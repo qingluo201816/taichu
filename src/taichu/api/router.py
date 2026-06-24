@@ -1,43 +1,22 @@
-"""统一路由注册：根据 Agent 注册中心动态生成路由。"""
+"""主路由：挂载所有功能模块的子路由。
 
-from fastapi import APIRouter, HTTPException
+新增功能模块：
+  1. 在 routes/ 下创建 feature.py（或 feature/ 目录）
+  2. 定义一个 APIRouter，内部定义该模块的端点
+  3. 回到此文件，加上 app.include_router(feature.router)
+"""
 
-from taichu.api.deps import get_agent_graph
-from taichu.core.registry import list_agents
-from taichu.models.schemas import (
-    AgentInfo,
-    AgentListResponse,
-    ChatRequest,
-    ChatResponse,
-)
+from fastapi import FastAPI
 
-router = APIRouter(prefix="/api")
+from taichu.api.routes import agents
 
 
-@router.get("/agents", response_model=AgentListResponse)
-async def api_list_agents():
-    """列出所有可用的 Agent。"""
-    agents = list_agents()
-    return AgentListResponse(
-        agents=[
-            AgentInfo(name=name, label=meta["label"], description=meta["description"])
-            for name, meta in agents.items()
-        ]
-    )
+def register_routes(app: FastAPI) -> None:
+    """向 FastAPI 应用注册所有功能路由。"""
+    app.include_router(agents.router)
 
-
-@router.post("/chat", response_model=ChatResponse)
-async def api_chat(req: ChatRequest):
-    """统一的对话入口，根据 agent 参数路由到对应 Agent。"""
-    try:
-        graph = get_agent_graph(req.agent)
-    except KeyError:
-        raise HTTPException(status_code=404, detail=f"Agent '{req.agent}' not found")
-
-    from langchain_core.messages import HumanMessage
-
-    state = {"messages": [HumanMessage(content=req.message)]}
-    result = await graph.ainvoke(state)
-
-    last_msg = result["messages"][-1]
-    return ChatResponse(agent=req.agent, response=last_msg.content)
+    # 未来扩展示例：
+    # from taichu.api.routes import auth, knowledge, files
+    # app.include_router(auth.router)
+    # app.include_router(knowledge.router)
+    # app.include_router(files.router)
