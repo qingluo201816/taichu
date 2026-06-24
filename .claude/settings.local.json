@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(powershell *)",
-      "Bash(netstat -ano)"
+      "Bash(netstat -ano)",
+      "Bash(mkdir -p \"C:/Users/wyh/Desktop/Taichu/.claude/skills/qa\")",
+      "Bash(mv \"C:/Users/wyh/Desktop/Taichu/.claude/skills/qa.md\" \"C:/Users/wyh/Desktop/Taichu/.claude/skills/qa/qa.md\")",
+      "Bash(mv \"C:/Users/wyh/Desktop/Taichu/.claude/skills/qa\" \"C:/Users/wyh/Desktop/Taichu/.claude/skills/quick-answer\")",
+      "Bash(mv \"C:/Users/wyh/Desktop/Taichu/.claude/skills/dis\" \"C:/Users/wyh/Desktop/Taichu/.claude/skills/discuss\")",
+      "Bash(mv \"C:/Users/wyh/Desktop/Taichu/.claude/skills/quick-answer/qa.md\" \"C:/Users/wyh/Desktop/Taichu/.claude/skills/quick-answer/quick-answer.md\")",
+      "Bash(mv \"C:/Users/wyh/Desktop/Taichu/.claude/skills/discuss/dis.md\" \"C:/Users/wyh/Desktop/Taichu/.claude/skills/discuss/discuss.md\")"
     ]
   }
 }

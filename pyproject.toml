@@ -9,7 +9,6 @@ dependencies = [
     "langchain-openai>=0.3",
     "fastapi>=0.115",
     "uvicorn[standard]>=0.34",
-    "streamlit>=1.42",
     "pydantic-settings>=2.7",
     "python-dotenv>=1.0",
 ]
