@@ -17,8 +17,9 @@ uv.lock
 # Environment
 .env
 
-# Data
-data/
+# Generated novel data
+project_assets/generated/*
+!project_assets/generated/.gitkeep
 
 # IDE
 .idea/
