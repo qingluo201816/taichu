@@ -1,18 +1,16 @@
-"""FastAPI 依赖注入。"""
+"""从应用状态提供 FastAPI 依赖。"""
 
-from functools import lru_cache
+from fastapi import Request
 
-from taichu.core.registry import get_agent, list_agents
-from taichu.core.storage import JsonStorageBackend, StorageBackend
-from taichu.config import settings
-
-
-@lru_cache()
-def get_storage() -> StorageBackend:
-    """获取存储后端实例（单例）。"""
-    return JsonStorageBackend(base_dir=settings.data_dir)
+from taichu.application.agents.registry import AgentRegistry
+from taichu.application.contracts.storage import StorageBackend
 
 
-def get_agent_graph(name: str):
-    """获取指定 Agent 的编译后 Graph。"""
-    return get_agent(name)
+def provide_agent_registry(request: Request) -> AgentRegistry:
+    """返回应用启动时创建的 Agent 注册中心。"""
+    return request.app.state.agent_registry
+
+
+def provide_storage(request: Request) -> StorageBackend:
+    """返回应用启动时创建的存储实现。"""
+    return request.app.state.storage
