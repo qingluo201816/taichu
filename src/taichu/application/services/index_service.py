@@ -1,7 +1,15 @@
 """Application service for rebuildable generated projections."""
 
+from datetime import UTC, datetime
+from uuid import uuid4
+
 from taichu.application.contracts.indexer import IndexerContract
 from taichu.application.contracts.storage import ProjectAssetStorageContract
+from taichu.domain.models.indexing import (
+    IndexBuildJob,
+    IndexBuildJobAction,
+    IndexBuildJobStatus,
+)
 
 
 class IndexService:
@@ -15,11 +23,43 @@ class IndexService:
         self._storage = storage
         self._indexer = indexer
 
-    async def clear_generated(self) -> None:
+    async def clear_generated(self) -> IndexBuildJob:
         """Clear generated projections without touching source assets."""
+        created_at = _now_iso()
         await self._storage.clear_generated()
+        return _job(
+            action=IndexBuildJobAction.CLEAR,
+            created_at=created_at,
+            message="generated projections cleared",
+        )
 
-    async def rebuild_generated_projection(self) -> None:
+    async def rebuild_generated_projection(self) -> IndexBuildJob:
         """Clear generated data and rebuild projection from source facts."""
+        created_at = _now_iso()
         await self._storage.clear_generated()
         await self._indexer.rebuild()
+        return _job(
+            action=IndexBuildJobAction.REBUILD,
+            created_at=created_at,
+            message="generated retrieval projection rebuilt from source facts",
+        )
+
+
+def _job(
+    *,
+    action: IndexBuildJobAction,
+    created_at: str,
+    message: str,
+) -> IndexBuildJob:
+    return IndexBuildJob(
+        id=f"index_job_{uuid4().hex}",
+        action=action,
+        status=IndexBuildJobStatus.COMPLETED,
+        created_at=created_at,
+        completed_at=_now_iso(),
+        message=message,
+    )
+
+
+def _now_iso() -> str:
+    return datetime.now(UTC).isoformat().replace("+00:00", "Z")

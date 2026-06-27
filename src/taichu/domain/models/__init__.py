@@ -6,6 +6,7 @@ from taichu.domain.models.ai_card import (
     AIResultCardType,
     AIWorkflow,
 )
+from taichu.domain.models.agent_chat import AgentConversation
 from taichu.domain.models.chapter import (
     Chapter,
     ChapterManifest,
@@ -21,6 +22,11 @@ from taichu.domain.models.inbox import (
     IdeaCardStatus,
 )
 from taichu.domain.models.import_batch import ImportBatch
+from taichu.domain.models.indexing import (
+    IndexBuildJob,
+    IndexBuildJobAction,
+    IndexBuildJobStatus,
+)
 from taichu.domain.models.knowledge import (
     CharacterCard,
     CharacterImportance,
@@ -46,12 +52,14 @@ from taichu.domain.models.source_ref import (
     SourceRefSourceType,
 )
 from taichu.domain.models.summary import ChapterSummary, ChapterSummaryStatus
+from taichu.domain.models.export import ExportBundle, ExportFile
 
 __all__ = [
     "AIResultCard",
     "AIResultCardStatus",
     "AIResultCardType",
     "AIWorkflow",
+    "AgentConversation",
     "Chapter",
     "ChapterManifest",
     "ChapterStatus",
@@ -63,6 +71,9 @@ __all__ = [
     "ChapterIssueSource",
     "ChapterIssueStatus",
     "ImportBatch",
+    "IndexBuildJob",
+    "IndexBuildJobAction",
+    "IndexBuildJobStatus",
     "CharacterCard",
     "CharacterImportance",
     "KnowledgeCard",
@@ -81,4 +92,6 @@ __all__ = [
     "SourceRefSourceType",
     "ChapterSummary",
     "ChapterSummaryStatus",
+    "ExportBundle",
+    "ExportFile",
 ]

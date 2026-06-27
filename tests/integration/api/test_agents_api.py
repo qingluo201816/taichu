@@ -16,9 +16,7 @@ class AgentApiTest(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         app = create_app(
-            llm=FakeMessagesListChatModel(
-                responses=[AIMessage(content="测试回复")]
-            )
+            llm=FakeMessagesListChatModel(responses=[AIMessage(content="测试回复")])
         )
         self.client = AsyncClient(
             transport=ASGITransport(app=app),
@@ -34,7 +32,7 @@ class AgentApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.status_code, 200)
         agent = response.json()["agents"][0]
         self.assertEqual(agent["name"], "chat")
-        self.assertEqual(agent["required_capabilities"], ["llm"])
+        self.assertEqual(agent["required_capabilities"], ["llm", "retrieval"])
         self.assertEqual(agent["exposures"], ["api", "mcp", "ui"])
         self.assertFalse(agent["supports_streaming"])
 

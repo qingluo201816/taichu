@@ -1,3 +1,7 @@
+# Skill 规则覆盖说明
+
+本项目的项目级 Skill 规则位于 `.agents/skills/rule.md`。创建、修改或讨论 Skills 时，必须先读取 `.agents/skills/rule.md`。如果旧说明提到 `.Codex/skills/rule.md`，以 `.agents/skills/rule.md` 为当前有效规则源。
+
 # Taichu (太初) - 项目规范
 
 ## 项目定位
@@ -8,7 +12,7 @@
 - 当用户提问存在歧义、信息缺失或逻辑矛盾，且无法通过上下文合理推断时，必须主动向用户提问澄清，不得擅自猜测或假设后直接作答。明确后再给出回答。
 
 ## Skills 规则
-- 当创建、修改或讨论 Skills 时，**必须先读取** `.Codex/skills/rule.md` 并遵循其中定义的规范。
+- 当创建、修改或讨论 Skills 时，**必须先读取** `.agents/skills/rule.md` 并遵循其中定义的规范。
 - 
 ## docs 规则
 - 当创建、修改或讨论 docs 时，**必须先读取** `docs/rule.md` 并遵循其中定义的规范,docs文档看重日期,即使是过时消息也没事,但是docs外的文档是持续更新的
@@ -72,4 +76,4 @@
 
 ---
 
-*最后更新：2026-06-25*
+*最后更新：2026-06-27*

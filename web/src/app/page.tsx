@@ -10,39 +10,33 @@ import {
 
 const modules = [
   {
-    title: "章节写作",
-    description: "打开当前章节，写作并保存正文",
+    title: "进入编辑器",
+    description: "当前章节写作、选区 AI、章节整理",
     href: "/editor",
     size: "lg",
   },
   {
-    title: "模型看板",
-    description: "用量统计与模型监控",
-    href: "/dashboard",
-    size: "sm",
-  },
-  {
-    title: "知识库",
-    description: "角色、世界观、设定可视化",
-    href: "/knowledge",
-    size: "sm",
-  },
-  {
-    title: "大纲管理",
-    description: "卷、章、情节脉络",
-    href: "#",
+    title: "Agent Chat",
+    description: "带来源的深度创作对话",
+    href: "/chat",
     size: "sm",
   },
   {
     title: "创作收件箱",
-    description: "非事实灵感、待确认设定与章节问题",
+    description: "灵感与待确认设定",
     href: "/inbox",
     size: "sm",
   },
   {
-    title: "文本审查",
-    description: "一致性检查与纠错",
-    href: "#",
+    title: "知识库",
+    description: "作者确认事实",
+    href: "/knowledge",
+    size: "sm",
+  },
+  {
+    title: "导出与重建",
+    description: "导出 source，重建 generated",
+    href: "/settings",
     size: "sm",
   },
 ];
@@ -80,7 +74,7 @@ export default function Home() {
                   <CardContent>
                     <div className="flex h-full min-h-[100px] items-center justify-center rounded-lg bg-zinc-50 dark:bg-zinc-900">
                       <span className="text-sm text-zinc-300 dark:text-zinc-700">
-                        即将开放
+                        主写作入口
                       </span>
                     </div>
                   </CardContent>
