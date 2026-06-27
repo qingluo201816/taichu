@@ -30,7 +30,11 @@ from taichu.domain.models.pending_fact import (
     PendingFactType,
     ProposedBy,
 )
-from taichu.domain.models.retrieval import RetrievalHit
+from taichu.domain.models.retrieval import (
+    RetrievalHit,
+    RetrievalReason,
+    RetrievalSourceType,
+)
 from taichu.domain.models.source_ref import (
     SourceAnchorType,
     SourceRef,
@@ -58,10 +62,11 @@ class FakeRetrieval:
 
     def __init__(self) -> None:
         self.queries: list[RetrievalQuery] = []
+        self.hits: list[RetrievalHit] = []
 
     async def search(self, query: RetrievalQuery) -> list[RetrievalHit]:
         self.queries.append(query)
-        return []
+        return self.hits
 
 
 class ChatAgentServiceTest(unittest.IsolatedAsyncioTestCase):
@@ -130,6 +135,40 @@ class ChatAgentServiceTest(unittest.IsolatedAsyncioTestCase):
         for source_ref in result.card.source_refs:
             self.assertNotIn("generated", source_ref.path)
             self.assertNotIn("sqlite", source_ref.path.lower())
+
+    async def test_chat_citation_labels_match_deduped_source_order(self) -> None:
+        await self._write_knowledge(
+            _knowledge_card(
+                knowledge_id="knowledge_confirmed",
+                name="Confirmed lotus",
+                status=KnowledgeCardStatus.CONFIRMED,
+            )
+        )
+        self.retrieval.hits = [
+            _retrieval_hit(
+                _knowledge_source_ref(
+                    knowledge_id="knowledge_confirmed",
+                    path="project_assets/source/knowledge/items/knowledge_confirmed.json",
+                )
+            )
+        ]
+
+        result = await self.service.run(
+            ChatAgentRequest(
+                message="这一章怎么推进？",
+                chapter_id="chapter_001",
+            )
+        )
+        content = result.card.content
+        self.assertIsInstance(content, dict)
+        assert isinstance(content, dict)
+        citations = content["citations"]
+
+        self.assertEqual(len(result.card.source_refs), 2)
+        self.assertEqual([citation["label"] for citation in citations], ["S1", "S2"])
+        self.assertIn("[S1] 当前章节", self.llm.prompts[0])
+        self.assertIn("[S2] confirmed Knowledge", self.llm.prompts[0])
+        self.assertNotIn("[S3]", self.llm.prompts[0])
 
     async def test_chat_without_context_is_marked_speculative(self) -> None:
         result = await self.service.run(
@@ -200,4 +239,29 @@ def _source_ref() -> SourceRef:
         excerpt_hash="hash_excerpt",
         source_hash="hash_source",
         created_at="2026-06-27T00:00:00Z",
+    )
+
+
+def _knowledge_source_ref(*, knowledge_id: str, path: str) -> SourceRef:
+    return SourceRef(
+        source_type=SourceRefSourceType.KNOWLEDGE,
+        source_id=knowledge_id,
+        path=path,
+        anchor_type=SourceAnchorType.KNOWLEDGE_FIELD,
+        field_path="summary",
+        excerpt="Confirmed lotus summary",
+        excerpt_hash="hash_excerpt",
+        source_hash="hash_source",
+        created_at="2026-06-27T00:00:00Z",
+    )
+
+
+def _retrieval_hit(source_ref: SourceRef) -> RetrievalHit:
+    return RetrievalHit(
+        source_type=RetrievalSourceType(source_ref.source_type.value),
+        source_id=source_ref.source_id,
+        excerpt=source_ref.excerpt,
+        score=1.0,
+        reason=RetrievalReason.EXACT,
+        source_ref=source_ref,
     )

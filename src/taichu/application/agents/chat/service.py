@@ -59,6 +59,12 @@ class ChatAgentRunResult:
     card: AIResultCard
 
 
+@dataclass(frozen=True)
+class _ChatSource:
+    source_ref: SourceRef
+    prompt_line: str
+
+
 class ChatAgentService:
     """Run source-aware Basic Agent Chat without writing fact assets."""
 
@@ -99,30 +105,43 @@ class ChatAgentService:
             else []
         )
 
-        source_refs = _dedupe_source_refs(
+        sources = _dedupe_sources(
             [
-                *([chapter_ref] if chapter_ref is not None else []),
-                *[_knowledge_source_ref(card, now) for card in confirmed_cards],
-                *[hit.source_ref for hit in retrieval_hits],
+                *(
+                    [
+                        _ChatSource(
+                            source_ref=chapter_ref,
+                            prompt_line=(
+                                "当前章节"
+                                f"《{chapter_content.chapter.title}》摘录：\n"
+                                f"{_compact_excerpt(chapter_content.markdown, _MAX_CHAPTER_EXCERPT)}"
+                            ),
+                        )
+                    ]
+                    if chapter_ref is not None and chapter_content is not None
+                    else []
+                ),
+                *[
+                    _ChatSource(
+                        source_ref=_knowledge_source_ref(card, now),
+                        prompt_line=f"confirmed Knowledge：{_confirmed_fact_line(card)}",
+                    )
+                    for card in confirmed_cards
+                ],
+                *[
+                    _ChatSource(
+                        source_ref=hit.source_ref,
+                        prompt_line=f"检索证据：{_retrieval_line(hit)}",
+                    )
+                    for hit in retrieval_hits
+                ],
             ]
         )
+        source_refs = [source.source_ref for source in sources]
         raw_answer = await self._llm.complete(
             build_chat_prompt(
                 message=request.message,
-                chapter_title=(
-                    chapter_content.chapter.title
-                    if chapter_content is not None
-                    else None
-                ),
-                chapter_excerpt=(
-                    _compact_excerpt(chapter_content.markdown, _MAX_CHAPTER_EXCERPT)
-                    if chapter_content is not None
-                    else None
-                ),
-                confirmed_fact_lines=[
-                    _confirmed_fact_line(card) for card in confirmed_cards
-                ],
-                retrieval_lines=[_retrieval_line(hit) for hit in retrieval_hits],
+                source_lines=[source.prompt_line for source in sources],
             )
         )
         card = await self._ai_card_service.create_card(
@@ -150,7 +169,10 @@ class ChatAgentService:
                     "source_status": (
                         "source_backed" if source_refs else "speculative"
                     ),
-                    "citations": [_citation(ref) for ref in source_refs],
+                    "citations": [
+                        _citation(ref, index)
+                        for index, ref in enumerate(source_refs, start=1)
+                    ],
                 },
                 source_refs=source_refs,
                 created_at=now,
@@ -250,10 +272,11 @@ def _knowledge_source_ref(card: KnowledgeCard, created_at: str) -> SourceRef:
     )
 
 
-def _dedupe_source_refs(source_refs: list[SourceRef]) -> list[SourceRef]:
-    deduped: list[SourceRef] = []
+def _dedupe_sources(sources: list[_ChatSource]) -> list[_ChatSource]:
+    deduped: list[_ChatSource] = []
     seen: set[tuple[object, ...]] = set()
-    for source_ref in source_refs:
+    for source in sources:
+        source_ref = source.source_ref
         key = (
             source_ref.source_type,
             source_ref.source_id,
@@ -266,12 +289,13 @@ def _dedupe_source_refs(source_refs: list[SourceRef]) -> list[SourceRef]:
         if key in seen:
             continue
         seen.add(key)
-        deduped.append(source_ref)
+        deduped.append(source)
     return deduped
 
 
-def _citation(source_ref: SourceRef) -> dict[str, object]:
+def _citation(source_ref: SourceRef, index: int) -> dict[str, object]:
     return {
+        "label": f"S{index}",
         "source_type": source_ref.source_type.value,
         "source_id": source_ref.source_id,
         "path": source_ref.path,

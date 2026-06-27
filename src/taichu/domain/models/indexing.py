@@ -18,6 +18,7 @@ class IndexBuildJobStatus(StrEnum):
     """Synchronous MVP status for generated maintenance jobs."""
 
     COMPLETED = "completed"
+    FAILED = "failed"
 
 
 class IndexBuildJob(DomainModel):
