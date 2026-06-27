@@ -81,22 +81,22 @@ export function AICardList({
 }: AICardListProps) {
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-5 flex items-center gap-2 text-sm font-semibold text-gray-600">
+      <div className="mb-5 flex items-center gap-2 text-sm font-medium text-[var(--tc-workspace-text-secondary)]">
         <MessageSquare className="size-4" />
         智能助手卡片
       </div>
 
-      <div className="rounded-lg border-2 border-black px-4 py-4">
-        <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+      <div className="tc-panel-soft tc-aurora-line px-4 py-4">
+        <div className="mb-2 flex items-center gap-2 text-sm font-medium text-[var(--tc-workspace-focus)]">
           <Scissors className="size-4" />
           当前选区
         </div>
         {selection ? (
           <div className="space-y-3 text-sm">
-            <p className="max-h-24 overflow-auto rounded-md bg-gray-50 p-2 leading-6">
+            <p className="tc-paper-fragment max-h-24 overflow-auto p-2 leading-6">
               {selection.selected_text}
             </p>
-            <dl className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+            <dl className="grid grid-cols-2 gap-2 font-mono text-xs text-[var(--tc-workspace-text-muted)]">
               <dt>段落</dt>
               <dd>{selection.source_ref.paragraph_start}</dd>
               <dt>起止</dt>
@@ -107,11 +107,11 @@ export function AICardList({
             </dl>
           </div>
         ) : (
-          <p className="text-sm text-gray-500">未选择正文</p>
+          <p className="text-sm text-[var(--tc-workspace-text-muted)]">未选择正文</p>
         )}
       </div>
 
-      <div className="mt-4 space-y-3 rounded-lg border-2 border-black px-4 py-4">
+      <div className="tc-panel mt-4 space-y-3 px-4 py-4">
         <div className="grid grid-cols-3 gap-2">
           <ModeButton
             active={selectedMode === "ask"}
@@ -138,7 +138,7 @@ export function AICardList({
         <textarea
           value={prompt}
           onChange={event => onPromptChange(event.target.value)}
-          className="min-h-20 w-full resize-none rounded-lg border-2 border-black bg-white px-3 py-2 text-sm outline-none focus:bg-[#fffefc]"
+          className="tc-input min-h-20 w-full resize-none px-3 py-2 text-sm"
           placeholder="给智能助手的一句话"
         />
         {selectedMode === "continue_text" ? (
@@ -146,7 +146,7 @@ export function AICardList({
             value={targetWords}
             onChange={event => onTargetWordsChange(event.target.value)}
             inputMode="numeric"
-            className="h-9 w-full rounded-lg border-2 border-black px-3 text-sm outline-none"
+            className="tc-input h-9 w-full px-3 text-sm"
             placeholder="目标字数"
           />
         ) : null}
@@ -154,21 +154,29 @@ export function AICardList({
           size="sm"
           disabled={!selection || loading}
           onClick={() => onRunSelection(selectedMode)}
-          className="w-full rounded-full border-2 border-black"
+          className="w-full"
         >
           {loading ? <Loader2 className="size-4 animate-spin" /> : null}
           生成卡片
         </Button>
+        <p className="text-xs leading-5 text-[var(--tc-workspace-text-muted)]">
+          {selection ? "选区已就绪，可以生成智能助手卡片。" : "请先在正文中选中一段文字，生成卡片按钮会自动点亮。"}
+        </p>
         <Button
           size="sm"
           disabled={loading}
           onClick={onRunChapterSummary}
-          className="w-full rounded-full border-2 border-black bg-white text-black hover:bg-gray-100"
+          variant="outline"
+          className="w-full"
         >
           {loading ? <Loader2 className="size-4 animate-spin" /> : <FileText className="size-4" />}
           整理本章
         </Button>
-        {error ? <p className="text-xs font-semibold text-red-700">{error}</p> : null}
+        {error ? (
+          <p className="tc-danger rounded-[var(--tc-panel-radius)] border px-3 py-2 text-xs font-medium">
+            {error}
+          </p>
+        ) : null}
       </div>
 
       <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-auto pr-1">
@@ -207,8 +215,10 @@ function ModeButton({
       aria-label={label}
       onClick={onClick}
       className={cn(
-        "inline-flex h-9 items-center justify-center gap-1 rounded-lg border-2 border-black text-xs font-semibold",
-        active ? "bg-black text-white" : "bg-white hover:bg-gray-100",
+        "inline-flex h-9 items-center justify-center gap-1 rounded-[var(--tc-panel-radius)] border text-xs font-medium transition-colors",
+        active
+          ? "border-[var(--tc-workspace-focus)] bg-[var(--tc-workspace-focus)] text-[var(--tc-workspace-shell)]"
+          : "border-[var(--tc-workspace-border)] bg-[var(--tc-workspace-recess)] text-[var(--tc-workspace-text-secondary)] hover:border-[var(--tc-workspace-focus)] hover:text-[var(--tc-workspace-focus)]",
       )}
     >
       {children}
@@ -235,12 +245,28 @@ function ResultCard({
   onDiscard: AICardListProps["onDiscard"];
 }) {
   const generated = card.status === "generated";
+  const paperTone =
+    card.type === "text_candidate" || card.type === "chapter_summary";
   return (
-    <article className="rounded-lg border-2 border-black bg-white px-3 py-3">
+    <article
+      className={cn(
+        "px-3 py-3",
+        paperTone ? "tc-paper-card" : "tc-panel tc-aurora-line",
+      )}
+    >
       <div className="mb-2 flex items-center justify-between gap-2">
         <div>
           <p className="text-sm font-semibold">{cardTitle(card)}</p>
-          <p className="text-xs text-gray-500">{statusText(card.status)}</p>
+          <p
+            className={cn(
+              "text-xs",
+              paperTone
+                ? "text-[var(--tc-paper-ink-muted)]"
+                : "text-[var(--tc-workspace-text-muted)]",
+            )}
+          >
+            {statusText(card.status)}
+          </p>
         </div>
         <button
           type="button"
@@ -248,12 +274,24 @@ function ResultCard({
           aria-label="丢弃"
           disabled={!generated}
           onClick={() => onDiscard(card)}
-          className="inline-flex size-8 items-center justify-center rounded-lg border-2 border-black disabled:opacity-40"
+          className={cn(
+            "inline-flex size-8 items-center justify-center rounded-[var(--tc-panel-radius)] border transition-colors disabled:opacity-40",
+            paperTone
+              ? "border-[var(--tc-paper-border)] hover:bg-[var(--tc-paper-mark-soft)]"
+              : "border-[var(--tc-workspace-border)] bg-[var(--tc-workspace-recess)] text-[var(--tc-workspace-text-secondary)] hover:border-[var(--tc-workspace-focus)] hover:text-[var(--tc-workspace-focus)]",
+          )}
         >
           <Trash2 className="size-4" />
         </button>
       </div>
-      <div className="max-h-48 overflow-auto whitespace-pre-wrap rounded-md bg-gray-50 p-2 text-sm leading-6">
+      <div
+        className={cn(
+          "max-h-48 overflow-auto whitespace-pre-wrap rounded-[var(--tc-panel-radius)] p-2 text-sm leading-6",
+          paperTone
+            ? "border border-[var(--tc-paper-border-soft)] bg-[var(--tc-paper-bg-soft)]"
+            : "tc-recess text-[var(--tc-workspace-text-secondary)]",
+        )}
+      >
         {cardContent(card)}
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
@@ -263,6 +301,7 @@ function ResultCard({
               label="插入"
               disabled={!generated}
               onClick={() => onApplyText(card, "insert_cursor")}
+              tone="paper"
             >
               <CornerDownLeft className="size-4" />
             </SmallAction>
@@ -270,6 +309,7 @@ function ResultCard({
               label="替换"
               disabled={!generated}
               onClick={() => onApplyText(card, "replace_selection")}
+              tone="paper"
             >
               <Replace className="size-4" />
             </SmallAction>
@@ -277,10 +317,11 @@ function ResultCard({
               label="追加"
               disabled={!generated}
               onClick={() => onApplyText(card, "append_after_selection")}
+              tone="paper"
             >
               <ListPlus className="size-4" />
             </SmallAction>
-            <SmallAction label="复制" onClick={() => onCopyText(card)}>
+            <SmallAction label="复制" tone="paper" onClick={() => onCopyText(card)}>
               <Copy className="size-4" />
             </SmallAction>
           </>
@@ -308,6 +349,7 @@ function ResultCard({
             label="重试"
             disabled={!generated}
             onClick={() => onRetry(card)}
+            tone={paperTone ? "paper" : "workspace"}
           >
             <RotateCcw className="size-4" />
           </SmallAction>
@@ -322,11 +364,13 @@ function SmallAction({
   disabled = false,
   children,
   onClick,
+  tone = "workspace",
 }: {
   label: string;
   disabled?: boolean;
   children: ReactNode;
   onClick: () => void;
+  tone?: "workspace" | "paper";
 }) {
   return (
     <button
@@ -335,7 +379,12 @@ function SmallAction({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="inline-flex h-8 items-center gap-1 rounded-lg border-2 border-black px-2 text-xs font-semibold disabled:opacity-40"
+      className={cn(
+        "inline-flex h-8 items-center gap-1 rounded-[var(--tc-panel-radius)] border px-2 text-xs font-medium transition-colors disabled:opacity-40",
+        tone === "paper"
+          ? "border-[var(--tc-paper-border)] text-[var(--tc-paper-ink)] hover:bg-[var(--tc-paper-mark-soft)]"
+          : "border-[var(--tc-workspace-border)] bg-[var(--tc-workspace-recess)] text-[var(--tc-workspace-text-secondary)] hover:border-[var(--tc-workspace-focus)] hover:text-[var(--tc-workspace-focus)]",
+      )}
     >
       {children}
       {label}

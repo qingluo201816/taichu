@@ -58,31 +58,33 @@ export function KnowledgeList() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#fffefc] text-black">
-      <header className="border-b-[3px] border-black bg-white">
+    <main className="tc-workspace-page min-h-screen">
+      <header className="tc-workspace-header">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4">
           <div className="flex items-center gap-4">
             <Link
               href="/home"
-              className="inline-flex size-10 items-center justify-center rounded-lg border-2 border-black bg-white hover:bg-gray-100"
+              className="inline-flex size-10 items-center justify-center rounded-[var(--tc-panel-radius)] border border-[var(--tc-workspace-border)] bg-[var(--tc-workspace-recess)] text-[var(--tc-workspace-text-secondary)] transition-colors hover:border-[var(--tc-workspace-focus)] hover:text-[var(--tc-workspace-focus)]"
               aria-label="返回太初"
               title="返回太初"
             >
               <ArrowLeft className="size-5" />
             </Link>
             <div>
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase text-gray-500">
+              <div className="flex items-center gap-2 text-xs font-medium text-[var(--tc-workspace-text-muted)]">
                 <BookOpenCheck className="size-4" />
                 正式事实范围 / 已确认知识
               </div>
-              <h1 className="mt-1 text-2xl font-semibold">知识库</h1>
+              <h1 className="mt-1 text-2xl font-semibold text-[var(--tc-workspace-focus)]">
+                知识库
+              </h1>
             </div>
           </div>
           <Button
             size="sm"
             onClick={() => void refresh()}
             disabled={loading}
-            className="rounded-full border-2 border-black"
+            variant="outline"
           >
             {loading ? (
               <Loader2 className="size-4 animate-spin" />
@@ -96,18 +98,18 @@ export function KnowledgeList() {
 
       <section className="mx-auto max-w-6xl px-5 py-5">
         {error ? (
-          <div className="mb-4 rounded-lg border-2 border-black bg-white px-4 py-3 text-sm font-semibold text-red-700">
+          <div className="tc-danger mb-4 rounded-[var(--tc-panel-radius)] border px-4 py-3 text-sm font-medium">
             {error}
           </div>
         ) : null}
 
         {loading ? (
-          <div className="flex h-40 items-center justify-center text-sm font-semibold text-gray-500">
+          <div className="flex h-40 items-center justify-center text-sm font-medium text-[var(--tc-workspace-text-muted)]">
             <Loader2 className="mr-2 size-4 animate-spin" />
             加载中
           </div>
         ) : cards.length === 0 ? (
-          <div className="rounded-lg border-2 border-dashed border-black bg-white px-4 py-12 text-center text-sm text-gray-500">
+          <div className="rounded-[var(--tc-panel-radius)] border border-dashed border-[var(--tc-workspace-border)] bg-[var(--tc-workspace-panel)] px-4 py-12 text-center text-sm text-[var(--tc-workspace-text-muted)]">
             暂无已确认知识
           </div>
         ) : (
@@ -124,15 +126,17 @@ export function KnowledgeList() {
 
 function KnowledgeCardItem({ card }: { card: KnowledgeCardInfo }) {
   return (
-    <article className="rounded-lg border-[3px] border-black bg-white px-4 py-4">
+    <article className="tc-paper-card px-4 py-4">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <p className="text-lg font-semibold">{card.name}</p>
-          <p className="text-xs font-semibold uppercase text-gray-500">
+          <p className="text-lg font-semibold">
+            {card.name}
+          </p>
+          <p className="font-sans text-xs font-medium text-[var(--tc-paper-ink-muted)]">
             {knowledgeTypeText(card.type)} / {knowledgeStatusText(card.status)}
           </p>
         </div>
-        <span className="rounded-full border-2 border-black bg-[#cce7df] px-2 py-0.5 text-xs font-semibold">
+        <span className="tc-paper-tag px-2 py-0.5">
           正式事实
         </span>
       </div>
@@ -142,19 +146,19 @@ function KnowledgeCardItem({ card }: { card: KnowledgeCardInfo }) {
           {card.aliases.map(alias => (
             <span
               key={alias}
-              className="rounded-full border-2 border-black px-2 py-0.5 text-xs"
+              className="rounded-full border border-[var(--tc-paper-border)] px-2 py-0.5 font-sans text-xs"
             >
               {alias}
             </span>
           ))}
         </div>
       ) : null}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t-2 border-black pt-2 text-xs text-gray-500">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--tc-paper-border-soft)] pt-2 font-sans text-xs text-[var(--tc-paper-ink-muted)]">
         <span className="inline-flex items-center gap-1">
           <FileText className="size-3" />
           证据来源 {card.source_refs.length}
         </span>
-        <span>知识编号：{card.id}</span>
+        <span className="font-mono">知识编号：{card.id}</span>
       </div>
     </article>
   );

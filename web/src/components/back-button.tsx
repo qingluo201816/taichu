@@ -9,7 +9,8 @@ export default function BackButton() {
   return (
     <button
       onClick={() => router.push("/home")}
-      className="fixed top-6 left-6 z-50 flex items-center gap-1.5 text-sm text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors"
+      className="fixed left-5 top-5 z-50 inline-flex h-9 items-center gap-2 rounded-[var(--tc-panel-radius)] border border-[var(--tc-workspace-border)] bg-[var(--tc-workspace-shell)]/85 px-3 text-sm font-medium text-[var(--tc-workspace-text-secondary)] backdrop-blur transition-colors hover:border-[var(--tc-workspace-focus)] hover:text-[var(--tc-workspace-focus)]"
+      aria-label="返回太初"
     >
       <ArrowLeft className="w-4 h-4" />
       返回太初

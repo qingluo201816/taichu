@@ -65,12 +65,16 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#fbfaf7] px-6 py-7 text-zinc-950">
+    <main className="tc-workspace-page min-h-screen px-5 py-7 md:px-6">
       <BackButton />
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 pt-12">
-        <header className="border-b-2 border-black pb-4">
-          <p className="mb-2 text-sm font-semibold text-zinc-600">设置</p>
-          <h1 className="text-3xl font-bold">导出与重建</h1>
+        <header className="border-b border-[var(--tc-workspace-border-weak)] pb-4">
+          <p className="mb-2 text-sm font-medium text-[var(--tc-workspace-text-secondary)]">
+            设置
+          </p>
+          <h1 className="text-3xl font-semibold text-[var(--tc-workspace-focus)]">
+            导出与重建
+          </h1>
         </header>
 
         <section className="grid gap-4 md:grid-cols-3">
@@ -101,35 +105,41 @@ export default function SettingsPage() {
         </section>
 
         {error ? (
-          <p className="border-2 border-red-700 bg-white p-3 text-sm font-semibold text-red-700">
+          <p className="tc-danger rounded-[var(--tc-panel-radius)] border p-3 text-sm font-medium">
             {error}
           </p>
         ) : null}
 
         {job ? (
-          <section className="border-2 border-black bg-white p-4">
-            <h2 className="text-lg font-bold">最近任务</h2>
+          <section className="tc-panel p-4">
+            <h2 className="text-lg font-semibold text-[var(--tc-workspace-focus)]">
+              最近任务
+            </h2>
             <dl className="mt-3 grid gap-2 text-sm md:grid-cols-2">
-              <dt className="font-semibold">动作</dt>
+              <dt className="font-medium text-[var(--tc-workspace-text-muted)]">动作</dt>
               <dd>{jobActionText(job.action)}</dd>
-              <dt className="font-semibold">状态</dt>
+              <dt className="font-medium text-[var(--tc-workspace-text-muted)]">状态</dt>
               <dd>{jobStatusText(job.status)}</dd>
-              <dt className="font-semibold">派生数据路径</dt>
-              <dd>{job.generated_path}</dd>
-              <dt className="font-semibold">结果</dt>
+              <dt className="font-medium text-[var(--tc-workspace-text-muted)]">派生数据路径</dt>
+              <dd className="break-all font-mono text-xs">{job.generated_path}</dd>
+              <dt className="font-medium text-[var(--tc-workspace-text-muted)]">结果</dt>
               <dd>{job.message}</dd>
             </dl>
           </section>
         ) : null}
 
         {bundle ? (
-          <section className="border-2 border-black bg-white p-4">
+          <section className="tc-panel p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-bold">最近导出</h2>
-                <p className="text-sm text-zinc-500">{bundle.id}</p>
+                <h2 className="text-lg font-semibold text-[var(--tc-workspace-focus)]">
+                  最近导出
+                </h2>
+                <p className="font-mono text-sm text-[var(--tc-workspace-text-muted)]">
+                  {bundle.id}
+                </p>
               </div>
-              <span className="rounded-full border-2 border-black px-3 py-1 text-xs font-semibold">
+              <span className="tc-tag px-3 py-1">
                 {bundle.files.length} 个文件
               </span>
             </div>
@@ -137,10 +147,12 @@ export default function SettingsPage() {
               {bundle.files.map(file => (
                 <div
                   key={file.path}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border-2 border-black px-3 py-2 text-sm"
+                  className="tc-panel-soft flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
                 >
-                  <span className="break-all font-semibold">{file.path}</span>
-                  <span className="text-xs text-zinc-500">
+                  <span className="break-all font-mono text-xs text-[var(--tc-workspace-text-secondary)]">
+                    {file.path}
+                  </span>
+                  <span className="text-xs text-[var(--tc-workspace-text-muted)]">
                     {mediaTypeText(file.media_type)}
                   </span>
                 </div>
@@ -194,16 +206,20 @@ function ActionPanel({
   onClick: () => void;
 }) {
   return (
-    <section className="flex min-h-44 flex-col justify-between border-2 border-black bg-white p-4">
+    <section className="tc-panel flex min-h-44 flex-col justify-between p-4">
       <div>
-        <h2 className="text-lg font-bold">{title}</h2>
-        <p className="mt-2 text-sm leading-6 text-zinc-600">{detail}</p>
+        <h2 className="text-lg font-semibold text-[var(--tc-workspace-focus)]">
+          {title}
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-[var(--tc-workspace-text-secondary)]">
+          {detail}
+        </p>
       </div>
       <Button
         type="button"
         disabled={loading}
         onClick={onClick}
-        className="mt-4 rounded-full border-2 border-black"
+        className="mt-4"
       >
         {loading ? <Loader2 className="size-4 animate-spin" /> : icon}
         {buttonLabel}
