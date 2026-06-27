@@ -4,6 +4,11 @@ from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
 from taichu.domain.models.retrieval import RetrievalHit
+from taichu.domain.rules.fact_scope import RetrievalScopeName
+
+
+def _default_fact_scope() -> frozenset[str]:
+    return frozenset({RetrievalScopeName.FACT.value})
 
 
 @dataclass(frozen=True)
@@ -11,7 +16,7 @@ class RetrievalQuery:
     """当前唯一小说内的检索请求。"""
 
     text: str
-    scopes: frozenset[str] = field(default_factory=frozenset)
+    scopes: frozenset[str] = field(default_factory=_default_fact_scope)
     limit: int = 10
 
 

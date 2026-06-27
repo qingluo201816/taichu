@@ -1,1 +1,7 @@
-"""可重建索引与向量数据实现。"""
+"""Rebuildable generated indexing implementations."""
+
+from taichu.infrastructure.indexing.projection_rebuilder import (
+    SqliteProjectionRebuilder,
+)
+
+__all__ = ["SqliteProjectionRebuilder"]
