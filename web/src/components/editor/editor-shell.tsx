@@ -526,7 +526,7 @@ export default function EditorShell() {
       <div className="grid min-h-screen grid-cols-[280px_minmax(0,1fr)_320px]">
         <aside className="border-r-[3px] border-black bg-white px-4 py-5">
           <Link
-            href="/"
+            href="/home"
             className="mb-6 inline-flex items-center gap-2 rounded-full border-2 border-black px-3 py-1.5 text-sm font-semibold hover:bg-gray-100"
           >
             <ChevronLeft className="size-4" />

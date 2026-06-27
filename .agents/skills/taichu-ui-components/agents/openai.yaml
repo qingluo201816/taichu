@@ -1,0 +1,4 @@
+interface:
+  display_name: "太初 UI 组件准入"
+  short_description: "太初前端自动任务的组件库选择、花哨素材准入和视觉边界控制规则"
+  default_prompt: "Use $taichu-ui-components 审查并实现太初前端组件。"
