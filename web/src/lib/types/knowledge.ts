@@ -23,7 +23,6 @@ export type ConfirmEditedPendingFactRequest = {
   summary?: string | null;
   aliases?: string[] | null;
   fields?: Record<string, unknown> | null;
-  source_refs?: SourceRefInfo[] | null;
 };
 
 export type PendingFactConfirmationResponse = {

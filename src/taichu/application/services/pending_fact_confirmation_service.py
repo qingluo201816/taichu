@@ -20,7 +20,6 @@ from taichu.domain.models.knowledge import (
     KnowledgeCardType,
 )
 from taichu.domain.models.pending_fact import PendingFact, PendingFactStatus
-from taichu.domain.models.source_ref import SourceRef
 from taichu.domain.rules.card_state import assert_pending_fact_transition_allowed
 
 
@@ -47,7 +46,6 @@ class PendingFactConfirmationEdits:
     summary: str | None = None
     aliases: list[str] | None = None
     fields: dict[str, Any] | None = None
-    source_refs: list[SourceRef] | None = None
 
 
 @dataclass(frozen=True)
@@ -227,10 +225,8 @@ def _knowledge_card_from_pending_fact(
     now = _now_iso()
     fields = _fields_from_content(pending_fact.content)
     if edits is not None and edits.fields is not None:
-        fields = edits.fields
-    source_refs = pending_fact.source_refs
-    if edits is not None and edits.source_refs is not None:
-        source_refs = edits.source_refs
+        fields = dict(edits.fields)
+    fields["pending_fact_id"] = pending_fact.id
     return KnowledgeCard(
         id=pending_fact.target_knowledge_id
         or _knowledge_id_for_pending_fact(pending_fact),
@@ -243,7 +239,7 @@ def _knowledge_card_from_pending_fact(
             else _summary_from_content(pending_fact.content)
         ),
         fields=fields,
-        source_refs=source_refs,
+        source_refs=pending_fact.source_refs,
         status=KnowledgeCardStatus.CONFIRMED,
         created_at=now,
         updated_at=now,
