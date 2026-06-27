@@ -13,7 +13,15 @@ from taichu.application.services.chapter_summary_service import (
     ChapterSummaryService,
 )
 from taichu.application.services.import_service import ImportService
-from taichu.application.services.knowledge_service import KnowledgeService
+from taichu.application.services.knowledge_service import (
+    KnowledgeService,
+    knowledge_category_for_type,
+)
+from taichu.domain.models.knowledge import (
+    KnowledgeCard,
+    KnowledgeCardStatus,
+    KnowledgeCardType,
+)
 from taichu.domain.models import (
     RetrievalHit,
     RetrievalReason,
@@ -107,6 +115,31 @@ class ChapterSummaryServiceTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("分段 1/2", llm.prompts[0])
         self.assertIn("分段 2/2", llm.prompts[0])
         self.assertIn("检索证据", llm.prompts[0])
+
+    async def test_summary_prompt_uses_confirmed_knowledge_only(self) -> None:
+        await ImportService(self.storage).import_text(
+            "第一章 事实边界\n秦浩轩修行剑意。",
+            source_name="fact_scope.txt",
+        )
+        confirmed = _knowledge_card(
+            knowledge_id="knowledge_confirmed",
+            name="Confirmed sword intent",
+            status=KnowledgeCardStatus.CONFIRMED,
+        )
+        archived = _knowledge_card(
+            knowledge_id="knowledge_archived",
+            name="Archived sword intent",
+            status=KnowledgeCardStatus.ARCHIVED,
+        )
+        await self._write_knowledge_card(confirmed)
+        await self._write_knowledge_card(archived)
+        llm = FakeLLM([_summary_json()])
+        service = self._service(llm)
+
+        await service.summarize_chapter("chapter_001")
+
+        self.assertIn("Confirmed sword intent", llm.prompts[0])
+        self.assertNotIn("Archived sword intent", llm.prompts[0])
 
     async def test_duplicate_setting_candidates_are_deduped(self) -> None:
         await ImportService(self.storage).import_text(
@@ -231,6 +264,13 @@ class ChapterSummaryServiceTest(unittest.IsolatedAsyncioTestCase):
             ai_card_service=self.ai_card_service,
         )
 
+    async def _write_knowledge_card(self, card: KnowledgeCard) -> None:
+        await self.storage.write_knowledge_record(
+            knowledge_category_for_type(card.type),
+            card.id,
+            card.model_dump(mode="json"),
+        )
+
 
 def _summary_json(
     *,
@@ -247,6 +287,26 @@ def _summary_json(
             "next_chapter_hooks": ["继续探索"],
         },
         ensure_ascii=False,
+    )
+
+
+def _knowledge_card(
+    *,
+    knowledge_id: str,
+    name: str,
+    status: KnowledgeCardStatus,
+) -> KnowledgeCard:
+    return KnowledgeCard(
+        id=knowledge_id,
+        type=KnowledgeCardType.TECHNIQUE,
+        name=name,
+        aliases=[],
+        summary=f"{name} summary",
+        fields={},
+        source_refs=[_source_ref()],
+        status=status,
+        created_at="2026-06-27T00:00:00Z",
+        updated_at="2026-06-27T00:00:00Z",
     )
 
 

@@ -303,13 +303,15 @@ function ResultCard({
             <FileQuestion className="size-4" />
           </SmallAction>
         ) : null}
-        <SmallAction
-          label="重试"
-          disabled={!generated}
-          onClick={() => onRetry(card)}
-        >
-          <RotateCcw className="size-4" />
-        </SmallAction>
+        {card.type !== "chapter_summary" ? (
+          <SmallAction
+            label="重试"
+            disabled={!generated}
+            onClick={() => onRetry(card)}
+          >
+            <RotateCcw className="size-4" />
+          </SmallAction>
+        ) : null}
       </div>
     </article>
   );
