@@ -10,6 +10,7 @@ from taichu.application.services.ai_card_service import (
     IDEAS_FILE,
     AICardService,
 )
+from taichu.domain.exceptions import InvalidStateTransitionError
 from taichu.application.services.selection_ai_service import (
     SelectionAIRequest,
     SelectionAIService,
@@ -195,6 +196,54 @@ class SelectionAIServiceTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(discarded.status, AIResultCardStatus.DISCARDED)
         self.assertEqual(idea_records, [])
         self.assertEqual(pending_records, [])
+
+    async def test_ai_card_actions_reject_terminal_state_transitions(
+        self,
+    ) -> None:
+        llm = FakeLLM(
+            [
+                json.dumps(
+                    {
+                        "card_type": "text_candidate",
+                        "content": {"text": "插入正文"},
+                    },
+                    ensure_ascii=False,
+                )
+            ]
+        )
+        service = SelectionAIService(llm, self.ai_card_service)
+        card = await service.run_selection(
+            _request(SelectionMode.CONTINUE_TEXT)
+        )
+
+        inserted = await self.ai_card_service.mark_inserted(card.id)
+
+        self.assertEqual(inserted.status, AIResultCardStatus.INSERTED)
+        with self.assertRaises(InvalidStateTransitionError):
+            await self.ai_card_service.discard_card(card.id)
+
+    async def test_saved_idea_card_cannot_be_retried_after_terminal_state(
+        self,
+    ) -> None:
+        llm = FakeLLM(
+            [
+                json.dumps(
+                    {
+                        "card_type": "suggestion",
+                        "content": {"body": "先保存为灵感。"},
+                    },
+                    ensure_ascii=False,
+                )
+            ]
+        )
+        service = SelectionAIService(llm, self.ai_card_service)
+        card = await service.run_selection(_request(SelectionMode.ASK))
+
+        saved = await self.ai_card_service.save_suggestion_as_idea(card.id)
+
+        self.assertEqual(saved.card.status, AIResultCardStatus.SAVED_TO_INBOX)
+        with self.assertRaises(InvalidStateTransitionError):
+            await self.ai_card_service.mark_retried(card.id)
 
 
 def _request(

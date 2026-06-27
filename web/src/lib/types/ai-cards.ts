@@ -65,11 +65,13 @@ export type AIResultCard = {
 
 export type SelectionAIRequest = {
   mode: SelectionMode;
-  chapter_id: string;
-  selected_text: string;
-  surrounding_text: string;
-  selection_range: SelectionRangeInfo;
-  source_ref: SourceRefInfo;
+  selection_context: {
+    chapter_id: string;
+    selected_text: string;
+    surrounding_text: string;
+    selection_range: SelectionRangeInfo;
+    source_ref: SourceRefInfo;
+  };
   user_prompt?: string | null;
   target_words?: number | null;
   parent_card_id?: string | null;

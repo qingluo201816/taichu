@@ -5,26 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-
-class SourceRefInfo(BaseModel):
-    """SourceRef v1 transport shape."""
-
-    source_type: str
-    source_id: str
-    path: str
-    chapter_id: str | None = None
-    anchor_type: str
-    heading_path: list[str] | None = None
-    paragraph_start: int | None = None
-    paragraph_end: int | None = None
-    field_path: str | None = None
-    char_start: int | None = None
-    char_end: int | None = None
-    excerpt: str
-    excerpt_hash: str
-    source_hash: str
-    created_at: str
-    stale: bool = False
+from taichu.domain.models.source_ref import SourceRef
 
 
 class SelectionRangeInfo(BaseModel):
@@ -42,15 +23,21 @@ class SelectionModeInfo(StrEnum):
     CONTINUE_TEXT = "continue_text"
 
 
-class SelectionAIRequest(BaseModel):
-    """Request body for editor selection AI."""
+class SelectionContextInfo(BaseModel):
+    """Editor selection context validated at the API boundary."""
 
-    mode: SelectionModeInfo
     chapter_id: str = Field(min_length=1)
     selected_text: str = Field(min_length=1)
     surrounding_text: str = ""
     selection_range: SelectionRangeInfo
-    source_ref: SourceRefInfo
+    source_ref: SourceRef
+
+
+class SelectionAIRequest(BaseModel):
+    """Request body for editor selection AI."""
+
+    mode: SelectionModeInfo
+    selection_context: SelectionContextInfo
     user_prompt: str | None = None
     target_words: int | None = Field(default=None, gt=0)
     parent_card_id: str | None = None
@@ -66,7 +53,7 @@ class AIResultCardInfo(BaseModel):
     chapter_id: str | None = None
     input_context: dict[str, Any]
     content: dict[str, Any] | str
-    source_refs: list[SourceRefInfo] = Field(default_factory=list)
+    source_refs: list[SourceRef] = Field(default_factory=list)
     parent_card_id: str | None = None
     created_at: str
     updated_at: str

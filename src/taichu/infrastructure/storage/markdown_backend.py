@@ -6,6 +6,7 @@ import asyncio
 import json
 import re
 import shutil
+from threading import Lock
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -51,6 +52,9 @@ class ProjectAssetStorageBackend:
         self._assets_root = assets_root
         self._source_root = assets_root / "source"
         self._generated_root = assets_root / "generated"
+        self._workspace_locks = {
+            filename: Lock() for filename in _WORKSPACE_FILES
+        }
 
     async def ensure_skeleton(self) -> None:
         """Create source/generated directories and empty main records."""
@@ -210,8 +214,10 @@ class ProjectAssetStorageBackend:
     ) -> None:
         self._ensure_skeleton_sync()
         path = self._resolve_safe_workspace_jsonl(filename)
-        with path.open("a", encoding="utf-8") as file:
-            file.write(json.dumps(data, ensure_ascii=False) + "\n")
+        line = json.dumps(data, ensure_ascii=False) + "\n"
+        with self._workspace_locks[filename]:
+            current_text = path.read_text(encoding="utf-8")
+            self._replace_workspace_text(path, current_text + line)
 
     def _list_workspace_records_sync(
         self,
@@ -242,15 +248,12 @@ class ProjectAssetStorageBackend:
     ) -> None:
         self._ensure_skeleton_sync()
         path = self._resolve_safe_workspace_jsonl(filename)
-        temporary_path = path.with_suffix(path.suffix + ".tmp")
-        temporary_path.write_text(
-            "".join(
-                json.dumps(record, ensure_ascii=False) + "\n"
-                for record in records
-            ),
-            encoding="utf-8",
+        text = "".join(
+            json.dumps(record, ensure_ascii=False) + "\n"
+            for record in records
         )
-        temporary_path.replace(path)
+        with self._workspace_locks[filename]:
+            self._replace_workspace_text(path, text)
 
     def _clear_generated_sync(self) -> None:
         if self._generated_root.exists():
@@ -294,6 +297,12 @@ class ProjectAssetStorageBackend:
         if not filename.endswith(".jsonl"):
             raise ValueError("workspace record file must be JSONL")
         return self._source_root / "workspace" / filename
+
+    @staticmethod
+    def _replace_workspace_text(path: Path, text: str) -> None:
+        temporary_path = path.with_suffix(path.suffix + ".tmp")
+        temporary_path.write_text(text, encoding="utf-8")
+        temporary_path.replace(path)
 
     @property
     def _manifest_path(self) -> Path:

@@ -119,3 +119,19 @@ class FactScopeContractTest(unittest.TestCase):
                 self.assertFalse(is_allowed_in_fact_scope(item))
                 with self.assertRaises(FactScopeViolationError):
                     assert_allowed_in_fact_scope(item)
+
+    def test_discarded_ai_result_card_is_not_fact_scope_allowed(self) -> None:
+        card = AIResultCard(
+            id="card_discarded",
+            type=AIResultCardType.SUGGESTION,
+            workflow=AIWorkflow.ASK_SELECTION,
+            status=AIResultCardStatus.DISCARDED,
+            input_context={},
+            content="已丢弃的 AI 建议不是事实",
+            created_at="2026-06-27T00:00:00Z",
+            updated_at="2026-06-27T00:00:00Z",
+        )
+
+        self.assertFalse(is_allowed_in_fact_scope(card))
+        with self.assertRaises(FactScopeViolationError):
+            assert_allowed_in_fact_scope(card)
