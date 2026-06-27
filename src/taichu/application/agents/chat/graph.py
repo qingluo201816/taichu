@@ -1,6 +1,6 @@
 """构建自由对话 Agent 的 LangGraph。"""
 
-from typing import TypedDict
+from typing import Any, TypedDict, cast
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import BaseMessage
@@ -36,9 +36,12 @@ manifest = AgentManifest(
 
 def build_graph(context: CapabilityContext) -> CompiledStateGraph:
     """使用注入能力构建并编译 Chat Agent。"""
-    llm = context.require("llm", BaseChatModel)
+    llm_candidate = context.require("llm", object)
+    if not isinstance(llm_candidate, BaseChatModel):
+        raise TypeError("Capability 'llm' must be a BaseChatModel")
+    llm = llm_candidate
     builder = StateGraph(ChatState)
-    builder.add_node("call_model", create_call_model_node(llm))
+    builder.add_node("call_model", cast(Any, create_call_model_node(llm)))
     builder.set_entry_point("call_model")
     builder.add_edge("call_model", END)
     return builder.compile()

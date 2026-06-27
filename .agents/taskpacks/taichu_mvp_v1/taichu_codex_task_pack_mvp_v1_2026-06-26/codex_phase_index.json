@@ -1,0 +1,62 @@
+{
+  "name": "taichu_mvp_v1_codex_task_pack",
+  "generated_at": "2026-06-26",
+  "non_negotiables": [
+    "single novel runtime context; no project_id/novel_id in product APIs/services/agents/tools",
+    "chapter markdown and confirmed knowledge JSON are fiction fact sources",
+    "source contains user assets; fact_scope and workspace_scope must be separated",
+    "generated is deletable and rebuildable",
+    "SQLite is generated projection only",
+    "Selection AI is an editor application workflow, not MVP Agent",
+    "AI output must be AIResultCard",
+    "PendingFact requires author confirmation before Knowledge",
+    "SourceRef v1 is paragraph/field level plus paragraph-relative selection offsets"
+  ],
+  "phases": [
+    {
+      "phase": 0,
+      "name": "Product Contract / Data Contract Lockdown",
+      "file": "02_phases/phase_00_product_contract_data_contract_lockdown.md"
+    },
+    {
+      "phase": 1,
+      "name": "Project Asset Skeleton / Corpus Importer",
+      "file": "02_phases/phase_01_project_asset_skeleton_corpus_importer.md"
+    },
+    {
+      "phase": 2,
+      "name": "Editor Shell / Markdown Persistence",
+      "file": "02_phases/phase_02_editor_shell_markdown_persistence.md"
+    },
+    {
+      "phase": 3,
+      "name": "Selection AI / AI Result Card",
+      "file": "02_phases/phase_03_selection_ai_ai_result_card.md"
+    },
+    {
+      "phase": 4,
+      "name": "Creative Inbox / Lightweight Kanban",
+      "file": "02_phases/phase_04_creative_inbox_lightweight_kanban.md"
+    },
+    {
+      "phase": 5,
+      "name": "Minimal Knowledge Base",
+      "file": "02_phases/phase_05_minimal_knowledge_base.md"
+    },
+    {
+      "phase": 6,
+      "name": "Hybrid Retrieval / Evidence Answer",
+      "file": "02_phases/phase_06_hybrid_retrieval_evidence_answer.md"
+    },
+    {
+      "phase": 7,
+      "name": "Chapter Summary / Candidate Setting Pipeline",
+      "file": "02_phases/phase_07_chapter_summary_candidate_setting_pipeline.md"
+    },
+    {
+      "phase": 8,
+      "name": "Basic Agent Chat / Export / MVP Integration",
+      "file": "02_phases/phase_08_basic_agent_chat_export_mvp_integration.md"
+    }
+  ]
+}

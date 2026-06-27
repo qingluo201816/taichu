@@ -1,6 +1,6 @@
 # 太初项目架构
 
-> 更新日期：2026-06-25
+> 更新日期：2026-06-27
 >
 > 状态：已落地的架构基线。新增功能必须按本文结构落位。
 
@@ -123,6 +123,20 @@ project_assets/
 - 应用层通过 `StorageContract` 和 `RetrievalContract` 访问数据。
 - 人物、地点、势力、功法和事件使用稳定 ID 关联，不以中文名或文件名作为主键。
 - 源数据包含 `schema_version`，为未来数据迁移保留依据。
+
+### 2.3.1 MVP v1 数据契约锁定
+
+Phase 0 固定以下产品与数据契约，后续阶段不得绕过：
+
+- 正式小说事实源只有 `project_assets/source/manuscripts/` 下的章节 Markdown，以及 `project_assets/source/knowledge/` 下 `status=confirmed` 的 Knowledge JSON。
+- `project_assets/source/workspace/` 保存 AIResultCard、IdeaCard、PendingFact、ChapterSummary、编辑器状态等用户创作资产；这些内容默认不进入 `fact_scope`，在 UI 或检索中使用时必须标记为非事实。
+- `project_assets/generated/` 只保存可删除、可重建的投影。SQLite 固定为 `project_assets/generated/sqlite/taichu.db` 一类 generated projection，不得保存删库后无法从 source 重建的唯一用户资产。
+- Selection AI 是编辑器应用工作流，由 `application/services/selection_ai_service.py` 或等价 Service/Workflow 承载，不注册为 AgentRegistry 内的 MVP Agent，也不新增 `application/agents/selection_assistant/` 作为主逻辑。
+- AI 面向前端的输出必须是 AIResultCard。续写、建议、设定补充、检索证据和摘要都不得以裸字符串作为产品响应绕过卡片状态机。
+- 旧 `/api/chat` 裸字符串响应入口不符合 MVP v1 AIResultCard 契约，已从产品 API 移除；后续若重建 Agent Chat 调用入口，必须按当前架构返回 AIResultCard 或其明确封装，不做旧接口兼容。
+- PendingFact 在 `pending` 状态不是事实，只有作者确认为 `confirmed` 或 `edited_confirmed` 后，才能写入 Knowledge JSON 并进入默认 `fact_scope`。
+- SourceRef v1 统一采用段落级/字段级证据定位；章节段落索引在运行代码中按 0-based 处理，选区偏移 `char_start/char_end` 只相对 `paragraph_start` 对应段落，不使用全文字符 offset。
+- SourceRef 不得指向 generated SQLite 行或 EmbeddingChunk id；EmbeddingChunk 是派生投影，外部证据只认其内部携带的 SourceRef。
 
 ### 2.4 项目根目录总览
 

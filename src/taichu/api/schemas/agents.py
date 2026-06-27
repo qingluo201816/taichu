@@ -1,20 +1,6 @@
 """Agent API 请求与响应模型。"""
 
-from pydantic import BaseModel, Field
-
-
-class ChatRequest(BaseModel):
-    """Agent 对话请求。"""
-
-    agent: str = "chat"
-    message: str = Field(min_length=1)
-
-
-class ChatResponse(BaseModel):
-    """Agent 对话响应。"""
-
-    agent: str
-    response: str
+from pydantic import BaseModel
 
 
 class AgentInfo(BaseModel):

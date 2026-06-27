@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
+from taichu.domain.models.retrieval import RetrievalHit
+
 
 @dataclass(frozen=True)
 class RetrievalQuery:
@@ -26,12 +28,15 @@ class RetrievalResult:
 
 
 @runtime_checkable
-class RetrievalBackend(Protocol):
+class RetrievalContract(Protocol):
     """定义关键词、语义或混合检索的统一接口。"""
 
     async def search(
         self,
         query: RetrievalQuery,
-    ) -> list[RetrievalResult]:
+    ) -> list[RetrievalHit]:
         """检索当前唯一小说的相关内容。"""
         ...
+
+
+RetrievalBackend = RetrievalContract
