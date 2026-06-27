@@ -34,7 +34,7 @@ flowchart LR
 开发态内容只服务于开发者和编码助手，不参与太初产品运行。
 
 ```text
-.claude/
+.claude/                            # Claude Code 开发态根目录
 ├── agents/                         # Claude Code 开发辅助 Agent
 │   ├── code-reviewer.md
 │   ├── frontend-reviewer.md
@@ -51,7 +51,7 @@ flowchart LR
 ├── settings.json
 └── settings.local.json             # 本地配置，不提交 Git
 
-.agents/
+.agents/                            # Codex 开发态根目录
 └── skills/                         # Codex 使用的项目级 Skill
 ```
 
@@ -85,38 +85,54 @@ flowchart LR
 - 人物、地点等实体仍使用稳定 ID 关联；单本小说只消除跨小说歧义，不取消小说内部实体主键。
 
 ```text
-project_assets/
+project_assets/                      # 单本小说数据态资产根目录
 ├── source/                          # 唯一事实来源，必须备份
 │   ├── metadata.yaml               # 小说元信息、schema_version
-│   ├── worldbuilding/
-│   │   ├── cultivation_system.md
-│   │   ├── geography.md
-│   │   └── history.md
-│   ├── characters/
-│   ├── techniques/
-│   ├── locations/
-│   ├── factions/
-│   ├── plots/
+│   ├── manuscripts/                 # 正文稿件源数据
+│   │   ├── manifest.json            # 章节清单
+│   │   └── chapters/                # 章节 Markdown，正式事实源
+│   ├── knowledge/                   # 作者确认 Knowledge JSON，正式事实源
+│   │   ├── characters/
+│   │   ├── events/
+│   │   ├── factions/
+│   │   ├── foreshadows/
+│   │   ├── items/
+│   │   ├── locations/
+│   │   ├── techniques/
+│   │   └── worldbuilding/
+│   ├── workspace/                   # 工作区资产，默认不是 fact_scope
+│   │   ├── ai_cards.jsonl
+│   │   ├── chapter_issues.jsonl
+│   │   ├── chapter_summaries.jsonl
+│   │   ├── editor_state.json
+│   │   ├── ideas.jsonl
+│   │   └── pending_facts.jsonl
+│   ├── characters/                  # 预留源目录骨架
+│   ├── factions/                    # 预留源目录骨架
+│   ├── inspirations/                # 预留源目录骨架
+│   ├── locations/                   # 预留源目录骨架
+│   ├── plots/                       # 预留剧情源目录骨架
 │   │   ├── arcs/
 │   │   └── outlines/
-│   ├── manuscripts/
-│   │   └── chapters/
-│   ├── timeline/
-│   ├── inspirations/
-│   └── templates/
+│   ├── techniques/                  # 预留源目录骨架
+│   ├── templates/                   # 预留写作模板目录骨架
+│   ├── timeline/                    # 预留时间线目录骨架
+│   └── worldbuilding/               # 预留世界观文档目录骨架
 │
 └── generated/                       # 可删除、可完整重建
-    ├── vector_store/
-    │   └── chroma/
-    ├── embedding_cache/
-    ├── search_index/
+    ├── sqlite/                      # SQLite/FTS 检索投影
+    │   └── taichu.db                # 可重建数据库文件
+    ├── embedding_cache/             # 预留 Embedding 缓存
+    ├── search_index/                # 预留关键词/混合检索索引
+    ├── vector_store/                # 预留向量库派生数据
     ├── exports/                     # 可再次导出的产物
-    └── temp/
+    └── temp/                        # 临时产物
 ```
 
 数据态遵循以下强制规则：
 
-- `source/` 是唯一事实来源，向量库、搜索索引和缓存不能反向成为业务主数据。
+- `source/manuscripts/` 与 `source/knowledge/` 是默认 `fact_scope` 的唯一事实来源；`source/workspace/` 可导出但默认不是事实范围。
+- `generated/sqlite/`、向量库、搜索索引和缓存不能反向成为业务主数据。
 - 所有检索范围默认是当前唯一小说，不设计跨小说过滤条件。
 - 删除整个 `generated/` 后，系统必须能根据 `source/` 完整重建。
 - Agent、API 路由和前端不得直接读写 `project_assets/`。
@@ -141,7 +157,7 @@ Phase 0 固定以下产品与数据契约，后续阶段不得绕过：
 ### 2.4 项目根目录总览
 
 ```text
-Taichu/
+Taichu/                              # 项目仓库根目录
 ├── .claude/                         # Claude Code 开发态配置
 ├── .agents/                         # Codex 项目级开发态配置
 ├── src/taichu/                      # 后端运行代码
@@ -233,7 +249,7 @@ main.py
 ## 4. 后端目标结构
 
 ```text
-src/taichu/
+src/taichu/                          # 后端 Python 包根目录
 ├── __init__.py
 ├── main.py                            # 组合入口：创建实例、注入依赖、启动 FastAPI
 ├── config.py                          # 只读取和校验环境变量，不创建业务对象
@@ -247,7 +263,7 @@ src/taichu/
 │   │   ├── knowledge.py
 │   │   ├── outline.py
 │   │   └── common.py
-│   └── routes/
+│   └── routes/                      # API 路由实现
 │       ├── agents.py                  # Agent 查询、调用、流式输出
 │       ├── knowledge.py               # 知识库 CRUD
 │       ├── outline.py                 # 大纲 CRUD
@@ -273,16 +289,16 @@ src/taichu/
 │   ├── agents/                        # 产品运行时 Agent 插件
 │   │   ├── contract.py                # AgentManifest、调用协议
 │   │   ├── registry.py                # 协议校验、注册和查询
-│   │   ├── chat/
-│   │   ├── continuation/
-│   │   ├── generation/
-│   │   ├── polishing/
-│   │   ├── rewriting/
-│   │   ├── style_transfer/
-│   │   ├── proofreading/
-│   │   ├── pacing/
-│   │   ├── outlining/
-│   │   └── review/
+│   │   ├── chat/                    # 通用对话 Agent
+│   │   ├── continuation/            # 章节续写 Agent
+│   │   ├── generation/              # 内容生成 Agent
+│   │   ├── polishing/               # 文本润色 Agent
+│   │   ├── rewriting/               # 改写 Agent
+│   │   ├── style_transfer/          # 风格迁移 Agent
+│   │   ├── proofreading/            # 校对 Agent
+│   │   ├── pacing/                  # 节奏调整 Agent
+│   │   ├── outlining/               # 大纲规划 Agent
+│   │   └── review/                  # 审查 Agent
 │   │
 │   └── tools/                         # Agent 可复用的原子能力
 │       ├── contract.py                # Tool 协议
@@ -294,7 +310,7 @@ src/taichu/
 │       └── text_transform.py
 │
 ├── domain/                            # 技术无关的小说领域
-│   ├── models/
+│   ├── models/                      # 领域实体模型
 │   │   ├── character.py
 │   │   ├── worldbuilding.py
 │   │   ├── technique.py
@@ -312,26 +328,26 @@ src/taichu/
 │
 └── infrastructure/                    # 可替换技术实现
     ├── plugin_discovery.py             # 扫描和动态导入 Agent/Tool
-    ├── storage/
+    ├── storage/                     # 存储后端实现
     │   ├── json_backend.py
     │   ├── markdown_backend.py
     │   └── sqlite_backend.py           # 规划
-    ├── retrieval/
+    ├── retrieval/                   # 检索策略实现
     │   ├── keyword.py
     │   ├── vector.py
     │   └── hybrid.py
-    ├── llm/
+    ├── llm/                         # LLM 接入与工厂
     │   ├── factory.py
-    │   ├── providers/
+    │   ├── providers/               # LLM 提供商适配器
     │   │   ├── deepseek.py
     │   │   ├── openai.py               # 规划
     │   │   └── anthropic.py            # 规划
     │   └── usage.py                    # Token 与费用统计
-    ├── mcp/
+    ├── mcp/                         # MCP 集成实现
     │   ├── client.py                   # 调用外部 MCP Server
     │   ├── capability_adapter.py       # MCP Tool 转为应用能力
     │   └── server.py                   # 对外暴露太初能力（规划）
-    └── indexing/
+    └── indexing/                    # 索引构建实现
         ├── embeddings.py
         └── vector_store.py
 ```
@@ -380,40 +396,40 @@ exposures = {"api", "ui", "mcp"}
 ## 5. 前端目标结构
 
 ```text
-web/
-├── src/
+web/                                 # 前端工程根目录
+├── src/                             # 前端源码
 │   ├── app/                            # Next.js App Router
 │   │   ├── layout.tsx
 │   │   ├── page.tsx                   # Bento Grid 首页
-│   │   ├── chat/
-│   │   ├── writing/
-│   │   ├── outline/
-│   │   ├── knowledge/
-│   │   │   ├── characters/
-│   │   │   ├── worldbuilding/
-│   │   │   ├── techniques/
-│   │   │   ├── locations/
-│   │   │   └── timeline/
-│   │   ├── inspirations/
-│   │   ├── review/
-│   │   ├── history/
-│   │   └── settings/
+│   │   ├── chat/                    # 通用对话页面
+│   │   ├── writing/                 # 写作工作台页面
+│   │   ├── outline/                 # 大纲规划页面
+│   │   ├── knowledge/               # 知识库页面组
+│   │   │   ├── characters/          # 角色知识页面
+│   │   │   ├── worldbuilding/       # 世界观知识页面
+│   │   │   ├── techniques/          # 功法知识页面
+│   │   │   ├── locations/           # 地点知识页面
+│   │   │   └── timeline/            # 时间线知识页面
+│   │   ├── inspirations/            # 灵感管理页面
+│   │   ├── review/                  # 一致性审查页面
+│   │   ├── history/                 # 历史与版本页面
+│   │   └── settings/                # 系统设置页面
 │   │
-│   ├── components/
+│   ├── components/                  # React 组件
 │   │   ├── ui/                        # shadcn/ui 基础组件
 │   │   ├── layout/                    # 返回按钮、页面框架
-│   │   ├── chat/
-│   │   ├── writing/
-│   │   ├── outline/
-│   │   ├── knowledge/
-│   │   └── review/
+│   │   ├── chat/                    # 对话组件
+│   │   ├── writing/                 # 写作组件
+│   │   ├── outline/                 # 大纲组件
+│   │   ├── knowledge/               # 知识库组件
+│   │   └── review/                  # 审查组件
 │   │
 │   ├── hooks/                         # 客户端交互状态
 │   │   ├── use-chat.ts
 │   │   ├── use-stream.ts
 │   │   └── use-agents.ts
 │   │
-│   └── lib/
+│   └── lib/                         # 前端基础库与 API 封装
 │       ├── api-client.ts              # 唯一 HTTP 请求入口
 │       ├── api/                       # 按后端资源封装请求
 │       │   ├── agents.ts
@@ -423,7 +439,7 @@ web/
 │       ├── types/                     # API 类型
 │       └── utils.ts
 │
-├── public/
+├── public/                          # 静态资源
 ├── package.json
 └── next.config.ts
 ```
@@ -433,20 +449,20 @@ web/
 ## 6. 测试结构
 
 ```text
-tests/
-├── unit/
-│   ├── application/
-│   │   ├── services/
-│   │   ├── agents/
-│   │   └── tools/
-│   ├── domain/
-│   └── infrastructure/
-├── integration/
-│   ├── api/
-│   ├── storage/
-│   ├── retrieval/
-│   └── mcp/
-└── fixtures/
+tests/                               # 自动化测试根目录
+├── unit/                            # 单元测试
+│   ├── application/                 # 应用层测试
+│   │   ├── services/                # Service 用例测试
+│   │   ├── agents/                  # Agent 协议与流程测试
+│   │   └── tools/                   # Tool 原子能力测试
+│   ├── domain/                      # 领域模型与规则测试
+│   └── infrastructure/              # 基础设施适配测试
+├── integration/                     # 集成测试
+│   ├── api/                         # API 集成测试
+│   ├── storage/                     # 存储集成测试
+│   ├── retrieval/                   # 检索集成测试
+│   └── mcp/                         # MCP 集成测试
+└── fixtures/                        # 测试夹具
     └── project_assets/                # 隔离的测试小说数据
 ```
 
