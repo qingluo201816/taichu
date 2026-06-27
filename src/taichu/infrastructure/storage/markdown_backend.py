@@ -41,6 +41,7 @@ _WORKSPACE_FILES = (
     "ai_cards.jsonl",
     "ideas.jsonl",
     "pending_facts.jsonl",
+    "chapter_issues.jsonl",
     "chapter_summaries.jsonl",
 )
 
