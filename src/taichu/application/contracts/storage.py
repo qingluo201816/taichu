@@ -99,7 +99,7 @@ class ProjectAssetStorageContract(Protocol):
         knowledge_id: str,
         data: StorageData,
     ) -> None:
-        """原子写入 source/knowledge 下的 confirmed JSON 主记录。"""
+        """原子写入 source/knowledge 下的 JSON 主记录。"""
         ...
 
     async def read_knowledge_record(

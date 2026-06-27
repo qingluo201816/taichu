@@ -44,6 +44,11 @@ class KnowledgeService:
 
     async def list_cards(self) -> list[KnowledgeCard]:
         """List all confirmed knowledge records from source/knowledge."""
+        cards = await self.list_all_cards()
+        return [card for card in cards if card.status is KnowledgeCardStatus.CONFIRMED]
+
+    async def list_all_cards(self) -> list[KnowledgeCard]:
+        """List all knowledge records from source/knowledge."""
         records = await self._storage.list_knowledge_records()
         cards = [KnowledgeCard.model_validate(record) for record in records]
         return sorted(cards, key=lambda card: (card.type.value, card.name, card.id))
