@@ -3,9 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 const modules = [
   {
-    title: "对话写作",
-    description: "和 AI 一起构思情节、润色文字",
-    href: "/chat",
+    title: "章节写作",
+    description: "打开当前章节，写作并保存正文",
+    href: "/editor",
     size: "lg",
   },
   {

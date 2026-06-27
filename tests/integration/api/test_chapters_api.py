@@ -59,7 +59,32 @@ class ChapterApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("正文", response.json()["markdown"])
 
+    async def test_save_chapter_updates_markdown_and_manifest(self) -> None:
+        markdown = "# 第一章 开始\n\n保存后的中文长段落，带着灵气与山风。\n"
+
+        save_response = await self.client.put(
+            "/api/chapters/chapter_001",
+            json={"markdown": markdown},
+        )
+        read_response = await self.client.get("/api/chapters/chapter_001")
+        list_response = await self.client.get("/api/chapters")
+
+        self.assertEqual(save_response.status_code, 200)
+        self.assertEqual(read_response.json()["markdown"], markdown)
+        self.assertGreater(
+            list_response.json()["chapters"][0]["word_count"],
+            0,
+        )
+
     async def test_missing_chapter_returns_404(self) -> None:
         response = await self.client.get("/api/chapters/missing")
+
+        self.assertEqual(response.status_code, 404)
+
+    async def test_save_missing_chapter_returns_404(self) -> None:
+        response = await self.client.put(
+            "/api/chapters/missing",
+            json={"markdown": "# 不存在\n"},
+        )
 
         self.assertEqual(response.status_code, 404)

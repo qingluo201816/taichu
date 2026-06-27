@@ -7,6 +7,7 @@ from taichu.api.schemas.chapters import (
     ChapterInfo,
     ChapterListResponse,
     ChapterReadResponse,
+    ChapterSaveRequest,
 )
 from taichu.application.services.chapter_service import (
     ChapterNotFoundError,
@@ -39,6 +40,26 @@ async def api_read_chapter(
     """Read a manuscript chapter by id."""
     try:
         content = await service.read_chapter(chapter_id)
+    except ChapterNotFoundError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    return ChapterReadResponse(
+        chapter=_chapter_info(content.chapter),
+        markdown=content.markdown,
+    )
+
+
+@router.put(
+    "/chapters/{chapter_id}",
+    response_model=ChapterReadResponse,
+)
+async def api_save_chapter(
+    chapter_id: str,
+    request: ChapterSaveRequest,
+    service: ChapterService = Depends(provide_chapter_service),
+) -> ChapterReadResponse:
+    """Persist Markdown for an existing manuscript chapter."""
+    try:
+        content = await service.save_chapter(chapter_id, request.markdown)
     except ChapterNotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
     return ChapterReadResponse(
