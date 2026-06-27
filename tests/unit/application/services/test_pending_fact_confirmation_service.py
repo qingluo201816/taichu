@@ -67,6 +67,10 @@ class PendingFactConfirmationServiceTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.knowledge_card.status, KnowledgeCardStatus.CONFIRMED)
         self.assertEqual(result.knowledge_card.type, KnowledgeCardType.TECHNIQUE)
         self.assertEqual(result.knowledge_card.source_refs, pending_fact.source_refs)
+        self.assertEqual(
+            result.knowledge_card.fields["pending_fact_id"],
+            pending_fact.id,
+        )
         self.assertFalse(is_allowed_in_fact_scope(result.pending_fact))
         self.assertTrue(is_allowed_in_fact_scope(result.knowledge_card))
         knowledge_path = (
@@ -141,7 +145,23 @@ class PendingFactConfirmationServiceTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.knowledge_card.name, "Edited technique")
         self.assertEqual(result.knowledge_card.aliases, ["Alias A"])
         self.assertEqual(result.knowledge_card.summary, "Author approved summary")
-        self.assertEqual(result.knowledge_card.fields, {"rule": "edited"})
+        self.assertEqual(
+            result.knowledge_card.fields,
+            {"rule": "edited", "pending_fact_id": pending_fact.id},
+        )
+        self.assertEqual(result.knowledge_card.source_refs, pending_fact.source_refs)
+
+    async def test_confirm_edited_cannot_override_original_source_refs(
+        self,
+    ) -> None:
+        pending_fact = _pending_fact()
+        await self._append_pending_fact(pending_fact)
+
+        result = await self.confirmation_service.confirm_pending_fact_with_edits(
+            pending_fact.id,
+            PendingFactConfirmationEdits(fields={"rule": "edited"}),
+        )
+
         self.assertEqual(result.knowledge_card.source_refs, pending_fact.source_refs)
 
     async def test_confirm_without_source_ref_is_rejected(self) -> None:

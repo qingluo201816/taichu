@@ -66,6 +66,34 @@ class SourceRefContractTest(unittest.TestCase):
                 created_at="2026-06-27T00:00:00Z",
             )
 
+    def test_rejects_generated_non_sqlite_source(self) -> None:
+        with self.assertRaises(ValidationError):
+            SourceRef(
+                source_type=SourceRefSourceType.CHAPTER,
+                source_id="chapter_001",
+                path="project_assets/generated/search_index/chunk.json",
+                anchor_type=SourceAnchorType.DOCUMENT,
+                excerpt="generated",
+                excerpt_hash="hash_excerpt",
+                source_hash="hash_source",
+                created_at="2026-06-27T00:00:00Z",
+            )
+
+    def test_rejects_embedding_chunk_source_type(self) -> None:
+        with self.assertRaises(ValidationError):
+            SourceRef.model_validate(
+                {
+                    "source_type": "embedding_chunk",
+                    "source_id": "chunk_001",
+                    "path": "project_assets/generated/vector_store/chunk_001.json",
+                    "anchor_type": SourceAnchorType.DOCUMENT,
+                    "excerpt": "chunk",
+                    "excerpt_hash": "hash_excerpt",
+                    "source_hash": "hash_source",
+                    "created_at": "2026-06-27T00:00:00Z",
+                }
+            )
+
     def test_rejects_invalid_paragraph_range(self) -> None:
         with self.assertRaises(ValidationError):
             SourceRef(
@@ -76,6 +104,20 @@ class SourceRefContractTest(unittest.TestCase):
                 paragraph_start=2,
                 paragraph_end=1,
                 excerpt="倒置范围",
+                excerpt_hash="hash_excerpt",
+                source_hash="hash_source",
+                created_at="2026-06-27T00:00:00Z",
+            )
+
+    def test_rejects_incomplete_paragraph_range(self) -> None:
+        with self.assertRaises(ValidationError):
+            SourceRef(
+                source_type=SourceRefSourceType.CHAPTER,
+                source_id="chapter_001",
+                path="project_assets/source/manuscripts/chapters/chapter_001.md",
+                anchor_type=SourceAnchorType.PARAGRAPH_RANGE,
+                paragraph_start=2,
+                excerpt="incomplete range",
                 excerpt_hash="hash_excerpt",
                 source_hash="hash_source",
                 created_at="2026-06-27T00:00:00Z",
@@ -108,6 +150,19 @@ class SourceRefContractTest(unittest.TestCase):
                 anchor_type=SourceAnchorType.KNOWLEDGE_FIELD,
                 field_path="fields.realm",
                 excerpt="字段证据",
+                excerpt_hash="hash_excerpt",
+                source_hash="hash_source",
+                created_at="2026-06-27T00:00:00Z",
+            )
+
+    def test_knowledge_field_requires_field_path(self) -> None:
+        with self.assertRaises(ValidationError):
+            SourceRef(
+                source_type=SourceRefSourceType.KNOWLEDGE,
+                source_id="knowledge_001",
+                path="project_assets/source/knowledge/techniques/knowledge_001.json",
+                anchor_type=SourceAnchorType.KNOWLEDGE_FIELD,
+                excerpt="field evidence",
                 excerpt_hash="hash_excerpt",
                 source_hash="hash_source",
                 created_at="2026-06-27T00:00:00Z",

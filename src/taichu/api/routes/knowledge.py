@@ -94,7 +94,6 @@ async def api_confirm_pending_fact_with_edits(
                 summary=request.summary,
                 aliases=request.aliases,
                 fields=request.fields,
-                source_refs=request.source_refs,
             ),
         )
     except PendingFactNotFoundError as error:

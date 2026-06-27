@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from taichu.domain.models.source_ref import SourceRef
 
@@ -46,11 +46,12 @@ class PendingFactInfo(BaseModel):
 class ConfirmEditedPendingFactRequest(BaseModel):
     """Author edits supplied when confirming a PendingFact."""
 
+    model_config = ConfigDict(extra="forbid")
+
     name: str | None = None
     summary: str | None = None
     aliases: list[str] | None = None
     fields: dict[str, Any] | None = None
-    source_refs: list[SourceRef] | None = None
 
 
 class PendingFactConfirmationResponse(BaseModel):

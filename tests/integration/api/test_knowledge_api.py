@@ -102,7 +102,13 @@ class KnowledgeApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(body["pending_fact"]["status"], "edited_confirmed")
         self.assertEqual(body["knowledge_card"]["name"], "Edited Name")
         self.assertEqual(body["knowledge_card"]["aliases"], ["Edited Alias"])
-        self.assertEqual(body["knowledge_card"]["fields"], {"rule": "edited rule"})
+        self.assertEqual(
+            body["knowledge_card"]["fields"],
+            {
+                "rule": "edited rule",
+                "pending_fact_id": pending_fact.id,
+            },
+        )
         self.assertEqual(len(body["knowledge_card"]["source_refs"]), 1)
 
     async def test_reject_pending_fact_does_not_write_knowledge(self) -> None:
@@ -122,7 +128,9 @@ class KnowledgeApiTest(unittest.IsolatedAsyncioTestCase):
             [],
         )
 
-    async def test_invalid_source_ref_payload_is_rejected(self) -> None:
+    async def test_confirm_edited_rejects_source_ref_override_payload(
+        self,
+    ) -> None:
         pending_fact = _pending_fact()
         await self._append_pending_fact(pending_fact)
 
