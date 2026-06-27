@@ -2,7 +2,7 @@
 
 from fastapi import FastAPI
 
-from taichu.api.routes import agents, ai_cards, chapters
+from taichu.api.routes import agents, ai_cards, chapters, inbox
 
 
 def register_routes(app: FastAPI) -> None:
@@ -10,3 +10,4 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(agents.router)
     app.include_router(ai_cards.router)
     app.include_router(chapters.router)
+    app.include_router(inbox.router)

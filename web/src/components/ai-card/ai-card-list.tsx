@@ -3,6 +3,7 @@
 import {
   Copy,
   CornerDownLeft,
+  FileQuestion,
   Lightbulb,
   ListPlus,
   Loader2,
@@ -51,6 +52,7 @@ type AICardListProps = {
   ) => void;
   onCopyText: (card: AIResultCard) => void;
   onSaveIdea: (card: AIResultCard) => void;
+  onConvertPendingFact: (card: AIResultCard) => void;
   onRetry: (card: AIResultCard) => void;
   onDiscard: (card: AIResultCard) => void;
 };
@@ -70,6 +72,7 @@ export function AICardList({
   onApplyText,
   onCopyText,
   onSaveIdea,
+  onConvertPendingFact,
   onRetry,
   onDiscard,
 }: AICardListProps) {
@@ -164,6 +167,7 @@ export function AICardList({
             onApplyText={onApplyText}
             onCopyText={onCopyText}
             onSaveIdea={onSaveIdea}
+            onConvertPendingFact={onConvertPendingFact}
             onRetry={onRetry}
             onDiscard={onDiscard}
           />
@@ -206,6 +210,7 @@ function ResultCard({
   onApplyText,
   onCopyText,
   onSaveIdea,
+  onConvertPendingFact,
   onRetry,
   onDiscard,
 }: {
@@ -213,6 +218,7 @@ function ResultCard({
   onApplyText: AICardListProps["onApplyText"];
   onCopyText: AICardListProps["onCopyText"];
   onSaveIdea: AICardListProps["onSaveIdea"];
+  onConvertPendingFact: AICardListProps["onConvertPendingFact"];
   onRetry: AICardListProps["onRetry"];
   onDiscard: AICardListProps["onDiscard"];
 }) {
@@ -274,6 +280,15 @@ function ResultCard({
             onClick={() => onSaveIdea(card)}
           >
             <Lightbulb className="size-4" />
+          </SmallAction>
+        ) : null}
+        {card.type === "pending_fact" ? (
+          <SmallAction
+            label="待确认"
+            disabled={!generated}
+            onClick={() => onConvertPendingFact(card)}
+          >
+            <FileQuestion className="size-4" />
           </SmallAction>
         ) : null}
         <SmallAction

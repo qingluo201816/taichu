@@ -12,7 +12,14 @@ from taichu.domain.models.chapter import (
     ChapterStatus,
     Volume,
 )
-from taichu.domain.models.inbox import IdeaCard, IdeaCardSource, IdeaCardStatus
+from taichu.domain.models.inbox import (
+    ChapterIssue,
+    ChapterIssueSource,
+    ChapterIssueStatus,
+    IdeaCard,
+    IdeaCardSource,
+    IdeaCardStatus,
+)
 from taichu.domain.models.import_batch import ImportBatch
 from taichu.domain.models.knowledge import (
     CharacterCard,
@@ -52,6 +59,9 @@ __all__ = [
     "IdeaCard",
     "IdeaCardSource",
     "IdeaCardStatus",
+    "ChapterIssue",
+    "ChapterIssueSource",
+    "ChapterIssueStatus",
     "ImportBatch",
     "CharacterCard",
     "CharacterImportance",

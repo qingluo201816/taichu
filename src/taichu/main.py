@@ -10,6 +10,7 @@ from taichu.application.agents.registry import AgentRegistry
 from taichu.application.capabilities import CapabilityContext
 from taichu.application.services.ai_card_service import AICardService
 from taichu.application.services.chapter_service import ChapterService
+from taichu.application.services.inbox_service import InboxService
 from taichu.application.services.selection_ai_service import SelectionAIService
 from taichu.application.tools.registry import ToolRegistry
 from taichu.config import Settings, settings
@@ -39,6 +40,7 @@ def create_app(
     chat_model = llm or create_llm(app_settings)
     llm_service = LangChainLLMAdapter(chat_model)
     ai_card_service = AICardService(project_storage)
+    inbox_service = InboxService(project_storage, ai_card_service)
     selection_ai_service = SelectionAIService(llm_service, ai_card_service)
     capability_context = CapabilityContext(
         capabilities={
@@ -65,6 +67,7 @@ def create_app(
     application.state.project_storage = project_storage
     application.state.chapter_service = chapter_service
     application.state.ai_card_service = ai_card_service
+    application.state.inbox_service = inbox_service
     application.state.selection_ai_service = selection_ai_service
     application.add_middleware(
         CORSMiddleware,

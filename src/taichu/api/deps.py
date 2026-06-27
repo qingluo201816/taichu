@@ -6,6 +6,7 @@ from taichu.application.agents.registry import AgentRegistry
 from taichu.application.contracts.storage import StorageBackend
 from taichu.application.services.ai_card_service import AICardService
 from taichu.application.services.chapter_service import ChapterService
+from taichu.application.services.inbox_service import InboxService
 from taichu.application.services.selection_ai_service import SelectionAIService
 
 
@@ -32,3 +33,8 @@ def provide_ai_card_service(request: Request) -> AICardService:
 def provide_selection_ai_service(request: Request) -> SelectionAIService:
     """返回选区 AI 应用服务。"""
     return request.app.state.selection_ai_service
+
+
+def provide_inbox_service(request: Request) -> InboxService:
+    """返回创作收件箱应用服务。"""
+    return request.app.state.inbox_service

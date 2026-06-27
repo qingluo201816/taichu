@@ -19,10 +19,12 @@ from taichu.domain.models.inbox import (
     IdeaCardSource,
     IdeaCardStatus,
 )
+from taichu.domain.models.pending_fact import PendingFact
 from taichu.domain.rules.card_state import assert_ai_card_transition_allowed
 
 AI_CARDS_FILE = "ai_cards.jsonl"
 IDEAS_FILE = "ideas.jsonl"
+PENDING_FACTS_FILE = "pending_facts.jsonl"
 
 
 @dataclass(frozen=True)
@@ -31,6 +33,14 @@ class SaveIdeaResult:
 
     card: AIResultCard
     idea: IdeaCard
+
+
+@dataclass(frozen=True)
+class ConvertPendingFactResult:
+    """Result of moving a pending-fact card into the creative inbox."""
+
+    card: AIResultCard
+    pending_fact: PendingFact
 
 
 class AICardService:
@@ -91,11 +101,21 @@ class AICardService:
         card = await self.get_card(card_id)
         if card.type is not AIResultCardType.SUGGESTION:
             raise InvalidCardActionError("Only suggestion cards can be saved as ideas")
+        existing_idea = await self._find_idea_by_source_card(card.id)
+        if card.status is AIResultCardStatus.SAVED_TO_INBOX:
+            if existing_idea is None:
+                raise InvalidCardActionError(
+                    "Saved card is missing its idea inbox record"
+                )
+            return SaveIdeaResult(card=card, idea=existing_idea)
 
         updated_card = await self._transition_card(
             card,
             AIResultCardStatus.SAVED_TO_INBOX,
         )
+        if existing_idea is not None:
+            return SaveIdeaResult(card=updated_card, idea=existing_idea)
+
         now = _now_iso()
         idea = IdeaCard(
             id=f"idea_{uuid4().hex}",
@@ -113,6 +133,57 @@ class AICardService:
             idea.model_dump(mode="json"),
         )
         return SaveIdeaResult(card=updated_card, idea=idea)
+
+    async def convert_card_to_pending_fact(
+        self,
+        card_id: str,
+    ) -> ConvertPendingFactResult:
+        """Persist a PendingFactCard as a non-fact pending fact."""
+        card = await self.get_card(card_id)
+        if card.type is not AIResultCardType.PENDING_FACT:
+            raise InvalidCardActionError(
+                "Only pending fact cards can be converted to pending facts"
+            )
+        assert_ai_card_transition_allowed(
+            card.status,
+            AIResultCardStatus.CONVERTED_TO_PENDING_FACT,
+        )
+        if not isinstance(card.content, dict):
+            raise InvalidCardActionError("Pending fact card content must be an object")
+        pending_fact = PendingFact.model_validate(card.content)
+        existing_pending_fact = await self._find_pending_fact(pending_fact.id)
+        if card.status is AIResultCardStatus.CONVERTED_TO_PENDING_FACT:
+            if existing_pending_fact is None:
+                raise InvalidCardActionError(
+                    "Converted card is missing its pending fact inbox record"
+                )
+            return ConvertPendingFactResult(
+                card=card,
+                pending_fact=existing_pending_fact,
+            )
+
+        if existing_pending_fact is not None:
+            updated_card = await self._transition_card(
+                card,
+                AIResultCardStatus.CONVERTED_TO_PENDING_FACT,
+            )
+            return ConvertPendingFactResult(
+                card=updated_card,
+                pending_fact=existing_pending_fact,
+            )
+
+        await self._storage.append_workspace_record(
+            PENDING_FACTS_FILE,
+            pending_fact.model_dump(mode="json"),
+        )
+        updated_card = await self._transition_card(
+            card,
+            AIResultCardStatus.CONVERTED_TO_PENDING_FACT,
+        )
+        return ConvertPendingFactResult(
+            card=updated_card,
+            pending_fact=pending_fact,
+        )
 
     async def _transition_card(
         self,
@@ -143,6 +214,26 @@ class AICardService:
         if not replaced:
             raise AICardNotFoundError(updated.id)
         await self._storage.rewrite_workspace_records(AI_CARDS_FILE, rewritten)
+
+    async def _find_idea_by_source_card(
+        self,
+        card_id: str,
+    ) -> IdeaCard | None:
+        for record in await self._storage.list_workspace_records(IDEAS_FILE):
+            idea = IdeaCard.model_validate(record)
+            if idea.source_card_id == card_id:
+                return idea
+        return None
+
+    async def _find_pending_fact(
+        self,
+        pending_fact_id: str,
+    ) -> PendingFact | None:
+        for record in await self._storage.list_workspace_records(PENDING_FACTS_FILE):
+            pending_fact = PendingFact.model_validate(record)
+            if pending_fact.id == pending_fact_id:
+                return pending_fact
+        return None
 
 
 class AICardNotFoundError(LookupError):

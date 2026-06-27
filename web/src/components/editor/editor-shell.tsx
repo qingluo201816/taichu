@@ -28,6 +28,7 @@ import {
   listAICards,
 } from "@/lib/api/ai-cards";
 import { listChapters, readChapter, saveChapter } from "@/lib/api/chapters";
+import { convertAICardToPendingFact } from "@/lib/api/inbox";
 import {
   buildTextCandidateEdit,
   textCandidateContent,
@@ -365,6 +366,20 @@ export default function EditorShell() {
     [upsertAICard],
   );
 
+  const convertPendingFact = useCallback(
+    async (card: AIResultCard) => {
+      try {
+        const response = await convertAICardToPendingFact(card.id);
+        upsertAICard(response.card);
+      } catch (actionError) {
+        setAIError(
+          actionError instanceof Error ? actionError.message : "转为待确认设定失败",
+        );
+      }
+    },
+    [upsertAICard],
+  );
+
   const discardAICard = useCallback(
     async (card: AIResultCard) => {
       try {
@@ -405,8 +420,13 @@ export default function EditorShell() {
           (left, right) => left.order - right.order,
         );
         setChapters(sortedChapters);
-        if (sortedChapters[0]) {
-          await loadChapter(sortedChapters[0].id);
+        const requestedChapterId =
+          new URLSearchParams(window.location.search).get("chapter_id");
+        const initialChapter =
+          sortedChapters.find(chapter => chapter.id === requestedChapterId) ??
+          sortedChapters[0];
+        if (initialChapter) {
+          await loadChapter(initialChapter.id);
         } else {
           setLoading(false);
         }
@@ -613,6 +633,7 @@ export default function EditorShell() {
             }
             onCopyText={card => void copyTextCandidate(card)}
             onSaveIdea={card => void saveIdea(card)}
+            onConvertPendingFact={card => void convertPendingFact(card)}
             onRetry={retryAICard}
             onDiscard={card => void discardAICard(card)}
           />

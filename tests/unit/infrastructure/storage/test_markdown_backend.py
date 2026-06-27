@@ -46,6 +46,14 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
                 / "ai_cards.jsonl"
             ).exists()
         )
+        self.assertTrue(
+            (
+                self.assets_root
+                / "source"
+                / "workspace"
+                / "chapter_issues.jsonl"
+            ).exists()
+        )
         self.assertTrue((self.assets_root / "generated" / "sqlite").exists())
 
     async def test_ensure_skeleton_does_not_overwrite_source_assets(

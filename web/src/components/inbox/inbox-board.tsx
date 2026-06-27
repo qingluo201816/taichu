@@ -1,0 +1,438 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import Link from "next/link";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ExternalLink,
+  FileQuestion,
+  Inbox,
+  Lightbulb,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+  XCircle,
+} from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { ignorePendingFact, readInbox } from "@/lib/api/inbox";
+import type {
+  ChapterIssueInfo,
+  IdeaCardInfo,
+  InboxResponse,
+  PendingFactInfo,
+  SavedAICardInfo,
+} from "@/lib/types/inbox";
+
+type LaneTone = "idea" | "pending" | "ai" | "issue";
+
+const emptyInbox: InboxResponse = {
+  ideas: [],
+  pending_facts: [],
+  saved_ai_cards: [],
+  chapter_issues: [],
+};
+
+export function InboxBoard() {
+  const [snapshot, setSnapshot] = useState<InboxResponse>(emptyInbox);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [busyPendingFactId, setBusyPendingFactId] = useState<string | null>(null);
+
+  const totals = useMemo(
+    () =>
+      snapshot.ideas.length +
+      snapshot.pending_facts.length +
+      snapshot.saved_ai_cards.length +
+      snapshot.chapter_issues.length,
+    [snapshot],
+  );
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setSnapshot(await readInbox());
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "收件箱加载失败");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadInitialInbox() {
+      try {
+        const nextSnapshot = await readInbox();
+        if (!cancelled) {
+          setSnapshot(nextSnapshot);
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(loadError instanceof Error ? loadError.message : "收件箱加载失败");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadInitialInbox();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const onIgnorePendingFact = useCallback(
+    async (pendingFactId: string) => {
+      setBusyPendingFactId(pendingFactId);
+      setError(null);
+      try {
+        await ignorePendingFact(pendingFactId);
+        setSnapshot(current => ({
+          ...current,
+          pending_facts: current.pending_facts.filter(
+            pendingFact => pendingFact.id !== pendingFactId,
+          ),
+        }));
+      } catch (ignoreError) {
+        setError(ignoreError instanceof Error ? ignoreError.message : "忽略失败");
+      } finally {
+        setBusyPendingFactId(null);
+      }
+    },
+    [],
+  );
+
+  return (
+    <main className="min-h-screen bg-[#fffefc] text-black">
+      <header className="border-b-[3px] border-black bg-white">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="inline-flex size-10 items-center justify-center rounded-lg border-2 border-black bg-white hover:bg-gray-100"
+              aria-label="返回太初"
+              title="返回太初"
+            >
+              <ArrowLeft className="size-5" />
+            </Link>
+            <div>
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase text-gray-500">
+                <Inbox className="size-4" />
+                workspace_scope / non_fact
+              </div>
+              <h1 className="mt-1 text-2xl font-semibold">创作收件箱</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="rounded-full border-2 border-black px-3 py-1 text-sm font-semibold">
+              {totals} 条
+            </span>
+            <Button
+              size="sm"
+              onClick={() => void refresh()}
+              disabled={loading}
+              className="rounded-full border-2 border-black"
+            >
+              {loading ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <RefreshCw className="size-4" />
+              )}
+              刷新
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <section className="mx-auto max-w-7xl px-5 py-5">
+        {error ? (
+          <div className="mb-4 rounded-lg border-2 border-black bg-white px-4 py-3 text-sm font-semibold text-red-700">
+            {error}
+          </div>
+        ) : null}
+
+        <div className="grid gap-4 xl:grid-cols-4">
+          <Lane
+            title="灵感"
+            count={snapshot.ideas.length}
+            icon={<Lightbulb className="size-4" />}
+            tone="idea"
+            loading={loading}
+          >
+            {snapshot.ideas.map(idea => (
+              <IdeaItem key={idea.id} idea={idea} />
+            ))}
+          </Lane>
+
+          <Lane
+            title="待确认设定"
+            count={snapshot.pending_facts.length}
+            icon={<FileQuestion className="size-4" />}
+            tone="pending"
+            loading={loading}
+          >
+            {snapshot.pending_facts.map(pendingFact => (
+              <PendingFactItem
+                key={pendingFact.id}
+                pendingFact={pendingFact}
+                busy={busyPendingFactId === pendingFact.id}
+                onIgnore={() => void onIgnorePendingFact(pendingFact.id)}
+              />
+            ))}
+          </Lane>
+
+          <Lane
+            title="已保存 AI 卡片"
+            count={snapshot.saved_ai_cards.length}
+            icon={<Sparkles className="size-4" />}
+            tone="ai"
+            loading={loading}
+          >
+            {snapshot.saved_ai_cards.map(card => (
+              <SavedAICardItem key={card.id} card={card} />
+            ))}
+          </Lane>
+
+          <Lane
+            title="章节问题"
+            count={snapshot.chapter_issues.length}
+            icon={<AlertTriangle className="size-4" />}
+            tone="issue"
+            loading={loading}
+          >
+            {snapshot.chapter_issues.map(issue => (
+              <ChapterIssueItem key={issue.id} issue={issue} />
+            ))}
+          </Lane>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function Lane({
+  title,
+  count,
+  icon,
+  tone,
+  loading,
+  children,
+}: {
+  title: string;
+  count: number;
+  icon: ReactNode;
+  tone: LaneTone;
+  loading: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <section className="min-h-[520px] border-[3px] border-black bg-white">
+      <div className={laneHeaderClass(tone)}>
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          {icon}
+          {title}
+        </div>
+        <span className="rounded-full border-2 border-black bg-white px-2 py-0.5 text-xs font-semibold">
+          {count}
+        </span>
+      </div>
+      <div className="space-y-3 p-3">
+        {loading ? (
+          <div className="flex h-28 items-center justify-center text-sm font-semibold text-gray-500">
+            <Loader2 className="mr-2 size-4 animate-spin" />
+            加载中
+          </div>
+        ) : count === 0 ? (
+          <div className="rounded-lg border-2 border-dashed border-black px-3 py-8 text-center text-sm text-gray-500">
+            暂无条目
+          </div>
+        ) : (
+          children
+        )}
+      </div>
+    </section>
+  );
+}
+
+function IdeaItem({ idea }: { idea: IdeaCardInfo }) {
+  return (
+    <InboxItem href={idea.source_href}>
+      <p className="whitespace-pre-wrap text-sm leading-6">{idea.content}</p>
+      <ItemFooter
+        meta={`${idea.source} / ${idea.status}`}
+        chapterId={idea.linked_chapter_id}
+      />
+    </InboxItem>
+  );
+}
+
+function PendingFactItem({
+  pendingFact,
+  busy,
+  onIgnore,
+}: {
+  pendingFact: PendingFactInfo;
+  busy: boolean;
+  onIgnore: () => void;
+}) {
+  return (
+    <InboxItem href={pendingFact.source_href}>
+      <div className="space-y-2">
+        <div>
+          <p className="text-sm font-semibold">{pendingFact.title}</p>
+          <p className="text-xs text-gray-500">{pendingFact.fact_type}</p>
+        </div>
+        <p className="max-h-28 overflow-auto whitespace-pre-wrap rounded-md bg-gray-50 p-2 text-sm leading-6">
+          {contentText(pendingFact.content)}
+        </p>
+        <Button
+          type="button"
+          size="sm"
+          onClick={onIgnore}
+          disabled={busy}
+          className="h-8 rounded-full border-2 border-black"
+        >
+          {busy ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <XCircle className="size-4" />
+          )}
+          忽略
+        </Button>
+      </div>
+      <ItemFooter meta={pendingFact.status} chapterId={chapterFromRefs(pendingFact)} />
+    </InboxItem>
+  );
+}
+
+function SavedAICardItem({ card }: { card: SavedAICardInfo }) {
+  return (
+    <InboxItem href={card.source_href}>
+      <div className="space-y-2">
+        <p className="text-sm font-semibold">{cardTypeText(card.type)}</p>
+        <p className="max-h-28 overflow-auto whitespace-pre-wrap rounded-md bg-gray-50 p-2 text-sm leading-6">
+          {contentText(card.content)}
+        </p>
+      </div>
+      <ItemFooter meta={card.status} chapterId={card.chapter_id} />
+    </InboxItem>
+  );
+}
+
+function ChapterIssueItem({ issue }: { issue: ChapterIssueInfo }) {
+  return (
+    <InboxItem href={issue.source_href}>
+      <div className="space-y-2">
+        <p className="text-sm font-semibold">{issue.title}</p>
+        <p className="whitespace-pre-wrap text-sm leading-6">
+          {issue.description || "未填写描述"}
+        </p>
+      </div>
+      <ItemFooter meta={`${issue.source} / ${issue.status}`} chapterId={issue.chapter_id} />
+    </InboxItem>
+  );
+}
+
+function InboxItem({
+  href,
+  children,
+}: {
+  href?: string | null;
+  children: ReactNode;
+}) {
+  return (
+    <article className="rounded-lg border-2 border-black bg-white px-3 py-3">
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase">
+        <span className="rounded-full border-2 border-black px-2 py-0.5">
+          workspace_scope
+        </span>
+        <span className="rounded-full border-2 border-black bg-gray-100 px-2 py-0.5">
+          non_fact
+        </span>
+        {href ? (
+          <Link
+            href={href}
+            className="ml-auto inline-flex items-center gap-1 rounded-full border-2 border-black px-2 py-0.5 normal-case hover:bg-gray-100"
+          >
+            <ExternalLink className="size-3" />
+            正文
+          </Link>
+        ) : null}
+      </div>
+      {children}
+    </article>
+  );
+}
+
+function ItemFooter({
+  meta,
+  chapterId,
+}: {
+  meta: string;
+  chapterId?: string | null;
+}) {
+  return (
+    <div className="mt-3 flex flex-wrap justify-between gap-2 border-t-2 border-black pt-2 text-xs text-gray-500">
+      <span>{meta}</span>
+      {chapterId ? <span>{chapterId}</span> : null}
+    </div>
+  );
+}
+
+function laneHeaderClass(tone: LaneTone): string {
+  const base =
+    "flex items-center justify-between border-b-[3px] border-black px-3 py-3";
+  if (tone === "idea") {
+    return `${base} bg-[#f6e7a8]`;
+  }
+  if (tone === "pending") {
+    return `${base} bg-[#cce7df]`;
+  }
+  if (tone === "ai") {
+    return `${base} bg-[#d9ddff]`;
+  }
+  return `${base} bg-[#f4c7b8]`;
+}
+
+function contentText(content: Record<string, unknown> | string): string {
+  if (typeof content === "string") {
+    return content;
+  }
+  const title = content.title;
+  const body = content.body ?? content.summary ?? content.content ?? content.text;
+  if (typeof title === "string" && typeof body === "string") {
+    return `${title}\n${body}`;
+  }
+  if (typeof body === "string") {
+    return body;
+  }
+  return JSON.stringify(content, null, 2);
+}
+
+function cardTypeText(type: string): string {
+  if (type === "suggestion") {
+    return "建议卡片";
+  }
+  if (type === "pending_fact") {
+    return "待确认设定卡片";
+  }
+  if (type === "text_candidate") {
+    return "正文候选卡片";
+  }
+  return type;
+}
+
+function chapterFromRefs(pendingFact: PendingFactInfo): string | null {
+  for (const sourceRef of pendingFact.source_refs) {
+    if (sourceRef.chapter_id) {
+      return sourceRef.chapter_id;
+    }
+  }
+  return null;
+}
