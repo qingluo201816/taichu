@@ -8,9 +8,12 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from taichu.api.router import register_routes
 from taichu.application.agents.registry import AgentRegistry
 from taichu.application.capabilities import CapabilityContext
+from taichu.application.services.ai_card_service import AICardService
 from taichu.application.services.chapter_service import ChapterService
+from taichu.application.services.selection_ai_service import SelectionAIService
 from taichu.application.tools.registry import ToolRegistry
 from taichu.config import Settings, settings
+from taichu.infrastructure.llm.adapter import LangChainLLMAdapter
 from taichu.infrastructure.llm.factory import create_llm
 from taichu.infrastructure.plugin_discovery import (
     discover_agents,
@@ -34,6 +37,9 @@ def create_app(
     )
     chapter_service = ChapterService(project_storage)
     chat_model = llm or create_llm(app_settings)
+    llm_service = LangChainLLMAdapter(chat_model)
+    ai_card_service = AICardService(project_storage)
+    selection_ai_service = SelectionAIService(llm_service, ai_card_service)
     capability_context = CapabilityContext(
         capabilities={
             "llm": chat_model,
@@ -58,6 +64,8 @@ def create_app(
     application.state.storage = storage
     application.state.project_storage = project_storage
     application.state.chapter_service = chapter_service
+    application.state.ai_card_service = ai_card_service
+    application.state.selection_ai_service = selection_ai_service
     application.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],

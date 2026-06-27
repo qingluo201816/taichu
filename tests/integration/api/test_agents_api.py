@@ -45,3 +45,10 @@ class AgentApiTest(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(response.status_code, 404)
+
+    async def test_selection_ai_is_not_registered_as_agent(self) -> None:
+        response = await self.client.get("/api/agents")
+
+        agent_names = {agent["name"] for agent in response.json()["agents"]}
+        self.assertNotIn("selection_ai", agent_names)
+        self.assertNotIn("selection_assistant", agent_names)

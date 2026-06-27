@@ -70,6 +70,29 @@ class ProjectAssetStorageContract(Protocol):
         """读取章节 Markdown，路径相对 source 根目录。"""
         ...
 
+    async def append_workspace_record(
+        self,
+        filename: str,
+        data: StorageData,
+    ) -> None:
+        """向 source/workspace 下的 JSONL 主记录追加一条数据。"""
+        ...
+
+    async def list_workspace_records(
+        self,
+        filename: str,
+    ) -> list[StorageData]:
+        """读取 source/workspace 下的 JSONL 主记录。"""
+        ...
+
+    async def rewrite_workspace_records(
+        self,
+        filename: str,
+        records: list[StorageData],
+    ) -> None:
+        """原子重写 source/workspace 下的 JSONL 主记录。"""
+        ...
+
     async def clear_generated(self) -> None:
         """清空并重建 generated 空目录骨架。"""
         ...

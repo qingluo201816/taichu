@@ -91,6 +91,40 @@ class ProjectAssetStorageBackend:
             relative_path,
         )
 
+    async def append_workspace_record(
+        self,
+        filename: str,
+        data: StorageData,
+    ) -> None:
+        """Append one JSON object to a workspace JSONL source file."""
+        await asyncio.to_thread(
+            self._append_workspace_record_sync,
+            filename,
+            data,
+        )
+
+    async def list_workspace_records(
+        self,
+        filename: str,
+    ) -> list[StorageData]:
+        """Read JSON objects from a workspace JSONL source file."""
+        return await asyncio.to_thread(
+            self._list_workspace_records_sync,
+            filename,
+        )
+
+    async def rewrite_workspace_records(
+        self,
+        filename: str,
+        records: list[StorageData],
+    ) -> None:
+        """Atomically rewrite a workspace JSONL source file."""
+        await asyncio.to_thread(
+            self._rewrite_workspace_records_sync,
+            filename,
+            records,
+        )
+
     async def clear_generated(self) -> None:
         """Delete generated contents and recreate empty generated dirs."""
         await asyncio.to_thread(self._clear_generated_sync)
@@ -169,6 +203,55 @@ class ProjectAssetStorageBackend:
         path = self._resolve_safe_chapter_path(relative_path)
         return path.read_text(encoding="utf-8")
 
+    def _append_workspace_record_sync(
+        self,
+        filename: str,
+        data: StorageData,
+    ) -> None:
+        self._ensure_skeleton_sync()
+        path = self._resolve_safe_workspace_jsonl(filename)
+        with path.open("a", encoding="utf-8") as file:
+            file.write(json.dumps(data, ensure_ascii=False) + "\n")
+
+    def _list_workspace_records_sync(
+        self,
+        filename: str,
+    ) -> list[StorageData]:
+        self._ensure_skeleton_sync()
+        path = self._resolve_safe_workspace_jsonl(filename)
+        records: list[StorageData] = []
+        for line_number, line in enumerate(
+            path.read_text(encoding="utf-8").splitlines(),
+            start=1,
+        ):
+            if not line.strip():
+                continue
+            data = json.loads(line)
+            if not isinstance(data, dict):
+                raise ValueError(
+                    f"Workspace JSONL line must be an object: "
+                    f"{filename}:{line_number}"
+                )
+            records.append(data)
+        return records
+
+    def _rewrite_workspace_records_sync(
+        self,
+        filename: str,
+        records: list[StorageData],
+    ) -> None:
+        self._ensure_skeleton_sync()
+        path = self._resolve_safe_workspace_jsonl(filename)
+        temporary_path = path.with_suffix(path.suffix + ".tmp")
+        temporary_path.write_text(
+            "".join(
+                json.dumps(record, ensure_ascii=False) + "\n"
+                for record in records
+            ),
+            encoding="utf-8",
+        )
+        temporary_path.replace(path)
+
     def _clear_generated_sync(self) -> None:
         if self._generated_root.exists():
             shutil.rmtree(self._generated_root)
@@ -204,6 +287,13 @@ class ProjectAssetStorageBackend:
         if not _CHAPTER_ID.fullmatch(chapter_id):
             raise ValueError("chapter id contains unsafe characters")
         return self._source_root / Path(*path.parts)
+
+    def _resolve_safe_workspace_jsonl(self, filename: str) -> Path:
+        if filename not in _WORKSPACE_FILES:
+            raise ValueError("workspace filename is not part of the contract")
+        if not filename.endswith(".jsonl"):
+            raise ValueError("workspace record file must be JSONL")
+        return self._source_root / "workspace" / filename
 
     @property
     def _manifest_path(self) -> Path:
