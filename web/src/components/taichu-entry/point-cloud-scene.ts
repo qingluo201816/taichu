@@ -76,7 +76,7 @@ export class TaichuPointCloudScene {
     this.onStateChange = options.onStateChange;
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x100b12, 0.0029);
+    this.scene.fog = new THREE.FogExp2(0x120d14, 0.0019);
 
     this.camera = new THREE.PerspectiveCamera(70, 1, 0.1, 430);
     this.camera.position.set(0, 2.05, 15);
@@ -87,7 +87,7 @@ export class TaichuPointCloudScene {
       antialias: false,
       powerPreference: "high-performance",
     });
-    this.renderer.setClearColor(0x100b12, 1);
+    this.renderer.setClearColor(0x120d14, 1);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.domElement.style.position = "absolute";
     this.renderer.domElement.style.inset = "0";
@@ -236,7 +236,7 @@ export class TaichuPointCloudScene {
         uDenseProgress: { value: 0 },
         uFocusProgress: { value: 0 },
         uGlobalOpacity: { value: baseLayerOpacity[layer.name] },
-        uMaxPointSize: { value: layer.name === "focusParticle" ? 7.4 : 5.9 },
+        uMaxPointSize: { value: layer.name === "focusParticle" ? 7.4 : 3.8 },
         uNearFadeDistance: { value: 7.2 },
         uLayerDrift: { value: layerDrift[layer.name] },
         uFocusDim: { value: layer.name === "focusParticle" ? 1 : 0.16 },
@@ -382,6 +382,6 @@ export class TaichuPointCloudScene {
   }
 
   private pixelRatio(): number {
-    return Math.min(window.devicePixelRatio || 1, 1.75);
+    return Math.min(window.devicePixelRatio || 1, 2);
   }
 }

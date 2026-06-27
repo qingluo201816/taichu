@@ -61,15 +61,15 @@ const layerIds: Record<PointCloudLayerName, number> = {
 
 const voidGrey: Color = [0.18, 0.19, 0.18];
 const graphite: Color = [0.23, 0.21, 0.23];
-const mineralGreen: Color = [0.37, 0.63, 0.38];
-const coldMint: Color = [0.52, 0.78, 0.58];
-const darkTeal: Color = [0.08, 0.34, 0.31];
-const scanCyan: Color = [0.22, 0.55, 0.54];
-const starIvory: Color = [0.86, 0.87, 0.78];
-const oldBone: Color = [0.67, 0.69, 0.6];
-const paleGold: Color = [0.72, 0.72, 0.42];
-const emberRose: Color = [0.84, 0.33, 0.49];
-const palaceWhite: Color = [0.78, 0.76, 0.7];
+const mineralGreen: Color = [0.46, 0.76, 0.46];
+const coldMint: Color = [0.68, 0.94, 0.72];
+const darkTeal: Color = [0.1, 0.42, 0.38];
+const scanCyan: Color = [0.3, 0.66, 0.66];
+const starIvory: Color = [0.96, 0.95, 0.86];
+const oldBone: Color = [0.78, 0.79, 0.68];
+const paleGold: Color = [0.86, 0.86, 0.5];
+const emberRose: Color = [0.95, 0.42, 0.58];
+const palaceWhite: Color = [0.88, 0.86, 0.78];
 const focusGreen: Color = [0.57, 0.82, 0.45];
 
 function mixColor(a: Color, b: Color, t: number): Color {
@@ -162,15 +162,15 @@ function scanPointColor(
 ): Color {
   const palette = random.next();
 
-  if (palette < 0.46) {
-    return mixColor(mineralGreen, coldMint, random.next() * 0.58 + center * 0.18);
+  if (palette < 0.38) {
+    return mixColor(mineralGreen, coldMint, random.next() * 0.54 + center * 0.2);
   }
 
-  if (palette < 0.74) {
-    return mixColor(oldBone, starIvory, random.next() * 0.46 + center * 0.22);
+  if (palette < 0.76) {
+    return mixColor(oldBone, starIvory, random.next() * 0.54 + center * 0.3);
   }
 
-  if (palette < 0.88) {
+  if (palette < 0.87) {
     return mixColor(darkTeal, scanCyan, random.next() * 0.58);
   }
 
@@ -209,8 +209,8 @@ export function foregroundGroundPointCloud(
       y,
       z,
       color: scanPointColor(random, center, depth),
-      size: random.range(0.9, 3.85) * (1.22 - depth * 0.26),
-      alpha: random.range(0.13, 0.34) * alphaDepth * (0.9 + center * 0.26),
+      size: random.range(0.58, 2.75) * (1.08 - depth * 0.18),
+      alpha: random.range(0.16, 0.42) * alphaDepth * (0.94 + center * 0.26),
       random: random.next(),
     };
   });
@@ -237,8 +237,8 @@ export function midGroundMistPointCloud(
       y,
       z,
       color,
-      size: random.range(0.42, 2.05),
-      alpha: random.range(0.045, 0.16) * (0.86 + center * 0.52),
+      size: random.range(0.38, 1.75),
+      alpha: random.range(0.08, 0.25) * (0.88 + center * 0.48),
       random: random.next(),
     };
   });
@@ -265,8 +265,8 @@ export function horizonGlowBandPointCloud(
       y,
       z,
       color,
-      size: random.range(0.46, 2.45) * (0.92 + center * 0.22),
-      alpha: random.range(0.068, 0.21) * (0.82 + center * 0.56),
+      size: random.range(0.42, 2.1) * (0.92 + center * 0.22),
+      alpha: random.range(0.09, 0.3) * (0.86 + center * 0.48),
       random: random.next(),
     };
   });
@@ -301,8 +301,8 @@ export function sideBoundaryPointCloud(
       y,
       z,
       color,
-      size: random.range(0.42, 2.65),
-      alpha: random.range(0.052, 0.22) * (lobe < 0.64 ? 1 : 0.82),
+      size: random.range(0.34, 2.05),
+      alpha: random.range(0.08, 0.27) * (lobe < 0.64 ? 1 : 0.84),
       random: random.next(),
     };
   });
@@ -330,8 +330,8 @@ export function skyDepthPointCloud(count: number): GeneratedPointCloudLayer {
       y,
       z,
       color,
-      size: random.range(0.28, 1.45),
-      alpha: random.range(0.022, 0.12) * (0.64 + towardHorizon * 0.8) * centerVoid,
+      size: random.range(0.28, 1.2),
+      alpha: random.range(0.04, 0.16) * (0.68 + towardHorizon * 0.78) * centerVoid,
       random: random.next(),
     };
   });
@@ -354,8 +354,8 @@ export function ambientDeepSpacePointCloud(
       y,
       z,
       color,
-      size: random.range(0.24, 1.08),
-      alpha: random.range(0.016, 0.082) * (0.74 + edgeLight * 0.36),
+      size: random.range(0.24, 1.0),
+      alpha: random.range(0.03, 0.12) * (0.76 + edgeLight * 0.34),
       random: random.next(),
     };
   });
@@ -383,8 +383,8 @@ export function distantEnvironmentPointCloud(
       y,
       z,
       color,
-      size: random.range(0.34, 1.72),
-      alpha: random.range(0.038, 0.15) * (0.9 + center * 0.24),
+      size: random.range(0.32, 1.45),
+      alpha: random.range(0.07, 0.22) * (0.9 + center * 0.22),
       random: random.next(),
     };
   });
@@ -438,8 +438,8 @@ export function distantPalacePointCloud(
       y,
       z,
       color,
-      size: random.range(0.42, 1.28),
-      alpha: random.range(0.035, 0.13),
+      size: random.range(0.36, 1.05),
+      alpha: random.range(0.1, 0.26),
       random: random.next(),
     };
   });
