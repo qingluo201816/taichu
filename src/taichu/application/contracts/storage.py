@@ -93,6 +93,30 @@ class ProjectAssetStorageContract(Protocol):
         """原子重写 source/workspace 下的 JSONL 主记录。"""
         ...
 
+    async def write_knowledge_record(
+        self,
+        category: str,
+        knowledge_id: str,
+        data: StorageData,
+    ) -> None:
+        """原子写入 source/knowledge 下的 confirmed JSON 主记录。"""
+        ...
+
+    async def read_knowledge_record(
+        self,
+        category: str,
+        knowledge_id: str,
+    ) -> StorageData | None:
+        """读取 source/knowledge 下的单条 JSON 主记录。"""
+        ...
+
+    async def list_knowledge_records(
+        self,
+        category: str | None = None,
+    ) -> list[StorageData]:
+        """列出 source/knowledge 下的 JSON 主记录。"""
+        ...
+
     async def clear_generated(self) -> None:
         """清空并重建 generated 空目录骨架。"""
         ...

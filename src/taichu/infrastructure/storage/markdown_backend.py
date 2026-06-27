@@ -14,17 +14,22 @@ from typing import Any
 from taichu.application.contracts.storage import StorageData
 
 _CHAPTER_ID = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+_KNOWLEDGE_ID = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+
+_KNOWLEDGE_CATEGORIES = (
+    "characters",
+    "worldbuilding",
+    "techniques",
+    "locations",
+    "factions",
+    "items",
+    "events",
+    "foreshadows",
+)
 
 _SOURCE_DIRS = (
     "manuscripts/chapters",
-    "knowledge/characters",
-    "knowledge/worldbuilding",
-    "knowledge/techniques",
-    "knowledge/locations",
-    "knowledge/factions",
-    "knowledge/items",
-    "knowledge/events",
-    "knowledge/foreshadows",
+    *(f"knowledge/{category}" for category in _KNOWLEDGE_CATEGORIES),
     "workspace",
 )
 
@@ -56,6 +61,7 @@ class ProjectAssetStorageBackend:
         self._workspace_locks = {
             filename: Lock() for filename in _WORKSPACE_FILES
         }
+        self._knowledge_lock = Lock()
 
     async def ensure_skeleton(self) -> None:
         """Create source/generated directories and empty main records."""
@@ -128,6 +134,42 @@ class ProjectAssetStorageBackend:
             self._rewrite_workspace_records_sync,
             filename,
             records,
+        )
+
+    async def write_knowledge_record(
+        self,
+        category: str,
+        knowledge_id: str,
+        data: StorageData,
+    ) -> None:
+        """Write one confirmed knowledge JSON source record atomically."""
+        await asyncio.to_thread(
+            self._write_knowledge_record_sync,
+            category,
+            knowledge_id,
+            data,
+        )
+
+    async def read_knowledge_record(
+        self,
+        category: str,
+        knowledge_id: str,
+    ) -> StorageData | None:
+        """Read one confirmed knowledge JSON source record."""
+        return await asyncio.to_thread(
+            self._read_knowledge_record_sync,
+            category,
+            knowledge_id,
+        )
+
+    async def list_knowledge_records(
+        self,
+        category: str | None = None,
+    ) -> list[StorageData]:
+        """List confirmed knowledge JSON source records."""
+        return await asyncio.to_thread(
+            self._list_knowledge_records_sync,
+            category,
         )
 
     async def clear_generated(self) -> None:
@@ -256,6 +298,51 @@ class ProjectAssetStorageBackend:
         with self._workspace_locks[filename]:
             self._replace_workspace_text(path, text)
 
+    def _write_knowledge_record_sync(
+        self,
+        category: str,
+        knowledge_id: str,
+        data: StorageData,
+    ) -> None:
+        self._ensure_skeleton_sync()
+        path = self._resolve_safe_knowledge_json(category, knowledge_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
+        with self._knowledge_lock:
+            self._replace_file_text(path, text)
+
+    def _read_knowledge_record_sync(
+        self,
+        category: str,
+        knowledge_id: str,
+    ) -> StorageData | None:
+        self._ensure_skeleton_sync()
+        path = self._resolve_safe_knowledge_json(category, knowledge_id)
+        if not path.exists():
+            return None
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            raise ValueError("Knowledge JSON record must be an object")
+        return data
+
+    def _list_knowledge_records_sync(
+        self,
+        category: str | None = None,
+    ) -> list[StorageData]:
+        self._ensure_skeleton_sync()
+        categories = (category,) if category is not None else _KNOWLEDGE_CATEGORIES
+        records: list[StorageData] = []
+        for current_category in categories:
+            category_root = self._resolve_safe_knowledge_category(current_category)
+            for path in sorted(category_root.glob("*.json")):
+                data = json.loads(path.read_text(encoding="utf-8"))
+                if not isinstance(data, dict):
+                    raise ValueError(
+                        f"Knowledge JSON record must be an object: {path.name}"
+                    )
+                records.append(data)
+        return records
+
     def _clear_generated_sync(self) -> None:
         if self._generated_root.exists():
             shutil.rmtree(self._generated_root)
@@ -299,8 +386,27 @@ class ProjectAssetStorageBackend:
             raise ValueError("workspace record file must be JSONL")
         return self._source_root / "workspace" / filename
 
+    def _resolve_safe_knowledge_json(
+        self,
+        category: str,
+        knowledge_id: str,
+    ) -> Path:
+        category_root = self._resolve_safe_knowledge_category(category)
+        if not _KNOWLEDGE_ID.fullmatch(knowledge_id):
+            raise ValueError("knowledge id contains unsafe characters")
+        return category_root / f"{knowledge_id}.json"
+
+    def _resolve_safe_knowledge_category(self, category: str) -> Path:
+        if category not in _KNOWLEDGE_CATEGORIES:
+            raise ValueError("knowledge category is not part of the contract")
+        return self._source_root / "knowledge" / category
+
     @staticmethod
     def _replace_workspace_text(path: Path, text: str) -> None:
+        ProjectAssetStorageBackend._replace_file_text(path, text)
+
+    @staticmethod
+    def _replace_file_text(path: Path, text: str) -> None:
         temporary_path = path.with_suffix(path.suffix + ".tmp")
         temporary_path.write_text(text, encoding="utf-8")
         temporary_path.replace(path)
