@@ -28,3 +28,9 @@ class ChapterReadResponse(BaseModel):
 
     chapter: ChapterInfo
     markdown: str
+
+
+class ChapterSaveRequest(BaseModel):
+    """Request body for Markdown persistence."""
+
+    markdown: str

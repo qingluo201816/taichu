@@ -128,3 +128,49 @@
     @apply font-sans;
   }
 }
+
+.taichu-editor h1 {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+  margin: 1.25rem 0 0.75rem;
+}
+
+.taichu-editor h2 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+  margin: 1.15rem 0 0.65rem;
+}
+
+.taichu-editor h3 {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+  margin: 1rem 0 0.5rem;
+}
+
+.taichu-editor p {
+  margin: 0.75rem 0;
+}
+
+.taichu-editor blockquote {
+  border-left: 3px solid #000;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: #374151;
+}
+
+.taichu-editor hr {
+  border: 0;
+  border-top: 3px solid #000;
+  margin: 1.5rem 0;
+}
+
+.taichu-editor strong {
+  font-weight: 800;
+}
+
+.taichu-editor em {
+  font-style: italic;
+}
