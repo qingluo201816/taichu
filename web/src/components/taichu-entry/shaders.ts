@@ -16,51 +16,59 @@ uniform float uFocusDim;
 
 varying vec3 vColor;
 varying float vAlpha;
+varying float vCore;
 
 void main() {
   vec3 transformed = position;
 
   float phase = aRandom * 6.28318530718;
-  float breath = sin(uTime * 0.42 + phase) * 0.045 * uLayerDrift;
-  transformed.y += breath;
-  transformed.x += cos(uTime * 0.18 + phase) * 0.025 * uLayerDrift;
+  float slowPulse = sin(uTime * 0.34 + phase);
+  float lateralPulse = cos(uTime * 0.19 + phase * 1.7);
+  transformed.y += slowPulse * 0.032 * uLayerDrift;
+  transformed.x += lateralPulse * 0.022 * uLayerDrift;
 
-  float entryPull = uEntryProgress * (aRandom - 0.5) * 2.2;
+  float entryPull = uEntryProgress * (aRandom - 0.5) * 8.6;
   transformed.z -= entryPull;
-  transformed.y += uEntryProgress * sin(phase * 1.7) * 0.62;
+  transformed.y += uEntryProgress * sin(phase * 1.7) * 0.46;
+  transformed.x += uEntryProgress * cos(phase * 1.3) * 0.58;
 
-  float denseStretch = uDenseProgress * (aRandom - 0.5) * 7.5;
+  float denseStretch = uDenseProgress * (aRandom - 0.5) * 17.0;
   transformed.z += denseStretch;
-  transformed.x += sin(phase * 2.0) * uDenseProgress * 0.9;
+  transformed.x += sin(phase * 2.0) * uDenseProgress * 1.35;
+  transformed.y += cos(phase * 2.3) * uDenseProgress * 0.76;
 
   vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
   float depth = max(1.0, -mvPosition.z);
-  float perspectiveSize = aSize * uPixelRatio * (360.0 / depth);
-  gl_PointSize = clamp(perspectiveSize, 0.35, uMaxPointSize);
+  float perspectiveSize = aSize * uPixelRatio * (430.0 / depth);
+  float denseBoost = 1.0 + uDenseProgress * 0.18;
+  gl_PointSize = clamp(perspectiveSize * denseBoost, 0.42, uMaxPointSize);
   gl_Position = projectionMatrix * mvPosition;
 
-  float nearFade = smoothstep(2.5, uNearFadeDistance, depth);
+  float nearFade = smoothstep(3.0, uNearFadeDistance, depth);
   float focusFade = mix(1.0, uFocusDim, uFocusProgress);
   vColor = color;
   vAlpha = aAlpha * uGlobalOpacity * nearFade * focusFade;
+  vCore = clamp(aSize / max(uMaxPointSize, 0.001), 0.0, 1.0);
 }
 `;
 
 export const pointCloudFragmentShader = `
-precision mediump float;
+precision highp float;
 
 varying vec3 vColor;
 varying float vAlpha;
+varying float vCore;
 
 void main() {
   vec2 coord = gl_PointCoord - vec2(0.5);
   float distanceFromCenter = length(coord);
-  float crispCircle = smoothstep(0.48, 0.28, distanceFromCenter);
-  float pinCore = smoothstep(0.18, 0.0, distanceFromCenter);
-  vec3 color = vColor * (0.9 + pinCore * 0.2);
-  float alpha = vAlpha * crispCircle;
+  float disc = smoothstep(0.49, 0.32, distanceFromCenter);
+  float core = smoothstep(0.18, 0.0, distanceFromCenter);
+  float rim = smoothstep(0.5, 0.42, distanceFromCenter) * (1.0 - core);
+  vec3 color = vColor * (0.86 + core * 0.24 + vCore * 0.08);
+  float alpha = vAlpha * (disc * 0.92 + core * 0.22 + rim * 0.1);
 
-  if (alpha <= 0.012) {
+  if (alpha <= 0.007) {
     discard;
   }
 

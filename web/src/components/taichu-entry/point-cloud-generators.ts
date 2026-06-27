@@ -7,7 +7,6 @@ import type {
 type Color = [number, number, number];
 
 type LayerWriter = {
-  index: number;
   x: number;
   y: number;
   z: number;
@@ -60,23 +59,25 @@ const layerIds: Record<PointCloudLayerName, number> = {
   focusParticle: 10,
 };
 
-const ivory: Color = [0.76, 0.82, 0.7];
-const warmWhite: Color = [0.88, 0.86, 0.78];
-const mutedWhite: Color = [0.52, 0.58, 0.53];
-const paleGold: Color = [0.72, 0.78, 0.45];
-const inkGreen: Color = [0.05, 0.23, 0.14];
-const greyGreen: Color = [0.32, 0.62, 0.39];
-const scanGreen: Color = [0.48, 0.82, 0.47];
-const blueGreen: Color = [0.16, 0.48, 0.45];
-const roseDust: Color = [0.82, 0.28, 0.46];
-const palaceLine: Color = [0.66, 0.64, 0.6];
-const focusGreen: Color = [0.46, 0.68, 0.42];
+const voidGrey: Color = [0.18, 0.19, 0.18];
+const graphite: Color = [0.23, 0.21, 0.23];
+const mineralGreen: Color = [0.37, 0.63, 0.38];
+const coldMint: Color = [0.52, 0.78, 0.58];
+const darkTeal: Color = [0.08, 0.34, 0.31];
+const scanCyan: Color = [0.22, 0.55, 0.54];
+const starIvory: Color = [0.86, 0.87, 0.78];
+const oldBone: Color = [0.67, 0.69, 0.6];
+const paleGold: Color = [0.72, 0.72, 0.42];
+const emberRose: Color = [0.84, 0.33, 0.49];
+const palaceWhite: Color = [0.78, 0.76, 0.7];
+const focusGreen: Color = [0.57, 0.82, 0.45];
 
 function mixColor(a: Color, b: Color, t: number): Color {
+  const amount = clamp(t, 0, 1);
   return [
-    a[0] + (b[0] - a[0]) * t,
-    a[1] + (b[1] - a[1]) * t,
-    a[2] + (b[2] - a[2]) * t,
+    a[0] + (b[0] - a[0]) * amount,
+    a[1] + (b[1] - a[1]) * amount,
+    a[2] + (b[2] - a[2]) * amount,
   ];
 }
 
@@ -84,19 +85,42 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-function terrainNoise(x: number, z: number): number {
+function smoothstep(edge0: number, edge1: number, x: number): number {
+  const t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+}
+
+function ridgeNoise(x: number, z: number): number {
   return (
-    Math.sin(x * 0.055 + z * 0.018) * 0.55 +
-    Math.sin(x * 0.021 - z * 0.044) * 0.38 +
-    Math.cos((x + z) * 0.032) * 0.28
+    Math.sin(x * 0.052 + z * 0.021) * 0.62 +
+    Math.sin(x * 0.017 - z * 0.048) * 0.34 +
+    Math.cos((x - z) * 0.028) * 0.3
   );
+}
+
+function gaussian(value: number, width: number): number {
+  return Math.exp(-(value * value) / (2 * width * width));
+}
+
+function chooseSegment(random: SeededRandom, segments: Segment[]): Segment {
+  const totalWeight = segments.reduce((sum, segment) => sum + segment.weight, 0);
+  let cursor = random.range(0, totalWeight);
+
+  for (const segment of segments) {
+    cursor -= segment.weight;
+    if (cursor <= 0) {
+      return segment;
+    }
+  }
+
+  return segments[segments.length - 1];
 }
 
 function createLayer(
   name: PointCloudLayerName,
   count: number,
   seed: number,
-  fill: (random: SeededRandom, index: number) => Omit<LayerWriter, "index">,
+  fill: (random: SeededRandom, index: number) => LayerWriter,
 ): GeneratedPointCloudLayer {
   const positions = new Float32Array(count * 3);
   const colors = new Float32Array(count * 3);
@@ -131,34 +155,62 @@ function createLayer(
   };
 }
 
+function scanPointColor(
+  random: SeededRandom,
+  center: number,
+  depth: number,
+): Color {
+  const palette = random.next();
+
+  if (palette < 0.46) {
+    return mixColor(mineralGreen, coldMint, random.next() * 0.58 + center * 0.18);
+  }
+
+  if (palette < 0.74) {
+    return mixColor(oldBone, starIvory, random.next() * 0.46 + center * 0.22);
+  }
+
+  if (palette < 0.88) {
+    return mixColor(darkTeal, scanCyan, random.next() * 0.58);
+  }
+
+  if (palette < 0.96) {
+    return mixColor(voidGrey, paleGold, random.next() * 0.42 + center * 0.18);
+  }
+
+  return mixColor(emberRose, starIvory, random.next() * 0.2 + depth * 0.12);
+}
+
 export function foregroundGroundPointCloud(
   count: number,
 ): GeneratedPointCloudLayer {
   return createLayer("foregroundGroundPointCloud", count, 1103, random => {
-    const z = random.next() < 0.62
-      ? 6 + Math.pow(random.next(), 1.28) * 106
-      : 86 + Math.pow(random.next(), 0.7) * 184;
-    const halfWidth = clamp(54 + z * 0.82, 60, 230);
-    const x = random.signed() * halfWidth;
-    const centerBias = 1 - Math.min(1, Math.abs(x) / halfWidth);
-    const y = terrainNoise(x, z) * 1.05 - 7.7 + centerBias * 0.45;
-    const depth = z / 270;
-    const palette = random.next();
-    const color = palette < 0.5
-      ? mixColor(greyGreen, scanGreen, random.next() * 0.55)
-      : palette < 0.82
-        ? mixColor(mutedWhite, ivory, random.next() * 0.85)
-        : palette < 0.96
-          ? mixColor(inkGreen, greyGreen, random.next() * 0.5)
-          : mixColor(roseDust, ivory, random.next() * 0.28);
+    const nearBand = random.next() < 0.68;
+    const z = nearBand
+      ? 4.5 + Math.pow(random.next(), 1.18) * 102
+      : 86 + Math.pow(random.next(), 0.78) * 124;
+    const depth = z / 210;
+    const halfWidth = clamp(46 + z * 1.02, 54, 232);
+    const signedX = random.signed();
+    const edgeBias = random.next() < 0.28 ? Math.sign(signedX || 1) * Math.pow(Math.abs(signedX), 0.62) : signedX;
+    const x = edgeBias * halfWidth;
+    const center = gaussian(x, halfWidth * 0.52);
+    const basin = gaussian(x, 22) * smoothstep(8, 68, z);
+    const y =
+      ridgeNoise(x, z) * 0.74 -
+      8.2 +
+      center * 0.5 -
+      basin * 1.4 +
+      random.signed() * 0.16;
+    const alphaDepth = nearBand ? 1.08 : 0.86;
 
     return {
       x,
       y,
       z,
-      color,
-      size: random.range(0.95, 3.05) * (1.18 - depth * 0.38),
-      alpha: random.range(0.11, 0.34) * (0.92 - depth * 0.22),
+      color: scanPointColor(random, center, depth),
+      size: random.range(0.9, 3.85) * (1.22 - depth * 0.26),
+      alpha: random.range(0.13, 0.34) * alphaDepth * (0.9 + center * 0.26),
       random: random.next(),
     };
   });
@@ -168,24 +220,25 @@ export function midGroundMistPointCloud(
   count: number,
 ): GeneratedPointCloudLayer {
   return createLayer("midGroundMistPointCloud", count, 2207, random => {
-    const x = random.signed() * 176;
-    const z = random.range(78, 220);
-    const y = random.range(-4, 36) + Math.sin(z * 0.055) * 1.1;
-    const center = 1 - Math.min(1, Math.abs(x) / 176);
-    const palette = random.next();
-    const color = palette < 0.45
-      ? mixColor(blueGreen, scanGreen, random.next() * 0.52)
-      : palette < 0.8
-        ? mixColor(mutedWhite, warmWhite, center * 0.38 + random.next() * 0.18)
-        : mixColor(inkGreen, greyGreen, random.next() * 0.58);
+    const signedX = random.signed();
+    const x = Math.sign(signedX || 1) * Math.pow(Math.abs(signedX), 0.72) * 184;
+    const z = random.range(64, 186);
+    const center = gaussian(x, 78);
+    const y =
+      random.range(-4.5, 34) +
+      Math.sin(z * 0.045 + x * 0.018) * 1.4 -
+      center * 1.6;
+    const color = random.next() < 0.52
+      ? mixColor(darkTeal, coldMint, random.next() * 0.56 + center * 0.14)
+      : mixColor(graphite, starIvory, random.next() * 0.54 + center * 0.28);
 
     return {
       x,
       y,
       z,
       color,
-      size: random.range(0.45, 2.15),
-      alpha: random.range(0.035, 0.15) * (0.75 + center * 0.34),
+      size: random.range(0.42, 2.05),
+      alpha: random.range(0.045, 0.16) * (0.86 + center * 0.52),
       random: random.next(),
     };
   });
@@ -195,21 +248,25 @@ export function horizonGlowBandPointCloud(
   count: number,
 ): GeneratedPointCloudLayer {
   return createLayer("horizonGlowBandPointCloud", count, 3301, random => {
-    const x = random.signed() * 136;
-    const z = random.range(148, 210);
-    const y = random.range(-2.6, 8.8);
-    const center = 1 - Math.min(1, Math.abs(x) / 136);
-    const color = random.next() < 0.36
-      ? mixColor(greyGreen, paleGold, center * 0.42 + random.next() * 0.16)
-      : mixColor(mutedWhite, ivory, center * 0.32 + random.next() * 0.24);
+    const signedX = random.signed();
+    const x = Math.sign(signedX || 1) * Math.pow(Math.abs(signedX), 0.58) * 176;
+    const z = random.range(124, 178);
+    const center = gaussian(x, 62);
+    const y =
+      random.range(-3.6, 5.6) +
+      Math.sin(x * 0.032) * 0.8 +
+      random.signed() * center * 0.5;
+    const color = random.next() < 0.58
+      ? mixColor(oldBone, starIvory, random.next() * 0.34 + center * 0.36)
+      : mixColor(mineralGreen, paleGold, random.next() * 0.34 + center * 0.22);
 
     return {
       x,
       y,
       z,
       color,
-      size: random.range(0.5, 2.2),
-      alpha: random.range(0.055, 0.18) * (0.68 + center * 0.34),
+      size: random.range(0.46, 2.45) * (0.92 + center * 0.22),
+      alpha: random.range(0.068, 0.21) * (0.82 + center * 0.56),
       random: random.next(),
     };
   });
@@ -220,23 +277,32 @@ export function sideBoundaryPointCloud(
 ): GeneratedPointCloudLayer {
   return createLayer("sideBoundaryPointCloud", count, 4409, random => {
     const side = random.next() > 0.5 ? 1 : -1;
-    const z = random.range(28, 245);
-    const band = Math.pow(random.next(), 1.25);
-    const x = side * random.range(44 + z * 0.1, 182) + random.signed() * 22 * band;
-    const yBase = random.range(-8, 90);
-    const canopy = Math.sin(z * 0.043 + side) * 8.5;
-    const y = yBase + canopy - Math.pow(Math.abs(x) / 230, 2) * 8;
-    const color = random.next() < 0.58
-      ? mixColor(inkGreen, greyGreen, random.next() * 0.72)
-      : mixColor(blueGreen, mutedWhite, random.next() * 0.42);
+    const z = random.range(24, 248);
+    const lobe = random.next();
+    const canopyHeight = lobe < 0.64
+      ? random.range(15, 94)
+      : random.range(-4, 44);
+    const wallDistance = random.range(54 + z * 0.12, 190);
+    const curve = Math.sin(z * 0.034 + side * 0.7) * 14;
+    const x =
+      side * wallDistance +
+      side * curve +
+      random.signed() * random.range(2, 30);
+    const y =
+      canopyHeight +
+      Math.sin(z * 0.048 + x * 0.018) * 7.6 -
+      Math.pow(Math.abs(x) / 245, 2) * 9;
+    const color = random.next() < 0.68
+      ? mixColor(darkTeal, mineralGreen, random.next() * 0.82)
+      : mixColor(graphite, coldMint, random.next() * 0.5);
 
     return {
       x,
       y,
       z,
       color,
-      size: random.range(0.35, 2.15),
-      alpha: random.range(0.045, 0.22),
+      size: random.range(0.42, 2.65),
+      alpha: random.range(0.052, 0.22) * (lobe < 0.64 ? 1 : 0.82),
       random: random.next(),
     };
   });
@@ -244,23 +310,28 @@ export function sideBoundaryPointCloud(
 
 export function skyDepthPointCloud(count: number): GeneratedPointCloudLayer {
   return createLayer("skyDepthPointCloud", count, 5519, random => {
-    const horizonBias = Math.pow(random.next(), 1.35);
-    const y = 8 + horizonBias * 92;
-    const z = random.range(76, 315);
-    const halfWidth = 86 + z * 0.66;
-    const x = random.signed() * halfWidth;
-    const towardHorizon = 1 - Math.min(1, (y - 8) / 92);
-    const color = random.next() < 0.12
-      ? mixColor(inkGreen, scanGreen, random.next() * 0.45)
-      : mixColor([0.14, 0.12, 0.15], mutedWhite, towardHorizon * 0.52);
+    const horizonBias = Math.pow(random.next(), 1.95);
+    const y = 10 + horizonBias * 104;
+    const z = random.range(88, 336);
+    const width = 84 + z * 0.65;
+    const signedX = random.signed();
+    const sideBias = random.next() < 0.38
+      ? Math.sign(signedX || 1) * Math.pow(Math.abs(signedX), 0.62)
+      : signedX;
+    const x = sideBias * width;
+    const towardHorizon = 1 - clamp((y - 10) / 104, 0, 1);
+    const centerVoid = 1 - gaussian(x, 38) * smoothstep(44, 106, y);
+    const color = random.next() < 0.18
+      ? mixColor(darkTeal, coldMint, random.next() * 0.46)
+      : mixColor([0.1, 0.09, 0.11], oldBone, towardHorizon * 0.5 + random.next() * 0.1);
 
     return {
       x,
       y,
       z,
       color,
-      size: random.range(0.3, 1.55),
-      alpha: random.range(0.018, 0.11) * (0.62 + towardHorizon * 0.58),
+      size: random.range(0.28, 1.45),
+      alpha: random.range(0.022, 0.12) * (0.64 + towardHorizon * 0.8) * centerVoid,
       random: random.next(),
     };
   });
@@ -270,18 +341,21 @@ export function ambientDeepSpacePointCloud(
   count: number,
 ): GeneratedPointCloudLayer {
   return createLayer("ambientDeepSpacePointCloud", count, 6619, random => {
-    const z = random.range(110, 350);
-    const x = random.signed() * random.range(90, 260);
-    const y = random.range(20, 112);
-    const color = mixColor([0.11, 0.09, 0.12], greyGreen, random.next() * 0.5);
+    const z = random.range(128, 366);
+    const x = random.signed() * random.range(76, 276);
+    const y = random.range(22, 122);
+    const edgeLight = smoothstep(52, 190, Math.abs(x));
+    const color = random.next() < 0.22
+      ? mixColor(darkTeal, scanCyan, random.next() * 0.46)
+      : mixColor([0.09, 0.08, 0.1], oldBone, random.next() * 0.34 + edgeLight * 0.12);
 
     return {
       x,
       y,
       z,
       color,
-      size: random.range(0.25, 1.15),
-      alpha: random.range(0.015, 0.075),
+      size: random.range(0.24, 1.08),
+      alpha: random.range(0.016, 0.082) * (0.74 + edgeLight * 0.36),
       random: random.next(),
     };
   });
@@ -291,21 +365,26 @@ export function distantEnvironmentPointCloud(
   count: number,
 ): GeneratedPointCloudLayer {
   return createLayer("distantEnvironmentPointCloud", count, 7727, random => {
-    const x = random.signed() * random.range(28, 168);
-    const z = random.range(142, 230);
-    const ridge = 5 + Math.sin(x * 0.06) * 5.2 + Math.cos(z * 0.045) * 2.4;
-    const y = random.range(-5, ridge + 20);
-    const color = random.next() < 0.5
-      ? mixColor(inkGreen, greyGreen, random.next() * 0.7)
-      : mixColor(blueGreen, mutedWhite, random.next() * 0.45);
+    const x = random.signed() * random.range(20, 172);
+    const z = random.range(142, 224);
+    const ridge =
+      6 +
+      Math.sin(x * 0.045) * 4.8 +
+      Math.cos(z * 0.038) * 2.7 +
+      gaussian(x, 52) * 3.5;
+    const y = random.range(-5.5, ridge + random.range(9, 28));
+    const center = gaussian(x, 82);
+    const color = random.next() < 0.46
+      ? mixColor(darkTeal, mineralGreen, random.next() * 0.72)
+      : mixColor(voidGrey, starIvory, random.next() * 0.42 + center * 0.14);
 
     return {
       x,
       y,
       z,
       color,
-      size: random.range(0.35, 1.8),
-      alpha: random.range(0.03, 0.14),
+      size: random.range(0.34, 1.72),
+      alpha: random.range(0.038, 0.15) * (0.9 + center * 0.24),
       random: random.next(),
     };
   });
@@ -315,53 +394,52 @@ export function distantPalacePointCloud(
   count: number,
 ): GeneratedPointCloudLayer {
   const segments: Segment[] = [
-    { x1: -31, y1: 0.2, x2: 31, y2: 0.2, z: 194, weight: 6 },
-    { x1: -28, y1: 1.3, x2: 28, y2: 1.3, z: 193.2, weight: 5 },
-    { x1: -12.5, y1: 1.2, x2: -12.5, y2: 8.9, z: 192.4, weight: 3 },
-    { x1: 12.5, y1: 1.2, x2: 12.5, y2: 8.9, z: 192.4, weight: 3 },
-    { x1: -15.8, y1: 7.2, x2: 0, y2: 10.2, z: 191.8, weight: 4 },
-    { x1: 0, y1: 10.2, x2: 15.8, y2: 7.2, z: 191.8, weight: 4 },
-    { x1: -17.4, y1: 6.9, x2: 17.4, y2: 6.9, z: 191.8, weight: 4 },
-    { x1: -43, y1: 0.8, x2: -25, y2: 0.8, z: 195.6, weight: 4 },
-    { x1: 25, y1: 0.8, x2: 43, y2: 0.8, z: 195.6, weight: 4 },
-    { x1: -40, y1: 0.8, x2: -40, y2: 6.8, z: 195, weight: 2 },
-    { x1: -27.5, y1: 0.8, x2: -27.5, y2: 6.8, z: 195, weight: 2 },
-    { x1: 27.5, y1: 0.8, x2: 27.5, y2: 6.8, z: 195, weight: 2 },
-    { x1: 40, y1: 0.8, x2: 40, y2: 6.8, z: 195, weight: 2 },
-    { x1: -45, y1: 6.1, x2: -34, y2: 8.1, z: 194.4, weight: 3 },
-    { x1: -34, y1: 8.1, x2: -23.5, y2: 6.1, z: 194.4, weight: 3 },
-    { x1: 23.5, y1: 6.1, x2: 34, y2: 8.1, z: 194.4, weight: 3 },
-    { x1: 34, y1: 8.1, x2: 45, y2: 6.1, z: 194.4, weight: 3 },
-    { x1: -23, y1: 6.4, x2: -16.5, y2: 7.3, z: 193.4, weight: 2 },
-    { x1: 16.5, y1: 7.3, x2: 23, y2: 6.4, z: 193.4, weight: 2 },
+    { x1: -49, y1: -0.3, x2: 49, y2: -0.3, z: 186, weight: 9 },
+    { x1: -44, y1: 1.0, x2: 44, y2: 1.0, z: 185.4, weight: 6 },
+    { x1: -23, y1: 1.0, x2: -23, y2: 10.6, z: 184.6, weight: 4 },
+    { x1: 23, y1: 1.0, x2: 23, y2: 10.6, z: 184.6, weight: 4 },
+    { x1: -17, y1: 1.2, x2: -17, y2: 8.2, z: 184.2, weight: 3 },
+    { x1: 17, y1: 1.2, x2: 17, y2: 8.2, z: 184.2, weight: 3 },
+    { x1: -26.5, y1: 8.0, x2: 0, y2: 13.0, z: 183.2, weight: 6 },
+    { x1: 0, y1: 13.0, x2: 26.5, y2: 8.0, z: 183.2, weight: 6 },
+    { x1: -29, y1: 7.5, x2: 29, y2: 7.5, z: 183.4, weight: 5 },
+    { x1: -66, y1: 0.4, x2: -36, y2: 0.4, z: 188.2, weight: 5 },
+    { x1: 36, y1: 0.4, x2: 66, y2: 0.4, z: 188.2, weight: 5 },
+    { x1: -61, y1: 0.8, x2: -61, y2: 8.0, z: 187.2, weight: 3 },
+    { x1: -41, y1: 0.8, x2: -41, y2: 8.0, z: 187.2, weight: 3 },
+    { x1: 41, y1: 0.8, x2: 41, y2: 8.0, z: 187.2, weight: 3 },
+    { x1: 61, y1: 0.8, x2: 61, y2: 8.0, z: 187.2, weight: 3 },
+    { x1: -69, y1: 7.1, x2: -51, y2: 10.2, z: 186.5, weight: 4 },
+    { x1: -51, y1: 10.2, x2: -34, y2: 7.1, z: 186.5, weight: 4 },
+    { x1: 34, y1: 7.1, x2: 51, y2: 10.2, z: 186.5, weight: 4 },
+    { x1: 51, y1: 10.2, x2: 69, y2: 7.1, z: 186.5, weight: 4 },
+    { x1: -34, y1: 7.6, x2: -27, y2: 8.7, z: 184.4, weight: 2 },
+    { x1: 27, y1: 8.7, x2: 34, y2: 7.6, z: 184.4, weight: 2 },
+    { x1: -4, y1: 1.0, x2: -4, y2: 6.2, z: 183.8, weight: 2 },
+    { x1: 4, y1: 1.0, x2: 4, y2: 6.2, z: 183.8, weight: 2 },
   ];
 
-  const totalWeight = segments.reduce((sum, segment) => sum + segment.weight, 0);
-
   return createLayer("distantPalacePointCloud", count, 8831, random => {
-    let cursor = random.range(0, totalWeight);
-    let selected = segments[0];
-    for (const segment of segments) {
-      cursor -= segment.weight;
-      if (cursor <= 0) {
-        selected = segment;
-        break;
-      }
-    }
-
+    const selected = chooseSegment(random, segments);
     const t = random.next();
-    const x = selected.x1 + (selected.x2 - selected.x1) * t + random.signed() * 0.22;
-    const y = selected.y1 + (selected.y2 - selected.y1) * t + random.signed() * 0.2;
-    const z = selected.z + random.signed() * 1.8;
-    const color = mixColor(palaceLine, warmWhite, random.next() * 0.18);
+    const x =
+      selected.x1 +
+      (selected.x2 - selected.x1) * t +
+      random.signed() * 0.28;
+    const y =
+      selected.y1 +
+      (selected.y2 - selected.y1) * t +
+      random.signed() * 0.22;
+    const z = selected.z + random.signed() * 1.35;
+    const color = mixColor(palaceWhite, starIvory, random.next() * 0.24);
 
     return {
       x,
       y,
       z,
       color,
-      size: random.range(0.45, 1.35),
-      alpha: random.range(0.035, 0.12),
+      size: random.range(0.42, 1.28),
+      alpha: random.range(0.035, 0.13),
       random: random.next(),
     };
   });
@@ -371,22 +449,25 @@ export function transitionDensePointCloud(
   count: number,
 ): GeneratedPointCloudLayer {
   return createLayer("transitionDensePointCloud", count, 9917, random => {
-    const signed = random.signed();
-    const x = Math.sign(signed || 1) * Math.pow(Math.abs(signed), 1.22) * 176;
-    const z = random.range(92, 146);
-    const y = random.range(-12, 42) + Math.sin(x * 0.035) * 2.4;
-    const center = 1 - Math.min(1, Math.abs(x) / 176);
-    const color = random.next() < 0.1
-      ? mixColor(greyGreen, warmWhite, center * 0.3)
-      : mixColor(mutedWhite, warmWhite, center * 0.5);
+    const signedX = random.signed();
+    const x = Math.sign(signedX || 1) * Math.pow(Math.abs(signedX), 0.62) * 184;
+    const z = random.range(82, 136);
+    const center = gaussian(x, 72);
+    const y =
+      random.range(-12, 42) +
+      Math.sin(x * 0.03 + z * 0.06) * 2.2 -
+      center * 2;
+    const color = random.next() < 0.22
+      ? mixColor(mineralGreen, starIvory, center * 0.42)
+      : mixColor(oldBone, starIvory, random.next() * 0.36 + center * 0.34);
 
     return {
       x,
       y,
       z,
       color,
-      size: random.range(0.45, 2.2),
-      alpha: random.range(0.045, 0.15) * (0.68 + center * 0.38),
+      size: random.range(0.38, 2.15) * (0.9 + center * 0.18),
+      alpha: random.range(0.04, 0.14) * (0.76 + center * 0.46),
       random: random.next(),
     };
   });
@@ -398,8 +479,8 @@ export function focusParticle(): GeneratedPointCloudLayer {
     y: 4.45,
     z: 132,
     color: focusGreen,
-    size: 7.2,
-    alpha: 0.86,
+    size: 6.4,
+    alpha: 0.92,
     random: 0.42,
   }));
 }

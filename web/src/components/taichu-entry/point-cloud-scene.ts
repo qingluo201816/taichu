@@ -23,28 +23,28 @@ type RuntimeLayer = {
 };
 
 const baseLayerOpacity: Record<PointCloudLayerName, number> = {
-  foregroundGroundPointCloud: 1,
-  midGroundMistPointCloud: 0.92,
-  horizonGlowBandPointCloud: 0.9,
-  sideBoundaryPointCloud: 0.95,
-  skyDepthPointCloud: 0.88,
-  ambientDeepSpacePointCloud: 0.72,
-  distantEnvironmentPointCloud: 0.86,
-  distantPalacePointCloud: 0.78,
+  foregroundGroundPointCloud: 1.28,
+  midGroundMistPointCloud: 1.16,
+  horizonGlowBandPointCloud: 1.18,
+  sideBoundaryPointCloud: 1.18,
+  skyDepthPointCloud: 0.94,
+  ambientDeepSpacePointCloud: 0.74,
+  distantEnvironmentPointCloud: 1.02,
+  distantPalacePointCloud: 1,
   transitionDensePointCloud: 0,
   focusParticle: 0,
 };
 
 const layerDrift: Record<PointCloudLayerName, number> = {
-  foregroundGroundPointCloud: 0.45,
-  midGroundMistPointCloud: 1.1,
-  horizonGlowBandPointCloud: 0.72,
-  sideBoundaryPointCloud: 0.55,
-  skyDepthPointCloud: 0.38,
-  ambientDeepSpacePointCloud: 0.28,
-  distantEnvironmentPointCloud: 0.42,
-  distantPalacePointCloud: 0.18,
-  transitionDensePointCloud: 1.35,
+  foregroundGroundPointCloud: 0.3,
+  midGroundMistPointCloud: 0.82,
+  horizonGlowBandPointCloud: 0.52,
+  sideBoundaryPointCloud: 0.42,
+  skyDepthPointCloud: 0.24,
+  ambientDeepSpacePointCloud: 0.2,
+  distantEnvironmentPointCloud: 0.28,
+  distantPalacePointCloud: 0.1,
+  transitionDensePointCloud: 1.08,
   focusParticle: 0.1,
 };
 
@@ -57,7 +57,7 @@ export class TaichuPointCloudScene {
   private readonly scene: THREE.Scene;
   private readonly camera: THREE.PerspectiveCamera;
   private readonly layers: RuntimeLayer[] = [];
-  private readonly cameraTarget = { x: 0, y: -0.2, z: 178 };
+  private readonly cameraTarget = { x: 0, y: -0.35, z: 184 };
   private readonly sceneStart = performance.now();
   private animationFrameId = 0;
   private disposed = false;
@@ -76,10 +76,10 @@ export class TaichuPointCloudScene {
     this.onStateChange = options.onStateChange;
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x171119, 0.0034);
+    this.scene.fog = new THREE.FogExp2(0x100b12, 0.0029);
 
-    this.camera = new THREE.PerspectiveCamera(68, 1, 0.1, 420);
-    this.camera.position.set(0, 1.8, 16);
+    this.camera = new THREE.PerspectiveCamera(70, 1, 0.1, 430);
+    this.camera.position.set(0, 2.05, 15);
     this.camera.lookAt(this.cameraTarget.x, this.cameraTarget.y, this.cameraTarget.z);
 
     this.renderer = new THREE.WebGLRenderer({
@@ -87,7 +87,7 @@ export class TaichuPointCloudScene {
       antialias: false,
       powerPreference: "high-performance",
     });
-    this.renderer.setClearColor(0x171119, 1);
+    this.renderer.setClearColor(0x100b12, 1);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.domElement.style.position = "absolute";
     this.renderer.domElement.style.inset = "0";
@@ -123,24 +123,24 @@ export class TaichuPointCloudScene {
       },
     });
 
-    this.timeline.to(this.camera.position, { z: 74, y: 2.6, duration: 1.45 }, 0);
-    this.timeline.to(this.cameraTarget, { y: 1.2, z: 178, duration: 1.45 }, 0);
+    this.timeline.to(this.camera.position, { z: 76, y: 2.72, duration: 1.45 }, 0);
+    this.timeline.to(this.cameraTarget, { y: 1.1, z: 184, duration: 1.45 }, 0);
     this.timeline.to(
       this.camera,
       {
-        fov: 48,
+        fov: 50,
         duration: 1.45,
         onUpdate: () => this.camera.updateProjectionMatrix(),
       },
       0,
     );
     this.tweenUniform("uEntryProgress", 1, 1.45, 0);
-    this.tweenLayerOpacity(["distantPalacePointCloud"], 0.22, 1.1, 0.35);
-    this.tweenLayerOpacity(["transitionDensePointCloud"], 0.28, 0.75, 0.72);
+    this.tweenLayerOpacity(["distantPalacePointCloud"], 0.16, 1.1, 0.35);
+    this.tweenLayerOpacity(["transitionDensePointCloud"], 0.32, 0.75, 0.72);
 
     this.timeline.add(() => this.setState("dense-transition"), 1.34);
-    this.timeline.to(this.camera.position, { z: 116, y: 3.35, duration: 1 }, 1.45);
-    this.timeline.to(this.cameraTarget, { x: 0.1, y: 5.2, z: 132, duration: 1 }, 1.45);
+    this.timeline.to(this.camera.position, { z: 116, y: 3.42, duration: 1 }, 1.45);
+    this.timeline.to(this.cameraTarget, { x: 0.1, y: 5.05, z: 132, duration: 1 }, 1.45);
     this.tweenUniform("uDenseProgress", 1, 1, 1.45);
     this.tweenLayerOpacity(["transitionDensePointCloud"], 1, 0.55, 1.45);
     this.tweenLayerOpacity(
@@ -151,7 +151,7 @@ export class TaichuPointCloudScene {
         "ambientDeepSpacePointCloud",
         "distantEnvironmentPointCloud",
       ],
-      0.34,
+      0.3,
       0.75,
       1.58,
     );
@@ -236,8 +236,8 @@ export class TaichuPointCloudScene {
         uDenseProgress: { value: 0 },
         uFocusProgress: { value: 0 },
         uGlobalOpacity: { value: baseLayerOpacity[layer.name] },
-        uMaxPointSize: { value: layer.name === "focusParticle" ? 8 : 4.6 },
-        uNearFadeDistance: { value: 8 },
+        uMaxPointSize: { value: layer.name === "focusParticle" ? 7.4 : 5.9 },
+        uNearFadeDistance: { value: 7.2 },
         uLayerDrift: { value: layerDrift[layer.name] },
         uFocusDim: { value: layer.name === "focusParticle" ? 1 : 0.16 },
       },
@@ -335,12 +335,12 @@ export class TaichuPointCloudScene {
     }
 
     if (this.state === "idle") {
-      const targetX = this.pointerX * 2.1;
-      const targetY = 1.8 - this.pointerY * 0.38;
+      const targetX = this.pointerX * 2.35;
+      const targetY = 2.05 - this.pointerY * 0.34;
       this.camera.position.x += (targetX - this.camera.position.x) * 0.035;
       this.camera.position.y += (targetY - this.camera.position.y) * 0.035;
-      this.cameraTarget.x += (this.pointerX * 3.4 - this.cameraTarget.x) * 0.025;
-      this.cameraTarget.y += (-0.2 - this.pointerY * 0.75 - this.cameraTarget.y) * 0.025;
+      this.cameraTarget.x += (this.pointerX * 3.8 - this.cameraTarget.x) * 0.025;
+      this.cameraTarget.y += (-0.35 - this.pointerY * 0.68 - this.cameraTarget.y) * 0.025;
     }
 
     this.camera.lookAt(
@@ -382,6 +382,6 @@ export class TaichuPointCloudScene {
   }
 
   private pixelRatio(): number {
-    return Math.min(window.devicePixelRatio || 1, 1.5);
+    return Math.min(window.devicePixelRatio || 1, 1.75);
   }
 }

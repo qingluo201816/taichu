@@ -1,14 +1,14 @@
 import type { LayerCounts, PerformanceTier } from "./types";
 
 const highCounts: LayerCounts = {
-  foregroundGroundPointCloud: 50000,
-  midGroundMistPointCloud: 34000,
-  horizonGlowBandPointCloud: 19000,
-  sideBoundaryPointCloud: 56000,
-  skyDepthPointCloud: 52000,
+  foregroundGroundPointCloud: 72000,
+  midGroundMistPointCloud: 38000,
+  horizonGlowBandPointCloud: 22000,
+  sideBoundaryPointCloud: 64000,
+  skyDepthPointCloud: 56000,
   ambientDeepSpacePointCloud: 22000,
-  distantEnvironmentPointCloud: 25000,
-  distantPalacePointCloud: 8200,
+  distantEnvironmentPointCloud: 28000,
+  distantPalacePointCloud: 8800,
   transitionDensePointCloud: 56000,
   focusParticle: 1,
 };
