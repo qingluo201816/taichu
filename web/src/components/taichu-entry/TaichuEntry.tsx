@@ -85,14 +85,14 @@ export default function TaichuEntry() {
   }, [startEntry]);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#171119] text-[#f4efe5]">
+    <main className="relative min-h-screen overflow-hidden bg-[#100b12] text-[#f4efe5]">
       <div
         ref={containerRef}
         className="absolute inset-0"
         aria-hidden="true"
       />
 
-      <div className="pointer-events-none absolute inset-0 z-10 shadow-[inset_0_0_96px_rgba(0,0,0,0.46)]" />
+      <div className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(circle_at_50%_52%,rgba(0,0,0,0)_0%,rgba(0,0,0,0)_58%,rgba(0,0,0,0.22)_100%)] shadow-[inset_0_0_96px_rgba(0,0,0,0.46)]" />
 
       <button
         type="button"
@@ -100,20 +100,20 @@ export default function TaichuEntry() {
         disabled={entryState !== "idle"}
         aria-label="进入太初"
         aria-busy={entryState !== "idle"}
-        className="absolute left-1/2 top-8 z-20 flex h-14 w-[220px] -translate-x-1/2 flex-col items-center justify-center border border-[#f4efe5]/82 bg-black/10 text-[#f7f3ea] outline-none backdrop-blur-[1px] transition-[border-color,background-color,opacity,transform] duration-200 hover:border-white hover:bg-white/[0.035] focus-visible:ring-2 focus-visible:ring-[#f4efe5]/70 disabled:cursor-default disabled:opacity-70"
+        className="absolute left-1/2 top-8 z-20 flex h-14 w-[218px] -translate-x-1/2 flex-col items-center justify-center border border-[#f4efe5]/72 bg-[#100b12]/18 text-[#f7f3ea] outline-none backdrop-blur-[1px] transition-[border-color,background-color,opacity,transform] duration-200 hover:border-white hover:bg-white/[0.032] focus-visible:ring-2 focus-visible:ring-[#f4efe5]/70 disabled:cursor-default disabled:opacity-70"
       >
         <span className="font-mono text-[17px] tracking-[0.34em]">TAICHU</span>
-        <span className="mt-1 text-[11px] tracking-[0.18em] text-[#b8b2a8]">
+        <span className="mt-1 text-[11px] tracking-[0.18em] text-[#c4beb2]">
           {entryState === "idle" ? "进入太初" : stateText[entryState]}
         </span>
       </button>
 
-      <div className="pointer-events-none absolute left-6 top-6 z-20 hidden max-w-[220px] space-y-2 text-[11px] text-[#9d9d9d] md:block">
+      <div className="pointer-events-none absolute left-6 top-6 z-20 hidden max-w-[220px] space-y-2 text-[11px] text-[#a6a196] md:block">
         <Readout label="坐标" value="太初虚空" />
         <Readout label="阶段" value={stateText[entryState]} />
       </div>
 
-      <div className="pointer-events-none absolute bottom-6 right-6 z-20 hidden max-w-[260px] space-y-2 text-[11px] text-[#9d9d9d] md:block">
+      <div className="pointer-events-none absolute bottom-6 right-6 z-20 hidden max-w-[260px] space-y-2 text-[11px] text-[#a6a196] md:block">
         <Readout label="世界种子" value="已点亮" active />
         <Readout label="观测场" value="点云稳定" />
       </div>
