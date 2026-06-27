@@ -246,10 +246,26 @@ class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(confirmed.json()["knowledge_card"]["status"], "confirmed")
         self.assertEqual(summary.status_code, 200)
         self.assertEqual(rebuild.json()["job"]["status"], "completed")
-        self.assertEqual(chat.json()["card"]["workflow"], "chat")
+        chat_payload = chat.json()
+        self.assertEqual(chat_payload["card"]["workflow"], "chat")
+        self.assertGreaterEqual(
+            len(chat_payload["conversation"]["source_refs"]),
+            1,
+        )
+        for source_ref in chat_payload["conversation"]["source_refs"]:
+            normalized_path = source_ref["path"].replace("\\", "/")
+            self.assertNotIn("project_assets/generated", normalized_path)
+            self.assertNotIn("/sqlite/", normalized_path)
+            self.assertFalse(normalized_path.endswith(".db"))
+        self.assertEqual(
+            chat_payload["card"]["content"]["citations"][0]["label"],
+            "S1",
+        )
         export_paths = {file["path"] for file in export_bundle.json()["files"]}
         self.assertIn("source/workspace/ideas.jsonl", export_paths)
+        self.assertIn("source/workspace/pending_facts.jsonl", export_paths)
         self.assertIn("source/knowledge/items/knowledge_phase8_item.json", export_paths)
+        self.assertFalse(any(path.startswith("generated/") for path in export_paths))
         self.assertTrue(
             (self.assets_root / "generated" / "sqlite" / "taichu.db").exists()
         )
