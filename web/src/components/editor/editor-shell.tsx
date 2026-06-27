@@ -101,7 +101,7 @@ export default function EditorShell() {
     editorProps: {
       attributes: {
         class:
-          "taichu-editor min-h-[calc(100vh-12rem)] outline-none px-8 py-7 text-[17px] leading-8",
+          "taichu-editor min-h-[calc(100vh-13rem)] outline-none px-5 py-6 text-[17px] leading-8 md:px-10 md:py-8",
       },
     },
     content: markdownToTiptapContent(""),
@@ -118,6 +118,15 @@ export default function EditorShell() {
       setSelection(chapter ? captureSelectionContext(nextEditor, chapter) : null);
     },
   });
+
+  const refreshSelection = useCallback(() => {
+    const chapter = activeChapterRef.current;
+    if (!editor || !chapter) {
+      setSelection(null);
+      return;
+    }
+    setSelection(captureSelectionContext(editor, chapter));
+  }, [editor]);
 
   const loadChapter = useCallback(
     async (chapterId: string) => {
@@ -522,57 +531,57 @@ export default function EditorShell() {
   }, [persistChapter, saveState]);
 
   return (
-    <main className="min-h-screen bg-[#fffefc] text-black">
-      <div className="grid min-h-screen grid-cols-[280px_minmax(0,1fr)_320px]">
-        <aside className="border-r-[3px] border-black bg-white px-4 py-5">
+    <main className="tc-workspace-page min-h-screen">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)_300px] xl:grid-cols-[var(--tc-shell-sidebar-width)_minmax(0,1fr)_var(--tc-shell-inspector-width)]">
+        <aside className="border-b border-[var(--tc-workspace-border-weak)] bg-[var(--tc-workspace-shell)] px-4 py-4 lg:sticky lg:top-0 lg:h-screen lg:overflow-auto lg:border-b-0 lg:border-r">
           <Link
             href="/home"
-            className="mb-6 inline-flex items-center gap-2 rounded-full border-2 border-black px-3 py-1.5 text-sm font-semibold hover:bg-gray-100"
+            className="mb-6 inline-flex h-9 items-center gap-2 rounded-[var(--tc-panel-radius)] border border-[var(--tc-workspace-border)] bg-[var(--tc-workspace-recess)] px-3 text-sm font-medium text-[var(--tc-workspace-text-secondary)] transition-colors hover:border-[var(--tc-workspace-focus)] hover:text-[var(--tc-workspace-focus)]"
           >
             <ChevronLeft className="size-4" />
             返回太初
           </Link>
-          <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-600">
+          <div className="mb-4 flex items-center gap-2 text-sm font-medium text-[var(--tc-workspace-text-secondary)]">
             <FileText className="size-4" />
             章节
           </div>
-          <nav className="space-y-2">
+          <nav className="grid gap-2 md:grid-cols-2 xl:grid-cols-1">
             {chapters.map(chapter => (
               <button
                 key={chapter.id}
                 onClick={() => void switchChapter(chapter.id)}
                 className={cn(
-                  "w-full rounded-lg border-2 border-black px-3 py-2 text-left text-sm transition-colors",
+                  "w-full rounded-[var(--tc-panel-radius)] border px-3 py-2 text-left text-sm transition-colors",
                   activeChapter?.id === chapter.id
-                    ? "bg-black text-white"
-                    : "bg-white hover:bg-gray-100",
+                    ? "border-[var(--tc-workspace-focus)] bg-[var(--tc-workspace-focus)] text-[var(--tc-workspace-shell)]"
+                    : "border-[var(--tc-workspace-border-weak)] bg-[var(--tc-workspace-panel)] text-[var(--tc-workspace-text-secondary)] hover:border-[var(--tc-workspace-border)] hover:text-[var(--tc-workspace-focus)]",
                 )}
               >
                 <span className="block truncate font-semibold">{chapter.title}</span>
-                <span className="block text-xs opacity-70">
+                <span className="block font-mono text-xs opacity-70">
                   {chapter.word_count} 字
                 </span>
               </button>
             ))}
             {!chapters.length && !loading ? (
-              <div className="rounded-lg border-2 border-dashed border-black px-3 py-4 text-sm text-gray-600">
+              <div className="rounded-[var(--tc-panel-radius)] border border-dashed border-[var(--tc-workspace-border)] px-3 py-4 text-sm text-[var(--tc-workspace-text-muted)]">
                 暂无章节
               </div>
             ) : null}
           </nav>
         </aside>
 
-        <section className="flex min-w-0 flex-col">
-          <header className="flex h-16 items-center justify-between border-b-[3px] border-black bg-[#fffefc] px-5">
+        <section className="flex min-w-0 flex-col bg-[var(--tc-workspace-editor)]">
+          <header className="tc-workspace-header flex min-h-14 flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-5">
             <div className="min-w-0">
-              <h1 className="truncate text-lg font-semibold">
+              <h1 className="truncate text-lg font-semibold text-[var(--tc-workspace-focus)]">
                 {activeChapter?.title ?? "编辑器"}
               </h1>
-              <p className="text-xs font-semibold text-gray-500">
+              <p className="font-mono text-xs text-[var(--tc-workspace-text-muted)]">
                 {statusText(saveState, loading)}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <ToolbarButton
                 active={editor?.isActive("heading", { level: 1 }) ?? false}
                 label="标题一"
@@ -629,7 +638,7 @@ export default function EditorShell() {
                 size="sm"
                 onClick={() => void persistChapter()}
                 disabled={!activeChapter || saveState === "saving"}
-                className="ml-2 rounded-full border-2 border-black"
+                className="ml-0 border border-[var(--tc-workspace-border)] md:ml-2"
               >
                 {saveState === "saving" ? (
                   <Loader2 className="size-4 animate-spin" />
@@ -643,17 +652,25 @@ export default function EditorShell() {
             </div>
           </header>
 
-          <div className="min-h-0 flex-1 overflow-auto bg-[#fffefc]">
-            {error ? (
-              <div className="m-6 rounded-lg border-2 border-black bg-white px-4 py-3 text-sm text-red-700">
-                {error}
+          <div className="min-h-0 flex-1 overflow-auto px-3 py-5 md:px-6 md:py-8">
+            <div className="mx-auto w-full max-w-[var(--tc-editor-max-width)]">
+              {error ? (
+                <div className="tc-danger mb-4 rounded-[var(--tc-panel-radius)] border px-4 py-3 text-sm font-medium">
+                  {error}
+                </div>
+              ) : null}
+              <div
+                className="tc-paper-card overflow-hidden"
+                onPointerUp={() => window.setTimeout(refreshSelection, 0)}
+                onKeyUp={refreshSelection}
+              >
+                <EditorContent editor={editor} />
               </div>
-            ) : null}
-            <EditorContent editor={editor} />
+            </div>
           </div>
         </section>
 
-        <aside className="min-h-0 border-l-[3px] border-black bg-white px-4 py-5">
+        <aside className="min-h-0 border-t border-[var(--tc-workspace-border-weak)] bg-[var(--tc-workspace-shell)] px-4 py-5 lg:sticky lg:top-0 lg:h-screen lg:overflow-auto lg:border-l lg:border-t-0">
           <AICardList
             cards={aiCards}
             selection={selection}
@@ -699,8 +716,10 @@ function ToolbarButton({
       title={label}
       onClick={onClick}
       className={cn(
-        "inline-flex size-8 items-center justify-center rounded-lg border-2 border-black transition-colors",
-        active ? "bg-black text-white" : "bg-white hover:bg-gray-100",
+        "inline-flex size-8 items-center justify-center rounded-[var(--tc-panel-radius)] border transition-colors",
+        active
+          ? "border-[var(--tc-workspace-focus)] bg-[var(--tc-workspace-focus)] text-[var(--tc-workspace-shell)]"
+          : "border-[var(--tc-workspace-border)] bg-[var(--tc-workspace-recess)] text-[var(--tc-workspace-text-secondary)] hover:border-[var(--tc-workspace-focus)] hover:text-[var(--tc-workspace-focus)]",
       )}
     >
       {children}
