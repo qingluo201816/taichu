@@ -4,7 +4,9 @@ from fastapi import Request
 
 from taichu.application.agents.registry import AgentRegistry
 from taichu.application.contracts.storage import StorageBackend
+from taichu.application.services.ai_card_service import AICardService
 from taichu.application.services.chapter_service import ChapterService
+from taichu.application.services.selection_ai_service import SelectionAIService
 
 
 def provide_agent_registry(request: Request) -> AgentRegistry:
@@ -20,3 +22,13 @@ def provide_storage(request: Request) -> StorageBackend:
 def provide_chapter_service(request: Request) -> ChapterService:
     """返回章节应用服务。"""
     return request.app.state.chapter_service
+
+
+def provide_ai_card_service(request: Request) -> AICardService:
+    """返回 AI 卡片应用服务。"""
+    return request.app.state.ai_card_service
+
+
+def provide_selection_ai_service(request: Request) -> SelectionAIService:
+    """返回选区 AI 应用服务。"""
+    return request.app.state.selection_ai_service

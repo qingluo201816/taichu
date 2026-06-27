@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -13,29 +13,55 @@ import {
   Heading2,
   Italic,
   Loader2,
-  MessageSquare,
   Pilcrow,
   Quote,
   Save,
-  Scissors,
   SeparatorHorizontal,
 } from "lucide-react";
 import Link from "next/link";
 
+import { AICardList } from "@/components/ai-card/ai-card-list";
 import { Button } from "@/components/ui/button";
+import {
+  applyAICardAction,
+  createSelectionAICard,
+  listAICards,
+} from "@/lib/api/ai-cards";
 import { listChapters, readChapter, saveChapter } from "@/lib/api/chapters";
+import {
+  buildTextCandidateEdit,
+  textCandidateContent,
+  type TextCandidatePlacement,
+} from "@/lib/editor/ai-card-actions";
 import {
   markdownToTiptapContent,
   tiptapContentToMarkdown,
 } from "@/lib/editor/markdown";
 import {
+  ChapterSaveCoordinator,
+  ChapterSaveFailedError,
+  isBlockingSaveFailure,
+  isDirtySaveSatisfied,
+  shouldApplySaveOutcome,
+} from "@/lib/editor/save-coordinator";
+import {
   captureSelectionContext,
   type SelectionContext,
 } from "@/lib/editor/selection";
 import type { ChapterInfo } from "@/lib/types/chapters";
+import type {
+  AIResultCard,
+  SelectionMode,
+} from "@/lib/types/ai-cards";
 import { cn } from "@/lib/utils";
 
 type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
+
+type PendingSave = {
+  chapterId: string;
+  editorVersion: number;
+  promise: Promise<boolean>;
+};
 
 export default function EditorShell() {
   const [chapters, setChapters] = useState<ChapterInfo[]>([]);
@@ -43,9 +69,22 @@ export default function EditorShell() {
   const [loading, setLoading] = useState(true);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [selection, setSelection] = useState<SelectionContext | null>(null);
+  const [aiCards, setAICards] = useState<AIResultCard[]>([]);
+  const [aiLoading, setAILoading] = useState(false);
+  const [aiError, setAIError] = useState<string | null>(null);
+  const [aiPrompt, setAIPrompt] = useState("");
+  const [aiMode, setAIMode] = useState<SelectionMode>("ask");
+  const [targetWords, setTargetWords] = useState("200");
   const [error, setError] = useState<string | null>(null);
-  const saveSequence = useRef(0);
+  const chapterSaveCoordinator = useMemo(
+    () => new ChapterSaveCoordinator<ChapterInfo>(saveChapter),
+    [],
+  );
   const activeChapterRef = useRef<ChapterInfo | null>(null);
+  const editorVersionRef = useRef(0);
+  const pendingSaveRef = useRef<PendingSave | null>(null);
+  const savedEditorVersionRef = useRef(0);
+  const settingChapterContentRef = useRef(false);
 
   const editor = useEditor({
     extensions: [
@@ -61,7 +100,13 @@ export default function EditorShell() {
     },
     content: markdownToTiptapContent(""),
     immediatelyRender: false,
-    onUpdate: () => setSaveState("dirty"),
+    onUpdate: () => {
+      if (settingChapterContentRef.current) {
+        return;
+      }
+      editorVersionRef.current += 1;
+      setSaveState("dirty");
+    },
     onSelectionUpdate: ({ editor: nextEditor }) => {
       const chapter = activeChapterRef.current;
       setSelection(chapter ? captureSelectionContext(nextEditor, chapter) : null);
@@ -79,7 +124,14 @@ export default function EditorShell() {
         const response = await readChapter(chapterId);
         activeChapterRef.current = response.chapter;
         setActiveChapter(response.chapter);
-        editor.commands.setContent(markdownToTiptapContent(response.markdown));
+        settingChapterContentRef.current = true;
+        try {
+          editor.commands.setContent(markdownToTiptapContent(response.markdown));
+        } finally {
+          settingChapterContentRef.current = false;
+        }
+        editorVersionRef.current += 1;
+        savedEditorVersionRef.current = editorVersionRef.current;
         setSelection(null);
         setSaveState("saved");
       } catch (loadError) {
@@ -92,47 +144,245 @@ export default function EditorShell() {
     [editor],
   );
 
-  const persistChapter = useCallback(async () => {
-    if (!editor || !activeChapterRef.current) {
-      return;
+  const persistChapter = useCallback(async (): Promise<boolean> => {
+    const chapter = activeChapterRef.current;
+    if (!editor || !chapter) {
+      return true;
     }
-    const sequence = saveSequence.current + 1;
-    saveSequence.current = sequence;
-    setSaveState("saving");
 
-    try {
-      const markdown = tiptapContentToMarkdown(editor.getJSON());
-      const response = await saveChapter(activeChapterRef.current.id, markdown);
-      if (saveSequence.current !== sequence) {
-        return;
-      }
-      activeChapterRef.current = response.chapter;
-      setActiveChapter(response.chapter);
-      setChapters(current =>
-        current.map(chapter =>
-          chapter.id === response.chapter.id ? response.chapter : chapter,
-        ),
-      );
-      setSaveState("saved");
-    } catch (saveError) {
-      if (saveSequence.current === sequence) {
-        setError(saveError instanceof Error ? saveError.message : "保存失败");
-        setSaveState("error");
-      }
+    const editorVersionAtSave = editorVersionRef.current;
+    const pendingSave = pendingSaveRef.current;
+    if (
+      pendingSave?.chapterId === chapter.id &&
+      pendingSave.editorVersion === editorVersionAtSave
+    ) {
+      return pendingSave.promise;
     }
-  }, [editor]);
+
+    const markdown = tiptapContentToMarkdown(editor.getJSON());
+    const operation = (async (): Promise<boolean> => {
+      setError(null);
+      setSaveState("saving");
+
+      try {
+        const outcome = await chapterSaveCoordinator.save(chapter, markdown);
+        if (!outcome.stale) {
+          setChapters(current =>
+            current.map(currentChapter =>
+              currentChapter.id === outcome.chapter.id
+                ? outcome.chapter
+                : currentChapter,
+            ),
+          );
+        }
+
+        const activeChapterId = activeChapterRef.current?.id ?? null;
+        if (!shouldApplySaveOutcome(activeChapterId, outcome)) {
+          return false;
+        }
+
+        activeChapterRef.current = outcome.chapter;
+        setActiveChapter(outcome.chapter);
+
+        if (
+          isDirtySaveSatisfied({
+            activeChapterId,
+            outcome,
+            editorVersionAtSave,
+            currentEditorVersion: editorVersionRef.current,
+          })
+        ) {
+          savedEditorVersionRef.current = editorVersionAtSave;
+          setSaveState("saved");
+          return true;
+        }
+
+        setSaveState("dirty");
+        return false;
+      } catch (saveError) {
+        const activeChapterId = activeChapterRef.current?.id ?? null;
+        if (
+          saveError instanceof ChapterSaveFailedError &&
+          isBlockingSaveFailure(activeChapterId, saveError)
+        ) {
+          setError(saveError.message);
+          setSaveState("error");
+        } else if (!(saveError instanceof ChapterSaveFailedError)) {
+          setError(saveError instanceof Error ? saveError.message : "保存失败");
+          setSaveState("error");
+        }
+        return false;
+      }
+    })();
+
+    pendingSaveRef.current = {
+      chapterId: chapter.id,
+      editorVersion: editorVersionAtSave,
+      promise: operation,
+    };
+    void operation.finally(() => {
+      if (pendingSaveRef.current?.promise === operation) {
+        pendingSaveRef.current = null;
+      }
+    });
+
+    return operation;
+  }, [chapterSaveCoordinator, editor]);
 
   const switchChapter = useCallback(
     async (chapterId: string) => {
       if (activeChapterRef.current?.id === chapterId) {
         return;
       }
-      if (saveState === "dirty") {
-        await persistChapter();
+      if (editorVersionRef.current !== savedEditorVersionRef.current) {
+        const saved = await persistChapter();
+        if (!saved) {
+          return;
+        }
       }
       await loadChapter(chapterId);
     },
-    [loadChapter, persistChapter, saveState],
+    [loadChapter, persistChapter],
+  );
+
+  const upsertAICard = useCallback((card: AIResultCard) => {
+    setAICards(current => {
+      const exists = current.some(currentCard => currentCard.id === card.id);
+      if (!exists) {
+        return [...current, card];
+      }
+      return current.map(currentCard =>
+        currentCard.id === card.id ? card : currentCard,
+      );
+    });
+  }, []);
+
+  const refreshAICards = useCallback(async (chapterId: string) => {
+    const response = await listAICards(chapterId);
+    setAICards(response.cards);
+  }, []);
+
+  const runSelectionAI = useCallback(
+    async (mode: SelectionMode, parentCard?: AIResultCard) => {
+      const chapter = activeChapterRef.current;
+      const sourceRef =
+        parentCard?.input_context.selection_ref ?? selection?.source_ref;
+      const selectionRange =
+        parentCard?.input_context.selection_range ?? selection?.selection_range;
+      const selectedText =
+        parentCard?.input_context.selected_text ?? selection?.selected_text;
+      const surroundingText =
+        parentCard?.input_context.surrounding_text ??
+        selection?.surrounding_text ??
+        "";
+      if (!chapter || !sourceRef || !selectionRange || !selectedText) {
+        setAIError("请先选择正文");
+        return;
+      }
+
+      setAILoading(true);
+      setAIError(null);
+      try {
+        const words =
+          mode === "continue_text"
+            ? positiveIntegerOrNull(
+                parentCard?.input_context.target_words ?? targetWords,
+              )
+            : null;
+        const response = await createSelectionAICard({
+          mode,
+          chapter_id: chapter.id,
+          selected_text: selectedText,
+          surrounding_text: surroundingText,
+          selection_range: selectionRange,
+          source_ref: sourceRef,
+          user_prompt:
+            parentCard?.input_context.user_prompt ?? (aiPrompt.trim() || null),
+          target_words: words,
+          parent_card_id: parentCard?.id,
+        });
+        upsertAICard(response.card);
+        await refreshAICards(chapter.id);
+      } catch (selectionError) {
+        setAIError(
+          selectionError instanceof Error
+            ? selectionError.message
+            : "AI 卡片生成失败",
+        );
+      } finally {
+        setAILoading(false);
+      }
+    },
+    [aiPrompt, refreshAICards, selection, targetWords, upsertAICard],
+  );
+
+  const applyTextCandidate = useCallback(
+    async (card: AIResultCard, placement: TextCandidatePlacement) => {
+      if (!editor) {
+        return;
+      }
+      const edit = buildTextCandidateEdit({
+        card,
+        placement,
+        cursorPosition: editor.state.selection.from,
+      });
+      editor.chain().focus().insertContentAt(
+        { from: edit.from, to: edit.to },
+        edit.text,
+      ).run();
+      try {
+        const response = await applyAICardAction(card.id, "inserted");
+        upsertAICard(response.card);
+      } catch (actionError) {
+        setAIError(
+          actionError instanceof Error ? actionError.message : "卡片状态更新失败",
+        );
+      }
+    },
+    [editor, upsertAICard],
+  );
+
+  const copyTextCandidate = useCallback(async (card: AIResultCard) => {
+    const text = textCandidateContent(card);
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+    }
+  }, []);
+
+  const saveIdea = useCallback(
+    async (card: AIResultCard) => {
+      try {
+        const response = await applyAICardAction(card.id, "save_to_idea");
+        upsertAICard(response.card);
+      } catch (actionError) {
+        setAIError(
+          actionError instanceof Error ? actionError.message : "保存灵感失败",
+        );
+      }
+    },
+    [upsertAICard],
+  );
+
+  const discardAICard = useCallback(
+    async (card: AIResultCard) => {
+      try {
+        const response = await applyAICardAction(card.id, "discard");
+        upsertAICard(response.card);
+      } catch (actionError) {
+        setAIError(
+          actionError instanceof Error ? actionError.message : "丢弃卡片失败",
+        );
+      }
+    },
+    [upsertAICard],
+  );
+
+  const retryAICard = useCallback(
+    (card: AIResultCard) => {
+      const mode = card.input_context.mode ?? aiMode;
+      void runSelectionAI(mode, card);
+    },
+    [aiMode, runSelectionAI],
   );
 
   useEffect(() => {
@@ -171,6 +421,35 @@ export default function EditorShell() {
       cancelled = true;
     };
   }, [editor, loadChapter]);
+
+  const activeChapterId = activeChapter?.id;
+
+  useEffect(() => {
+    if (!activeChapterId) {
+      return;
+    }
+
+    let cancelled = false;
+    async function loadCards() {
+      try {
+        const response = await listAICards(activeChapterId);
+        if (!cancelled) {
+          setAICards(response.cards);
+        }
+      } catch (cardError) {
+        if (!cancelled) {
+          setAIError(
+            cardError instanceof Error ? cardError.message : "AI 卡片加载失败",
+          );
+        }
+      }
+    }
+
+    void loadCards();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeChapterId]);
 
   useEffect(() => {
     if (saveState !== "dirty") {
@@ -314,41 +593,27 @@ export default function EditorShell() {
           </div>
         </section>
 
-        <aside className="border-l-[3px] border-black bg-white px-4 py-5">
-          <div className="mb-5 flex items-center gap-2 text-sm font-semibold text-gray-600">
-            <MessageSquare className="size-4" />
-            AI 卡片
-          </div>
-          <div className="rounded-lg border-2 border-black px-4 py-4">
-            <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-              <Scissors className="size-4" />
-              当前选区
-            </div>
-            {selection ? (
-              <div className="space-y-3 text-sm">
-                <p className="max-h-28 overflow-auto rounded-md bg-gray-50 p-2 leading-6">
-                  {selection.selected_text}
-                </p>
-                <dl className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                  <dt>段落</dt>
-                  <dd>{selection.source_ref.paragraph_start}</dd>
-                  <dt>起止</dt>
-                  <dd>
-                    {selection.source_ref.char_start}-
-                    {selection.source_ref.char_end}
-                  </dd>
-                </dl>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">未选择正文</p>
-            )}
-          </div>
-          <div className="mt-4 rounded-lg border-2 border-dashed border-black px-4 py-4 text-sm text-gray-500">
-            Phase 3 接入
-          </div>
-          <pre className="mt-4 max-h-64 overflow-auto rounded-lg bg-gray-50 p-3 text-xs leading-5 text-gray-600">
-            {selection ? JSON.stringify(selection, null, 2) : "{}"}
-          </pre>
+        <aside className="min-h-0 border-l-[3px] border-black bg-white px-4 py-5">
+          <AICardList
+            cards={aiCards}
+            selection={selection}
+            prompt={aiPrompt}
+            targetWords={targetWords}
+            selectedMode={aiMode}
+            loading={aiLoading}
+            error={aiError}
+            onPromptChange={setAIPrompt}
+            onTargetWordsChange={setTargetWords}
+            onModeChange={setAIMode}
+            onRunSelection={mode => void runSelectionAI(mode)}
+            onApplyText={(card, placement) =>
+              void applyTextCandidate(card, placement)
+            }
+            onCopyText={card => void copyTextCandidate(card)}
+            onSaveIdea={card => void saveIdea(card)}
+            onRetry={retryAICard}
+            onDiscard={card => void discardAICard(card)}
+          />
         </aside>
       </div>
     </main>
@@ -398,4 +663,15 @@ function statusText(saveState: SaveState, loading: boolean): string {
     return "保存失败";
   }
   return "就绪";
+}
+
+function positiveIntegerOrNull(value: unknown): number | null {
+  if (typeof value === "number" && Number.isInteger(value) && value > 0) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  }
+  return null;
 }

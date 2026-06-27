@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:editor": "tsc -p tsconfig.tests.json && node .test-dist/tests/editor/save-coordinator.test.js && node .test-dist/tests/editor/ai-card-actions.test.js"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
