@@ -63,7 +63,7 @@ export function KnowledgeList() {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4">
           <div className="flex items-center gap-4">
             <Link
-              href="/"
+              href="/home"
               className="inline-flex size-10 items-center justify-center rounded-lg border-2 border-black bg-white hover:bg-gray-100"
               aria-label="返回太初"
               title="返回太初"

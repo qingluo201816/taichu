@@ -1,0 +1,39 @@
+{
+  "name": "taichu_frontend_style_taskpack_mvp01",
+  "updated_at": "2026-06-27",
+  "purpose": "MVP0.1 完成后，基于 TAICHU_DESIGN.md 统一太初前端三层设计系统。",
+  "entry_prompt": "CODEX_MASTER_PROMPT.md",
+  "mandatory_first_phase": "02_PHASES/phase_00_design_intake_frontend_audit_style_lock.md",
+  "phase_order": [
+    "02_PHASES/phase_00_design_intake_frontend_audit_style_lock.md",
+    "02_PHASES/phase_01_design_token_foundation.md",
+    "02_PHASES/phase_02_dark_workspace_shell.md",
+    "02_PHASES/phase_03_paper_manuscript_content_layer.md",
+    "02_PHASES/phase_04_cards_inbox_knowledge_ai_surfaces.md",
+    "02_PHASES/phase_05_responsive_accessibility_motion.md",
+    "02_PHASES/phase_06_visual_qa_freeze.md"
+  ],
+  "must_read": [
+    "TAICHU_DESIGN.md",
+    "docs/rule.md",
+    "README.md",
+    "web/package.json",
+    "README.md",
+    "00_CONTEXT/product_context.md",
+    "01_DESIGN_SYSTEM/taichu_design_contract.md",
+    "03_EXECUTION/codex_rules.md",
+    "03_EXECUTION/stop_conditions.md",
+    "03_EXECUTION/evidence_return_template.md"
+  ],
+  "forbidden_paths": [
+    "src/taichu/**",
+    "project_assets/**"
+  ],
+  "primary_paths": [
+    "web/src/app/**",
+    "web/src/components/**",
+    "web/src/lib/**",
+    "web/src/types/**",
+    "docs/**"
+  ]
+}
