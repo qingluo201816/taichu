@@ -197,3 +197,46 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(cards_path.read_text(encoding="utf-8"), original_text)
+
+    async def test_knowledge_json_write_read_and_list(self) -> None:
+        await self.storage.write_knowledge_record(
+            "techniques",
+            "knowledge_001",
+            {"id": "knowledge_001", "status": "confirmed"},
+        )
+
+        self.assertEqual(
+            await self.storage.read_knowledge_record(
+                "techniques",
+                "knowledge_001",
+            ),
+            {"id": "knowledge_001", "status": "confirmed"},
+        )
+        self.assertEqual(
+            await self.storage.list_knowledge_records("techniques"),
+            [{"id": "knowledge_001", "status": "confirmed"}],
+        )
+        self.assertTrue(
+            (
+                self.assets_root
+                / "source"
+                / "knowledge"
+                / "techniques"
+                / "knowledge_001.json"
+            ).exists()
+        )
+
+    async def test_knowledge_json_rejects_unsafe_paths(self) -> None:
+        unsafe_inputs = [
+            ("../escape", "knowledge_001"),
+            ("techniques", "../escape"),
+            ("techniques", "Knowledge 001"),
+        ]
+        for category, knowledge_id in unsafe_inputs:
+            with self.subTest(category=category, knowledge_id=knowledge_id):
+                with self.assertRaises(ValueError):
+                    await self.storage.write_knowledge_record(
+                        category,
+                        knowledge_id,
+                        {"id": knowledge_id},
+                    )

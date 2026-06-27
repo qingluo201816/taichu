@@ -7,6 +7,10 @@ from taichu.application.contracts.storage import StorageBackend
 from taichu.application.services.ai_card_service import AICardService
 from taichu.application.services.chapter_service import ChapterService
 from taichu.application.services.inbox_service import InboxService
+from taichu.application.services.knowledge_service import KnowledgeService
+from taichu.application.services.pending_fact_confirmation_service import (
+    PendingFactConfirmationService,
+)
 from taichu.application.services.selection_ai_service import SelectionAIService
 
 
@@ -38,3 +42,15 @@ def provide_selection_ai_service(request: Request) -> SelectionAIService:
 def provide_inbox_service(request: Request) -> InboxService:
     """返回创作收件箱应用服务。"""
     return request.app.state.inbox_service
+
+
+def provide_knowledge_service(request: Request) -> KnowledgeService:
+    """Return the minimal Knowledge application service."""
+    return request.app.state.knowledge_service
+
+
+def provide_pending_fact_confirmation_service(
+    request: Request,
+) -> PendingFactConfirmationService:
+    """Return the PendingFact author confirmation service."""
+    return request.app.state.pending_fact_confirmation_service

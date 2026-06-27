@@ -6,18 +6,25 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowLeft,
+  Ban,
+  CheckCircle2,
   ExternalLink,
   FileQuestion,
   Inbox,
   Lightbulb,
   Loader2,
+  PencilLine,
   RefreshCw,
   Sparkles,
-  XCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { ignorePendingFact, readInbox } from "@/lib/api/inbox";
+import { readInbox } from "@/lib/api/inbox";
+import {
+  confirmEditedPendingFact,
+  confirmPendingFact,
+  rejectPendingFact,
+} from "@/lib/api/knowledge";
 import type {
   ChapterIssueInfo,
   IdeaCardInfo,
@@ -25,6 +32,7 @@ import type {
   PendingFactInfo,
   SavedAICardInfo,
 } from "@/lib/types/inbox";
+import type { ConfirmEditedPendingFactRequest } from "@/lib/types/knowledge";
 
 type LaneTone = "idea" | "pending" | "ai" | "issue";
 
@@ -39,6 +47,7 @@ export function InboxBoard() {
   const [snapshot, setSnapshot] = useState<InboxResponse>(emptyInbox);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [busyPendingFactId, setBusyPendingFactId] = useState<string | null>(null);
 
   const totals = useMemo(
@@ -87,25 +96,74 @@ export function InboxBoard() {
     };
   }, []);
 
-  const onIgnorePendingFact = useCallback(
+  const removePendingFact = useCallback((pendingFactId: string) => {
+    setSnapshot(current => ({
+      ...current,
+      pending_facts: current.pending_facts.filter(
+        pendingFact => pendingFact.id !== pendingFactId,
+      ),
+    }));
+  }, []);
+
+  const onConfirmPendingFact = useCallback(
     async (pendingFactId: string) => {
       setBusyPendingFactId(pendingFactId);
       setError(null);
+      setMessage(null);
       try {
-        await ignorePendingFact(pendingFactId);
-        setSnapshot(current => ({
-          ...current,
-          pending_facts: current.pending_facts.filter(
-            pendingFact => pendingFact.id !== pendingFactId,
-          ),
-        }));
-      } catch (ignoreError) {
-        setError(ignoreError instanceof Error ? ignoreError.message : "忽略失败");
+        const response = await confirmPendingFact(pendingFactId);
+        removePendingFact(pendingFactId);
+        setMessage(`已确认入库：${response.knowledge_card.name}`);
+      } catch (confirmError) {
+        setError(
+          confirmError instanceof Error ? confirmError.message : "确认入库失败",
+        );
       } finally {
         setBusyPendingFactId(null);
       }
     },
-    [],
+    [removePendingFact],
+  );
+
+  const onConfirmPendingFactWithEdits = useCallback(
+    async (
+      pendingFactId: string,
+      request: ConfirmEditedPendingFactRequest,
+    ) => {
+      setBusyPendingFactId(pendingFactId);
+      setError(null);
+      setMessage(null);
+      try {
+        const response = await confirmEditedPendingFact(pendingFactId, request);
+        removePendingFact(pendingFactId);
+        setMessage(`已编辑确认：${response.knowledge_card.name}`);
+      } catch (confirmError) {
+        setError(
+          confirmError instanceof Error ? confirmError.message : "编辑确认失败",
+        );
+      } finally {
+        setBusyPendingFactId(null);
+      }
+    },
+    [removePendingFact],
+  );
+
+  const onRejectPendingFact = useCallback(
+    async (pendingFactId: string) => {
+      setBusyPendingFactId(pendingFactId);
+      setError(null);
+      setMessage(null);
+      try {
+        await rejectPendingFact(pendingFactId);
+        removePendingFact(pendingFactId);
+        setMessage("已驳回候选设定");
+      } catch (rejectError) {
+        setError(rejectError instanceof Error ? rejectError.message : "驳回失败");
+      } finally {
+        setBusyPendingFactId(null);
+      }
+    },
+    [removePendingFact],
   );
 
   return (
@@ -156,6 +214,11 @@ export function InboxBoard() {
             {error}
           </div>
         ) : null}
+        {message ? (
+          <div className="mb-4 rounded-lg border-2 border-black bg-[#cce7df] px-4 py-3 text-sm font-semibold">
+            {message}
+          </div>
+        ) : null}
 
         <div className="grid gap-4 xl:grid-cols-4">
           <Lane
@@ -182,7 +245,11 @@ export function InboxBoard() {
                 key={pendingFact.id}
                 pendingFact={pendingFact}
                 busy={busyPendingFactId === pendingFact.id}
-                onIgnore={() => void onIgnorePendingFact(pendingFact.id)}
+                onConfirm={() => void onConfirmPendingFact(pendingFact.id)}
+                onConfirmEdited={request =>
+                  void onConfirmPendingFactWithEdits(pendingFact.id, request)
+                }
+                onReject={() => void onRejectPendingFact(pendingFact.id)}
               />
             ))}
           </Lane>
@@ -275,12 +342,50 @@ function IdeaItem({ idea }: { idea: IdeaCardInfo }) {
 function PendingFactItem({
   pendingFact,
   busy,
-  onIgnore,
+  onConfirm,
+  onConfirmEdited,
+  onReject,
 }: {
   pendingFact: PendingFactInfo;
   busy: boolean;
-  onIgnore: () => void;
+  onConfirm: () => void;
+  onConfirmEdited: (request: ConfirmEditedPendingFactRequest) => void;
+  onReject: () => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(pendingFact.title);
+  const [summary, setSummary] = useState(contentText(pendingFact.content));
+  const [aliases, setAliases] = useState("");
+  const [fieldsJson, setFieldsJson] = useState(
+    JSON.stringify(fieldsObject(pendingFact.content), null, 2),
+  );
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  function submitEditedConfirmation() {
+    setLocalError(null);
+    let fields: Record<string, unknown>;
+    try {
+      const parsed = JSON.parse(fieldsJson) as unknown;
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        setLocalError("字段必须是 JSON object");
+        return;
+      }
+      fields = parsed as Record<string, unknown>;
+    } catch {
+      setLocalError("字段 JSON 格式不正确");
+      return;
+    }
+    onConfirmEdited({
+      name: name.trim() || pendingFact.title,
+      summary: summary.trim() || contentText(pendingFact.content),
+      aliases: aliases
+        .split(",")
+        .map(alias => alias.trim())
+        .filter(Boolean),
+      fields,
+    });
+  }
+
   return (
     <InboxItem href={pendingFact.source_href}>
       <div className="space-y-2">
@@ -291,20 +396,83 @@ function PendingFactItem({
         <p className="max-h-28 overflow-auto whitespace-pre-wrap rounded-md bg-gray-50 p-2 text-sm leading-6">
           {contentText(pendingFact.content)}
         </p>
-        <Button
-          type="button"
-          size="sm"
-          onClick={onIgnore}
-          disabled={busy}
-          className="h-8 rounded-full border-2 border-black"
-        >
-          {busy ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <XCircle className="size-4" />
-          )}
-          忽略
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            size="sm"
+            onClick={onConfirm}
+            disabled={busy}
+            className="h-8 rounded-full border-2 border-black"
+          >
+            {busy ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <CheckCircle2 className="size-4" />
+            )}
+            确认
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setEditing(current => !current)}
+            disabled={busy}
+            className="h-8 rounded-full border-2 border-black"
+          >
+            <PencilLine className="size-4" />
+            编辑确认
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={onReject}
+            disabled={busy}
+            className="h-8 rounded-full border-2 border-black"
+          >
+            <Ban className="size-4" />
+            驳回
+          </Button>
+        </div>
+        {editing ? (
+          <div className="space-y-2 border-t-2 border-black pt-3">
+            <input
+              value={name}
+              onChange={event => setName(event.target.value)}
+              className="h-9 w-full rounded-lg border-2 border-black px-2 text-sm outline-none"
+              placeholder="知识名称"
+            />
+            <textarea
+              value={summary}
+              onChange={event => setSummary(event.target.value)}
+              className="min-h-20 w-full resize-y rounded-lg border-2 border-black px-2 py-2 text-sm outline-none"
+              placeholder="确认摘要"
+            />
+            <input
+              value={aliases}
+              onChange={event => setAliases(event.target.value)}
+              className="h-9 w-full rounded-lg border-2 border-black px-2 text-sm outline-none"
+              placeholder="别名，用英文逗号分隔"
+            />
+            <textarea
+              value={fieldsJson}
+              onChange={event => setFieldsJson(event.target.value)}
+              className="min-h-24 w-full resize-y rounded-lg border-2 border-black px-2 py-2 font-mono text-xs outline-none"
+              placeholder="字段 JSON"
+            />
+            {localError ? (
+              <p className="text-xs font-semibold text-red-700">{localError}</p>
+            ) : null}
+            <Button
+              type="button"
+              size="sm"
+              onClick={submitEditedConfirmation}
+              disabled={busy}
+              className="h-8 rounded-full border-2 border-black"
+            >
+              <CheckCircle2 className="size-4" />
+              提交确认
+            </Button>
+          </div>
+        ) : null}
       </div>
       <ItemFooter meta={pendingFact.status} chapterId={chapterFromRefs(pendingFact)} />
     </InboxItem>
@@ -413,6 +581,13 @@ function contentText(content: Record<string, unknown> | string): string {
     return body;
   }
   return JSON.stringify(content, null, 2);
+}
+
+function fieldsObject(content: Record<string, unknown> | string) {
+  if (typeof content === "string") {
+    return { text: content };
+  }
+  return content;
 }
 
 function cardTypeText(type: string): string {
