@@ -4,6 +4,7 @@ import {
   Copy,
   CornerDownLeft,
   FileQuestion,
+  FileText,
   Lightbulb,
   ListPlus,
   Loader2,
@@ -46,6 +47,7 @@ type AICardListProps = {
   onTargetWordsChange: (value: string) => void;
   onModeChange: (mode: SelectionMode) => void;
   onRunSelection: (mode: SelectionMode) => void;
+  onRunChapterSummary: () => void;
   onApplyText: (
     card: AIResultCard,
     placement: "insert_cursor" | "replace_selection" | "append_after_selection",
@@ -69,6 +71,7 @@ export function AICardList({
   onTargetWordsChange,
   onModeChange,
   onRunSelection,
+  onRunChapterSummary,
   onApplyText,
   onCopyText,
   onSaveIdea,
@@ -155,6 +158,15 @@ export function AICardList({
         >
           {loading ? <Loader2 className="size-4 animate-spin" /> : null}
           生成卡片
+        </Button>
+        <Button
+          size="sm"
+          disabled={loading}
+          onClick={onRunChapterSummary}
+          className="w-full rounded-full border-2 border-black bg-white text-black hover:bg-gray-100"
+        >
+          {loading ? <Loader2 className="size-4 animate-spin" /> : <FileText className="size-4" />}
+          整理本章
         </Button>
         {error ? <p className="text-xs font-semibold text-red-700">{error}</p> : null}
       </div>
@@ -336,12 +348,18 @@ function cardTitle(card: AIResultCard): string {
   if (card.type === "pending_fact") {
     return "待确认设定";
   }
+  if (card.type === "chapter_summary") {
+    return "章节整理";
+  }
   return "建议";
 }
 
 function cardContent(card: AIResultCard): string {
   if (typeof card.content === "string") {
     return card.content;
+  }
+  if (card.type === "chapter_summary") {
+    return chapterSummaryContent(card.content);
   }
   const title = card.content.title;
   const body = card.content.body ?? card.content.summary ?? card.content.content;
@@ -352,6 +370,36 @@ function cardContent(card: AIResultCard): string {
     return body;
   }
   return JSON.stringify(card.content, null, 2);
+}
+
+function chapterSummaryContent(content: Record<string, unknown>): string {
+  const lines: string[] = [];
+  const summary = content.summary;
+  if (typeof summary === "string") {
+    lines.push(summary);
+  }
+  const keyEvents = stringArray(content.key_events);
+  if (keyEvents.length) {
+    lines.push(`关键事件\n${keyEvents.map(item => `- ${item}`).join("\n")}`);
+  }
+  const candidates = Array.isArray(content.new_setting_candidates)
+    ? content.new_setting_candidates.length
+    : 0;
+  if (candidates) {
+    lines.push(`待确认设定候选：${candidates} 条`);
+  }
+  const hooks = stringArray(content.next_chapter_hooks);
+  if (hooks.length) {
+    lines.push(`后续钩子\n${hooks.map(item => `- ${item}`).join("\n")}`);
+  }
+  return lines.join("\n\n") || JSON.stringify(content, null, 2);
+}
+
+function stringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((item): item is string => typeof item === "string");
 }
 
 function statusText(status: AIResultCard["status"]): string {
