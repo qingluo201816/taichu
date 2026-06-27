@@ -31,8 +31,7 @@ class ToolRegistry:
         )
         if missing:
             raise ToolRegistrationError(
-                f"Tool '{name}' requires unavailable capabilities: "
-                f"{', '.join(sorted(missing))}"
+                f"工具“{name}”缺少所需能力：{', '.join(sorted(missing))}"
             )
 
         self._plugins[name] = plugin
@@ -64,4 +63,4 @@ class ToolNotFoundError(LookupError):
     """请求的 Tool 不存在。"""
 
     def __init__(self, name: str) -> None:
-        super().__init__(f"Tool '{name}' not found")
+        super().__init__(f"工具“{name}”不存在")

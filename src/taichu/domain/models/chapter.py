@@ -34,9 +34,9 @@ class Chapter(DomainModel):
         """Keep chapter metadata pointed at source Markdown only."""
         normalized = value.replace("\\", "/").lower()
         if "project_assets/generated/" in normalized:
-            raise ValueError("chapter markdown_path must not point to generated")
+            raise ValueError("章节正文路径不能指向派生数据")
         if not normalized.endswith(".md"):
-            raise ValueError("chapter markdown_path must point to Markdown")
+            raise ValueError("章节正文路径必须指向 Markdown 文件")
         return value
 
 

@@ -132,4 +132,4 @@ class PendingFactNotFoundError(LookupError):
     """Raised when a pending fact id is absent from the inbox."""
 
     def __init__(self, pending_fact_id: str) -> None:
-        super().__init__(f"PendingFact '{pending_fact_id}' was not found")
+        super().__init__(f"待确认设定“{pending_fact_id}”不存在")

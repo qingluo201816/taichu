@@ -66,7 +66,7 @@ class KnowledgeService:
     ) -> KnowledgeWriteResult:
         """Write a confirmed KnowledgeCard, or reuse the existing same id."""
         if card.status is not KnowledgeCardStatus.CONFIRMED:
-            raise KnowledgeWriteError("Only confirmed KnowledgeCard can be written")
+            raise KnowledgeWriteError("只有已确认知识可以写入知识库")
         _validate_knowledge_source_refs(card.source_refs)
 
         category = knowledge_category_for_type(card.type)
@@ -118,7 +118,7 @@ def knowledge_category_for_type(card_type: KnowledgeCardType) -> str:
 
 def _validate_knowledge_source_refs(source_refs: list[SourceRef]) -> None:
     if not source_refs:
-        raise KnowledgeSourceRefError("Confirmed Knowledge requires SourceRef evidence")
+        raise KnowledgeSourceRefError("已确认知识必须包含证据来源")
     for source_ref in source_refs:
         validate_source_ref_contract(source_ref)
 

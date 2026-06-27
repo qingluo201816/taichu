@@ -33,13 +33,13 @@ class IndexService:
                 action=IndexBuildJobAction.CLEAR,
                 status=IndexBuildJobStatus.FAILED,
                 created_at=created_at,
-                message=f"generated clear failed: {error}",
+                message=f"清空派生数据失败：{error}",
             )
         return _job(
             action=IndexBuildJobAction.CLEAR,
             status=IndexBuildJobStatus.COMPLETED,
             created_at=created_at,
-            message="generated projections cleared",
+            message="派生检索数据已清空",
         )
 
     async def rebuild_generated_projection(self) -> IndexBuildJob:
@@ -53,13 +53,13 @@ class IndexService:
                 action=IndexBuildJobAction.REBUILD,
                 status=IndexBuildJobStatus.FAILED,
                 created_at=created_at,
-                message=f"generated rebuild failed: {error}",
+                message=f"重建派生检索数据失败：{error}",
             )
         return _job(
             action=IndexBuildJobAction.REBUILD,
             status=IndexBuildJobStatus.COMPLETED,
             created_at=created_at,
-            message="generated retrieval projection rebuilt from source facts",
+            message="已从源资产重建派生检索数据",
         )
 
 

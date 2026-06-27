@@ -102,7 +102,7 @@ class SelectionAIService:
         if parsed is None:
             card_type = AIResultCardType.SUGGESTION
             content: dict[str, Any] | str = {
-                "title": "AI 输出解析失败",
+                "title": "智能助手输出解析失败",
                 "body": "模型没有返回结构化 JSON，本次结果已降级为建议卡。",
                 "raw_text": raw_output,
             }
@@ -160,7 +160,7 @@ def build_selection_prompt(request: SelectionAIRequest) -> str:
     user_prompt = request.user_prompt or ""
     return "\n".join(
         [
-            "你是太初编辑器内的 Selection AI 工作流。",
+            "你是太初编辑器内的选区智能助手工作流。",
             mode_instruction,
             target_line,
             "必须只返回一个 JSON object，不要 Markdown 代码块。",

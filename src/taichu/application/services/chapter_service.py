@@ -103,7 +103,7 @@ class ChapterNotFoundError(LookupError):
     """Raised when a chapter id is absent from the manifest."""
 
     def __init__(self, chapter_id: str) -> None:
-        super().__init__(f"Chapter '{chapter_id}' was not found")
+        super().__init__(f"章节“{chapter_id}”不存在")
 
 
 def _count_non_space(text: str) -> int:

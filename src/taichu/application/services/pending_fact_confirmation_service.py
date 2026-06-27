@@ -35,6 +35,7 @@ _KNOWLEDGE_TYPE_BY_PENDING_TYPE: dict[str, KnowledgeCardType] = {
     "rule": KnowledgeCardType.RULE,
     "event": KnowledgeCardType.EVENT,
     "foreshadow": KnowledgeCardType.FORESHADOW,
+    "other": KnowledgeCardType.RULE,
 }
 
 
@@ -197,7 +198,7 @@ class PendingFactNotFoundError(LookupError):
     """Raised when a PendingFact id is absent from workspace records."""
 
     def __init__(self, pending_fact_id: str) -> None:
-        super().__init__(f"PendingFact '{pending_fact_id}' was not found")
+        super().__init__(f"待确认设定“{pending_fact_id}”不存在")
 
 
 class PendingFactConfirmationError(ValueError):
@@ -253,7 +254,7 @@ def _knowledge_type_for_pending_fact(
         return _KNOWLEDGE_TYPE_BY_PENDING_TYPE[pending_fact.fact_type.value]
     except KeyError as error:
         raise UnsupportedPendingFactTypeError(
-            f"PendingFact type '{pending_fact.fact_type.value}' cannot be confirmed"
+            f"待确认设定类型“{pending_fact.fact_type.value}”暂不能确认入库"
         ) from error
 
 

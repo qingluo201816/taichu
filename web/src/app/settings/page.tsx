@@ -69,31 +69,31 @@ export default function SettingsPage() {
       <BackButton />
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 pt-12">
         <header className="border-b-2 border-black pb-4">
-          <p className="mb-2 text-sm font-semibold text-zinc-600">Settings</p>
+          <p className="mb-2 text-sm font-semibold text-zinc-600">设置</p>
           <h1 className="text-3xl font-bold">导出与重建</h1>
         </header>
 
         <section className="grid gap-4 md:grid-cols-3">
           <ActionPanel
             title="导出"
-            detail="Markdown · Knowledge JSON · workspace JSONL · metadata"
-            buttonLabel="导出 bundle"
+            detail="导出章节正文、已确认知识、工作区记录与元数据"
+            buttonLabel="导出资料包"
             loading={loading === "export"}
             icon={<Download className="size-4" />}
             onClick={exportBundle}
           />
           <ActionPanel
             title="重建"
-            detail="清空 generated 后从 source 重建检索 projection"
-            buttonLabel="重建 generated"
+            detail="清空派生数据后，从源资产重建检索投影"
+            buttonLabel="重建派生数据"
             loading={loading === "rebuild"}
             icon={<RefreshCcw className="size-4" />}
             onClick={rebuildGenerated}
           />
           <ActionPanel
             title="清理"
-            detail="只清空 generated，不触碰 source 用户资产"
-            buttonLabel="清空 generated"
+            detail="只清空派生数据，不触碰源资产"
+            buttonLabel="清空派生数据"
             loading={loading === "clear"}
             icon={<Trash2 className="size-4" />}
             onClick={clearGenerated}
@@ -111,10 +111,10 @@ export default function SettingsPage() {
             <h2 className="text-lg font-bold">最近任务</h2>
             <dl className="mt-3 grid gap-2 text-sm md:grid-cols-2">
               <dt className="font-semibold">动作</dt>
-              <dd>{job.action}</dd>
+              <dd>{jobActionText(job.action)}</dd>
               <dt className="font-semibold">状态</dt>
-              <dd>{job.status}</dd>
-              <dt className="font-semibold">路径</dt>
+              <dd>{jobStatusText(job.status)}</dd>
+              <dt className="font-semibold">派生数据路径</dt>
               <dd>{job.generated_path}</dd>
               <dt className="font-semibold">结果</dt>
               <dd>{job.message}</dd>
@@ -130,7 +130,7 @@ export default function SettingsPage() {
                 <p className="text-sm text-zinc-500">{bundle.id}</p>
               </div>
               <span className="rounded-full border-2 border-black px-3 py-1 text-xs font-semibold">
-                {bundle.files.length} files
+                {bundle.files.length} 个文件
               </span>
             </div>
             <div className="mt-4 grid gap-2">
@@ -140,7 +140,9 @@ export default function SettingsPage() {
                   className="flex flex-wrap items-center justify-between gap-2 rounded-md border-2 border-black px-3 py-2 text-sm"
                 >
                   <span className="break-all font-semibold">{file.path}</span>
-                  <span className="text-xs text-zinc-500">{file.media_type}</span>
+                  <span className="text-xs text-zinc-500">
+                    {mediaTypeText(file.media_type)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -149,6 +151,31 @@ export default function SettingsPage() {
       </div>
     </main>
   );
+}
+
+function jobActionText(action: string): string {
+  const labels: Record<string, string> = {
+    clear: "清空派生数据",
+    rebuild: "重建派生数据",
+  };
+  return labels[action] ?? "任务";
+}
+
+function jobStatusText(status: string): string {
+  const labels: Record<string, string> = {
+    completed: "已完成",
+    failed: "失败",
+  };
+  return labels[status] ?? "处理中";
+}
+
+function mediaTypeText(mediaType: string): string {
+  const labels: Record<string, string> = {
+    "application/json": "JSON 文件",
+    "text/markdown": "Markdown 文件",
+    "text/plain": "文本文件",
+  };
+  return labels[mediaType] ?? "文件";
 }
 
 function ActionPanel({

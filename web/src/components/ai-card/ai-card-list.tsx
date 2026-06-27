@@ -83,7 +83,7 @@ export function AICardList({
     <div className="flex h-full flex-col">
       <div className="mb-5 flex items-center gap-2 text-sm font-semibold text-gray-600">
         <MessageSquare className="size-4" />
-        AI 卡片
+        智能助手卡片
       </div>
 
       <div className="rounded-lg border-2 border-black px-4 py-4">
@@ -139,7 +139,7 @@ export function AICardList({
           value={prompt}
           onChange={event => onPromptChange(event.target.value)}
           className="min-h-20 w-full resize-none rounded-lg border-2 border-black bg-white px-3 py-2 text-sm outline-none focus:bg-[#fffefc]"
-          placeholder="给 AI 的一句话"
+          placeholder="给智能助手的一句话"
         />
         {selectedMode === "continue_text" ? (
           <input

@@ -11,12 +11,12 @@ import {
 const modules = [
   {
     title: "进入编辑器",
-    description: "当前章节写作、选区 AI、章节整理",
+    description: "当前章节写作、选区智能助手、章节整理",
     href: "/editor",
     size: "lg",
   },
   {
-    title: "Agent Chat",
+    title: "智能对话",
     description: "带来源的深度创作对话",
     href: "/chat",
     size: "sm",
@@ -35,7 +35,7 @@ const modules = [
   },
   {
     title: "导出与重建",
-    description: "导出 source，重建 generated",
+    description: "导出源资产，重建派生检索数据",
     href: "/settings",
     size: "sm",
   },
@@ -50,7 +50,7 @@ export default function Home() {
             太初
           </h1>
           <p className="mt-3 text-lg text-zinc-500 dark:text-zinc-400">
-            玄幻小说 AI 写作助手
+            玄幻小说智能写作助手
           </p>
         </header>
 

@@ -15,7 +15,7 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     const detail = await response.text();
-    throw new Error(detail || `API request failed: ${response.status}`);
+    throw new Error(detail || `接口请求失败：${response.status}`);
   }
 
   return (await response.json()) as T;

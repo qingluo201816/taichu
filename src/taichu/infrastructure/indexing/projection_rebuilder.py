@@ -283,9 +283,9 @@ class SqliteProjectionRebuilder:
         path = (self._source_root / Path(*pure_path.parts)).resolve()
         source_root = self._source_root.resolve()
         if not path.is_relative_to(source_root):
-            raise ValueError("source path must stay inside source root")
+            raise ValueError("源资产路径必须位于源资产目录内")
         if "generated" in path.parts:
-            raise ValueError("source path must not point to generated assets")
+            raise ValueError("源资产路径不能指向派生数据")
         return path
 
 
