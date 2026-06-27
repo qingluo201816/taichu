@@ -28,7 +28,7 @@ manifest = AgentManifest(
     description="与太初助手进行对话，讨论当前玄幻小说的创作",
     input_schema=ChatAgentInput,
     output_schema=ChatAgentOutput,
-    required_capabilities=frozenset({"llm"}),
+    required_capabilities=frozenset({"llm", "retrieval"}),
     exposures=frozenset({"api", "ui", "mcp"}),
     supports_streaming=False,
 )
