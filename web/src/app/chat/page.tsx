@@ -84,16 +84,16 @@ export default function ChatPage() {
           <div>
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-zinc-600">
               <Sparkles className="size-4" />
-              Agent Chat
+              智能对话
             </div>
             <h1 className="text-3xl font-bold">对话写作</h1>
           </div>
           <div className="flex flex-wrap gap-2 text-xs font-semibold text-zinc-600">
             <span className="rounded-full border-2 border-black bg-white px-3 py-1">
-              AIResultCard
+              回复保存为结果卡片
             </span>
             <span className="rounded-full border-2 border-black bg-white px-3 py-1">
-              fact_scope
+              仅使用正式事实范围
             </span>
           </div>
         </header>
@@ -169,7 +169,7 @@ export default function ChatPage() {
                     <h2 className="text-xl font-bold">太初回复</h2>
                   </div>
                   <span className="rounded-full border-2 border-black px-3 py-1 text-xs font-semibold">
-                    {result.card.status}
+                    {cardStatusText(result.card.status)}
                   </span>
                 </div>
                 <div className="whitespace-pre-wrap text-sm leading-7">
@@ -185,7 +185,7 @@ export default function ChatPage() {
                           className="rounded-md border-2 border-black p-3 text-xs"
                         >
                           <p className="font-semibold">
-                            S{index + 1} · {sourceRef.source_type} ·{" "}
+                            来源 {index + 1} · {sourceTypeText(sourceRef.source_type)} ·{" "}
                             {sourceRef.source_id}
                           </p>
                           <p className="mt-1 break-all text-zinc-500">
@@ -210,6 +210,26 @@ export default function ChatPage() {
       </div>
     </main>
   );
+}
+
+function cardStatusText(status: string): string {
+  const labels: Record<string, string> = {
+    generated: "待处理",
+    inserted: "已插入正文",
+    saved_to_inbox: "已保存到收件箱",
+    converted_to_pending_fact: "已转为待确认设定",
+    discarded: "已丢弃",
+    retried: "已重试",
+  };
+  return labels[status] ?? "待处理";
+}
+
+function sourceTypeText(sourceType: string): string {
+  const labels: Record<string, string> = {
+    chapter: "正文",
+    knowledge: "已确认知识",
+  };
+  return labels[sourceType] ?? "来源";
 }
 
 function ToggleRow({

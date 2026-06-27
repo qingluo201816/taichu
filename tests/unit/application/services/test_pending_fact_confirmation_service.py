@@ -151,6 +151,27 @@ class PendingFactConfirmationServiceTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(result.knowledge_card.source_refs, pending_fact.source_refs)
 
+    async def test_confirm_other_pending_fact_uses_rule_knowledge_type(
+        self,
+    ) -> None:
+        pending_fact = _pending_fact(fact_type=PendingFactType.OTHER)
+        await self._append_pending_fact(pending_fact)
+
+        result = await self.confirmation_service.confirm_pending_fact(
+            pending_fact.id
+        )
+
+        self.assertEqual(result.pending_fact.status, PendingFactStatus.CONFIRMED)
+        self.assertEqual(result.knowledge_card.type, KnowledgeCardType.RULE)
+        knowledge_path = (
+            self.assets_root
+            / "source"
+            / "knowledge"
+            / "worldbuilding"
+            / f"{result.knowledge_card.id}.json"
+        )
+        self.assertTrue(knowledge_path.exists())
+
     async def test_confirm_edited_cannot_override_original_source_refs(
         self,
     ) -> None:
@@ -210,11 +231,12 @@ def _pending_fact(
     *,
     pending_fact_id: str = "pending_fact_001",
     title: str = "Taichu sword intent",
+    fact_type: PendingFactType = PendingFactType.TECHNIQUE,
     source_refs: list[SourceRef] | None = None,
 ) -> PendingFact:
     return PendingFact(
         id=pending_fact_id,
-        fact_type=PendingFactType.TECHNIQUE,
+        fact_type=fact_type,
         title=title,
         content={"rule": "heart fire reveals the sword path"},
         proposed_by=ProposedBy.AI,

@@ -80,7 +80,7 @@ class AICardService:
         """Mark a text candidate card as inserted into the manuscript."""
         card = await self.get_card(card_id)
         if card.type is not AIResultCardType.TEXT_CANDIDATE:
-            raise InvalidCardActionError("Only text candidate cards can be inserted")
+            raise InvalidCardActionError("只有正文候选卡片可以插入正文")
         return await self._transition_card(card, AIResultCardStatus.INSERTED)
 
     async def discard_card(self, card_id: str) -> AIResultCard:
@@ -100,12 +100,12 @@ class AICardService:
         """Persist a suggestion card as a non-fact creative IdeaCard."""
         card = await self.get_card(card_id)
         if card.type is not AIResultCardType.SUGGESTION:
-            raise InvalidCardActionError("Only suggestion cards can be saved as ideas")
+            raise InvalidCardActionError("只有建议卡片可以保存为灵感")
         existing_idea = await self._find_idea_by_source_card(card.id)
         if card.status is AIResultCardStatus.SAVED_TO_INBOX:
             if existing_idea is None:
                 raise InvalidCardActionError(
-                    "Saved card is missing its idea inbox record"
+                    "已保存卡片缺少对应的灵感收件箱记录"
                 )
             return SaveIdeaResult(card=card, idea=existing_idea)
 
@@ -142,20 +142,20 @@ class AICardService:
         card = await self.get_card(card_id)
         if card.type is not AIResultCardType.PENDING_FACT:
             raise InvalidCardActionError(
-                "Only pending fact cards can be converted to pending facts"
+                "只有待确认设定卡片可以转入待确认设定"
             )
         assert_ai_card_transition_allowed(
             card.status,
             AIResultCardStatus.CONVERTED_TO_PENDING_FACT,
         )
         if not isinstance(card.content, dict):
-            raise InvalidCardActionError("Pending fact card content must be an object")
+            raise InvalidCardActionError("待确认设定卡片内容必须是结构化对象")
         pending_fact = PendingFact.model_validate(card.content)
         existing_pending_fact = await self._find_pending_fact(pending_fact.id)
         if card.status is AIResultCardStatus.CONVERTED_TO_PENDING_FACT:
             if existing_pending_fact is None:
                 raise InvalidCardActionError(
-                    "Converted card is missing its pending fact inbox record"
+                    "已转换卡片缺少对应的待确认设定收件箱记录"
                 )
             return ConvertPendingFactResult(
                 card=card,
@@ -240,7 +240,7 @@ class AICardNotFoundError(LookupError):
     """Raised when an AIResultCard id is absent from the workspace record."""
 
     def __init__(self, card_id: str) -> None:
-        super().__init__(f"AIResultCard '{card_id}' was not found")
+        super().__init__(f"智能助手结果卡片“{card_id}”不存在")
 
 
 class InvalidCardActionError(ValueError):

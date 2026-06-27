@@ -272,14 +272,14 @@ class ChapterSummaryNotFoundError(LookupError):
     """Raised when a chapter summary id is absent from workspace records."""
 
     def __init__(self, summary_id: str) -> None:
-        super().__init__(f"ChapterSummary '{summary_id}' was not found")
+        super().__init__(f"章节整理记录“{summary_id}”不存在")
 
 
 class SummaryCandidateNotFoundError(LookupError):
     """Raised when a candidate id is absent from a summary."""
 
     def __init__(self, pending_fact_id: str) -> None:
-        super().__init__(f"Summary candidate '{pending_fact_id}' was not found")
+        super().__init__(f"章节整理候选“{pending_fact_id}”不存在")
 
 
 def _parse_summary_output(raw_output: str, markdown: str) -> SummaryWorkflowOutput:

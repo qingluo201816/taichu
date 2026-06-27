@@ -315,7 +315,7 @@ export default function EditorShell() {
         setAIError(
           selectionError instanceof Error
             ? selectionError.message
-            : "AI 卡片生成失败",
+            : "智能助手卡片生成失败",
         );
       } finally {
         setAILoading(false);
@@ -497,7 +497,9 @@ export default function EditorShell() {
       } catch (cardError) {
         if (!cancelled) {
           setAIError(
-            cardError instanceof Error ? cardError.message : "AI 卡片加载失败",
+            cardError instanceof Error
+              ? cardError.message
+              : "智能助手卡片加载失败",
           );
         }
       }

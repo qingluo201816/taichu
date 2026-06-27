@@ -73,7 +73,7 @@ export function KnowledgeList() {
             <div>
               <div className="flex items-center gap-2 text-xs font-semibold uppercase text-gray-500">
                 <BookOpenCheck className="size-4" />
-                fact_scope / confirmed knowledge
+                正式事实范围 / 已确认知识
               </div>
               <h1 className="mt-1 text-2xl font-semibold">知识库</h1>
             </div>
@@ -129,11 +129,11 @@ function KnowledgeCardItem({ card }: { card: KnowledgeCardInfo }) {
         <div>
           <p className="text-lg font-semibold">{card.name}</p>
           <p className="text-xs font-semibold uppercase text-gray-500">
-            {card.type} / {card.status}
+            {knowledgeTypeText(card.type)} / {knowledgeStatusText(card.status)}
           </p>
         </div>
         <span className="rounded-full border-2 border-black bg-[#cce7df] px-2 py-0.5 text-xs font-semibold">
-          fact
+          正式事实
         </span>
       </div>
       <p className="whitespace-pre-wrap text-sm leading-6">{card.summary}</p>
@@ -152,10 +152,33 @@ function KnowledgeCardItem({ card }: { card: KnowledgeCardInfo }) {
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t-2 border-black pt-2 text-xs text-gray-500">
         <span className="inline-flex items-center gap-1">
           <FileText className="size-3" />
-          SourceRef {card.source_refs.length}
+          证据来源 {card.source_refs.length}
         </span>
-        <span>{card.id}</span>
+        <span>知识编号：{card.id}</span>
       </div>
     </article>
   );
+}
+
+function knowledgeTypeText(type: string): string {
+  const labels: Record<string, string> = {
+    character: "人物",
+    realm: "境界",
+    technique: "功法",
+    location: "地点",
+    faction: "势力",
+    item: "物品",
+    rule: "规则/设定",
+    event: "事件",
+    foreshadow: "伏笔",
+  };
+  return labels[type] ?? "设定";
+}
+
+function knowledgeStatusText(status: string): string {
+  const labels: Record<string, string> = {
+    confirmed: "已确认",
+    archived: "已归档",
+  };
+  return labels[status] ?? "已确认";
 }

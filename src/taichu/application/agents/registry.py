@@ -31,8 +31,7 @@ class AgentRegistry:
         )
         if missing:
             raise AgentRegistrationError(
-                f"Agent '{name}' requires unavailable capabilities: "
-                f"{', '.join(sorted(missing))}"
+                f"智能体“{name}”缺少所需能力：{', '.join(sorted(missing))}"
             )
 
         self._plugins[name] = plugin
@@ -69,14 +68,14 @@ class DuplicateAgentError(AgentRegistrationError):
     """Agent 名称重复。"""
 
     def __init__(self, name: str) -> None:
-        super().__init__(f"Agent '{name}' is already registered")
+        super().__init__(f"智能体“{name}”已经注册")
 
 
 class AgentNotFoundError(LookupError):
     """请求的 Agent 不存在。"""
 
     def __init__(self, name: str, available: list[str]) -> None:
-        choices = ", ".join(available) or "none"
+        choices = ", ".join(available) or "无"
         super().__init__(
-            f"Agent '{name}' not found. Available agents: {choices}"
+            f"智能体“{name}”不存在。当前可用智能体：{choices}"
         )

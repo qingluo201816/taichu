@@ -128,7 +128,7 @@ def main() -> None:
         "taichu.main:app",
         host=settings.host,
         port=settings.port,
-        reload=True,
+        reload=False,
     )
 
 

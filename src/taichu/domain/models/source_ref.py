@@ -58,41 +58,37 @@ class SourceRef(DomainModel):
         """Validate the local SourceRef shape without reading storage."""
         normalized_path = self.path.replace("\\", "/").lower()
         if "project_assets/generated/" in normalized_path:
-            raise ValueError("SourceRef must not point to generated assets")
+            raise ValueError("证据来源不能指向派生数据目录")
         if normalized_path.endswith(".db") or "/sqlite/" in normalized_path:
-            raise ValueError("SourceRef must not point to SQLite rows/files")
+            raise ValueError("证据来源不能指向 SQLite 行或数据库文件")
 
         if self.anchor_type is SourceAnchorType.PARAGRAPH:
             if self.paragraph_start is None:
-                raise ValueError("paragraph anchor requires paragraph_start")
+                raise ValueError("段落证据来源必须包含段落位置")
         if self.anchor_type is SourceAnchorType.PARAGRAPH_RANGE:
             if self.paragraph_start is None or self.paragraph_end is None:
-                raise ValueError(
-                    "paragraph_range anchor requires start and end"
-                )
+                raise ValueError("段落范围证据来源必须包含起止段落")
             if self.paragraph_end < self.paragraph_start:
-                raise ValueError("paragraph_end must be >= paragraph_start")
+                raise ValueError("结束段落不能早于起始段落")
         if self.anchor_type is SourceAnchorType.KNOWLEDGE_FIELD:
             if not self.field_path:
-                raise ValueError("knowledge_field anchor requires field_path")
+                raise ValueError("知识字段证据来源必须包含字段路径")
             if self.source_type is not SourceRefSourceType.KNOWLEDGE:
-                raise ValueError(
-                    "knowledge_field anchor requires knowledge source_type"
-                )
+                raise ValueError("知识字段证据来源必须指向知识文件")
         if self.anchor_type is SourceAnchorType.CARD:
             if self.source_type not in {
                 SourceRefSourceType.WORKSPACE,
                 SourceRefSourceType.AI_CARD,
                 SourceRefSourceType.SUMMARY,
             }:
-                raise ValueError("card anchor requires workspace-like source")
+                raise ValueError("卡片证据来源必须指向工作区资产")
 
         if self.char_start is not None or self.char_end is not None:
             if self.paragraph_start is None:
-                raise ValueError("char offsets require paragraph_start")
+                raise ValueError("选区偏移必须同时包含段落位置")
             if self.char_start is None or self.char_end is None:
-                raise ValueError("char offsets require both start and end")
+                raise ValueError("选区偏移必须同时包含起止位置")
             if self.char_end < self.char_start:
-                raise ValueError("char_end must be >= char_start")
+                raise ValueError("选区结束位置不能早于起始位置")
 
         return self

@@ -182,7 +182,7 @@ export function InboxBoard() {
             <div>
               <div className="flex items-center gap-2 text-xs font-semibold uppercase text-gray-500">
                 <Inbox className="size-4" />
-                workspace_scope / non_fact
+                工作区范围 / 非事实
               </div>
               <h1 className="mt-1 text-2xl font-semibold">创作收件箱</h1>
             </div>
@@ -255,7 +255,7 @@ export function InboxBoard() {
           </Lane>
 
           <Lane
-            title="已保存 AI 卡片"
+            title="已保存智能助手卡片"
             count={snapshot.saved_ai_cards.length}
             icon={<Sparkles className="size-4" />}
             tone="ai"
@@ -332,7 +332,7 @@ function IdeaItem({ idea }: { idea: IdeaCardInfo }) {
     <InboxItem href={idea.source_href}>
       <p className="whitespace-pre-wrap text-sm leading-6">{idea.content}</p>
       <ItemFooter
-        meta={`${idea.source} / ${idea.status}`}
+        meta={`${ideaSourceText(idea.source)} / ${ideaStatusText(idea.status)}`}
         chapterId={idea.linked_chapter_id}
       />
     </InboxItem>
@@ -391,7 +391,9 @@ function PendingFactItem({
       <div className="space-y-2">
         <div>
           <p className="text-sm font-semibold">{pendingFact.title}</p>
-          <p className="text-xs text-gray-500">{pendingFact.fact_type}</p>
+          <p className="text-xs text-gray-500">
+            {pendingFactTypeText(pendingFact.fact_type)}
+          </p>
         </div>
         <p className="max-h-28 overflow-auto whitespace-pre-wrap rounded-md bg-gray-50 p-2 text-sm leading-6">
           {contentText(pendingFact.content)}
@@ -474,7 +476,10 @@ function PendingFactItem({
           </div>
         ) : null}
       </div>
-      <ItemFooter meta={pendingFact.status} chapterId={chapterFromRefs(pendingFact)} />
+      <ItemFooter
+        meta={pendingFactStatusText(pendingFact.status)}
+        chapterId={chapterFromRefs(pendingFact)}
+      />
     </InboxItem>
   );
 }
@@ -488,7 +493,7 @@ function SavedAICardItem({ card }: { card: SavedAICardInfo }) {
           {contentText(card.content)}
         </p>
       </div>
-      <ItemFooter meta={card.status} chapterId={card.chapter_id} />
+      <ItemFooter meta={aiCardStatusText(card.status)} chapterId={card.chapter_id} />
     </InboxItem>
   );
 }
@@ -502,7 +507,10 @@ function ChapterIssueItem({ issue }: { issue: ChapterIssueInfo }) {
           {issue.description || "未填写描述"}
         </p>
       </div>
-      <ItemFooter meta={`${issue.source} / ${issue.status}`} chapterId={issue.chapter_id} />
+      <ItemFooter
+        meta={`${issueSourceText(issue.source)} / ${chapterIssueStatusText(issue.status)}`}
+        chapterId={issue.chapter_id}
+      />
     </InboxItem>
   );
 }
@@ -518,10 +526,10 @@ function InboxItem({
     <article className="rounded-lg border-2 border-black bg-white px-3 py-3">
       <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase">
         <span className="rounded-full border-2 border-black px-2 py-0.5">
-          workspace_scope
+          工作区范围
         </span>
         <span className="rounded-full border-2 border-black bg-gray-100 px-2 py-0.5">
-          non_fact
+          非事实
         </span>
         {href ? (
           <Link
@@ -548,7 +556,7 @@ function ItemFooter({
   return (
     <div className="mt-3 flex flex-wrap justify-between gap-2 border-t-2 border-black pt-2 text-xs text-gray-500">
       <span>{meta}</span>
-      {chapterId ? <span>{chapterId}</span> : null}
+      {chapterId ? <span>{chapterLabel(chapterId)}</span> : null}
     </div>
   );
 }
@@ -601,6 +609,95 @@ function cardTypeText(type: string): string {
     return "正文候选卡片";
   }
   return type;
+}
+
+function pendingFactTypeText(type: string): string {
+  const labels: Record<string, string> = {
+    character: "人物",
+    realm: "境界",
+    technique: "功法",
+    location: "地点",
+    faction: "势力",
+    item: "物品",
+    rule: "规则/设定",
+    event: "事件",
+    foreshadow: "伏笔",
+    other: "其他设定",
+  };
+  return labels[type] ?? "其他设定";
+}
+
+function pendingFactStatusText(status: string): string {
+  const labels: Record<string, string> = {
+    pending: "待确认",
+    confirmed: "已确认",
+    edited_confirmed: "已编辑确认",
+    ignored: "已驳回",
+  };
+  return labels[status] ?? "待确认";
+}
+
+function aiCardStatusText(status: string): string {
+  const labels: Record<string, string> = {
+    generated: "待处理",
+    inserted: "已插入正文",
+    saved_to_inbox: "已保存到收件箱",
+    converted_to_pending_fact: "已转为待确认设定",
+    discarded: "已丢弃",
+    retried: "已重试",
+  };
+  return labels[status] ?? "待处理";
+}
+
+function ideaSourceText(source: string): string {
+  if (source === "ai") {
+    return "智能助手建议";
+  }
+  if (source === "author") {
+    return "作者记录";
+  }
+  return "来源未知";
+}
+
+function ideaStatusText(status: string): string {
+  if (status === "open") {
+    return "待处理";
+  }
+  if (status === "archived") {
+    return "已归档";
+  }
+  return "待处理";
+}
+
+function issueSourceText(source: string): string {
+  if (source === "ai") {
+    return "智能助手发现";
+  }
+  if (source === "author") {
+    return "作者记录";
+  }
+  return "来源未知";
+}
+
+function chapterIssueStatusText(status: string): string {
+  if (status === "open") {
+    return "待处理";
+  }
+  if (status === "resolved") {
+    return "已解决";
+  }
+  if (status === "ignored") {
+    return "已忽略";
+  }
+  return "待处理";
+}
+
+function chapterLabel(chapterId: string): string {
+  const match = /^chapter_(\d+)$/.exec(chapterId);
+  if (!match) {
+    return `章节：${chapterId}`;
+  }
+  return `第 ${Number(match[1])} 章`;
 }
 
 function chapterFromRefs(pendingFact: PendingFactInfo): string | null {

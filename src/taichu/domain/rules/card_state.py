@@ -51,8 +51,7 @@ def assert_ai_card_transition_allowed(
         return
     if target not in _AI_CARD_TRANSITIONS[current]:
         raise InvalidStateTransitionError(
-            f"AIResultCard status cannot transition from "
-            f"{current.value} to {target.value}"
+            f"智能助手结果卡片状态不能从“{current.value}”变更为“{target.value}”"
         )
 
 
@@ -65,6 +64,5 @@ def assert_pending_fact_transition_allowed(
         return
     if target not in _PENDING_FACT_TRANSITIONS[current]:
         raise InvalidStateTransitionError(
-            f"PendingFact status cannot transition from "
-            f"{current.value} to {target.value}"
+            f"待确认设定状态不能从“{current.value}”变更为“{target.value}”"
         )
