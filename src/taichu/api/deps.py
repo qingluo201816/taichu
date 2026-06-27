@@ -5,6 +5,9 @@ from fastapi import Request
 from taichu.application.agents.registry import AgentRegistry
 from taichu.application.contracts.storage import StorageBackend
 from taichu.application.services.ai_card_service import AICardService
+from taichu.application.services.chapter_summary_service import (
+    ChapterSummaryService,
+)
 from taichu.application.services.chapter_service import ChapterService
 from taichu.application.services.inbox_service import InboxService
 from taichu.application.services.knowledge_service import KnowledgeService
@@ -27,6 +30,11 @@ def provide_storage(request: Request) -> StorageBackend:
 def provide_chapter_service(request: Request) -> ChapterService:
     """返回章节应用服务。"""
     return request.app.state.chapter_service
+
+
+def provide_chapter_summary_service(request: Request) -> ChapterSummaryService:
+    """Return the chapter summary application service."""
+    return request.app.state.chapter_summary_service
 
 
 def provide_ai_card_service(request: Request) -> AICardService:

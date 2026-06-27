@@ -27,7 +27,12 @@ import {
   createSelectionAICard,
   listAICards,
 } from "@/lib/api/ai-cards";
-import { listChapters, readChapter, saveChapter } from "@/lib/api/chapters";
+import {
+  listChapters,
+  readChapter,
+  saveChapter,
+  summarizeChapter,
+} from "@/lib/api/chapters";
 import { convertAICardToPendingFact } from "@/lib/api/inbox";
 import {
   buildTextCandidateEdit,
@@ -394,6 +399,37 @@ export default function EditorShell() {
     [upsertAICard],
   );
 
+  const runChapterSummary = useCallback(async () => {
+    const chapter = activeChapterRef.current;
+    if (!chapter) {
+      setAIError("请先打开章节");
+      return;
+    }
+    if (editorVersionRef.current !== savedEditorVersionRef.current) {
+      const saved = await persistChapter();
+      if (!saved) {
+        setAIError("请先保存当前章节");
+        return;
+      }
+    }
+
+    setAILoading(true);
+    setAIError(null);
+    try {
+      const response = await summarizeChapter(chapter.id);
+      upsertAICard(response.card);
+      await refreshAICards(chapter.id);
+    } catch (summaryError) {
+      setAIError(
+        summaryError instanceof Error
+          ? summaryError.message
+          : "章节整理失败",
+      );
+    } finally {
+      setAILoading(false);
+    }
+  }, [persistChapter, refreshAICards, upsertAICard]);
+
   const retryAICard = useCallback(
     (card: AIResultCard) => {
       const mode = card.input_context.mode ?? aiMode;
@@ -628,6 +664,7 @@ export default function EditorShell() {
             onTargetWordsChange={setTargetWords}
             onModeChange={setAIMode}
             onRunSelection={mode => void runSelectionAI(mode)}
+            onRunChapterSummary={() => void runChapterSummary()}
             onApplyText={(card, placement) =>
               void applyTextCandidate(card, placement)
             }
