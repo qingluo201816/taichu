@@ -12,7 +12,7 @@ from taichu.main import create_app
 
 
 class AgentApiTest(unittest.IsolatedAsyncioTestCase):
-    """验证 Agent 发现、注册和 API 调用链路。"""
+    """验证 Agent manifest API，旧 /api/chat 不再作为产品入口保留。"""
 
     async def asyncSetUp(self) -> None:
         app = create_app(
@@ -38,22 +38,10 @@ class AgentApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(agent["exposures"], ["api", "mcp", "ui"])
         self.assertFalse(agent["supports_streaming"])
 
-    async def test_chat_invokes_registered_agent(self) -> None:
+    async def test_legacy_chat_endpoint_is_removed(self) -> None:
         response = await self.client.post(
             "/api/chat",
             json={"agent": "chat", "message": "你好"},
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.json(),
-            {"agent": "chat", "response": "测试回复"},
-        )
-
-    async def test_chat_unknown_agent_returns_404(self) -> None:
-        response = await self.client.post(
-            "/api/chat",
-            json={"agent": "missing", "message": "你好"},
         )
 
         self.assertEqual(response.status_code, 404)

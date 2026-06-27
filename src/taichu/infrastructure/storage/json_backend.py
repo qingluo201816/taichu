@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 import json
 import re
 from pathlib import Path
@@ -26,7 +27,7 @@ class JsonStorageBackend:
         """读取单条 JSON 数据。"""
         return await asyncio.to_thread(self._get_sync, collection, key)
 
-    async def list(self, collection: str) -> list[StorageData]:
+    async def list(self, collection: str) -> builtins.list[StorageData]:
         """列出集合内的 JSON 数据。"""
         return await asyncio.to_thread(self._list_sync, collection)
 
@@ -73,7 +74,7 @@ class JsonStorageBackend:
             return None
         return self._read_object(path)
 
-    def _list_sync(self, collection: str) -> list[StorageData]:
+    def _list_sync(self, collection: str) -> builtins.list[StorageData]:
         directory = self._collection_dir(collection)
         if not directory.exists():
             return []
