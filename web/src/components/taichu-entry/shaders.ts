@@ -39,9 +39,9 @@ void main() {
 
   vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
   float depth = max(1.0, -mvPosition.z);
-  float perspectiveSize = aSize * uPixelRatio * (430.0 / depth);
+  float perspectiveSize = aSize * uPixelRatio * (410.0 / depth);
   float denseBoost = 1.0 + uDenseProgress * 0.18;
-  gl_PointSize = clamp(perspectiveSize * denseBoost, 0.42, uMaxPointSize);
+  gl_PointSize = clamp(perspectiveSize * denseBoost, 0.48, uMaxPointSize);
   gl_Position = projectionMatrix * mvPosition;
 
   float nearFade = smoothstep(3.0, uNearFadeDistance, depth);
@@ -62,11 +62,10 @@ varying float vCore;
 void main() {
   vec2 coord = gl_PointCoord - vec2(0.5);
   float distanceFromCenter = length(coord);
-  float disc = smoothstep(0.49, 0.32, distanceFromCenter);
-  float core = smoothstep(0.18, 0.0, distanceFromCenter);
-  float rim = smoothstep(0.5, 0.42, distanceFromCenter) * (1.0 - core);
-  vec3 color = vColor * (0.86 + core * 0.24 + vCore * 0.08);
-  float alpha = vAlpha * (disc * 0.92 + core * 0.22 + rim * 0.1);
+  float disc = smoothstep(0.5, 0.39, distanceFromCenter);
+  float core = smoothstep(0.23, 0.02, distanceFromCenter);
+  vec3 color = min(vColor * (1.12 + core * 0.12 + vCore * 0.04), vec3(1.0));
+  float alpha = min(vAlpha * (disc * 1.05 + core * 0.1), 1.0);
 
   if (alpha <= 0.007) {
     discard;

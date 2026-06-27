@@ -1,22 +1,22 @@
 import type { LayerCounts, PerformanceTier } from "./types";
 
 const highCounts: LayerCounts = {
-  foregroundGroundPointCloud: 72000,
-  midGroundMistPointCloud: 38000,
-  horizonGlowBandPointCloud: 22000,
-  sideBoundaryPointCloud: 64000,
-  skyDepthPointCloud: 56000,
-  ambientDeepSpacePointCloud: 22000,
-  distantEnvironmentPointCloud: 28000,
-  distantPalacePointCloud: 8800,
+  foregroundGroundPointCloud: 98000,
+  midGroundMistPointCloud: 52000,
+  horizonGlowBandPointCloud: 30000,
+  sideBoundaryPointCloud: 82000,
+  skyDepthPointCloud: 70000,
+  ambientDeepSpacePointCloud: 26000,
+  distantEnvironmentPointCloud: 36000,
+  distantPalacePointCloud: 9600,
   transitionDensePointCloud: 56000,
   focusParticle: 1,
 };
 
 const tierScale: Record<PerformanceTier, number> = {
   high: 1,
-  medium: 0.62,
-  low: 0.38,
+  medium: 0.52,
+  low: 0.3,
 };
 
 export function detectPerformanceTier(): PerformanceTier {
