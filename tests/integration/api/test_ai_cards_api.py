@@ -95,27 +95,48 @@ class AICardsApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(action_response.json()["card"]["status"], "saved_to_inbox")
         self.assertIn(card_id, ideas_path.read_text(encoding="utf-8"))
 
+    async def test_invalid_source_ref_is_rejected_before_card_persistence(
+        self,
+    ) -> None:
+        payload = _selection_payload()
+        selection_context = payload["selection_context"]
+        assert isinstance(selection_context, dict)
+        source_ref = selection_context["source_ref"]
+        assert isinstance(source_ref, dict)
+        source_ref["path"] = "project_assets/generated/sqlite/taichu.db"
+
+        response = await self.client.post(
+            "/api/ai-cards/selection",
+            json=payload,
+        )
+        list_response = await self.client.get("/api/ai-cards")
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(list_response.json()["cards"], [])
+
 
 def _selection_payload() -> dict[str, object]:
     return {
         "mode": "ask",
-        "chapter_id": "chapter_001",
-        "selected_text": "正文",
-        "surrounding_text": "正文带着灵火向前。",
-        "selection_range": {"from": 1, "to": 3},
-        "source_ref": {
-            "source_type": "chapter",
-            "source_id": "chapter_001",
-            "path": "manuscripts/chapters/chapter_001.md",
+        "selection_context": {
             "chapter_id": "chapter_001",
-            "anchor_type": "paragraph",
-            "paragraph_start": 0,
-            "char_start": 0,
-            "char_end": 2,
-            "excerpt": "正文",
-            "excerpt_hash": "hash_excerpt",
-            "source_hash": "hash_source",
-            "created_at": "2026-06-27T00:00:00Z",
+            "selected_text": "正文",
+            "surrounding_text": "正文带着灵火向前。",
+            "selection_range": {"from": 1, "to": 3},
+            "source_ref": {
+                "source_type": "chapter",
+                "source_id": "chapter_001",
+                "path": "manuscripts/chapters/chapter_001.md",
+                "chapter_id": "chapter_001",
+                "anchor_type": "paragraph",
+                "paragraph_start": 0,
+                "char_start": 0,
+                "char_end": 2,
+                "excerpt": "正文",
+                "excerpt_hash": "hash_excerpt",
+                "source_hash": "hash_source",
+                "created_at": "2026-06-27T00:00:00Z",
+            },
         },
         "user_prompt": "哪里可以更好？",
     }

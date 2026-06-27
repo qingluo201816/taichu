@@ -1,5 +1,6 @@
 """Project asset Markdown storage tests."""
 
+import asyncio
 import tempfile
 import unittest
 from pathlib import Path
@@ -124,3 +125,67 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
             "# 第一章\n\n正文\n",
         )
         self.assertTrue((self.assets_root / "generated" / "temp").exists())
+
+    async def test_workspace_jsonl_append_preserves_concurrent_records(
+        self,
+    ) -> None:
+        await self.storage.ensure_skeleton()
+
+        await asyncio.gather(
+            *[
+                self.storage.append_workspace_record(
+                    "ai_cards.jsonl",
+                    {"id": f"card_{index:03d}", "order": index},
+                )
+                for index in range(20)
+            ]
+        )
+
+        records = await self.storage.list_workspace_records("ai_cards.jsonl")
+        self.assertEqual(len(records), 20)
+        self.assertEqual(
+            {record["id"] for record in records},
+            {f"card_{index:03d}" for index in range(20)},
+        )
+
+    async def test_workspace_jsonl_append_failure_keeps_existing_file(
+        self,
+    ) -> None:
+        await self.storage.ensure_skeleton()
+        await self.storage.append_workspace_record(
+            "ideas.jsonl",
+            {"id": "idea_001", "content": "保留"},
+        )
+        ideas_path = (
+            self.assets_root / "source" / "workspace" / "ideas.jsonl"
+        )
+        original_text = ideas_path.read_text(encoding="utf-8")
+
+        with self.assertRaises(TypeError):
+            await self.storage.append_workspace_record(
+                "ideas.jsonl",
+                {"id": "idea_bad", "content": object()},
+            )
+
+        self.assertEqual(ideas_path.read_text(encoding="utf-8"), original_text)
+
+    async def test_workspace_jsonl_rewrite_failure_keeps_existing_file(
+        self,
+    ) -> None:
+        await self.storage.ensure_skeleton()
+        await self.storage.append_workspace_record(
+            "ai_cards.jsonl",
+            {"id": "card_001", "status": "generated"},
+        )
+        cards_path = (
+            self.assets_root / "source" / "workspace" / "ai_cards.jsonl"
+        )
+        original_text = cards_path.read_text(encoding="utf-8")
+
+        with self.assertRaises(TypeError):
+            await self.storage.rewrite_workspace_records(
+                "ai_cards.jsonl",
+                [{"id": "card_bad", "content": object()}],
+            )
+
+        self.assertEqual(cards_path.read_text(encoding="utf-8"), original_text)

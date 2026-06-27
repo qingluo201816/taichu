@@ -13,7 +13,6 @@ from taichu.api.schemas.ai_cards import (
     AICardResponse,
     AIResultCardInfo,
     SelectionAIRequest,
-    SourceRefInfo,
 )
 from taichu.application.services.ai_card_service import (
     AICardNotFoundError,
@@ -29,7 +28,6 @@ from taichu.application.services.selection_ai_service import (
 )
 from taichu.domain.exceptions import InvalidStateTransitionError
 from taichu.domain.models.ai_card import AIResultCard
-from taichu.domain.models.source_ref import SourceRef
 
 router = APIRouter(prefix="/api")
 
@@ -53,19 +51,18 @@ async def api_create_selection_ai_card(
     service: SelectionAIService = Depends(provide_selection_ai_service),
 ) -> AICardResponse:
     """Run Selection AI and persist the resulting AIResultCard."""
+    selection_context = request.selection_context
     try:
         card = await service.run_selection(
             ServiceSelectionAIRequest(
                 mode=SelectionMode(request.mode.value),
-                chapter_id=request.chapter_id,
-                selected_text=request.selected_text,
-                surrounding_text=request.surrounding_text,
-                selection_range=request.selection_range.model_dump(
+                chapter_id=selection_context.chapter_id,
+                selected_text=selection_context.selected_text,
+                surrounding_text=selection_context.surrounding_text,
+                selection_range=selection_context.selection_range.model_dump(
                     by_alias=True
                 ),
-                selection_ref=SourceRef.model_validate(
-                    request.source_ref.model_dump()
-                ),
+                selection_ref=selection_context.source_ref,
                 user_prompt=request.user_prompt,
                 target_words=request.target_words,
                 parent_card_id=request.parent_card_id,
@@ -109,12 +106,8 @@ def _card_info(card: AIResultCard) -> AIResultCardInfo:
         chapter_id=card.chapter_id,
         input_context=card.input_context,
         content=card.content,
-        source_refs=[_source_ref_info(ref) for ref in card.source_refs],
+        source_refs=card.source_refs,
         parent_card_id=card.parent_card_id,
         created_at=card.created_at,
         updated_at=card.updated_at,
     )
-
-
-def _source_ref_info(ref: SourceRef) -> SourceRefInfo:
-    return SourceRefInfo(**ref.model_dump(mode="json"))

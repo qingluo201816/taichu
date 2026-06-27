@@ -291,11 +291,13 @@ export default function EditorShell() {
             : null;
         const response = await createSelectionAICard({
           mode,
-          chapter_id: chapter.id,
-          selected_text: selectedText,
-          surrounding_text: surroundingText,
-          selection_range: selectionRange,
-          source_ref: sourceRef,
+          selection_context: {
+            chapter_id: chapter.id,
+            selected_text: selectedText,
+            surrounding_text: surroundingText,
+            selection_range: selectionRange,
+            source_ref: sourceRef,
+          },
           user_prompt:
             parentCard?.input_context.user_prompt ?? (aiPrompt.trim() || null),
           target_words: words,
