@@ -14,7 +14,7 @@ export type ExportBundleResponse = {
 export type IndexBuildJobInfo = {
   id: string;
   action: "clear" | "rebuild";
-  status: "completed";
+  status: "completed" | "failed";
   generated_path: string;
   created_at: string;
   completed_at: string;

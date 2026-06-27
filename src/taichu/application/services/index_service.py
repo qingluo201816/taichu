@@ -26,9 +26,18 @@ class IndexService:
     async def clear_generated(self) -> IndexBuildJob:
         """Clear generated projections without touching source assets."""
         created_at = _now_iso()
-        await self._storage.clear_generated()
+        try:
+            await self._storage.clear_generated()
+        except Exception as error:  # noqa: BLE001 - convert to product job status.
+            return _job(
+                action=IndexBuildJobAction.CLEAR,
+                status=IndexBuildJobStatus.FAILED,
+                created_at=created_at,
+                message=f"generated clear failed: {error}",
+            )
         return _job(
             action=IndexBuildJobAction.CLEAR,
+            status=IndexBuildJobStatus.COMPLETED,
             created_at=created_at,
             message="generated projections cleared",
         )
@@ -36,10 +45,19 @@ class IndexService:
     async def rebuild_generated_projection(self) -> IndexBuildJob:
         """Clear generated data and rebuild projection from source facts."""
         created_at = _now_iso()
-        await self._storage.clear_generated()
-        await self._indexer.rebuild()
+        try:
+            await self._storage.clear_generated()
+            await self._indexer.rebuild()
+        except Exception as error:  # noqa: BLE001 - convert to product job status.
+            return _job(
+                action=IndexBuildJobAction.REBUILD,
+                status=IndexBuildJobStatus.FAILED,
+                created_at=created_at,
+                message=f"generated rebuild failed: {error}",
+            )
         return _job(
             action=IndexBuildJobAction.REBUILD,
+            status=IndexBuildJobStatus.COMPLETED,
             created_at=created_at,
             message="generated retrieval projection rebuilt from source facts",
         )
@@ -48,13 +66,14 @@ class IndexService:
 def _job(
     *,
     action: IndexBuildJobAction,
+    status: IndexBuildJobStatus,
     created_at: str,
     message: str,
 ) -> IndexBuildJob:
     return IndexBuildJob(
         id=f"index_job_{uuid4().hex}",
         action=action,
-        status=IndexBuildJobStatus.COMPLETED,
+        status=status,
         created_at=created_at,
         completed_at=_now_iso(),
         message=message,

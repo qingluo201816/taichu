@@ -19,6 +19,11 @@ from taichu.domain.models.knowledge import (
     KnowledgeCardStatus,
     KnowledgeCardType,
 )
+from taichu.domain.models.indexing import (
+    IndexBuildJob,
+    IndexBuildJobAction,
+    IndexBuildJobStatus,
+)
 from taichu.domain.models.source_ref import (
     SourceAnchorType,
     SourceRef,
@@ -111,6 +116,22 @@ class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
             (self.assets_root / "generated" / "sqlite" / "taichu.db").exists()
         )
         self.assertEqual(chapter_path.read_text(encoding="utf-8"), chapter_before)
+
+    async def test_generated_rebuild_endpoint_can_return_failed_job(self) -> None:
+        app = create_app(
+            app_settings=Settings(project_assets_dir=self.assets_root),
+            llm=FakeMessagesListChatModel(responses=[AIMessage(content="unused")]),
+        )
+        app.state.index_service = FailingIndexService()
+        async with AsyncClient(
+            transport=ASGITransport(app=app),
+            base_url="http://test",
+        ) as client:
+            response = await client.post("/api/generated/rebuild")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["job"]["status"], "failed")
+        self.assertIn("forced failure", response.json()["job"]["message"])
 
     async def test_mvp_writing_loop_smoke(self) -> None:
         app = create_app(
@@ -231,6 +252,30 @@ class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("source/knowledge/items/knowledge_phase8_item.json", export_paths)
         self.assertTrue(
             (self.assets_root / "generated" / "sqlite" / "taichu.db").exists()
+        )
+
+
+class FailingIndexService:
+    """Return a failed job from the API dependency seam."""
+
+    async def rebuild_generated_projection(self) -> IndexBuildJob:
+        return IndexBuildJob(
+            id="index_job_failed",
+            action=IndexBuildJobAction.REBUILD,
+            status=IndexBuildJobStatus.FAILED,
+            created_at="2026-06-27T00:00:00Z",
+            completed_at="2026-06-27T00:00:01Z",
+            message="forced failure",
+        )
+
+    async def clear_generated(self) -> IndexBuildJob:
+        return IndexBuildJob(
+            id="index_job_clear_failed",
+            action=IndexBuildJobAction.CLEAR,
+            status=IndexBuildJobStatus.FAILED,
+            created_at="2026-06-27T00:00:00Z",
+            completed_at="2026-06-27T00:00:01Z",
+            message="forced failure",
         )
 
 
