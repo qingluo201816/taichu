@@ -1,6 +1,31 @@
-# 点云生成方法
+# 点云资产管线与备用生成方法
 
-重点：不要随机撒星星。所有粒子都必须来自空间结构采样。
+重点：主路径必须是点云资产驱动，支持 `.ply/.pcd/.pcd.gz` 与移动端资产版本。程序生成点云只作为资产读取失败时的备用观测场；即便 fallback 生效，也不要随机撒星星，所有粒子都必须来自空间结构采样。
+
+## 资产主路径
+
+资产主路径至少包含：
+
+- `assetUrl`：桌面点云资产。
+- `mobileAssetUrl`：移动端点云资产，可在首版暂时指向同一文件。
+- `position / rotation / scale`：资产级变换，不写死到渲染类。
+- `sourcePointCloud`：资产加载后的主点云层。
+- `focusParticle`：进入完成前吸附的微小粒子。
+
+每个资产点需要归一化为：
+
+```text
+position
+color
+size
+alpha
+random
+amplitude
+```
+
+`amplitude` 用于 shader 微动和后续音频/强度信号。没有真实 amplitude 字段时，可以从亮度、深度和稳定 hash 推导默认值。
+
+## fallback 生成方法
 
 ## foregroundGroundPointCloud
 

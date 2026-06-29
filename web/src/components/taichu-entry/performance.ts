@@ -1,21 +1,22 @@
 import type { LayerCounts, PerformanceTier } from "./types";
 
 const highCounts: LayerCounts = {
-  foregroundGroundPointCloud: 98000,
-  midGroundMistPointCloud: 52000,
+  sourcePointCloud: 0,
+  foregroundGroundPointCloud: 72000,
+  midGroundMistPointCloud: 22000,
   horizonGlowBandPointCloud: 30000,
-  sideBoundaryPointCloud: 82000,
-  skyDepthPointCloud: 70000,
-  ambientDeepSpacePointCloud: 26000,
-  distantEnvironmentPointCloud: 36000,
-  distantPalacePointCloud: 9600,
-  transitionDensePointCloud: 56000,
+  sideBoundaryPointCloud: 26000,
+  skyDepthPointCloud: 0,
+  ambientDeepSpacePointCloud: 6000,
+  distantEnvironmentPointCloud: 42000,
+  distantPalacePointCloud: 26000,
+  transitionDensePointCloud: 14000,
   focusParticle: 1,
 };
 
 const tierScale: Record<PerformanceTier, number> = {
   high: 1,
-  medium: 0.52,
+  medium: 0.48,
   low: 0.3,
 };
 
@@ -54,7 +55,11 @@ export function layerCountsForTier(
 
   for (const [name, count] of Object.entries(highCounts)) {
     counts[name as keyof LayerCounts] =
-      name === "focusParticle" ? 1 : Math.max(600, Math.round(count * scale));
+      count <= 0
+        ? 0
+        : name === "focusParticle"
+          ? 1
+          : Math.max(600, Math.round(count * scale));
   }
 
   return counts;

@@ -23,7 +23,14 @@
 
 ## 技术
 
-- [ ] 安装 three/gsap/@types/three。
+- [ ] 不重复安装 three/gsap/@types/three，确认现有依赖可用。
+- [ ] 点云主路径从 `PointCloudSceneConfig.asset` 加载 `.ply/.pcd/.pcd.gz`。
+- [ ] 支持 `mobileAssetUrl`，移动端可以选择轻量资产。
+- [ ] 程序生成点云只作为资产失败 fallback，不作为主路径。
+- [ ] 每个点包含 `amplitude`，shader 能按点强度微动。
+- [ ] shader 预留 `uAudioLow/uAudioMid/uAudioHigh/uPulseStrength`。
+- [ ] 相机锚点通过 `cameraNav/cameraEnter/cameraChapter/cameraFocus` 配置驱动。
+- [ ] 热点/章节锚点进入 `hotspots` 元数据和交互层，不写死到渲染类。
 - [ ] `npm run lint` 通过。
 - [ ] `npm run build` 通过。
 - [ ] Three.js 资源 dispose。
