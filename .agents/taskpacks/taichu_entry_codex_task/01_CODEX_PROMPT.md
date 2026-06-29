@@ -1,6 +1,6 @@
 # Codex 主任务提示词
 
-你正在修改 `qingluo201816/taichu` 仓库中的 `web/` 前端。请从零实现“太初首次进入页”，不要沿用旧的随机粒子 demo 思路。
+你正在修改 `qingluo201816/taichu` 仓库中的 `web/` 前端。请实现“太初点云入口体验引擎”，不要沿用旧的随机粒子 demo 或“程序生成点坐标即主架构”的思路。
 
 ## 背景
 
@@ -15,29 +15,36 @@ https://pendereckisgarden.pl/pl/o-projekcie
 
 ## 技术方向硬约束
 
-不要做“随机星空背景”。必须做“点云场景渲染”：先构造地面、左右边界、远景宫阙、天空深度层、密集转场层这些三维空间结构，再从这些结构采样点云。
+不要做“随机星空背景”。必须做“点云场景渲染”：优先加载点云资产，资产不可用时才用 fallback 构造地面、左右边界、远景宫阙、天空深度层、密集转场层这些三维空间结构并采样点云。
 
-参考站的技术公开信息表明，它不是普通粒子背景，而是使用 TypeScript、Three.js、GLSL，3D 数据以 PCD 点云格式存储并 gzip 压缩，还通过 shader 让粒子运动，并重点处理加载性能和页面转场。太初原型可以先用程序生成点云，但架构要预留未来替换成 `.pcd/.ply/.json.gz` 点云资产的入口。
+参考站的技术公开信息表明，它不是普通粒子背景，而是使用 TypeScript、Three.js、GLSL，3D 数据以 PCD 点云格式存储并 gzip 压缩，还通过 shader 让粒子运动，并重点处理加载性能和页面转场。太初入口必须以 `.ply/.pcd/.pcd.gz` 点云资产为主路径，程序生成点云只能作为资产读取失败时的备用观测场。
 
 ## 需要修改/新增的文件
 
-在 `web/` 内实现。建议新增：
+在 `web/` 内实现。建议按体验引擎分层：
 
 ```text
 web/src/components/taichu-entry/TaichuEntry.tsx
 web/src/components/taichu-entry/point-cloud-scene.ts
-web/src/components/taichu-entry/point-cloud-generators.ts
+web/src/components/taichu-entry/point-cloud-scene-config.ts
+web/src/components/taichu-entry/point-cloud-asset.ts
+web/src/components/taichu-entry/ply-loader.ts
+web/src/components/taichu-entry/pcd-loader.ts
+web/src/components/taichu-entry/point-cloud-material.ts
+web/src/components/taichu-entry/point-cloud-camera-controller.ts
+web/src/components/taichu-entry/point-cloud-interaction-layer.ts
+web/src/components/taichu-entry/generated-fallback-point-cloud.ts
 web/src/components/taichu-entry/shaders.ts
 web/src/components/taichu-entry/types.ts
 web/src/components/taichu-entry/use-reduced-motion.ts
 web/src/app/page.tsx 或 web/src/app/entry/page.tsx
 ```
 
-依赖：
+依赖已在当前前端中存在；不要重复引入无关库：
 ```bash
-cd web
-npm install three gsap
-npm install -D @types/three
+three
+gsap
+@types/three
 ```
 
 如果不用 GSAP，也必须实现同等平滑的状态机动画，但优先使用 GSAP 做相机与 uniform 过渡。
@@ -73,7 +80,7 @@ npm install -D @types/three
 
 ## 点云层必须拆分
 
-必须在代码中有清晰命名与生成函数：
+必须在资产主路径与 fallback 中有清晰命名：
 
 ```text
 foregroundGroundPointCloud
@@ -88,7 +95,7 @@ transitionDensePointCloud
 focusParticle
 ```
 
-每一层要有独立的 geometry、material/uniform 或至少独立 attributes，便于调参。
+资产主路径至少支持 `sourcePointCloud` 与 `focusParticle`；fallback 才负责生成多层观测场。每一层要有独立的 geometry、material/uniform 或至少独立 attributes，便于调参。
 
 ## Shader 要求
 
@@ -100,6 +107,7 @@ color: vec3
 size: float
 alpha: float
 random: float
+amplitude: float
 layerId: float 或通过独立 material 区分
 ```
 
@@ -110,6 +118,7 @@ layerId: float 或通过独立 material 区分
 3. 支持时间驱动的轻微漂浮/呼吸，但不能变成水波网格。
 4. 支持进入动画时沿 z 轴/相机方向拉伸。
 5. 支持 near-camera fade，避免前景糊屏。
+6. 预留 `uAudioLow/uAudioMid/uAudioHigh/uPulseStrength`，让后续音频或强度信号能驱动每点 amplitude。
 
 片元 shader 必须：
 
@@ -151,7 +160,26 @@ type EntryState = 'idle' | 'entering' | 'dense-transition' | 'focus' | 'complete
 2. `entering`：点击 TAICHU 后，相机沿地面方向向远景推进，前景地面粒子从下方与两侧掠过。宫阙逐渐淡出，不要真的进入宫阙。
 3. `dense-transition`：进入一层极密横向粒子雾带/位面夹层，短暂看不清结构，产生空间迷失感。
 4. `focus`：从密层里锁定一颗不起眼的微小粒子，其他粒子渐暗或后退。微粒可有极克制的暗绿 glow。
-5. `completed`：触发 `onEnter` 回调，默认跳转 `/editor` 或显示主应用占位，不要白屏卡住。
+5. `completed`：触发 `onEnter` 回调，默认跳转 `/home` 或当前主应用入口，不要白屏卡住。
+
+相机锚点必须进入 `PointCloudSceneConfig`，至少包含 `cameraNav`、`cameraEnter`、`cameraChapter`、`cameraFocus`，不要散落写死在渲染类里。
+
+## 场景元数据
+
+必须提供 `PointCloudSceneConfig`：
+
+```text
+assetUrl
+mobileAssetUrl
+position / rotation / scale
+cameraNav
+cameraEnter
+cameraChapter
+cameraFocus
+hotspots
+```
+
+`hotspots` 是后续章节锚点/世界节点的入口，首版可以只提供元数据和命中接口，不必做复杂 UI。
 
 ## UI 与可用性
 

@@ -2,15 +2,11 @@
 
 ## 现有前端事实
 
-当前 `web/` 是 Next.js 项目，`src/app` 使用 App Router 结构，`src/components` 已存在组件目录。`package.json` 当前依赖包含 Next、React、Tailwind、shadcn、Tiptap 等，但没有 three/gsap。
+当前 `web/` 是 Next.js 项目，`src/app` 使用 App Router 结构，`src/components` 已存在组件目录。`package.json` 当前依赖已包含 Next、React、Tailwind、shadcn、Tiptap、Three.js、GSAP 和 `@types/three`。
 
 ## 依赖
 
-```bash
-cd web
-npm install three gsap
-npm install -D @types/three
-```
+当前依赖已具备；本任务不应重复安装或引入无关渲染库。
 
 ## 推荐文件结构
 
@@ -18,7 +14,14 @@ npm install -D @types/three
 web/src/components/taichu-entry/
   TaichuEntry.tsx
   point-cloud-scene.ts
-  point-cloud-generators.ts
+  point-cloud-scene-config.ts
+  point-cloud-asset.ts
+  ply-loader.ts
+  pcd-loader.ts
+  point-cloud-material.ts
+  point-cloud-camera-controller.ts
+  point-cloud-interaction-layer.ts
+  generated-fallback-point-cloud.ts
   shaders.ts
   types.ts
   use-reduced-motion.ts
@@ -42,6 +45,11 @@ web/src/app/page.tsx
 - BufferGeometry 每层一个 Points。
 - ShaderMaterial 自定义点 sprite，不用简单 PointsMaterial。
 - 不要强 bloom；首版可不用 postprocessing，先靠 shader 点光晕做质感。
+- `PointCloudSceneConfig` 描述资产、移动端资产、变换、相机锚点和热点。
+- `PointCloudAsset` 负责加载 `.ply/.pcd/.pcd.gz`，程序生成点云只作为 fallback。
+- `PointCloudMaterial` 负责 shader、per-point amplitude、`uAudioLow/uAudioMid/uAudioHigh/uPulseStrength`。
+- `PointCloudCameraController` 负责 idle 漂浮、鼠标视差、进入和章节镜头状态。
+- `PointCloudInteractionLayer` 负责热点/章节锚点元数据，不污染渲染类。
 
 ## 性能策略
 

@@ -1,6 +1,6 @@
 {
   "schema_version": "1",
-  "current_chapter_id": "chapter_001",
+  "current_chapter_id": "chapter_003",
   "volumes": [],
   "chapters": [
     {
@@ -10,9 +10,9 @@
       "order": 0,
       "markdown_path": "manuscripts/chapters/chapter_001.md",
       "status": "active",
-      "word_count": 4019,
+      "word_count": 4033,
       "created_at": "2026-06-27T09:06:48.864027Z",
-      "updated_at": "2026-06-27T10:45:15.673508Z"
+      "updated_at": "2026-06-28T03:48:29.573509Z"
     },
     {
       "id": "chapter_002",
@@ -32,10 +32,10 @@
       "order": 2,
       "markdown_path": "manuscripts/chapters/chapter_003.md",
       "status": "active",
-      "word_count": 4004,
+      "word_count": 3993,
       "created_at": "2026-06-27T09:06:48.864027Z",
-      "updated_at": "2026-06-27T09:20:27.057889Z"
+      "updated_at": "2026-06-28T11:43:51.195990Z"
     }
   ],
-  "updated_at": "2026-06-27T10:45:15.673508Z"
+  "updated_at": "2026-06-28T11:43:51.195990Z"
 }
