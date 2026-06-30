@@ -1,0 +1,24 @@
+{
+  "id": "character-b7841ddf7d6f45dca78adb725482448e",
+  "type": "character",
+  "name": "主角",
+  "aliases": [],
+  "summary": "",
+  "body": "",
+  "tags": [],
+  "importance": "core",
+  "status": "draft",
+  "source_refs": [
+    {
+      "source_type": "author_note",
+      "source_id": "作者手动记录",
+      "display_name": "作者手动记录",
+      "excerpt": "作者手动记录",
+      "note": "",
+      "author_note_body": "作者手动记录"
+    }
+  ],
+  "fields": {},
+  "created_at": "2026-06-30T13:57:23.791521Z",
+  "updated_at": "2026-06-30T13:57:42.103264Z"
+}
