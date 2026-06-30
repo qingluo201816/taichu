@@ -1,8 +1,9 @@
 """Creative inbox endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from pydantic import ValidationError
+from fastapi import APIRouter, Depends, HTTPException, Query
 
-from taichu.api.deps import provide_inbox_service
+from taichu.api.deps import provide_inbox_service, provide_mvp_inbox_service
 from taichu.api.schemas.inbox import (
     ChapterIssueInfo,
     ConvertPendingFactResponse,
@@ -13,6 +14,16 @@ from taichu.api.schemas.inbox import (
     SaveIdeaResponse,
     SavedAICardInfo,
 )
+from taichu.api.schemas.mvp import (
+    ConfirmPendingFactRequest,
+    ConfirmPendingFactResponse,
+    CreateInboxItemRequest,
+    MVPInboxIdeaResponse,
+    MVPInboxIssueResponse,
+    MVPInboxListResponse,
+    MVPInboxPendingFactResponse,
+    PatchInboxItemRequest,
+)
 from taichu.application.services.ai_card_service import (
     AICardNotFoundError,
     InvalidCardActionError,
@@ -21,19 +32,32 @@ from taichu.application.services.inbox_service import (
     InboxService,
     PendingFactNotFoundError,
 )
+from taichu.application.services.mvp_inbox_service import (
+    InboxItemNotFoundError,
+    InboxValidationError,
+    MVPInboxService,
+)
 from taichu.domain.exceptions import InvalidStateTransitionError
 from taichu.domain.models.ai_card import AIResultCard
 from taichu.domain.models.inbox import ChapterIssue, IdeaCard
+from taichu.domain.models import StructuredKnowledgeType
 from taichu.domain.models.pending_fact import PendingFact
 
 router = APIRouter(prefix="/api")
 
 
-@router.get("/inbox", response_model=InboxResponse)
+@router.get("/inbox")
 async def api_read_inbox(
     service: InboxService = Depends(provide_inbox_service),
-) -> InboxResponse:
-    """Return the four non-fact creative inbox lanes."""
+    mvp_service: MVPInboxService = Depends(provide_mvp_inbox_service),
+    tab: str | None = Query(default=None),
+) -> InboxResponse | MVPInboxListResponse:
+    """Return the legacy inbox snapshot or one MVP Inbox tab."""
+    if tab is not None:
+        try:
+            return MVPInboxListResponse(items=await mvp_service.list_items(tab))
+        except InboxValidationError as error:
+            raise _bad_request(str(error)) from error
     snapshot = await service.list_inbox()
     return InboxResponse(
         ideas=[_idea_info(idea) for idea in snapshot.ideas],
@@ -48,6 +72,140 @@ async def api_read_inbox(
             _chapter_issue_info(issue) for issue in snapshot.chapter_issues
         ],
     )
+
+
+@router.get("/inbox/pending-facts", response_model=MVPInboxListResponse)
+async def api_list_mvp_pending_facts(
+    service: MVPInboxService = Depends(provide_mvp_inbox_service),
+) -> MVPInboxListResponse:
+    """List manual pending facts."""
+    return MVPInboxListResponse(
+        items=await service.list_items("pending-facts")
+    )
+
+
+@router.post("/inbox/ideas", response_model=MVPInboxIdeaResponse)
+async def api_create_mvp_idea(
+    request: CreateInboxItemRequest,
+    service: MVPInboxService = Depends(provide_mvp_inbox_service),
+) -> MVPInboxIdeaResponse:
+    """Create a manual inspiration item."""
+    try:
+        item = await service.create_idea(request.data)
+    except ValidationError as error:
+        raise _bad_request(_validation_message(error)) from error
+    return MVPInboxIdeaResponse(item=item)
+
+
+@router.patch("/inbox/ideas/{item_id}", response_model=MVPInboxIdeaResponse)
+async def api_patch_mvp_idea(
+    item_id: str,
+    request: PatchInboxItemRequest,
+    service: MVPInboxService = Depends(provide_mvp_inbox_service),
+) -> MVPInboxIdeaResponse:
+    """Patch a manual inspiration item."""
+    try:
+        item = await service.patch_idea(item_id, request.updates)
+    except InboxItemNotFoundError as error:
+        raise _not_found(str(error)) from error
+    except ValidationError as error:
+        raise _bad_request(_validation_message(error)) from error
+    return MVPInboxIdeaResponse(item=item)
+
+
+@router.post("/inbox/pending-facts", response_model=MVPInboxPendingFactResponse)
+async def api_create_mvp_pending_fact(
+    request: CreateInboxItemRequest,
+    service: MVPInboxService = Depends(provide_mvp_inbox_service),
+) -> MVPInboxPendingFactResponse:
+    """Create a manual pending fact."""
+    try:
+        item = await service.create_pending_fact(request.data)
+    except ValidationError as error:
+        raise _bad_request(_validation_message(error)) from error
+    return MVPInboxPendingFactResponse(item=item)
+
+
+@router.patch(
+    "/inbox/pending-facts/{item_id}",
+    response_model=MVPInboxPendingFactResponse,
+)
+async def api_patch_mvp_pending_fact(
+    item_id: str,
+    request: PatchInboxItemRequest,
+    service: MVPInboxService = Depends(provide_mvp_inbox_service),
+) -> MVPInboxPendingFactResponse:
+    """Patch a manual pending fact."""
+    try:
+        item = await service.patch_pending_fact(item_id, request.updates)
+    except InboxItemNotFoundError as error:
+        raise _not_found(str(error)) from error
+    except ValidationError as error:
+        raise _bad_request(_validation_message(error)) from error
+    return MVPInboxPendingFactResponse(item=item)
+
+
+@router.post(
+    "/inbox/pending-facts/{item_id}/confirm",
+    response_model=ConfirmPendingFactResponse,
+)
+async def api_confirm_mvp_pending_fact(
+    item_id: str,
+    request: ConfirmPendingFactRequest,
+    service: MVPInboxService = Depends(provide_mvp_inbox_service),
+) -> ConfirmPendingFactResponse:
+    """Confirm a manual pending fact into a draft knowledge card."""
+    try:
+        result = await service.confirm_pending_fact(
+            item_id,
+            _knowledge_type(request.knowledge_type),
+            request.card_preview,
+        )
+    except InboxItemNotFoundError as error:
+        raise _not_found(str(error)) from error
+    except (ValidationError, ValueError) as error:
+        raise _bad_request(_validation_message(error)) from error
+    return ConfirmPendingFactResponse(
+        pending_fact=result.pending_fact,
+        knowledge_card=result.knowledge_card,
+    )
+
+
+@router.get("/inbox/issues", response_model=MVPInboxListResponse)
+async def api_list_mvp_issues(
+    service: MVPInboxService = Depends(provide_mvp_inbox_service),
+) -> MVPInboxListResponse:
+    """List manual issue items."""
+    return MVPInboxListResponse(items=await service.list_items("issues"))
+
+
+@router.post("/inbox/issues", response_model=MVPInboxIssueResponse)
+async def api_create_mvp_issue(
+    request: CreateInboxItemRequest,
+    service: MVPInboxService = Depends(provide_mvp_inbox_service),
+) -> MVPInboxIssueResponse:
+    """Create a manual issue item."""
+    try:
+        item = await service.create_issue(request.data)
+    except ValidationError as error:
+        raise _bad_request(_validation_message(error)) from error
+    return MVPInboxIssueResponse(item=item)
+
+
+@router.patch("/inbox/issues/{item_id}", response_model=MVPInboxIssueResponse)
+async def api_patch_mvp_issue(
+    item_id: str,
+    request: PatchInboxItemRequest,
+    service: MVPInboxService = Depends(provide_mvp_inbox_service),
+) -> MVPInboxIssueResponse:
+    """Patch a manual issue item."""
+    try:
+        item = await service.patch_issue(item_id, request.updates)
+    except InboxItemNotFoundError as error:
+        raise _not_found(str(error)) from error
+    except ValidationError as error:
+        raise _bad_request(_validation_message(error)) from error
+    return MVPInboxIssueResponse(item=item)
 
 
 @router.post(
@@ -109,6 +267,34 @@ async def api_ignore_pending_fact(
         raise HTTPException(status_code=409, detail=str(error)) from error
     return PendingFactActionResponse(
         pending_fact=_pending_fact_info(pending_fact)
+    )
+
+
+def _knowledge_type(value: str) -> StructuredKnowledgeType:
+    try:
+        return StructuredKnowledgeType(value)
+    except ValueError as error:
+        raise ValueError("未知的知识卡类型") from error
+
+
+def _validation_message(error: Exception) -> str:
+    if isinstance(error, ValidationError):
+        return "Inbox 内容不完整或格式不正确，请检查后再保存。"
+    message = str(error)
+    return message if message else "Inbox 内容不完整或格式不正确，请检查后再保存。"
+
+
+def _not_found(message: str) -> HTTPException:
+    return HTTPException(
+        status_code=404,
+        detail={"error": {"code": "NOT_FOUND", "message": message}},
+    )
+
+
+def _bad_request(message: str) -> HTTPException:
+    return HTTPException(
+        status_code=422,
+        detail={"error": {"code": "VALIDATION_ERROR", "message": message}},
     )
 
 

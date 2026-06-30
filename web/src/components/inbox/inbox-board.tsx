@@ -1,87 +1,146 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
-import Link from "next/link";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Ban,
-  CheckCircle2,
-  ExternalLink,
-  FileQuestion,
-  Inbox,
-  Lightbulb,
-  Loader2,
-  PencilLine,
-  RefreshCw,
-  Sparkles,
-} from "lucide-react";
+import { CheckCircle2, Inbox, Loader2, Plus, Save, Trash2 } from "lucide-react";
 
+import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
-import { readInbox } from "@/lib/api/inbox";
 import {
-  confirmEditedPendingFact,
-  confirmPendingFact,
-  rejectPendingFact,
-} from "@/lib/api/knowledge";
+  confirmInboxPendingFact,
+  createInboxIdea,
+  createInboxIssue,
+  createInboxPendingFact,
+  listInboxItems,
+  listKnowledgeTypes,
+  patchInboxIdea,
+  patchInboxIssue,
+  patchInboxPendingFact,
+} from "@/lib/api/mvp";
 import type {
-  ChapterIssueInfo,
-  IdeaCardInfo,
-  InboxResponse,
-  PendingFactInfo,
-  SavedAICardInfo,
-} from "@/lib/types/inbox";
-import type { ConfirmEditedPendingFactRequest } from "@/lib/types/knowledge";
+  InboxPriority,
+  InboxTab,
+  KnowledgeTypeInfo,
+  KnowledgeTypeValue,
+  MVPInboxIdea,
+  MVPInboxIssue,
+  MVPInboxPendingFact,
+} from "@/lib/types/mvp";
+import { cn } from "@/lib/utils";
 
-type LaneTone = "idea" | "pending" | "ai" | "issue";
-
-const emptyInbox: InboxResponse = {
-  ideas: [],
-  pending_facts: [],
-  saved_ai_cards: [],
-  chapter_issues: [],
-};
+const tabs: Array<{ value: InboxTab; label: string }> = [
+  { value: "ideas", label: "灵感" },
+  { value: "pending-facts", label: "待确认事实" },
+  { value: "issues", label: "待处理问题" },
+];
 
 export function InboxBoard() {
-  const [snapshot, setSnapshot] = useState<InboxResponse>(emptyInbox);
+  const [activeTab, setActiveTab] = useState<InboxTab>("ideas");
+  const [ideas, setIdeas] = useState<MVPInboxIdea[]>([]);
+  const [pendingFacts, setPendingFacts] = useState<MVPInboxPendingFact[]>([]);
+  const [issues, setIssues] = useState<MVPInboxIssue[]>([]);
+  const [knowledgeTypes, setKnowledgeTypes] = useState<KnowledgeTypeInfo[]>([]);
+  const [newTitle, setNewTitle] = useState("");
+  const [newContent, setNewContent] = useState("");
+  const [priority, setPriority] = useState<InboxPriority>("normal");
+  const [confirmType, setConfirmType] = useState<KnowledgeTypeValue>("character");
+  const [confirmName, setConfirmName] = useState("");
+  const [confirmSummary, setConfirmSummary] = useState("");
+  const [selectedPendingFactId, setSelectedPendingFactId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [busyPendingFactId, setBusyPendingFactId] = useState<string | null>(null);
 
-  const totals = useMemo(
-    () =>
-      snapshot.ideas.length +
-      snapshot.pending_facts.length +
-      snapshot.saved_ai_cards.length +
-      snapshot.chapter_issues.length,
-    [snapshot],
+  const activePendingFact = useMemo(
+    () => pendingFacts.find(item => item.id === selectedPendingFactId) ?? null,
+    [pendingFacts, selectedPendingFactId],
   );
 
-  const refresh = useCallback(async () => {
+  const totalCount = ideas.length + pendingFacts.length + issues.length;
+
+  const selectPendingFact = useCallback((item: MVPInboxPendingFact) => {
+    setSelectedPendingFactId(item.id);
+    setConfirmName(item.title || item.content.slice(0, 24));
+    setConfirmSummary(item.content);
+  }, []);
+
+  const applyPendingFacts = useCallback(
+    (items: MVPInboxPendingFact[], preferredId?: string | null) => {
+      setPendingFacts(items);
+      const nextSelected =
+        items.find(item => item.id === preferredId) ?? items[0] ?? null;
+      if (nextSelected) {
+        selectPendingFact(nextSelected);
+      } else {
+        setSelectedPendingFactId(null);
+        setConfirmName("");
+        setConfirmSummary("");
+      }
+    },
+    [selectPendingFact],
+  );
+
+  async function reloadTab(tab: InboxTab) {
     setLoading(true);
     setError(null);
     try {
-      setSnapshot(await readInbox());
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "收件箱加载失败");
+      if (tab === "ideas") {
+        setIdeas((await listInboxItems("ideas")).items);
+      }
+      if (tab === "pending-facts") {
+        const response = await listInboxItems("pending-facts");
+        applyPendingFacts(response.items, selectedPendingFactId);
+      }
+      if (tab === "issues") {
+        setIssues((await listInboxItems("issues")).items);
+      }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Inbox 加载失败");
     } finally {
       setLoading(false);
     }
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    listKnowledgeTypes()
+      .then(response => {
+        if (!cancelled) {
+          setKnowledgeTypes(response.types);
+          setConfirmType(response.types[0]?.value ?? "character");
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-    async function loadInitialInbox() {
+    async function loadCurrentTab() {
       try {
-        const nextSnapshot = await readInbox();
-        if (!cancelled) {
-          setSnapshot(nextSnapshot);
+        if (activeTab === "ideas") {
+          const response = await listInboxItems("ideas");
+          if (!cancelled) {
+            setIdeas(response.items);
+          }
         }
-      } catch (loadError) {
+        if (activeTab === "pending-facts") {
+          const response = await listInboxItems("pending-facts");
+          if (!cancelled) {
+            applyPendingFacts(response.items, null);
+          }
+        }
+        if (activeTab === "issues") {
+          const response = await listInboxItems("issues");
+          if (!cancelled) {
+            setIssues(response.items);
+          }
+        }
+      } catch (caught) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : "收件箱加载失败");
+          setError(caught instanceof Error ? caught.message : "Inbox 加载失败");
         }
       } finally {
         if (!cancelled) {
@@ -89,636 +148,440 @@ export function InboxBoard() {
         }
       }
     }
-
-    void loadInitialInbox();
+    void loadCurrentTab();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [activeTab, applyPendingFacts]);
 
-  const removePendingFact = useCallback((pendingFactId: string) => {
-    setSnapshot(current => ({
-      ...current,
-      pending_facts: current.pending_facts.filter(
-        pendingFact => pendingFact.id !== pendingFactId,
-      ),
-    }));
-  }, []);
-
-  const onConfirmPendingFact = useCallback(
-    async (pendingFactId: string) => {
-      setBusyPendingFactId(pendingFactId);
-      setError(null);
-      setMessage(null);
-      try {
-        const response = await confirmPendingFact(pendingFactId);
-        removePendingFact(pendingFactId);
-        setMessage(`已确认入库：${response.knowledge_card.name}`);
-      } catch (confirmError) {
-        setError(
-          confirmError instanceof Error ? confirmError.message : "确认入库失败",
-        );
-      } finally {
-        setBusyPendingFactId(null);
-      }
-    },
-    [removePendingFact],
-  );
-
-  const onConfirmPendingFactWithEdits = useCallback(
-    async (
-      pendingFactId: string,
-      request: ConfirmEditedPendingFactRequest,
-    ) => {
-      setBusyPendingFactId(pendingFactId);
-      setError(null);
-      setMessage(null);
-      try {
-        const response = await confirmEditedPendingFact(pendingFactId, request);
-        removePendingFact(pendingFactId);
-        setMessage(`已编辑确认：${response.knowledge_card.name}`);
-      } catch (confirmError) {
-        setError(
-          confirmError instanceof Error ? confirmError.message : "编辑确认失败",
-        );
-      } finally {
-        setBusyPendingFactId(null);
-      }
-    },
-    [removePendingFact],
-  );
-
-  const onRejectPendingFact = useCallback(
-    async (pendingFactId: string) => {
-      setBusyPendingFactId(pendingFactId);
-      setError(null);
-      setMessage(null);
-      try {
-        await rejectPendingFact(pendingFactId);
-        removePendingFact(pendingFactId);
-        setMessage("已驳回候选设定");
-      } catch (rejectError) {
-        setError(rejectError instanceof Error ? rejectError.message : "驳回失败");
-      } finally {
-        setBusyPendingFactId(null);
-      }
-    },
-    [removePendingFact],
-  );
-
-  return (
-    <main className="tc-workspace-page min-h-screen">
-      <header className="tc-workspace-header">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-4">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/home"
-              className="inline-flex size-10 items-center justify-center rounded-[var(--tc-panel-radius)] border border-[var(--tc-workspace-border)] bg-[var(--tc-workspace-recess)] text-[var(--tc-workspace-text-secondary)] transition-colors hover:border-[var(--tc-workspace-focus)] hover:text-[var(--tc-workspace-focus)]"
-              aria-label="返回太初"
-              title="返回太初"
-            >
-              <ArrowLeft className="size-5" />
-            </Link>
-            <div>
-              <div className="flex items-center gap-2 text-xs font-medium text-[var(--tc-workspace-text-muted)]">
-                <Inbox className="size-4" />
-                工作区范围 / 非事实
-              </div>
-              <h1 className="mt-1 text-2xl font-semibold text-[var(--tc-workspace-focus)]">
-                创作收件箱
-              </h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="tc-tag px-3 py-1 text-sm">
-              {totals} 条
-            </span>
-            <Button
-              size="sm"
-              onClick={() => void refresh()}
-              disabled={loading}
-              variant="outline"
-            >
-              {loading ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <RefreshCw className="size-4" />
-              )}
-              刷新
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <section className="mx-auto max-w-7xl px-5 py-5">
-        {error ? (
-          <div className="tc-danger mb-4 rounded-[var(--tc-panel-radius)] border px-4 py-3 text-sm font-medium">
-            {error}
-          </div>
-        ) : null}
-        {message ? (
-          <div className="tc-success mb-4 rounded-[var(--tc-panel-radius)] border px-4 py-3 text-sm font-medium">
-            {message}
-          </div>
-        ) : null}
-
-        <div className="grid gap-4 xl:grid-cols-4">
-          <Lane
-            title="灵感"
-            count={snapshot.ideas.length}
-            icon={<Lightbulb className="size-4" />}
-            tone="idea"
-            loading={loading}
-          >
-            {snapshot.ideas.map(idea => (
-              <IdeaItem key={idea.id} idea={idea} />
-            ))}
-          </Lane>
-
-          <Lane
-            title="待确认设定"
-            count={snapshot.pending_facts.length}
-            icon={<FileQuestion className="size-4" />}
-            tone="pending"
-            loading={loading}
-          >
-            {snapshot.pending_facts.map(pendingFact => (
-              <PendingFactItem
-                key={pendingFact.id}
-                pendingFact={pendingFact}
-                busy={busyPendingFactId === pendingFact.id}
-                onConfirm={() => void onConfirmPendingFact(pendingFact.id)}
-                onConfirmEdited={request =>
-                  void onConfirmPendingFactWithEdits(pendingFact.id, request)
-                }
-                onReject={() => void onRejectPendingFact(pendingFact.id)}
-              />
-            ))}
-          </Lane>
-
-          <Lane
-            title="已保存智能助手卡片"
-            count={snapshot.saved_ai_cards.length}
-            icon={<Sparkles className="size-4" />}
-            tone="ai"
-            loading={loading}
-          >
-            {snapshot.saved_ai_cards.map(card => (
-              <SavedAICardItem key={card.id} card={card} />
-            ))}
-          </Lane>
-
-          <Lane
-            title="章节问题"
-            count={snapshot.chapter_issues.length}
-            icon={<AlertTriangle className="size-4" />}
-            tone="issue"
-            loading={loading}
-          >
-            {snapshot.chapter_issues.map(issue => (
-              <ChapterIssueItem key={issue.id} issue={issue} />
-            ))}
-          </Lane>
-        </div>
-      </section>
-    </main>
-  );
-}
-
-function Lane({
-  title,
-  count,
-  icon,
-  tone,
-  loading,
-  children,
-}: {
-  title: string;
-  count: number;
-  icon: ReactNode;
-  tone: LaneTone;
-  loading: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <section className="tc-panel min-h-[520px] overflow-hidden">
-      <div className={laneHeaderClass(tone)}>
-        <div className="flex items-center gap-2 text-sm font-medium text-[var(--tc-workspace-focus)]">
-          {icon}
-          {title}
-        </div>
-        <span className="tc-tag px-2 py-0.5 text-xs">
-          {count}
-        </span>
-      </div>
-      <div className="space-y-3 p-3">
-        {loading ? (
-          <div className="flex h-28 items-center justify-center text-sm font-medium text-[var(--tc-workspace-text-muted)]">
-            <Loader2 className="mr-2 size-4 animate-spin" />
-            加载中
-          </div>
-        ) : count === 0 ? (
-          <div className="rounded-[var(--tc-panel-radius)] border border-dashed border-[var(--tc-workspace-border)] px-3 py-8 text-center text-sm text-[var(--tc-workspace-text-muted)]">
-            暂无条目
-          </div>
-        ) : (
-          children
-        )}
-      </div>
-    </section>
-  );
-}
-
-function IdeaItem({ idea }: { idea: IdeaCardInfo }) {
-  return (
-    <InboxItem href={idea.source_href}>
-      <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--tc-workspace-text-secondary)]">
-        {idea.content}
-      </p>
-      <ItemFooter
-        meta={`${ideaSourceText(idea.source)} / ${ideaStatusText(idea.status)}`}
-        chapterId={idea.linked_chapter_id}
-      />
-    </InboxItem>
-  );
-}
-
-function PendingFactItem({
-  pendingFact,
-  busy,
-  onConfirm,
-  onConfirmEdited,
-  onReject,
-}: {
-  pendingFact: PendingFactInfo;
-  busy: boolean;
-  onConfirm: () => void;
-  onConfirmEdited: (request: ConfirmEditedPendingFactRequest) => void;
-  onReject: () => void;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(pendingFact.title);
-  const [summary, setSummary] = useState(contentText(pendingFact.content));
-  const [aliases, setAliases] = useState("");
-  const [fieldsJson, setFieldsJson] = useState(
-    JSON.stringify(fieldsObject(pendingFact.content), null, 2),
-  );
-  const [localError, setLocalError] = useState<string | null>(null);
-
-  function submitEditedConfirmation() {
-    setLocalError(null);
-    let fields: Record<string, unknown>;
+  async function createItem() {
+    setBusy(true);
+    setError(null);
+    setMessage(null);
     try {
-      const parsed = JSON.parse(fieldsJson) as unknown;
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-        setLocalError("字段必须是 JSON 对象");
-        return;
+      if (activeTab === "ideas") {
+        await createInboxIdea({
+          content: newContent,
+          priority,
+        });
       }
-      fields = parsed as Record<string, unknown>;
-    } catch {
-      setLocalError("字段 JSON 格式不正确");
+      if (activeTab === "pending-facts") {
+        await createInboxPendingFact({
+          title: newTitle,
+          content: newContent,
+          origin: "作者手动记录",
+          priority,
+        });
+      }
+      if (activeTab === "issues") {
+        await createInboxIssue({
+          title: newTitle,
+          content: newContent,
+          priority,
+        });
+      }
+      setNewTitle("");
+      setNewContent("");
+      setMessage("已添加到 Inbox");
+      await reloadTab(activeTab);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "添加失败");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function patchItem(
+    tab: InboxTab,
+    itemId: string,
+    updates: Record<string, unknown>,
+  ) {
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      if (tab === "ideas") {
+        await patchInboxIdea(itemId, updates);
+      }
+      if (tab === "pending-facts") {
+        await patchInboxPendingFact(itemId, updates);
+      }
+      if (tab === "issues") {
+        await patchInboxIssue(itemId, updates);
+      }
+      await reloadTab(tab);
+      setMessage("已更新 Inbox");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "更新失败");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmPendingFact() {
+    if (!activePendingFact) {
       return;
     }
-    onConfirmEdited({
-      name: name.trim() || pendingFact.title,
-      summary: summary.trim() || contentText(pendingFact.content),
-      aliases: aliases
-        .split(",")
-        .map(alias => alias.trim())
-        .filter(Boolean),
-      fields,
-    });
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await confirmInboxPendingFact(activePendingFact.id, confirmType, {
+        name: confirmName,
+        summary: confirmSummary,
+        body: activePendingFact.content,
+        source_refs: [
+          {
+            source_type: "author_note",
+            source_id: "作者手动记录",
+            display_name: activePendingFact.origin || "作者手动记录",
+            excerpt: activePendingFact.content.slice(0, 300),
+            note: "作者在 Inbox 手动确认",
+            author_note_body: activePendingFact.content,
+          },
+        ],
+      });
+      setMessage("已确认入库，原记录保留为已处理");
+      setSelectedPendingFactId(null);
+      await reloadTab("pending-facts");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "确认入库失败");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
-    <InboxItem href={pendingFact.source_href}>
-      <div className="space-y-2">
-        <div>
-          <p className="text-sm font-semibold text-[var(--tc-workspace-focus)]">
-            {pendingFact.title}
-          </p>
-          <p className="text-xs text-[var(--tc-workspace-text-muted)]">
-            {pendingFactTypeText(pendingFact.fact_type)}
-          </p>
-        </div>
-        <p className="tc-paper-fragment max-h-28 overflow-auto whitespace-pre-wrap p-2 text-sm leading-6">
-          {contentText(pendingFact.content)}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            size="sm"
-            onClick={onConfirm}
-            disabled={busy}
-            className="h-8"
-          >
-            {busy ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <CheckCircle2 className="size-4" />
-            )}
-            确认
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => setEditing(current => !current)}
-            disabled={busy}
-            variant="outline"
-            className="h-8"
-          >
-            <PencilLine className="size-4" />
-            编辑确认
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={onReject}
-            disabled={busy}
-            variant="destructive"
-            className="h-8"
-          >
-            <Ban className="size-4" />
-            驳回
-          </Button>
-        </div>
-        {editing ? (
-          <div className="space-y-2 border-t border-[var(--tc-workspace-border-weak)] pt-3">
-            <input
-              value={name}
-              onChange={event => setName(event.target.value)}
-              className="tc-input h-9 w-full px-2 text-sm"
-              placeholder="知识名称"
-            />
-            <textarea
-              value={summary}
-              onChange={event => setSummary(event.target.value)}
-              className="tc-input min-h-20 w-full resize-y px-2 py-2 text-sm"
-              placeholder="确认摘要"
-            />
-            <input
-              value={aliases}
-              onChange={event => setAliases(event.target.value)}
-              className="tc-input h-9 w-full px-2 text-sm"
-              placeholder="别名，用英文逗号分隔"
-            />
-            <textarea
-              value={fieldsJson}
-              onChange={event => setFieldsJson(event.target.value)}
-              className="tc-input min-h-24 w-full resize-y px-2 py-2 font-mono text-xs"
-              placeholder="字段 JSON"
-            />
-            {localError ? (
-              <p className="tc-danger rounded-[var(--tc-panel-radius)] border px-2 py-1 text-xs font-medium">
-                {localError}
-              </p>
+    <AppShell activePath="/inbox">
+      <section className="mx-auto grid max-w-[1440px] gap-5 px-5 py-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+        <aside className="rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-4">
+          <div className="mb-4">
+            <p className="text-xs text-[var(--tc-smoke)]">Inbox</p>
+            <h1 className="font-serif text-3xl text-[var(--tc-midnight-ink)]">
+              创作收件箱
+            </h1>
+            <p className="mt-2 text-sm text-[var(--tc-smoke)]">
+              当前待处理 {totalCount} 条
+            </p>
+          </div>
+
+          <div className="grid gap-2">
+            {tabs.map(tab => (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => {
+                  setLoading(true);
+                  setActiveTab(tab.value);
+                }}
+                className={cn(
+                  "h-11 rounded-[var(--tc-radius-control)] border px-3 text-left text-sm font-medium",
+                  activeTab === tab.value
+                    ? "border-[var(--tc-midnight-ink)] bg-[var(--tc-lavender-whisper)]"
+                    : "border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] text-[var(--tc-smoke)]",
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-5 rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] p-3">
+            <h2 className="mb-3 text-sm font-semibold">
+              新增{tabs.find(tab => tab.value === activeTab)?.label}
+            </h2>
+            {activeTab !== "ideas" ? (
+              <input
+                value={newTitle}
+                onChange={event => setNewTitle(event.target.value)}
+                placeholder="标题"
+                className="mb-2 h-10 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 text-sm outline-none"
+              />
             ) : null}
+            <textarea
+              value={newContent}
+              onChange={event => setNewContent(event.target.value)}
+              placeholder={activeTab === "ideas" ? "灵感内容" : "正文内容"}
+              className="min-h-28 w-full resize-y rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 py-2 text-sm leading-6 outline-none"
+            />
+            <select
+              value={priority}
+              onChange={event => setPriority(event.target.value as InboxPriority)}
+              className="mt-2 h-10 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 text-sm"
+              aria-label="优先级"
+            >
+              <option value="low">低</option>
+              <option value="normal">普通</option>
+              <option value="high">高</option>
+            </select>
             <Button
               type="button"
-              size="sm"
-              onClick={submitEditedConfirmation}
-              disabled={busy}
-              className="h-8"
+              onClick={createItem}
+              disabled={busy || !newContent.trim() || (activeTab !== "ideas" && !newTitle.trim())}
+              className="mt-3 w-full"
             >
-              <CheckCircle2 className="size-4" />
-              提交确认
+              {busy ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+              添加
             </Button>
           </div>
-        ) : null}
-      </div>
-      <ItemFooter
-        meta={pendingFactStatusText(pendingFact.status)}
-        chapterId={chapterFromRefs(pendingFact)}
-      />
-    </InboxItem>
+        </aside>
+
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-4">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="flex items-center gap-2 font-serif text-3xl text-[var(--tc-midnight-ink)]">
+                <Inbox className="size-6" />
+                {tabs.find(tab => tab.value === activeTab)?.label}
+              </h2>
+              {loading ? <Loader2 className="size-5 animate-spin" /> : null}
+            </div>
+            {error ? (
+              <p className="tc-warning mb-3 rounded-[var(--tc-radius-control)] border px-3 py-2 text-sm">
+                {error}
+              </p>
+            ) : null}
+            {message ? (
+              <p className="tc-success mb-3 rounded-[var(--tc-radius-control)] border px-3 py-2 text-sm">
+                {message}
+              </p>
+            ) : null}
+            <div className="grid gap-3">
+              {activeTab === "ideas" &&
+                ideas.map(item => (
+                  <InboxCard
+                    key={item.id}
+                    title="灵感"
+                    content={item.content}
+                    meta={`${priorityLabel(item.priority)} · ${statusLabel(item.status)}`}
+                    selected={false}
+                    onEdit={(_title, content) =>
+                      void patchItem("ideas", item.id, { content })
+                    }
+                    onProcessed={() => void patchItem("ideas", item.id, { status: "processed" })}
+                    onDeprecated={() => void patchItem("ideas", item.id, { status: "deprecated" })}
+                  />
+                ))}
+              {activeTab === "pending-facts" &&
+                pendingFacts.map(item => (
+                  <InboxCard
+                    key={item.id}
+                    title={item.title || "待确认事实"}
+                    content={item.content}
+                    meta={`${priorityLabel(item.priority)} · ${statusLabel(item.status)}`}
+                    selected={selectedPendingFactId === item.id}
+                    onSelect={() => selectPendingFact(item)}
+                    onEdit={(title, content) =>
+                      void patchItem("pending-facts", item.id, { title, content })
+                    }
+                    onProcessed={() =>
+                      void patchItem("pending-facts", item.id, { status: "processed" })
+                    }
+                    onDeprecated={() =>
+                      void patchItem("pending-facts", item.id, { status: "deprecated" })
+                    }
+                  />
+                ))}
+              {activeTab === "issues" &&
+                issues.map(item => (
+                  <InboxCard
+                    key={item.id}
+                    title={item.title}
+                    content={item.content}
+                    meta={`${priorityLabel(item.priority)} · ${statusLabel(item.status)}`}
+                    selected={false}
+                    onEdit={(title, content) =>
+                      void patchItem("issues", item.id, { title, content })
+                    }
+                    onProcessed={() => void patchItem("issues", item.id, { status: "processed" })}
+                    onDeprecated={() => void patchItem("issues", item.id, { status: "deprecated" })}
+                  />
+                ))}
+              {!loading && currentItemsCount(activeTab, ideas, pendingFacts, issues) === 0 ? (
+                <div className="rounded-[var(--tc-radius-card)] border border-dashed border-[var(--tc-stone-mist)] px-4 py-16 text-center text-sm text-[var(--tc-smoke)]">
+                  暂无条目
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <aside className="rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-4">
+            <h2 className="font-serif text-2xl text-[var(--tc-midnight-ink)]">
+              确认入库
+            </h2>
+            {activePendingFact ? (
+              <div className="mt-4 space-y-3">
+                <p className="rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] p-3 text-sm leading-6">
+                  原事实：{activePendingFact.content}
+                </p>
+                <label className="block text-sm font-medium">
+                  知识卡类型
+                  <select
+                    value={confirmType}
+                    onChange={event =>
+                      setConfirmType(event.target.value as KnowledgeTypeValue)
+                    }
+                    className="mt-2 h-10 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3"
+                  >
+                    {knowledgeTypes.map(type => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block text-sm font-medium">
+                  知识卡预览
+                  <input
+                    value={confirmName}
+                    onChange={event => setConfirmName(event.target.value)}
+                    className="mt-2 h-10 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3"
+                    placeholder="名称"
+                  />
+                </label>
+                <textarea
+                  value={confirmSummary}
+                  onChange={event => setConfirmSummary(event.target.value)}
+                  className="min-h-28 w-full resize-y rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3 py-2 text-sm leading-6 outline-none"
+                  placeholder="摘要"
+                />
+                <Button
+                  type="button"
+                  onClick={confirmPendingFact}
+                  disabled={busy || !confirmName.trim() || !confirmSummary.trim()}
+                  className="w-full"
+                >
+                  {busy ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
+                  确认入库
+                </Button>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-[var(--tc-radius-control)] border border-dashed border-[var(--tc-stone-mist)] px-3 py-12 text-center text-sm text-[var(--tc-smoke)]">
+                选择一条待确认事实
+              </div>
+            )}
+          </aside>
+        </section>
+      </section>
+    </AppShell>
   );
 }
 
-function SavedAICardItem({ card }: { card: SavedAICardInfo }) {
-  return (
-    <InboxItem href={card.source_href}>
-      <div className="space-y-2">
-        <p className="text-sm font-semibold text-[var(--tc-workspace-focus)]">
-          {cardTypeText(card.type)}
-        </p>
-        <p className="tc-paper-fragment max-h-28 overflow-auto whitespace-pre-wrap p-2 text-sm leading-6">
-          {contentText(card.content)}
-        </p>
-      </div>
-      <ItemFooter meta={aiCardStatusText(card.status)} chapterId={card.chapter_id} />
-    </InboxItem>
-  );
-}
-
-function ChapterIssueItem({ issue }: { issue: ChapterIssueInfo }) {
-  return (
-    <InboxItem href={issue.source_href}>
-      <div className="space-y-2">
-        <p className="text-sm font-semibold text-[var(--tc-workspace-focus)]">
-          {issue.title}
-        </p>
-        <p className="whitespace-pre-wrap text-sm leading-6 text-[var(--tc-workspace-text-secondary)]">
-          {issue.description || "未填写描述"}
-        </p>
-      </div>
-      <ItemFooter
-        meta={`${issueSourceText(issue.source)} / ${chapterIssueStatusText(issue.status)}`}
-        chapterId={issue.chapter_id}
-      />
-    </InboxItem>
-  );
-}
-
-function InboxItem({
-  href,
-  children,
+function InboxCard({
+  title,
+  content,
+  meta,
+  selected,
+  onSelect,
+  onEdit,
+  onProcessed,
+  onDeprecated,
 }: {
-  href?: string | null;
-  children: ReactNode;
+  title: string;
+  content: string;
+  meta: string;
+  selected: boolean;
+  onSelect?: () => void;
+  onEdit: (title: string, content: string) => void;
+  onProcessed: () => void;
+  onDeprecated: () => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(title);
+  const [draftContent, setDraftContent] = useState(content);
+
+  function submitEdit() {
+    onEdit(draftTitle.trim() || title, draftContent);
+    setEditing(false);
+  }
+
   return (
-    <article className="tc-panel-soft px-3 py-3">
-      <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] font-medium">
-        <span className="tc-tag px-2 py-0.5">
-          工作区范围
-        </span>
-        <span className="tc-tag px-2 py-0.5">
-          非事实
-        </span>
-        {href ? (
-          <Link
-            href={href}
-            className="ml-auto inline-flex items-center gap-1 rounded-full border border-[var(--tc-workspace-border)] px-2 py-0.5 normal-case text-[var(--tc-workspace-text-secondary)] transition-colors hover:border-[var(--tc-workspace-focus)] hover:text-[var(--tc-workspace-focus)]"
-          >
-            <ExternalLink className="size-3" />
-            正文
-          </Link>
-        ) : null}
+    <article
+      className={cn(
+        "rounded-[var(--tc-radius-card)] border bg-[var(--tc-cream-paper)] p-4",
+        selected ? "border-[var(--tc-midnight-ink)]" : "border-[var(--tc-stone-mist)]",
+      )}
+    >
+      <button type="button" onClick={onSelect} className="w-full text-left">
+        <h3 className="text-lg font-semibold text-[var(--tc-midnight-ink)]">
+          {title}
+        </h3>
+        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--tc-smoke)]">
+          {content}
+        </p>
+        <p className="mt-3 text-xs text-[var(--tc-smoke)]">{meta}</p>
+      </button>
+      {editing ? (
+        <div className="mt-4 space-y-2 border-t border-[var(--tc-stone-mist)] pt-3">
+          <input
+            value={draftTitle}
+            onChange={event => setDraftTitle(event.target.value)}
+            className="h-10 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 text-sm outline-none"
+            placeholder="标题"
+          />
+          <textarea
+            value={draftContent}
+            onChange={event => setDraftContent(event.target.value)}
+            className="min-h-28 w-full resize-y rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 py-2 text-sm leading-6 outline-none"
+            placeholder="内容"
+          />
+          <Button type="button" size="sm" onClick={submitEdit}>
+            <Save className="size-4" />
+            保存编辑
+          </Button>
+        </div>
+      ) : null}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => setEditing(current => !current)}
+        >
+          <Save className="size-4" />
+          编辑
+        </Button>
+        <Button type="button" size="sm" variant="outline" onClick={onProcessed}>
+          <CheckCircle2 className="size-4" />
+          标记已处理
+        </Button>
+        <Button type="button" size="sm" variant="outline" onClick={onDeprecated}>
+          <Trash2 className="size-4" />
+          废弃
+        </Button>
       </div>
-      {children}
     </article>
   );
 }
 
-function ItemFooter({
-  meta,
-  chapterId,
-}: {
-  meta: string;
-  chapterId?: string | null;
-}) {
-  return (
-    <div className="mt-3 flex flex-wrap justify-between gap-2 border-t border-[var(--tc-workspace-border-weak)] pt-2 text-xs text-[var(--tc-workspace-text-muted)]">
-      <span>{meta}</span>
-      {chapterId ? <span>{chapterLabel(chapterId)}</span> : null}
-    </div>
-  );
+function currentItemsCount(
+  tab: InboxTab,
+  ideas: MVPInboxIdea[],
+  pendingFacts: MVPInboxPendingFact[],
+  issues: MVPInboxIssue[],
+): number {
+  if (tab === "ideas") {
+    return ideas.length;
+  }
+  if (tab === "pending-facts") {
+    return pendingFacts.length;
+  }
+  return issues.length;
 }
 
-function laneHeaderClass(tone: LaneTone): string {
-  const base =
-    "flex items-center justify-between border-b border-[var(--tc-workspace-border-weak)] bg-[var(--tc-workspace-panel-soft)] px-3 py-3";
-  if (tone === "idea") {
-    return `${base} border-t-2 border-t-[var(--tc-paper-lime)]`;
-  }
-  if (tone === "pending") {
-    return `${base} border-t-2 border-t-[var(--tc-paper-spring)]`;
-  }
-  if (tone === "ai") {
-    return `${base} border-t-2 border-t-[var(--tc-aurora-violet)]`;
-  }
-  return `${base} border-t-2 border-t-[var(--tc-warning-text)]`;
-}
-
-function contentText(content: Record<string, unknown> | string): string {
-  if (typeof content === "string") {
-    return content;
-  }
-  const title = content.title;
-  const body = content.body ?? content.summary ?? content.content ?? content.text;
-  if (typeof title === "string" && typeof body === "string") {
-    return `${title}\n${body}`;
-  }
-  if (typeof body === "string") {
-    return body;
-  }
-  return JSON.stringify(content, null, 2);
-}
-
-function fieldsObject(content: Record<string, unknown> | string) {
-  if (typeof content === "string") {
-    return { text: content };
-  }
-  return content;
-}
-
-function cardTypeText(type: string): string {
-  if (type === "suggestion") {
-    return "建议卡片";
-  }
-  if (type === "pending_fact") {
-    return "待确认设定卡片";
-  }
-  if (type === "text_candidate") {
-    return "正文候选卡片";
-  }
-  return "智能助手卡片";
-}
-
-function pendingFactTypeText(type: string): string {
+function priorityLabel(priority: string): string {
   const labels: Record<string, string> = {
-    character: "人物",
-    realm: "境界",
-    technique: "功法",
-    location: "地点",
-    faction: "势力",
-    item: "物品",
-    rule: "规则/设定",
-    event: "事件",
-    foreshadow: "伏笔",
-    other: "其他设定",
+    low: "低优先级",
+    normal: "普通优先级",
+    high: "高优先级",
   };
-  return labels[type] ?? "其他设定";
+  return labels[priority] ?? "普通优先级";
 }
 
-function pendingFactStatusText(status: string): string {
+function statusLabel(status: string): string {
   const labels: Record<string, string> = {
-    pending: "待确认",
-    confirmed: "已确认",
-    edited_confirmed: "已编辑确认",
-    ignored: "已驳回",
-  };
-  return labels[status] ?? "待确认";
-}
-
-function aiCardStatusText(status: string): string {
-  const labels: Record<string, string> = {
-    generated: "待处理",
-    inserted: "已插入正文",
-    saved_to_inbox: "已保存到收件箱",
-    converted_to_pending_fact: "已转为待确认设定",
-    discarded: "已丢弃",
-    retried: "已重试",
+    todo: "待处理",
+    processed: "已处理",
+    deprecated: "已废弃",
   };
   return labels[status] ?? "待处理";
-}
-
-function ideaSourceText(source: string): string {
-  if (source === "ai") {
-    return "智能助手建议";
-  }
-  if (source === "author") {
-    return "作者记录";
-  }
-  return "来源未知";
-}
-
-function ideaStatusText(status: string): string {
-  if (status === "open") {
-    return "待处理";
-  }
-  if (status === "archived") {
-    return "已归档";
-  }
-  return "待处理";
-}
-
-function issueSourceText(source: string): string {
-  if (source === "ai") {
-    return "智能助手发现";
-  }
-  if (source === "author") {
-    return "作者记录";
-  }
-  return "来源未知";
-}
-
-function chapterIssueStatusText(status: string): string {
-  if (status === "open") {
-    return "待处理";
-  }
-  if (status === "resolved") {
-    return "已解决";
-  }
-  if (status === "ignored") {
-    return "已忽略";
-  }
-  return "待处理";
-}
-
-function chapterLabel(chapterId: string): string {
-  const match = /^chapter_(\d+)$/.exec(chapterId);
-  if (!match) {
-    return `章节：${chapterId}`;
-  }
-  return `第 ${Number(match[1])} 章`;
-}
-
-function chapterFromRefs(pendingFact: PendingFactInfo): string | null {
-  for (const sourceRef of pendingFact.source_refs) {
-    if (sourceRef.chapter_id) {
-      return sourceRef.chapter_id;
-    }
-  }
-  return null;
 }

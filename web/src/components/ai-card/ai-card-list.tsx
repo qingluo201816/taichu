@@ -10,7 +10,6 @@ import {
   Loader2,
   MessageSquare,
   PenLine,
-  Replace,
   RotateCcw,
   Scissors,
   Sparkles,
@@ -304,14 +303,6 @@ function ResultCard({
               tone="paper"
             >
               <CornerDownLeft className="size-4" />
-            </SmallAction>
-            <SmallAction
-              label="替换"
-              disabled={!generated}
-              onClick={() => onApplyText(card, "replace_selection")}
-              tone="paper"
-            >
-              <Replace className="size-4" />
             </SmallAction>
             <SmallAction
               label="追加"

@@ -58,6 +58,14 @@ class ProjectAssetStorageContract(Protocol):
         """写入 source/manuscripts/manifest.json。"""
         ...
 
+    async def read_outline(self) -> StorageData:
+        """读取 source/manuscripts/outline.json。"""
+        ...
+
+    async def write_outline(self, data: StorageData) -> None:
+        """写入 source/manuscripts/outline.json。"""
+        ...
+
     async def write_chapter_markdown(
         self,
         relative_path: str,
@@ -115,6 +123,38 @@ class ProjectAssetStorageContract(Protocol):
         category: str | None = None,
     ) -> list[StorageData]:
         """列出 source/knowledge 下的 JSON 主记录。"""
+        ...
+
+    async def write_structured_knowledge_record(
+        self,
+        knowledge_type: str,
+        knowledge_id: str,
+        data: StorageData,
+    ) -> None:
+        """按知识类型写入结构化知识卡 JSON。"""
+        ...
+
+    async def read_structured_knowledge_record(
+        self,
+        knowledge_type: str,
+        knowledge_id: str,
+    ) -> StorageData | None:
+        """按知识类型读取结构化知识卡 JSON。"""
+        ...
+
+    async def list_structured_knowledge_records(
+        self,
+        knowledge_type: str | None = None,
+    ) -> list[StorageData]:
+        """按知识类型列出结构化知识卡 JSON。"""
+        ...
+
+    async def read_preferences(self) -> StorageData:
+        """读取 source/workspace/settings_preferences.json。"""
+        ...
+
+    async def write_preferences(self, data: StorageData) -> None:
+        """写入 source/workspace/settings_preferences.json。"""
         ...
 
     async def clear_generated(self) -> None:
