@@ -27,8 +27,21 @@ _KNOWLEDGE_CATEGORIES = (
     "foreshadows",
 )
 
+_STRUCTURED_KNOWLEDGE_TYPES = (
+    "character",
+    "realm",
+    "technique",
+    "location",
+    "faction",
+    "item",
+    "rule",
+    "event",
+    "foreshadow",
+)
+
 _SOURCE_DIRS = (
     "manuscripts/chapters",
+    *(f"knowledge/{knowledge_type}" for knowledge_type in _STRUCTURED_KNOWLEDGE_TYPES),
     *(f"knowledge/{category}" for category in _KNOWLEDGE_CATEGORIES),
     "workspace",
 )
@@ -48,6 +61,10 @@ _WORKSPACE_FILES = (
     "pending_facts.jsonl",
     "chapter_issues.jsonl",
     "chapter_summaries.jsonl",
+    "ai_workspace_conversations.jsonl",
+    "inbox_ideas.jsonl",
+    "inbox_pending_facts.jsonl",
+    "inbox_issues.jsonl",
 )
 
 
@@ -82,6 +99,14 @@ class ProjectAssetStorageBackend:
     async def write_manifest(self, data: StorageData) -> None:
         """Write manuscripts/manifest.json atomically."""
         await asyncio.to_thread(self._write_manifest_sync, data)
+
+    async def read_outline(self) -> StorageData:
+        """Read manuscripts/outline.json, creating it if needed."""
+        return await asyncio.to_thread(self._read_outline_sync)
+
+    async def write_outline(self, data: StorageData) -> None:
+        """Write manuscripts/outline.json atomically."""
+        await asyncio.to_thread(self._write_outline_sync, data)
 
     async def write_chapter_markdown(
         self,
@@ -172,6 +197,50 @@ class ProjectAssetStorageBackend:
             category,
         )
 
+    async def write_structured_knowledge_record(
+        self,
+        knowledge_type: str,
+        knowledge_id: str,
+        data: StorageData,
+    ) -> None:
+        """Write one MVP structured knowledge card JSON atomically."""
+        await asyncio.to_thread(
+            self._write_structured_knowledge_record_sync,
+            knowledge_type,
+            knowledge_id,
+            data,
+        )
+
+    async def read_structured_knowledge_record(
+        self,
+        knowledge_type: str,
+        knowledge_id: str,
+    ) -> StorageData | None:
+        """Read one MVP structured knowledge card JSON."""
+        return await asyncio.to_thread(
+            self._read_structured_knowledge_record_sync,
+            knowledge_type,
+            knowledge_id,
+        )
+
+    async def list_structured_knowledge_records(
+        self,
+        knowledge_type: str | None = None,
+    ) -> list[StorageData]:
+        """List MVP structured knowledge card JSON records."""
+        return await asyncio.to_thread(
+            self._list_structured_knowledge_records_sync,
+            knowledge_type,
+        )
+
+    async def read_preferences(self) -> StorageData:
+        """Read workspace/settings_preferences.json."""
+        return await asyncio.to_thread(self._read_preferences_sync)
+
+    async def write_preferences(self, data: StorageData) -> None:
+        """Write workspace/settings_preferences.json atomically."""
+        await asyncio.to_thread(self._write_preferences_sync, data)
+
     async def clear_generated(self) -> None:
         """Delete generated contents and recreate empty generated dirs."""
         await asyncio.to_thread(self._clear_generated_sync)
@@ -194,6 +263,10 @@ class ProjectAssetStorageBackend:
         if not manifest_path.exists():
             self._write_manifest_sync(self._empty_manifest())
 
+        outline_path = self._outline_path
+        if not outline_path.exists():
+            self._write_outline_sync(self._empty_outline())
+
         workspace_root = self._source_root / "workspace"
         for filename in _WORKSPACE_FILES:
             path = workspace_root / filename
@@ -203,6 +276,14 @@ class ProjectAssetStorageBackend:
         editor_state = workspace_root / "editor_state.json"
         if not editor_state.exists():
             editor_state.write_text("{}\n", encoding="utf-8")
+
+        preferences_path = workspace_root / "settings_preferences.json"
+        if not preferences_path.exists():
+            preferences_path.write_text(
+                json.dumps(self._default_preferences(), ensure_ascii=False, indent=2)
+                + "\n",
+                encoding="utf-8",
+            )
 
     def _read_metadata_sync(self) -> StorageData:
         self._ensure_skeleton_sync()
@@ -236,6 +317,23 @@ class ProjectAssetStorageBackend:
             encoding="utf-8",
         )
         temporary_path.replace(manifest_path)
+
+    def _read_outline_sync(self) -> StorageData:
+        self._ensure_skeleton_sync()
+        data = json.loads(self._outline_path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            raise ValueError("Writing outline must be a JSON object")
+        return data
+
+    def _write_outline_sync(self, data: StorageData) -> None:
+        outline_path = self._outline_path
+        outline_path.parent.mkdir(parents=True, exist_ok=True)
+        temporary_path = outline_path.with_suffix(".json.tmp")
+        temporary_path.write_text(
+            json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        temporary_path.replace(outline_path)
 
     def _write_chapter_markdown_sync(
         self,
@@ -343,6 +441,75 @@ class ProjectAssetStorageBackend:
                 records.append(data)
         return records
 
+    def _write_structured_knowledge_record_sync(
+        self,
+        knowledge_type: str,
+        knowledge_id: str,
+        data: StorageData,
+    ) -> None:
+        self._ensure_skeleton_sync()
+        path = self._resolve_safe_structured_knowledge_json(
+            knowledge_type,
+            knowledge_id,
+        )
+        path.parent.mkdir(parents=True, exist_ok=True)
+        text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
+        with self._knowledge_lock:
+            self._replace_file_text(path, text)
+
+    def _read_structured_knowledge_record_sync(
+        self,
+        knowledge_type: str,
+        knowledge_id: str,
+    ) -> StorageData | None:
+        self._ensure_skeleton_sync()
+        path = self._resolve_safe_structured_knowledge_json(
+            knowledge_type,
+            knowledge_id,
+        )
+        if not path.exists():
+            return None
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            raise ValueError("Structured knowledge JSON record must be an object")
+        return data
+
+    def _list_structured_knowledge_records_sync(
+        self,
+        knowledge_type: str | None = None,
+    ) -> list[StorageData]:
+        self._ensure_skeleton_sync()
+        knowledge_types = (
+            (knowledge_type,)
+            if knowledge_type is not None
+            else _STRUCTURED_KNOWLEDGE_TYPES
+        )
+        records: list[StorageData] = []
+        for current_type in knowledge_types:
+            type_root = self._resolve_safe_structured_knowledge_type(current_type)
+            for path in sorted(type_root.glob("*.json")):
+                data = json.loads(path.read_text(encoding="utf-8"))
+                if not isinstance(data, dict):
+                    raise ValueError(
+                        f"Structured knowledge JSON record must be an object: "
+                        f"{path.name}"
+                    )
+                records.append(data)
+        return records
+
+    def _read_preferences_sync(self) -> StorageData:
+        self._ensure_skeleton_sync()
+        path = self._preferences_path
+        data = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            raise ValueError("Settings preferences must be a JSON object")
+        return data
+
+    def _write_preferences_sync(self, data: StorageData) -> None:
+        self._ensure_skeleton_sync()
+        text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
+        self._replace_file_text(self._preferences_path, text)
+
     def _clear_generated_sync(self) -> None:
         if self._generated_root.exists():
             shutil.rmtree(self._generated_root)
@@ -365,18 +532,25 @@ class ProjectAssetStorageBackend:
         path = PurePosixPath(relative_path)
         if path.is_absolute() or ".." in path.parts:
             raise ValueError("chapter path must stay inside source root")
-        if len(path.parts) != 3 or path.parts[:2] != (
+        valid_flat_path = len(path.parts) == 3 and path.parts[:2] == (
             "manuscripts",
             "chapters",
-        ):
+        )
+        valid_volume_path = len(path.parts) == 4 and path.parts[:2] == (
+            "manuscripts",
+            "chapters",
+        )
+        if not (valid_flat_path or valid_volume_path):
             raise ValueError(
-                "chapter path must be manuscripts/chapters/<id>.md"
+                "chapter path must stay inside manuscripts/chapters"
             )
         if path.suffix != ".md":
             raise ValueError("chapter path must end with .md")
         chapter_id = path.stem
         if not _CHAPTER_ID.fullmatch(chapter_id):
             raise ValueError("chapter id contains unsafe characters")
+        if valid_volume_path and not _CHAPTER_ID.fullmatch(path.parts[2]):
+            raise ValueError("volume id contains unsafe characters")
         return self._source_root / Path(*path.parts)
 
     def _resolve_safe_workspace_jsonl(self, filename: str) -> Path:
@@ -401,6 +575,21 @@ class ProjectAssetStorageBackend:
             raise ValueError("knowledge category is not part of the contract")
         return self._source_root / "knowledge" / category
 
+    def _resolve_safe_structured_knowledge_json(
+        self,
+        knowledge_type: str,
+        knowledge_id: str,
+    ) -> Path:
+        type_root = self._resolve_safe_structured_knowledge_type(knowledge_type)
+        if not _KNOWLEDGE_ID.fullmatch(knowledge_id):
+            raise ValueError("knowledge id contains unsafe characters")
+        return type_root / f"{knowledge_id}.json"
+
+    def _resolve_safe_structured_knowledge_type(self, knowledge_type: str) -> Path:
+        if knowledge_type not in _STRUCTURED_KNOWLEDGE_TYPES:
+            raise ValueError("knowledge type is not part of the MVP contract")
+        return self._source_root / "knowledge" / knowledge_type
+
     @staticmethod
     def _replace_workspace_text(path: Path, text: str) -> None:
         ProjectAssetStorageBackend._replace_file_text(path, text)
@@ -415,6 +604,14 @@ class ProjectAssetStorageBackend:
     def _manifest_path(self) -> Path:
         return self._source_root / "manuscripts" / "manifest.json"
 
+    @property
+    def _outline_path(self) -> Path:
+        return self._source_root / "manuscripts" / "outline.json"
+
+    @property
+    def _preferences_path(self) -> Path:
+        return self._source_root / "workspace" / "settings_preferences.json"
+
     @staticmethod
     def _empty_manifest() -> StorageData:
         return {
@@ -422,6 +619,24 @@ class ProjectAssetStorageBackend:
             "current_chapter_id": None,
             "volumes": [],
             "chapters": [],
+            "updated_at": _now_iso(),
+        }
+
+    @staticmethod
+    def _empty_outline() -> StorageData:
+        return {
+            "volumes": [],
+            "current_volume_id": None,
+            "current_chapter_id": None,
+            "updated_at": _now_iso(),
+        }
+
+    @staticmethod
+    def _default_preferences() -> StorageData:
+        return {
+            "font_size": 18,
+            "font_style": "serif",
+            "editor_background": "dark",
             "updated_at": _now_iso(),
         }
 

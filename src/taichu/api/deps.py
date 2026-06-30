@@ -6,6 +6,7 @@ from taichu.application.agents.chat.service import ChatAgentService
 from taichu.application.agents.registry import AgentRegistry
 from taichu.application.contracts.storage import StorageBackend
 from taichu.application.services.ai_card_service import AICardService
+from taichu.application.services.ai_workspace_service import AIWorkspaceService
 from taichu.application.services.chapter_summary_service import (
     ChapterSummaryService,
 )
@@ -14,10 +15,14 @@ from taichu.application.services.export_service import ExportService
 from taichu.application.services.index_service import IndexService
 from taichu.application.services.inbox_service import InboxService
 from taichu.application.services.knowledge_service import KnowledgeService
+from taichu.application.services.mvp_inbox_service import MVPInboxService
+from taichu.application.services.mvp_knowledge_service import MVPKnowledgeService
+from taichu.application.services.outline_service import OutlineService
 from taichu.application.services.pending_fact_confirmation_service import (
     PendingFactConfirmationService,
 )
 from taichu.application.services.selection_ai_service import SelectionAIService
+from taichu.application.services.settings_service import SettingsPreferenceService
 
 
 def provide_agent_registry(request: Request) -> AgentRegistry:
@@ -40,6 +45,11 @@ def provide_chapter_service(request: Request) -> ChapterService:
     return request.app.state.chapter_service
 
 
+def provide_outline_service(request: Request) -> OutlineService:
+    """Return the MVP writing outline application service."""
+    return request.app.state.outline_service
+
+
 def provide_chapter_summary_service(request: Request) -> ChapterSummaryService:
     """Return the chapter summary application service."""
     return request.app.state.chapter_summary_service
@@ -60,6 +70,11 @@ def provide_inbox_service(request: Request) -> InboxService:
     return request.app.state.inbox_service
 
 
+def provide_mvp_inbox_service(request: Request) -> MVPInboxService:
+    """Return the MVP Inbox application service."""
+    return request.app.state.mvp_inbox_service
+
+
 def provide_export_service(request: Request) -> ExportService:
     """Return the readable export application service."""
     return request.app.state.export_service
@@ -75,8 +90,23 @@ def provide_knowledge_service(request: Request) -> KnowledgeService:
     return request.app.state.knowledge_service
 
 
+def provide_mvp_knowledge_service(request: Request) -> MVPKnowledgeService:
+    """Return the MVP structured knowledge application service."""
+    return request.app.state.mvp_knowledge_service
+
+
 def provide_pending_fact_confirmation_service(
     request: Request,
 ) -> PendingFactConfirmationService:
     """Return the PendingFact author confirmation service."""
     return request.app.state.pending_fact_confirmation_service
+
+
+def provide_ai_workspace_service(request: Request) -> AIWorkspaceService:
+    """Return the MVP writing-area AI conversation service."""
+    return request.app.state.ai_workspace_service
+
+
+def provide_settings_preference_service(request: Request) -> SettingsPreferenceService:
+    """Return the MVP settings preference service."""
+    return request.app.state.settings_preference_service

@@ -42,6 +42,14 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
             (
                 self.assets_root
                 / "source"
+                / "manuscripts"
+                / "outline.json"
+            ).exists()
+        )
+        self.assertTrue(
+            (
+                self.assets_root
+                / "source"
                 / "workspace"
                 / "ai_cards.jsonl"
             ).exists()
@@ -52,6 +60,30 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
                 / "source"
                 / "workspace"
                 / "chapter_issues.jsonl"
+            ).exists()
+        )
+        self.assertTrue(
+            (
+                self.assets_root
+                / "source"
+                / "workspace"
+                / "ai_workspace_conversations.jsonl"
+            ).exists()
+        )
+        self.assertTrue(
+            (
+                self.assets_root
+                / "source"
+                / "workspace"
+                / "settings_preferences.json"
+            ).exists()
+        )
+        self.assertTrue(
+            (
+                self.assets_root
+                / "source"
+                / "knowledge"
+                / "character"
             ).exists()
         )
         self.assertTrue((self.assets_root / "generated" / "sqlite").exists())
@@ -133,6 +165,58 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
             "# 第一章\n\n正文\n",
         )
         self.assertTrue((self.assets_root / "generated" / "temp").exists())
+
+    async def test_chapter_markdown_preserves_author_whitespace(self) -> None:
+        await self.storage.ensure_skeleton()
+        markdown = "第一行  保留空格\n\n\n    缩进行\n\n\n\n结尾  \n"
+
+        await self.storage.write_chapter_markdown(
+            "manuscripts/chapters/chapter_001.md",
+            markdown,
+        )
+
+        self.assertEqual(
+            await self.storage.read_chapter_markdown(
+                "manuscripts/chapters/chapter_001.md"
+            ),
+            markdown,
+        )
+
+    async def test_outline_json_write_read(self) -> None:
+        outline: dict[str, object] = {
+            "volumes": [
+                {
+                    "volume_id": "volume-001",
+                    "name": "第一卷 大田初醒",
+                    "order": 1,
+                    "chapters": [
+                        {
+                            "chapter_id": "chapter-001",
+                            "display_title": "第1章 大田金鳞元神出",
+                            "order": 1,
+                            "markdown_path": (
+                                "manuscripts/chapters/volume-001/chapter-001.md"
+                            ),
+                        }
+                    ],
+                }
+            ],
+            "current_volume_id": "volume-001",
+            "current_chapter_id": "chapter-001",
+            "updated_at": "2026-06-30T12:00:00+09:00",
+        }
+
+        await self.storage.write_outline(outline)
+
+        self.assertEqual(await self.storage.read_outline(), outline)
+        self.assertTrue(
+            (
+                self.assets_root
+                / "source"
+                / "manuscripts"
+                / "outline.json"
+            ).exists()
+        )
 
     async def test_workspace_jsonl_append_preserves_concurrent_records(
         self,
@@ -224,7 +308,63 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
                 / "techniques"
                 / "knowledge_001.json"
             ).exists()
+                    )
+
+    async def test_structured_knowledge_uses_type_directories(self) -> None:
+        card: dict[str, object] = {
+            "id": "character-qin-yang",
+            "type": "character",
+            "name": "秦阳",
+            "summary": "主角。",
+            "status": "draft",
+        }
+
+        await self.storage.write_structured_knowledge_record(
+            "character",
+            "character-qin-yang",
+            card,
         )
+
+        self.assertEqual(
+            await self.storage.read_structured_knowledge_record(
+                "character",
+                "character-qin-yang",
+            ),
+            card,
+        )
+        self.assertEqual(
+            await self.storage.list_structured_knowledge_records("character"),
+            [card],
+        )
+        self.assertTrue(
+            (
+                self.assets_root
+                / "source"
+                / "knowledge"
+                / "character"
+                / "character-qin-yang.json"
+            ).exists()
+        )
+
+    async def test_structured_knowledge_rejects_unknown_type(self) -> None:
+        with self.assertRaises(ValueError):
+            await self.storage.write_structured_knowledge_record(
+                "characters",
+                "character-qin-yang",
+                {"id": "character-qin-yang"},
+            )
+
+    async def test_preferences_json_write_read(self) -> None:
+        preferences = {
+            "font_size": 19,
+            "font_style": "serif",
+            "editor_background": "dark",
+            "updated_at": "2026-06-30T12:00:00+09:00",
+        }
+
+        await self.storage.write_preferences(preferences)
+
+        self.assertEqual(await self.storage.read_preferences(), preferences)
 
     async def test_knowledge_json_rejects_unsafe_paths(self) -> None:
         unsafe_inputs = [

@@ -15,8 +15,42 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     const detail = await response.text();
-    throw new Error(detail || `接口请求失败：${response.status}`);
+    throw new Error(errorMessage(detail, response.status));
   }
 
   return (await response.json()) as T;
+}
+
+function errorMessage(detail: string, status: number): string {
+  if (!detail) {
+    return `接口请求失败：${status}`;
+  }
+  try {
+    const parsed = JSON.parse(detail) as unknown;
+    if (isObject(parsed)) {
+      const error = parsed.error;
+      if (isObject(error) && typeof error.message === "string") {
+        return error.message;
+      }
+      if (typeof parsed.detail === "string") {
+        return parsed.detail;
+      }
+      if (isObject(parsed.detail)) {
+        const nestedError = parsed.detail.error;
+        if (
+          isObject(nestedError) &&
+          typeof nestedError.message === "string"
+        ) {
+          return nestedError.message;
+        }
+      }
+    }
+  } catch {
+    return detail;
+  }
+  return detail;
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

@@ -9,7 +9,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-[var(--tc-workspace-focus)] text-[var(--tc-workspace-shell)] hover:bg-[var(--tc-void-frame-warm)]",
+          "border-[var(--tc-midnight-ink)] bg-[var(--tc-lavender-whisper)] text-[var(--tc-midnight-ink)] hover:bg-[color-mix(in_srgb,var(--tc-lavender-whisper),var(--tc-white)_20%)]",
         outline:
           "border-[var(--tc-workspace-border)] bg-transparent text-[var(--tc-workspace-text)] hover:bg-[var(--tc-workspace-panel-soft)] aria-expanded:bg-[var(--tc-workspace-panel-soft)]",
         secondary:

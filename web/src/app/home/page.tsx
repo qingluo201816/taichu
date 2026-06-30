@@ -1,130 +1,77 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  BookOpen,
-  BookOpenCheck,
-  Inbox,
-  MessageSquare,
-  Settings,
-} from "lucide-react";
+import { ArrowRight, BookOpen, History, Inbox, Library } from "lucide-react";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { AppShell } from "@/components/app-shell";
 
-const modules = [
+const quickEntries = [
   {
-    title: "进入编辑器",
-    description: "当前章节写作、选区智能助手、章节整理",
+    title: "写作",
+    detail: "正文、分卷章节大纲、右侧 AI 入口",
     href: "/editor",
-    size: "lg",
     icon: BookOpen,
-    meta: "主工作台",
-  },
-  {
-    title: "智能对话",
-    description: "带来源的深度创作对话",
-    href: "/chat",
-    size: "sm",
-    icon: MessageSquare,
-    meta: "事实范围",
-  },
-  {
-    title: "创作收件箱",
-    description: "灵感与待确认设定",
-    href: "/inbox",
-    size: "sm",
-    icon: Inbox,
-    meta: "非事实",
   },
   {
     title: "知识库",
-    description: "作者确认事实",
+    detail: "结构化知识卡片查看与编辑",
     href: "/knowledge",
-    size: "sm",
-    icon: BookOpenCheck,
-    meta: "已确认",
+    icon: Library,
   },
   {
-    title: "导出与重建",
-    description: "导出源资产，重建派生检索数据",
-    href: "/settings",
-    size: "sm",
-    icon: Settings,
-    meta: "源资产",
+    title: "Inbox",
+    detail: "灵感、待确认事实、待处理问题",
+    href: "/inbox",
+    icon: Inbox,
+  },
+  {
+    title: "AI 历史",
+    detail: "写作区多轮记录与提示词快照",
+    href: "/ai-history",
+    icon: History,
   },
 ];
 
 export default function HomePage() {
   return (
-    <main className="tc-workspace-page flex flex-1 items-center justify-center px-5 py-8 md:px-12 md:py-14">
-      <div className="w-full max-w-6xl">
-        <header className="mb-8 flex flex-col gap-5 border-b border-[var(--tc-workspace-border-weak)] pb-6 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="mb-3 font-mono text-xs text-[var(--tc-workspace-text-muted)]">
-              坐标：主创作入口
-            </p>
-            <h1 className="text-3xl font-semibold tracking-normal text-[var(--tc-workspace-focus)] md:text-4xl">
-              太初
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--tc-workspace-text-secondary)] md:text-base">
-              单本玄幻长篇的个人 AI 创作工作台。正文、设定、灵感和来源证据在同一上下文中推进。
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2 text-xs">
-            <span className="tc-tag px-3 py-1">
-              <span className="tc-status-dot" />
-              世界种子已点亮
-            </span>
-            <span className="tc-tag px-3 py-1">深色写作工作台</span>
-          </div>
-        </header>
+    <AppShell activePath="/home">
+      <section className="mx-auto grid min-h-[calc(100vh-73px)] max-w-6xl content-center gap-10 px-5 py-12">
+        <div className="max-w-3xl">
+          <p className="mb-3 text-sm font-medium text-[var(--tc-deep-forest-teal)]">
+            主创作入口
+          </p>
+          <h1 className="font-serif text-5xl leading-tight text-[var(--tc-midnight-ink)] md:text-7xl">
+            太初
+          </h1>
+          <p className="mt-5 text-lg leading-8 text-[var(--tc-smoke)]">
+            面向单本玄幻小说的个人写作工作台。正文、大纲、知识、灵感和模拟 AI 链路在同一个作者上下文中推进。
+          </p>
+        </div>
 
-        <div className="grid auto-rows-[154px] grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {modules.map(mod => {
-            const Icon = mod.icon;
+        <div className="grid gap-4 md:grid-cols-2">
+          {quickEntries.map(entry => {
+            const Icon = entry.icon;
             return (
               <Link
-                key={mod.title}
-                href={mod.href}
-                className={`group ${mod.size === "lg" ? "md:col-span-2 md:row-span-2" : ""}`}
+                key={entry.href}
+                href={entry.href}
+                className="group rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-6 transition-colors hover:border-[var(--tc-midnight-ink)]"
               >
-                <Card className="h-full border-[var(--tc-workspace-border-weak)] bg-[var(--tc-workspace-panel)] transition-colors duration-200 hover:border-[var(--tc-workspace-focus)]">
-                  <CardHeader>
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <span className="inline-flex size-9 items-center justify-center rounded-[var(--tc-panel-radius)] border border-[var(--tc-workspace-border)] bg-[var(--tc-workspace-recess)] text-[var(--tc-workspace-text-secondary)]">
-                        <Icon className="size-4" />
-                      </span>
-                      <span className="tc-tag px-2.5 py-1">{mod.meta}</span>
-                    </div>
-                    <CardTitle className="flex items-center justify-between gap-3 text-base text-[var(--tc-workspace-focus)]">
-                      {mod.title}
-                      <ArrowRight className="size-4 opacity-45 transition-transform group-hover:translate-x-0.5 group-hover:opacity-100" />
-                    </CardTitle>
-                    <CardDescription className="leading-6">
-                      {mod.description}
-                    </CardDescription>
-                  </CardHeader>
-                  {mod.size === "lg" ? (
-                    <CardContent>
-                      <div className="tc-recess flex min-h-[128px] items-end justify-between px-4 py-3">
-                        <span className="font-mono text-xs text-[var(--tc-workspace-text-muted)]">
-                          当前章节 / 选区智能助手 / 章节整理
-                        </span>
-                        <span className="h-px w-20 bg-[var(--tc-aurora-line)]" />
-                      </div>
-                    </CardContent>
-                  ) : null}
-                </Card>
+                <div className="mb-5 flex items-center justify-between gap-3">
+                  <span className="inline-flex size-11 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-midnight-ink)] bg-[var(--tc-cream-paper)]">
+                    <Icon className="size-5" />
+                  </span>
+                  <ArrowRight className="size-5 text-[var(--tc-smoke)] transition-transform group-hover:translate-x-1 group-hover:text-[var(--tc-midnight-ink)]" />
+                </div>
+                <h2 className="text-xl font-semibold text-[var(--tc-midnight-ink)]">
+                  {entry.title}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-[var(--tc-smoke)]">
+                  {entry.detail}
+                </p>
               </Link>
             );
           })}
         </div>
-      </div>
-    </main>
+      </section>
+    </AppShell>
   );
 }
