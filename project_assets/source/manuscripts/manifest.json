@@ -12,7 +12,7 @@
       "status": "active",
       "word_count": 4033,
       "created_at": "2026-06-27T09:06:48.864027Z",
-      "updated_at": "2026-06-28T03:48:29.573509Z"
+      "updated_at": "2026-06-30T09:32:06.815030Z"
     },
     {
       "id": "chapter_002",
@@ -23,7 +23,7 @@
       "status": "active",
       "word_count": 3053,
       "created_at": "2026-06-27T09:06:48.864027Z",
-      "updated_at": "2026-06-27T09:15:52.993180Z"
+      "updated_at": "2026-06-30T09:32:12.085683Z"
     },
     {
       "id": "chapter_003",
@@ -34,8 +34,8 @@
       "status": "active",
       "word_count": 3993,
       "created_at": "2026-06-27T09:06:48.864027Z",
-      "updated_at": "2026-06-28T11:43:51.195990Z"
+      "updated_at": "2026-06-30T09:32:16.175283Z"
     }
   ],
-  "updated_at": "2026-06-28T11:43:51.195990Z"
+  "updated_at": "2026-06-30T09:32:16.175283Z"
 }

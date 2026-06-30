@@ -1,0 +1,27 @@
+{
+  "name": "太初 MVP 第一版 Codex 执行任务包",
+  "updated_at": "2026-06-30",
+  "target_path": "产品文档/MVP执行任务包/",
+  "required_reading": [
+    "AGENTS.md",
+    "docs/rule.md",
+    "TAICHU_DESIGN.md",
+    "产品文档/MVP功能改版.md",
+    "产品文档/MVP迭代规则与LLM边界补充.md"
+  ],
+  "phases": [
+    "Preflight",
+    "Phase 1 数据结构",
+    "Phase 2 后端 API",
+    "Phase 3 前端页面",
+    "Phase 4 假 AI 链路",
+    "Phase 5 验收与清理"
+  ],
+  "rules": [
+    "每阶段完成后停机",
+    "停机点前不得自动 commit",
+    "不接真实 LLM",
+    "不评测输出质量",
+    "用户界面必须中文"
+  ]
+}
