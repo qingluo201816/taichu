@@ -1,0 +1,1181 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RAG 方案学习页</title>
+  <style>
+    :root {
+      --bg: #151516;
+      --shell: #0f0f10;
+      --panel: #1c1c1e;
+      --panel-soft: #222225;
+      --recess: #101012;
+      --border: #34343a;
+      --border-weak: #29292d;
+      --text: #f4f1ea;
+      --text-secondary: #c7c0b6;
+      --text-muted: #8b8781;
+      --focus: #ffffff;
+      --paper: #f8f3e6;
+      --paper-soft: #fbf7ee;
+      --ink: #11100d;
+      --ink-muted: #655f55;
+      --paper-border: #171410;
+      --paper-border-soft: #d8cdbb;
+      --mark: #edfe5e;
+      --spring: #31e992;
+      --blue: #bed4fb;
+      --rose: #f3b5d2;
+      --aurora: linear-gradient(90deg, #f6d1ac, #f3b5d2, #c7b8f5, #a7eadc, #afcdf6);
+      --radius: 8px;
+      --font-ui: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", Arial, sans-serif;
+      --font-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
+      --font-mono: Consolas, "SFMono-Regular", "JetBrains Mono", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--shell);
+      color: var(--text);
+      font-family: var(--font-ui);
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        var(--bg);
+      background-size: 48px 48px;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 330px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      border-right: 1px solid var(--border-weak);
+      background: color-mix(in srgb, var(--shell) 94%, transparent);
+      padding: 22px 16px;
+    }
+
+    .brand {
+      border-bottom: 1px solid var(--border-weak);
+      padding: 0 4px 18px;
+    }
+
+    .brand-kicker,
+    .readout {
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .brand h1 {
+      margin: 8px 0 10px;
+      color: var(--focus);
+      font-size: 24px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .nav {
+      display: grid;
+      gap: 7px;
+      margin: 18px 0;
+    }
+
+    .nav-button {
+      width: 100%;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 9px 10px;
+      text-align: left;
+      transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+    }
+
+    .nav-button:hover {
+      border-color: var(--border);
+      background: var(--panel);
+      color: var(--focus);
+    }
+
+    .nav-button.active {
+      border-color: var(--border);
+      background: var(--panel-soft);
+      color: var(--focus);
+    }
+
+    .nav-index {
+      flex: 0 0 auto;
+      width: 28px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .nav-title {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .side-actions {
+      display: grid;
+      gap: 8px;
+      border-top: 1px solid var(--border-weak);
+      padding-top: 16px;
+    }
+
+    .status {
+      min-height: 22px;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .main {
+      min-width: 0;
+      padding: 24px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      border: 1px solid var(--border-weak);
+      border-radius: var(--radius);
+      background: color-mix(in srgb, var(--panel) 90%, transparent);
+      padding: 16px;
+    }
+
+    .page-meta {
+      min-width: 0;
+    }
+
+    .page-meta h2 {
+      margin: 4px 0 8px;
+      color: var(--focus);
+      font-size: clamp(22px, 4vw, 34px);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .page-meta p {
+      max-width: 860px;
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 12px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--recess);
+      color: var(--text-secondary);
+      font-size: 12px;
+      line-height: 1;
+      padding: 6px 9px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--mark);
+      box-shadow: 0 0 10px rgba(237, 254, 94, 0.2);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .btn {
+      min-height: 34px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      padding: 7px 10px;
+      font-size: 13px;
+      transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      border-color: var(--focus);
+      background: var(--panel-soft);
+      color: var(--focus);
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    .btn.primary {
+      border-color: var(--focus);
+      background: var(--focus);
+      color: var(--shell);
+    }
+
+    .btn.primary:hover:not(:disabled) {
+      background: #f4efe5;
+      color: var(--shell);
+    }
+
+    .paper-wrap {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: center;
+      margin-top: 18px;
+    }
+
+    .paper {
+      width: min(100%, 1120px);
+      min-height: 68vh;
+      border: 1px solid var(--paper-border);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(rgba(17, 16, 13, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(17, 16, 13, 0.035) 1px, transparent 1px),
+        var(--paper);
+      background-size: 28px 28px;
+      color: var(--ink);
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
+      padding: clamp(18px, 4vw, 42px);
+    }
+
+    .paper:focus {
+      outline: 2px solid rgba(199, 184, 245, 0.72);
+      outline-offset: 4px;
+    }
+
+    .paper h1,
+    .paper h2,
+    .paper h3 {
+      font-family: var(--font-serif);
+      color: var(--ink);
+      letter-spacing: 0;
+    }
+
+    .paper h1 {
+      margin: 0 0 16px;
+      font-size: clamp(28px, 5vw, 44px);
+      line-height: 1.18;
+    }
+
+    .paper h2 {
+      margin: 34px 0 12px;
+      border-bottom: 1px solid var(--paper-border);
+      padding-bottom: 8px;
+      font-size: 24px;
+      line-height: 1.28;
+    }
+
+    .paper h3 {
+      margin: 22px 0 10px;
+      font-size: 19px;
+      line-height: 1.35;
+    }
+
+    .paper p,
+    .paper li {
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1.86;
+    }
+
+    .paper p {
+      margin: 10px 0;
+    }
+
+    .paper ul,
+    .paper ol {
+      padding-left: 1.25rem;
+    }
+
+    .paper strong {
+      font-weight: 700;
+    }
+
+    .paper code {
+      border: 1px solid var(--paper-border-soft);
+      border-radius: 5px;
+      background: var(--paper-soft);
+      padding: 1px 5px;
+      font-family: var(--font-mono);
+      font-size: 0.9em;
+    }
+
+    .note {
+      border: 1px solid var(--paper-border);
+      border-radius: 7px;
+      background: var(--paper-soft);
+      padding: 12px 14px;
+      margin: 16px 0;
+    }
+
+    .note.mark {
+      background: linear-gradient(90deg, rgba(237, 254, 94, 0.28), var(--paper-soft) 52%);
+    }
+
+    .note.blue {
+      background: linear-gradient(90deg, rgba(190, 212, 251, 0.34), var(--paper-soft) 52%);
+    }
+
+    .paper-tag {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--paper-border);
+      border-radius: 999px;
+      background: var(--mark);
+      color: var(--ink);
+      font-family: var(--font-ui);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 8px;
+    }
+
+    .table-scroll {
+      overflow-x: auto;
+      border: 1px solid var(--paper-border);
+      border-radius: 7px;
+      margin: 14px 0;
+      background: var(--paper-soft);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--paper-border-soft);
+      border-right: 1px solid var(--paper-border-soft);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    th {
+      background: rgba(17, 16, 13, 0.06);
+      font-weight: 700;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    th:last-child,
+    td:last-child {
+      border-right: 0;
+    }
+
+    .steps,
+    .cards,
+    .lane,
+    .split {
+      display: grid;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .steps {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .split {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .lane {
+      grid-template-columns: 1fr;
+    }
+
+    .step-card,
+    .mini-card,
+    .lane-card {
+      border: 1px solid var(--paper-border);
+      border-radius: 7px;
+      background: var(--paper-soft);
+      padding: 14px;
+    }
+
+    .step-card {
+      position: relative;
+      min-height: 132px;
+    }
+
+    .step-card::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: -13px;
+      width: 13px;
+      height: 1px;
+      background: var(--paper-border);
+    }
+
+    .step-card:last-child::after {
+      display: none;
+    }
+
+    .step-card b,
+    .mini-card b,
+    .lane-card b {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--ink);
+      font-size: 15px;
+    }
+
+    .step-card span,
+    .mini-card span,
+    .lane-card span {
+      display: block;
+      color: var(--ink-muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .lane-card {
+      display: grid;
+      grid-template-columns: 170px minmax(0, 1fr);
+      align-items: start;
+      gap: 12px;
+    }
+
+    .lane-card b {
+      margin: 0;
+    }
+
+    .bars {
+      display: grid;
+      gap: 8px;
+      margin: 14px 0;
+    }
+
+    .bar {
+      display: grid;
+      grid-template-columns: 130px minmax(0, 1fr) 84px;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-ui);
+      font-size: 13px;
+    }
+
+    .bar-track {
+      height: 12px;
+      border: 1px solid var(--paper-border);
+      background: var(--paper-soft);
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: var(--spring);
+    }
+
+    .decision {
+      display: grid;
+      gap: 10px;
+      margin: 16px 0;
+      counter-reset: decision;
+    }
+
+    .decision-item {
+      counter-increment: decision;
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+      border: 1px solid var(--paper-border);
+      border-radius: 7px;
+      background: var(--paper-soft);
+      padding: 12px;
+    }
+
+    .decision-item::before {
+      content: counter(decision);
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--paper-border);
+      border-radius: 999px;
+      background: var(--mark);
+      font-family: var(--font-mono);
+      font-weight: 700;
+    }
+
+    .source-list {
+      border-top: 1px solid var(--paper-border-soft);
+      margin-top: 30px;
+      padding-top: 14px;
+    }
+
+    .source-list a {
+      color: var(--ink);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    .footer-help {
+      max-width: 1120px;
+      margin: 16px auto 0;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 1080px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: relative;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--border-weak);
+      }
+
+      .nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .topbar {
+        flex-direction: column;
+      }
+
+      .toolbar {
+        justify-content: flex-start;
+      }
+
+      .steps,
+      .cards,
+      .split {
+        grid-template-columns: 1fr;
+      }
+
+      .step-card::after {
+        display: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .main {
+        padding: 14px;
+      }
+
+      .nav {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar,
+      .paper {
+        border-radius: 6px;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .lane-card,
+      .bar,
+      .decision-item {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-kicker">学习资料 / 可编辑单页</div>
+        <h1>小说 RAG 方案</h1>
+        <p>按“先看地图，再看技术，再做选择”的顺序重写。不要背产品名，先分清每层解决什么问题。</p>
+      </div>
+      <nav class="nav" id="pageNav" aria-label="页面目录"></nav>
+      <div class="side-actions">
+        <button class="btn" id="prevBtn" type="button">上一页</button>
+        <button class="btn" id="nextBtn" type="button">下一页</button>
+        <button class="btn primary" id="saveBtn" type="button">保存</button>
+        <button class="btn" id="resetBtn" type="button">重置当前页</button>
+        <button class="btn" id="exportBtn" type="button">导出当前 HTML</button>
+        <div class="status" id="statusText">已加载，可直接编辑纸面内容。</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="page-meta">
+          <div class="readout" id="pageCounter">第 1 页 / 共 10 页</div>
+          <h2 id="pageTitle">先建立地图</h2>
+          <p id="pageIntro">先把 RAG 拆成几层，再去理解 SQLite、ES、向量库这些产品分别站在哪一层。</p>
+          <div class="badge-row" id="badgeRow"></div>
+        </div>
+        <div class="toolbar">
+          <button class="btn" id="prevBtnTop" type="button">上一页</button>
+          <button class="btn" id="nextBtnTop" type="button">下一页</button>
+          <button class="btn primary" id="saveBtnTop" type="button">保存修改</button>
+        </div>
+      </header>
+
+      <section class="paper-wrap">
+        <article class="paper" id="editor" contenteditable="true" spellcheck="false" aria-label="可编辑正文"></article>
+      </section>
+      <p class="footer-help">提示：纸面区域可以直接点击编辑。修改会自动保存到当前浏览器；如果要把改好的版本带走，请点击“导出当前 HTML”。</p>
+    </main>
+  </div>
+
+  <template data-page-template="map">
+    <h1>先建立地图</h1>
+    <p><span class="paper-tag">先记这一句</span> RAG 不是某一个数据库，也不是“向量库”等于一切。RAG 是一条流程：先从你的资料里找证据，再让模型基于证据回答。</p>
+    <div class="note mark">
+      <p><strong>为什么之前会看不懂：</strong>SQLite、MySQL、ES、向量库、BM25、倒排索引、GraphRAG 同时出现时，它们看起来像一堆平级选项。实际上它们属于不同层：有的负责存资料，有的负责按关键词搜，有的负责按语义搜，有的负责查关系。</p>
+    </div>
+    <h2>把所有东西先放进 5 个抽屉</h2>
+    <div class="lane">
+      <div class="lane-card"><b>第 1 层：源资料</b><span>你真正相信的原始内容。小说里就是章节正文、作者确认的人物卡、设定卡、事件记录。源资料要人能读、能备份、能追溯。</span></div>
+      <div class="lane-card"><b>第 2 层：结构化数据库</b><span>按字段保存和查询资料。例如“人物名=秦浩轩”“类型=地点”“阵营=王城”。SQLite、MySQL、PostgreSQL、MongoDB 多数在这一层。</span></div>
+      <div class="lane-card"><b>第 3 层：全文搜索</b><span>按关键词和原句找内容。例如搜“黑骑士”“登基”“太初古卷”。倒排索引、BM25、SQLite FTS、PostgreSQL 全文检索、ES/OpenSearch 在这一层。</span></div>
+      <div class="lane-card"><b>第 4 层：语义搜索</b><span>按意思相近找内容。例如“那个冷酷但忠诚的骑士是谁”。FAISS、Chroma、Qdrant、Milvus、Weaviate、pgvector、Pinecone 常在这一层。</span></div>
+      <div class="lane-card"><b>第 5 层：关系与推理</b><span>查“谁背叛过谁”“谁通过两层关系连到皇室”。这需要事件库、关系表、图数据库或 GraphRAG 思路。</span></div>
+    </div>
+    <h2>学习顺序</h2>
+    <div class="decision">
+      <div class="decision-item"><p><strong>先学 RAG 流程。</strong>知道“存储、索引、检索、生成”四步分别做什么。</p></div>
+      <div class="decision-item"><p><strong>再学查询类型。</strong>直接查、字段过滤、关键词搜索、语义搜索、关系查询，不要混在一起。</p></div>
+      <div class="decision-item"><p><strong>再看产品。</strong>SQLite 不是 ES，ES 不是向量库，向量库也不能代替事实库。</p></div>
+      <div class="decision-item"><p><strong>最后选路线。</strong>个人小说先轻量跑通，再逐步加全文、向量和关系能力。</p></div>
+    </div>
+  </template>
+
+  <template data-page-template="rag">
+    <h1>RAG 完整流程</h1>
+    <p><span class="paper-tag">RAG</span> 是 Retrieval-Augmented Generation，中文可以理解成“检索增强生成”。它的重点不是模型多聪明，而是回答前先拿到正确资料。</p>
+    <h2>一条问题是怎么走完的</h2>
+    <div class="steps">
+      <div class="step-card"><b>1. 用户提问</b><span>例如：秦浩轩第一次意识到太初古卷异常，是在哪一段？</span></div>
+      <div class="step-card"><b>2. 系统检索</b><span>先从章节、知识卡、事件记录里找“秦浩轩”“太初古卷”“异常”等相关片段。</span></div>
+      <div class="step-card"><b>3. 组装上下文</b><span>把命中的段落、来源、章节号、必要设定整理给模型。</span></div>
+      <div class="step-card"><b>4. 模型回答</b><span>模型只基于这些证据回答，并给出来源，减少瞎编。</span></div>
+    </div>
+    <h2>RAG 里每一步对应什么技术</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>步骤</th><th>要解决的问题</th><th>常见技术/产品</th><th>小说里的例子</th></tr></thead>
+        <tbody>
+          <tr><td>存储</td><td>资料放在哪里，能不能长期维护</td><td>Markdown、JSON、SQLite、PostgreSQL、MongoDB</td><td>章节正文、人物卡、地点卡、势力卡</td></tr>
+          <tr><td>索引</td><td>怎样让资料可查</td><td>字段索引、倒排索引、向量索引、图索引</td><td>按人名查、按关键词查、按语义查、按关系查</td></tr>
+          <tr><td>检索</td><td>给定问题，找哪些资料</td><td>SQL、BM25、向量 top-k、图遍历、混合检索</td><td>找相关段落、相关人物、相关事件</td></tr>
+          <tr><td>生成</td><td>把资料变成回答或续写建议</td><td>LLM、提示词、来源约束、重排</td><td>回答设定、检查冲突、辅助续写</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note blue">
+      <p><strong>重要边界：</strong>RAG 不是把整本小说一次性塞给模型。正确做法是：先用检索缩小范围，再把少量相关证据交给模型。</p>
+    </div>
+  </template>
+
+  <template data-page-template="query">
+    <h1>先分清 5 种查询</h1>
+    <p><span class="paper-tag">选型关键</span> 你问的问题不同，应该用的检索方式也不同。不要拿向量库解决所有问题，也不要拿 SQL 硬做语义搜索。</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>查询类型</th><th>用户怎么问</th><th>最合适的技术</th><th>为什么</th></tr></thead>
+        <tbody>
+          <tr><td>直接定位</td><td>“打开第 12 章”“张三人物卡”</td><td>路径、主键、SQL 主键查询、键值查询</td><td>目标很明确，不需要相关性排序。</td></tr>
+          <tr><td>字段过滤</td><td>“列出王城派人物”“只看已确认设定”</td><td>SQLite/MySQL/PostgreSQL/MongoDB filter</td><td>条件是明确字段，不需要全文搜索。</td></tr>
+          <tr><td>关键词搜索</td><td>“搜登基”“搜黑骑士出现过哪里”</td><td>倒排索引、BM25、SQLite FTS、ES</td><td>问题里有明确词面，全文检索最稳。</td></tr>
+          <tr><td>语义搜索</td><td>“那个冷酷但忠诚的骑士是谁”</td><td>Embedding + 向量库</td><td>没有说准确名字，只给了意思。</td></tr>
+          <tr><td>关系查询</td><td>“谁既帮助过主角又背叛过他”</td><td>关系表、图数据库、事件库、GraphRAG</td><td>需要跨人物、事件、时间线推理。</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h2>给小说助手的一套判断法</h2>
+    <div class="decision">
+      <div class="decision-item"><p><strong>问题里有准确名字吗？</strong>有，就先查人物卡、别名表或 SQL 字段。</p></div>
+      <div class="decision-item"><p><strong>问题里有明确关键词吗？</strong>有，就先走全文搜索或 BM25。</p></div>
+      <div class="decision-item"><p><strong>问题只是描述感觉吗？</strong>是，就用向量检索找语义相似片段。</p></div>
+      <div class="decision-item"><p><strong>问题涉及“谁和谁如何相连”吗？</strong>是，就需要关系库或事件库。</p></div>
+    </div>
+    <div class="note mark">
+      <p><strong>一个成熟 RAG 通常不是单一路线：</strong>先用 metadata 缩小范围，再用 BM25 和向量检索召回，最后排序和交给模型。</p>
+    </div>
+  </template>
+
+  <template data-page-template="index">
+    <h1>倒排索引、BM25、切块</h1>
+    <p><span class="paper-tag">这一页讲搜索底层</span> 如果你理解了“切块是什么”“倒排索引是什么”“BM25 怎么排序”，就能看懂 ES、SQLite FTS、PostgreSQL 全文检索在做什么。</p>
+    <h2>切块：先决定最小证据单位</h2>
+    <p>切块就是把正文或知识拆成可检索单元。召回粒度越大，上下文越完整，但噪音也越多；粒度越小，定位越准，但可能断掉前后文。</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>粒度</th><th>适合查什么</th><th>优点</th><th>风险</th></tr></thead>
+        <tbody>
+          <tr><td>整章</td><td>章节总结、章节主题</td><td>上下文完整</td><td>太长，模型抓不住重点</td></tr>
+          <tr><td>段落</td><td>人物登场、原句、对话</td><td>来源清楚，适合 BM25</td><td>单段可能缺上下文</td></tr>
+          <tr><td>滑动窗口</td><td>连续剧情片段</td><td>保留前后文</td><td>重复内容多，索引更大</td></tr>
+          <tr><td>知识字段</td><td>身份、别名、阵营、能力</td><td>结构化强，回答稳定</td><td>需要维护字段</td></tr>
+          <tr><td>事件片段</td><td>背叛、决斗、登基、婚约</td><td>适合剧情推理</td><td>整理成本高</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h2>倒排索引：词到文档列表</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>词</th><th>出现在哪些片段</th><th>搜索时怎么用</th></tr></thead>
+        <tbody>
+          <tr><td>黑骑士</td><td>人物卡：张三；第 12 章第 4 段；第 21 章第 9 段</td><td>搜“黑骑士”时，直接取这些候选。</td></tr>
+          <tr><td>登基</td><td>第 45 章第 2 段；事件卡：新帝登基</td><td>适合找精确剧情词。</td></tr>
+          <tr><td>太初古卷</td><td>设定卡；第 3 章第 8 段；第 9 章第 1 段</td><td>适合专有名词召回。</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h2>BM25：给候选片段排序</h2>
+    <p>BM25 可以粗略理解成：一个词在某片段里出现得多、但在全部资料里不常见，而且这个片段不是因为特别长才碰巧命中，那么它的分数就更高。</p>
+    <div class="bars">
+      <div class="bar"><strong>人物卡：张三</strong><div class="bar-track"><div class="bar-fill" style="width: 94%"></div></div><span>最相关</span></div>
+      <div class="bar"><strong>第 12 章段落</strong><div class="bar-track"><div class="bar-fill" style="width: 76%"></div></div><span>相关</span></div>
+      <div class="bar"><strong>第 2 章段落</strong><div class="bar-track"><div class="bar-fill" style="width: 38%"></div></div><span>弱相关</span></div>
+    </div>
+    <div class="note">
+      <p><strong>记忆方式：</strong>倒排索引负责“先找到候选”，BM25 负责“谁排前面”。</p>
+    </div>
+  </template>
+
+  <template data-page-template="db">
+    <h1>普通数据库怎么选</h1>
+    <p><span class="paper-tag">先分清职责</span> 普通数据库主要管“资料怎么长期保存、怎么按字段查、怎么保持结构一致”。它不是专门的语义搜索系统。</p>
+    <h2>产品速读</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>方案</th><th>它是什么</th><th>适合什么</th><th>不适合什么</th><th>小说学习建议</th></tr></thead>
+        <tbody>
+          <tr><td>Markdown / JSON</td><td>文件方案，不算数据库服务</td><td>人类可读、手工维护、备份、学习</td><td>复杂查询、并发、一致性</td><td>最适合当源资料起点</td></tr>
+          <tr><td>SQLite</td><td>单文件、无独立服务的 SQL 数据库</td><td>本地工具、个人项目、小中型资料库</td><td>高并发、多服务器、复杂权限</td><td>个人小说 RAG 起步优先</td></tr>
+          <tr><td>MySQL</td><td>经典关系型数据库服务</td><td>Web 业务、多用户、账号权限、订单任务</td><td>复杂文本召回、语义检索</td><td>做产品后台时考虑，不是学习 RAG 首选</td></tr>
+          <tr><td>PostgreSQL</td><td>功能很强的关系型数据库</td><td>复杂关系、JSONB、全文检索、扩展能力</td><td>极简本地学习</td><td>想“一库多用”时优先考虑</td></tr>
+          <tr><td>MongoDB</td><td>文档数据库，记录像 JSON</td><td>字段变化大、嵌套对象多、复杂卡片</td><td>复杂关系 join、强事务建模</td><td>适合复杂人物卡，但关系仍要设计</td></tr>
+          <tr><td>Redis</td><td>内存数据结构存储</td><td>缓存、会话、队列、热数据、计数器</td><td>长文本事实库、正文主存储</td><td>适合作加速层，不建议当主库</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h2>怎么选，按问题判断</h2>
+    <div class="split">
+      <div class="mini-card"><b>只是学习和个人本地</b><span>Markdown/JSON + SQLite。源资料可读，SQLite 负责字段查询和轻量索引。</span></div>
+      <div class="mini-card"><b>已经要做 Web 服务</b><span>PostgreSQL 或 MySQL。它们适合用户、权限、任务、日志等业务数据。</span></div>
+      <div class="mini-card"><b>设定卡字段经常变化</b><span>MongoDB 或 PostgreSQL JSONB。关键是你是否需要复杂关系查询。</span></div>
+      <div class="mini-card"><b>只是想加速</b><span>Redis。缓存检索结果、会话状态、任务进度，不要把它当长期事实源。</span></div>
+    </div>
+    <div class="note mark">
+      <p><strong>对小说学习最稳的第一步：</strong>Markdown/JSON 保存源资料，SQLite 保存索引和 metadata。先跑通再升级。</p>
+    </div>
+  </template>
+
+  <template data-page-template="search">
+    <h1>全文搜索与 ES</h1>
+    <p><span class="paper-tag">这一层解决关键词</span> 全文搜索适合“按词、短语、原句、术语找资料”。它通常用倒排索引召回，用 BM25 排序。</p>
+    <h2>常见选择</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>方案</th><th>特点</th><th>适合</th><th>学习建议</th></tr></thead>
+        <tbody>
+          <tr><td>SQLite FTS</td><td>SQLite 的全文检索能力，支持 MATCH、短语、列过滤、bm25、highlight、snippet 等</td><td>本地学习、个人小说、轻量工具</td><td>优先学，成本最低</td></tr>
+          <tr><td>PostgreSQL 全文检索</td><td>用 tsvector、tsquery、GIN/GiST 索引做全文搜索</td><td>已经用 PostgreSQL 的项目</td><td>适合一库多用</td></tr>
+          <tr><td>MySQL 全文检索</td><td>支持自然语言搜索、布尔搜索、查询扩展，也有 ngram 等能力</td><td>已有 MySQL 的业务系统</td><td>能用，但不是专门搜索引擎</td></tr>
+          <tr><td>Elasticsearch</td><td>成熟搜索引擎，擅长倒排索引、BM25、过滤、高亮、聚合、分布式</td><td>搜索体验成为核心功能，数据量和查询复杂度上来</td><td>学习概念可以看，落地不必第一步上</td></tr>
+          <tr><td>OpenSearch</td><td>开源搜索套件，能力路线接近 ES，常用于搜索和日志分析</td><td>希望自托管开源搜索服务</td><td>与 ES 放在同一层理解</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h2>ES 到底是什么</h2>
+    <div class="cards">
+      <div class="mini-card"><b>它不是普通数据库替代品</b><span>源资料和业务事务仍应在文件或数据库里。ES 更像“可重建的搜索索引”。</span></div>
+      <div class="mini-card"><b>它不是向量库的同义词</b><span>ES 的经典强项是关键词全文检索。它也有向量相关能力，但学习时先分清两层。</span></div>
+      <div class="mini-card"><b>它适合搜索体验</b><span>字段权重、中文分词、同义词、高亮、聚合统计、复杂筛选，这些是 ES 的价值。</span></div>
+    </div>
+    <h2>什么时候上 ES / OpenSearch</h2>
+    <ul>
+      <li>你已经有稳定源资料和重建索引流程。</li>
+      <li>你需要更强中文分词、字段权重、同义词、高亮、聚合统计。</li>
+      <li>你愿意承担服务部署、索引映射、同步、备份和运维成本。</li>
+    </ul>
+    <h2>什么时候不上</h2>
+    <ul>
+      <li>只是单本小说、个人学习、本地工具。</li>
+      <li>你还没整理好章节、人物卡、事件卡这些源资料。</li>
+      <li>你的主要问题是语义相似，那应先学向量检索。</li>
+    </ul>
+  </template>
+
+  <template data-page-template="vector">
+    <h1>向量数据库怎么选</h1>
+    <p><span class="paper-tag">这一层解决语义</span> 向量检索把文本变成 embedding 向量，再找距离最近的片段。它适合“意思相近”，不适合替代所有搜索。</p>
+    <h2>先理解流程</h2>
+    <div class="steps">
+      <div class="step-card"><b>1. 切块</b><span>把章节、知识卡、事件记录拆成合适片段。</span></div>
+      <div class="step-card"><b>2. 向量化</b><span>用 embedding 模型把文本变成数字向量。</span></div>
+      <div class="step-card"><b>3. 近邻搜索</b><span>用户问题也变成向量，找最相似的 top-k 片段。</span></div>
+      <div class="step-card"><b>4. 过滤与生成</b><span>结合 metadata filter，再把片段交给模型回答。</span></div>
+    </div>
+    <h2>产品速读</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>产品</th><th>它更像什么</th><th>适合什么</th><th>注意点</th></tr></thead>
+        <tbody>
+          <tr><td>FAISS</td><td>向量相似搜索库</td><td>本地实验、算法学习、高性能检索</td><td>不是完整数据库服务，很多管理能力要自己做</td></tr>
+          <tr><td>Chroma</td><td>面向 AI 应用的轻量向量库</td><td>本地学习、原型、简单 RAG</td><td>适合先跑 demo，不要一开始想太复杂</td></tr>
+          <tr><td>Qdrant</td><td>向量搜索引擎</td><td>单机到小服务，需要 payload 元数据过滤</td><td>个人项目升级路线很自然</td></tr>
+          <tr><td>pgvector</td><td>PostgreSQL 扩展</td><td>已有 PostgreSQL，想少维护一个系统</td><td>向量和关系数据放一起，但要理解索引和性能边界</td></tr>
+          <tr><td>Milvus</td><td>大规模向量数据库</td><td>更大规模、服务化、向量数据很多</td><td>能力强但更重，学习起步不必先上</td></tr>
+          <tr><td>Weaviate</td><td>AI 数据库/向量数据库</td><td>想研究向量、关键词、混合搜索</td><td>混合搜索能力值得学习</td></tr>
+          <tr><td>Pinecone</td><td>托管向量数据库</td><td>不想运维，希望云服务</td><td>要考虑成本、数据位置和供应商绑定</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h2>按阶段选</h2>
+    <div class="split">
+      <div class="mini-card"><b>本地学习</b><span>FAISS 或 Chroma。先理解 embedding、top-k、相似度、metadata。</span></div>
+      <div class="mini-card"><b>个人项目升级</b><span>Qdrant 或 pgvector。前者专门做向量搜索，后者适合 PostgreSQL 用户。</span></div>
+      <div class="mini-card"><b>更大规模</b><span>Milvus、Weaviate、Pinecone。重点看运维、过滤、混合检索和成本。</span></div>
+      <div class="mini-card"><b>小说场景</b><span>向量适合找“像这段情绪/设定/人物描述”的片段，但仍要配合关键词和来源。</span></div>
+    </div>
+    <div class="note">
+      <p><strong>常见坑：</strong>向量库只告诉你“相似”，不告诉你“真实”。事实边界仍要靠源资料、作者确认和来源引用。</p>
+    </div>
+  </template>
+
+  <template data-page-template="hybrid">
+    <h1>混合检索怎么组合</h1>
+    <p><span class="paper-tag">成熟做法</span> 比较可靠的 RAG 通常不是单一路线，而是 metadata filter + BM25 + vector + rerank 的组合。</p>
+    <h2>一个问题的完整检索管线</h2>
+    <div class="steps">
+      <div class="step-card"><b>1. 识别问题</b><span>判断是人物、设定、剧情、关系、续写还是冲突检查。</span></div>
+      <div class="step-card"><b>2. 元数据过滤</b><span>先限制范围：只查当前小说、已确认资料、指定章节范围或指定类型。</span></div>
+      <div class="step-card"><b>3. 双路召回</b><span>BM25 找关键词，向量找语义相似，必要时查关系表。</span></div>
+      <div class="step-card"><b>4. 排序生成</b><span>合并去重、重排、截断，再交给模型回答。</span></div>
+    </div>
+    <h2>不同能力各司其职</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>能力</th><th>负责什么</th><th>小说例子</th><th>常见产品</th></tr></thead>
+        <tbody>
+          <tr><td>metadata filter</td><td>缩小范围</td><td>只查人物卡、只查前 30 章、只查已确认设定</td><td>SQL、MongoDB filter、ES filter、向量库 payload filter</td></tr>
+          <tr><td>BM25</td><td>按关键词相关度排序</td><td>搜“太初古卷”“黑骑士”“登基”</td><td>SQLite FTS、PostgreSQL、ES、OpenSearch</td></tr>
+          <tr><td>vector</td><td>按语义相似找片段</td><td>“像这个人物性格的描写”</td><td>FAISS、Chroma、Qdrant、pgvector、Milvus</td></tr>
+          <tr><td>relation</td><td>查关系路径和事件链</td><td>“谁既帮助又背叛过主角”</td><td>关系表、图数据库、GraphRAG</td></tr>
+          <tr><td>rerank</td><td>重新排序候选</td><td>把更贴近问题的来源放前面</td><td>重排模型、规则打分、LLM 判断</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note mark">
+      <p><strong>记忆方式：</strong>先过滤范围，再召回候选，再排序，最后生成。不要让模型直接面对整本小说。</p>
+    </div>
+  </template>
+
+  <template data-page-template="novel">
+    <h1>小说知识怎么建模</h1>
+    <p><span class="paper-tag">小说不是普通文档</span> 普通 RAG 只把文档切块就能用，但小说还有人物状态、势力关系、事件因果、时间线和伏笔，这些需要单独建模。</p>
+    <h2>推荐拆成 5 套知识</h2>
+    <div class="cards">
+      <div class="mini-card"><b>实体卡片库</b><span>人物、地点、势力、功法、物品、规则。回答“是谁、是什么”。</span></div>
+      <div class="mini-card"><b>正文章节库</b><span>章节 Markdown、段落切块、来源锚点。回答“哪里写过”。</span></div>
+      <div class="mini-card"><b>事件库</b><span>谁在何时何地做了什么，结果是什么。回答“发生过什么”。</span></div>
+      <div class="mini-card"><b>关系库</b><span>师徒、敌对、同盟、背叛、血缘、上下级。回答“谁和谁什么关系”。</span></div>
+      <div class="mini-card"><b>时间线库</b><span>第几章、哪一天、剧情阶段、因果顺序。回答“先后顺序”。</span></div>
+      <div class="mini-card"><b>待确认资料</b><span>AI 总结或推断先不要进入事实库，必须等作者确认。</span></div>
+    </div>
+    <h2>问题到资料的路由</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>问题</th><th>优先查哪里</th><th>补充查哪里</th><th>原因</th></tr></thead>
+        <tbody>
+          <tr><td>“张三是谁？”</td><td>实体卡片库</td><td>章节正文</td><td>身份、别名、阵营应是确认事实。</td></tr>
+          <tr><td>“张三什么时候背叛？”</td><td>事件库</td><td>章节段落</td><td>背叛是事件，需要时间和来源。</td></tr>
+          <tr><td>“这段续写冲突吗？”</td><td>实体卡 + 事件库</td><td>向量相似段落</td><td>要对照已有事实和相似剧情。</td></tr>
+          <tr><td>“谁和皇室关系最深？”</td><td>关系库</td><td>事件库</td><td>这是关系路径问题，图结构更自然。</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h2>源资料与派生索引</h2>
+    <div class="split">
+      <div class="mini-card"><b>源资料</b><span>章节正文、作者确认知识、事件记录。它们应该人可读、可备份、可追溯。</span></div>
+      <div class="mini-card"><b>派生索引</b><span>SQLite FTS、ES 索引、向量库、缓存。它们可以删除后从源资料重建。</span></div>
+    </div>
+  </template>
+
+  <template data-page-template="route">
+    <h1>个人小说推荐路线</h1>
+    <p><span class="paper-tag">最终建议</span> 个人学习/单本小说不要一开始上全套工业架构。先跑通最小闭环，再逐步升级。</p>
+    <h2>从轻到重的 5 阶段</h2>
+    <div class="decision">
+      <div class="decision-item"><p><strong>阶段 1：源资料整理。</strong>章节用 Markdown，人物/设定用 JSON 或 Markdown frontmatter。目标是人能读、能备份。</p></div>
+      <div class="decision-item"><p><strong>阶段 2：SQLite 做结构化索引。</strong>保存人物、章节、标签、路径、别名、状态。支持直接查和字段过滤。</p></div>
+      <div class="decision-item"><p><strong>阶段 3：SQLite FTS 或 PostgreSQL 全文检索。</strong>解决“搜词、搜原句、搜术语”的问题。</p></div>
+      <div class="decision-item"><p><strong>阶段 4：加入向量检索。</strong>用 Chroma、FAISS、Qdrant 或 pgvector 解决模糊描述和语义相似。</p></div>
+      <div class="decision-item"><p><strong>阶段 5：补事件、关系、时间线。</strong>先用关系表，复杂后再考虑图数据库或 GraphRAG。</p></div>
+    </div>
+    <h2>最小可行组合</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>职责</th><th>第一选择</th><th>升级选择</th><th>为什么</th></tr></thead>
+        <tbody>
+          <tr><td>源资料</td><td>Markdown + JSON</td><td>Git / 对象存储</td><td>人能读，便于备份。</td></tr>
+          <tr><td>结构化查询</td><td>SQLite</td><td>PostgreSQL</td><td>字段过滤和关系数据更稳定。</td></tr>
+          <tr><td>关键词搜索</td><td>SQLite FTS</td><td>ES / OpenSearch</td><td>找术语、原句、专有名词。</td></tr>
+          <tr><td>语义搜索</td><td>Chroma / FAISS</td><td>Qdrant / pgvector / Milvus</td><td>找意思相近的片段。</td></tr>
+          <tr><td>关系推理</td><td>关系表</td><td>图数据库 / GraphRAG</td><td>查人物关系和事件路径。</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h2>一句话结论</h2>
+    <div class="note mark">
+      <p><strong>推荐起步：</strong>Markdown/JSON + SQLite + SQLite FTS。等你真正遇到“关键词搜不到意思相近内容”的问题，再加向量库；等你真正遇到“关系路径很复杂”的问题，再加关系图谱。</p>
+    </div>
+    <div class="source-list">
+      <h3>官方资料入口</h3>
+      <p>
+        <a href="https://www.sqlite.org/serverless.html">SQLite Serverless</a> ·
+        <a href="https://www.sqlite.org/fts5.html">SQLite FTS5</a> ·
+        <a href="https://dev.mysql.com/doc/refman/8.4/en/fulltext-search.html">MySQL 全文检索</a> ·
+        <a href="https://www.postgresql.org/docs/current/textsearch.html">PostgreSQL 全文检索</a> ·
+        <a href="https://www.elastic.co/docs/solutions/search/full-text">Elastic 全文检索</a> ·
+        <a href="https://docs.opensearch.org/latest/search-plugins/keyword-search/">OpenSearch 搜索</a> ·
+        <a href="https://faiss.ai/index.html">FAISS</a> ·
+        <a href="https://docs.trychroma.com/docs/overview/introduction">Chroma</a> ·
+        <a href="https://qdrant.tech/documentation/overview/vector-search/">Qdrant</a> ·
+        <a href="https://milvus.io/docs/overview.md">Milvus</a> ·
+        <a href="https://docs.weaviate.io/weaviate/search/hybrid">Weaviate 混合搜索</a> ·
+        <a href="https://github.com/pgvector/pgvector">pgvector</a> ·
+        <a href="https://docs.pinecone.io/guides/search/search-overview">Pinecone 搜索</a> ·
+        <a href="https://www.mongodb.com/docs/manual/data-modeling/">MongoDB 数据建模</a> ·
+        <a href="https://redis.io/docs/latest/develop/data-types/">Redis 数据类型</a>
+      </p>
+    </div>
+  </template>
+
+  <script>
+    (function () {
+      "use strict";
+
+      const STORAGE_KEY = "rag-learning-page-edits-v2";
+      const pages = [
+        { id: "map", title: "先建立地图", intro: "先把 RAG 拆成几层，再去理解 SQLite、ES、向量库这些产品分别站在哪一层。", tags: ["学习顺序", "总地图", "先看这里"] },
+        { id: "rag", title: "RAG 完整流程", intro: "RAG 是先检索证据，再让模型基于证据生成，不是某个数据库或某个产品。", tags: ["存储", "索引", "检索", "生成"] },
+        { id: "query", title: "先分清 5 种查询", intro: "直接查、字段过滤、关键词搜索、语义搜索、关系查询分别对应不同技术。", tags: ["查询类型", "技术分工", "路由"] },
+        { id: "index", title: "倒排索引、BM25、切块", intro: "理解搜索引擎之前，先理解切块、倒排索引和 BM25 各自做什么。", tags: ["切块", "倒排索引", "BM25"] },
+        { id: "db", title: "普通数据库怎么选", intro: "普通数据库主要解决资料保存、字段查询和结构一致性，不等于语义搜索。", tags: ["SQLite", "MySQL", "PostgreSQL", "MongoDB"] },
+        { id: "search", title: "全文搜索与 ES", intro: "全文搜索解决关键词、短语、原句和术语召回，ES 是其中的服务化搜索引擎。", tags: ["全文检索", "ES", "OpenSearch"] },
+        { id: "vector", title: "向量数据库怎么选", intro: "向量检索解决意思相近的问题，但仍要配合元数据过滤、关键词搜索和来源。", tags: ["FAISS", "Chroma", "Qdrant", "pgvector"] },
+        { id: "hybrid", title: "混合检索怎么组合", intro: "成熟 RAG 通常是 metadata filter、BM25、vector、关系查询和重排组合起来。", tags: ["混合检索", "重排", "过滤"] },
+        { id: "novel", title: "小说知识怎么建模", intro: "小说不只是文档，还需要人物、事件、关系、时间线和待确认资料。", tags: ["实体卡", "事件库", "关系库"] },
+        { id: "route", title: "个人小说推荐路线", intro: "从 Markdown/JSON + SQLite + SQLite FTS 起步，再按真实问题逐步加向量和图关系。", tags: ["推荐路线", "最小可行", "逐步升级"] }
+      ];
+
+      const nav = document.getElementById("pageNav");
+      const editor = document.getElementById("editor");
+      const title = document.getElementById("pageTitle");
+      const intro = document.getElementById("pageIntro");
+      const counter = document.getElementById("pageCounter");
+      const badges = document.getElementById("badgeRow");
+      const statusText = document.getElementById("statusText");
+      const prevButtons = [document.getElementById("prevBtn"), document.getElementById("prevBtnTop")];
+      const nextButtons = [document.getElementById("nextBtn"), document.getElementById("nextBtnTop")];
+      const saveButtons = [document.getElementById("saveBtn"), document.getElementById("saveBtnTop")];
+      const resetBtn = document.getElementById("resetBtn");
+      const exportBtn = document.getElementById("exportBtn");
+      const templates = {};
+      let currentIndex = 0;
+      let saveTimer = 0;
+      let edits = {};
+
+      document.querySelectorAll("template[data-page-template]").forEach(template => {
+        templates[template.dataset.pageTemplate] = template.innerHTML.trim();
+      });
+
+      try {
+        edits = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      } catch (error) {
+        edits = {};
+        setStatus("本地保存数据读取失败，已使用默认内容。");
+      }
+
+      function pageContent(id) {
+        return typeof edits[id] === "string" ? edits[id] : templates[id];
+      }
+
+      function setStatus(message) {
+        statusText.textContent = message;
+      }
+
+      function saveCurrent() {
+        const page = pages[currentIndex];
+        edits[page.id] = editor.innerHTML;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(edits));
+        setStatus("已保存：" + page.title);
+      }
+
+      function queueSave() {
+        window.clearTimeout(saveTimer);
+        setStatus("编辑中，准备自动保存。");
+        saveTimer = window.setTimeout(saveCurrent, 520);
+      }
+
+      function renderNav() {
+        nav.innerHTML = "";
+        pages.forEach((page, index) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "nav-button" + (index === currentIndex ? " active" : "");
+          button.innerHTML = '<span class="nav-index">' + String(index + 1).padStart(2, "0") + '</span><span class="nav-title">' + page.title + '</span>';
+          button.addEventListener("click", () => setPage(index));
+          nav.appendChild(button);
+        });
+      }
+
+      function renderBadges(page) {
+        badges.innerHTML = "";
+        page.tags.forEach((tag, index) => {
+          const span = document.createElement("span");
+          span.className = "badge";
+          span.innerHTML = (index === 0 ? '<span class="dot"></span>' : "") + tag;
+          badges.appendChild(span);
+        });
+      }
+
+      function setPage(index) {
+        if (index < 0 || index >= pages.length) {
+          return;
+        }
+        if (editor.innerHTML.trim()) {
+          saveCurrent();
+        }
+        currentIndex = index;
+        const page = pages[currentIndex];
+        title.textContent = page.title;
+        intro.textContent = page.intro;
+        counter.textContent = "第 " + (currentIndex + 1) + " 页 / 共 " + pages.length + " 页";
+        editor.innerHTML = pageContent(page.id);
+        renderBadges(page);
+        renderNav();
+        prevButtons.forEach(button => { button.disabled = currentIndex === 0; });
+        nextButtons.forEach(button => { button.disabled = currentIndex === pages.length - 1; });
+        setStatus("当前页可编辑：" + page.title);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function resetCurrent() {
+        const page = pages[currentIndex];
+        if (!window.confirm("确定要重置当前页吗？这会清除本页在浏览器里的修改。")) {
+          return;
+        }
+        delete edits[page.id];
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(edits));
+        editor.innerHTML = templates[page.id];
+        setStatus("已重置：" + page.title);
+      }
+
+      function exportHtml() {
+        saveCurrent();
+        const clone = document.documentElement.cloneNode(true);
+        clone.querySelectorAll("template[data-page-template]").forEach(template => {
+          const id = template.dataset.pageTemplate;
+          template.innerHTML = pageContent(id);
+        });
+        const html = "<!doctype html>\n" + clone.outerHTML;
+        const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        const date = new Date();
+        const stamp = date.getFullYear() + String(date.getMonth() + 1).padStart(2, "0") + String(date.getDate()).padStart(2, "0");
+        link.href = url;
+        link.download = "RAG方案学习页-" + stamp + ".html";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        setStatus("已导出当前 HTML。");
+      }
+
+      prevButtons.forEach(button => button.addEventListener("click", () => setPage(currentIndex - 1)));
+      nextButtons.forEach(button => button.addEventListener("click", () => setPage(currentIndex + 1)));
+      saveButtons.forEach(button => button.addEventListener("click", saveCurrent));
+      resetBtn.addEventListener("click", resetCurrent);
+      exportBtn.addEventListener("click", exportHtml);
+      editor.addEventListener("input", queueSave);
+
+      window.addEventListener("keydown", event => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+          event.preventDefault();
+          saveCurrent();
+        }
+      });
+
+      setPage(0);
+    })();
+  </script>
+</body>
+</html>
