@@ -113,6 +113,35 @@ export type PointCloudMaterialConfig = {
   audioHigh: number;
 };
 
+export type ForegroundPlanetTexturePaths = {
+  albedo: string;
+  bump?: string;
+  roughness?: string;
+  cloudAlpha?: string;
+  emission?: string;
+  atmosphereGlow?: string;
+  particleRing?: string;
+  foregroundFog?: string;
+  runeCircle?: string;
+};
+
+export type ForegroundPlanetConfig = {
+  enabled: boolean;
+  position: Vec3;
+  mobilePosition?: Vec3;
+  radius: number;
+  mobileRadius?: number;
+  opacity: number;
+  cloudOpacity: number;
+  atmosphereOpacity: number;
+  decorOpacity: number;
+  rotationSpeed: number;
+  cloudRotationSpeed: number;
+  tiltDegrees: number;
+  enterDrift: Vec3;
+  texturePaths: ForegroundPlanetTexturePaths;
+};
+
 export type PointCloudSceneConfig = {
   id: string;
   asset: PointCloudAssetDescriptor;
@@ -123,6 +152,7 @@ export type PointCloudSceneConfig = {
   cameraFocus: PointCloudCameraPose;
   exploration: PointCloudExplorationConfig;
   material: PointCloudMaterialConfig;
+  foregroundPlanet?: ForegroundPlanetConfig;
   hotspots: PointCloudHotspot[];
 };
 

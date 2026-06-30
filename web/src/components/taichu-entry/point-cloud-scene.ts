@@ -5,6 +5,7 @@ import {
   fallbackFocusParticle,
   generateFallbackPointCloudLayers,
 } from "./generated-fallback-point-cloud";
+import { ForegroundPlanet } from "./foreground-planet";
 import { createGaussianSplatMesh } from "./gaussian-splat-material";
 import { layerCountsForTier, detectPerformanceTier } from "./performance";
 import { loadPointCloudAsset } from "./point-cloud-asset";
@@ -47,6 +48,7 @@ export class TaichuPointCloudScene {
   private readonly cameraTarget = { x: 0, y: 0, z: 0 };
   private readonly cameraController: PointCloudCameraController;
   private readonly interactionLayer: PointCloudInteractionLayer;
+  private readonly foregroundPlanet: ForegroundPlanet | null = null;
   private readonly layers: RuntimeLayer[] = [];
   private readonly sceneStart = performance.now();
   private lastFrameTime = performance.now();
@@ -85,6 +87,13 @@ export class TaichuPointCloudScene {
     this.interactionLayer = new PointCloudInteractionLayer([
       ...this.config.hotspots,
     ]);
+    if (this.config.foregroundPlanet?.enabled) {
+      this.foregroundPlanet = new ForegroundPlanet(
+        this.config.foregroundPlanet,
+        this.reducedMotion,
+      );
+      this.scene.add(this.foregroundPlanet.group);
+    }
 
     this.renderer = new THREE.WebGLRenderer({
       alpha: false,
@@ -136,6 +145,7 @@ export class TaichuPointCloudScene {
     this.enterTimeoutId = window.setTimeout(() => this.completeEntry(), 4200);
 
     this.cameraController.tweenTo(this.timeline, this.config.cameraEnter, 1.45, 0);
+    this.foregroundPlanet?.beginEntry(this.timeline);
     this.tweenUniform("uEntryProgress", 1, 1.45, 0);
     this.tweenLayerOpacity(["horizonGlowBandPointCloud", "distantPalacePointCloud"], 0.6, 1.1, 0.35);
     this.tweenLayerOpacity(["transitionDensePointCloud"], 0.3, 0.75, 0.72);
@@ -221,6 +231,10 @@ export class TaichuPointCloudScene {
       layer.material.dispose();
     }
 
+    if (this.foregroundPlanet) {
+      this.foregroundPlanet.dispose();
+      this.scene.remove(this.foregroundPlanet.group);
+    }
     this.interactionLayer.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
@@ -235,6 +249,7 @@ export class TaichuPointCloudScene {
       onComplete: () => this.completeEntry(),
     });
     this.enterTimeoutId = window.setTimeout(() => this.completeEntry(), 520);
+    this.foregroundPlanet?.beginEntry(this.timeline);
     this.tweenLayerOpacity(["focusParticle"], 0.9, 0.2, 0);
     this.tweenUniform("uGlobalOpacity", 0.1, 0.36, 0, ["focusParticle"]);
   }
@@ -497,6 +512,7 @@ export class TaichuPointCloudScene {
         layer.material.uniforms.uPixelRatio.value = this.pixelRatio();
       }
     }
+    this.foregroundPlanet?.resize(width);
   };
 
   private animate = (): void => {
@@ -518,6 +534,7 @@ export class TaichuPointCloudScene {
     }
 
     this.cameraController.lookAtTarget();
+    this.foregroundPlanet?.update(elapsed, this.camera, this.state !== "idle");
     this.renderer.render(this.scene, this.camera);
     this.checkFrameBudget();
     this.animationFrameId = window.requestAnimationFrame(this.animate);
