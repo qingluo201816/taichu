@@ -1,0 +1,51 @@
+{
+  "volumes": [
+    {
+      "volume_id": "volume-default",
+      "name": "第一卷",
+      "order": 1,
+      "chapters": [
+        {
+          "chapter_id": "chapter_001",
+          "display_title": "第1章 大田金鳞元神出",
+          "order": 1,
+          "markdown_path": "manuscripts/chapters/chapter_001.md"
+        },
+        {
+          "chapter_id": "chapter_002",
+          "display_title": "第2章 山中神仙选仙苗",
+          "order": 2,
+          "markdown_path": "manuscripts/chapters/chapter_002.md"
+        },
+        {
+          "chapter_id": "chapter_003",
+          "display_title": "第3章 至上仙尊真乙太初教",
+          "order": 3,
+          "markdown_path": "manuscripts/chapters/chapter_003.md"
+        },
+        {
+          "chapter_id": "chapter-7ad3919bf79c4694bcf4021051a39138",
+          "display_title": "新章节",
+          "order": 4,
+          "markdown_path": "manuscripts/chapters/volume-default/chapter-7ad3919bf79c4694bcf4021051a39138.md"
+        }
+      ]
+    },
+    {
+      "volume_id": "volume-f9e0a94cab294523a9f3eb4637bff45e",
+      "name": "新的一卷",
+      "order": 2,
+      "chapters": [
+        {
+          "chapter_id": "chapter-8b548b67be734feabdcd93cfff1fe22a",
+          "display_title": "新章节",
+          "order": 1,
+          "markdown_path": "manuscripts/chapters/volume-f9e0a94cab294523a9f3eb4637bff45e/chapter-8b548b67be734feabdcd93cfff1fe22a.md"
+        }
+      ]
+    }
+  ],
+  "current_volume_id": "volume-f9e0a94cab294523a9f3eb4637bff45e",
+  "current_chapter_id": "chapter-8b548b67be734feabdcd93cfff1fe22a",
+  "updated_at": "2026-06-30T13:55:03.702960Z"
+}

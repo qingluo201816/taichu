@@ -1,7 +1,18 @@
 {
   "schema_version": "1",
   "current_chapter_id": "chapter_003",
-  "volumes": [],
+  "volumes": [
+    {
+      "id": "volume-default",
+      "title": "第一卷",
+      "order": 1
+    },
+    {
+      "id": "volume-f9e0a94cab294523a9f3eb4637bff45e",
+      "title": "新的一卷",
+      "order": 2
+    }
+  ],
   "chapters": [
     {
       "id": "chapter_001",
@@ -10,9 +21,9 @@
       "order": 0,
       "markdown_path": "manuscripts/chapters/chapter_001.md",
       "status": "active",
-      "word_count": 4033,
+      "word_count": 4036,
       "created_at": "2026-06-27T09:06:48.864027Z",
-      "updated_at": "2026-06-30T09:32:06.815030Z"
+      "updated_at": "2026-06-30T13:28:18.944509Z"
     },
     {
       "id": "chapter_002",
@@ -32,10 +43,32 @@
       "order": 2,
       "markdown_path": "manuscripts/chapters/chapter_003.md",
       "status": "active",
-      "word_count": 3993,
+      "word_count": 3988,
       "created_at": "2026-06-27T09:06:48.864027Z",
-      "updated_at": "2026-06-30T09:32:16.175283Z"
+      "updated_at": "2026-06-30T13:55:35.822599Z"
+    },
+    {
+      "id": "chapter-7ad3919bf79c4694bcf4021051a39138",
+      "volume_id": "volume-default",
+      "title": "新章节",
+      "order": 3,
+      "markdown_path": "manuscripts/chapters/volume-default/chapter-7ad3919bf79c4694bcf4021051a39138.md",
+      "status": "draft",
+      "word_count": 0,
+      "created_at": "2026-06-30T13:54:58.531724Z",
+      "updated_at": "2026-06-30T13:54:58.531724Z"
+    },
+    {
+      "id": "chapter-8b548b67be734feabdcd93cfff1fe22a",
+      "volume_id": "volume-f9e0a94cab294523a9f3eb4637bff45e",
+      "title": "新章节",
+      "order": 4,
+      "markdown_path": "manuscripts/chapters/volume-f9e0a94cab294523a9f3eb4637bff45e/chapter-8b548b67be734feabdcd93cfff1fe22a.md",
+      "status": "draft",
+      "word_count": 9,
+      "created_at": "2026-06-30T13:55:03.707961Z",
+      "updated_at": "2026-06-30T13:55:09.154895Z"
     }
   ],
-  "updated_at": "2026-06-30T09:32:16.175283Z"
+  "updated_at": "2026-06-30T13:55:35.822599Z"
 }
