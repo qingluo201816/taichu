@@ -51,6 +51,7 @@ class CreateChapterRequest(BaseModel):
 
     volume_id: str
     display_title: str | None = None
+    after_chapter_id: str | None = None
 
 
 class RenameChapterRequest(BaseModel):

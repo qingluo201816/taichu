@@ -1,7 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BookOpenCheck, Loader2, Plus, Save, ShieldCheck, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  Plus,
+  Save,
+  ShieldCheck,
+  SlidersHorizontal,
+  Trash2,
+} from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -28,7 +37,7 @@ const statusFilters: Array<{ value: StatusFilter; label: string }> = [
   { value: "all", label: "全部" },
   { value: "draft", label: "草稿" },
   { value: "active", label: "有效" },
-  { value: "deprecated", label: "只看废弃" },
+  { value: "deprecated", label: "已废弃" },
 ];
 
 const emptySourceRef: SourceReference = {
@@ -53,23 +62,19 @@ export function KnowledgeList() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [isFilterOpen, setFilterOpen] = useState(false);
 
   const activeTypeLabel = useMemo(
     () => types.find(type => type.value === activeType)?.label ?? "角色",
     [activeType, types],
   );
-
   const selectedCardId = selectedCard?.id ?? null;
 
   const applyLoadedCards = useCallback(
-    (
-      nextCards: StructuredKnowledgeCard[],
-      preferredCardId?: string | null,
-    ) => {
-      const nextSelected =
-        nextCards.find(card => card.id === preferredCardId) ??
-        nextCards[0] ??
-        null;
+    (nextCards: StructuredKnowledgeCard[], preferredCardId?: string | null) => {
+      const nextSelected = preferredCardId
+        ? nextCards.find(card => card.id === preferredCardId) ?? null
+        : null;
       setCards(nextCards);
       setSelectedCard(nextSelected);
       setForm(nextSelected ? formFromCard(nextSelected) : emptyCardForm());
@@ -77,7 +82,7 @@ export function KnowledgeList() {
     [],
   );
 
-  async function reloadCards(preferredCardId?: string) {
+  async function reloadCards(preferredCardId?: string | null) {
     setLoading(true);
     setError(null);
     try {
@@ -118,6 +123,7 @@ export function KnowledgeList() {
   useEffect(() => {
     let cancelled = false;
     async function loadCurrentCards() {
+      setLoading(true);
       try {
         const response = await listKnowledgeCards({
           type: activeType,
@@ -125,7 +131,7 @@ export function KnowledgeList() {
           q: query,
         });
         if (!cancelled) {
-          applyLoadedCards(response.cards, selectedCardId);
+          applyLoadedCards(response.cards, null);
         }
       } catch (caught) {
         if (!cancelled) {
@@ -141,7 +147,17 @@ export function KnowledgeList() {
     return () => {
       cancelled = true;
     };
-  }, [activeType, applyLoadedCards, query, selectedCardId, status]);
+  }, [activeType, applyLoadedCards, query, status]);
+
+  function openCard(card: StructuredKnowledgeCard) {
+    if (selectedCard?.id === card.id) {
+      setSelectedCard(null);
+      setForm(emptyCardForm());
+      return;
+    }
+    setSelectedCard(card);
+    setForm(formFromCard(card));
+  }
 
   async function createCurrentTypeCard() {
     setSaving(true);
@@ -149,8 +165,6 @@ export function KnowledgeList() {
     setMessage(null);
     try {
       const response = await createKnowledgeCard(activeType);
-      setSelectedCard(response.card);
-      setForm(formFromCard(response.card));
       await reloadCards(response.card.id);
       setMessage("已新建知识卡");
     } catch (caught) {
@@ -178,8 +192,6 @@ export function KnowledgeList() {
         source_refs: form.sourceRefs.filter(source => source.excerpt.trim()),
         fields: form.fieldNote.trim() ? { note: form.fieldNote.trim() } : {},
       });
-      setSelectedCard(response.card);
-      setForm(formFromCard(response.card));
       await reloadCards(response.card.id);
       setMessage("已保存知识卡");
     } catch (caught) {
@@ -198,8 +210,6 @@ export function KnowledgeList() {
     setMessage(null);
     try {
       const response = await markKnowledgeCardActive(selectedCard.id);
-      setSelectedCard(response.card);
-      setForm(formFromCard(response.card));
       await reloadCards(response.card.id);
       setMessage("已标记为有效");
     } catch (caught) {
@@ -218,8 +228,6 @@ export function KnowledgeList() {
     setMessage(null);
     try {
       const response = await markKnowledgeCardDeprecated(selectedCard.id);
-      setSelectedCard(response.card);
-      setForm(formFromCard(response.card));
       await reloadCards(response.card.id);
       setMessage("已标记废弃");
     } catch (caught) {
@@ -239,22 +247,16 @@ export function KnowledgeList() {
   }
 
   return (
-    <AppShell activePath="/knowledge">
-      <section className="mx-auto grid max-w-[1440px] gap-5 px-5 py-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-4">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs text-[var(--tc-smoke)]">知识库</p>
-              <h1 className="font-serif text-3xl text-[var(--tc-midnight-ink)]">
-                知识卡
-              </h1>
-            </div>
-            <Button type="button" size="icon" title="新建知识卡" onClick={createCurrentTypeCard}>
-              <Plus className="size-4" />
-            </Button>
+    <AppShell activePath="/knowledge" escapeToHome>
+      <section className="mx-auto grid max-w-[1440px] gap-5 px-5 py-6 xl:grid-cols-[176px_minmax(0,1fr)]">
+        <aside className="rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2">
+          <div className="px-2 py-2">
+            <p className="text-xs text-[var(--tc-text-muted)]">知识库</p>
+            <h1 className="text-xl font-semibold text-[var(--tc-text-primary)]">
+              分类
+            </h1>
           </div>
-
-          <div className="grid grid-cols-3 gap-2">
+          <div className="mt-2 grid gap-1">
             {types.map(type => (
               <button
                 key={type.value}
@@ -266,220 +268,314 @@ export function KnowledgeList() {
                   setForm(emptyCardForm());
                 }}
                 className={cn(
-                  "h-10 rounded-[var(--tc-radius-control)] border text-sm transition-colors",
+                  "h-9 rounded-[var(--tc-radius-control)] px-3 text-left text-sm transition-colors",
                   activeType === type.value
-                    ? "border-[var(--tc-midnight-ink)] bg-[var(--tc-lavender-whisper)]"
-                    : "border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] text-[var(--tc-smoke)]",
+                    ? "bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
+                    : "text-[var(--tc-text-secondary)] hover:bg-[var(--tc-surface-muted)] hover:text-[var(--tc-text-primary)]",
                 )}
               >
                 {type.label}
               </button>
             ))}
           </div>
-
-          <div className="mt-4 space-y-3">
-            <input
-              value={query}
-              onChange={event => {
-                setLoading(true);
-                setQuery(event.target.value);
-              }}
-              placeholder="搜索知识卡"
-              className="h-10 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3 text-sm outline-none"
-            />
-            <div className="grid grid-cols-2 gap-2">
-              {statusFilters.map(filter => (
-                <button
-                  key={filter.value}
-                  type="button"
-                  onClick={() => {
-                    setLoading(true);
-                    setStatus(filter.value);
-                  }}
-                  className={cn(
-                    "h-9 rounded-[var(--tc-radius-control)] border text-sm",
-                    status === filter.value
-                      ? "border-[var(--tc-midnight-ink)] bg-[var(--tc-lavender-whisper)]"
-                      : "border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] text-[var(--tc-smoke)]",
-                  )}
-                >
-                  {filter.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-4 space-y-2">
-            {loading ? (
-              <div className="flex h-24 items-center justify-center text-sm text-[var(--tc-smoke)]">
-                <Loader2 className="mr-2 size-4 animate-spin" />
-                加载中
-              </div>
-            ) : cards.length ? (
-              cards.map(card => (
-                <button
-                  key={card.id}
-                  type="button"
-                  onClick={() => setSelectedCard(card)}
-                  className={cn(
-                    "w-full rounded-[var(--tc-radius-control)] border px-3 py-3 text-left transition-colors",
-                    selectedCard?.id === card.id
-                      ? "border-[var(--tc-midnight-ink)] bg-[var(--tc-lavender-whisper)]"
-                      : "border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)]",
-                  )}
-                >
-                  <span className="block truncate font-medium">
-                    {card.name || "未命名知识卡"}
-                  </span>
-                  <span className="text-xs text-[var(--tc-smoke)]">
-                    {statusLabel(card.status)} · 来源 {card.source_refs.length} 条
-                  </span>
-                </button>
-              ))
-            ) : (
-              <div className="rounded-[var(--tc-radius-control)] border border-dashed border-[var(--tc-stone-mist)] px-3 py-8 text-center text-sm text-[var(--tc-smoke)]">
-                当前类型暂无知识卡
-              </div>
-            )}
-          </div>
         </aside>
 
-        <section className="rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-5">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <section className="min-w-0">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="flex items-center gap-2 text-sm text-[var(--tc-deep-forest-teal)]">
-                <BookOpenCheck className="size-4" />
-                {activeTypeLabel}
+              <p className="text-xs text-[var(--tc-text-muted)]">
+                {activeTypeLabel} · {cards.length} 条
               </p>
-              <h2 className="font-serif text-4xl text-[var(--tc-midnight-ink)]">
-                {selectedCard ? form.name || "编辑知识卡" : "新建当前类型知识卡"}
+              <h2 className="text-2xl font-semibold text-[var(--tc-text-primary)]">
+                知识条目
               </h2>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button type="button" onClick={saveCard} disabled={!selectedCard || saving}>
-                {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                保存
-              </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                value={query}
+                onChange={event => setQuery(event.target.value)}
+                placeholder="搜索当前分类"
+                className="h-9 w-52 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)] outline-none placeholder:text-[var(--tc-text-muted)]"
+              />
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setFilterOpen(current => !current)}
+                  className="inline-flex h-9 items-center gap-2 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] px-3 text-sm text-[var(--tc-text-secondary)] hover:text-[var(--tc-text-primary)]"
+                >
+                  <SlidersHorizontal className="size-4" />
+                  筛选
+                </button>
+                {isFilterOpen ? (
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-36 rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2">
+                    {statusFilters.map(filter => (
+                      <button
+                        key={filter.value}
+                        type="button"
+                        onClick={() => {
+                          setStatus(filter.value);
+                          setFilterOpen(false);
+                        }}
+                        className={cn(
+                          "block h-8 w-full rounded-[var(--tc-radius-control)] px-2 text-left text-sm",
+                          status === filter.value
+                            ? "bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
+                            : "text-[var(--tc-text-secondary)] hover:bg-[var(--tc-surface-muted)]",
+                        )}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
               <Button
                 type="button"
-                variant="outline"
-                onClick={markActive}
-                disabled={!selectedCard || saving}
+                onClick={createCurrentTypeCard}
+                disabled={saving}
               >
-                <ShieldCheck className="size-4" />
-                标记为有效
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={markDeprecated}
-                disabled={!selectedCard || saving}
-              >
-                <Trash2 className="size-4" />
-                标记废弃
+                {saving ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Plus className="size-4" />
+                )}
+                新建
               </Button>
             </div>
           </div>
 
           {error ? (
-            <p className="tc-warning mb-4 rounded-[var(--tc-radius-control)] border px-3 py-2 text-sm">
+            <p className="tc-warning mb-3 rounded-[var(--tc-radius-control)] border px-3 py-2 text-sm">
               {error}
             </p>
           ) : null}
           {message ? (
-            <p className="tc-success mb-4 rounded-[var(--tc-radius-control)] border px-3 py-2 text-sm">
+            <p className="tc-success mb-3 rounded-[var(--tc-radius-control)] border px-3 py-2 text-sm">
               {message}
             </p>
           ) : null}
 
-          {selectedCard ? (
-            <div className="grid gap-4 lg:grid-cols-2">
-              <TextField label="名称" value={form.name} onChange={name => setForm({ ...form, name })} />
-              <TextField label="别名" value={form.aliases} onChange={aliases => setForm({ ...form, aliases })} placeholder="多个别名用逗号分隔" />
-              <TextAreaField label="摘要" value={form.summary} onChange={summary => setForm({ ...form, summary })} />
-              <TextAreaField label="正文补充" value={form.body} onChange={body => setForm({ ...form, body })} />
-              <TextField label="标签" value={form.tags} onChange={tags => setForm({ ...form, tags })} placeholder="多个标签用逗号分隔" />
-              <label className="block text-sm font-medium">
-                重要程度
-                <select
-                  value={form.importance}
-                  onChange={event =>
-                    setForm({
-                      ...form,
-                      importance: event.target.value as StructuredKnowledgeImportance,
-                    })
-                  }
-                  className="mt-2 h-10 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3"
-                >
-                  <option value="core">核心</option>
-                  <option value="major">重要</option>
-                  <option value="normal">普通</option>
-                  <option value="minor">轻量</option>
-                </select>
-              </label>
-              <TextAreaField label="结构字段补充" value={form.fieldNote} onChange={fieldNote => setForm({ ...form, fieldNote })} />
-              <div className="rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] p-3">
-                <div className="mb-3 flex items-center justify-between gap-2">
-                  <h3 className="text-sm font-semibold">来源引用</h3>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      setForm(current => ({
-                        ...current,
-                        sourceRefs: [...current.sourceRefs, emptySourceRef],
-                      }))
-                    }
-                  >
-                    添加来源
-                  </Button>
-                </div>
-                <div className="space-y-3">
-                  {form.sourceRefs.map((source, index) => (
-                    <div
-                      key={`${source.source_id}-${index}`}
-                      className="rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-3"
-                    >
-                      <TextField
-                        label="来源名称"
-                        value={source.display_name}
-                        onChange={display_name =>
-                          updateSourceRef(index, { display_name })
-                        }
-                      />
-                      <TextField
-                        label="来源编号"
-                        value={source.source_id}
-                        onChange={source_id => updateSourceRef(index, { source_id })}
-                      />
-                      <TextAreaField
-                        label="摘录"
-                        value={source.excerpt}
-                        onChange={excerpt => updateSourceRef(index, { excerpt })}
-                      />
-                      <TextField
-                        label="备注"
-                        value={source.note}
-                        onChange={note => updateSourceRef(index, { note })}
-                      />
-                    </div>
-                  ))}
-                </div>
+          <div className="max-w-[980px]">
+            {loading ? (
+              <div className="flex h-28 items-center justify-center text-sm text-[var(--tc-text-muted)]">
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                加载中
               </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={createCurrentTypeCard}
-              className="flex min-h-80 w-full items-center justify-center rounded-[var(--tc-radius-card)] border border-dashed border-[var(--tc-stone-mist)] text-sm text-[var(--tc-smoke)]"
-            >
-              新建当前类型知识卡
-            </button>
-          )}
+            ) : cards.length ? (
+              <div className="divide-y divide-[var(--tc-border-subtle)] border-y border-[var(--tc-border-subtle)]">
+                {cards.map(card => {
+                  const expanded = selectedCard?.id === card.id;
+                  return (
+                    <article key={card.id}>
+                      <button
+                        type="button"
+                        onClick={() => openCard(card)}
+                        className="flex min-h-12 w-full items-center gap-3 px-1 py-2 text-left"
+                      >
+                        <span className="inline-flex size-7 shrink-0 items-center justify-center text-[var(--tc-text-muted)]">
+                          {expanded ? (
+                            <ChevronDown className="size-4" />
+                          ) : (
+                            <ChevronRight className="size-4" />
+                          )}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium text-[var(--tc-text-primary)]">
+                            {card.name || "未命名知识卡"}
+                          </span>
+                          <span className="block truncate text-xs text-[var(--tc-text-muted)]">
+                            {statusLabel(card.status)} · 来源{" "}
+                            {card.source_refs.length} 条 ·{" "}
+                            {dateLabel(card.updated_at)}
+                          </span>
+                        </span>
+                      </button>
+                      {expanded ? (
+                        <KnowledgeEditor
+                          form={form}
+                          saving={saving}
+                          onFormChange={setForm}
+                          onSave={() => void saveCard()}
+                          onMarkActive={() => void markActive()}
+                          onMarkDeprecated={() => void markDeprecated()}
+                          onAddSource={() =>
+                            setForm(current => ({
+                              ...current,
+                              sourceRefs: [...current.sourceRefs, emptySourceRef],
+                            }))
+                          }
+                          onUpdateSource={updateSourceRef}
+                        />
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="border-y border-dashed border-[var(--tc-border-subtle)] px-3 py-16 text-center text-sm text-[var(--tc-text-muted)]">
+                当前类型暂无知识卡
+              </div>
+            )}
+          </div>
         </section>
       </section>
     </AppShell>
+  );
+}
+
+function KnowledgeEditor({
+  form,
+  saving,
+  onFormChange,
+  onSave,
+  onMarkActive,
+  onMarkDeprecated,
+  onAddSource,
+  onUpdateSource,
+}: {
+  form: CardFormState;
+  saving: boolean;
+  onFormChange: (form: CardFormState) => void;
+  onSave: () => void;
+  onMarkActive: () => void;
+  onMarkDeprecated: () => void;
+  onAddSource: () => void;
+  onUpdateSource: (index: number, updates: Partial<SourceReference>) => void;
+}) {
+  return (
+    <div className="pb-5 pl-10 pr-2">
+      <div className="grid max-w-[860px] gap-3">
+        <TextField
+          label="名称"
+          value={form.name}
+          onChange={name => onFormChange({ ...form, name })}
+        />
+        <TextField
+          label="别名"
+          value={form.aliases}
+          onChange={aliases => onFormChange({ ...form, aliases })}
+          placeholder="多个别名用逗号分隔"
+        />
+        <TextAreaField
+          label="摘要"
+          value={form.summary}
+          onChange={summary => onFormChange({ ...form, summary })}
+        />
+        <TextAreaField
+          label="正文补充"
+          value={form.body}
+          onChange={body => onFormChange({ ...form, body })}
+        />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <TextField
+            label="标签"
+            value={form.tags}
+            onChange={tags => onFormChange({ ...form, tags })}
+            placeholder="多个标签用逗号分隔"
+          />
+          <label className="block text-sm text-[var(--tc-text-secondary)]">
+            重要程度
+            <select
+              value={form.importance}
+              onChange={event =>
+                onFormChange({
+                  ...form,
+                  importance: event.target.value as StructuredKnowledgeImportance,
+                })
+              }
+              className="mt-1 h-9 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-[var(--tc-text-primary)] outline-none"
+            >
+              <option value="core">核心</option>
+              <option value="major">重要</option>
+              <option value="normal">普通</option>
+              <option value="minor">轻量</option>
+            </select>
+          </label>
+        </div>
+        <TextAreaField
+          label="结构字段补充"
+          value={form.fieldNote}
+          onChange={fieldNote => onFormChange({ ...form, fieldNote })}
+        />
+
+        <div className="space-y-2 pt-2">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-medium text-[var(--tc-text-primary)]">
+              来源引用
+            </h3>
+            <button
+              type="button"
+              onClick={onAddSource}
+              className="text-sm text-[var(--tc-text-secondary)] hover:text-[var(--tc-text-primary)]"
+            >
+              添加来源
+            </button>
+          </div>
+          <div className="grid gap-2">
+            {form.sourceRefs.map((source, index) => (
+              <div
+                key={`${source.source_id}-${index}`}
+                className="grid gap-2 border-l border-[var(--tc-border-subtle)] pl-3"
+              >
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <TextField
+                    label="来源名称"
+                    value={source.display_name}
+                    onChange={display_name =>
+                      onUpdateSource(index, { display_name })
+                    }
+                  />
+                  <TextField
+                    label="来源编号"
+                    value={source.source_id}
+                    onChange={source_id => onUpdateSource(index, { source_id })}
+                  />
+                </div>
+                <TextAreaField
+                  label="摘录"
+                  value={source.excerpt}
+                  onChange={excerpt => onUpdateSource(index, { excerpt })}
+                />
+                <TextField
+                  label="备注"
+                  value={source.note}
+                  onChange={note => onUpdateSource(index, { note })}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 pt-2">
+          <Button type="button" onClick={onSave} disabled={saving}>
+            {saving ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Save className="size-4" />
+            )}
+            保存
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onMarkActive}
+            disabled={saving}
+          >
+            <ShieldCheck className="size-4" />
+            标记有效
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onMarkDeprecated}
+            disabled={saving}
+          >
+            <Trash2 className="size-4" />
+            标记废弃
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -536,6 +632,19 @@ function statusLabel(status: string): string {
   return labels[status] ?? "草稿";
 }
 
+function dateLabel(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "时间未知";
+  }
+  return date.toLocaleString("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function TextField({
   label,
   value,
@@ -548,13 +657,13 @@ function TextField({
   placeholder?: string;
 }) {
   return (
-    <label className="block text-sm font-medium">
+    <label className="block text-sm text-[var(--tc-text-secondary)]">
       {label}
       <input
         value={value}
         onChange={event => onChange(event.target.value)}
         placeholder={placeholder}
-        className="mt-2 h-10 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3 outline-none"
+        className="mt-1 h-9 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-[var(--tc-text-primary)] outline-none placeholder:text-[var(--tc-text-muted)]"
       />
     </label>
   );
@@ -570,12 +679,12 @@ function TextAreaField({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="block text-sm font-medium">
+    <label className="block text-sm text-[var(--tc-text-secondary)]">
       {label}
       <textarea
         value={value}
         onChange={event => onChange(event.target.value)}
-        className="mt-2 min-h-28 w-full resize-y rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3 py-2 leading-6 outline-none"
+        className="mt-1 min-h-20 w-full resize-y rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 leading-6 text-[var(--tc-text-primary)] outline-none"
       />
     </label>
   );

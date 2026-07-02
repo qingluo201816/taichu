@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { History, Loader2, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, History, Loader2 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { listChapters } from "@/lib/api/chapters";
@@ -9,9 +9,9 @@ import { listAIHistory, readAIHistory } from "@/lib/api/mvp";
 import type { ChapterInfo } from "@/lib/types/chapters";
 import type {
   AIWorkspaceConversation,
+  AIWorkspaceMessage,
   AIWorkspaceTaskType,
 } from "@/lib/types/mvp";
-import { cn } from "@/lib/utils";
 
 const taskOptions: Array<{ value: "" | AIWorkspaceTaskType; label: string }> = [
   { value: "", label: "全部入口" },
@@ -30,8 +30,11 @@ export default function AIHistoryPage() {
   const [hasSource, setHasSource] = useState("");
   const [hasError, setHasError] = useState("");
   const [conversations, setConversations] = useState<AIWorkspaceConversation[]>([]);
-  const [selected, setSelected] = useState<AIWorkspaceConversation | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedConversation, setExpandedConversation] =
+    useState<AIWorkspaceConversation | null>(null);
   const [loading, setLoading] = useState(true);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const chapterTitleById = useMemo(
@@ -67,7 +70,8 @@ export default function AIHistoryPage() {
         });
         if (!cancelled) {
           setConversations(response.conversations);
-          setSelected(current => current ?? response.conversations[0] ?? null);
+          setExpandedId(null);
+          setExpandedConversation(null);
         }
       } catch (caught) {
         if (!cancelled) {
@@ -85,36 +89,43 @@ export default function AIHistoryPage() {
     };
   }, [chapterId, hasError, hasSource, taskType]);
 
-  async function selectConversation(conversationId: string) {
+  async function toggleConversation(conversation: AIWorkspaceConversation) {
+    if (expandedId === conversation.id) {
+      setExpandedId(null);
+      setExpandedConversation(null);
+      return;
+    }
+    setExpandedId(conversation.id);
+    setExpandedConversation(conversation);
+    setDetailLoading(true);
+    setError(null);
     try {
-      setSelected((await readAIHistory(conversationId)).conversation);
+      setExpandedConversation((await readAIHistory(conversation.id)).conversation);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "记录读取失败");
+    } finally {
+      setDetailLoading(false);
     }
   }
 
   return (
     <AppShell activePath="/ai-history">
-      <section className="mx-auto grid max-w-[1440px] gap-5 px-5 py-6 xl:grid-cols-[380px_minmax(0,1fr)]">
-        <aside className="rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-4">
-          <div className="mb-4">
-            <p className="flex items-center gap-2 text-xs text-[var(--tc-smoke)]">
+      <section className="mx-auto grid max-w-[1440px] gap-5 px-5 py-6 xl:grid-cols-[220px_minmax(0,1fr)]">
+        <aside className="rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-3">
+          <div className="mb-3">
+            <p className="flex items-center gap-2 text-xs text-[var(--tc-text-muted)]">
               <History className="size-4" />
               AI 历史
             </p>
-            <h1 className="font-serif text-3xl text-[var(--tc-midnight-ink)]">
-              写作区记录
+            <h1 className="text-xl font-semibold text-[var(--tc-text-primary)]">
+              筛选
             </h1>
           </div>
-
           <div className="grid gap-2">
             <select
               value={chapterId}
-              onChange={event => {
-                setChapterId(event.target.value);
-                setSelected(null);
-              }}
-              className="h-10 rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3 text-sm"
+              onChange={event => setChapterId(event.target.value)}
+              className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)]"
               aria-label="章节筛选"
             >
               <option value="">全部章节</option>
@@ -126,11 +137,10 @@ export default function AIHistoryPage() {
             </select>
             <select
               value={taskType}
-              onChange={event => {
-                setTaskType(event.target.value as "" | AIWorkspaceTaskType);
-                setSelected(null);
-              }}
-              className="h-10 rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3 text-sm"
+              onChange={event =>
+                setTaskType(event.target.value as "" | AIWorkspaceTaskType)
+              }
+              className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)]"
               aria-label="功能入口筛选"
             >
               {taskOptions.map(option => (
@@ -141,11 +151,8 @@ export default function AIHistoryPage() {
             </select>
             <select
               value={hasSource}
-              onChange={event => {
-                setHasSource(event.target.value);
-                setSelected(null);
-              }}
-              className="h-10 rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3 text-sm"
+              onChange={event => setHasSource(event.target.value)}
+              className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)]"
               aria-label="来源筛选"
             >
               <option value="">是否有来源</option>
@@ -154,11 +161,8 @@ export default function AIHistoryPage() {
             </select>
             <select
               value={hasError}
-              onChange={event => {
-                setHasError(event.target.value);
-                setSelected(null);
-              }}
-              className="h-10 rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3 text-sm"
+              onChange={event => setHasError(event.target.value)}
+              className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)]"
               aria-label="错误筛选"
             >
               <option value="">是否错误</option>
@@ -166,134 +170,163 @@ export default function AIHistoryPage() {
               <option value="false">无错误</option>
             </select>
           </div>
+        </aside>
 
-          <div className="mt-4 space-y-2">
+        <section className="min-w-0">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs text-[var(--tc-text-muted)]">
+                共 {conversations.length} 条
+              </p>
+              <h2 className="text-2xl font-semibold text-[var(--tc-text-primary)]">
+                写作区记录
+              </h2>
+            </div>
             {loading ? (
-              <div className="flex h-24 items-center justify-center text-sm text-[var(--tc-smoke)]">
+              <span className="inline-flex items-center gap-2 text-sm text-[var(--tc-text-muted)]">
+                <Loader2 className="size-4 animate-spin" />
+                加载中
+              </span>
+            ) : null}
+          </div>
+
+          {error ? (
+            <p className="tc-warning mb-3 max-w-[860px] rounded-[var(--tc-radius-control)] border px-3 py-2 text-sm">
+              {error}
+            </p>
+          ) : null}
+
+          <div className="max-w-[980px]">
+            {loading ? (
+              <div className="flex h-28 items-center justify-center text-sm text-[var(--tc-text-muted)]">
                 <Loader2 className="mr-2 size-4 animate-spin" />
                 加载中
               </div>
             ) : conversations.length ? (
-              conversations.map(conversation => (
-                <button
-                  key={conversation.id}
-                  type="button"
-                  onClick={() => void selectConversation(conversation.id)}
-                  className={cn(
-                    "w-full rounded-[var(--tc-radius-control)] border px-3 py-3 text-left",
-                    selected?.id === conversation.id
-                      ? "border-[var(--tc-midnight-ink)] bg-[var(--tc-lavender-whisper)]"
-                      : "border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)]",
-                  )}
-                >
-                  <span className="block text-sm font-medium">
-                    {taskLabel(conversation.task_type)}
-                  </span>
-                  <span className="text-xs text-[var(--tc-smoke)]">
-                    {dateLabel(conversation.updated_at)} ·{" "}
-                    {chapterTitleById.get(conversation.chapter_id) ?? "当前章节"} ·{" "}
-                    {conversation.source_refs.length ? "有来源" : "无来源"}
-                  </span>
-                  <span className="mt-1 block truncate text-xs text-[var(--tc-smoke)]">
-                    {firstUserInput(conversation)}
-                  </span>
-                </button>
-              ))
+              <div className="divide-y divide-[var(--tc-border-subtle)] border-y border-[var(--tc-border-subtle)]">
+                {conversations.map(conversation => {
+                  const expanded = expandedId === conversation.id;
+                  const detail =
+                    expanded && expandedConversation?.id === conversation.id
+                      ? expandedConversation
+                      : conversation;
+                  return (
+                    <article key={conversation.id}>
+                      <button
+                        type="button"
+                        onClick={() => void toggleConversation(conversation)}
+                        className="flex min-h-12 w-full items-center gap-3 px-1 py-2 text-left"
+                      >
+                        <span className="inline-flex size-7 shrink-0 items-center justify-center text-[var(--tc-text-muted)]">
+                          {expanded ? (
+                            <ChevronDown className="size-4" />
+                          ) : (
+                            <ChevronRight className="size-4" />
+                          )}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium text-[var(--tc-text-primary)]">
+                            {taskLabel(conversation.task_type)} ·{" "}
+                            {chapterTitleById.get(conversation.chapter_id) ??
+                              "当前章节"}
+                          </span>
+                          <span className="block truncate text-xs text-[var(--tc-text-muted)]">
+                            {dateLabel(conversation.updated_at)} ·{" "}
+                            {conversation.source_refs.length ? "有来源" : "无来源"} ·{" "}
+                            {hasErrorConversation(conversation)
+                              ? "有错误"
+                              : "无错误"}
+                          </span>
+                          <span className="mt-0.5 block truncate text-xs text-[var(--tc-text-muted)]">
+                            {firstUserInput(conversation)}
+                          </span>
+                        </span>
+                      </button>
+                      {expanded ? (
+                        <ConversationDetail
+                          conversation={detail}
+                          loading={detailLoading}
+                        />
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </div>
             ) : (
-              <div className="rounded-[var(--tc-radius-control)] border border-dashed border-[var(--tc-stone-mist)] px-3 py-8 text-center text-sm text-[var(--tc-smoke)]">
+              <div className="border-y border-dashed border-[var(--tc-border-subtle)] px-3 py-16 text-center text-sm text-[var(--tc-text-muted)]">
                 暂无 AI 历史
               </div>
             )}
           </div>
-        </aside>
-
-        <section className="rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-5">
-          {error ? (
-            <p className="tc-warning mb-4 rounded-[var(--tc-radius-control)] border px-3 py-2 text-sm">
-              {error}
-            </p>
-          ) : null}
-          {selected ? (
-            <div>
-              <div className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-[var(--tc-stone-mist)] pb-4">
-                <div>
-                  <p className="text-sm text-[var(--tc-deep-forest-teal)]">
-                    {taskLabel(selected.task_type)}
-                  </p>
-                  <h2 className="font-serif text-4xl text-[var(--tc-midnight-ink)]">
-                    {chapterTitleById.get(selected.chapter_id) ?? "当前章节"}
-                  </h2>
-                </div>
-                <div className="flex flex-wrap gap-2 text-xs text-[var(--tc-smoke)]">
-                  <span className="rounded-full border border-[var(--tc-stone-mist)] px-3 py-1">
-                    模型：模拟模型
-                  </span>
-                  <span className="rounded-full border border-[var(--tc-stone-mist)] px-3 py-1">
-                    {selected.is_mock ? "模拟输出" : "非模拟输出"}
-                  </span>
-                  <span className="rounded-full border border-[var(--tc-stone-mist)] px-3 py-1">
-                    {hasErrorConversation(selected) ? "有错误" : "无错误"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {selected.messages.map(message => (
-                  <article
-                    key={message.message_id}
-                    className="rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] p-4"
-                  >
-                    <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[var(--tc-smoke)]">
-                      <span>{roleLabel(message.role)}</span>
-                      <span>本轮任务：{taskLabel(message.task_type)}</span>
-                      <span>参考范围：{scopeLabel(message.reference_scope)}</span>
-                      {message.output_type ? (
-                        <span>输出类型：{outputLabel(message.output_type)}</span>
-                      ) : null}
-                    </div>
-                    <p className="whitespace-pre-wrap text-sm leading-7">
-                      {contentText(message.content)}
-                    </p>
-                    {message.source_refs.length ? (
-                      <div className="mt-3 space-y-2 border-t border-[var(--tc-stone-mist)] pt-3">
-                        {message.source_refs.map((source, index) => (
-                          <div
-                            key={`${source.source_id}-${index}`}
-                            className="rounded-[var(--tc-radius-control)] bg-[var(--tc-white)] px-3 py-2 text-sm"
-                          >
-                            <p className="font-medium">
-                              来源引用 {index + 1}：{source.display_name}
-                            </p>
-                            <p className="mt-1 text-[var(--tc-smoke)]">
-                              {source.excerpt}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-                    {message.prompt_snapshot ? (
-                      <details className="mt-3">
-                        <summary className="cursor-pointer text-sm text-[var(--tc-deep-forest-teal)]">
-                          提示词快照
-                        </summary>
-                        <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-3 text-xs leading-5">
-                          {message.prompt_snapshot.final_prompt}
-                        </pre>
-                      </details>
-                    ) : null}
-                  </article>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="flex min-h-96 items-center justify-center gap-2 text-sm text-[var(--tc-smoke)]">
-              <Search className="size-4" />
-              选择一条 AI 历史
-            </div>
-          )}
         </section>
       </section>
     </AppShell>
+  );
+}
+
+function ConversationDetail({
+  conversation,
+  loading,
+}: {
+  conversation: AIWorkspaceConversation;
+  loading: boolean;
+}) {
+  return (
+    <div className="pb-5 pl-10 pr-2">
+      {loading ? (
+        <p className="mb-3 inline-flex items-center gap-2 text-sm text-[var(--tc-text-muted)]">
+          <Loader2 className="size-4 animate-spin" />
+          读取详情
+        </p>
+      ) : null}
+      <div className="mb-3 flex flex-wrap gap-2 text-xs text-[var(--tc-text-muted)]">
+        <span>{conversation.is_mock ? "模拟输出" : "真实输出"}</span>
+        <span>参考范围：{scopeLabel(conversation.reference_scope)}</span>
+        <span>{hasErrorConversation(conversation) ? "有错误" : "无错误"}</span>
+      </div>
+      <div className="grid max-w-[900px] gap-4">
+        {conversation.messages.map(message => (
+          <MessageBlock key={message.message_id} message={message} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MessageBlock({ message }: { message: AIWorkspaceMessage }) {
+  return (
+    <article className="border-l border-[var(--tc-border-subtle)] pl-3">
+      <div className="mb-1 flex flex-wrap items-center gap-2 text-xs text-[var(--tc-text-muted)]">
+        <span>{roleLabel(message.role)}</span>
+        <span>本轮任务：{taskLabel(message.task_type)}</span>
+        <span>参考范围：{scopeLabel(message.reference_scope)}</span>
+        {message.output_type ? (
+          <span>输出类型：{outputLabel(message.output_type)}</span>
+        ) : null}
+      </div>
+      <p className="whitespace-pre-wrap text-sm leading-7 text-[var(--tc-text-secondary)]">
+        {contentText(message.content)}
+      </p>
+      {message.source_refs.length ? (
+        <div className="mt-2 grid gap-2 text-sm text-[var(--tc-text-muted)]">
+          {message.source_refs.map((source, index) => (
+            <p key={`${source.source_id}-${index}`}>
+              来源 {index + 1}：{source.display_name} · {source.excerpt}
+            </p>
+          ))}
+        </div>
+      ) : null}
+      {message.prompt_snapshot ? (
+        <details className="mt-2">
+          <summary className="cursor-pointer text-sm text-[var(--tc-text-secondary)]">
+            提示词快照
+          </summary>
+          <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap border-l border-[var(--tc-border-subtle)] pl-3 text-xs leading-5 text-[var(--tc-text-muted)]">
+            {message.prompt_snapshot.final_prompt}
+          </pre>
+        </details>
+      ) : null}
+    </article>
   );
 }
 

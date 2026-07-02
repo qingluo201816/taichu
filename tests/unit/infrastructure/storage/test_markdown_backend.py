@@ -27,39 +27,31 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
 
         await self.storage.ensure_skeleton()
 
+        self.assertTrue((self.assets_root / "source" / "metadata.yaml").exists())
         self.assertTrue(
-            (self.assets_root / "source" / "metadata.yaml").exists()
+            (self.assets_root / "source" / "manuscripts" / "manifest.json").exists()
+        )
+        self.assertTrue(
+            (self.assets_root / "source" / "manuscripts" / "deleted_chapters").exists()
         )
         self.assertTrue(
             (
                 self.assets_root
                 / "source"
                 / "manuscripts"
-                / "manifest.json"
+                / "deleted_chapters"
+                / ".gitkeep"
             ).exists()
         )
         self.assertTrue(
-            (
-                self.assets_root
-                / "source"
-                / "manuscripts"
-                / "outline.json"
-            ).exists()
+            (self.assets_root / "source" / "manuscripts" / "outline.json").exists()
+        )
+        self.assertTrue(
+            (self.assets_root / "source" / "workspace" / "ai_cards.jsonl").exists()
         )
         self.assertTrue(
             (
-                self.assets_root
-                / "source"
-                / "workspace"
-                / "ai_cards.jsonl"
-            ).exists()
-        )
-        self.assertTrue(
-            (
-                self.assets_root
-                / "source"
-                / "workspace"
-                / "chapter_issues.jsonl"
+                self.assets_root / "source" / "workspace" / "chapter_issues.jsonl"
             ).exists()
         )
         self.assertTrue(
@@ -72,19 +64,11 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertTrue(
             (
-                self.assets_root
-                / "source"
-                / "workspace"
-                / "settings_preferences.json"
+                self.assets_root / "source" / "workspace" / "settings_preferences.json"
             ).exists()
         )
         self.assertTrue(
-            (
-                self.assets_root
-                / "source"
-                / "knowledge"
-                / "character"
-            ).exists()
+            (self.assets_root / "source" / "knowledge" / "character").exists()
         )
         self.assertTrue((self.assets_root / "generated" / "sqlite").exists())
 
@@ -94,12 +78,8 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
         source_root = self.assets_root / "source"
         metadata_path = source_root / "metadata.yaml"
         manifest_path = source_root / "manuscripts" / "manifest.json"
-        chapter_path = (
-            source_root / "manuscripts" / "chapters" / "chapter_999.md"
-        )
-        knowledge_path = (
-            source_root / "knowledge" / "characters" / "character_001.json"
-        )
+        chapter_path = source_root / "manuscripts" / "chapters" / "chapter_999.md"
+        knowledge_path = source_root / "knowledge" / "characters" / "character_001.json"
         ideas_path = source_root / "workspace" / "ideas.jsonl"
         editor_state_path = source_root / "workspace" / "editor_state.json"
 
@@ -182,6 +162,67 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
             markdown,
         )
 
+    async def test_chapter_markdown_can_move_to_deleted_chapters(self) -> None:
+        await self.storage.ensure_skeleton()
+        source = "manuscripts/chapters/volume-001/chapter_001.md"
+        target = (
+            "manuscripts/deleted_chapters/volume-001/"
+            "deleted_20260702t120000z_chapter_001.md"
+        )
+        await self.storage.write_chapter_markdown(source, "被删除正文")
+
+        await self.storage.move_chapter_markdown(source, target)
+
+        self.assertFalse(
+            (
+                self.assets_root
+                / "source"
+                / "manuscripts"
+                / "chapters"
+                / "volume-001"
+                / "chapter_001.md"
+            ).exists()
+        )
+        self.assertEqual(
+            (
+                self.assets_root
+                / "source"
+                / "manuscripts"
+                / "deleted_chapters"
+                / "volume-001"
+                / "deleted_20260702t120000z_chapter_001.md"
+            ).read_text(encoding="utf-8"),
+            "被删除正文",
+        )
+
+    async def test_chapter_markdown_allows_generated_chinese_volume_paths(
+        self,
+    ) -> None:
+        await self.storage.ensure_skeleton()
+        source = (
+            "manuscripts/chapters/volume_001_第一卷/"
+            "chapter_001_大田金鳞元神出.md"
+        )
+        target = (
+            "manuscripts/deleted_chapters/volume_001_第一卷/"
+            "deleted_20260702t120000z_chapter_001_大田金鳞元神出.md"
+        )
+
+        await self.storage.write_chapter_markdown(source, "正文")
+        await self.storage.move_chapter_markdown(source, target)
+
+        self.assertEqual(
+            (
+                self.assets_root
+                / "source"
+                / "manuscripts"
+                / "deleted_chapters"
+                / "volume_001_第一卷"
+                / "deleted_20260702t120000z_chapter_001_大田金鳞元神出.md"
+            ).read_text(encoding="utf-8"),
+            "正文",
+        )
+
     async def test_outline_json_write_read(self) -> None:
         outline: dict[str, object] = {
             "volumes": [
@@ -210,12 +251,7 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(await self.storage.read_outline(), outline)
         self.assertTrue(
-            (
-                self.assets_root
-                / "source"
-                / "manuscripts"
-                / "outline.json"
-            ).exists()
+            (self.assets_root / "source" / "manuscripts" / "outline.json").exists()
         )
 
     async def test_workspace_jsonl_append_preserves_concurrent_records(
@@ -248,9 +284,7 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
             "ideas.jsonl",
             {"id": "idea_001", "content": "保留"},
         )
-        ideas_path = (
-            self.assets_root / "source" / "workspace" / "ideas.jsonl"
-        )
+        ideas_path = self.assets_root / "source" / "workspace" / "ideas.jsonl"
         original_text = ideas_path.read_text(encoding="utf-8")
 
         with self.assertRaises(TypeError):
@@ -269,9 +303,7 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
             "ai_cards.jsonl",
             {"id": "card_001", "status": "generated"},
         )
-        cards_path = (
-            self.assets_root / "source" / "workspace" / "ai_cards.jsonl"
-        )
+        cards_path = self.assets_root / "source" / "workspace" / "ai_cards.jsonl"
         original_text = cards_path.read_text(encoding="utf-8")
 
         with self.assertRaises(TypeError):
@@ -308,7 +340,7 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
                 / "techniques"
                 / "knowledge_001.json"
             ).exists()
-                    )
+        )
 
     async def test_structured_knowledge_uses_type_directories(self) -> None:
         card: dict[str, object] = {

@@ -47,17 +47,39 @@ export async function renameVolume(
   );
 }
 
+export async function deleteVolume(volumeId: string): Promise<OutlineResponse> {
+  return apiRequest<OutlineResponse>(
+    `/api/outline/volumes/${encodeURIComponent(volumeId)}`,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
 export async function createChapter(
   volumeId: string,
   displayTitle?: string | null,
+  afterChapterId?: string | null,
 ): Promise<OutlineResponse> {
   return apiRequest<OutlineResponse>("/api/outline/chapters", {
     method: "POST",
     body: JSON.stringify({
       volume_id: volumeId,
       display_title: displayTitle ?? null,
+      after_chapter_id: afterChapterId ?? null,
     }),
   });
+}
+
+export async function deleteChapter(
+  chapterId: string,
+): Promise<OutlineResponse> {
+  return apiRequest<OutlineResponse>(
+    `/api/outline/chapters/${encodeURIComponent(chapterId)}`,
+    {
+      method: "DELETE",
+    },
+  );
 }
 
 export async function renameChapter(

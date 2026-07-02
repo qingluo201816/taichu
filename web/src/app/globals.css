@@ -8,8 +8,9 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--tc-font-ui);
+  --font-serif: var(--tc-font-display);
   --font-mono: var(--tc-font-mono);
-  --font-heading: var(--tc-font-ui);
+  --font-heading: var(--tc-font-display);
   --color-tc-workspace-bg: var(--tc-workspace-bg);
   --color-tc-workspace-shell: var(--tc-workspace-shell);
   --color-tc-workspace-panel: var(--tc-workspace-panel);
@@ -201,6 +202,340 @@
   --sidebar-ring: var(--tc-aurora-line);
 }
 
+:root,
+:root[data-theme-style="langbase-midnight-console"] {
+  color-scheme: dark;
+
+  --style-console-charcoal: #232324;
+  --style-bone-white: #fafafa;
+  --style-true-black: #000000;
+  --style-off-white: #ebeced;
+  --style-mute-gray: #a1a1aa;
+  --style-wire-gray: #5c5c61;
+  --style-recess-black: #181818;
+  --style-nav-ink: #0e0e10;
+  --style-smoke: #454546;
+  --style-ash: #696970;
+  --style-aurora-peach: #f6d1ac;
+  --style-aurora-pink: #f3b5d2;
+  --style-aurora-violet: #c7b8f5;
+  --style-aurora-mint: #a7eadc;
+  --style-aurora-sky: #afcdf6;
+
+  --tc-cream-paper: var(--style-console-charcoal);
+  --tc-midnight-ink: var(--style-bone-white);
+  --tc-pure-black: var(--style-true-black);
+  --tc-white: var(--style-console-charcoal);
+  --tc-stone-mist: var(--style-wire-gray);
+  --tc-graphite-veil: var(--style-ash);
+  --tc-smoke: var(--style-mute-gray);
+  --tc-charcoal: var(--style-recess-black);
+  --tc-charcoal-mist: var(--style-smoke);
+  --tc-deep-forest-teal: var(--style-bone-white);
+  --tc-lavender-whisper: var(--style-recess-black);
+  --tc-amber-pulse: var(--style-off-white);
+
+  --tc-font-display: var(--font-geist-mono), "JetBrains Mono",
+    "IBM Plex Mono", "Fira Code", "SFMono-Regular", Consolas, monospace;
+  --tc-font-ui: var(--font-geist-sans), "Inter", "PingFang SC",
+    "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --tc-font-mono: var(--font-geist-mono), "JetBrains Mono", "IBM Plex Mono",
+    "Fira Code", "SFMono-Regular", Consolas, monospace;
+  --tc-font-editor: var(--font-geist-sans), "Inter", "PingFang SC",
+    "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --tc-font-paper-title: var(--font-geist-mono), "JetBrains Mono",
+    "IBM Plex Mono", "Fira Code", "SFMono-Regular", Consolas, monospace;
+  --tc-font-paper-body: var(--font-geist-sans), "Inter", "PingFang SC",
+    "Microsoft YaHei", "Noto Sans SC", sans-serif;
+
+  --tc-surface-page: var(--style-console-charcoal);
+  --tc-surface-card: var(--style-console-charcoal);
+  --tc-surface-panel: var(--style-console-charcoal);
+  --tc-surface-muted: var(--style-recess-black);
+  --tc-surface-inverted: var(--style-bone-white);
+
+  --tc-text-primary: var(--style-bone-white);
+  --tc-text-secondary: var(--style-off-white);
+  --tc-text-muted: var(--style-mute-gray);
+  --tc-text-inverted: var(--style-true-black);
+
+  --tc-border-subtle: rgba(92, 92, 97, 0.72);
+  --tc-border-strong: var(--style-wire-gray);
+  --tc-border-disabled: var(--style-smoke);
+
+  --tc-action-primary-bg: var(--style-bone-white);
+  --tc-action-primary-text: var(--style-nav-ink);
+  --tc-action-primary-border: var(--style-bone-white);
+  --tc-action-primary-hover-bg: var(--style-bone-white);
+  --tc-action-secondary-bg: transparent;
+  --tc-action-secondary-text: var(--style-bone-white);
+
+  --tc-accent-brand: var(--style-bone-white);
+  --tc-accent-highlight: var(--style-recess-black);
+  --tc-nav-bg: var(--style-nav-ink);
+  --tc-nav-border: rgba(35, 35, 36, 0.92);
+  --tc-nav-active-bg: var(--style-recess-black);
+  --tc-nav-active-text: var(--style-bone-white);
+
+  --tc-space-section: 64px;
+  --tc-space-card: 24px;
+  --tc-space-element: 12px;
+  --tc-radius-control: 4px;
+  --tc-radius-card: 12px;
+  --tc-radius-badge: 4px;
+  --tc-radius-pill: 9999px;
+  --tc-card-radius: var(--tc-radius-card);
+  --tc-panel-radius: var(--tc-radius-pill);
+  --radius: 0.75rem;
+  --tc-shadow-card: none;
+  --tc-shadow-paper: none;
+  --tc-shadow-panel: 0 1px 3px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.08);
+
+  --tc-workspace-bg: var(--tc-surface-page);
+  --tc-workspace-shell: var(--tc-surface-card);
+  --tc-workspace-panel: var(--tc-surface-panel);
+  --tc-workspace-panel-soft: var(--tc-surface-muted);
+  --tc-workspace-recess: var(--tc-surface-muted);
+  --tc-workspace-editor: var(--tc-surface-muted);
+  --tc-workspace-border: var(--tc-border-subtle);
+  --tc-workspace-border-weak: var(--tc-border-subtle);
+  --tc-workspace-grid: rgba(92, 92, 97, 0.22);
+  --tc-workspace-text: var(--tc-text-primary);
+  --tc-workspace-text-secondary: var(--tc-text-secondary);
+  --tc-workspace-text-muted: var(--tc-text-muted);
+  --tc-workspace-text-dim: var(--style-ash);
+  --tc-workspace-focus: var(--tc-accent-brand);
+
+  --tc-aurora-peach: var(--style-aurora-peach);
+  --tc-aurora-rose: var(--style-aurora-pink);
+  --tc-aurora-violet: var(--style-aurora-violet);
+  --tc-aurora-mint: var(--style-aurora-mint);
+  --tc-aurora-sky: var(--style-aurora-sky);
+  --tc-aurora-line: rgba(250, 250, 250, 0.72);
+  --tc-aurora-soft: rgba(199, 184, 245, 0.16);
+  --tc-aurora-glow: rgba(199, 184, 245, 0.22);
+  --tc-aurora-gradient: linear-gradient(
+    to right,
+    var(--style-aurora-peach),
+    var(--style-aurora-pink),
+    var(--style-aurora-violet),
+    var(--style-aurora-mint),
+    var(--style-aurora-sky)
+  );
+
+  --tc-paper-bg: var(--tc-surface-card);
+  --tc-paper-bg-soft: var(--tc-surface-muted);
+  --tc-paper-ink: var(--tc-text-primary);
+  --tc-paper-ink-muted: var(--tc-text-secondary);
+  --tc-paper-border: var(--tc-border-subtle);
+  --tc-paper-border-soft: var(--tc-border-subtle);
+  --tc-paper-shadow: none;
+  --tc-paper-lime: var(--style-off-white);
+  --tc-paper-spring: var(--style-mute-gray);
+  --tc-paper-cornflower: var(--style-wire-gray);
+  --tc-paper-mark-soft: rgba(250, 250, 250, 0.18);
+
+  --tc-danger-text: var(--style-off-white);
+  --tc-danger-border: var(--style-wire-gray);
+  --tc-danger-soft: var(--style-recess-black);
+  --tc-success-text: var(--style-off-white);
+  --tc-success-border: var(--style-wire-gray);
+  --tc-success-soft: var(--style-recess-black);
+  --tc-warning-text: var(--style-off-white);
+  --tc-warning-border: var(--style-wire-gray);
+  --tc-warning-soft: var(--style-recess-black);
+
+  --background: var(--tc-surface-page);
+  --foreground: var(--tc-text-primary);
+  --card: var(--tc-surface-card);
+  --card-foreground: var(--tc-text-primary);
+  --popover: var(--tc-surface-panel);
+  --popover-foreground: var(--tc-text-primary);
+  --primary: var(--tc-action-primary-bg);
+  --primary-foreground: var(--tc-action-primary-text);
+  --secondary: var(--tc-surface-muted);
+  --secondary-foreground: var(--tc-text-primary);
+  --muted: var(--tc-surface-muted);
+  --muted-foreground: var(--tc-text-secondary);
+  --accent: var(--tc-surface-muted);
+  --accent-foreground: var(--tc-text-primary);
+  --destructive: var(--tc-text-primary);
+  --border: var(--tc-border-subtle);
+  --input: var(--tc-border-subtle);
+  --ring: var(--tc-accent-brand);
+
+  --sidebar: var(--tc-surface-card);
+  --sidebar-foreground: var(--tc-text-primary);
+  --sidebar-primary: var(--tc-accent-brand);
+  --sidebar-primary-foreground: var(--tc-text-inverted);
+  --sidebar-accent: var(--tc-surface-muted);
+  --sidebar-accent-foreground: var(--tc-text-primary);
+  --sidebar-border: var(--tc-border-subtle);
+  --sidebar-ring: var(--tc-accent-brand);
+}
+
+:root[data-theme-style="graphite-chalk-swiss"] {
+  color-scheme: light;
+
+  --style-graphite: #0a0a0a;
+  --style-pure-black: #000000;
+  --style-carbon: #171717;
+  --style-concrete: #737373;
+  --style-ash: #a1a1a1;
+  --style-smoke: #b9b9b9;
+  --style-hairline: #e5e5e5;
+  --style-mist: #f2f2f2;
+  --style-chalk: #ffffff;
+
+  --tc-cream-paper: var(--style-chalk);
+  --tc-midnight-ink: var(--style-graphite);
+  --tc-pure-black: var(--style-pure-black);
+  --tc-white: var(--style-chalk);
+  --tc-stone-mist: var(--style-hairline);
+  --tc-graphite-veil: var(--style-concrete);
+  --tc-smoke: var(--style-concrete);
+  --tc-charcoal: var(--style-carbon);
+  --tc-charcoal-mist: var(--style-hairline);
+  --tc-deep-forest-teal: var(--style-graphite);
+  --tc-lavender-whisper: var(--style-graphite);
+  --tc-amber-pulse: var(--style-graphite);
+
+  --tc-font-display: var(--font-geist-sans), "Inter", "PingFang SC",
+    "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --tc-font-ui: var(--font-geist-sans), "Inter", "PingFang SC",
+    "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --tc-font-mono: var(--font-geist-mono), "JetBrains Mono", "SFMono-Regular",
+    Consolas, monospace;
+  --tc-font-editor: var(--font-geist-sans), "Inter", "PingFang SC",
+    "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --tc-font-paper-title: var(--font-geist-sans), "Inter", "PingFang SC",
+    "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --tc-font-paper-body: var(--font-geist-sans), "Inter", "PingFang SC",
+    "Microsoft YaHei", "Noto Sans SC", sans-serif;
+
+  --tc-surface-page: var(--style-chalk);
+  --tc-surface-card: var(--style-chalk);
+  --tc-surface-panel: var(--style-chalk);
+  --tc-surface-muted: var(--style-mist);
+  --tc-surface-inverted: var(--style-carbon);
+
+  --tc-text-primary: var(--style-graphite);
+  --tc-text-secondary: var(--style-concrete);
+  --tc-text-muted: var(--style-ash);
+  --tc-text-inverted: var(--style-chalk);
+
+  --tc-border-subtle: var(--style-hairline);
+  --tc-border-strong: var(--style-graphite);
+  --tc-border-disabled: var(--style-ash);
+
+  --tc-action-primary-bg: var(--style-graphite);
+  --tc-action-primary-text: var(--style-chalk);
+  --tc-action-primary-border: var(--style-graphite);
+  --tc-action-primary-hover-bg: var(--style-carbon);
+  --tc-action-secondary-bg: transparent;
+  --tc-action-secondary-text: var(--style-graphite);
+
+  --tc-accent-brand: var(--style-graphite);
+  --tc-accent-highlight: var(--style-mist);
+  --tc-nav-bg: var(--style-chalk);
+  --tc-nav-border: var(--style-hairline);
+  --tc-nav-active-bg: var(--style-mist);
+  --tc-nav-active-text: var(--style-graphite);
+
+  --tc-space-section: 48px;
+  --tc-space-card: 16px;
+  --tc-space-element: 8px;
+  --tc-radius-control: 10px;
+  --tc-radius-card: 14px;
+  --tc-radius-badge: 26px;
+  --tc-radius-pill: 9999px;
+  --tc-card-radius: var(--tc-radius-card);
+  --tc-panel-radius: var(--tc-radius-control);
+  --tc-shadow-card: none;
+  --tc-shadow-paper: none;
+  --tc-shadow-panel: none;
+
+  --tc-workspace-bg: var(--tc-surface-page);
+  --tc-workspace-shell: var(--tc-surface-card);
+  --tc-workspace-panel: var(--tc-surface-panel);
+  --tc-workspace-panel-soft: var(--tc-surface-muted);
+  --tc-workspace-recess: var(--tc-surface-card);
+  --tc-workspace-editor: var(--tc-surface-card);
+  --tc-workspace-border: var(--tc-border-subtle);
+  --tc-workspace-border-weak: var(--tc-border-subtle);
+  --tc-workspace-grid: rgba(10, 10, 10, 0.035);
+  --tc-workspace-text: var(--tc-text-primary);
+  --tc-workspace-text-secondary: var(--tc-text-secondary);
+  --tc-workspace-text-muted: var(--tc-text-secondary);
+  --tc-workspace-text-dim: var(--tc-text-muted);
+  --tc-workspace-focus: var(--tc-text-primary);
+
+  --tc-aurora-peach: var(--style-graphite);
+  --tc-aurora-rose: var(--style-hairline);
+  --tc-aurora-violet: var(--style-graphite);
+  --tc-aurora-mint: var(--style-mist);
+  --tc-aurora-sky: var(--style-mist);
+  --tc-aurora-line: rgba(10, 10, 10, 0.32);
+  --tc-aurora-soft: var(--style-mist);
+  --tc-aurora-glow: var(--style-hairline);
+  --tc-aurora-gradient: linear-gradient(
+    90deg,
+    var(--style-graphite),
+    var(--style-concrete)
+  );
+
+  --tc-paper-bg: var(--tc-surface-card);
+  --tc-paper-bg-soft: var(--tc-surface-card);
+  --tc-paper-ink: var(--tc-text-primary);
+  --tc-paper-ink-muted: var(--tc-text-secondary);
+  --tc-paper-border: var(--tc-border-subtle);
+  --tc-paper-border-soft: var(--tc-border-subtle);
+  --tc-paper-shadow: none;
+  --tc-paper-lime: var(--style-mist);
+  --tc-paper-spring: var(--style-mist);
+  --tc-paper-cornflower: var(--style-mist);
+  --tc-paper-mark-soft: var(--style-mist);
+
+  --tc-danger-text: var(--style-graphite);
+  --tc-danger-border: var(--style-hairline);
+  --tc-danger-soft: var(--style-mist);
+  --tc-success-text: var(--style-graphite);
+  --tc-success-border: var(--style-hairline);
+  --tc-success-soft: var(--style-mist);
+  --tc-warning-text: var(--style-graphite);
+  --tc-warning-border: var(--style-hairline);
+  --tc-warning-soft: var(--style-mist);
+
+  --background: var(--tc-surface-page);
+  --foreground: var(--tc-text-primary);
+  --card: var(--tc-surface-card);
+  --card-foreground: var(--tc-text-primary);
+  --popover: var(--tc-surface-panel);
+  --popover-foreground: var(--tc-text-primary);
+  --primary: var(--tc-action-primary-bg);
+  --primary-foreground: var(--tc-action-primary-text);
+  --secondary: var(--tc-surface-muted);
+  --secondary-foreground: var(--tc-text-primary);
+  --muted: var(--tc-surface-muted);
+  --muted-foreground: var(--tc-text-secondary);
+  --accent: var(--tc-surface-muted);
+  --accent-foreground: var(--tc-text-primary);
+  --destructive: var(--tc-text-primary);
+  --border: var(--tc-border-subtle);
+  --input: var(--tc-border-subtle);
+  --ring: var(--tc-border-strong);
+
+  --sidebar: var(--tc-surface-card);
+  --sidebar-foreground: var(--tc-text-primary);
+  --sidebar-primary: var(--tc-text-primary);
+  --sidebar-primary-foreground: var(--tc-text-inverted);
+  --sidebar-accent: var(--tc-surface-muted);
+  --sidebar-accent-foreground: var(--tc-text-primary);
+  --sidebar-border: var(--tc-border-subtle);
+  --sidebar-ring: var(--tc-border-strong);
+}
+
 .dark {
   color-scheme: dark;
 }
@@ -227,6 +562,10 @@
     outline: 2px solid var(--tc-deep-forest-teal);
     outline-offset: 2px;
   }
+}
+
+.tc-display-font {
+  font-family: var(--tc-font-display);
 }
 
 .tc-workspace-page {

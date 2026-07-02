@@ -14,6 +14,10 @@ from typing import Any
 from taichu.application.contracts.storage import StorageData
 
 _CHAPTER_ID = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+_MANUSCRIPT_PATH_SEGMENT = re.compile(
+    r"^[\w\u3400-\u4dbf\u4e00-\u9fff][\w\u3400-\u4dbf\u4e00-\u9fff.-]*$",
+    re.UNICODE,
+)
 _KNOWLEDGE_ID = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 
 _KNOWLEDGE_CATEGORIES = (
@@ -41,6 +45,7 @@ _STRUCTURED_KNOWLEDGE_TYPES = (
 
 _SOURCE_DIRS = (
     "manuscripts/chapters",
+    "manuscripts/deleted_chapters",
     *(f"knowledge/{knowledge_type}" for knowledge_type in _STRUCTURED_KNOWLEDGE_TYPES),
     *(f"knowledge/{category}" for category in _KNOWLEDGE_CATEGORIES),
     "workspace",
@@ -75,9 +80,7 @@ class ProjectAssetStorageBackend:
         self._assets_root = assets_root
         self._source_root = assets_root / "source"
         self._generated_root = assets_root / "generated"
-        self._workspace_locks = {
-            filename: Lock() for filename in _WORKSPACE_FILES
-        }
+        self._workspace_locks = {filename: Lock() for filename in _WORKSPACE_FILES}
         self._knowledge_lock = Lock()
 
     async def ensure_skeleton(self) -> None:
@@ -125,6 +128,18 @@ class ProjectAssetStorageBackend:
         return await asyncio.to_thread(
             self._read_chapter_markdown_sync,
             relative_path,
+        )
+
+    async def move_chapter_markdown(
+        self,
+        source_relative_path: str,
+        target_relative_path: str,
+    ) -> None:
+        """Move a chapter Markdown file to another safe manuscript path."""
+        await asyncio.to_thread(
+            self._move_chapter_markdown_sync,
+            source_relative_path,
+            target_relative_path,
         )
 
     async def append_workspace_record(
@@ -248,6 +263,11 @@ class ProjectAssetStorageBackend:
     def _ensure_skeleton_sync(self) -> None:
         for directory in _SOURCE_DIRS:
             (self._source_root / directory).mkdir(parents=True, exist_ok=True)
+        deleted_gitkeep = (
+            self._source_root / "manuscripts" / "deleted_chapters" / ".gitkeep"
+        )
+        if not deleted_gitkeep.exists():
+            deleted_gitkeep.write_text("\n", encoding="utf-8")
         self._ensure_generated_dirs()
 
         metadata_path = self._source_root / "metadata.yaml"
@@ -288,9 +308,7 @@ class ProjectAssetStorageBackend:
     def _read_metadata_sync(self) -> StorageData:
         self._ensure_skeleton_sync()
         return self._parse_simple_yaml(
-            (self._source_root / "metadata.yaml").read_text(
-                encoding="utf-8"
-            )
+            (self._source_root / "metadata.yaml").read_text(encoding="utf-8")
         )
 
     def _write_metadata_sync(self, data: StorageData) -> None:
@@ -348,6 +366,23 @@ class ProjectAssetStorageBackend:
         path = self._resolve_safe_chapter_path(relative_path)
         return path.read_text(encoding="utf-8")
 
+    def _move_chapter_markdown_sync(
+        self,
+        source_relative_path: str,
+        target_relative_path: str,
+    ) -> None:
+        source_path = self._resolve_safe_chapter_path(source_relative_path)
+        target_path = self._resolve_safe_chapter_move_target_path(target_relative_path)
+        if source_path == target_path:
+            return
+        if not source_path.exists():
+            raise FileNotFoundError(source_relative_path)
+        if target_path.exists():
+            raise FileExistsError(target_relative_path)
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.replace(target_path)
+        self._remove_empty_manuscript_dirs(source_path.parent)
+
     def _append_workspace_record_sync(
         self,
         filename: str,
@@ -376,8 +411,7 @@ class ProjectAssetStorageBackend:
             data = json.loads(line)
             if not isinstance(data, dict):
                 raise ValueError(
-                    f"Workspace JSONL line must be an object: "
-                    f"{filename}:{line_number}"
+                    f"Workspace JSONL line must be an object: {filename}:{line_number}"
                 )
             records.append(data)
         return records
@@ -390,8 +424,7 @@ class ProjectAssetStorageBackend:
         self._ensure_skeleton_sync()
         path = self._resolve_safe_workspace_jsonl(filename)
         text = "".join(
-            json.dumps(record, ensure_ascii=False) + "\n"
-            for record in records
+            json.dumps(record, ensure_ascii=False) + "\n" for record in records
         )
         with self._workspace_locks[filename]:
             self._replace_workspace_text(path, text)
@@ -541,17 +574,68 @@ class ProjectAssetStorageBackend:
             "chapters",
         )
         if not (valid_flat_path or valid_volume_path):
+            raise ValueError("chapter path must stay inside manuscripts/chapters")
+        if path.suffix != ".md":
+            raise ValueError("chapter path must end with .md")
+        chapter_id = path.stem
+        if valid_flat_path and not _CHAPTER_ID.fullmatch(chapter_id):
+            raise ValueError("chapter id contains unsafe characters")
+        if valid_volume_path and not _is_safe_manuscript_segment(chapter_id):
+            raise ValueError("chapter id contains unsafe characters")
+        if valid_volume_path and not _is_safe_manuscript_segment(path.parts[2]):
+            raise ValueError("volume id contains unsafe characters")
+        return self._source_root / Path(*path.parts)
+
+    def _resolve_safe_deleted_chapter_path(self, relative_path: str) -> Path:
+        if "\\" in relative_path:
+            raise ValueError("chapter path must use '/' separators")
+        path = PurePosixPath(relative_path)
+        if path.is_absolute() or ".." in path.parts:
+            raise ValueError("chapter path must stay inside source root")
+        valid_deleted_path = len(path.parts) == 4 and path.parts[:2] == (
+            "manuscripts",
+            "deleted_chapters",
+        )
+        if not valid_deleted_path:
             raise ValueError(
-                "chapter path must stay inside manuscripts/chapters"
+                "deleted chapter path must stay inside manuscripts/deleted_chapters"
             )
         if path.suffix != ".md":
             raise ValueError("chapter path must end with .md")
         chapter_id = path.stem
-        if not _CHAPTER_ID.fullmatch(chapter_id):
+        if not _is_safe_manuscript_segment(chapter_id):
             raise ValueError("chapter id contains unsafe characters")
-        if valid_volume_path and not _CHAPTER_ID.fullmatch(path.parts[2]):
+        if not _is_safe_manuscript_segment(path.parts[2]):
             raise ValueError("volume id contains unsafe characters")
         return self._source_root / Path(*path.parts)
+
+    def _remove_empty_manuscript_dirs(self, directory: Path) -> None:
+        roots = (
+            self._source_root / "manuscripts" / "chapters",
+            self._source_root / "manuscripts" / "deleted_chapters",
+        )
+        for root in roots:
+            try:
+                directory.relative_to(root)
+            except ValueError:
+                continue
+            current = directory
+            while current != root:
+                try:
+                    current.rmdir()
+                except OSError:
+                    break
+                current = current.parent
+            return
+
+    def _resolve_safe_chapter_move_target_path(self, relative_path: str) -> Path:
+        path = PurePosixPath(relative_path)
+        if len(path.parts) >= 2 and path.parts[:2] == (
+            "manuscripts",
+            "deleted_chapters",
+        ):
+            return self._resolve_safe_deleted_chapter_path(relative_path)
+        return self._resolve_safe_chapter_path(relative_path)
 
     def _resolve_safe_workspace_jsonl(self, filename: str) -> Path:
         if filename not in _WORKSPACE_FILES:
@@ -655,10 +739,7 @@ class ProjectAssetStorageBackend:
 
     @staticmethod
     def _format_simple_yaml(data: StorageData) -> str:
-        lines = [
-            f"{key}: {_format_scalar(value)}"
-            for key, value in data.items()
-        ]
+        lines = [f"{key}: {_format_scalar(value)}" for key, value in data.items()]
         return "\n".join(lines) + "\n"
 
 
@@ -684,3 +765,7 @@ def _format_scalar(value: Any) -> str:
     if isinstance(value, bool):
         return "true" if value else "false"
     return str(value)
+
+
+def _is_safe_manuscript_segment(value: str) -> bool:
+    return bool(_MANUSCRIPT_PATH_SEGMENT.fullmatch(value)) and value not in {".", ".."}

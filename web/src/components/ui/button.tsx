@@ -9,7 +9,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "border-[var(--tc-midnight-ink)] bg-[var(--tc-lavender-whisper)] text-[var(--tc-midnight-ink)] hover:bg-[color-mix(in_srgb,var(--tc-lavender-whisper),var(--tc-white)_20%)]",
+          "tc-primary-action",
         outline:
           "border-[var(--tc-workspace-border)] bg-transparent text-[var(--tc-workspace-text)] hover:bg-[var(--tc-workspace-panel-soft)] aria-expanded:bg-[var(--tc-workspace-panel-soft)]",
         secondary:
@@ -45,12 +45,24 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  style,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  const semanticStyle =
+    variant === "default"
+      ? {
+          borderColor: "var(--tc-action-primary-border)",
+          background: "var(--tc-action-primary-bg)",
+          color: "var(--tc-action-primary-text)",
+          ...style,
+        }
+      : style;
+
   return (
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      style={semanticStyle}
       {...props}
     />
   )

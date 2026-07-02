@@ -49,6 +49,19 @@ async def api_rename_volume(
     return OutlineResponse(outline=outline)
 
 
+@router.delete("/outline/volumes/{volume_id}", response_model=OutlineResponse)
+async def api_delete_volume(
+    volume_id: str,
+    service: OutlineService = Depends(provide_outline_service),
+) -> OutlineResponse:
+    """Delete one volume and archive its chapters."""
+    try:
+        outline = await service.delete_volume(volume_id)
+    except OutlineNotFoundError as error:
+        raise _not_found(str(error)) from error
+    return OutlineResponse(outline=outline)
+
+
 @router.post("/outline/chapters", response_model=OutlineResponse)
 async def api_create_chapter(
     request: CreateChapterRequest,
@@ -59,7 +72,21 @@ async def api_create_chapter(
         outline = await service.create_chapter(
             request.volume_id,
             request.display_title,
+            after_chapter_id=request.after_chapter_id,
         )
+    except OutlineNotFoundError as error:
+        raise _not_found(str(error)) from error
+    return OutlineResponse(outline=outline)
+
+
+@router.delete("/outline/chapters/{chapter_id}", response_model=OutlineResponse)
+async def api_delete_chapter(
+    chapter_id: str,
+    service: OutlineService = Depends(provide_outline_service),
+) -> OutlineResponse:
+    """Delete one chapter from the outline and archive its Markdown."""
+    try:
+        outline = await service.delete_chapter(chapter_id)
     except OutlineNotFoundError as error:
         raise _not_found(str(error)) from error
     return OutlineResponse(outline=outline)

@@ -4,6 +4,7 @@ import {
   buildTextCandidateEdit,
   textCandidateContent,
 } from "../../src/lib/editor/ai-card-actions";
+import { formatNovelParagraphs } from "../../src/lib/editor/markdown";
 import type { AIResultCard } from "../../src/lib/types/ai-cards";
 
 const tests: Array<[string, () => void]> = [];
@@ -58,6 +59,17 @@ test("text candidate content can read object payload fallback", () => {
   const card = textCard({ content: { text: "对象正文" } });
 
   assert.equal(textCandidateContent(card), "对象正文");
+});
+
+test("format novel paragraphs adds two full-width indent spaces", () => {
+  const formatted = formatNovelParagraphs(
+    "  first paragraph keeps inner spaces  \n\n　　second paragraph",
+  );
+
+  assert.equal(
+    formatted,
+    "\u3000\u3000first paragraph keeps inner spaces\n\n\u3000\u3000second paragraph",
+  );
 });
 
 for (const [name, run] of tests) {

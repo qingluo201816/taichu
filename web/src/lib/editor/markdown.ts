@@ -6,6 +6,16 @@ type InlineToken = {
   marks?: { type: "bold" | "italic" }[];
 };
 
+export function formatNovelParagraphs(markdown: string): string {
+  return markdown
+    .replace(/\r\n/g, "\n")
+    .split(/\n+/)
+    .map(paragraph => paragraph.trim())
+    .filter(Boolean)
+    .map(paragraph => `　　${paragraph}`)
+    .join("\n\n");
+}
+
 export function markdownToTiptapContent(markdown: string): JSONContent {
   const lines = markdown.replace(/\r\n/g, "\n").split("\n");
   const content: JSONContent[] = [];

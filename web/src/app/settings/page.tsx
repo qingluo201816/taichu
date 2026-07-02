@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { Loader2, Save, Settings } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { Button } from "@/components/ui/button";
 import { patchPreferences, readPreferences } from "@/lib/api/mvp";
 import type { EditorPreferences } from "@/lib/types/mvp";
 
 const defaultPreferences: EditorPreferences = {
   font_size: 18,
-  font_style: "serif",
+  font_style: "sans",
   editor_background: "soft",
   updated_at: "",
 };
@@ -28,7 +29,7 @@ export default function SettingsPage() {
     readPreferences()
       .then(response => {
         if (!cancelled) {
-          setPreferences(response.preferences);
+          setPreferences({ ...response.preferences, font_style: "sans" });
         }
       })
       .catch(caught => {
@@ -51,8 +52,11 @@ export default function SettingsPage() {
     setError(null);
     setMessage(null);
     try {
-      const response = await patchPreferences(preferences);
-      setPreferences(response.preferences);
+      const response = await patchPreferences({
+        ...preferences,
+        font_style: "sans",
+      });
+      setPreferences({ ...response.preferences, font_style: "sans" });
       setMessage("偏好已保存");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "设置保存失败");
@@ -72,6 +76,20 @@ export default function SettingsPage() {
           <h1 className="font-serif text-4xl text-[var(--tc-midnight-ink)]">
             基础偏好
           </h1>
+        </div>
+
+        <div className="mb-5 rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-6">
+          <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
+            <div>
+              <h2 className="text-lg font-semibold text-[var(--tc-midnight-ink)]">
+                界面风格
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--tc-smoke)]">
+                一键切换整套界面视觉。页面结构、路由和功能保持不变，只替换颜色、字体、圆角、边框和局部动效强度。
+              </p>
+            </div>
+            <ThemeSwitcher />
+          </div>
         </div>
 
         <div className="rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-6">
@@ -103,23 +121,6 @@ export default function SettingsPage() {
               </label>
 
               <label className="block text-sm font-medium">
-                字体样式
-                <select
-                  value={preferences.font_style}
-                  onChange={event =>
-                    setPreferences(current => ({
-                      ...current,
-                      font_style: event.target.value as EditorPreferences["font_style"],
-                    }))
-                  }
-                  className="mt-3 h-10 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3"
-                >
-                  <option value="serif">衬线</option>
-                  <option value="sans">无衬线</option>
-                </select>
-              </label>
-
-              <label className="block text-sm font-medium">
                 编辑背景
                 <select
                   value={preferences.editor_background}
@@ -132,8 +133,8 @@ export default function SettingsPage() {
                   }
                   className="mt-3 h-10 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3"
                 >
-                  <option value="soft">柔和纸面</option>
-                  <option value="dark">墨色边框</option>
+                  <option value="soft">柔色纸面</option>
+                  <option value="dark">无边框</option>
                 </select>
               </label>
 

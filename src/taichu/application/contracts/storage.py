@@ -78,6 +78,14 @@ class ProjectAssetStorageContract(Protocol):
         """读取章节 Markdown，路径相对 source 根目录。"""
         ...
 
+    async def move_chapter_markdown(
+        self,
+        source_relative_path: str,
+        target_relative_path: str,
+    ) -> None:
+        """移动章节 Markdown，路径相对 source 根目录。"""
+        ...
+
     async def append_workspace_record(
         self,
         filename: str,

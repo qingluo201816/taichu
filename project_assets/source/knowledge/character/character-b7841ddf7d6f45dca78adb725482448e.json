@@ -7,7 +7,7 @@
   "body": "",
   "tags": [],
   "importance": "core",
-  "status": "draft",
+  "status": "deprecated",
   "source_refs": [
     {
       "source_type": "author_note",
@@ -20,5 +20,5 @@
   ],
   "fields": {},
   "created_at": "2026-06-30T13:57:23.791521Z",
-  "updated_at": "2026-06-30T13:57:42.103264Z"
+  "updated_at": "2026-07-02T13:40:03.002157Z"
 }

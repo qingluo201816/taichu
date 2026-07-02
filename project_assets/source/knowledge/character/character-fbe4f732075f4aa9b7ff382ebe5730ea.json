@@ -1,0 +1,27 @@
+{
+  "id": "character-fbe4f732075f4aa9b7ff382ebe5730ea",
+  "type": "character",
+  "name": "秦浩轩",
+  "aliases": [
+    "主角",
+    "老秦"
+  ],
+  "summary": "",
+  "body": "",
+  "tags": [],
+  "importance": "core",
+  "status": "draft",
+  "source_refs": [
+    {
+      "source_type": "author_note",
+      "source_id": "作者手动记录",
+      "display_name": "作者手动记录",
+      "excerpt": "作者手动记录",
+      "note": "",
+      "author_note_body": "作者手动记录"
+    }
+  ],
+  "fields": {},
+  "created_at": "2026-07-02T13:42:14.361286Z",
+  "updated_at": "2026-07-02T15:06:06.862635Z"
+}

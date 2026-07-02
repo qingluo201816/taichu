@@ -1,7 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Inbox, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Inbox,
+  Loader2,
+  Plus,
+  Save,
+  Trash2,
+} from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
@@ -33,6 +42,8 @@ const tabs: Array<{ value: InboxTab; label: string }> = [
   { value: "issues", label: "待处理问题" },
 ];
 
+type InboxEntry = MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue;
+
 export function InboxBoard() {
   const [activeTab, setActiveTab] = useState<InboxTab>("ideas");
   const [ideas, setIdeas] = useState<MVPInboxIdea[]>([]);
@@ -45,42 +56,32 @@ export function InboxBoard() {
   const [confirmType, setConfirmType] = useState<KnowledgeTypeValue>("character");
   const [confirmName, setConfirmName] = useState("");
   const [confirmSummary, setConfirmSummary] = useState("");
-  const [selectedPendingFactId, setSelectedPendingFactId] = useState<string | null>(null);
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [isCreateOpen, setCreateOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const activePendingFact = useMemo(
-    () => pendingFacts.find(item => item.id === selectedPendingFactId) ?? null,
-    [pendingFacts, selectedPendingFactId],
-  );
+  const activeItems = useMemo(() => {
+    if (activeTab === "ideas") {
+      return ideas;
+    }
+    if (activeTab === "pending-facts") {
+      return pendingFacts;
+    }
+    return issues;
+  }, [activeTab, ideas, issues, pendingFacts]);
 
   const totalCount = ideas.length + pendingFacts.length + issues.length;
+  const activeTabLabel = tabs.find(tab => tab.value === activeTab)?.label ?? "灵感";
 
-  const selectPendingFact = useCallback((item: MVPInboxPendingFact) => {
-    setSelectedPendingFactId(item.id);
+  const preparePendingFactConfirm = useCallback((item: MVPInboxPendingFact) => {
     setConfirmName(item.title || item.content.slice(0, 24));
     setConfirmSummary(item.content);
   }, []);
 
-  const applyPendingFacts = useCallback(
-    (items: MVPInboxPendingFact[], preferredId?: string | null) => {
-      setPendingFacts(items);
-      const nextSelected =
-        items.find(item => item.id === preferredId) ?? items[0] ?? null;
-      if (nextSelected) {
-        selectPendingFact(nextSelected);
-      } else {
-        setSelectedPendingFactId(null);
-        setConfirmName("");
-        setConfirmSummary("");
-      }
-    },
-    [selectPendingFact],
-  );
-
-  async function reloadTab(tab: InboxTab) {
+  async function reloadTab(tab: InboxTab, preferredExpandedId?: string | null) {
     setLoading(true);
     setError(null);
     try {
@@ -88,12 +89,12 @@ export function InboxBoard() {
         setIdeas((await listInboxItems("ideas")).items);
       }
       if (tab === "pending-facts") {
-        const response = await listInboxItems("pending-facts");
-        applyPendingFacts(response.items, selectedPendingFactId);
+        setPendingFacts((await listInboxItems("pending-facts")).items);
       }
       if (tab === "issues") {
         setIssues((await listInboxItems("issues")).items);
       }
+      setExpandedItemId(preferredExpandedId ?? null);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Inbox 加载失败");
     } finally {
@@ -119,6 +120,7 @@ export function InboxBoard() {
   useEffect(() => {
     let cancelled = false;
     async function loadCurrentTab() {
+      setLoading(true);
       try {
         if (activeTab === "ideas") {
           const response = await listInboxItems("ideas");
@@ -129,7 +131,7 @@ export function InboxBoard() {
         if (activeTab === "pending-facts") {
           const response = await listInboxItems("pending-facts");
           if (!cancelled) {
-            applyPendingFacts(response.items, null);
+            setPendingFacts(response.items);
           }
         }
         if (activeTab === "issues") {
@@ -144,6 +146,7 @@ export function InboxBoard() {
         }
       } finally {
         if (!cancelled) {
+          setExpandedItemId(null);
           setLoading(false);
         }
       }
@@ -152,7 +155,18 @@ export function InboxBoard() {
     return () => {
       cancelled = true;
     };
-  }, [activeTab, applyPendingFacts]);
+  }, [activeTab]);
+
+  function toggleItem(item: InboxEntry) {
+    if (expandedItemId === item.id) {
+      setExpandedItemId(null);
+      return;
+    }
+    setExpandedItemId(item.id);
+    if (activeTab === "pending-facts" && isPendingFact(item)) {
+      preparePendingFactConfirm(item);
+    }
+  }
 
   async function createItem() {
     setBusy(true);
@@ -182,7 +196,8 @@ export function InboxBoard() {
       }
       setNewTitle("");
       setNewContent("");
-      setMessage("已添加到 Inbox");
+      setCreateOpen(false);
+      setMessage("已添加到收件箱");
       await reloadTab(activeTab);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "添加失败");
@@ -209,8 +224,8 @@ export function InboxBoard() {
       if (tab === "issues") {
         await patchInboxIssue(itemId, updates);
       }
-      await reloadTab(tab);
-      setMessage("已更新 Inbox");
+      await reloadTab(tab, itemId);
+      setMessage("已更新收件箱");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "更新失败");
     } finally {
@@ -218,31 +233,27 @@ export function InboxBoard() {
     }
   }
 
-  async function confirmPendingFact() {
-    if (!activePendingFact) {
-      return;
-    }
+  async function confirmPendingFact(item: MVPInboxPendingFact) {
     setBusy(true);
     setError(null);
     setMessage(null);
     try {
-      await confirmInboxPendingFact(activePendingFact.id, confirmType, {
+      await confirmInboxPendingFact(item.id, confirmType, {
         name: confirmName,
         summary: confirmSummary,
-        body: activePendingFact.content,
+        body: item.content,
         source_refs: [
           {
             source_type: "author_note",
             source_id: "作者手动记录",
-            display_name: activePendingFact.origin || "作者手动记录",
-            excerpt: activePendingFact.content.slice(0, 300),
-            note: "作者在 Inbox 手动确认",
-            author_note_body: activePendingFact.content,
+            display_name: item.origin || "作者手动记录",
+            excerpt: item.content.slice(0, 300),
+            note: "作者在收件箱手动确认",
+            author_note_body: item.content,
           },
         ],
       });
       setMessage("已确认入库，原记录保留为已处理");
-      setSelectedPendingFactId(null);
       await reloadTab("pending-facts");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "确认入库失败");
@@ -253,174 +264,289 @@ export function InboxBoard() {
 
   return (
     <AppShell activePath="/inbox">
-      <section className="mx-auto grid max-w-[1440px] gap-5 px-5 py-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-4">
-          <div className="mb-4">
-            <p className="text-xs text-[var(--tc-smoke)]">Inbox</p>
-            <h1 className="font-serif text-3xl text-[var(--tc-midnight-ink)]">
-              创作收件箱
+      <section className="mx-auto grid max-w-[1440px] gap-5 px-5 py-6 xl:grid-cols-[176px_minmax(0,1fr)]">
+        <aside className="rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2">
+          <div className="px-2 py-2">
+            <p className="text-xs text-[var(--tc-text-muted)]">收件箱</p>
+            <h1 className="text-xl font-semibold text-[var(--tc-text-primary)]">
+              模块
             </h1>
-            <p className="mt-2 text-sm text-[var(--tc-smoke)]">
-              当前待处理 {totalCount} 条
+            <p className="mt-1 text-xs text-[var(--tc-text-muted)]">
+              共 {totalCount} 条
             </p>
           </div>
-
-          <div className="grid gap-2">
+          <div className="mt-2 grid gap-1">
             {tabs.map(tab => (
               <button
                 key={tab.value}
                 type="button"
                 onClick={() => {
-                  setLoading(true);
                   setActiveTab(tab.value);
+                  setCreateOpen(false);
                 }}
                 className={cn(
-                  "h-11 rounded-[var(--tc-radius-control)] border px-3 text-left text-sm font-medium",
+                  "h-9 rounded-[var(--tc-radius-control)] px-3 text-left text-sm transition-colors",
                   activeTab === tab.value
-                    ? "border-[var(--tc-midnight-ink)] bg-[var(--tc-lavender-whisper)]"
-                    : "border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] text-[var(--tc-smoke)]",
+                    ? "bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
+                    : "text-[var(--tc-text-secondary)] hover:bg-[var(--tc-surface-muted)] hover:text-[var(--tc-text-primary)]",
                 )}
               >
                 {tab.label}
               </button>
             ))}
           </div>
-
-          <div className="mt-5 rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] p-3">
-            <h2 className="mb-3 text-sm font-semibold">
-              新增{tabs.find(tab => tab.value === activeTab)?.label}
-            </h2>
-            {activeTab !== "ideas" ? (
-              <input
-                value={newTitle}
-                onChange={event => setNewTitle(event.target.value)}
-                placeholder="标题"
-                className="mb-2 h-10 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 text-sm outline-none"
-              />
-            ) : null}
-            <textarea
-              value={newContent}
-              onChange={event => setNewContent(event.target.value)}
-              placeholder={activeTab === "ideas" ? "灵感内容" : "正文内容"}
-              className="min-h-28 w-full resize-y rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 py-2 text-sm leading-6 outline-none"
-            />
-            <select
-              value={priority}
-              onChange={event => setPriority(event.target.value as InboxPriority)}
-              className="mt-2 h-10 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 text-sm"
-              aria-label="优先级"
-            >
-              <option value="low">低</option>
-              <option value="normal">普通</option>
-              <option value="high">高</option>
-            </select>
-            <Button
-              type="button"
-              onClick={createItem}
-              disabled={busy || !newContent.trim() || (activeTab !== "ideas" && !newTitle.trim())}
-              className="mt-3 w-full"
-            >
-              {busy ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
-              添加
-            </Button>
-          </div>
         </aside>
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-4">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="flex items-center gap-2 font-serif text-3xl text-[var(--tc-midnight-ink)]">
-                <Inbox className="size-6" />
-                {tabs.find(tab => tab.value === activeTab)?.label}
+        <section className="min-w-0">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="flex items-center gap-2 text-xs text-[var(--tc-text-muted)]">
+                <Inbox className="size-4" />
+                {activeTabLabel}
+              </p>
+              <h2 className="text-2xl font-semibold text-[var(--tc-text-primary)]">
+                当前模块条目
               </h2>
-              {loading ? <Loader2 className="size-5 animate-spin" /> : null}
             </div>
-            {error ? (
-              <p className="tc-warning mb-3 rounded-[var(--tc-radius-control)] border px-3 py-2 text-sm">
-                {error}
-              </p>
-            ) : null}
-            {message ? (
-              <p className="tc-success mb-3 rounded-[var(--tc-radius-control)] border px-3 py-2 text-sm">
-                {message}
-              </p>
-            ) : null}
-            <div className="grid gap-3">
-              {activeTab === "ideas" &&
-                ideas.map(item => (
-                  <InboxCard
-                    key={item.id}
-                    title="灵感"
-                    content={item.content}
-                    meta={`${priorityLabel(item.priority)} · ${statusLabel(item.status)}`}
-                    selected={false}
-                    onEdit={(_title, content) =>
-                      void patchItem("ideas", item.id, { content })
-                    }
-                    onProcessed={() => void patchItem("ideas", item.id, { status: "processed" })}
-                    onDeprecated={() => void patchItem("ideas", item.id, { status: "deprecated" })}
-                  />
-                ))}
-              {activeTab === "pending-facts" &&
-                pendingFacts.map(item => (
-                  <InboxCard
-                    key={item.id}
-                    title={item.title || "待确认事实"}
-                    content={item.content}
-                    meta={`${priorityLabel(item.priority)} · ${statusLabel(item.status)}`}
-                    selected={selectedPendingFactId === item.id}
-                    onSelect={() => selectPendingFact(item)}
-                    onEdit={(title, content) =>
-                      void patchItem("pending-facts", item.id, { title, content })
-                    }
-                    onProcessed={() =>
-                      void patchItem("pending-facts", item.id, { status: "processed" })
-                    }
-                    onDeprecated={() =>
-                      void patchItem("pending-facts", item.id, { status: "deprecated" })
-                    }
-                  />
-                ))}
-              {activeTab === "issues" &&
-                issues.map(item => (
-                  <InboxCard
-                    key={item.id}
-                    title={item.title}
-                    content={item.content}
-                    meta={`${priorityLabel(item.priority)} · ${statusLabel(item.status)}`}
-                    selected={false}
-                    onEdit={(title, content) =>
-                      void patchItem("issues", item.id, { title, content })
-                    }
-                    onProcessed={() => void patchItem("issues", item.id, { status: "processed" })}
-                    onDeprecated={() => void patchItem("issues", item.id, { status: "deprecated" })}
-                  />
-                ))}
-              {!loading && currentItemsCount(activeTab, ideas, pendingFacts, issues) === 0 ? (
-                <div className="rounded-[var(--tc-radius-card)] border border-dashed border-[var(--tc-stone-mist)] px-4 py-16 text-center text-sm text-[var(--tc-smoke)]">
-                  暂无条目
-                </div>
-              ) : null}
-            </div>
+            <button
+              type="button"
+              onClick={() => setCreateOpen(current => !current)}
+              className="inline-flex h-9 items-center gap-2 rounded-[var(--tc-radius-pill)] border border-[var(--tc-border-subtle)] px-4 text-sm text-[var(--tc-text-secondary)] hover:text-[var(--tc-text-primary)]"
+            >
+              <Plus className="size-4" />
+              新增
+            </button>
           </div>
 
-          <aside className="rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-4">
-            <h2 className="font-serif text-2xl text-[var(--tc-midnight-ink)]">
-              确认入库
-            </h2>
-            {activePendingFact ? (
-              <div className="mt-4 space-y-3">
-                <p className="rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] p-3 text-sm leading-6">
-                  原事实：{activePendingFact.content}
-                </p>
-                <label className="block text-sm font-medium">
-                  知识卡类型
+          {isCreateOpen ? (
+            <div className="mb-4 max-w-[760px] border-y border-[var(--tc-border-subtle)] py-4">
+              <div className="grid gap-2">
+                {activeTab !== "ideas" ? (
+                  <input
+                    value={newTitle}
+                    onChange={event => setNewTitle(event.target.value)}
+                    placeholder="标题"
+                    className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)] outline-none"
+                  />
+                ) : null}
+                <textarea
+                  value={newContent}
+                  onChange={event => setNewContent(event.target.value)}
+                  placeholder={activeTab === "ideas" ? "灵感内容" : "正文内容"}
+                  className="min-h-20 resize-y rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 text-sm leading-6 text-[var(--tc-text-primary)] outline-none"
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={priority}
+                    onChange={event =>
+                      setPriority(event.target.value as InboxPriority)
+                    }
+                    className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)]"
+                    aria-label="优先级"
+                  >
+                    <option value="low">低</option>
+                    <option value="normal">普通</option>
+                    <option value="high">高</option>
+                  </select>
+                  <Button
+                    type="button"
+                    onClick={createItem}
+                    disabled={
+                      busy ||
+                      !newContent.trim() ||
+                      (activeTab !== "ideas" && !newTitle.trim())
+                    }
+                  >
+                    {busy ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Plus className="size-4" />
+                    )}
+                    添加
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {error ? (
+            <p className="tc-warning mb-3 max-w-[760px] rounded-[var(--tc-radius-control)] border px-3 py-2 text-sm">
+              {error}
+            </p>
+          ) : null}
+          {message ? (
+            <p className="tc-success mb-3 max-w-[760px] rounded-[var(--tc-radius-control)] border px-3 py-2 text-sm">
+              {message}
+            </p>
+          ) : null}
+
+          <div className="max-w-[980px]">
+            {loading ? (
+              <div className="flex h-28 items-center justify-center text-sm text-[var(--tc-text-muted)]">
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                加载中
+              </div>
+            ) : activeItems.length ? (
+              <div className="divide-y divide-[var(--tc-border-subtle)] border-y border-[var(--tc-border-subtle)]">
+                {activeItems.map(item => (
+                  <InboxRow
+                    key={`${item.id}-${item.updated_at}`}
+                    tab={activeTab}
+                    item={item}
+                    expanded={expandedItemId === item.id}
+                    busy={busy}
+                    knowledgeTypes={knowledgeTypes}
+                    confirmType={confirmType}
+                    confirmName={confirmName}
+                    confirmSummary={confirmSummary}
+                    onToggle={() => toggleItem(item)}
+                    onPatch={updates => void patchItem(activeTab, item.id, updates)}
+                    onProcessed={() =>
+                      void patchItem(activeTab, item.id, { status: "processed" })
+                    }
+                    onDeprecated={() =>
+                      void patchItem(activeTab, item.id, { status: "deprecated" })
+                    }
+                    onConfirm={
+                      activeTab === "pending-facts" && isPendingFact(item)
+                        ? () => void confirmPendingFact(item)
+                        : undefined
+                    }
+                    onConfirmTypeChange={setConfirmType}
+                    onConfirmNameChange={setConfirmName}
+                    onConfirmSummaryChange={setConfirmSummary}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="border-y border-dashed border-[var(--tc-border-subtle)] px-3 py-16 text-center text-sm text-[var(--tc-text-muted)]">
+                暂无条目
+              </div>
+            )}
+          </div>
+        </section>
+      </section>
+    </AppShell>
+  );
+}
+
+function InboxRow({
+  tab,
+  item,
+  expanded,
+  busy,
+  knowledgeTypes,
+  confirmType,
+  confirmName,
+  confirmSummary,
+  onToggle,
+  onPatch,
+  onProcessed,
+  onDeprecated,
+  onConfirm,
+  onConfirmTypeChange,
+  onConfirmNameChange,
+  onConfirmSummaryChange,
+}: {
+  tab: InboxTab;
+  item: InboxEntry;
+  expanded: boolean;
+  busy: boolean;
+  knowledgeTypes: KnowledgeTypeInfo[];
+  confirmType: KnowledgeTypeValue;
+  confirmName: string;
+  confirmSummary: string;
+  onToggle: () => void;
+  onPatch: (updates: Record<string, unknown>) => void;
+  onProcessed: () => void;
+  onDeprecated: () => void;
+  onConfirm?: () => void;
+  onConfirmTypeChange: (value: KnowledgeTypeValue) => void;
+  onConfirmNameChange: (value: string) => void;
+  onConfirmSummaryChange: (value: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(itemTitle(tab, item));
+  const [draftContent, setDraftContent] = useState(item.content);
+
+  function submitEdit() {
+    onPatch(
+      tab === "ideas"
+        ? { content: draftContent }
+        : { title: draftTitle.trim() || itemTitle(tab, item), content: draftContent },
+    );
+    setEditing(false);
+  }
+
+  return (
+    <article>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex min-h-12 w-full items-center gap-3 px-1 py-2 text-left"
+      >
+        <span className="inline-flex size-7 shrink-0 items-center justify-center text-[var(--tc-text-muted)]">
+          {expanded ? (
+            <ChevronDown className="size-4" />
+          ) : (
+            <ChevronRight className="size-4" />
+          )}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-medium text-[var(--tc-text-primary)]">
+            {itemTitle(tab, item)}
+          </span>
+          <span className="block truncate text-xs text-[var(--tc-text-muted)]">
+            {priorityLabel(item.priority)} · {statusLabel(item.status)} ·{" "}
+            {dateLabel(item.updated_at)}
+          </span>
+        </span>
+      </button>
+
+      {expanded ? (
+        <div className="pb-5 pl-10 pr-2">
+          <p className="max-w-[860px] whitespace-pre-wrap text-sm leading-7 text-[var(--tc-text-secondary)]">
+            {item.content}
+          </p>
+
+          {editing ? (
+            <div className="mt-3 grid max-w-[760px] gap-2">
+              {tab !== "ideas" ? (
+                <input
+                  value={draftTitle}
+                  onChange={event => setDraftTitle(event.target.value)}
+                  className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)] outline-none"
+                  placeholder="标题"
+                />
+              ) : null}
+              <textarea
+                value={draftContent}
+                onChange={event => setDraftContent(event.target.value)}
+                className="min-h-20 resize-y rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 text-sm leading-6 text-[var(--tc-text-primary)] outline-none"
+                placeholder="内容"
+              />
+              <div>
+                <Button type="button" size="sm" onClick={submitEdit}>
+                  <Save className="size-4" />
+                  保存编辑
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
+          {tab === "pending-facts" && isPendingFact(item) ? (
+            <div className="mt-4 grid max-w-[760px] gap-2 border-l border-[var(--tc-border-subtle)] pl-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label className="block text-sm text-[var(--tc-text-secondary)]">
+                  知识类型
                   <select
                     value={confirmType}
                     onChange={event =>
-                      setConfirmType(event.target.value as KnowledgeTypeValue)
+                      onConfirmTypeChange(
+                        event.target.value as KnowledgeTypeValue,
+                      )
                     }
-                    className="mt-2 h-10 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3"
+                    className="mt-1 h-9 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-[var(--tc-text-primary)] outline-none"
                   >
                     {knowledgeTypes.map(type => (
                       <option key={type.value} value={type.value}>
@@ -429,143 +555,87 @@ export function InboxBoard() {
                     ))}
                   </select>
                 </label>
-                <label className="block text-sm font-medium">
-                  知识卡预览
+                <label className="block text-sm text-[var(--tc-text-secondary)]">
+                  知识名称
                   <input
                     value={confirmName}
-                    onChange={event => setConfirmName(event.target.value)}
-                    className="mt-2 h-10 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3"
-                    placeholder="名称"
+                    onChange={event => onConfirmNameChange(event.target.value)}
+                    className="mt-1 h-9 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-[var(--tc-text-primary)] outline-none"
                   />
                 </label>
+              </div>
+              <label className="block text-sm text-[var(--tc-text-secondary)]">
+                入库摘要
                 <textarea
                   value={confirmSummary}
-                  onChange={event => setConfirmSummary(event.target.value)}
-                  className="min-h-28 w-full resize-y rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3 py-2 text-sm leading-6 outline-none"
-                  placeholder="摘要"
+                  onChange={event => onConfirmSummaryChange(event.target.value)}
+                  className="mt-1 min-h-20 w-full resize-y rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 leading-6 text-[var(--tc-text-primary)] outline-none"
                 />
-                <Button
-                  type="button"
-                  onClick={confirmPendingFact}
-                  disabled={busy || !confirmName.trim() || !confirmSummary.trim()}
-                  className="w-full"
-                >
-                  {busy ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
-                  确认入库
-                </Button>
-              </div>
-            ) : (
-              <div className="mt-4 rounded-[var(--tc-radius-control)] border border-dashed border-[var(--tc-stone-mist)] px-3 py-12 text-center text-sm text-[var(--tc-smoke)]">
-                选择一条待确认事实
-              </div>
-            )}
-          </aside>
-        </section>
-      </section>
-    </AppShell>
-  );
-}
+              </label>
+            </div>
+          ) : null}
 
-function InboxCard({
-  title,
-  content,
-  meta,
-  selected,
-  onSelect,
-  onEdit,
-  onProcessed,
-  onDeprecated,
-}: {
-  title: string;
-  content: string;
-  meta: string;
-  selected: boolean;
-  onSelect?: () => void;
-  onEdit: (title: string, content: string) => void;
-  onProcessed: () => void;
-  onDeprecated: () => void;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [draftTitle, setDraftTitle] = useState(title);
-  const [draftContent, setDraftContent] = useState(content);
-
-  function submitEdit() {
-    onEdit(draftTitle.trim() || title, draftContent);
-    setEditing(false);
-  }
-
-  return (
-    <article
-      className={cn(
-        "rounded-[var(--tc-radius-card)] border bg-[var(--tc-cream-paper)] p-4",
-        selected ? "border-[var(--tc-midnight-ink)]" : "border-[var(--tc-stone-mist)]",
-      )}
-    >
-      <button type="button" onClick={onSelect} className="w-full text-left">
-        <h3 className="text-lg font-semibold text-[var(--tc-midnight-ink)]">
-          {title}
-        </h3>
-        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--tc-smoke)]">
-          {content}
-        </p>
-        <p className="mt-3 text-xs text-[var(--tc-smoke)]">{meta}</p>
-      </button>
-      {editing ? (
-        <div className="mt-4 space-y-2 border-t border-[var(--tc-stone-mist)] pt-3">
-          <input
-            value={draftTitle}
-            onChange={event => setDraftTitle(event.target.value)}
-            className="h-10 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 text-sm outline-none"
-            placeholder="标题"
-          />
-          <textarea
-            value={draftContent}
-            onChange={event => setDraftContent(event.target.value)}
-            className="min-h-28 w-full resize-y rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 py-2 text-sm leading-6 outline-none"
-            placeholder="内容"
-          />
-          <Button type="button" size="sm" onClick={submitEdit}>
-            <Save className="size-4" />
-            保存编辑
-          </Button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setEditing(current => !current)}
+            >
+              <Save className="size-4" />
+              编辑
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onProcessed}
+              disabled={busy}
+            >
+              <CheckCircle2 className="size-4" />
+              标记已处理
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onDeprecated}
+              disabled={busy}
+            >
+              <Trash2 className="size-4" />
+              废弃
+            </Button>
+            {onConfirm ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={onConfirm}
+                disabled={busy || !confirmName.trim() || !confirmSummary.trim()}
+              >
+                {busy ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="size-4" />
+                )}
+                确认入库
+              </Button>
+            ) : null}
+          </div>
         </div>
       ) : null}
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() => setEditing(current => !current)}
-        >
-          <Save className="size-4" />
-          编辑
-        </Button>
-        <Button type="button" size="sm" variant="outline" onClick={onProcessed}>
-          <CheckCircle2 className="size-4" />
-          标记已处理
-        </Button>
-        <Button type="button" size="sm" variant="outline" onClick={onDeprecated}>
-          <Trash2 className="size-4" />
-          废弃
-        </Button>
-      </div>
     </article>
   );
 }
 
-function currentItemsCount(
-  tab: InboxTab,
-  ideas: MVPInboxIdea[],
-  pendingFacts: MVPInboxPendingFact[],
-  issues: MVPInboxIssue[],
-): number {
+function isPendingFact(item: InboxEntry): item is MVPInboxPendingFact {
+  return "origin" in item;
+}
+
+function itemTitle(tab: InboxTab, item: InboxEntry): string {
   if (tab === "ideas") {
-    return ideas.length;
+    return "灵感";
   }
-  if (tab === "pending-facts") {
-    return pendingFacts.length;
-  }
-  return issues.length;
+  return "title" in item && item.title ? item.title : "未命名条目";
 }
 
 function priorityLabel(priority: string): string {
@@ -584,4 +654,17 @@ function statusLabel(status: string): string {
     deprecated: "已废弃",
   };
   return labels[status] ?? "待处理";
+}
+
+function dateLabel(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "时间未知";
+  }
+  return date.toLocaleString("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
