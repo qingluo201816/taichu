@@ -2,11 +2,11 @@
 
 > 更新日期：2026-07-04
 >
-> 当前版本：v0.3
+> 当前版本：v0.4
 >
 > 当前状态：讨论稿，作为正文知识沉淀 Agent 的唯一有效方案文档。
 >
-> 最新讨论主题：第一版入口、抽取范围、LangGraph 节点拆分、首批抽取类型、评测记录。
+> 最新讨论主题：旧 Basic Agent Chat 清理边界、候选匹配 active 知识卡规则。
 >
 > 文档维护规则：后续继续在本文内更新版本记录和章节内容，不再为每轮讨论新增独立方案文档。
 
@@ -25,13 +25,14 @@
 11. 类型专家节点设计
 12. LangGraph State 与 LLM 调用记录
 13. 哪些节点需要 LLM
-14. 候选项与作者审核
+14. 候选项、匹配规则与作者审核
 15. 评测与仪表盘
 16. 与写作页的关系
 17. 增量更新与后续批量任务
-18. 当前不做的事情
-19. 当前推荐总方案
-20. 下一轮讨论建议
+18. 接口边界与旧 Agent Chat 清理
+19. 当前不做的事情
+20. 当前推荐总方案
+21. 下一轮讨论建议
 
 ## 1. 更新状态与版本记录
 
@@ -52,6 +53,8 @@
 首批只抽角色、地点、势力、物品
 完整 prompt / response 保存
 逐条确认，不做批量确认
+候选匹配只匹配 active 知识卡
+旧 Basic Agent Chat 不作为正文知识沉淀 Agent 接口
 ```
 
 ### 1.2 版本记录
@@ -60,7 +63,8 @@
 |---|---|---|---|
 | v0.1 | 2026-07-04 | 正文知识沉淀 Agent 的定位、数据层、智能体工作台入口、评测同步建设 | 已合并 |
 | v0.2 | 2026-07-04 | 第一版抽取范围、章节调度单元、JSON 中间态、LangGraph 主图草案 | 已合并 |
-| v0.3 | 2026-07-04 | 第一版入口、LLM 调用记录、类型专家节点拆分、候选确认方式、首批抽取类型 | 当前有效版本 |
+| v0.3 | 2026-07-04 | 第一版入口、LLM 调用记录、类型专家节点拆分、候选确认方式、首批抽取类型 | 已合并 |
+| v0.4 | 2026-07-04 | 旧 Basic Agent Chat 清理边界、候选匹配 active 知识卡规则 | 当前有效版本 |
 
 ### 1.3 当前有效决策摘要
 
@@ -74,6 +78,9 @@
 确认后的有效知识卡进入 MongoDB 主数据。
 确认后的有效知识卡立即可被写作页结构化查询使用。
 每次 LLM 调用必须保存完整 prompt 和 response。
+候选匹配现有知识卡时，只匹配 active 知识卡。
+draft 和 deprecated 后续也默认不参与候选匹配。
+旧 /api/agents/chat 是 Basic Agent Chat 遗留接口，不作为正文知识沉淀 Agent 接口。
 第一版不做 RAG、不做向量库、不做 ES、不做图谱、不做 GraphRAG。
 评测和节点状态从第一版同步建设。
 ```
@@ -123,6 +130,10 @@
 候选确认第一版只支持逐条确认，不做批量确认。
 
 第一版先只抽取角色、地点、势力、物品。先把基本盘调好，再逐步加入事件、规则、境界、功法、伏笔等类型。
+
+候选匹配现有知识卡时，只匹配 active 知识卡。draft 和 deprecated 后续也默认不参与候选匹配。
+
+当前 `/api/agents/chat` 是旧 Basic Agent Chat，会生成 AIResultCard。正文知识沉淀 Agent 不复用这个接口。该接口及相关旧示例由 Codex 后续清理，清理后需要检查仓库里是否仍有旧入口、旧类型、旧调用链残留。
 
 ## 5. 数据层与中间态
 
@@ -255,39 +266,6 @@ LLM 输入单元：整章或章内片段
 批次汇总：多章任务再做批次内去重和合并
 ```
 
-当前章、当前卷、全书使用同一套大工作流，但复杂度不同。
-
-当前章任务：
-
-```text
-单章读取
-单章抽取
-单章候选生成
-单章审核
-```
-
-当前卷任务：
-
-```text
-多章读取
-逐章抽取
-章内候选汇总
-批次内去重
-批次内合并
-再与正式知识库比对
-```
-
-全书任务：
-
-```text
-多个卷 / 大量章节
-长时间后台任务
-更高重复率
-更多冲突项
-更复杂的运行恢复
-更重的审核压力
-```
-
 第一版只开放当前章节抽取。
 
 第二版再做多章节批量处理。
@@ -301,7 +279,7 @@ V3：当前卷抽取
 V4：全书抽取
 ```
 
-不从写作页入口跳转，是为了避免写作页复杂化。正文知识沉淀 Agent 是后台式、批处理式任务，不是写作时即时返回的轻量 AI 面板能力。入口放在智能体工作台更符合它的任务性质。
+不从写作页入口跳转，是为了避免写作页复杂化。正文知识沉淀 Agent 是后台式、批处理式任务，不是写作时即时返回的轻量 AI 面板能力。
 
 ## 9. 第一版抽取类型
 
@@ -335,8 +313,6 @@ V4：全书抽取
 功法容易和术法、神通、物品混淆
 伏笔需要长期上下文，单章抽取不稳定
 ```
-
-所以第一版先把角色、地点、势力、物品抽稳，再往里加功能更安全。
 
 ## 10. LangGraph 第一版主图
 
@@ -379,8 +355,12 @@ NormalizeAndValidateNode
   规范字段、枚举、空值、chapter_id、来源摘录，并做 schema 校验
 
   ↓
+RunInternalConflictCheckNode
+  先检查本轮内部重复和冲突
+
+  ↓
 MatchExistingKnowledgeNode
-  与 MongoDB 已确认知识卡做名称、别名和摘要级匹配
+  只与 MongoDB 中 active 知识卡做名称、别名和摘要级匹配
 
   ↓
 BuildReviewItemsNode
@@ -426,7 +406,8 @@ death_chapter_id
 current_realm_text
 first_seen_chapter_id
 last_seen_chapter_id
-source_refs
+source_origin
+source_note
 ```
 
 第一版不抽：
@@ -464,7 +445,7 @@ known_secrets
 
 实体专家节点不负责事件因果，也不负责复杂时间线推理。
 
-它负责把候选实体填成地点卡、势力卡、物品卡草稿，或生成对已有卡的更新建议。
+它负责把候选实体填成地点卡、势力卡、物品卡草稿，或生成对已有 active 卡的更新建议。
 
 ### 11.3 事件规则专家节点
 
@@ -479,8 +460,6 @@ known_secrets
 规则卡
 伏笔卡
 ```
-
-第一版不启用它，是为了避免第一个 Agent 过早进入剧情理解、因果判断和长期上下文推理，导致调试难度过高。
 
 ## 12. LangGraph State 与 LLM 调用记录
 
@@ -528,8 +507,6 @@ error
 
 ## 13. 哪些节点需要 LLM
 
-判断标准：如果任务是确定性的、可校验的、可写死的，就不要用 LLM；如果任务需要理解语义、归纳、消歧、压缩、判断类型，可以用 LLM。
-
 第一版必须用 LLM：
 
 ```text
@@ -565,6 +542,7 @@ MatchExistingKnowledgeNode 中的模糊同名判断
 来源摘录裁剪
 MongoDB 写入
 状态流转
+匹配范围过滤 active 知识卡
 ```
 
 原则：
@@ -575,7 +553,7 @@ MongoDB 写入
 成本高但收益不明显的，先不用 LLM。
 ```
 
-## 14. 候选项与作者审核
+## 14. 候选项、匹配规则与作者审核
 
 第一版候选项不设置 confidence / high / medium / low。
 
@@ -592,10 +570,49 @@ MongoDB 写入
 来源章节
 原文摘录
 schema 校验结果
-是否命中已有卡
+是否命中已有 active 卡
 冲突说明
 作者处理状态
 ```
+
+### 14.1 候选判断顺序
+
+第一步：本轮内部检测。
+
+```text
+同一 run 内，先按 name + aliases 规范化比较。
+如果同名同类型，合并候选。
+如果同名但类型不同，进入本轮冲突。
+如果别名互相包含，标记疑似重复。
+```
+
+第二步：和 MongoDB 已有 active 知识卡比对。
+
+比对顺序：
+
+```text
+1. 同类型 name 完全相同
+2. 同类型 aliases 命中
+3. name 命中对方 aliases
+4. aliases 之间有交集
+5. 摘要或 source_note 中出现明显同指称文本
+```
+
+第一版只匹配 active 知识卡。
+
+draft 和 deprecated 后续也默认不参与自动匹配。
+
+### 14.2 候选类型判断
+
+候选新卡：同类型下没有命中 active 卡的 name / aliases / 明显同指称。
+
+候选更新：命中已有 active 卡，并且新增字段是空白补充，或是 last_seen_chapter_id / source_note / summary 的补充。
+
+候选冲突：命中已有 active 卡，但候选字段和已有字段不一致，并且不能安全自动覆盖。
+
+建议忽略：候选信息太碎、没有足够来源摘录、或者不属于第一版抽取类型。
+
+### 14.3 作者审核
 
 作者审核第一版只允许逐条确认。
 
@@ -612,8 +629,6 @@ schema 校验结果
 第一版不做批量确认。
 
 原因：这个 Agent 会直接影响 MongoDB 有效知识库，而有效知识库后续会被写作页参考。批量确认会放大错误写入风险。
-
-后续如果需要排序，可以先用规则排序，不用 LLM 置信度。例如：有来源、无冲突、schema 通过、命中已有卡等。
 
 ## 15. 评测与仪表盘
 
@@ -681,11 +696,11 @@ LangSmith 可选接入，不作为第一版硬依赖。
 
 即使非必填字段缺失，也可以被写作页结构化查询使用。
 
-这意味着后续正文知识沉淀 Agent 再次运行时，可能不是创建新卡，而是对已有知识卡生成补充建议：
+这意味着后续正文知识沉淀 Agent 再次运行时，可能不是创建新卡，而是对已有 active 知识卡生成补充建议：
 
 ```text
 补充摘要
-补充来源引用
+补充来源说明
 更新最近出现章节
 补充当前境界文本
 补充物品当前持有人
@@ -738,7 +753,43 @@ model_name
 批次内候选去重
 ```
 
-## 18. 当前不做的事情
+## 18. 接口边界与旧 Agent Chat 清理
+
+旧 `/api/agents/chat` 是 Basic Agent Chat，会生成 AIResultCard，不适合作为正文知识沉淀 Agent 的接口。
+
+正文知识沉淀 Agent 需要 run、node、candidate、review、llm_calls、metrics 等概念，因此需要独立接口。
+
+推荐新增独立前缀：
+
+```text
+/api/agent-workbench/knowledge-extraction
+```
+
+第一版候选接口可以围绕运行和候选审核设计：
+
+```text
+GET  /api/agent-workbench/knowledge-extraction/runs
+POST /api/agent-workbench/knowledge-extraction/runs
+GET  /api/agent-workbench/knowledge-extraction/runs/{run_id}
+GET  /api/agent-workbench/knowledge-extraction/runs/{run_id}/candidates
+POST /api/agent-workbench/knowledge-extraction/candidates/{candidate_id}/confirm
+POST /api/agent-workbench/knowledge-extraction/candidates/{candidate_id}/reject
+POST /api/agent-workbench/knowledge-extraction/candidates/{candidate_id}/edit-confirm
+```
+
+Codex 清理旧 Basic Agent Chat 后，需要检查：
+
+```text
+/api/agents/chat 是否已移除或不再被前端调用
+web/src/app/chat/page.tsx 是否已替换为真实智能体工作台
+web/src/lib/api/agents.ts 是否不再暴露旧 runAgentChat
+web/src/lib/types/agents.ts 是否不再依赖旧 AIResultCard 输出
+后端 routes/agents.py 是否不再保留 Basic Agent Chat 端点
+ChatAgentService 相关旧服务是否删除或不再注册
+AIResultCard 旧 Agent Chat 链路是否没有被正文知识沉淀 Agent 复用
+```
+
+## 19. 当前不做的事情
 
 第一版不做：
 
@@ -748,6 +799,9 @@ model_name
 全书抽取
 批量确认
 候选置信度
+匹配 draft 知识卡
+匹配 deprecated 知识卡
+复用 /api/agents/chat
 RAG
 向量库
 ES
@@ -762,7 +816,7 @@ GraphRAG
 自动写入有效知识库
 ```
 
-## 19. 当前推荐总方案
+## 20. 当前推荐总方案
 
 正文知识沉淀 Agent 第一版应收敛为：
 
@@ -775,9 +829,11 @@ GraphRAG
 只抽角色、地点、势力、物品
 保存完整 prompt 和 response
 输出 JSON 中间态
+候选匹配只匹配 active 知识卡
 作者逐条确认
 确认后写入 MongoDB 有效知识库
 评测和节点状态同步建设
+独立接口，不复用旧 /api/agents/chat
 ```
 
 这是最适合当前阶段的路线：既能真正用上 LangGraph 和真实 LLM，又不会一次性进入全书抽取、多类型抽取、RAG、图谱和复杂批处理。
@@ -790,17 +846,18 @@ LLM 负责理解和建议。
 作者负责最终确认。
 MongoDB 只保存确认后的主数据。
 JSON 中间态保存未确认候选。
+只匹配 active 知识卡。
 评测仪表盘和节点状态从第一版同步建设。
 ```
 
-## 20. 下一轮讨论建议
+## 21. 下一轮讨论建议
 
 下一轮建议继续讨论：
 
-1. 智能体工作台页面第一版具体布局。
-2. JSON 中间态目录结构和字段结构。
-3. 当前章节抽取的 prompt 结构。
-4. 角色专家节点和实体专家节点的输出 schema。
-5. 运行记录和 LLM 调用记录是否放同一个 JSON 文件。
-6. 作者审核卡片的最小交互。
-7. 第一版如何判断“候选新卡 / 候选更新 / 候选冲突”。
+1. 智能体工作台页面第一版具体布局是否采用左侧 Agent 列表 + 中间四个 Tab + 右侧详情。
+2. JSON 中间态文件是否每次运行一个 JSON 文件。
+3. JSON 中间态目录是否放在 `project_assets/derived/agent_runs/knowledge_extraction/`。
+4. 当前章节抽取的通用抽取 prompt、角色专家 prompt、实体专家 prompt 的具体内容。
+5. 角色专家节点和实体专家节点的严格输出 schema。
+6. 作者审核卡片的最小交互是否只做确认入库、编辑后确认、废弃、稍后处理。
+7. 第一版如何具体实现“候选新卡 / 候选更新 / 候选冲突 / 建议忽略”的排序和展示。
