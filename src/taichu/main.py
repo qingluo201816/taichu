@@ -21,6 +21,9 @@ from taichu.application.services.export_service import ExportService
 from taichu.application.services.index_service import IndexService
 from taichu.application.services.inbox_service import InboxService
 from taichu.application.services.knowledge_service import KnowledgeService
+from taichu.application.services.knowledge_extraction_service import (
+    KnowledgeExtractionService,
+)
 from taichu.application.services.mvp_inbox_service import MVPInboxService
 from taichu.application.services.mvp_knowledge_service import MVPKnowledgeService
 from taichu.application.services.outline_service import OutlineService
@@ -38,6 +41,8 @@ from taichu.infrastructure.plugin_discovery import (
     discover_tools,
 )
 from taichu.infrastructure.indexing import SqliteProjectionRebuilder
+from taichu.infrastructure.agent_runs import JsonAgentRunStore
+from taichu.infrastructure.knowledge import JSONKnowledgeRepository
 from taichu.infrastructure.retrieval import SqliteFTSRetrievalBackend
 from taichu.infrastructure.storage.json_backend import JsonStorageBackend
 from taichu.infrastructure.storage.markdown_backend import (
@@ -64,6 +69,14 @@ def create_app(
     ai_card_service = AICardService(project_storage)
     inbox_service = InboxService(project_storage, ai_card_service)
     knowledge_service = KnowledgeService(project_storage)
+    knowledge_repository = JSONKnowledgeRepository(project_storage)
+    knowledge_run_store = JsonAgentRunStore(app_settings.project_assets_dir)
+    knowledge_extraction_service = KnowledgeExtractionService(
+        chapter_service=chapter_service,
+        llm=llm_service,
+        knowledge_repository=knowledge_repository,
+        run_store=knowledge_run_store,
+    )
     pending_fact_confirmation_service = PendingFactConfirmationService(
         project_storage,
         knowledge_service,
@@ -83,7 +96,11 @@ def create_app(
     )
     capability_context = CapabilityContext(
         capabilities={
-            "llm": chat_model,
+            "chat_model": chat_model,
+            "llm": llm_service,
+            "chapter_service": chapter_service,
+            "knowledge_repository": knowledge_repository,
+            "knowledge_run_store": knowledge_run_store,
             "retrieval": retrieval_backend,
             "storage": storage,
         }
@@ -109,6 +126,9 @@ def create_app(
     application.state.export_service = export_service
     application.state.index_service = index_service
     application.state.knowledge_service = knowledge_service
+    application.state.knowledge_repository = knowledge_repository
+    application.state.knowledge_run_store = knowledge_run_store
+    application.state.knowledge_extraction_service = knowledge_extraction_service
     application.state.mvp_knowledge_service = mvp_knowledge_service
     application.state.pending_fact_confirmation_service = (
         pending_fact_confirmation_service

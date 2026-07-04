@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BookOpen,
+  Bot,
   History,
   Inbox,
   Library,
@@ -16,6 +17,7 @@ import { cn } from "@/lib/utils";
 const navigation = [
   { label: "写作", href: "/editor", icon: BookOpen },
   { label: "知识库", href: "/knowledge", icon: Library },
+  { label: "智能体工作台", href: "/agent-workbench", icon: Bot },
   { label: "收件箱", href: "/inbox", icon: Inbox },
   { label: "AI 历史", href: "/ai-history", icon: History },
   { label: "设置", href: "/settings", icon: Settings },

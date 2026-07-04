@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, TypeAlias
 from uuid import uuid4
 
 from taichu.application.contracts.storage import ProjectAssetStorageContract
@@ -22,6 +23,7 @@ from taichu.domain.models import (
 INBOX_IDEAS_FILE = "inbox_ideas.jsonl"
 INBOX_PENDING_FACTS_FILE = "inbox_pending_facts.jsonl"
 INBOX_ISSUES_FILE = "inbox_issues.jsonl"
+MVPInboxItem: TypeAlias = MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue
 
 
 @dataclass(frozen=True)
@@ -247,26 +249,25 @@ class InboxValidationError(ValueError):
     """Raised when an Inbox request is invalid."""
 
 
-def _filter_items[
-    T: MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue,
-](
-    items: list[T],
+def _filter_items(
+    items: Sequence[MVPInboxItem],
     status: str,
     priority: str | None,
-) -> list[T]:
+) -> list[MVPInboxItem]:
+    filtered = list(items)
     if status and status != "all":
         try:
             status_filter = MVPInboxStatus(status)
         except ValueError as error:
             raise InboxValidationError("未知的收件箱状态") from error
-        items = [item for item in items if item.status is status_filter]
+        filtered = [item for item in filtered if item.status is status_filter]
     if priority and priority != "all":
         try:
             priority_filter = MVPInboxPriority(priority)
         except ValueError as error:
             raise InboxValidationError("未知的收件箱优先级") from error
-        items = [item for item in items if item.priority is priority_filter]
-    return sorted(items, key=lambda item: item.updated_at, reverse=True)
+        filtered = [item for item in filtered if item.priority is priority_filter]
+    return sorted(filtered, key=lambda item: item.updated_at, reverse=True)
 
 
 def _now_iso() -> str:

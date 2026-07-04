@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 
 from taichu.api.routes import (
+    agent_workbench,
     agents,
     ai_cards,
     ai_history,
@@ -19,6 +20,7 @@ from taichu.api.routes import (
 
 def register_routes(app: FastAPI) -> None:
     """向 FastAPI 应用注册所有功能路由。"""
+    app.include_router(agent_workbench.router)
     app.include_router(agents.router)
     app.include_router(ai_cards.router)
     app.include_router(ai_workspace.router)

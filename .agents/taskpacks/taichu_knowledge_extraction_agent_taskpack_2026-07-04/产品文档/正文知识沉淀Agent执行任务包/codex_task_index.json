@@ -1,0 +1,54 @@
+{
+  "package": "正文知识沉淀Agent执行任务包",
+  "updated_at": "2026-07-04",
+  "source_of_truth": "正文知识沉淀Agent方案.md",
+  "recommended_repo_path": "产品文档/正文知识沉淀Agent执行任务包/",
+  "phases": [
+    {
+      "id": "phase_0",
+      "name": "Preflight / 文档与仓库状态确认",
+      "file": "01-阶段任务.md#Phase 0"
+    },
+    {
+      "id": "phase_1",
+      "name": "后端模型、运行 JSON 中间态、KnowledgeRepository 抽象",
+      "file": "01-阶段任务.md#Phase 1"
+    },
+    {
+      "id": "phase_2",
+      "name": "LangGraph 主图与固定 Prompt 接入",
+      "file": "01-阶段任务.md#Phase 2"
+    },
+    {
+      "id": "phase_3",
+      "name": "API 契约",
+      "file": "01-阶段任务.md#Phase 3"
+    },
+    {
+      "id": "phase_4",
+      "name": "前端智能体工作台",
+      "file": "01-阶段任务.md#Phase 4"
+    },
+    {
+      "id": "phase_5",
+      "name": "评测与回放展示",
+      "file": "01-阶段任务.md#Phase 5"
+    },
+    {
+      "id": "phase_6",
+      "name": "端到端验收与清理",
+      "file": "01-阶段任务.md#Phase 6"
+    }
+  ],
+  "must_use_prompt_files": [
+    "04-Codex总提示词.md",
+    "05-固定Prompt模板.md"
+  ],
+  "hard_decisions": [
+    "第一版不引入 MongoDB",
+    "中间态写 project_assets/derived/agent_runs/knowledge_extraction/",
+    "候选不写入 project_assets/source/knowledge/",
+    "只抽 character/location/faction/item",
+    "Prompt 固定在任务包内，Codex 不得临场设计"
+  ]
+}

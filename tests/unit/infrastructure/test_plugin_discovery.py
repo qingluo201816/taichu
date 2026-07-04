@@ -11,10 +11,14 @@ from taichu.infrastructure.plugin_discovery import (
 class PluginDiscoveryTest(unittest.TestCase):
     """验证发现机制只返回插件候选。"""
 
-    def test_discover_agents_allows_empty_builtin_set(self) -> None:
+    def test_discover_agents_finds_builtin_knowledge_extraction(self) -> None:
         plugins = discover_agents("taichu.application.agents")
 
-        self.assertEqual(plugins, [])
+        self.assertEqual(
+            [plugin.manifest.name for plugin in plugins],
+            ["knowledge_extraction"],
+        )
+        self.assertEqual(plugins[0].manifest.label, "正文知识沉淀 Agent")
 
     def test_discover_tools_ignores_contract_modules(self) -> None:
         plugins = discover_tools("taichu.application.tools")

@@ -20,11 +20,15 @@ class AgentApiTest(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         await self.client.aclose()
 
-    async def test_list_agents_keeps_generic_api_without_chat_manifest(self) -> None:
+    async def test_list_agents_includes_knowledge_extraction_without_chat_manifest(
+        self,
+    ) -> None:
         response = await self.client.get("/api/agents")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["agents"], [])
+        agents = response.json()["agents"]
+        self.assertEqual([agent["name"] for agent in agents], ["knowledge_extraction"])
+        self.assertEqual(agents[0]["label"], "正文知识沉淀 Agent")
 
     async def test_legacy_chat_endpoint_is_removed(self) -> None:
         response = await self.client.post(
@@ -46,5 +50,6 @@ class AgentApiTest(unittest.IsolatedAsyncioTestCase):
         response = await self.client.get("/api/agents")
 
         agent_names = {agent["name"] for agent in response.json()["agents"]}
+        self.assertIn("knowledge_extraction", agent_names)
         self.assertNotIn("selection_ai", agent_names)
         self.assertNotIn("selection_assistant", agent_names)

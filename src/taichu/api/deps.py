@@ -14,6 +14,9 @@ from taichu.application.services.export_service import ExportService
 from taichu.application.services.index_service import IndexService
 from taichu.application.services.inbox_service import InboxService
 from taichu.application.services.knowledge_service import KnowledgeService
+from taichu.application.services.knowledge_extraction_service import (
+    KnowledgeExtractionService,
+)
 from taichu.application.services.mvp_inbox_service import MVPInboxService
 from taichu.application.services.mvp_knowledge_service import MVPKnowledgeService
 from taichu.application.services.outline_service import OutlineService
@@ -82,6 +85,13 @@ def provide_index_service(request: Request) -> IndexService:
 def provide_knowledge_service(request: Request) -> KnowledgeService:
     """Return the minimal Knowledge application service."""
     return request.app.state.knowledge_service
+
+
+def provide_knowledge_extraction_service(
+    request: Request,
+) -> KnowledgeExtractionService:
+    """Return the knowledge extraction Agent workbench service."""
+    return request.app.state.knowledge_extraction_service
 
 
 def provide_mvp_knowledge_service(request: Request) -> MVPKnowledgeService:
