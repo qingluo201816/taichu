@@ -121,7 +121,7 @@ export default function SettingsPage() {
               </label>
 
               <label className="block text-sm font-medium">
-                编辑背景
+                正文边框
                 <select
                   value={preferences.editor_background}
                   onChange={event =>
@@ -133,8 +133,8 @@ export default function SettingsPage() {
                   }
                   className="mt-3 h-10 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3"
                 >
-                  <option value="soft">柔色纸面</option>
-                  <option value="dark">无边框</option>
+                  <option value="soft">显示页缘</option>
+                  <option value="dark">隐藏页缘</option>
                 </select>
               </label>
 

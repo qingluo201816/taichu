@@ -34,6 +34,7 @@ from taichu.domain.models import (
     SourceAnchorType,
     SourceRef,
     SourceRefSourceType,
+    StructuredKnowledgeSourceOrigin,
     Volume,
 )
 
@@ -107,9 +108,10 @@ class DomainModelContractTest(unittest.TestCase):
             name="主角",
             aliases=["少年"],
             summary="作者确认的角色设定",
-            fields={"cultivation": {"current_realm": "炼气"}},
-            source_refs=[source_ref],
-            status=KnowledgeCardStatus.CONFIRMED,
+            status=KnowledgeCardStatus.ACTIVE,
+            source_origin=StructuredKnowledgeSourceOrigin.MANUAL,
+            source_note="作者手动确认。",
+            current_realm_text="炼气",
             created_at="2026-06-27T00:00:00Z",
             updated_at="2026-06-27T00:00:00Z",
         )

@@ -2,11 +2,12 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from taichu.domain.models import (
     AIWorkspaceConversation,
     EditorPreferences,
+    KnowledgeTypeSchema,
     MVPInboxIdea,
     MVPInboxIssue,
     MVPInboxPendingFact,
@@ -73,10 +74,27 @@ class KnowledgeTypesResponse(BaseModel):
     types: list[KnowledgeTypeInfo] = Field(default_factory=list)
 
 
+class KnowledgeSchemasResponse(BaseModel):
+    """Supported knowledge type schemas."""
+
+    schemas: list[KnowledgeTypeSchema] = Field(default_factory=list)
+
+
+class KnowledgeSchemaResponse(BaseModel):
+    """One knowledge type schema."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    knowledge_schema: KnowledgeTypeSchema = Field(alias="schema")
+
+
 class KnowledgeCardListResponse(BaseModel):
     """List of structured knowledge cards."""
 
     cards: list[StructuredKnowledgeCard] = Field(default_factory=list)
+    page: int = 1
+    page_size: int = 10
+    total: int = 0
 
 
 class KnowledgeCardResponse(BaseModel):
@@ -102,6 +120,9 @@ class MVPInboxListResponse(BaseModel):
     """Inbox tab response."""
 
     items: list[Any] = Field(default_factory=list)
+    page: int = 1
+    page_size: int = 10
+    total: int = 0
 
 
 class CreateInboxItemRequest(BaseModel):
@@ -175,6 +196,9 @@ class AIWorkspaceConversationListResponse(BaseModel):
     """Conversation list response."""
 
     conversations: list[AIWorkspaceConversation] = Field(default_factory=list)
+    page: int = 1
+    page_size: int = 10
+    total: int = 0
 
 
 class PreferencesResponse(BaseModel):

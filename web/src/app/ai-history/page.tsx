@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, History, Loader2 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { Button } from "@/components/ui/button";
 import { listChapters } from "@/lib/api/chapters";
 import { listAIHistory, readAIHistory } from "@/lib/api/mvp";
 import type { ChapterInfo } from "@/lib/types/chapters";
@@ -12,9 +13,10 @@ import type {
   AIWorkspaceMessage,
   AIWorkspaceTaskType,
 } from "@/lib/types/mvp";
+import { cn } from "@/lib/utils";
 
 const taskOptions: Array<{ value: "" | AIWorkspaceTaskType; label: string }> = [
-  { value: "", label: "全部入口" },
+  { value: "", label: "全部记录" },
   { value: "continue", label: "续写" },
   { value: "polish", label: "润色" },
   { value: "setting", label: "设定" },
@@ -22,14 +24,15 @@ const taskOptions: Array<{ value: "" | AIWorkspaceTaskType; label: string }> = [
   { value: "evidence", label: "证据" },
   { value: "chapter_summary", label: "章节摘要" },
 ];
+const HISTORY_PAGE_SIZE = 10;
 
 export default function AIHistoryPage() {
   const [chapters, setChapters] = useState<ChapterInfo[]>([]);
-  const [chapterId, setChapterId] = useState("");
+  const [chapterQuery, setChapterQuery] = useState("");
   const [taskType, setTaskType] = useState<"" | AIWorkspaceTaskType>("");
-  const [hasSource, setHasSource] = useState("");
-  const [hasError, setHasError] = useState("");
   const [conversations, setConversations] = useState<AIWorkspaceConversation[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [expandedConversation, setExpandedConversation] =
     useState<AIWorkspaceConversation | null>(null);
@@ -41,6 +44,8 @@ export default function AIHistoryPage() {
     () => new Map(chapters.map(chapter => [chapter.id, chapter.title])),
     [chapters],
   );
+  const activeTaskLabel =
+    taskOptions.find(option => option.value === taskType)?.label ?? "全部记录";
 
   useEffect(() => {
     let cancelled = false;
@@ -63,13 +68,14 @@ export default function AIHistoryPage() {
       setError(null);
       try {
         const response = await listAIHistory({
-          chapterId: chapterId || undefined,
+          chapterName: chapterQuery || undefined,
           taskType: taskType || undefined,
-          hasSource: hasSource || undefined,
-          hasError: hasError || undefined,
+          page: currentPage,
+          pageSize: HISTORY_PAGE_SIZE,
         });
         if (!cancelled) {
           setConversations(response.conversations);
+          setTotalCount(response.total);
           setExpandedId(null);
           setExpandedConversation(null);
         }
@@ -87,7 +93,7 @@ export default function AIHistoryPage() {
     return () => {
       cancelled = true;
     };
-  }, [chapterId, hasError, hasSource, taskType]);
+  }, [chapterQuery, currentPage, taskType]);
 
   async function toggleConversation(conversation: AIWorkspaceConversation) {
     if (expandedId === conversation.id) {
@@ -110,76 +116,48 @@ export default function AIHistoryPage() {
 
   return (
     <AppShell activePath="/ai-history">
-      <section className="mx-auto grid max-w-[1440px] gap-5 px-5 py-6 xl:grid-cols-[220px_minmax(0,1fr)]">
-        <aside className="rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-3">
-          <div className="mb-3">
-            <p className="flex items-center gap-2 text-xs text-[var(--tc-text-muted)]">
-              <History className="size-4" />
-              AI 历史
-            </p>
+      <section className="mx-auto grid max-w-[1440px] gap-5 px-5 py-6 xl:grid-cols-[176px_minmax(0,1fr)]">
+        <aside className="rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2">
+          <div className="px-2 py-2">
+            <p className="text-xs text-[var(--tc-text-muted)]">AI 历史</p>
             <h1 className="text-xl font-semibold text-[var(--tc-text-primary)]">
-              筛选
+              模块
             </h1>
+            <p className="mt-1 text-xs text-[var(--tc-text-muted)]">
+              共 {totalCount} 条
+            </p>
           </div>
-          <div className="grid gap-2">
-            <select
-              value={chapterId}
-              onChange={event => setChapterId(event.target.value)}
-              className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)]"
-              aria-label="章节筛选"
-            >
-              <option value="">全部章节</option>
-              {chapters.map(chapter => (
-                <option key={chapter.id} value={chapter.id}>
-                  {chapter.title}
-                </option>
-              ))}
-            </select>
-            <select
-              value={taskType}
-              onChange={event =>
-                setTaskType(event.target.value as "" | AIWorkspaceTaskType)
-              }
-              className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)]"
-              aria-label="功能入口筛选"
-            >
-              {taskOptions.map(option => (
-                <option key={option.value || "all"} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <select
-              value={hasSource}
-              onChange={event => setHasSource(event.target.value)}
-              className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)]"
-              aria-label="来源筛选"
-            >
-              <option value="">是否有来源</option>
-              <option value="true">有来源</option>
-              <option value="false">无来源</option>
-            </select>
-            <select
-              value={hasError}
-              onChange={event => setHasError(event.target.value)}
-              className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)]"
-              aria-label="错误筛选"
-            >
-              <option value="">是否错误</option>
-              <option value="true">有错误</option>
-              <option value="false">无错误</option>
-            </select>
+          <div className="mt-2 grid gap-1">
+            {taskOptions.map(option => (
+              <button
+                key={option.value || "all"}
+                type="button"
+                onClick={() => {
+                  setTaskType(option.value);
+                  setCurrentPage(1);
+                }}
+                className={cn(
+                  "h-9 rounded-[var(--tc-radius-control)] px-3 text-left text-sm transition-colors",
+                  taskType === option.value
+                    ? "bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
+                    : "text-[var(--tc-text-secondary)] hover:bg-[var(--tc-surface-muted)] hover:text-[var(--tc-text-primary)]",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         </aside>
 
         <section className="min-w-0">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs text-[var(--tc-text-muted)]">
-                共 {conversations.length} 条
+              <p className="flex items-center gap-2 text-xs text-[var(--tc-text-muted)]">
+                <History className="size-4" />
+                {activeTaskLabel}
               </p>
               <h2 className="text-2xl font-semibold text-[var(--tc-text-primary)]">
-                写作区记录
+                当前模块记录
               </h2>
             </div>
             {loading ? (
@@ -188,6 +166,18 @@ export default function AIHistoryPage() {
                 加载中
               </span>
             ) : null}
+          </div>
+
+          <div className="mb-4 flex max-w-[980px] flex-wrap gap-2">
+            <input
+              value={chapterQuery}
+              onChange={event => {
+                setChapterQuery(event.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="搜索章节名称"
+              className="h-9 w-60 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)] outline-none placeholder:text-[var(--tc-text-muted)]"
+            />
           </div>
 
           {error ? (
@@ -232,10 +222,7 @@ export default function AIHistoryPage() {
                           </span>
                           <span className="block truncate text-xs text-[var(--tc-text-muted)]">
                             {dateLabel(conversation.updated_at)} ·{" "}
-                            {conversation.source_refs.length ? "有来源" : "无来源"} ·{" "}
-                            {hasErrorConversation(conversation)
-                              ? "有错误"
-                              : "无错误"}
+                            {conversation.is_mock ? "模拟输出" : "真实输出"}
                           </span>
                           <span className="mt-0.5 block truncate text-xs text-[var(--tc-text-muted)]">
                             {firstUserInput(conversation)}
@@ -257,6 +244,12 @@ export default function AIHistoryPage() {
                 暂无 AI 历史
               </div>
             )}
+            <PaginationControls
+              page={currentPage}
+              pageSize={HISTORY_PAGE_SIZE}
+              total={totalCount}
+              onPageChange={setCurrentPage}
+            />
           </div>
         </section>
       </section>
@@ -282,7 +275,6 @@ function ConversationDetail({
       <div className="mb-3 flex flex-wrap gap-2 text-xs text-[var(--tc-text-muted)]">
         <span>{conversation.is_mock ? "模拟输出" : "真实输出"}</span>
         <span>参考范围：{scopeLabel(conversation.reference_scope)}</span>
-        <span>{hasErrorConversation(conversation) ? "有错误" : "无错误"}</span>
       </div>
       <div className="grid max-w-[900px] gap-4">
         {conversation.messages.map(message => (
@@ -307,15 +299,6 @@ function MessageBlock({ message }: { message: AIWorkspaceMessage }) {
       <p className="whitespace-pre-wrap text-sm leading-7 text-[var(--tc-text-secondary)]">
         {contentText(message.content)}
       </p>
-      {message.source_refs.length ? (
-        <div className="mt-2 grid gap-2 text-sm text-[var(--tc-text-muted)]">
-          {message.source_refs.map((source, index) => (
-            <p key={`${source.source_id}-${index}`}>
-              来源 {index + 1}：{source.display_name} · {source.excerpt}
-            </p>
-          ))}
-        </div>
-      ) : null}
       {message.prompt_snapshot ? (
         <details className="mt-2">
           <summary className="cursor-pointer text-sm text-[var(--tc-text-secondary)]">
@@ -398,7 +381,7 @@ function outputLabel(output: string): string {
     suggestion_result: "建议结果",
     evidence_result: "证据结果",
     chapter_summary: "章节摘要",
-    error: "错误",
+    error: "系统消息",
   };
   return labels[output] ?? "输出";
 }
@@ -410,7 +393,93 @@ function roleLabel(role: string): string {
   if (role === "assistant") {
     return "助手";
   }
-  return "错误";
+  return "系统消息";
+}
+
+function PaginationControls({
+  page,
+  pageSize,
+  total,
+  onPageChange,
+}: {
+  page: number;
+  pageSize: number;
+  total: number;
+  onPageChange: (page: number) => void;
+}) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  function submitPageJump(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const input = event.currentTarget.elements.namedItem(
+      "page",
+    ) as HTMLInputElement | null;
+    const parsedPage = Number(input?.value);
+    if (!Number.isFinite(parsedPage)) {
+      if (input) {
+        input.value = String(page);
+      }
+      return;
+    }
+    const nextPage = Math.min(totalPages, Math.max(1, Math.trunc(parsedPage)));
+    if (input) {
+      input.value = String(nextPage);
+    }
+    onPageChange(nextPage);
+  }
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--tc-text-muted)]">
+      <span className="shrink-0">
+        第 {page} / {totalPages} 页
+      </span>
+      <form
+        className="flex items-center gap-2"
+        onSubmit={submitPageJump}
+        aria-label="按页搜索"
+      >
+        <label
+          htmlFor="ai-history-page-jump"
+          className="text-xs text-[var(--tc-text-muted)]"
+        >
+          跳至
+        </label>
+        <input
+          key={page}
+          id="ai-history-page-jump"
+          name="page"
+          type="number"
+          min={1}
+          max={totalPages}
+          defaultValue={page}
+          className="h-8 w-16 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-2 text-center text-sm text-[var(--tc-text-primary)] outline-none"
+        />
+        <Button type="submit" size="sm" variant="outline">
+          前往
+        </Button>
+      </form>
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={page <= 1}
+          onClick={() => onPageChange(Math.max(1, page - 1))}
+        >
+          上一页
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={page >= totalPages}
+          onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+        >
+          下一页
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 function dateLabel(value: string): string {
@@ -424,10 +493,6 @@ function dateLabel(value: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-function hasErrorConversation(conversation: AIWorkspaceConversation): boolean {
-  return conversation.messages.some(message => message.role === "error");
 }
 
 function stringValue(value: unknown): string {

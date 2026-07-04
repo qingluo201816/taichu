@@ -160,7 +160,7 @@ class SourceRefContractTest(unittest.TestCase):
             SourceRef(
                 source_type=SourceRefSourceType.KNOWLEDGE,
                 source_id="knowledge_001",
-                path="project_assets/source/knowledge/techniques/knowledge_001.json",
+                path="project_assets/source/knowledge/technique/knowledge_001.json",
                 anchor_type=SourceAnchorType.KNOWLEDGE_FIELD,
                 excerpt="field evidence",
                 excerpt_hash="hash_excerpt",

@@ -10,14 +10,14 @@ import {
   Library,
   Settings,
 } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, type CSSProperties, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
 const navigation = [
   { label: "写作", href: "/editor", icon: BookOpen },
   { label: "知识库", href: "/knowledge", icon: Library },
-  { label: "Inbox", href: "/inbox", icon: Inbox },
+  { label: "收件箱", href: "/inbox", icon: Inbox },
   { label: "AI 历史", href: "/ai-history", icon: History },
   { label: "智能体工作台", href: "/chat", icon: Bot, badge: "实验功能" },
   { label: "设置", href: "/settings", icon: Settings },
@@ -26,22 +26,25 @@ const navigation = [
 export function AppShell({
   children,
   activePath,
-  escapeToHome = false,
+  escapeToHome,
   showNavigation = true,
   headerActions,
+  workspaceStyle,
 }: {
   children: ReactNode;
   activePath?: string;
   escapeToHome?: boolean;
   showNavigation?: boolean;
   headerActions?: ReactNode;
+  workspaceStyle?: CSSProperties;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const currentPath = activePath ?? pathname;
+  const shouldEscapeToHome = escapeToHome ?? (currentPath !== "/home");
 
   useEffect(() => {
-    if (!escapeToHome) {
+    if (!shouldEscapeToHome) {
       return;
     }
     function handleKeyDown(event: KeyboardEvent) {
@@ -53,10 +56,10 @@ export function AppShell({
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [escapeToHome, router]);
+  }, [router, shouldEscapeToHome]);
 
   return (
-    <main className="tc-workspace-page min-h-screen">
+    <main className="tc-workspace-page min-h-screen" style={workspaceStyle}>
       <header className="sticky top-0 z-40 border-b border-[var(--tc-nav-border)] bg-[var(--tc-nav-bg)]/92 backdrop-blur">
         <div
           className={cn(
@@ -91,7 +94,7 @@ export function AppShell({
                   headerActions ? "text-[11px]" : "text-xs",
                 )}
               >
-                单本玄幻小说写作助手
+                为长篇幻想而生的写作空间
               </span>
             </span>
           </Link>

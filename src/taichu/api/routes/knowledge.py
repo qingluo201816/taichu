@@ -93,7 +93,6 @@ async def api_confirm_pending_fact_with_edits(
                 name=request.name,
                 summary=request.summary,
                 aliases=request.aliases,
-                fields=request.fields,
             ),
         )
     except PendingFactNotFoundError as error:
@@ -138,18 +137,7 @@ async def api_reject_pending_fact(
 
 
 def _knowledge_info(card: KnowledgeCard) -> KnowledgeCardInfo:
-    return KnowledgeCardInfo(
-        id=card.id,
-        type=card.type.value,
-        name=card.name,
-        aliases=card.aliases,
-        summary=card.summary,
-        fields=card.fields,
-        source_refs=card.source_refs,
-        status=card.status.value,
-        created_at=card.created_at,
-        updated_at=card.updated_at,
-    )
+    return KnowledgeCardInfo.model_validate(card.model_dump(mode="json"))
 
 
 def _pending_fact_info(pending_fact: PendingFact) -> PendingFactInfo:

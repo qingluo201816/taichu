@@ -30,6 +30,7 @@ from taichu.domain.models import (
     SourceAnchorType,
     SourceRef,
     SourceRefSourceType,
+    StructuredKnowledgeSourceOrigin,
 )
 from taichu.domain.rules.fact_scope import RetrievalScopeName
 from taichu.infrastructure.indexing import SqliteProjectionRebuilder
@@ -60,7 +61,7 @@ class SqliteProjectionRetrievalTest(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         self._temporary_directory.cleanup()
 
-    async def test_rebuild_searches_chapters_and_confirmed_knowledge(
+    async def test_rebuild_searches_chapters_and_active_knowledge(
         self,
     ) -> None:
         await self.index_service.rebuild_generated_projection()
@@ -85,7 +86,7 @@ class SqliteProjectionRetrievalTest(unittest.IsolatedAsyncioTestCase):
             all(hit.source_ref is not None for hit in [*chapter_hits, *knowledge_hits])
         )
 
-    async def test_short_alias_exact_search_finds_confirmed_knowledge(
+    async def test_short_alias_exact_search_finds_active_knowledge(
         self,
     ) -> None:
         await self.index_service.rebuild_generated_projection()
@@ -108,7 +109,7 @@ class SqliteProjectionRetrievalTest(unittest.IsolatedAsyncioTestCase):
             self.assets_root
             / "source"
             / "knowledge"
-            / "characters"
+            / "character"
             / "knowledge_qinhaoxuan.json"
         )
         chapter_before = source_chapter_path.read_text(encoding="utf-8")
@@ -205,40 +206,41 @@ class SqliteProjectionRetrievalTest(unittest.IsolatedAsyncioTestCase):
             created_at="2026-06-27T00:00:00Z",
         )
 
-        confirmed = KnowledgeCard(
+        active = KnowledgeCard(
             id="knowledge_qinhaoxuan",
             type=KnowledgeCardType.CHARACTER,
             name="秦浩轩",
             aliases=["玄引"],
             summary="秦浩轩持有太初古卷。",
-            fields={"cultivation": {"current_realm": "炼气三层"}},
-            source_refs=[chapter_ref],
-            status=KnowledgeCardStatus.CONFIRMED,
+            status=KnowledgeCardStatus.ACTIVE,
+            source_origin=StructuredKnowledgeSourceOrigin.MANUAL,
+            source_note="作者手动确认。",
+            current_realm_text="炼气三层",
             created_at="2026-06-27T00:00:00Z",
             updated_at="2026-06-27T00:00:00Z",
         )
-        archived = KnowledgeCard(
+        deprecated = KnowledgeCard(
             id="knowledge_archived_item",
             type=KnowledgeCardType.ITEM,
             name="归墟伞",
             aliases=[],
             summary="归墟伞是已归档的旧设定。",
-            fields={},
-            source_refs=[chapter_ref],
-            status=KnowledgeCardStatus.ARCHIVED,
+            status=KnowledgeCardStatus.DEPRECATED,
+            source_origin=StructuredKnowledgeSourceOrigin.MANUAL,
+            source_note="作者手动确认。",
             created_at="2026-06-27T00:00:00Z",
             updated_at="2026-06-27T00:00:00Z",
         )
 
         await self.storage.write_knowledge_record(
-            "characters",
-            confirmed.id,
-            confirmed.model_dump(mode="json"),
+            "character",
+            active.id,
+            active.model_dump(mode="json"),
         )
         await self.storage.write_knowledge_record(
-            "items",
-            archived.id,
-            archived.model_dump(mode="json"),
+            "item",
+            deprecated.id,
+            deprecated.model_dump(mode="json"),
         )
         await self._write_workspace_assets(chapter_ref)
 

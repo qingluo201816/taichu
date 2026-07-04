@@ -79,7 +79,7 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
         metadata_path = source_root / "metadata.yaml"
         manifest_path = source_root / "manuscripts" / "manifest.json"
         chapter_path = source_root / "manuscripts" / "chapters" / "chapter_999.md"
-        knowledge_path = source_root / "knowledge" / "characters" / "character_001.json"
+        knowledge_path = source_root / "knowledge" / "character" / "character_001.json"
         ideas_path = source_root / "workspace" / "ideas.jsonl"
         editor_state_path = source_root / "workspace" / "editor_state.json"
 
@@ -316,28 +316,28 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_knowledge_json_write_read_and_list(self) -> None:
         await self.storage.write_knowledge_record(
-            "techniques",
+            "technique",
             "knowledge_001",
-            {"id": "knowledge_001", "status": "confirmed"},
+            {"id": "knowledge_001", "status": "active"},
         )
 
         self.assertEqual(
             await self.storage.read_knowledge_record(
-                "techniques",
+                "technique",
                 "knowledge_001",
             ),
-            {"id": "knowledge_001", "status": "confirmed"},
+            {"id": "knowledge_001", "status": "active"},
         )
         self.assertEqual(
-            await self.storage.list_knowledge_records("techniques"),
-            [{"id": "knowledge_001", "status": "confirmed"}],
+            await self.storage.list_knowledge_records("technique"),
+            [{"id": "knowledge_001", "status": "active"}],
         )
         self.assertTrue(
             (
                 self.assets_root
                 / "source"
                 / "knowledge"
-                / "techniques"
+                / "technique"
                 / "knowledge_001.json"
             ).exists()
         )
@@ -401,8 +401,8 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
     async def test_knowledge_json_rejects_unsafe_paths(self) -> None:
         unsafe_inputs = [
             ("../escape", "knowledge_001"),
-            ("techniques", "../escape"),
-            ("techniques", "Knowledge 001"),
+            ("technique", "../escape"),
+            ("technique", "Knowledge 001"),
         ]
         for category, knowledge_id in unsafe_inputs:
             with self.subTest(category=category, knowledge_id=knowledge_id):

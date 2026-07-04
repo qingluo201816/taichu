@@ -154,6 +154,49 @@ class AIWorkspaceService:
                 return conversation
         raise AIConversationNotFoundError(conversation_id)
 
+    async def regenerate_last_response(
+        self,
+        conversation_id: str,
+    ) -> AIWorkspaceConversation:
+        """Replace the latest assistant response using the latest author message."""
+        conversation = await self.get_conversation(conversation_id)
+        last_user_index = _last_user_message_index(conversation.messages)
+        if last_user_index is None:
+            raise AIConversationNotRegeneratableError(conversation_id)
+        kept_messages = conversation.messages[: last_user_index + 1]
+        reference = _reference_from_message(kept_messages[-1])
+        assistant_message = _mock_assistant_message(conversation, reference)
+        messages = [*kept_messages, assistant_message]
+        updated = conversation.model_copy(
+            update={
+                "messages": messages,
+                "source_refs": _source_refs_from_messages(messages),
+                "updated_at": assistant_message.created_at,
+            }
+        )
+        await self._replace(updated)
+        return updated
+
+    async def delete_conversation(self, conversation_id: str) -> None:
+        """Remove one writing-area AI conversation from the workspace log."""
+        records = await self._storage.list_workspace_records(
+            AI_WORKSPACE_CONVERSATIONS_FILE
+        )
+        rewritten: list[dict[str, object]] = []
+        deleted = False
+        for record in records:
+            conversation = AIWorkspaceConversation.model_validate(record)
+            if conversation.id == conversation_id:
+                deleted = True
+                continue
+            rewritten.append(conversation.model_dump(mode="json"))
+        if not deleted:
+            raise AIConversationNotFoundError(conversation_id)
+        await self._storage.rewrite_workspace_records(
+            AI_WORKSPACE_CONVERSATIONS_FILE,
+            rewritten,
+        )
+
     async def _append(self, conversation: AIWorkspaceConversation) -> None:
         await self._storage.append_workspace_record(
             AI_WORKSPACE_CONVERSATIONS_FILE,
@@ -190,6 +233,13 @@ class AIConversationNotFoundError(LookupError):
 
 class AIConversationNotPersistedError(ValueError):
     """Raised when a non-persisted entrance is sent to the AI history store."""
+
+
+class AIConversationNotRegeneratableError(ValueError):
+    """Raised when a conversation has no author message to regenerate from."""
+
+    def __init__(self, conversation_id: str) -> None:
+        super().__init__(f"写作区 AI 对话“{conversation_id}”暂无可重新生成的作者消息")
 
 
 def _prompt_snapshot(
@@ -342,6 +392,32 @@ def _merge_source_refs(
             seen.add(key)
             merged.append(item)
     return merged
+
+
+def _source_refs_from_messages(
+    messages: list[AIWorkspaceMessage],
+) -> list[SourceReference]:
+    merged: list[SourceReference] = []
+    for message in messages:
+        merged = _merge_source_refs(merged, message.source_refs)
+    return merged
+
+
+def _last_user_message_index(
+    messages: list[AIWorkspaceMessage],
+) -> int | None:
+    for index in range(len(messages) - 1, -1, -1):
+        if messages[index].role is AIWorkspaceMessageRole.USER:
+            return index
+    return None
+
+
+def _reference_from_message(message: AIWorkspaceMessage) -> dict[str, Any]:
+    snapshot = message.prompt_snapshot
+    if snapshot is None:
+        return {}
+    reference = snapshot.structured.get("reference")
+    return reference if isinstance(reference, dict) else {}
 
 
 def _has_error(conversation: AIWorkspaceConversation) -> bool:

@@ -3,6 +3,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from typing import cast
 
 from taichu.application.services.outline_service import OutlineService
 from taichu.infrastructure.storage.markdown_backend import (
@@ -45,10 +46,11 @@ class OutlineServiceTest(unittest.IsolatedAsyncioTestCase):
         )
 
         manifest = await self.storage.read_manifest()
+        manifest_chapters = cast(list[dict[str, object]], manifest["chapters"])
         self.assertEqual(
             [
                 chapter["title"]
-                for chapter in manifest["chapters"]  # type: ignore[index]
+                for chapter in manifest_chapters
             ],
             ["第1章 大田金鳞元神出", "第2章 山门回声", "第3章 测试第3"],
         )
@@ -128,10 +130,11 @@ class OutlineServiceTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(deleted_files[0].read_text(encoding="utf-8"), "待删除正文")
 
         manifest = await self.storage.read_manifest()
+        manifest_chapters = cast(list[dict[str, object]], manifest["chapters"])
         self.assertEqual(
             [
                 chapter["id"]
-                for chapter in manifest["chapters"]  # type: ignore[index]
+                for chapter in manifest_chapters
             ],
             [first.chapter_id, third.chapter_id],
         )
@@ -183,4 +186,3 @@ class OutlineServiceTest(unittest.IsolatedAsyncioTestCase):
         deleted_files = list(deleted_root.glob("*.md"))
         self.assertEqual(len(deleted_files), 1)
         self.assertEqual(deleted_files[0].read_text(encoding="utf-8"), "删除卷正文")
-

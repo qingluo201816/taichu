@@ -10,15 +10,17 @@ import {
   useSyncExternalStore,
 } from "react";
 import {
+  AlignLeft,
   BadgeCheck,
+  Baseline,
+  Book,
   Bot,
   BookOpen,
   BookmarkPlus,
-  ChevronDown,
-  ChevronRight,
+  CaseSensitive,
   Check,
+  Copy,
   FileText,
-  FilePlus2,
   History,
   Lightbulb,
   Loader2,
@@ -28,6 +30,8 @@ import {
   PenLine,
   Plus,
   Redo2,
+  RefreshCcw,
+  Rows3,
   Save,
   Search,
   SearchCheck,
@@ -39,28 +43,35 @@ import {
   Undo2,
   X,
 } from "lucide-react";
-import Link from "next/link";
 
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
-import { readChapter, saveChapter } from "@/lib/api/chapters";
+import {
+  listChapterSummaries,
+  readChapter,
+  saveChapter,
+  summarizeChapter,
+} from "@/lib/api/chapters";
 import {
   createAIConversation,
   createChapter,
   createInboxIdea,
   createInboxPendingFact,
   createVolume,
+  deleteAIConversation,
   deleteChapter,
   deleteVolume,
+  listAIHistory,
   patchPreferences,
   readOutline,
   readPreferences,
+  regenerateAIMessage,
   renameChapter,
   renameVolume,
   sendAIMessage,
 } from "@/lib/api/mvp";
 import { formatNovelParagraphs } from "@/lib/editor/markdown";
-import type { ChapterInfo } from "@/lib/types/chapters";
+import type { ChapterInfo, ChapterSummaryInfo } from "@/lib/types/chapters";
 import type {
   AIReferenceScope,
   AIWorkspaceConversation,
@@ -89,7 +100,6 @@ type AIEntryKey =
 type AIEntry = {
   key: AIEntryKey;
   label: string;
-  brandLabel: string;
   placeholder: string;
   taskType?: AIWorkspaceTaskType;
 };
@@ -105,7 +115,7 @@ type LocalMessage = {
   text: string;
 };
 
-type ReferenceRangeChoice = "auto" | "chapter" | "selection";
+type ReferenceRangeChoice = AIReferenceScope;
 type EditorPaperToneKey =
   | "mist"
   | "charcoal"
@@ -123,178 +133,455 @@ type EditorPaperToneKey =
 type EditorPaperTone = {
   key: EditorPaperToneKey;
   label: string;
-  surface: string;
+  isDark: boolean;
+  pageBackground: string;
+  toolbarBackground: string;
+  sidebarBackground: string;
+  rightRailBackground: string;
+  canvasBackground: string;
+  paperBackground: string;
+  panelBackground: string;
+  panelSoftBackground: string;
+  border: string;
+  borderSoft: string;
   swatch: string;
   ink: string;
+  muted: string;
+  focus: string;
   selection: string;
+};
+
+type EditorTypographyMenu = "fontSize" | "lineHeight" | "lineWidth" | "font";
+
+type EditorFontKey =
+  | "hyQiHei"
+  | "lxgwWenkai"
+  | "songti"
+  | "kaiti"
+  | "sourceSerif";
+
+type EditorFontOption = {
+  key: EditorFontKey;
+  label: string;
+  fontFamily: string;
+};
+
+type EditorToastTone = "success" | "info" | "error";
+
+type EditorToastState = {
+  id: number;
+  message: string;
+  tone: EditorToastTone;
 };
 
 const EDITOR_PAPER_TONE_STORAGE_KEY = "taichu-editor-paper-tone";
 const EDITOR_PAPER_TONE_EVENT = "taichu-editor-paper-tone-change";
 const EDITOR_COLLAPSED_VOLUMES_STORAGE_KEY = "taichu-editor-collapsed-volumes";
 const EDITOR_ACTIVE_CHAPTER_STORAGE_KEY = "taichu-editor-active-chapter";
+const EDITOR_LINE_HEIGHT_STORAGE_KEY = "taichu-editor-line-height";
+const EDITOR_LINE_WIDTH_STORAGE_KEY = "taichu-editor-line-width";
+const EDITOR_FONT_STORAGE_KEY = "taichu-editor-font";
+const DEFAULT_EDITOR_LINE_HEIGHT = 1.72;
+const DEFAULT_EDITOR_LINE_WIDTH = 760;
+const DEFAULT_EDITOR_FONT_KEY: EditorFontKey = "hyQiHei";
+const editorLineHeightRange = { min: 1.45, max: 2.2, step: 0.01 };
+const editorLineWidthRange = { min: 620, max: 980, step: 10 };
+
+const editorFontOptions: EditorFontOption[] = [
+  {
+    key: "hyQiHei",
+    label: "汉仪旗黑（默认）",
+    fontFamily:
+      '"HYQiHei", "Hanyi Qihei", var(--tc-font-ui), "PingFang SC", "Microsoft YaHei", sans-serif',
+  },
+  {
+    key: "lxgwWenkai",
+    label: "霞鹜文楷",
+    fontFamily:
+      '"LXGW WenKai", "霞鹜文楷", "STKaiti", "KaiTi", "Kaiti SC", serif',
+  },
+  {
+    key: "songti",
+    label: "宋体",
+    fontFamily: '"Songti SC", "SimSun", "Noto Serif SC", serif',
+  },
+  {
+    key: "kaiti",
+    label: "楷体",
+    fontFamily: '"Kaiti SC", "KaiTi", "STKaiti", serif',
+  },
+  {
+    key: "sourceSerif",
+    label: "思源宋体",
+    fontFamily:
+      '"Source Han Serif SC", "Noto Serif CJK SC", "Noto Serif SC", "Songti SC", serif',
+  },
+];
 
 const editorPaperTones: EditorPaperTone[] = [
   {
     key: "mist",
-    label: "薄雾灰",
-    surface: "#f7f7f8",
+    label: "凝神雾灰",
+    isDark: false,
+    pageBackground: "#e6e7e9",
+    toolbarBackground: "#f1f2f4",
+    sidebarBackground: "#eeeef0",
+    rightRailBackground: "#f2f2f3",
+    canvasBackground: "#ececef",
+    paperBackground: "#f7f7f8",
+    panelBackground: "#f5f5f6",
+    panelSoftBackground: "#eeeeef",
+    border: "#c8c9cc",
+    borderSoft: "#d9dade",
     swatch: "#f7f7f8",
     ink: "#202124",
+    muted: "#6d7076",
+    focus: "#4d5560",
     selection: "rgba(0, 0, 0, 0.14)",
   },
   {
     key: "charcoal",
-    label: "炭灰夜",
-    surface: "#202124",
+    label: "墨夜炭灰",
+    isDark: true,
+    pageBackground: "#1b1c1f",
+    toolbarBackground: "#18191c",
+    sidebarBackground: "#1f2023",
+    rightRailBackground: "#1c1d20",
+    canvasBackground: "#232428",
+    paperBackground: "#202124",
+    panelBackground: "#25262a",
+    panelSoftBackground: "#2d2e33",
+    border: "#42444a",
+    borderSoft: "#33353a",
     swatch: "#202124",
     ink: "#eceff3",
+    muted: "#a9adb6",
+    focus: "#d8dde8",
     selection: "rgba(255, 255, 255, 0.18)",
   },
   {
     key: "obsidian",
-    label: "玄墨黑",
-    surface: "#141416",
+    label: "玄墨静夜",
+    isDark: true,
+    pageBackground: "#101012",
+    toolbarBackground: "#0c0c0e",
+    sidebarBackground: "#141416",
+    rightRailBackground: "#111113",
+    canvasBackground: "#17171a",
+    paperBackground: "#141416",
+    panelBackground: "#19191d",
+    panelSoftBackground: "#202026",
+    border: "#33333a",
+    borderSoft: "#25252b",
     swatch: "#141416",
     ink: "#f1f1ee",
+    muted: "#aaa9a4",
+    focus: "#e4e2d8",
     selection: "rgba(255, 255, 255, 0.2)",
   },
   {
     key: "blueNight",
-    label: "蓝黑夜",
-    surface: "#18202b",
+    label: "夜读蓝黑",
+    isDark: true,
+    pageBackground: "#121821",
+    toolbarBackground: "#101722",
+    sidebarBackground: "#17202b",
+    rightRailBackground: "#141c27",
+    canvasBackground: "#1a2430",
+    paperBackground: "#18202b",
+    panelBackground: "#1d2a38",
+    panelSoftBackground: "#243243",
+    border: "#3b4b60",
+    borderSoft: "#2d3a4b",
     swatch: "#1d2a38",
     ink: "#edf3fb",
+    muted: "#a6b6ca",
+    focus: "#a6cdff",
     selection: "rgba(166, 205, 255, 0.22)",
   },
   {
     key: "pineNight",
-    label: "松烟青",
-    surface: "#18231f",
+    label: "青林松夜",
+    isDark: true,
+    pageBackground: "#111a17",
+    toolbarBackground: "#0f1714",
+    sidebarBackground: "#17231f",
+    rightRailBackground: "#141e1b",
+    canvasBackground: "#1a2823",
+    paperBackground: "#18231f",
+    panelBackground: "#1f302a",
+    panelSoftBackground: "#263a32",
+    border: "#3d594e",
+    borderSoft: "#30453d",
     swatch: "#1f302a",
     ink: "#ecf4ef",
+    muted: "#a9bdb4",
+    focus: "#a9e6cc",
     selection: "rgba(169, 230, 204, 0.2)",
   },
   {
     key: "green",
-    label: "护眼绿",
-    surface: "#dceedd",
+    label: "养目浅青",
+    isDark: false,
+    pageBackground: "#cddfce",
+    toolbarBackground: "#d9ead9",
+    sidebarBackground: "#d3e4d3",
+    rightRailBackground: "#d9ead9",
+    canvasBackground: "#d2e5d3",
+    paperBackground: "#dceedd",
+    panelBackground: "#e8f4e8",
+    panelSoftBackground: "#d3e5d4",
+    border: "#a9bea9",
+    borderSoft: "#bfd2bf",
     swatch: "#c8dfc8",
     ink: "#1d2b20",
+    muted: "#526855",
+    focus: "#3f6d4c",
     selection: "rgba(0, 0, 0, 0.14)",
   },
   {
     key: "classic",
-    label: "古典黄",
-    surface: "#f0e6cf",
+    label: "书页暖黄",
+    isDark: false,
+    pageBackground: "#ded2b7",
+    toolbarBackground: "#e9dec6",
+    sidebarBackground: "#e6dbc4",
+    rightRailBackground: "#e7dcc4",
+    canvasBackground: "#e5d8be",
+    paperBackground: "#f0e6cf",
+    panelBackground: "#f5ecd9",
+    panelSoftBackground: "#e8dcc3",
+    border: "#b6a686",
+    borderSoft: "#cfbf9f",
     swatch: "#e5d9bd",
     ink: "#2a2318",
+    muted: "#6c5b3e",
+    focus: "#7a6038",
     selection: "rgba(0, 0, 0, 0.14)",
   },
   {
     key: "blue",
-    label: "静谧蓝",
-    surface: "#e5edf6",
+    label: "静蓝晨雾",
+    isDark: false,
+    pageBackground: "#d5e1ef",
+    toolbarBackground: "#e0eaf5",
+    sidebarBackground: "#dce7f3",
+    rightRailBackground: "#e0eaf5",
+    canvasBackground: "#d9e5f2",
+    paperBackground: "#e5edf6",
+    panelBackground: "#eff5fb",
+    panelSoftBackground: "#d8e4f0",
+    border: "#aebbd0",
+    borderSoft: "#c5d1e2",
     swatch: "#d0dcea",
     ink: "#1f2834",
+    muted: "#5e6b7a",
+    focus: "#54708e",
     selection: "rgba(0, 0, 0, 0.14)",
   },
   {
     key: "pink",
-    label: "浪漫粉",
-    surface: "#f4e4e8",
+    label: "桃笺淡粉",
+    isDark: false,
+    pageBackground: "#e8d5dc",
+    toolbarBackground: "#f2e0e6",
+    sidebarBackground: "#eedce2",
+    rightRailBackground: "#f1e0e6",
+    canvasBackground: "#ebdae0",
+    paperBackground: "#f4e4e8",
+    panelBackground: "#faedf0",
+    panelSoftBackground: "#ead6dc",
+    border: "#c8aeb8",
+    borderSoft: "#dcc6ce",
     swatch: "#ead6dc",
     ink: "#302226",
+    muted: "#765d66",
+    focus: "#9a6678",
     selection: "rgba(0, 0, 0, 0.14)",
   },
   {
     key: "peach",
-    label: "兔年大吉",
-    surface: "linear-gradient(135deg, #fff4ef 0%, #ffe2cf 100%)",
+    label: "晨桃暖光",
+    isDark: false,
+    pageBackground: "#f2d8cb",
+    toolbarBackground: "#fae7dc",
+    sidebarBackground: "#f7e1d5",
+    rightRailBackground: "#fae7dc",
+    canvasBackground: "#f6dfd1",
+    paperBackground: "linear-gradient(135deg, #fff4ef 0%, #ffe2cf 100%)",
+    panelBackground: "#fff1e9",
+    panelSoftBackground: "#f3d3c3",
+    border: "#d8a891",
+    borderSoft: "#eac7b6",
     swatch: "linear-gradient(135deg, #fff4ef 0%, #f7bda4 100%)",
     ink: "#2f211c",
+    muted: "#75584d",
+    focus: "#b86d4e",
     selection: "rgba(0, 0, 0, 0.14)",
   },
   {
     key: "snow",
-    label: "白雪飞腊",
-    surface: "linear-gradient(135deg, #ffffff 0%, #f0f0ed 100%)",
+    label: "明净素白",
+    isDark: false,
+    pageBackground: "#e6e6e3",
+    toolbarBackground: "#f4f4f1",
+    sidebarBackground: "#eeeeeb",
+    rightRailBackground: "#f3f3f0",
+    canvasBackground: "#ecece8",
+    paperBackground: "linear-gradient(135deg, #ffffff 0%, #f0f0ed 100%)",
+    panelBackground: "#fafaf7",
+    panelSoftBackground: "#e7e7e2",
+    border: "#c5c5bf",
+    borderSoft: "#d8d8d1",
     swatch: "linear-gradient(135deg, #ffffff 0%, #e7e7e2 100%)",
     ink: "#242526",
+    muted: "#666864",
+    focus: "#5d6570",
     selection: "rgba(0, 0, 0, 0.14)",
   },
   {
     key: "aqua",
-    label: "绿水青山",
-    surface: "linear-gradient(135deg, #f2fffc 0%, #d8f1ee 100%)",
+    label: "青水远山",
+    isDark: false,
+    pageBackground: "#cfe3df",
+    toolbarBackground: "#e4f4f1",
+    sidebarBackground: "#dbede9",
+    rightRailBackground: "#e5f4f1",
+    canvasBackground: "#d8ebe7",
+    paperBackground: "linear-gradient(135deg, #f2fffc 0%, #d8f1ee 100%)",
+    panelBackground: "#f2fffc",
+    panelSoftBackground: "#cfe7e2",
+    border: "#9fbfba",
+    borderSoft: "#b8d7d2",
     swatch: "linear-gradient(135deg, #f2fffc 0%, #bfe5df 100%)",
     ink: "#1c2d2b",
+    muted: "#56706c",
+    focus: "#348378",
     selection: "rgba(0, 0, 0, 0.14)",
   },
 ];
+
+function editorThemeVariables(tone: EditorPaperTone): CSSProperties {
+  const primaryText = tone.isDark ? tone.pageBackground : tone.panelBackground;
+
+  return {
+    colorScheme: tone.isDark ? "dark" : "light",
+    "--tc-editor-selection-bg": tone.selection,
+    "--tc-editor-scrollbar-track": tone.paperBackground,
+    "--tc-editor-scrollbar-thumb": tone.border,
+    "--tc-editor-scrollbar-thumb-hover": tone.focus,
+    "--tc-workspace-bg": tone.pageBackground,
+    "--tc-workspace-shell": tone.toolbarBackground,
+    "--tc-workspace-panel": tone.panelBackground,
+    "--tc-workspace-panel-soft": tone.panelSoftBackground,
+    "--tc-workspace-recess": tone.canvasBackground,
+    "--tc-workspace-editor": tone.paperBackground,
+    "--tc-workspace-border": tone.border,
+    "--tc-workspace-border-weak": tone.borderSoft,
+    "--tc-workspace-text": tone.ink,
+    "--tc-workspace-text-secondary": tone.muted,
+    "--tc-workspace-focus": tone.focus,
+    "--tc-nav-bg": tone.toolbarBackground,
+    "--tc-nav-border": tone.borderSoft,
+    "--tc-midnight-ink": tone.ink,
+    "--tc-smoke": tone.muted,
+    "--tc-stone-mist": tone.border,
+    "--tc-white": tone.panelBackground,
+    "--tc-cream-paper": tone.panelSoftBackground,
+    "--tc-deep-forest-teal": tone.focus,
+    "--tc-action-primary-bg": tone.focus,
+    "--tc-action-primary-text": primaryText,
+    "--tc-action-primary-border": tone.focus,
+    "--tc-action-primary-hover-bg": `color-mix(in srgb, ${tone.focus} 88%, ${tone.pageBackground} 12%)`,
+  } as CSSProperties;
+}
 
 const aiEntries: AIEntry[] = [
   {
     key: "chat",
     label: "纯对话",
-    brandLabel: "问灵",
     placeholder: "输入你想临时询问的内容",
   },
   {
     key: "continue",
     label: "续写",
-    brandLabel: "衍文",
     placeholder: "输入续写要求，可为空",
     taskType: "continue",
   },
   {
     key: "polish",
     label: "润色",
-    brandLabel: "润笔",
     placeholder: "输入扩写、缩写或改写要求，可为空",
     taskType: "polish",
   },
   {
     key: "setting",
     label: "设定",
-    brandLabel: "构界",
     placeholder: "输入你想补充的设定方向",
     taskType: "setting",
   },
   {
     key: "suggestion",
     label: "建议",
-    brandLabel: "策议",
     placeholder: "输入你想判断或改进的问题",
     taskType: "suggestion",
   },
   {
     key: "evidence",
     label: "证据",
-    brandLabel: "溯源",
     placeholder: "输入你想追问的依据或出处",
     taskType: "evidence",
   },
   {
     key: "chapter_summary",
     label: "章节摘要",
-    brandLabel: "章要",
     placeholder: "本章暂未生成摘要",
     taskType: "chapter_summary",
   },
   {
     key: "inspiration",
     label: "灵感",
-    brandLabel: "灵引",
     placeholder: "记下一条灵感",
   },
   {
     key: "fact",
     label: "事实",
-    brandLabel: "事实簿",
     placeholder: "记下一条可能入库的事实",
   },
 ];
+
+const referenceOptions: Record<AIReferenceScope, string> = {
+  none: "无小说上下文",
+  selection: "选区",
+  chapter: "本章",
+  fulltext: "全文",
+};
+
+const aiReferenceConfigs: Partial<
+  Record<
+    AIWorkspaceTaskType,
+    { defaultScope: ReferenceRangeChoice; options: ReferenceRangeChoice[] }
+  >
+> = {
+  continue: { defaultScope: "chapter", options: ["chapter", "selection"] },
+  polish: { defaultScope: "selection", options: ["selection"] },
+  setting: { defaultScope: "selection", options: ["selection", "chapter", "fulltext"] },
+  suggestion: { defaultScope: "chapter", options: ["selection", "chapter", "fulltext"] },
+  evidence: { defaultScope: "fulltext", options: ["chapter", "fulltext"] },
+  chapter_summary: { defaultScope: "chapter", options: ["chapter"] },
+};
+
+const entryDescriptions: Record<AIEntryKey, string> = {
+  chat: "临时问答，不保存到历史",
+  continue: "根据当前章节续写正文",
+  polish: "处理当前选区文字",
+  setting: "补充世界观、人设或规则",
+  suggestion: "检查问题并给出修改方向",
+  evidence: "追问依据和前文线索",
+  chapter_summary: "整理当前章节摘要",
+  inspiration: "快速记录创意点",
+  fact: "记录待确认事实",
+};
 
 const defaultPreferences: EditorPreferences = {
   font_size: 18,
@@ -318,6 +605,28 @@ export default function EditorShell() {
   const [editorBackground, setEditorBackground] = useState<
     EditorPreferences["editor_background"]
   >(defaultPreferences.editor_background);
+  const [activeTypographyMenu, setActiveTypographyMenu] =
+    useState<EditorTypographyMenu | null>(null);
+  const [lineHeight, setLineHeight] = useState(() =>
+    readStoredEditorNumber(
+      EDITOR_LINE_HEIGHT_STORAGE_KEY,
+      DEFAULT_EDITOR_LINE_HEIGHT,
+      editorLineHeightRange.min,
+      editorLineHeightRange.max,
+    ),
+  );
+  const [lineWidth, setLineWidth] = useState(() =>
+    readStoredEditorNumber(
+      EDITOR_LINE_WIDTH_STORAGE_KEY,
+      DEFAULT_EDITOR_LINE_WIDTH,
+      editorLineWidthRange.min,
+      editorLineWidthRange.max,
+    ),
+  );
+  const [editorFontKey, setEditorFontKey] = useState<EditorFontKey>(() =>
+    readStoredEditorFontKey(),
+  );
+  const [editorToast, setEditorToast] = useState<EditorToastState | null>(null);
   const paperToneKey = useSyncExternalStore(
     subscribeStoredPaperToneKey,
     readStoredPaperToneKey,
@@ -326,13 +635,12 @@ export default function EditorShell() {
   const [isBackgroundMenuOpen, setBackgroundMenuOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [referenceRange, setReferenceRange] =
-    useState<ReferenceRangeChoice>("auto");
+    useState<ReferenceRangeChoice>("chapter");
   const [selectedAiTool, setSelectedAiTool] = useState<AIEntryKey>("continue");
   const [isAssistantPanelOpen, setAssistantPanelOpen] = useState(false);
   const [collapsedVolumeIds, setCollapsedVolumeIds] = useState<Set<string>>(
     () => readStoredCollapsedVolumeIds(),
   );
-  const [brandMode, setBrandMode] = useState(false);
   const [aiInput, setAIInput] = useState("");
   const [aiBusy, setAIBusy] = useState(false);
   const [aiError, setAIError] = useState<string | null>(null);
@@ -340,23 +648,46 @@ export default function EditorShell() {
     Partial<Record<AIEntryKey, AIWorkspaceConversation>>
   >({});
   const [localChatMessages, setLocalChatMessages] = useState<LocalMessage[]>([]);
+  const [isHistoryPickerOpen, setHistoryPickerOpen] = useState(false);
+  const [historyConversations, setHistoryConversations] = useState<
+    AIWorkspaceConversation[]
+  >([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [chapterSummary, setChapterSummary] =
+    useState<ChapterSummaryInfo | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
   const [showPromptSnapshot, setShowPromptSnapshot] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const savedMarkdownRef = useRef("");
   const savedChapterTitleRef = useRef("");
   const activeChapterRef = useRef<ChapterInfo | null>(null);
   const saveTimerRef = useRef<number | null>(null);
+  const editorToastTimerRef = useRef<number | null>(null);
+  const editorToastIdRef = useRef(0);
   const assistantPanelOpenRef = useRef(false);
   const assistantHistoryOpenRef = useRef(false);
   const activePaperTone =
     editorPaperTones.find(tone => tone.key === paperToneKey) ??
     editorPaperTones[0];
+  const editorThemeStyle = editorThemeVariables(activePaperTone);
+  const activeEditorFont =
+    editorFontOptions.find(option => option.key === editorFontKey) ??
+    editorFontOptions[0];
   const volumeCount = outline?.volumes.length ?? 0;
   const chapterCount = outlineChapters(outline).length;
 
   const activeEntry =
     aiEntries.find(entry => entry.key === selectedAiTool) ?? aiEntries[1];
   const activeConversation = conversations[selectedAiTool] ?? null;
+  const isSummaryEntry = activeEntry.key === "chapter_summary";
+  const isRecordEntry =
+    activeEntry.key === "inspiration" || activeEntry.key === "fact";
+  const isConversationEntry = Boolean(activeEntry.taskType) && !isSummaryEntry;
+  const activeReferenceConfig = activeEntry.taskType
+    ? aiReferenceConfigs[activeEntry.taskType] ?? null
+    : null;
   const currentOutlineChapter = activeChapter
     ? outlineChapterById(outline, activeChapter.id)
     : null;
@@ -366,10 +697,12 @@ export default function EditorShell() {
     ? chapterNumberLabel(currentOutlineChapter.order)
     : "章节";
   const currentReferenceScope = activeEntry.taskType
-    ? referenceScopeFor(activeEntry.taskType, selection, referenceRange)
-    : selection && referenceRange !== "chapter"
-      ? "selection"
-      : "chapter";
+    ? referenceScopeFor(activeEntry.taskType, referenceRange)
+    : "none";
+  const currentWordCount = useMemo(() => countReadableWords(markdown), [markdown]);
+  const showSelectionPreview =
+    activeReferenceConfig?.options.includes("selection") === true &&
+    Boolean(selection?.text.trim());
   const searchCount = useMemo(
     () => countOccurrences(markdown, searchText),
     [markdown, searchText],
@@ -405,6 +738,10 @@ export default function EditorShell() {
       savedMarkdownRef.current = response.markdown;
       setSaveState("saved");
       setSelection(null);
+      setHistoryPickerOpen(false);
+      setHistoryConversations([]);
+      setChapterSummary(null);
+      setSummaryError(null);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "章节加载失败");
       setSaveState("error");
@@ -417,6 +754,24 @@ export default function EditorShell() {
     const response = await readOutline();
     setOutline(response.outline);
     return response.outline;
+  }, []);
+
+  const loadLatestChapterSummary = useCallback(async (chapterId: string) => {
+    setSummaryLoading(true);
+    setSummaryError(null);
+    try {
+      const response = await listChapterSummaries(chapterId);
+      const latest =
+        [...response.summaries]
+          .filter(summary => summary.status !== "ignored")
+          .sort((left, right) => right.updated_at.localeCompare(left.updated_at))[0] ??
+        null;
+      setChapterSummary(latest);
+    } catch (caught) {
+      setSummaryError(caught instanceof Error ? caught.message : "章节摘要加载失败");
+    } finally {
+      setSummaryLoading(false);
+    }
   }, []);
 
   const openAssistantPanel = useCallback(() => {
@@ -455,12 +810,36 @@ export default function EditorShell() {
   }, [isAssistantPanelOpen]);
 
   useEffect(() => {
+    if (!isAssistantPanelOpen) {
+      return;
+    }
+    function handleAssistantEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape" || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      closeAssistantPanel();
+    }
+    window.addEventListener("keydown", handleAssistantEscape, true);
+    return () => window.removeEventListener("keydown", handleAssistantEscape, true);
+  }, [closeAssistantPanel, isAssistantPanelOpen]);
+
+  useEffect(() => {
     writeStoredCollapsedVolumeIds(collapsedVolumeIds);
   }, [collapsedVolumeIds]);
 
   useEffect(() => {
     resizeEditorTextarea();
-  }, [activeChapter?.id, fontSize, markdown, resizeEditorTextarea]);
+  }, [activeChapter?.id, fontSize, lineHeight, markdown, resizeEditorTextarea]);
+
+  useEffect(() => {
+    return () => {
+      if (editorToastTimerRef.current) {
+        window.clearTimeout(editorToastTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     function handlePopState(event: PopStateEvent) {
@@ -577,6 +956,13 @@ export default function EditorShell() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [persistChapter]);
 
+  async function loadChapterForWorkspace(chapterId: string) {
+    await loadChapter(chapterId);
+    if (selectedAiTool === "chapter_summary") {
+      await loadLatestChapterSummary(chapterId);
+    }
+  }
+
   async function switchChapter(chapterId: string) {
     if (activeChapter?.id === chapterId) {
       return;
@@ -587,7 +973,7 @@ export default function EditorShell() {
         return;
       }
     }
-    await loadChapter(chapterId);
+    await loadChapterForWorkspace(chapterId);
   }
 
   function clearActiveChapter() {
@@ -641,6 +1027,46 @@ export default function EditorShell() {
     }
   }
 
+  function updateLineHeightPreference(nextLineHeight: number) {
+    const safeLineHeight = clampNumber(
+      nextLineHeight,
+      editorLineHeightRange.min,
+      editorLineHeightRange.max,
+    );
+    setLineHeight(safeLineHeight);
+    writeStoredEditorNumber(EDITOR_LINE_HEIGHT_STORAGE_KEY, safeLineHeight);
+  }
+
+  function updateLineWidthPreference(nextLineWidth: number) {
+    const safeLineWidth = clampNumber(
+      nextLineWidth,
+      editorLineWidthRange.min,
+      editorLineWidthRange.max,
+    );
+    setLineWidth(safeLineWidth);
+    writeStoredEditorNumber(EDITOR_LINE_WIDTH_STORAGE_KEY, safeLineWidth);
+  }
+
+  function updateEditorFontPreference(nextFontKey: EditorFontKey) {
+    setEditorFontKey(nextFontKey);
+    writeStoredEditorFontKey(nextFontKey);
+    setActiveTypographyMenu(null);
+  }
+
+  function showEditorToast(
+    message: string,
+    tone: EditorToastTone = "success",
+  ) {
+    editorToastIdRef.current += 1;
+    setEditorToast({ id: editorToastIdRef.current, message, tone });
+    if (editorToastTimerRef.current) {
+      window.clearTimeout(editorToastTimerRef.current);
+    }
+    editorToastTimerRef.current = window.setTimeout(() => {
+      setEditorToast(null);
+    }, tone === "error" ? 2600 : 1900);
+  }
+
   async function renameVolumeName(volume: OutlineVolume) {
     const requestedName = window.prompt("请输入卷名", volume.name);
     if (requestedName === null) {
@@ -676,7 +1102,7 @@ export default function EditorShell() {
       setOutline(nextOutline);
       const nextChapterId = nextOutline.current_chapter_id;
       if (nextChapterId) {
-        await loadChapter(nextChapterId);
+        await loadChapterForWorkspace(nextChapterId);
         return;
       }
       clearActiveChapter();
@@ -691,7 +1117,7 @@ export default function EditorShell() {
       setOutline(nextOutline);
       const chapterId = nextOutline.current_chapter_id;
       if (chapterId) {
-        await loadChapter(chapterId);
+        await loadChapterForWorkspace(chapterId);
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "新建章节失败");
@@ -730,7 +1156,7 @@ export default function EditorShell() {
       setOutline(nextOutline);
       const nextChapterId = nextOutline.current_chapter_id;
       if (nextChapterId) {
-        await loadChapter(nextChapterId);
+        await loadChapterForWorkspace(nextChapterId);
         return;
       }
       clearActiveChapter();
@@ -848,6 +1274,7 @@ export default function EditorShell() {
     updateMarkdown(formatted);
     setSelection(null);
     setError(null);
+    showEditorToast("排版完成");
   }
 
   function selectAiTool(entryKey: AIEntryKey) {
@@ -855,9 +1282,163 @@ export default function EditorShell() {
       closeAssistantPanel();
       return;
     }
+    const nextEntry = aiEntries.find(entry => entry.key === entryKey);
+    if (nextEntry?.taskType) {
+      setReferenceRange(
+        aiReferenceConfigs[nextEntry.taskType]?.defaultScope ?? "chapter",
+      );
+    } else {
+      setReferenceRange("none");
+    }
     setSelectedAiTool(entryKey);
     openAssistantPanel();
     setAIError(null);
+    setShowPromptSnapshot(false);
+    setHistoryPickerOpen(false);
+    setHistoryConversations([]);
+    if (entryKey === "chapter_summary" && activeChapterRef.current) {
+      void loadLatestChapterSummary(activeChapterRef.current.id);
+    }
+  }
+
+  async function openHistoryPicker() {
+    const chapter = activeChapterRef.current;
+    if (!chapter || !activeEntry.taskType || !isConversationEntry) {
+      return;
+    }
+    if (isHistoryPickerOpen) {
+      setHistoryPickerOpen(false);
+      return;
+    }
+    setHistoryPickerOpen(true);
+    setHistoryLoading(true);
+    setHistoryError(null);
+    try {
+      const response = await listAIHistory({
+        chapterId: chapter.id,
+        taskType: activeEntry.taskType,
+        page: 1,
+        pageSize: 20,
+      });
+      setHistoryConversations(response.conversations);
+    } catch (caught) {
+      setHistoryError(caught instanceof Error ? caught.message : "历史对话加载失败");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  function startNewConversation() {
+    setConversations(current => ({
+      ...current,
+      [selectedAiTool]: undefined,
+    }));
+    setHistoryPickerOpen(false);
+    setAIInput("");
+    setAIError(null);
+    setShowPromptSnapshot(false);
+  }
+
+  function selectHistoryConversation(conversation: AIWorkspaceConversation) {
+    setConversations(current => ({
+      ...current,
+      [selectedAiTool]: conversation,
+    }));
+    setHistoryPickerOpen(false);
+    setAIError(null);
+    setShowPromptSnapshot(false);
+  }
+
+  function cycleReferenceRange() {
+    if (!activeReferenceConfig) {
+      return;
+    }
+    const options = activeReferenceConfig.options.filter(
+      option => option !== "selection" || Boolean(selection?.text.trim()),
+    );
+    const availableOptions = options.length ? options : activeReferenceConfig.options;
+    const currentIndex = availableOptions.indexOf(currentReferenceScope);
+    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % availableOptions.length;
+    setReferenceRange(availableOptions[nextIndex]);
+  }
+
+  async function regenerateCurrentConversation() {
+    if (selectedAiTool === "chat") {
+      setLocalChatMessages(current => regenerateLocalChatMessages(current));
+      setAIError(null);
+      showEditorToast("已重新生成");
+      return;
+    }
+    if (!activeConversation) {
+      return;
+    }
+    setAIBusy(true);
+    setAIError(null);
+    try {
+      const response = await regenerateAIMessage(activeConversation.id);
+      setConversations(current => ({
+        ...current,
+        [selectedAiTool]: response.conversation,
+      }));
+      setHistoryConversations(current =>
+        current.map(conversation =>
+          conversation.id === response.conversation.id
+            ? response.conversation
+            : conversation,
+        ),
+      );
+      showEditorToast("已重新生成");
+    } catch (caught) {
+      setAIError(caught instanceof Error ? caught.message : "重新生成失败");
+    } finally {
+      setAIBusy(false);
+    }
+  }
+
+  async function copyAIMessage(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setAIError(null);
+      showEditorToast("已复制模型回答");
+    } catch {
+      setAIError("复制失败，请手动选择文本复制");
+    }
+  }
+
+  async function deleteCurrentConversation() {
+    if (selectedAiTool === "chat") {
+      if (!window.confirm("确认删除当前临时对话？")) {
+        return;
+      }
+      setLocalChatMessages([]);
+      setAIError(null);
+      showEditorToast("对话已删除");
+      return;
+    }
+    if (!activeConversation) {
+      return;
+    }
+    if (!window.confirm("确认删除当前对话？删除后 AI 历史中也不会保留。")) {
+      return;
+    }
+    setAIBusy(true);
+    setAIError(null);
+    try {
+      await deleteAIConversation(activeConversation.id);
+      setConversations(current => ({
+        ...current,
+        [selectedAiTool]: undefined,
+      }));
+      setHistoryConversations(current =>
+        current.filter(conversation => conversation.id !== activeConversation.id),
+      );
+      setAIError(null);
+      showEditorToast("对话已删除");
+    } catch (caught) {
+      setAIError(caught instanceof Error ? caught.message : "删除对话失败");
+    } finally {
+      setAIBusy(false);
+    }
   }
 
   async function submitAI() {
@@ -893,7 +1474,8 @@ export default function EditorShell() {
           priority: "normal",
         });
         setAIInput("");
-        setAIError("灵感已保存到 Inbox");
+        setAIError(null);
+        showEditorToast("灵感已保存到收件箱");
         return;
       }
       if (activeEntry.key === "fact") {
@@ -905,19 +1487,39 @@ export default function EditorShell() {
           priority: "normal",
         });
         setAIInput("");
-        setAIError("事实已保存到 Inbox 的待确认事实");
+        setAIError(null);
+        showEditorToast("事实已保存到收件箱的待确认事实");
+        return;
+      }
+      if (activeEntry.key === "chapter_summary") {
+        if (chapterSummary) {
+          setAIError(null);
+          showEditorToast("本章摘要已生成", "info");
+          return;
+        }
+        setSummaryLoading(true);
+        try {
+          const response = await summarizeChapter(chapter.id);
+          setChapterSummary(response.summary);
+          setAIInput("");
+          setAIError(null);
+          setSummaryError(null);
+          showEditorToast("本章摘要已生成");
+        } finally {
+          setSummaryLoading(false);
+        }
         return;
       }
       if (!activeEntry.taskType) {
         return;
       }
-      const referenceScope = referenceScopeFor(
-        activeEntry.taskType,
-        selection,
-        referenceRange,
-      );
+      const referenceScope = referenceScopeFor(activeEntry.taskType, referenceRange);
+      if (referenceScope === "selection" && !selection?.text.trim()) {
+        setAIError("请先在正文中选择一段文字");
+        return;
+      }
       let conversation = conversations[activeEntry.key];
-      if (!conversation) {
+      if (!conversation || conversation.reference_scope !== referenceScope) {
         conversation = (
           await createAIConversation({
             chapterId: chapter.id,
@@ -956,20 +1558,151 @@ export default function EditorShell() {
       <span className="hidden rounded-full border border-[var(--tc-stone-mist)] px-3 py-1 text-xs text-[var(--tc-smoke)] 2xl:inline-flex">
         {statusText(saveState, loading)}
       </span>
-      <label className="flex h-9 items-center gap-2 rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3 text-sm">
-        <Type className="size-4" />
-        字号
-        <input
-          type="number"
-          min={14}
-          max={24}
-          value={fontSize}
-          onChange={event =>
-            void updateFontSizePreference(Number(event.target.value))
+      <div className="relative">
+        <button
+          type="button"
+          aria-expanded={activeTypographyMenu === "fontSize"}
+          onClick={() =>
+            setActiveTypographyMenu(current =>
+              current === "fontSize" ? null : "fontSize",
+            )
           }
-          className="w-12 bg-transparent text-center outline-none"
-        />
-      </label>
+          className="inline-flex h-9 items-center gap-1.5 rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-2.5 text-sm text-[var(--tc-midnight-ink)] hover:bg-[var(--tc-workspace-panel-soft)]"
+        >
+          <Type className="size-4" />
+          字号
+        </button>
+        {activeTypographyMenu === "fontSize" ? (
+          <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-56 rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.16)]">
+            <div className="mb-3 flex items-center justify-between text-xs text-[var(--tc-smoke)]">
+              <span>小</span>
+              <span className="font-medium text-[var(--tc-midnight-ink)]">字号</span>
+              <span>大</span>
+            </div>
+            <input
+              type="range"
+              min={14}
+              max={24}
+              step={1}
+              value={fontSize}
+              onChange={event =>
+                void updateFontSizePreference(Number(event.target.value))
+              }
+              className="w-full accent-[var(--tc-workspace-focus)]"
+              aria-label="字号"
+            />
+          </div>
+        ) : null}
+      </div>
+      <div className="relative">
+        <button
+          type="button"
+          aria-expanded={activeTypographyMenu === "lineHeight"}
+          onClick={() =>
+            setActiveTypographyMenu(current =>
+              current === "lineHeight" ? null : "lineHeight",
+            )
+          }
+          className="inline-flex h-9 items-center gap-1.5 rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-2.5 text-sm text-[var(--tc-midnight-ink)] hover:bg-[var(--tc-workspace-panel-soft)]"
+        >
+          <Rows3 className="size-4" />
+          行高
+        </button>
+        {activeTypographyMenu === "lineHeight" ? (
+          <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-56 rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.16)]">
+            <div className="mb-3 flex items-center justify-between text-xs text-[var(--tc-smoke)]">
+              <span>紧</span>
+              <span className="font-medium text-[var(--tc-midnight-ink)]">行高</span>
+              <span>松</span>
+            </div>
+            <input
+              type="range"
+              min={editorLineHeightRange.min}
+              max={editorLineHeightRange.max}
+              step={editorLineHeightRange.step}
+              value={lineHeight}
+              onChange={event =>
+                updateLineHeightPreference(Number(event.target.value))
+              }
+              className="w-full accent-[var(--tc-workspace-focus)]"
+              aria-label="行高"
+            />
+          </div>
+        ) : null}
+      </div>
+      <div className="relative">
+        <button
+          type="button"
+          aria-expanded={activeTypographyMenu === "lineWidth"}
+          onClick={() =>
+            setActiveTypographyMenu(current =>
+              current === "lineWidth" ? null : "lineWidth",
+            )
+          }
+          className="inline-flex h-9 items-center gap-1.5 rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-2.5 text-sm text-[var(--tc-midnight-ink)] hover:bg-[var(--tc-workspace-panel-soft)]"
+        >
+          <Baseline className="size-4" />
+          行宽
+        </button>
+        {activeTypographyMenu === "lineWidth" ? (
+          <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-56 rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.16)]">
+            <div className="mb-3 flex items-center justify-between text-xs text-[var(--tc-smoke)]">
+              <span>窄</span>
+              <span className="font-medium text-[var(--tc-midnight-ink)]">行宽</span>
+              <span>宽</span>
+            </div>
+            <input
+              type="range"
+              min={editorLineWidthRange.min}
+              max={editorLineWidthRange.max}
+              step={editorLineWidthRange.step}
+              value={lineWidth}
+              onChange={event =>
+                updateLineWidthPreference(Number(event.target.value))
+              }
+              className="w-full accent-[var(--tc-workspace-focus)]"
+              aria-label="行宽"
+            />
+          </div>
+        ) : null}
+      </div>
+      <div className="relative">
+        <button
+          type="button"
+          aria-expanded={activeTypographyMenu === "font"}
+          onClick={() =>
+            setActiveTypographyMenu(current =>
+              current === "font" ? null : "font",
+            )
+          }
+          className="inline-flex h-9 items-center gap-1.5 rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-2.5 text-sm text-[var(--tc-midnight-ink)] hover:bg-[var(--tc-workspace-panel-soft)]"
+        >
+          <CaseSensitive className="size-4" />
+          字体
+        </button>
+        {activeTypographyMenu === "font" ? (
+          <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-52 rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] py-2 shadow-[0_18px_48px_rgba(0,0,0,0.16)]">
+            {editorFontOptions.map(option => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => updateEditorFontPreference(option.key)}
+                className="flex h-12 w-full items-center justify-between gap-3 px-3 text-left text-sm leading-none text-[var(--tc-midnight-ink)] hover:bg-[var(--tc-workspace-panel-soft)]"
+              >
+                <span
+                  className="min-w-0 flex-1 truncate leading-6"
+                  style={{ fontFamily: option.fontFamily }}
+                >
+                  {option.label}
+                </span>
+                {option.key === editorFontKey ? (
+                  <Check className="size-4 shrink-0 text-[var(--tc-workspace-focus)]" />
+                ) : null}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
       <div className="relative">
         <Button
           type="button"
@@ -979,7 +1712,7 @@ export default function EditorShell() {
           onClick={() => setBackgroundMenuOpen(current => !current)}
         >
           <Palette className="size-4" />
-          背景
+          页面主题
           <span
             className="size-4 rounded-[5px] border border-[var(--tc-stone-mist)]"
             style={{ background: activePaperTone.swatch }}
@@ -990,7 +1723,7 @@ export default function EditorShell() {
           <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[360px] rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.16)]">
             <div className="mb-3 flex items-center justify-between gap-3">
               <span className="text-sm font-semibold text-[var(--tc-midnight-ink)]">
-                编辑背景
+                写作页主题
               </span>
               <button
                 type="button"
@@ -1036,10 +1769,10 @@ export default function EditorShell() {
           )
         }
         className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3 text-sm"
-        aria-label="编辑背景"
+        aria-label="正文边框"
       >
-        <option value="soft">柔色纸面</option>
-        <option value="dark">无边框</option>
+        <option value="soft">显示页缘</option>
+        <option value="dark">隐藏页缘</option>
       </select>
       <IconButton label="撤销" onClick={runUndo}>
         <Undo2 className="size-4" />
@@ -1059,8 +1792,14 @@ export default function EditorShell() {
           <span className="text-xs text-[var(--tc-smoke)]">{searchCount}</span>
         ) : null}
       </label>
-      <Button type="button" variant="outline" onClick={formatFullText}>
-        一键全文排版
+      <Button
+        type="button"
+        variant="outline"
+        onClick={formatFullText}
+        className="h-9 gap-1.5 px-3"
+      >
+        <AlignLeft className="size-4" />
+        一键排版
       </Button>
       <Button
         type="button"
@@ -1086,9 +1825,23 @@ export default function EditorShell() {
       escapeToHome
       showNavigation={false}
       headerActions={editorToolbar}
+      workspaceStyle={editorThemeStyle}
     >
-      <div className="flex min-h-[calc(100vh-57px)] flex-col bg-[var(--tc-workspace-bg)] xl:h-[calc(100vh-57px)] xl:flex-row xl:overflow-hidden">
-        <aside className="flex shrink-0 flex-col border-b border-[var(--tc-stone-mist)] bg-[var(--tc-white)] xl:h-full xl:w-[280px] xl:border-b-0 xl:border-r">
+      <div
+        className="tc-editor-theme-scope flex min-h-[calc(100dvh-62px)] flex-col bg-[var(--tc-workspace-bg)] xl:h-[calc(100dvh-62px)] xl:flex-row xl:overflow-hidden"
+        style={{
+          ...editorThemeStyle,
+          background: activePaperTone.pageBackground,
+          color: activePaperTone.ink,
+        }}
+      >
+        <aside
+          className="flex shrink-0 flex-col border-b border-[var(--tc-stone-mist)] bg-[var(--tc-white)] xl:h-full xl:w-[280px] xl:border-b-0 xl:border-r"
+          style={{
+            background: activePaperTone.sidebarBackground,
+            borderColor: activePaperTone.border,
+          }}
+        >
           <div className="shrink-0 px-4 pb-3 pt-4">
             <p className="text-xs text-[var(--tc-smoke)]">写作</p>
             <h1 className="mt-1 text-2xl font-semibold text-[var(--tc-midnight-ink)]">
@@ -1100,7 +1853,6 @@ export default function EditorShell() {
                 onClick={() => void addChapterToCurrentVolume()}
                 className="h-9 text-sm"
               >
-                <Plus className="size-4" />
                 新建章
               </Button>
               <Button
@@ -1109,71 +1861,75 @@ export default function EditorShell() {
                 onClick={addVolume}
                 className="h-9 text-sm"
               >
-                <FilePlus2 className="size-4" />
                 新建卷
               </Button>
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-3">
+          <div className="tc-editor-scrollbar min-h-0 flex-1 space-y-1 overflow-y-auto px-3 pb-3">
             {outline?.volumes.map(volume => {
               const collapsed = collapsedVolumeIds.has(volume.volume_id);
               return (
                 <section
                   key={volume.volume_id}
-                  className="rounded-[18px] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-2.5"
+                  className="group/volume rounded-[var(--tc-radius-control)] bg-transparent"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => toggleVolume(volume.volume_id)}
                       className="flex min-w-0 flex-1 items-center gap-2 rounded-[var(--tc-radius-control)] px-2 py-1.5 text-left text-sm font-semibold text-[var(--tc-midnight-ink)] hover:bg-[var(--tc-workspace-panel-soft)]"
                     >
                       {collapsed ? (
-                        <ChevronRight className="size-4 shrink-0" />
+                        <Book className="size-4 shrink-0 text-[var(--tc-smoke)]" />
                       ) : (
-                        <ChevronDown className="size-4 shrink-0" />
+                        <BookOpen className="size-4 shrink-0 text-[var(--tc-smoke)]" />
                       )}
                       <span className="truncate">{volume.name}</span>
                     </button>
-                    <button
-                      type="button"
-                      title="新建章节"
-                      onClick={() => void addChapter(volume.volume_id)}
-                      className="inline-flex size-7 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] text-[var(--tc-midnight-ink)] hover:bg-[var(--tc-workspace-panel-soft)]"
-                    >
-                      <Plus className="size-4" />
-                    </button>
-                    <button
-                      type="button"
-                      title="重命名卷"
-                      aria-label={`重命名${volume.name}`}
-                      onClick={() => void renameVolumeName(volume)}
-                      className="inline-flex size-7 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] text-[var(--tc-smoke)] hover:bg-[var(--tc-workspace-panel-soft)] hover:text-[var(--tc-midnight-ink)]"
-                    >
-                      <PenLine className="size-4" />
-                    </button>
-                    <button
-                      type="button"
-                      title="删除卷"
-                      aria-label={`删除${volume.name}`}
-                      onClick={() => void removeVolume(volume)}
-                      className="inline-flex size-7 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] text-[var(--tc-smoke)] hover:bg-[var(--tc-workspace-panel-soft)] hover:text-[var(--tc-midnight-ink)]"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
+                    <span className="shrink-0 pr-2 text-xs text-[var(--tc-smoke)] group-hover/volume:hidden">
+                      {volume.chapters.length} 章
+                    </span>
+                    <div className="hidden shrink-0 items-center gap-1 group-hover/volume:flex">
+                      <button
+                        type="button"
+                        title="新建章节"
+                        onClick={() => void addChapter(volume.volume_id)}
+                        className="inline-flex size-7 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] text-[var(--tc-midnight-ink)] hover:bg-[var(--tc-workspace-panel-soft)]"
+                      >
+                        <Plus className="size-4" />
+                      </button>
+                      <button
+                        type="button"
+                        title="重命名卷"
+                        aria-label={`重命名${volume.name}`}
+                        onClick={() => void renameVolumeName(volume)}
+                        className="inline-flex size-7 items-center justify-center rounded-[var(--tc-radius-control)] text-[var(--tc-smoke)] hover:bg-[var(--tc-workspace-panel-soft)] hover:text-[var(--tc-midnight-ink)]"
+                      >
+                        <PenLine className="size-4" />
+                      </button>
+                      <button
+                        type="button"
+                        title="删除卷"
+                        aria-label={`删除${volume.name}`}
+                        onClick={() => void removeVolume(volume)}
+                        className="inline-flex size-7 items-center justify-center rounded-[var(--tc-radius-control)] text-[var(--tc-smoke)] hover:bg-[var(--tc-workspace-panel-soft)] hover:text-[var(--tc-midnight-ink)]"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
                   </div>
                   {!collapsed ? (
-                    <div className="mt-2 space-y-0.5">
+                    <div className="mt-0.5 space-y-0.5 pl-4">
                       {volume.chapters.map(chapter => {
                         const active = activeChapter?.id === chapter.chapter_id;
                         return (
                           <div
                             key={chapter.chapter_id}
                             className={cn(
-                              "group relative flex w-full items-center rounded-[14px] transition-colors",
+                              "group relative flex w-full items-center rounded-[var(--tc-radius-control)] transition-colors",
                               active
-                                ? "bg-[color-mix(in_srgb,var(--tc-workspace-text)_6%,transparent)] font-medium text-[var(--tc-midnight-ink)]"
+                                ? "bg-[var(--tc-workspace-panel-soft)] font-medium text-[var(--tc-midnight-ink)]"
                                 : "text-[var(--tc-smoke)] hover:bg-[var(--tc-workspace-panel-soft)] hover:text-[var(--tc-midnight-ink)]",
                             )}
                           >
@@ -1189,7 +1945,7 @@ export default function EditorShell() {
                             <button
                               type="button"
                               onClick={() => void switchChapter(chapter.chapter_id)}
-                              className="min-w-0 flex-1 truncate px-3 py-2 pr-2 text-left text-[13px] outline-none"
+                              className="min-w-0 flex-1 truncate px-2.5 py-1 pr-2 text-left text-[13px] outline-none"
                             >
                               {chapter.display_title}
                             </button>
@@ -1222,18 +1978,21 @@ export default function EditorShell() {
         </aside>
 
         <section
-          className="flex min-w-0 flex-1 flex-col bg-[var(--tc-workspace-bg)]"
+          className="relative flex min-w-0 flex-1 flex-col bg-[var(--tc-workspace-bg)]"
           style={
             {
-              background: activePaperTone.surface,
+              background: activePaperTone.paperBackground,
               color: activePaperTone.ink,
               "--tc-editor-selection-bg": activePaperTone.selection,
             } as CSSProperties
           }
         >
           <div
-            className="min-h-0 flex-1 overflow-y-auto px-3 py-3 md:px-6 md:py-5 xl:px-10"
-            style={{ scrollbarGutter: "stable" }}
+            className="tc-editor-scrollbar min-h-0 flex-1 overflow-y-auto bg-[var(--tc-workspace-recess)] px-3 py-3 md:px-6 md:py-5 xl:px-10"
+            style={{
+              background: activePaperTone.paperBackground,
+              scrollbarGutter: "stable",
+            }}
           >
             {error ? (
               <div className="tc-warning mb-4 rounded-[var(--tc-radius-control)] border px-4 py-3 text-sm">
@@ -1242,13 +2001,17 @@ export default function EditorShell() {
             ) : null}
             <div
               className={cn(
-                "mx-auto min-h-[calc(100vh-150px)] w-full max-w-[760px] border shadow-none",
+                "mx-auto min-h-[calc(100vh-150px)] w-full border shadow-none",
                 editorBackground === "dark"
                   ? "border-transparent"
                   : "border-[var(--tc-stone-mist)]",
               )}
               style={{
+                background: activePaperTone.paperBackground,
+                borderColor:
+                  editorBackground === "dark" ? "transparent" : activePaperTone.border,
                 color: activePaperTone.ink,
+                maxWidth: `${lineWidth}px`,
               } as CSSProperties}
             >
               <div className="px-6 pb-8 pt-6 md:px-10 md:pb-10 md:pt-8">
@@ -1260,6 +2023,7 @@ export default function EditorShell() {
                     className="shrink-0 font-serif"
                     style={{
                       color: activePaperTone.ink,
+                      fontFamily: activeEditorFont.fontFamily,
                       fontSize: `${Math.round(fontSize * 1.55)}px`,
                       lineHeight: "1.28",
                     }}
@@ -1280,6 +2044,7 @@ export default function EditorShell() {
                     className="min-w-0 flex-1 bg-transparent font-serif outline-none placeholder:opacity-60 selection:bg-[var(--tc-editor-selection-bg)] selection:text-[inherit]"
                     style={{
                       color: activePaperTone.ink,
+                      fontFamily: activeEditorFont.fontFamily,
                       fontSize: `${Math.round(fontSize * 1.55)}px`,
                       lineHeight: "1.28",
                     }}
@@ -1288,142 +2053,229 @@ export default function EditorShell() {
                   />
                 </div>
               </div>
-              <textarea
-                ref={textareaRef}
-                value={markdown}
-                onChange={event => updateMarkdown(event.target.value)}
-                onSelect={updateSelection}
-                onKeyUp={updateSelection}
-                onMouseUp={updateSelection}
-                disabled={!activeChapter || loading}
-                spellCheck={false}
-                className="block min-h-[calc(100vh-330px)] w-full resize-none overflow-hidden bg-transparent px-6 pb-10 pt-0 font-[var(--tc-font-ui)] leading-[2.05] outline-none selection:bg-[var(--tc-editor-selection-bg)] selection:text-[inherit] md:px-10 md:pb-12"
-                style={{
-                  color: activePaperTone.ink,
-                  fontSize: `${fontSize}px`,
-                }}
-                placeholder="在这里写正文"
-              />
+              <div className="relative">
+                <textarea
+                  ref={textareaRef}
+                  value={markdown}
+                  onChange={event => updateMarkdown(event.target.value)}
+                  onSelect={updateSelection}
+                  onKeyUp={updateSelection}
+                  onMouseUp={updateSelection}
+                  disabled={!activeChapter || loading}
+                  spellCheck={false}
+                  className="block min-h-[calc(100vh-330px)] w-full resize-none overflow-hidden bg-transparent px-6 pb-10 pt-0 outline-none selection:bg-[var(--tc-editor-selection-bg)] selection:text-[inherit] md:px-10 md:pb-12"
+                  style={{
+                    color: activePaperTone.ink,
+                    fontFamily: activeEditorFont.fontFamily,
+                    fontSize: `${fontSize}px`,
+                    lineHeight,
+                  }}
+                  placeholder="在这里写正文"
+                />
+              </div>
             </div>
           </div>
+          <div
+            className="pointer-events-none absolute bottom-2 right-3 px-0 py-0 text-right text-xs text-[var(--tc-smoke)] md:right-4"
+            style={{
+              color: activePaperTone.muted,
+            }}
+          >
+            本章 {currentWordCount} 字
+          </div>
+          <EditorFloatingToast toast={editorToast} />
         </section>
 
         {isAssistantPanelOpen ? (
-          <aside className="flex shrink-0 flex-col border-t border-[var(--tc-stone-mist)] bg-[var(--tc-white)] xl:h-full xl:w-[400px] xl:border-l xl:border-t-0">
-            <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--tc-stone-mist)] px-4 py-3">
-              <div className="min-w-0">
-                <p className="text-xs text-[var(--tc-smoke)]">
-                  {brandMode ? "器灵入口" : "AI 入口"}
-                </p>
-                <h2 className="truncate font-serif text-2xl text-[var(--tc-midnight-ink)]">
-                  {brandMode ? activeEntry.brandLabel : activeEntry.label}
-                </h2>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setBrandMode(current => !current)}
-                  className="rounded-full border border-[var(--tc-stone-mist)] px-3 py-1 text-xs text-[var(--tc-smoke)] hover:text-[var(--tc-midnight-ink)]"
-                >
-                  {brandMode ? "清晰名" : "品牌名"}
-                </button>
-                <button
-                  type="button"
-                  aria-label="关闭助手面板"
-                  title="关闭助手面板"
-                  onClick={closeAssistantPanel}
-                  className="inline-flex size-9 items-center justify-center rounded-[var(--tc-radius-small)] border border-[var(--tc-stone-mist)] text-[var(--tc-smoke)] hover:text-[var(--tc-midnight-ink)]"
-                >
-                  <X className="size-4" />
-                </button>
+          <aside
+            className="flex shrink-0 flex-col border-t border-[var(--tc-stone-mist)] bg-[var(--tc-white)] xl:h-full xl:w-[400px] xl:border-l xl:border-t-0"
+            style={{
+              background: activePaperTone.sidebarBackground,
+              borderColor: activePaperTone.border,
+            }}
+          >
+            <header className="relative shrink-0 border-b border-[var(--tc-stone-mist)] px-4 py-4 pr-12">
+              <button
+                type="button"
+                aria-label="关闭助手面板"
+                title="关闭助手面板"
+                onClick={closeAssistantPanel}
+                className="absolute right-3 top-3 inline-flex size-7 items-center justify-center rounded-full border border-[var(--tc-stone-mist)] text-[var(--tc-smoke)] hover:bg-[var(--tc-workspace-panel-soft)] hover:text-[var(--tc-midnight-ink)]"
+              >
+                <X className="size-3.5" />
+              </button>
+              <div className="flex min-w-0 items-start gap-3">
+                <AIEntryIcon
+                  entryKey={activeEntry.key}
+                  className="mt-1 size-5 shrink-0 text-[var(--tc-smoke)]"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs leading-5 text-[var(--tc-smoke)]">
+                    {entryDescriptions[activeEntry.key]}
+                  </p>
+                  <div className="mt-1 flex min-w-0 items-end justify-between gap-2">
+                    <h2 className="truncate font-serif text-2xl leading-none text-[var(--tc-midnight-ink)]">
+                      {activeEntry.label}
+                    </h2>
+                    {isConversationEntry ? (
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => void openHistoryPicker()}
+                          className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-2.5 text-xs text-[var(--tc-smoke)] hover:bg-[var(--tc-workspace-panel-soft)] hover:text-[var(--tc-midnight-ink)]"
+                        >
+                          <History className="size-3.5" />
+                          历史对话
+                        </button>
+                        <button
+                          type="button"
+                          onClick={startNewConversation}
+                          className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-2.5 text-xs text-[var(--tc-smoke)] hover:bg-[var(--tc-workspace-panel-soft)] hover:text-[var(--tc-midnight-ink)]"
+                        >
+                          <MessageSquare className="size-3.5" />
+                          新对话
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
               </div>
             </header>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-              <AIMessageList
-                entryKey={selectedAiTool}
-                localMessages={localChatMessages}
-                conversation={activeConversation}
-                showPromptSnapshot={showPromptSnapshot}
-                onTogglePromptSnapshot={() =>
-                  setShowPromptSnapshot(current => !current)
-                }
-              />
+            <div className="tc-editor-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-4">
+              {showSelectionPreview ? (
+                <SelectionPreview selection={selection} />
+              ) : null}
+              {isHistoryPickerOpen && isConversationEntry ? (
+                <AIHistoryPicker
+                  conversations={historyConversations}
+                  loading={historyLoading}
+                  error={historyError}
+                  activeConversationId={activeConversation?.id ?? null}
+                  onSelect={selectHistoryConversation}
+                />
+              ) : null}
+              {isSummaryEntry ? (
+                <ChapterSummaryPanel
+                  summary={chapterSummary}
+                  loading={summaryLoading}
+                  error={summaryError}
+                />
+              ) : null}
+              {!isSummaryEntry && !isRecordEntry ? (
+                <AIMessageList
+                  entryKey={selectedAiTool}
+                  localMessages={localChatMessages}
+                  conversation={activeConversation}
+                  showPromptSnapshot={showPromptSnapshot}
+                  actionsDisabled={aiBusy}
+                  onTogglePromptSnapshot={() =>
+                    setShowPromptSnapshot(current => !current)
+                  }
+                  onRegenerate={() => void regenerateCurrentConversation()}
+                  onCopy={message => void copyAIMessage(message)}
+                  onDelete={() => void deleteCurrentConversation()}
+                />
+              ) : null}
             </div>
 
-            <div className="shrink-0 border-t border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] p-4">
-              <div className="mb-3 grid gap-2 text-xs sm:grid-cols-2">
-                <label className="flex items-center justify-between gap-2 rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 py-2">
-                  <span className="text-[var(--tc-smoke)]">参考范围</span>
-                  <select
-                    value={referenceRange}
-                    onChange={event =>
-                      setReferenceRange(event.target.value as ReferenceRangeChoice)
-                    }
-                    className="bg-transparent text-right text-[var(--tc-midnight-ink)] outline-none"
-                    aria-label="参考范围"
-                    disabled={activeEntry.key === "chapter_summary"}
-                  >
-                    <option value="auto">自动</option>
-                    <option value="chapter">本章</option>
-                    <option value="selection" disabled={!selection}>
-                      选区
-                    </option>
-                  </select>
-                </label>
-                <span className="flex items-center rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 py-2 text-[var(--tc-smoke)]">
-                  当前参考：{referenceScopeLabel(currentReferenceScope)}
-                </span>
-                {activeConversation?.is_mock ? (
-                  <span className="flex items-center rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 py-2 text-[var(--tc-smoke)]">
-                    模拟输出
-                  </span>
-                ) : null}
-              </div>
-              <textarea
-                value={aiInput}
-                onChange={event => setAIInput(event.target.value)}
-                className="min-h-24 w-full resize-y rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 py-2 text-sm leading-6 outline-none"
-                placeholder={activeEntry.placeholder}
-              />
-              <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="shrink-0 border-t border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] p-3">
+              {isSummaryEntry ? (
                 <Button
                   type="button"
                   onClick={() => void submitAI()}
-                  disabled={aiBusy || !activeChapter}
+                  disabled={
+                    aiBusy || summaryLoading || !activeChapter || Boolean(chapterSummary)
+                  }
+                  className="h-10 w-full"
                 >
-                  {aiBusy ? (
+                  {aiBusy || summaryLoading ? (
                     <Loader2 className="size-4 animate-spin" />
                   ) : (
-                    <Send className="size-4" />
+                    <FileText className="size-4" />
                   )}
-                  发送
+                  生成本章摘要
                 </Button>
-                <Link
-                  href="/ai-history"
-                  className="inline-flex h-8 items-center gap-2 rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 text-sm text-[var(--tc-smoke)] hover:text-[var(--tc-midnight-ink)]"
-                >
-                  <History className="size-4" />
-                  查找对话
-                </Link>
-                {activeEntry.taskType ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setConversations(current => ({
-                        ...current,
-                        [selectedAiTool]: undefined,
-                      }))
-                    }
-                    className="inline-flex h-8 items-center gap-2 rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 text-sm text-[var(--tc-smoke)] hover:text-[var(--tc-midnight-ink)]"
-                  >
-                    <MessageSquare className="size-4" />
-                    新对话
-                  </button>
-                ) : null}
-              </div>
+              ) : (
+                <>
+                  {isRecordEntry ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={aiInput}
+                        onChange={event => setAIInput(event.target.value)}
+                        className="h-40 min-h-0 w-full resize-none rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 py-2 text-sm leading-6 outline-none"
+                        placeholder={activeEntry.placeholder}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => void submitAI()}
+                        disabled={aiBusy || !activeChapter}
+                        className="h-9 w-full"
+                        aria-label="发送"
+                      >
+                        {aiBusy ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <Send className="size-4" />
+                        )}
+                        发送
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-stretch gap-2">
+                      <textarea
+                        value={aiInput}
+                        onChange={event => setAIInput(event.target.value)}
+                        className="h-20 min-h-0 flex-1 resize-none rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 py-2 text-sm leading-6 outline-none"
+                        placeholder={activeEntry.placeholder}
+                      />
+                      <div
+                        className={cn(
+                          "flex shrink-0 flex-col items-stretch gap-2",
+                          isConversationEntry && activeReferenceConfig
+                            ? "justify-start"
+                            : "justify-center",
+                        )}
+                      >
+                        {isConversationEntry && activeReferenceConfig ? (
+                          <button
+                            type="button"
+                            onClick={cycleReferenceRange}
+                            title="参考范围，点击切换"
+                            aria-label="参考范围，点击切换"
+                            className="inline-flex h-9 min-w-[72px] items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 text-sm text-[var(--tc-midnight-ink)] hover:bg-[var(--tc-workspace-panel-soft)]"
+                          >
+                            {referenceScopeLabel(currentReferenceScope)}
+                          </button>
+                        ) : null}
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => void submitAI()}
+                          disabled={aiBusy || !activeChapter}
+                          className="h-9 min-w-[72px]"
+                          aria-label="发送"
+                        >
+                          {aiBusy ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <Send className="size-4" />
+                          )}
+                          发送
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {activeConversation?.is_mock ? (
+                    <p className="mt-2 text-xs text-[var(--tc-smoke)]">
+                      模拟输出
+                    </p>
+                  ) : null}
+                </>
+              )}
               {aiError ? (
-                <p className="mt-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 py-2 text-sm text-[var(--tc-smoke)]">
+                <p className="mt-3 px-1 text-sm leading-6 text-[var(--tc-smoke)]">
                   {aiError}
                 </p>
               ) : null}
@@ -1431,15 +2283,21 @@ export default function EditorShell() {
           </aside>
         ) : null}
 
-        <aside className="shrink-0 border-t border-[var(--tc-stone-mist)] bg-[var(--tc-white)] xl:h-full xl:w-16 xl:border-l xl:border-t-0">
-          <div className="flex gap-1 overflow-x-auto p-2 xl:h-full xl:flex-col xl:items-stretch xl:overflow-visible">
+        <aside
+          className="shrink-0 border-t border-[var(--tc-stone-mist)] bg-[var(--tc-white)] xl:h-full xl:w-16 xl:border-l xl:border-t-0"
+          style={{
+            background: activePaperTone.rightRailBackground,
+            borderColor: activePaperTone.border,
+          }}
+        >
+          <div className="tc-editor-scrollbar flex gap-1 overflow-x-auto p-2 xl:h-full xl:flex-col xl:items-stretch xl:overflow-visible">
             {aiEntries.map(entry => (
               <button
                 key={entry.key}
                 type="button"
-                aria-label={`${brandMode ? entry.brandLabel : entry.label}入口`}
+                aria-label={`${entry.label}入口`}
                 aria-pressed={selectedAiTool === entry.key}
-                title={`${brandMode ? entry.brandLabel : entry.label}入口`}
+                title={`${entry.label}入口`}
                 onClick={() => selectAiTool(entry.key)}
                 className={cn(
                   "group relative flex h-12 min-w-12 flex-col items-center justify-center gap-0.5 rounded-[var(--tc-radius-small)] border text-[10px] leading-none transition-colors xl:min-w-0",
@@ -1447,11 +2305,11 @@ export default function EditorShell() {
                     ? "border-[var(--tc-workspace-border)] bg-[var(--tc-workspace-panel-soft)] text-[var(--tc-midnight-ink)]"
                     : "border-transparent text-[var(--tc-smoke)] hover:border-[var(--tc-stone-mist)] hover:bg-[var(--tc-cream-paper)] hover:text-[var(--tc-midnight-ink)]",
                 )}
-              >
-                <AIEntryIcon entryKey={entry.key} className="size-4" />
-                <span>{brandMode ? entry.brandLabel : entry.label}</span>
+                >
+                  <AIEntryIcon entryKey={entry.key} className="size-4" />
+                <span>{entry.label}</span>
                 <span className="pointer-events-none absolute right-[calc(100%+8px)] top-1/2 z-20 hidden -translate-y-1/2 whitespace-nowrap rounded-[var(--tc-radius-small)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-2 py-1 text-xs text-[var(--tc-midnight-ink)] opacity-0 shadow-sm transition-opacity group-hover:opacity-100 xl:block">
-                  {brandMode ? entry.brandLabel : entry.label}
+                  {entry.label}
                 </span>
               </button>
             ))}
@@ -1470,17 +2328,26 @@ function AIMessageList({
   localMessages,
   conversation,
   showPromptSnapshot,
+  actionsDisabled,
   onTogglePromptSnapshot,
+  onRegenerate,
+  onCopy,
+  onDelete,
 }: {
   entryKey: AIEntryKey;
   localMessages: LocalMessage[];
   conversation: AIWorkspaceConversation | null;
   showPromptSnapshot: boolean;
+  actionsDisabled: boolean;
   onTogglePromptSnapshot: () => void;
+  onRegenerate: () => void;
+  onCopy: (message: string) => void;
+  onDelete: () => void;
 }) {
   const messages =
     entryKey === "chat"
-      ? localMessages.map(message => ({
+      ? localMessages.map((message, index) => ({
+          id: `local-${index}`,
           role: message.role,
           text: message.text,
           sourceRefs: [] as SourceReference[],
@@ -1488,6 +2355,7 @@ function AIMessageList({
           mock: true,
         }))
       : (conversation?.messages ?? []).map(message => ({
+          id: message.message_id,
           role: message.role,
           text: messageContent(message),
           sourceRefs: message.source_refs,
@@ -1495,6 +2363,10 @@ function AIMessageList({
           mock: message.is_mock,
         }));
   const latestSnapshot = [...messages].reverse().find(message => message.snapshot);
+  const latestAssistantIndex = lastAssistantMessageIndex(messages);
+  if (!messages.length) {
+    return null;
+  }
 
   return (
     <section className="mt-4 space-y-3">
@@ -1517,13 +2389,23 @@ function AIMessageList({
           {latestSnapshot.snapshot}
         </pre>
       ) : null}
-      {messages.length ? (
-        messages.map((message, index) => (
-          <article
-            key={`${message.role}-${index}`}
-            className="rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-3"
+      {messages.map((message, index) => (
+        <article
+          key={message.id}
+          className={cn(
+            "flex",
+            message.role === "user" ? "justify-end" : "justify-start",
+          )}
+        >
+          <div
+            className={cn(
+              "max-w-[86%] rounded-[var(--tc-radius-card)] border p-3",
+              message.role === "user"
+                ? "border-[var(--tc-action-primary-border)] bg-[var(--tc-action-primary-bg)] text-[var(--tc-action-primary-text)]"
+                : "border-[var(--tc-stone-mist)] bg-[var(--tc-white)] text-[var(--tc-midnight-ink)]",
+            )}
           >
-            <div className="mb-2 flex items-center gap-2 text-xs text-[var(--tc-smoke)]">
+            <div className="mb-2 flex items-center gap-2 text-xs opacity-70">
               {message.role === "user" ? (
                 <BookOpen className="size-4" />
               ) : message.role === "assistant" ? (
@@ -1531,7 +2413,7 @@ function AIMessageList({
               ) : (
                 <Sparkles className="size-4" />
               )}
-              {message.role === "user" ? "作者" : "模拟输出"}
+              {message.role === "user" ? "作者" : "模型回答"}
               {message.mock ? <span>模拟</span> : null}
             </div>
             <p className="whitespace-pre-wrap text-sm leading-6">{message.text}</p>
@@ -1540,23 +2422,231 @@ function AIMessageList({
                 {message.sourceRefs.map((source, sourceIndex) => (
                   <div
                     key={`${source.source_id}-${sourceIndex}`}
-                    className="rounded-[10px] bg-[var(--tc-cream-paper)] px-3 py-2 text-xs"
+                    className="rounded-[var(--tc-radius-control)] bg-[var(--tc-cream-paper)] px-3 py-2 text-xs"
                   >
                     <p className="font-medium">
                       来源 {sourceIndex + 1}：{source.display_name}
                     </p>
-                    <p className="mt-1 text-[var(--tc-smoke)]">{source.excerpt}</p>
+                    <p className="mt-1 text-[var(--tc-smoke)]">
+                      {source.excerpt}
+                    </p>
                   </div>
                 ))}
               </div>
             ) : null}
-          </article>
-        ))
-      ) : (
-        <div className="rounded-[var(--tc-radius-control)] border border-dashed border-[var(--tc-stone-mist)] px-3 py-8 text-center text-sm text-[var(--tc-smoke)]">
-          暂无对话记录
+            {message.role === "assistant" && index === latestAssistantIndex ? (
+              <div className="mt-3 flex items-center justify-end gap-1 text-[var(--tc-smoke)]">
+                <MessageActionButton
+                  label="重新生成"
+                  disabled={actionsDisabled}
+                  onClick={onRegenerate}
+                >
+                  <RefreshCcw className="size-4" />
+                </MessageActionButton>
+                <MessageActionButton
+                  label="复制"
+                  disabled={actionsDisabled}
+                  onClick={() => onCopy(message.text)}
+                >
+                  <Copy className="size-4" />
+                </MessageActionButton>
+                <MessageActionButton
+                  label="删除"
+                  disabled={actionsDisabled}
+                  onClick={onDelete}
+                >
+                  <Trash2 className="size-4" />
+                </MessageActionButton>
+              </div>
+            ) : null}
+          </div>
+        </article>
+      ))}
+    </section>
+  );
+}
+
+function MessageActionButton({
+  label,
+  disabled,
+  children,
+  onClick,
+}: {
+  label: string;
+  disabled: boolean;
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="inline-flex size-8 items-center justify-center rounded-[var(--tc-radius-control)] text-[var(--tc-smoke)] hover:bg-[var(--tc-workspace-panel-soft)] hover:text-[var(--tc-midnight-ink)] disabled:cursor-not-allowed disabled:opacity-45"
+    >
+      {children}
+    </button>
+  );
+}
+
+function EditorFloatingToast({ toast }: { toast: EditorToastState | null }) {
+  if (!toast) {
+    return null;
+  }
+  const isError = toast.tone === "error";
+  return (
+    <div
+      key={toast.id}
+      role={isError ? "alert" : "status"}
+      className="pointer-events-none fixed left-1/2 top-20 z-[90] flex max-w-[min(420px,calc(100vw-32px))] -translate-x-1/2 items-center gap-3 rounded-[var(--tc-radius-pill)] border border-[var(--tc-workspace-border-weak)] bg-[color-mix(in_srgb,var(--tc-workspace-panel)_92%,transparent)] px-4 py-3 text-sm font-medium text-[var(--tc-midnight-ink)] shadow-[0_18px_54px_rgba(0,0,0,0.18)] backdrop-blur"
+    >
+      <span
+        className={cn(
+          "flex size-6 shrink-0 items-center justify-center rounded-full",
+          isError
+            ? "bg-[var(--tc-danger-soft)] text-[var(--tc-danger-text)]"
+            : "bg-[var(--tc-success-soft)] text-[var(--tc-success-text)]",
+        )}
+      >
+        {isError ? <X className="size-4" /> : <Check className="size-4" />}
+      </span>
+      <span className="truncate">{toast.message}</span>
+    </div>
+  );
+}
+
+function SelectionPreview({ selection }: { selection: TextSelection | null }) {
+  const text = selection?.text.trim() ?? "";
+  if (!text) {
+    return null;
+  }
+  return (
+    <div className="mb-3 border-l border-[var(--tc-stone-mist)] pl-3 text-xs leading-5 text-[var(--tc-smoke)]">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <span className="font-medium text-[var(--tc-midnight-ink)]">当前选区</span>
+        <span>共 {countReadableWords(text)} 字</span>
+      </div>
+      <p
+        className="overflow-hidden whitespace-pre-wrap text-[var(--tc-smoke)]"
+        style={
+          {
+            display: "-webkit-box",
+            WebkitBoxOrient: "vertical",
+            WebkitLineClamp: 2,
+          } as CSSProperties
+        }
+      >
+        {middleEllipsis(text, 86)}
+      </p>
+    </div>
+  );
+}
+
+function AIHistoryPicker({
+  conversations,
+  loading,
+  error,
+  activeConversationId,
+  onSelect,
+}: {
+  conversations: AIWorkspaceConversation[];
+  loading: boolean;
+  error: string | null;
+  activeConversationId: string | null;
+  onSelect: (conversation: AIWorkspaceConversation) => void;
+}) {
+  return (
+    <section className="mb-4 rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-[var(--tc-midnight-ink)]">
+          历史对话
+        </h3>
+        <span className="text-xs text-[var(--tc-smoke)]">
+          {loading ? "加载中" : `${conversations.length} 条`}
+        </span>
+      </div>
+      {error ? (
+        <p className="rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3 py-2 text-sm text-[var(--tc-smoke)]">
+          {error}
+        </p>
+      ) : null}
+      {!loading && !error && !conversations.length ? (
+        <p className="rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] px-3 py-2 text-sm text-[var(--tc-smoke)]">
+          本章暂无历史对话
+        </p>
+      ) : null}
+      <div className="space-y-1">
+        {conversations.map(conversation => (
+          <button
+            key={conversation.id}
+            type="button"
+            onClick={() => onSelect(conversation)}
+            className={cn(
+              "block w-full rounded-[var(--tc-radius-control)] border px-3 py-2 text-left text-sm transition-colors",
+              conversation.id === activeConversationId
+                ? "border-[var(--tc-midnight-ink)] bg-[var(--tc-workspace-panel-soft)] text-[var(--tc-midnight-ink)]"
+                : "border-transparent text-[var(--tc-smoke)] hover:border-[var(--tc-stone-mist)] hover:text-[var(--tc-midnight-ink)]",
+            )}
+          >
+            <span className="block truncate">
+              {conversationTitle(conversation)}
+            </span>
+            <span className="mt-1 block text-xs text-[var(--tc-smoke)]">
+              {shortDateLabel(conversation.updated_at)}
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ChapterSummaryPanel({
+  summary,
+  loading,
+  error,
+}: {
+  summary: ChapterSummaryInfo | null;
+  loading: boolean;
+  error: string | null;
+}) {
+  if (loading && !summary) {
+    return (
+      <div className="rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-4 text-sm text-[var(--tc-smoke)]">
+        摘要加载中
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-4 text-sm text-[var(--tc-smoke)]">
+        {error}
+      </div>
+    );
+  }
+  if (!summary) {
+    return null;
+  }
+  return (
+    <section className="rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-4">
+      <h3 className="text-sm font-semibold text-[var(--tc-midnight-ink)]">
+        本章摘要
+      </h3>
+      <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[var(--tc-midnight-ink)]">
+        {summary.summary}
+      </p>
+      {summary.key_events.length ? (
+        <div className="mt-4 border-t border-[var(--tc-stone-mist)] pt-3">
+          <p className="text-xs text-[var(--tc-smoke)]">关键事件</p>
+          <ul className="mt-2 space-y-1 text-sm leading-6">
+            {summary.key_events.map(event => (
+              <li key={event}>{event}</li>
+            ))}
+          </ul>
         </div>
-      )}
+      ) : null}
     </section>
   );
 }
@@ -1576,7 +2666,7 @@ function IconButton({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className="inline-flex size-10 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] text-[var(--tc-smoke)] hover:text-[var(--tc-midnight-ink)]"
+      className="inline-flex h-9 w-8 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] text-[var(--tc-smoke)] hover:text-[var(--tc-midnight-ink)]"
     >
       {children}
     </button>
@@ -1696,6 +2786,65 @@ function formatChapterDisplayTitle(order: number, titleBody: string): string {
   return body ? `${prefix} ${body}` : prefix;
 }
 
+function countReadableWords(text: string): number {
+  return text.replace(/\s/g, "").length;
+}
+
+function middleEllipsis(text: string, maxLength: number): string {
+  const normalized = text.trim();
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+  const headLength = Math.ceil(maxLength * 0.58);
+  const tailLength = Math.max(12, maxLength - headLength - 1);
+  return `${normalized.slice(0, headLength)}……${normalized.slice(-tailLength)}`;
+}
+
+function lastAssistantMessageIndex(messages: Array<{ role: string }>): number {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index].role === "assistant") {
+      return index;
+    }
+  }
+  return -1;
+}
+
+function regenerateLocalChatMessages(messages: LocalMessage[]): LocalMessage[] {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index].role === "user") {
+      return [
+        ...messages.slice(0, index + 1),
+        {
+          role: "assistant",
+          text: "我已经准备好了，请继续说。",
+        },
+      ];
+    }
+  }
+  return messages;
+}
+
+function conversationTitle(conversation: AIWorkspaceConversation): string {
+  const userMessage = conversation.messages.find(message => message.role === "user");
+  if (!userMessage) {
+    return "未命名对话";
+  }
+  return middleEllipsis(messageContent(userMessage), 42);
+}
+
+function shortDateLabel(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
 function readStoredPaperToneKey(): EditorPaperToneKey {
   if (typeof window === "undefined") {
     return "mist";
@@ -1725,6 +2874,54 @@ function subscribeStoredPaperToneKey(onStoreChange: () => void): () => void {
     window.removeEventListener("storage", onStoreChange);
     window.removeEventListener(EDITOR_PAPER_TONE_EVENT, onStoreChange);
   };
+}
+
+function readStoredEditorNumber(
+  storageKey: string,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  if (typeof window === "undefined") {
+    return fallback;
+  }
+  const storedValue = Number(window.localStorage.getItem(storageKey));
+  if (!Number.isFinite(storedValue)) {
+    return fallback;
+  }
+  return clampNumber(storedValue, min, max);
+}
+
+function writeStoredEditorNumber(storageKey: string, value: number) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.localStorage.setItem(storageKey, String(value));
+}
+
+function readStoredEditorFontKey(): EditorFontKey {
+  if (typeof window === "undefined") {
+    return DEFAULT_EDITOR_FONT_KEY;
+  }
+  const storedFont = window.localStorage.getItem(EDITOR_FONT_STORAGE_KEY);
+  if (editorFontOptions.some(option => option.key === storedFont)) {
+    return storedFont as EditorFontKey;
+  }
+  return DEFAULT_EDITOR_FONT_KEY;
+}
+
+function writeStoredEditorFontKey(fontKey: EditorFontKey) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.localStorage.setItem(EDITOR_FONT_STORAGE_KEY, fontKey);
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) {
+    return min;
+  }
+  return Math.min(max, Math.max(min, value));
 }
 
 function readStoredCollapsedVolumeIds(): Set<string> {
@@ -1810,23 +3007,17 @@ function countOccurrences(text: string, query: string): number {
 
 function referenceScopeFor(
   taskType: AIWorkspaceTaskType,
-  selection: TextSelection | null,
-  range: ReferenceRangeChoice = "auto",
+  range: ReferenceRangeChoice,
 ): AIReferenceScope {
-  if (taskType === "chapter_summary") {
-    return "chapter";
+  const config = aiReferenceConfigs[taskType];
+  if (!config) {
+    return "none";
   }
-  if (range === "chapter") {
-    return "chapter";
-  }
-  if (range === "selection") {
-    return selection ? "selection" : "chapter";
-  }
-  return selection ? "selection" : "chapter";
+  return config.options.includes(range) ? range : config.defaultScope;
 }
 
 function referenceScopeLabel(scope: AIReferenceScope): string {
-  return scope === "selection" ? "选区" : "本章";
+  return referenceOptions[scope] ?? "正文参考";
 }
 
 function defaultPromptFor(entryKey: AIEntryKey): string {

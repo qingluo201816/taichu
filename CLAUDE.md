@@ -57,6 +57,11 @@
 - **多模型支持**：通过工厂模式切换 LLM，预留用量统计接口
 - **Web UI 部署**：前后端分离，API 驱动
 
+### 知识库字段重构规则
+- 知识库字段重构阶段，旧知识卡数据不保留、不迁移、不兼容；当前 `project_assets/source/knowledge/` 中旧 JSON 可以按任务包要求清空。
+- 知识卡第一版不维护 `body`、`tags`、`fields`、`confidence`、`source_refs`、`relations`、`foreshadow`、`personality`、`motivation`、`appearance`。
+- 知识卡第一版来源使用 `source_origin` 与 `source_note`；类型专属字段直接保存在知识卡顶层，不使用 `fields` 包裹对象。
+
 ### 前端
 - **框架**：Next.js + shadcn/ui + Tailwind CSS
 - **前端设计强制规则**：涉及 `web/` 下页面、组件、样式、交互、动效、前端文案或视觉方案的创建、修改、评审和讨论时，必须先读取并遵循根目录 `TAICHU_DESIGN.md`。该文档是太初前端设计的强制规则源，不得只作为可选参考。

@@ -2,18 +2,23 @@
 
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
 from taichu.application.contracts.storage import ProjectAssetStorageContract
 from taichu.domain.models import (
-    SourceReference,
+    KnowledgeTypeSchema,
     StructuredKnowledgeCard,
+    StructuredKnowledgeSourceOrigin,
     StructuredKnowledgeStatus,
     StructuredKnowledgeType,
+    all_knowledge_type_schemas,
+    knowledge_type_field_keys,
+    knowledge_type_schema,
+    type_specific_field_keys,
 )
+from taichu.domain.models.structured_knowledge import FORBIDDEN_KNOWLEDGE_FIELD_KEYS
 
 
 class MVPKnowledgeService:
@@ -25,6 +30,14 @@ class MVPKnowledgeService:
     def list_types(self) -> list[StructuredKnowledgeType]:
         """Return all supported structured knowledge types."""
         return list(StructuredKnowledgeType)
+
+    def list_schemas(self) -> list[KnowledgeTypeSchema]:
+        """Return backend schema definitions for all supported card types."""
+        return all_knowledge_type_schemas()
+
+    def get_schema(self, knowledge_type: StructuredKnowledgeType) -> KnowledgeTypeSchema:
+        """Return the backend schema definition for one card type."""
+        return knowledge_type_schema(knowledge_type)
 
     async def list_cards(
         self,
@@ -76,23 +89,15 @@ class MVPKnowledgeService:
         """Create one draft knowledge card."""
         now = _now_iso()
         payload = dict(data or {})
-        card = StructuredKnowledgeCard.model_validate(
-            {
-                "id": payload.get("id") or f"{knowledge_type.value}-{uuid4().hex}",
-                "type": knowledge_type.value,
-                "name": payload.get("name", ""),
-                "aliases": payload.get("aliases", []),
-                "summary": payload.get("summary", ""),
-                "body": payload.get("body", ""),
-                "tags": payload.get("tags", []),
-                "importance": payload.get("importance", "normal"),
-                "status": payload.get("status", "draft"),
-                "source_refs": payload.get("source_refs", []),
-                "fields": payload.get("fields", {}),
-                "created_at": payload.get("created_at", now),
-                "updated_at": now,
-            }
+        card = _card_from_payload(
+            knowledge_type,
+            payload,
+            now=now,
+            card_id=str(payload.get("id") or f"{knowledge_type.value}-{uuid4().hex}"),
+            created_at=str(payload.get("created_at") or now),
         )
+        if card.status is StructuredKnowledgeStatus.ACTIVE:
+            _validate_active_card(card)
         await self._write(card)
         return card
 
@@ -104,20 +109,18 @@ class MVPKnowledgeService:
         """Patch author-editable fields on one card."""
         current = await self.get_card(card_id)
         payload = current.model_dump(mode="json")
-        for key in (
-            "name",
-            "aliases",
-            "summary",
-            "body",
-            "tags",
-            "importance",
-            "source_refs",
-            "fields",
-        ):
-            if key in updates:
-                payload[key] = updates[key]
+        _reject_forbidden_fields(updates)
+        allowed_keys = knowledge_type_field_keys(current.type)
+        unknown_keys = set(updates) - allowed_keys
+        if unknown_keys:
+            raise KnowledgeCardValidationError(
+                f"知识卡字段不支持：{', '.join(sorted(unknown_keys))}"
+            )
+        payload.update(updates)
         payload["updated_at"] = _now_iso()
         card = StructuredKnowledgeCard.model_validate(payload)
+        if card.status is StructuredKnowledgeStatus.ACTIVE:
+            _validate_active_card(card)
         await self._write(card)
         return card
 
@@ -150,7 +153,7 @@ class MVPKnowledgeService:
         await self._storage.write_structured_knowledge_record(
             card.type.value,
             card.id,
-            card.model_dump(mode="json"),
+            _storage_record(card),
         )
 
 
@@ -166,23 +169,98 @@ class KnowledgeCardValidationError(ValueError):
 
 
 def _validate_active_card(card: StructuredKnowledgeCard) -> None:
-    if not card.name.strip() or not card.summary.strip() or not card.source_refs:
-        raise KnowledgeCardValidationError("名称、摘要和来源引用补齐后，才能标记为有效。")
-    for source_ref in card.source_refs:
-        SourceReference.model_validate(source_ref.model_dump(mode="json"))
+    if (
+        not card.name.strip()
+        or not card.summary.strip()
+        or card.source_origin is None
+        or not card.source_note.strip()
+    ):
+        raise KnowledgeCardValidationError(
+            "名称、摘要、来源方式和来源说明补齐后，才能标记为有效。"
+        )
 
 
 def _searchable_text(card: StructuredKnowledgeCard) -> str:
-    value = " ".join(
-        [
-            card.name,
-            " ".join(card.aliases),
-            card.summary,
-            card.body,
-            json.dumps(card.fields, ensure_ascii=False, sort_keys=True),
-        ]
-    )
+    data = _storage_record(card)
+    value = " ".join(str(value) for value in data.values() if value is not None)
     return value.casefold()
+
+
+def _card_from_payload(
+    knowledge_type: StructuredKnowledgeType,
+    payload: dict[str, Any],
+    *,
+    now: str,
+    card_id: str,
+    created_at: str,
+) -> StructuredKnowledgeCard:
+    _reject_forbidden_fields(payload)
+    allowed_keys = knowledge_type_field_keys(knowledge_type) | {
+        "id",
+        "type",
+        "created_at",
+        "updated_at",
+    }
+    unknown_keys = set(payload) - allowed_keys
+    if unknown_keys:
+        raise KnowledgeCardValidationError(
+            f"知识卡字段不支持：{', '.join(sorted(unknown_keys))}"
+        )
+    base_payload: dict[str, Any] = {
+        "id": card_id,
+        "type": knowledge_type.value,
+        "name": payload.get("name", ""),
+        "aliases": payload.get("aliases", []),
+        "summary": payload.get("summary", ""),
+        "importance": payload.get("importance", "normal"),
+        "status": payload.get("status", "draft"),
+        "source_origin": payload.get("source_origin"),
+        "source_note": payload.get("source_note", ""),
+        "created_at": created_at,
+        "updated_at": now,
+    }
+    for field_key in type_specific_field_keys(knowledge_type):
+        if field_key in payload:
+            base_payload[field_key] = payload[field_key]
+    if base_payload["source_origin"] == "":
+        base_payload["source_origin"] = None
+    if base_payload["source_origin"] is not None:
+        base_payload["source_origin"] = StructuredKnowledgeSourceOrigin(
+            base_payload["source_origin"]
+        )
+    return StructuredKnowledgeCard.model_validate(base_payload)
+
+
+def _reject_forbidden_fields(payload: dict[str, Any]) -> None:
+    forbidden = FORBIDDEN_KNOWLEDGE_FIELD_KEYS & set(payload)
+    if forbidden:
+        raise KnowledgeCardValidationError(
+            f"知识卡第一版不支持字段：{', '.join(sorted(forbidden))}"
+        )
+
+
+def _storage_record(card: StructuredKnowledgeCard) -> dict[str, object]:
+    full_record = card.model_dump(mode="json", exclude_none=False)
+    record = card.model_dump(mode="json", exclude_none=True)
+    for key in (
+        "id",
+        "type",
+        "name",
+        "aliases",
+        "summary",
+        "importance",
+        "status",
+        "source_origin",
+        "source_note",
+        "created_at",
+        "updated_at",
+    ):
+        record[key] = full_record[key]
+    for field_key in type_specific_field_keys(card.type):
+        value = getattr(card, field_key)
+        if value is not None:
+            record[field_key] = value
+    return record
 
 
 def _now_iso() -> str:

@@ -9,10 +9,11 @@ import re
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
-from typing import Any, Iterable
+from typing import Iterable
 
 from taichu.domain.models.chapter import ChapterManifest
 from taichu.domain.models.knowledge import KnowledgeCard, KnowledgeCardStatus
+from taichu.domain.models.structured_knowledge import type_specific_field_keys
 from taichu.domain.models.source_ref import (
     SourceAnchorType,
     SourceRef,
@@ -20,14 +21,14 @@ from taichu.domain.models.source_ref import (
 )
 
 _KNOWLEDGE_CATEGORIES = (
-    "characters",
-    "worldbuilding",
-    "techniques",
-    "locations",
-    "factions",
-    "items",
-    "events",
-    "foreshadows",
+    "character",
+    "realm",
+    "technique",
+    "location",
+    "faction",
+    "item",
+    "rule",
+    "event",
 )
 
 
@@ -170,7 +171,7 @@ class SqliteProjectionRebuilder:
             for path in sorted(category_root.glob("*.json")):
                 data = json.loads(path.read_text(encoding="utf-8"))
                 card = KnowledgeCard.model_validate(data)
-                if card.status is not KnowledgeCardStatus.CONFIRMED:
+                if card.status is not KnowledgeCardStatus.ACTIVE:
                     continue
                 documents.extend(self._knowledge_card_documents(card, path))
         return documents
@@ -220,12 +221,12 @@ class SqliteProjectionRebuilder:
             )
         )
 
-        for field_path, value in _flatten_fields(card.fields):
+        for field_path, value in _indexed_type_fields(card):
             documents.append(
                 self._knowledge_document(
                     card=card,
                     document_id=f"knowledge:{card.id}:{field_path}",
-                    field_path=f"fields.{field_path}",
+                    field_path=field_path,
                     excerpt=value,
                     text="\n".join([card.name, value]).strip(),
                     source_ref_path=source_ref_path,
@@ -348,20 +349,11 @@ def _split_paragraphs(markdown: str) -> list[str]:
     ]
 
 
-def _flatten_fields(
-    fields: dict[str, Any],
-    prefix: str = "",
-) -> Iterable[tuple[str, str]]:
-    for key, value in fields.items():
-        field_path = f"{prefix}.{key}" if prefix else str(key)
-        if isinstance(value, dict):
-            yield from _flatten_fields(value, field_path)
-        elif isinstance(value, list):
-            compact = "；".join(str(item) for item in value if item is not None)
-            if compact:
-                yield field_path, compact
-        elif value is not None:
-            yield field_path, str(value)
+def _indexed_type_fields(card: KnowledgeCard) -> Iterable[tuple[str, str]]:
+    for field_key in type_specific_field_keys(card.type):
+        value = getattr(card, field_key)
+        if value is not None and str(value).strip():
+            yield field_key, str(value)
 
 
 def _source_ref_path(source_root: Path, path: Path) -> str:

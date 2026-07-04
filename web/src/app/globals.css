@@ -578,6 +578,35 @@
   color: var(--tc-workspace-text);
 }
 
+.tc-editor-theme-scope {
+  background: var(--tc-workspace-bg);
+  color: var(--tc-workspace-text);
+}
+
+.tc-editor-scrollbar {
+  scrollbar-color: var(--tc-editor-scrollbar-thumb) var(--tc-editor-scrollbar-track);
+  scrollbar-width: thin;
+}
+
+.tc-editor-scrollbar::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+.tc-editor-scrollbar::-webkit-scrollbar-track {
+  background: var(--tc-editor-scrollbar-track);
+}
+
+.tc-editor-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--tc-editor-scrollbar-thumb);
+  border: 4px solid var(--tc-editor-scrollbar-track);
+  border-radius: 999px;
+}
+
+.tc-editor-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--tc-editor-scrollbar-thumb-hover);
+}
+
 .tc-workspace-header {
   border-bottom: 1px solid var(--tc-workspace-border-weak);
   background: color-mix(in srgb, var(--tc-workspace-shell) 92%, transparent);

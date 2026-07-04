@@ -40,29 +40,88 @@ export type KnowledgeTypeValue =
   | "faction"
   | "item"
   | "rule"
-  | "event"
-  | "foreshadow";
+  | "event";
 
 export type StructuredKnowledgeStatus = "draft" | "active" | "deprecated";
 export type StructuredKnowledgeImportance = "core" | "major" | "normal" | "minor";
+export type StructuredKnowledgeSourceOrigin =
+  | "inbox_fact"
+  | "agent_extract"
+  | "manual";
+export type KnowledgeSchemaFieldType =
+  | "short_text"
+  | "long_text"
+  | "enum"
+  | "number"
+  | "boolean"
+  | "chapter_ref"
+  | "knowledge_ref"
+  | "string_array"
+  | "record_array";
 
 export type KnowledgeTypeInfo = {
   value: KnowledgeTypeValue;
   label: string;
 };
 
-export type StructuredKnowledgeCard = {
+export type KnowledgeFieldOption = {
+  value: string;
+  label: string;
+};
+
+export type KnowledgeFieldSchema = {
+  field_key: string;
+  label: string;
+  field_type: KnowledgeSchemaFieldType;
+  required_when_active: boolean;
+  options: KnowledgeFieldOption[];
+  placeholder: string;
+  display_group: string;
+  list_display: boolean;
+  ai_usage: string;
+};
+
+export type KnowledgeTypeSchema = {
+  type: KnowledgeTypeValue;
+  label: string;
+  fields: KnowledgeFieldSchema[];
+};
+
+export type StructuredKnowledgeCard = Partial<
+  Record<
+    | "role_type"
+    | "identity"
+    | "relationship_summary"
+    | "death_chapter_id"
+    | "current_realm_text"
+    | "first_seen_chapter_id"
+    | "last_seen_chapter_id"
+    | "system"
+    | "technique_type"
+    | "grade"
+    | "practice_condition"
+    | "owner_faction_id"
+    | "controlling_faction_id"
+    | "faction_type"
+    | "leader_id"
+    | "item_type"
+    | "current_holder_id"
+    | "exceptions"
+    | "chapter_id"
+    | "description",
+    string | null
+  >
+> & {
   id: string;
   type: KnowledgeTypeValue;
   name: string;
   aliases: string[];
   summary: string;
-  body: string;
-  tags: string[];
   importance: StructuredKnowledgeImportance;
   status: StructuredKnowledgeStatus;
-  source_refs: SourceReference[];
-  fields: Record<string, unknown>;
+  source_origin?: StructuredKnowledgeSourceOrigin | null;
+  source_note: string;
+  level_order?: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -71,8 +130,19 @@ export type KnowledgeTypesResponse = {
   types: KnowledgeTypeInfo[];
 };
 
+export type KnowledgeSchemasResponse = {
+  schemas: KnowledgeTypeSchema[];
+};
+
+export type KnowledgeSchemaResponse = {
+  schema: KnowledgeTypeSchema;
+};
+
 export type KnowledgeCardListResponse = {
   cards: StructuredKnowledgeCard[];
+  page: number;
+  page_size: number;
+  total: number;
 };
 
 export type KnowledgeCardResponse = {
@@ -120,6 +190,9 @@ export type InboxTab = "ideas" | "pending-facts" | "issues";
 
 export type MVPInboxListResponse<T> = {
   items: T[];
+  page: number;
+  page_size: number;
+  total: number;
 };
 
 export type MVPInboxIdeaResponse = {
@@ -200,6 +273,9 @@ export type AIWorkspaceConversationResponse = {
 
 export type AIWorkspaceConversationListResponse = {
   conversations: AIWorkspaceConversation[];
+  page: number;
+  page_size: number;
+  total: number;
 };
 
 export type EditorPreferences = {

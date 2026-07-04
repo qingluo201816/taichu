@@ -5,21 +5,11 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from taichu.domain.models.source_ref import SourceRef
+from taichu.domain.models.structured_knowledge import StructuredKnowledgeCard
 
 
-class KnowledgeCardInfo(BaseModel):
+class KnowledgeCardInfo(StructuredKnowledgeCard):
     """Transport shape for a confirmed KnowledgeCard."""
-
-    id: str
-    type: str
-    name: str
-    aliases: list[str] = Field(default_factory=list)
-    summary: str
-    fields: dict[str, Any] = Field(default_factory=dict)
-    source_refs: list[SourceRef] = Field(default_factory=list)
-    status: str
-    created_at: str
-    updated_at: str
 
 
 class KnowledgeListResponse(BaseModel):
@@ -51,7 +41,6 @@ class ConfirmEditedPendingFactRequest(BaseModel):
     name: str | None = None
     summary: str | None = None
     aliases: list[str] | None = None
-    fields: dict[str, Any] | None = None
 
 
 class PendingFactConfirmationResponse(BaseModel):

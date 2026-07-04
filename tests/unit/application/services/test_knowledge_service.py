@@ -13,11 +13,7 @@ from taichu.domain.models.knowledge import (
     KnowledgeCardStatus,
     KnowledgeCardType,
 )
-from taichu.domain.models.source_ref import (
-    SourceAnchorType,
-    SourceRef,
-    SourceRefSourceType,
-)
+from taichu.domain.models.structured_knowledge import StructuredKnowledgeSourceOrigin
 from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
@@ -35,27 +31,27 @@ class KnowledgeServiceTest(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         self._temporary_directory.cleanup()
 
-    async def test_list_cards_defaults_to_confirmed_only(self) -> None:
-        confirmed = _knowledge_card(
-            knowledge_id="knowledge_confirmed",
-            name="Confirmed sword",
-            status=KnowledgeCardStatus.CONFIRMED,
+    async def test_list_cards_defaults_to_active_only(self) -> None:
+        active = _knowledge_card(
+            knowledge_id="knowledge_active",
+            name="Active sword",
+            status=KnowledgeCardStatus.ACTIVE,
         )
-        archived = _knowledge_card(
-            knowledge_id="knowledge_archived",
-            name="Archived sword",
-            status=KnowledgeCardStatus.ARCHIVED,
+        deprecated = _knowledge_card(
+            knowledge_id="knowledge_deprecated",
+            name="Deprecated sword",
+            status=KnowledgeCardStatus.DEPRECATED,
         )
-        await self._write_card(confirmed)
-        await self._write_card(archived)
+        await self._write_card(active)
+        await self._write_card(deprecated)
 
         cards = await self.service.list_cards()
         all_cards = await self.service.list_all_cards()
 
-        self.assertEqual([card.id for card in cards], ["knowledge_confirmed"])
+        self.assertEqual([card.id for card in cards], ["knowledge_active"])
         self.assertEqual(
             {card.id for card in all_cards},
-            {"knowledge_confirmed", "knowledge_archived"},
+            {"knowledge_active", "knowledge_deprecated"},
         )
 
     async def _write_card(self, card: KnowledgeCard) -> None:
@@ -78,26 +74,9 @@ def _knowledge_card(
         name=name,
         aliases=[],
         summary=f"{name} summary",
-        fields={},
-        source_refs=[_source_ref()],
         status=status,
+        source_origin=StructuredKnowledgeSourceOrigin.MANUAL,
+        source_note="作者手动添加的测试知识。",
         created_at="2026-06-27T00:00:00Z",
         updated_at="2026-06-27T00:00:00Z",
-    )
-
-
-def _source_ref() -> SourceRef:
-    return SourceRef(
-        source_type=SourceRefSourceType.CHAPTER,
-        source_id="chapter_001",
-        path="manuscripts/chapters/chapter_001.md",
-        chapter_id="chapter_001",
-        anchor_type=SourceAnchorType.PARAGRAPH,
-        paragraph_start=0,
-        char_start=0,
-        char_end=8,
-        excerpt="source text",
-        excerpt_hash="hash_excerpt",
-        source_hash="hash_source",
-        created_at="2026-06-27T00:00:00Z",
     )

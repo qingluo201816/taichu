@@ -13,6 +13,7 @@ from taichu.api.schemas.mvp import (
 from taichu.application.services.ai_workspace_service import (
     AIConversationNotFoundError,
     AIConversationNotPersistedError,
+    AIConversationNotRegeneratableError,
     AIWorkspaceService,
 )
 from taichu.domain.models import (
@@ -98,6 +99,37 @@ async def api_get_ai_workspace_conversation(
     except AIConversationNotFoundError as error:
         raise _not_found(str(error)) from error
     return AIWorkspaceConversationResponse(conversation=conversation)
+
+
+@router.post(
+    "/ai-workspace-conversations/{conversation_id}/regenerate",
+    response_model=AIWorkspaceConversationResponse,
+)
+async def api_regenerate_ai_workspace_conversation(
+    conversation_id: str,
+    service: AIWorkspaceService = Depends(provide_ai_workspace_service),
+) -> AIWorkspaceConversationResponse:
+    """Replace the latest mock assistant response for one saved conversation."""
+    try:
+        conversation = await service.regenerate_last_response(conversation_id)
+    except AIConversationNotFoundError as error:
+        raise _not_found(str(error)) from error
+    except AIConversationNotRegeneratableError as error:
+        raise _bad_request(str(error)) from error
+    return AIWorkspaceConversationResponse(conversation=conversation)
+
+
+@router.delete("/ai-workspace-conversations/{conversation_id}")
+async def api_delete_ai_workspace_conversation(
+    conversation_id: str,
+    service: AIWorkspaceService = Depends(provide_ai_workspace_service),
+) -> dict[str, bool]:
+    """Delete one saved writing-area AI conversation."""
+    try:
+        await service.delete_conversation(conversation_id)
+    except AIConversationNotFoundError as error:
+        raise _not_found(str(error)) from error
+    return {"deleted": True}
 
 
 def _task_type(value: str) -> AIWorkspaceTaskType:

@@ -8,8 +8,12 @@ import type {
   ConfirmPendingFactResponse,
   EditorPreferences,
   InboxTab,
+  InboxPriority,
+  InboxStatus,
   KnowledgeCardListResponse,
   KnowledgeCardResponse,
+  KnowledgeSchemaResponse,
+  KnowledgeSchemasResponse,
   KnowledgeTypeValue,
   KnowledgeTypesResponse,
   MVPInboxIdea,
@@ -22,6 +26,13 @@ import type {
   OutlineResponse,
   PreferencesResponse,
 } from "@/lib/types/mvp";
+
+type InboxListParams = {
+  page?: number;
+  pageSize?: number;
+  status?: InboxStatus | "all";
+  priority?: InboxPriority | "all";
+};
 
 export async function readOutline(): Promise<OutlineResponse> {
   return apiRequest<OutlineResponse>("/api/outline");
@@ -99,14 +110,30 @@ export async function listKnowledgeTypes(): Promise<KnowledgeTypesResponse> {
   return apiRequest<KnowledgeTypesResponse>("/api/knowledge/types");
 }
 
+export async function listKnowledgeSchemas(): Promise<KnowledgeSchemasResponse> {
+  return apiRequest<KnowledgeSchemasResponse>("/api/knowledge/schemas");
+}
+
+export async function readKnowledgeSchema(
+  type: KnowledgeTypeValue,
+): Promise<KnowledgeSchemaResponse> {
+  return apiRequest<KnowledgeSchemaResponse>(
+    `/api/knowledge/schemas/${encodeURIComponent(type)}`,
+  );
+}
+
 export async function listKnowledgeCards(params: {
   type: KnowledgeTypeValue;
   status: "all" | "draft" | "active" | "deprecated";
   q?: string;
+  page?: number;
+  pageSize?: number;
 }): Promise<KnowledgeCardListResponse> {
   const search = new URLSearchParams({
     type: params.type,
     status: params.status,
+    page: String(params.page ?? 1),
+    page_size: String(params.pageSize ?? 10),
   });
   if (params.q?.trim()) {
     search.set("q", params.q.trim());
@@ -167,23 +194,41 @@ export async function markKnowledgeCardDeprecated(
 
 export async function listInboxItems(
   tab: "ideas",
+  params?: InboxListParams,
 ): Promise<MVPInboxListResponse<MVPInboxIdea>>;
 export async function listInboxItems(
   tab: "pending-facts",
+  params?: InboxListParams,
 ): Promise<MVPInboxListResponse<MVPInboxPendingFact>>;
 export async function listInboxItems(
   tab: "issues",
+  params?: InboxListParams,
 ): Promise<MVPInboxListResponse<MVPInboxIssue>>;
-export async function listInboxItems(tab: InboxTab) {
+export async function listInboxItems(tab: InboxTab, params: InboxListParams = {}) {
+  const search = new URLSearchParams({
+    page: String(params.page ?? 1),
+    page_size: String(params.pageSize ?? 10),
+  });
+  if (params.status) {
+    search.set("status", params.status);
+  }
+  if (params.priority && params.priority !== "all") {
+    search.set("priority", params.priority);
+  }
   if (tab === "pending-facts") {
     return apiRequest<MVPInboxListResponse<MVPInboxPendingFact>>(
-      "/api/inbox/pending-facts",
+      `/api/inbox/pending-facts?${search.toString()}`,
     );
   }
   if (tab === "issues") {
-    return apiRequest<MVPInboxListResponse<MVPInboxIssue>>("/api/inbox/issues");
+    return apiRequest<MVPInboxListResponse<MVPInboxIssue>>(
+      `/api/inbox/issues?${search.toString()}`,
+    );
   }
-  return apiRequest<MVPInboxListResponse<MVPInboxIdea>>("/api/inbox?tab=ideas");
+  search.set("tab", "ideas");
+  return apiRequest<MVPInboxListResponse<MVPInboxIdea>>(
+    `/api/inbox?${search.toString()}`,
+  );
 }
 
 export async function createInboxIdea(
@@ -310,28 +355,48 @@ export async function sendAIMessage(params: {
   );
 }
 
+export async function regenerateAIMessage(
+  conversationId: string,
+): Promise<AIWorkspaceConversationResponse> {
+  return apiRequest<AIWorkspaceConversationResponse>(
+    `/api/ai-workspace-conversations/${encodeURIComponent(
+      conversationId,
+    )}/regenerate`,
+    { method: "POST" },
+  );
+}
+
+export async function deleteAIConversation(
+  conversationId: string,
+): Promise<{ deleted: boolean }> {
+  return apiRequest<{ deleted: boolean }>(
+    `/api/ai-workspace-conversations/${encodeURIComponent(conversationId)}`,
+    { method: "DELETE" },
+  );
+}
+
 export async function listAIHistory(params: {
   chapterId?: string;
+  chapterName?: string;
   taskType?: AIWorkspaceTaskType;
-  hasSource?: string;
-  hasError?: string;
+  page?: number;
+  pageSize?: number;
 } = {}): Promise<AIWorkspaceConversationListResponse> {
-  const search = new URLSearchParams();
+  const search = new URLSearchParams({
+    page: String(params.page ?? 1),
+    page_size: String(params.pageSize ?? 10),
+  });
   if (params.chapterId) {
     search.set("chapter_id", params.chapterId);
+  }
+  if (params.chapterName?.trim()) {
+    search.set("chapter_name", params.chapterName.trim());
   }
   if (params.taskType) {
     search.set("task_type", params.taskType);
   }
-  if (params.hasSource) {
-    search.set("has_source", params.hasSource);
-  }
-  if (params.hasError) {
-    search.set("has_error", params.hasError);
-  }
-  const suffix = search.toString() ? `?${search.toString()}` : "";
   return apiRequest<AIWorkspaceConversationListResponse>(
-    `/api/ai-history${suffix}`,
+    `/api/ai-history?${search.toString()}`,
   );
 }
 

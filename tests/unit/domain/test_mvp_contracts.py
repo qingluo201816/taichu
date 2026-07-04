@@ -12,8 +12,6 @@ from taichu.domain.models import (
     AIWorkspaceMessageRole,
     AIWorkspaceOutputType,
     AIWorkspaceTaskType,
-    CharacterKnowledgeFields,
-    CharacterStateRecord,
     EditorBackground,
     EditorFontStyle,
     EditorPreferences,
@@ -29,9 +27,11 @@ from taichu.domain.models import (
     SourceReferenceType,
     StructuredKnowledgeCard,
     StructuredKnowledgeImportance,
+    StructuredKnowledgeSourceOrigin,
     StructuredKnowledgeStatus,
     StructuredKnowledgeType,
     WritingOutline,
+    knowledge_type_schema,
 )
 
 
@@ -101,38 +101,15 @@ class MVPContractTest(unittest.TestCase):
             name="秦阳",
             aliases=["秦无咎"],
             summary="主角，早期出现疑似金鳞元神异象。",
-            body="秦阳出身低微，但在残碑前引发金鳞异象。",
             importance=StructuredKnowledgeImportance.CORE,
             status=StructuredKnowledgeStatus.DRAFT,
-            source_refs=[
-                SourceReference(
-                    source_type=SourceReferenceType.CHAPTER,
-                    source_id="chapter-001",
-                    display_name="第1章 大田金鳞元神出",
-                    excerpt="秦阳掌心浮现金鳞，残碑随之震动。",
-                    note="角色首次出现异象。",
-                )
-            ],
-            fields=CharacterKnowledgeFields(
-                identity="少年修士",
-                faction="暂无",
-                current_realm="未定",
-                techniques=["未定"],
-                items=["残碑碎片"],
-                relationship_summary="暂未建立主要关系网。",
-                appearance_chapters=["chapter-001"],
-                state_records=[
-                    CharacterStateRecord(
-                        time_point="故事开篇",
-                        chapter_id="chapter-001",
-                        realm="未定",
-                        location="大田村外残碑",
-                        life_status="存活",
-                        camp="未定",
-                        note="引发金鳞异象。",
-                    )
-                ],
-            ).model_dump(mode="json"),
+            source_origin=StructuredKnowledgeSourceOrigin.MANUAL,
+            source_note="作者手动确认：第1章 大田金鳞元神出。",
+            role_type="protagonist",
+            identity="少年修士",
+            relationship_summary="暂未建立主要关系网。",
+            current_realm_text="未定",
+            first_seen_chapter_id="chapter-001",
             created_at=NOW,
             updated_at=NOW,
         )
@@ -140,8 +117,23 @@ class MVPContractTest(unittest.TestCase):
         self.assertFalse(card.can_be_used_as_effective_knowledge())
         active = card.model_copy(update={"status": StructuredKnowledgeStatus.ACTIVE})
         self.assertTrue(active.can_be_used_as_effective_knowledge())
-        self.assertNotIn("known_secrets", card.fields)
-        self.assertNotIn("current_goal", card.fields)
+        payload = card.model_dump(mode="json")
+        self.assertNotIn("body", payload)
+        self.assertNotIn("tags", payload)
+        self.assertNotIn("fields", payload)
+        self.assertNotIn("source_refs", payload)
+        self.assertEqual(card.role_type, "protagonist")
+
+    def test_knowledge_schema_does_not_register_forbidden_fields(self) -> None:
+        schema = knowledge_type_schema(StructuredKnowledgeType.CHARACTER)
+        field_keys = {field.field_key for field in schema.fields}
+
+        self.assertIn("source_origin", field_keys)
+        self.assertIn("role_type", field_keys)
+        self.assertNotIn("body", field_keys)
+        self.assertNotIn("tags", field_keys)
+        self.assertNotIn("fields", field_keys)
+        self.assertNotIn("source_refs", field_keys)
 
     def test_inbox_records_use_three_common_statuses(self) -> None:
         idea = MVPInboxIdea(

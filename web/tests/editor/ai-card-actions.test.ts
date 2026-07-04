@@ -61,14 +61,14 @@ test("text candidate content can read object payload fallback", () => {
   assert.equal(textCandidateContent(card), "对象正文");
 });
 
-test("format novel paragraphs adds two full-width indent spaces", () => {
+test("format novel paragraphs normalizes full-text layout", () => {
   const formatted = formatNovelParagraphs(
-    "  first paragraph keeps inner spaces  \n\n　　second paragraph",
+    "  first paragraph  \n\n\n　　second paragraph\n# 标题",
   );
 
   assert.equal(
     formatted,
-    "\u3000\u3000first paragraph keeps inner spaces\n\n\u3000\u3000second paragraph",
+    "\u3000\u3000first paragraph\n\n\u3000\u3000second paragraph\n\n# 标题",
   );
 });
 

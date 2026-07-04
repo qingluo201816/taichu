@@ -8,7 +8,6 @@ from taichu.application.services.ai_card_service import PENDING_FACTS_FILE
 from taichu.application.services.knowledge_service import (
     KnowledgeIdentityConflictError,
     KnowledgeService,
-    KnowledgeSourceRefError,
 )
 from taichu.application.services.pending_fact_confirmation_service import (
     PendingFactConfirmationEdits,
@@ -33,7 +32,7 @@ from taichu.infrastructure.storage.markdown_backend import (
 
 
 class PendingFactConfirmationServiceTest(unittest.IsolatedAsyncioTestCase):
-    """Verify PendingFact promotion writes only confirmed Knowledge."""
+    """Verify PendingFact promotion writes only active Knowledge."""
 
     async def asyncSetUp(self) -> None:
         self._temporary_directory = tempfile.TemporaryDirectory()
@@ -48,7 +47,7 @@ class PendingFactConfirmationServiceTest(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         self._temporary_directory.cleanup()
 
-    async def test_confirm_pending_fact_writes_confirmed_knowledge(
+    async def test_confirm_pending_fact_writes_active_knowledge(
         self,
     ) -> None:
         pending_fact = _pending_fact()
@@ -64,20 +63,20 @@ class PendingFactConfirmationServiceTest(unittest.IsolatedAsyncioTestCase):
             result.pending_fact.target_knowledge_id,
             result.knowledge_card.id,
         )
-        self.assertEqual(result.knowledge_card.status, KnowledgeCardStatus.CONFIRMED)
+        self.assertEqual(result.knowledge_card.status, KnowledgeCardStatus.ACTIVE)
         self.assertEqual(result.knowledge_card.type, KnowledgeCardType.TECHNIQUE)
-        self.assertEqual(result.knowledge_card.source_refs, pending_fact.source_refs)
         self.assertEqual(
-            result.knowledge_card.fields["pending_fact_id"],
-            pending_fact.id,
+            result.knowledge_card.source_origin,
+            "inbox_fact",
         )
+        self.assertIn(pending_fact.id, result.knowledge_card.source_note)
         self.assertFalse(is_allowed_in_fact_scope(result.pending_fact))
         self.assertTrue(is_allowed_in_fact_scope(result.knowledge_card))
         knowledge_path = (
             self.assets_root
             / "source"
             / "knowledge"
-            / "techniques"
+            / "technique"
             / f"{result.knowledge_card.id}.json"
         )
         self.assertTrue(knowledge_path.exists())
@@ -122,7 +121,7 @@ class PendingFactConfirmationServiceTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertFalse(is_allowed_in_fact_scope(first.pending_fact))
 
-    async def test_confirm_edited_preserves_source_refs_and_author_fields(
+    async def test_confirm_edited_preserves_author_common_fields(
         self,
     ) -> None:
         pending_fact = _pending_fact()
@@ -134,7 +133,6 @@ class PendingFactConfirmationServiceTest(unittest.IsolatedAsyncioTestCase):
                 name="Edited technique",
                 summary="Author approved summary",
                 aliases=["Alias A"],
-                fields={"rule": "edited"},
             ),
         )
 
@@ -145,11 +143,7 @@ class PendingFactConfirmationServiceTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.knowledge_card.name, "Edited technique")
         self.assertEqual(result.knowledge_card.aliases, ["Alias A"])
         self.assertEqual(result.knowledge_card.summary, "Author approved summary")
-        self.assertEqual(
-            result.knowledge_card.fields,
-            {"rule": "edited", "pending_fact_id": pending_fact.id},
-        )
-        self.assertEqual(result.knowledge_card.source_refs, pending_fact.source_refs)
+        self.assertEqual(result.knowledge_card.source_origin, "inbox_fact")
 
     async def test_confirm_other_pending_fact_uses_rule_knowledge_type(
         self,
@@ -167,38 +161,19 @@ class PendingFactConfirmationServiceTest(unittest.IsolatedAsyncioTestCase):
             self.assets_root
             / "source"
             / "knowledge"
-            / "worldbuilding"
+            / "rule"
             / f"{result.knowledge_card.id}.json"
         )
         self.assertTrue(knowledge_path.exists())
 
-    async def test_confirm_edited_cannot_override_original_source_refs(
-        self,
-    ) -> None:
-        pending_fact = _pending_fact()
-        await self._append_pending_fact(pending_fact)
-
-        result = await self.confirmation_service.confirm_pending_fact_with_edits(
-            pending_fact.id,
-            PendingFactConfirmationEdits(fields={"rule": "edited"}),
-        )
-
-        self.assertEqual(result.knowledge_card.source_refs, pending_fact.source_refs)
-
-    async def test_confirm_without_source_ref_is_rejected(self) -> None:
+    async def test_confirm_without_source_ref_still_records_inbox_source_note(self) -> None:
         pending_fact = _pending_fact(source_refs=[])
         await self._append_pending_fact(pending_fact)
 
-        with self.assertRaises(KnowledgeSourceRefError):
-            await self.confirmation_service.confirm_pending_fact(pending_fact.id)
+        result = await self.confirmation_service.confirm_pending_fact(pending_fact.id)
 
-        records = await self.storage.list_workspace_records(PENDING_FACTS_FILE)
-        stored = PendingFact.model_validate(records[0])
-        self.assertEqual(stored.status, PendingFactStatus.PENDING)
-        self.assertEqual(
-            list((self.assets_root / "source" / "knowledge").rglob("*.json")),
-            [],
-        )
+        self.assertEqual(result.knowledge_card.source_origin, "inbox_fact")
+        self.assertIn(pending_fact.id, result.knowledge_card.source_note)
 
     async def test_alias_conflict_is_rejected(self) -> None:
         first = _pending_fact(

@@ -17,7 +17,7 @@ const quickEntries = [
     icon: Library,
   },
   {
-    title: "Inbox",
+    title: "收件箱",
     detail: "灵感、待确认事实、待处理问题",
     href: "/inbox",
     icon: Inbox,

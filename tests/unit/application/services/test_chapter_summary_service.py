@@ -32,6 +32,7 @@ from taichu.domain.models import (
 )
 from taichu.domain.models.ai_card import AIResultCardType
 from taichu.domain.models.pending_fact import PendingFactStatus
+from taichu.domain.models.structured_knowledge import StructuredKnowledgeSourceOrigin
 from taichu.domain.models.summary import ChapterSummaryStatus
 from taichu.domain.rules.fact_scope import is_allowed_in_fact_scope
 from taichu.infrastructure.storage.markdown_backend import (
@@ -124,12 +125,12 @@ class ChapterSummaryServiceTest(unittest.IsolatedAsyncioTestCase):
         confirmed = _knowledge_card(
             knowledge_id="knowledge_confirmed",
             name="Confirmed sword intent",
-            status=KnowledgeCardStatus.CONFIRMED,
+            status=KnowledgeCardStatus.ACTIVE,
         )
         archived = _knowledge_card(
             knowledge_id="knowledge_archived",
             name="Archived sword intent",
-            status=KnowledgeCardStatus.ARCHIVED,
+            status=KnowledgeCardStatus.DEPRECATED,
         )
         await self._write_knowledge_card(confirmed)
         await self._write_knowledge_card(archived)
@@ -302,9 +303,9 @@ def _knowledge_card(
         name=name,
         aliases=[],
         summary=f"{name} summary",
-        fields={},
-        source_refs=[_source_ref()],
         status=status,
+        source_origin=StructuredKnowledgeSourceOrigin.MANUAL,
+        source_note="作者手动确认。",
         created_at="2026-06-27T00:00:00Z",
         updated_at="2026-06-27T00:00:00Z",
     )

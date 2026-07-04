@@ -25,6 +25,7 @@ from taichu.domain.models import (
     PendingFactStatus,
     PendingFactType,
     ProposedBy,
+    StructuredKnowledgeSourceOrigin,
 )
 from taichu.domain.rules import (
     FactScopeSource,
@@ -68,7 +69,9 @@ class FactScopeContractTest(unittest.TestCase):
             type=KnowledgeCardType.RULE,
             name="天道规则",
             summary="作者确认的设定",
-            status=KnowledgeCardStatus.CONFIRMED,
+            status=KnowledgeCardStatus.ACTIVE,
+            source_origin=StructuredKnowledgeSourceOrigin.MANUAL,
+            source_note="作者手动确认。",
             created_at="2026-06-27T00:00:00Z",
             updated_at="2026-06-27T00:00:00Z",
         )

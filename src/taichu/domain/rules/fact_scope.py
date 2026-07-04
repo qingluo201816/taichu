@@ -65,7 +65,7 @@ def is_allowed_in_fact_scope(item: Any) -> bool:
     if isinstance(item, Chapter):
         return True
     if isinstance(item, KnowledgeCard):
-        return item.status is KnowledgeCardStatus.CONFIRMED
+        return item.status is KnowledgeCardStatus.ACTIVE
     if isinstance(
         item,
         (PendingFact, IdeaCard, ChapterIssue, AIResultCard, ChapterSummary),

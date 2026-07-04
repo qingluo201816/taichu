@@ -74,7 +74,11 @@ class KnowledgeApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(knowledge.json()["cards"]), 1)
         self.assertEqual(
             knowledge.json()["cards"][0]["status"],
-            "confirmed",
+            "active",
+        )
+        self.assertEqual(
+            knowledge.json()["cards"][0]["source_origin"],
+            "inbox_fact",
         )
         self.assertEqual(
             len(list((self.assets_root / "source" / "knowledge").rglob("*.json"))),
@@ -93,7 +97,6 @@ class KnowledgeApiTest(unittest.IsolatedAsyncioTestCase):
                 "name": "Edited Name",
                 "summary": "Edited summary",
                 "aliases": ["Edited Alias"],
-                "fields": {"rule": "edited rule"},
             },
         )
 
@@ -102,14 +105,10 @@ class KnowledgeApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(body["pending_fact"]["status"], "edited_confirmed")
         self.assertEqual(body["knowledge_card"]["name"], "Edited Name")
         self.assertEqual(body["knowledge_card"]["aliases"], ["Edited Alias"])
-        self.assertEqual(
-            body["knowledge_card"]["fields"],
-            {
-                "rule": "edited rule",
-                "pending_fact_id": pending_fact.id,
-            },
-        )
-        self.assertEqual(len(body["knowledge_card"]["source_refs"]), 1)
+        self.assertEqual(body["knowledge_card"]["source_origin"], "inbox_fact")
+        self.assertIn(pending_fact.id, body["knowledge_card"]["source_note"])
+        self.assertNotIn("fields", body["knowledge_card"])
+        self.assertNotIn("source_refs", body["knowledge_card"])
 
     async def test_reject_pending_fact_does_not_write_knowledge(self) -> None:
         pending_fact = _pending_fact()

@@ -51,11 +51,22 @@ async def api_read_inbox(
     service: InboxService = Depends(provide_inbox_service),
     mvp_service: MVPInboxService = Depends(provide_mvp_inbox_service),
     tab: str | None = Query(default=None),
+    status: str = Query(default="todo"),
+    priority: str | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
 ) -> InboxResponse | MVPInboxListResponse:
     """Return the legacy inbox snapshot or one MVP Inbox tab."""
     if tab is not None:
         try:
-            return MVPInboxListResponse(items=await mvp_service.list_items(tab))
+            return await _mvp_inbox_list_response(
+                mvp_service,
+                tab,
+                status=status,
+                priority=priority,
+                page=page,
+                page_size=page_size,
+            )
         except InboxValidationError as error:
             raise _bad_request(str(error)) from error
     snapshot = await service.list_inbox()
@@ -76,12 +87,24 @@ async def api_read_inbox(
 
 @router.get("/inbox/pending-facts", response_model=MVPInboxListResponse)
 async def api_list_mvp_pending_facts(
+    status: str = Query(default="todo"),
+    priority: str | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
     service: MVPInboxService = Depends(provide_mvp_inbox_service),
 ) -> MVPInboxListResponse:
     """List manual pending facts."""
-    return MVPInboxListResponse(
-        items=await service.list_items("pending-facts")
-    )
+    try:
+        return await _mvp_inbox_list_response(
+            service,
+            "pending-facts",
+            status=status,
+            priority=priority,
+            page=page,
+            page_size=page_size,
+        )
+    except InboxValidationError as error:
+        raise _bad_request(str(error)) from error
 
 
 @router.post("/inbox/ideas", response_model=MVPInboxIdeaResponse)
@@ -173,10 +196,24 @@ async def api_confirm_mvp_pending_fact(
 
 @router.get("/inbox/issues", response_model=MVPInboxListResponse)
 async def api_list_mvp_issues(
+    status: str = Query(default="todo"),
+    priority: str | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
     service: MVPInboxService = Depends(provide_mvp_inbox_service),
 ) -> MVPInboxListResponse:
     """List manual issue items."""
-    return MVPInboxListResponse(items=await service.list_items("issues"))
+    try:
+        return await _mvp_inbox_list_response(
+            service,
+            "issues",
+            status=status,
+            priority=priority,
+            page=page,
+            page_size=page_size,
+        )
+    except InboxValidationError as error:
+        raise _bad_request(str(error)) from error
 
 
 @router.post("/inbox/issues", response_model=MVPInboxIssueResponse)
@@ -279,9 +316,32 @@ def _knowledge_type(value: str) -> StructuredKnowledgeType:
 
 def _validation_message(error: Exception) -> str:
     if isinstance(error, ValidationError):
-        return "Inbox 内容不完整或格式不正确，请检查后再保存。"
+        return "收件箱内容不完整或格式不正确，请检查后再保存。"
     message = str(error)
-    return message if message else "Inbox 内容不完整或格式不正确，请检查后再保存。"
+    return message if message else "收件箱内容不完整或格式不正确，请检查后再保存。"
+
+
+async def _mvp_inbox_list_response(
+    service: MVPInboxService,
+    tab: str,
+    *,
+    status: str,
+    priority: str | None,
+    page: int,
+    page_size: int,
+) -> MVPInboxListResponse:
+    items = await service.list_items(tab, status=status, priority=priority)
+    return MVPInboxListResponse(
+        items=_page_slice(items, page, page_size),
+        page=page,
+        page_size=page_size,
+        total=len(items),
+    )
+
+
+def _page_slice[T](items: list[T], page: int, page_size: int) -> list[T]:
+    start = (page - 1) * page_size
+    return items[start : start + page_size]
 
 
 def _not_found(message: str) -> HTTPException:

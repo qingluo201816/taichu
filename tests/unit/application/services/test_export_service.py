@@ -15,11 +15,7 @@ from taichu.domain.models.knowledge import (
     KnowledgeCardStatus,
     KnowledgeCardType,
 )
-from taichu.domain.models.source_ref import (
-    SourceAnchorType,
-    SourceRef,
-    SourceRefSourceType,
-)
+from taichu.domain.models.structured_knowledge import StructuredKnowledgeSourceOrigin
 from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
@@ -60,7 +56,7 @@ class ExportServiceTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("source/metadata.yaml", files)
         self.assertIn("source/manuscripts/manifest.json", files)
         self.assertIn("source/manuscripts/chapters/chapter_001.md", files)
-        self.assertIn("source/knowledge/items/knowledge_export_item.json", files)
+        self.assertIn("source/knowledge/item/knowledge_export_item.json", files)
         self.assertIn("source/workspace/ideas.jsonl", files)
         self.assertIn(
             "秦浩轩记录太初古卷",
@@ -69,7 +65,7 @@ class ExportServiceTest(unittest.IsolatedAsyncioTestCase):
 
         manifest = json.loads(files["source/manuscripts/manifest.json"].content)
         knowledge = json.loads(
-            files["source/knowledge/items/knowledge_export_item.json"].content
+            files["source/knowledge/item/knowledge_export_item.json"].content
         )
         idea_lines = [
             json.loads(line)
@@ -78,7 +74,7 @@ class ExportServiceTest(unittest.IsolatedAsyncioTestCase):
         ]
 
         self.assertEqual(manifest["chapters"][0]["id"], "chapter_001")
-        self.assertEqual(knowledge["status"], "confirmed")
+        self.assertEqual(knowledge["status"], "active")
         self.assertEqual(idea_lines[0]["id"], "idea_export_001")
 
     async def _write_knowledge(self, card: KnowledgeCard) -> None:
@@ -96,24 +92,9 @@ def _knowledge_card() -> KnowledgeCard:
         name="太初古卷",
         aliases=[],
         summary="太初古卷是作者确认设定。",
-        fields={},
-        source_refs=[_source_ref()],
-        status=KnowledgeCardStatus.CONFIRMED,
+        status=KnowledgeCardStatus.ACTIVE,
+        source_origin=StructuredKnowledgeSourceOrigin.MANUAL,
+        source_note="作者手动确认。",
         created_at="2026-06-27T00:00:00Z",
         updated_at="2026-06-27T00:00:00Z",
-    )
-
-
-def _source_ref() -> SourceRef:
-    return SourceRef(
-        source_type=SourceRefSourceType.CHAPTER,
-        source_id="chapter_001",
-        path="project_assets/source/manuscripts/chapters/chapter_001.md",
-        chapter_id="chapter_001",
-        anchor_type=SourceAnchorType.PARAGRAPH,
-        paragraph_start=0,
-        excerpt="秦浩轩记录太初古卷。",
-        excerpt_hash="hash_excerpt",
-        source_hash="hash_source",
-        created_at="2026-06-27T00:00:00Z",
     )

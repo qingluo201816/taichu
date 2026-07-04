@@ -8,6 +8,8 @@ from taichu.api.schemas.mvp import (
     CreateKnowledgeCardRequest,
     KnowledgeCardListResponse,
     KnowledgeCardResponse,
+    KnowledgeSchemaResponse,
+    KnowledgeSchemasResponse,
     KnowledgeTypeInfo,
     KnowledgeTypesResponse,
     PatchKnowledgeCardRequest,
@@ -17,21 +19,9 @@ from taichu.application.services.mvp_knowledge_service import (
     KnowledgeCardValidationError,
     MVPKnowledgeService,
 )
-from taichu.domain.models import StructuredKnowledgeType
+from taichu.domain.models import StructuredKnowledgeType, knowledge_type_label
 
 router = APIRouter(prefix="/api")
-
-KNOWLEDGE_TYPE_LABELS: dict[str, str] = {
-    "character": "角色",
-    "realm": "境界",
-    "technique": "功法",
-    "location": "地点",
-    "faction": "势力",
-    "item": "物品",
-    "rule": "规则",
-    "event": "事件",
-    "foreshadow": "伏笔",
-}
 
 
 @router.get("/knowledge/types", response_model=KnowledgeTypesResponse)
@@ -41,10 +31,31 @@ async def api_list_knowledge_types(
     """Return structured knowledge types with Chinese labels."""
     return KnowledgeTypesResponse(
         types=[
-            KnowledgeTypeInfo(value=item.value, label=KNOWLEDGE_TYPE_LABELS[item.value])
+            KnowledgeTypeInfo(value=item.value, label=knowledge_type_label(item))
             for item in service.list_types()
         ]
     )
+
+
+@router.get("/knowledge/schemas", response_model=KnowledgeSchemasResponse)
+async def api_list_knowledge_schemas(
+    service: MVPKnowledgeService = Depends(provide_mvp_knowledge_service),
+) -> KnowledgeSchemasResponse:
+    """Return all structured knowledge schemas."""
+    return KnowledgeSchemasResponse(schemas=service.list_schemas())
+
+
+@router.get("/knowledge/schemas/{type}", response_model=KnowledgeSchemaResponse)
+async def api_get_knowledge_schema(
+    type: str,
+    service: MVPKnowledgeService = Depends(provide_mvp_knowledge_service),
+) -> KnowledgeSchemaResponse:
+    """Return one structured knowledge schema."""
+    try:
+        schema = service.get_schema(_knowledge_type(type))
+    except ValueError as error:
+        raise _bad_request(str(error) or "未知的知识卡类型") from error
+    return KnowledgeSchemaResponse(schema=schema)
 
 
 @router.get("/knowledge/cards", response_model=KnowledgeCardListResponse)
@@ -52,6 +63,8 @@ async def api_list_knowledge_cards(
     type: str = Query(...),
     status: str = "all",
     q: str | None = None,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
     service: MVPKnowledgeService = Depends(provide_mvp_knowledge_service),
 ) -> KnowledgeCardListResponse:
     """List cards for one structured knowledge type."""
@@ -59,7 +72,12 @@ async def api_list_knowledge_cards(
         cards = await service.list_cards(_knowledge_type(type), status=status, q=q)
     except ValueError as error:
         raise _bad_request(str(error) or "知识库筛选条件不正确") from error
-    return KnowledgeCardListResponse(cards=cards)
+    return KnowledgeCardListResponse(
+        cards=_page_slice(cards, page, page_size),
+        page=page,
+        page_size=page_size,
+        total=len(cards),
+    )
 
 
 @router.post("/knowledge/cards", response_model=KnowledgeCardResponse)
@@ -153,6 +171,11 @@ def _validation_message(error: Exception) -> str:
         return "知识卡内容不完整或格式不正确，请检查后再保存。"
     message = str(error)
     return message if message else "知识卡内容不完整或格式不正确，请检查后再保存。"
+
+
+def _page_slice[T](items: list[T], page: int, page_size: int) -> list[T]:
+    start = (page - 1) * page_size
+    return items[start : start + page_size]
 
 
 def _not_found(message: str) -> HTTPException:

@@ -13,6 +13,7 @@ from taichu.domain.models import (
     MVPInboxIdea,
     MVPInboxIssue,
     MVPInboxPendingFact,
+    MVPInboxPriority,
     MVPInboxStatus,
     StructuredKnowledgeCard,
     StructuredKnowledgeType,
@@ -42,27 +43,21 @@ class MVPInboxService:
         self._storage = storage
         self._knowledge_service = knowledge_service
 
-    async def list_items(self, tab: str) -> list[MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue]:
-        """List active items for one Inbox tab."""
+    async def list_items(
+        self,
+        tab: str,
+        *,
+        status: str = "todo",
+        priority: str | None = None,
+    ) -> list[MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue]:
+        """List items for one Inbox tab with optional lifecycle filters."""
         if tab == "ideas":
-            return [
-                item
-                for item in await self._list_ideas()
-                if item.status is MVPInboxStatus.TODO
-            ]
+            return _filter_items(await self._list_ideas(), status, priority)
         if tab == "pending-facts":
-            return [
-                item
-                for item in await self._list_pending_facts()
-                if item.status is MVPInboxStatus.TODO
-            ]
+            return _filter_items(await self._list_pending_facts(), status, priority)
         if tab == "issues":
-            return [
-                item
-                for item in await self._list_issues()
-                if item.status is MVPInboxStatus.TODO
-            ]
-        raise InboxValidationError("未知的 Inbox 分类")
+            return _filter_items(await self._list_issues(), status, priority)
+        raise InboxValidationError("未知的收件箱分类")
 
     async def create_idea(self, data: dict[str, Any]) -> MVPInboxIdea:
         """Create a manual inspiration item."""
@@ -170,7 +165,11 @@ class MVPInboxService:
         payload = dict(card_preview)
         payload.setdefault("name", pending_fact.title or pending_fact.content[:20])
         payload.setdefault("summary", pending_fact.content[:80])
-        payload.setdefault("body", pending_fact.content)
+        payload.setdefault("source_origin", "inbox_fact")
+        payload.setdefault(
+            "source_note",
+            _source_note_for_pending_fact(pending_fact),
+        )
         payload.setdefault("status", "draft")
         card = await self._knowledge_service.create_card(knowledge_type, payload)
         processed = await self.patch_pending_fact(
@@ -235,7 +234,7 @@ class MVPInboxService:
                 updated_item = item
             rewritten.append(item.model_dump(mode="json"))
         if updated_item is None:
-            raise InboxItemNotFoundError(f"Inbox 项“{item_id}”不存在")
+            raise InboxItemNotFoundError(f"收件箱项“{item_id}”不存在")
         await self._storage.rewrite_workspace_records(filename, rewritten)
         return updated_item
 
@@ -248,5 +247,38 @@ class InboxValidationError(ValueError):
     """Raised when an Inbox request is invalid."""
 
 
+def _filter_items[
+    T: MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue,
+](
+    items: list[T],
+    status: str,
+    priority: str | None,
+) -> list[T]:
+    if status and status != "all":
+        try:
+            status_filter = MVPInboxStatus(status)
+        except ValueError as error:
+            raise InboxValidationError("未知的收件箱状态") from error
+        items = [item for item in items if item.status is status_filter]
+    if priority and priority != "all":
+        try:
+            priority_filter = MVPInboxPriority(priority)
+        except ValueError as error:
+            raise InboxValidationError("未知的收件箱优先级") from error
+        items = [item for item in items if item.priority is priority_filter]
+    return sorted(items, key=lambda item: item.updated_at, reverse=True)
+
+
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+
+
+def _source_note_for_pending_fact(pending_fact: MVPInboxPendingFact) -> str:
+    parts = [f"收件箱待确认事实：{pending_fact.id}"]
+    if pending_fact.source_chapter_id:
+        parts.append(f"章节：{pending_fact.source_chapter_id}")
+    if pending_fact.origin:
+        parts.append(f"来源：{pending_fact.origin}")
+    if pending_fact.content:
+        parts.append(f"内容：{pending_fact.content[:120]}")
+    return "；".join(parts)

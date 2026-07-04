@@ -1,1 +1,4 @@
-{"id": "idea-a7606dfdfe9b4c22b3a2f90e763f4dbd", "content": "测试灵感测试2", "source_chapter_id": null, "priority": "low", "status": "todo", "created_at": "2026-07-02T13:40:29.531228Z", "updated_at": "2026-07-02T13:40:36.347059Z"}
+{"id": "idea-a7606dfdfe9b4c22b3a2f90e763f4dbd", "content": "测试灵感测试2", "source_chapter_id": null, "priority": "low", "status": "processed", "created_at": "2026-07-02T13:40:29.531228Z", "updated_at": "2026-07-03T17:32:03.002798Z"}
+{"id": "idea-6fd005c9f12c4b13a3099967bc9860fe", "content": "111", "source_chapter_id": null, "priority": "normal", "status": "deprecated", "created_at": "2026-07-03T17:32:12.454735Z", "updated_at": "2026-07-03T17:32:27.401722Z"}
+{"id": "idea-1c301982c25a4b469dcd4b615ef1939c", "content": "测试", "source_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b", "priority": "normal", "status": "processed", "created_at": "2026-07-03T17:33:48.077565Z", "updated_at": "2026-07-03T17:33:52.001614Z"}
+{"id": "idea-ef7cbd3accd241f2afa3d728db1b8ace", "content": "1", "source_chapter_id": null, "priority": "normal", "status": "deprecated", "created_at": "2026-07-03T18:10:22.201078Z", "updated_at": "2026-07-03T18:10:26.095678Z"}

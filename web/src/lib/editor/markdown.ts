@@ -7,13 +7,21 @@ type InlineToken = {
 };
 
 export function formatNovelParagraphs(markdown: string): string {
-  return markdown
+  const lines = markdown
     .replace(/\r\n/g, "\n")
-    .split(/\n+/)
-    .map(paragraph => paragraph.trim())
-    .filter(Boolean)
-    .map(paragraph => `　　${paragraph}`)
-    .join("\n\n");
+    .split("\n")
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  return lines.map(formatNovelLine).join("\n\n");
+}
+
+function formatNovelLine(line: string): string {
+  const normalizedLine = line.replace(/^[\s\u3000]+/, "");
+  if (/^(#{1,6}\s|>\s?|[-*+]\s|\d+\.\s|---+$)/.test(normalizedLine)) {
+    return normalizedLine;
+  }
+  return `　　${normalizedLine}`;
 }
 
 export function markdownToTiptapContent(markdown: string): JSONContent {

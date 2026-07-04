@@ -3,7 +3,6 @@
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Any
 
 from httpx import ASGITransport, AsyncClient
 
@@ -71,13 +70,16 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
                 "data": {"id": "character-qin-yang"},
             },
         )
+        schema_response = await self.client.get("/api/knowledge/schemas/character")
         patch_response = await self.client.patch(
             "/api/knowledge/cards/character-qin-yang",
             json={
                 "updates": {
                     "name": "秦阳",
                     "summary": "初入山门的少年。",
-                    "source_refs": [_source_ref()],
+                    "source_origin": "manual",
+                    "source_note": "作者手动确认。",
+                    "role_type": "protagonist",
                 }
             },
         )
@@ -93,18 +95,117 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         deprecated_list_response = await self.client.get(
             "/api/knowledge/cards?type=character&status=deprecated"
         )
+        foreshadow_response = await self.client.post(
+            "/api/knowledge/cards",
+            json={"type": "foreshadow", "data": {"name": "不应创建"}},
+        )
+        forbidden_response = await self.client.post(
+            "/api/knowledge/cards",
+            json={"type": "character", "data": {"fields": {"note": "旧字段"}}},
+        )
 
         self.assertEqual(types_response.status_code, 200)
         self.assertIn(
             {"value": "character", "label": "角色"},
             types_response.json()["types"],
         )
+        self.assertNotIn(
+            {"value": "foreshadow", "label": "伏笔"},
+            types_response.json()["types"],
+        )
         self.assertEqual(create_response.status_code, 200)
+        self.assertEqual(schema_response.status_code, 200)
+        schema_field_keys = {
+            field["field_key"]
+            for field in schema_response.json()["schema"]["fields"]
+        }
+        self.assertIn("role_type", schema_field_keys)
+        self.assertNotIn("fields", schema_field_keys)
         self.assertEqual(patch_response.status_code, 200)
         self.assertEqual(active_response.json()["card"]["status"], "active")
         self.assertEqual(deprecated_response.json()["card"]["status"], "deprecated")
         self.assertEqual(all_response.json()["cards"], [])
         self.assertEqual(len(deprecated_list_response.json()["cards"]), 1)
+        self.assertEqual(foreshadow_response.status_code, 422)
+        self.assertEqual(forbidden_response.status_code, 422)
+
+    async def test_structured_knowledge_creates_all_v1_types(self) -> None:
+        expected_types = {
+            "character",
+            "realm",
+            "technique",
+            "location",
+            "faction",
+            "item",
+            "rule",
+            "event",
+        }
+        forbidden_fields = {
+            "body",
+            "tags",
+            "fields",
+            "confidence",
+            "source_refs",
+            "relations",
+            "foreshadow",
+            "personality",
+            "motivation",
+            "appearance",
+        }
+        type_payloads: dict[str, dict[str, object]] = {
+            "character": {"role_type": "protagonist", "identity": "outer disciple"},
+            "realm": {"system": "qi refining", "level_order": 1},
+            "technique": {
+                "technique_type": "cultivation_method",
+                "grade": "yellow",
+                "practice_condition": "quiet room",
+            },
+            "location": {
+                "controlling_faction_id": "faction-sect",
+                "first_seen_chapter_id": "chapter_001",
+            },
+            "faction": {"faction_type": "sect", "leader_id": "character-master"},
+            "item": {
+                "item_type": "magic_treasure",
+                "grade": "low",
+                "current_holder_id": "character-qin-yang",
+            },
+            "rule": {"exceptions": "none"},
+            "event": {"chapter_id": "chapter_001", "description": "first arrival"},
+        }
+
+        schemas_response = await self.client.get("/api/knowledge/schemas")
+        self.assertEqual(schemas_response.status_code, 200)
+        schemas = schemas_response.json()["schemas"]
+        self.assertEqual({schema["type"] for schema in schemas}, expected_types)
+        for schema in schemas:
+            schema_field_keys = {field["field_key"] for field in schema["fields"]}
+            self.assertTrue(schema_field_keys.isdisjoint(forbidden_fields))
+
+        for knowledge_type, type_payload in type_payloads.items():
+            response = await self.client.post(
+                "/api/knowledge/cards",
+                json={
+                    "type": knowledge_type,
+                    "data": {
+                        "id": f"{knowledge_type}-acceptance",
+                        "name": f"{knowledge_type} card",
+                        "summary": f"{knowledge_type} summary",
+                        "status": "active",
+                        "source_origin": "manual",
+                        "source_note": "acceptance test",
+                        **type_payload,
+                    },
+                },
+            )
+
+            self.assertEqual(response.status_code, 200)
+            card = response.json()["card"]
+            self.assertEqual(card["type"], knowledge_type)
+            self.assertEqual(card["status"], "active")
+            self.assertTrue(forbidden_fields.isdisjoint(card))
+            for field_key, expected_value in type_payload.items():
+                self.assertEqual(card[field_key], expected_value)
 
     async def test_mvp_inbox_tabs_and_manual_pending_fact_confirmation(self) -> None:
         idea_response = await self.client.post(
@@ -131,7 +232,6 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
                 "card_preview": {
                     "name": "金鳞异象",
                     "summary": "元神外显的早期征兆。",
-                    "source_refs": [_source_ref()],
                 },
             },
         )
@@ -146,6 +246,11 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
             confirm_response.json()["knowledge_card"]["status"],
             "draft",
         )
+        self.assertEqual(
+            confirm_response.json()["knowledge_card"]["source_origin"],
+            "inbox_fact",
+        )
+        self.assertNotIn("source_refs", confirm_response.json()["knowledge_card"])
         self.assertEqual(pending_list_response.json()["items"], [])
 
     async def test_mock_ai_conversation_and_history(self) -> None:
@@ -176,6 +281,15 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         history_response = await self.client.get(
             "/api/ai-history?chapter_id=chapter_001&task_type=continue&has_source=false"
         )
+        regenerate_response = await self.client.post(
+            f"/api/ai-workspace-conversations/{conversation_id}/regenerate"
+        )
+        delete_response = await self.client.delete(
+            f"/api/ai-workspace-conversations/{conversation_id}"
+        )
+        deleted_history_response = await self.client.get(
+            "/api/ai-history?chapter_id=chapter_001&task_type=continue"
+        )
 
         self.assertEqual(chat_response.status_code, 422)
         self.assertIn("纯对话", chat_response.json()["error"]["message"])
@@ -188,6 +302,16 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
             conversation["messages"][0]["prompt_snapshot"]["final_prompt"],
         )
         self.assertEqual(history_response.json()["conversations"][0]["id"], conversation_id)
+        regenerated = regenerate_response.json()["conversation"]
+        self.assertEqual(regenerate_response.status_code, 200)
+        self.assertEqual(len(regenerated["messages"]), 2)
+        self.assertNotEqual(
+            regenerated["messages"][1]["message_id"],
+            conversation["messages"][1]["message_id"],
+        )
+        self.assertEqual(delete_response.status_code, 200)
+        self.assertEqual(delete_response.json(), {"deleted": True})
+        self.assertEqual(deleted_history_response.json()["conversations"], [])
 
     async def test_settings_preferences_do_not_expose_model_configuration(self) -> None:
         patch_response = await self.client.patch(
@@ -207,13 +331,3 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(preferences["font_size"], 20)
         self.assertNotIn("api_key", preferences)
         self.assertNotIn("model", preferences)
-
-
-def _source_ref() -> dict[str, Any]:
-    return {
-        "source_type": "chapter",
-        "source_id": "chapter_001",
-        "display_name": "第一章 开始",
-        "excerpt": "正文带着灵火向前。",
-        "note": "作者手动确认",
-    }

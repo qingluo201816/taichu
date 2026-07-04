@@ -1,16 +1,16 @@
-"""MVP structured knowledge card contracts."""
+"""First-version structured knowledge card contracts."""
+
+from __future__ import annotations
 
 from enum import StrEnum
-from typing import Any
 
 from pydantic import Field
 
 from taichu.domain.models.base import DomainModel
-from taichu.domain.models.mvp_source_ref import SourceReference
 
 
 class StructuredKnowledgeType(StrEnum):
-    """Knowledge card types in the MVP structured knowledge base."""
+    """Knowledge card types supported by the first-version knowledge base."""
 
     CHARACTER = "character"
     REALM = "realm"
@@ -20,11 +20,10 @@ class StructuredKnowledgeType(StrEnum):
     ITEM = "item"
     RULE = "rule"
     EVENT = "event"
-    FORESHADOW = "foreshadow"
 
 
 class StructuredKnowledgeStatus(StrEnum):
-    """Lifecycle states for structured knowledge cards."""
+    """Lifecycle states for knowledge cards."""
 
     DRAFT = "draft"
     ACTIVE = "active"
@@ -40,139 +39,544 @@ class StructuredKnowledgeImportance(StrEnum):
     MINOR = "minor"
 
 
-class CharacterStateRecord(DomainModel):
-    """One structured character state record."""
+class StructuredKnowledgeSourceOrigin(StrEnum):
+    """First-version source origin buckets."""
 
-    time_point: str = Field(min_length=1)
-    chapter_id: str | None = None
-    realm: str | None = None
-    location: str | None = None
-    life_status: str | None = None
-    camp: str | None = None
-    note: str | None = None
+    INBOX_FACT = "inbox_fact"
+    AGENT_EXTRACT = "agent_extract"
+    MANUAL = "manual"
 
 
-class CharacterKnowledgeFields(DomainModel):
-    """Type-specific fields for character cards."""
+class KnowledgeSchemaFieldType(StrEnum):
+    """Field types used by the backend schema registry."""
 
-    identity: str | None = None
-    faction: str | None = None
-    current_realm: str | None = None
-    techniques: list[str] = Field(default_factory=list)
-    items: list[str] = Field(default_factory=list)
-    relationship_summary: str | None = None
-    appearance_chapters: list[str] = Field(default_factory=list)
-    state_records: list[CharacterStateRecord] = Field(default_factory=list)
-
-
-class LocationKnowledgeFields(DomainModel):
-    """Type-specific fields for location cards."""
-
-    region: str | None = None
-    parent_location: str | None = None
-    controlling_faction: str | None = None
-    location_rules: str | None = None
-    important_resources: list[str] = Field(default_factory=list)
-    danger_level: str | None = None
-    appearance_chapters: list[str] = Field(default_factory=list)
-    related_events: list[str] = Field(default_factory=list)
+    SHORT_TEXT = "short_text"
+    LONG_TEXT = "long_text"
+    ENUM = "enum"
+    NUMBER = "number"
+    BOOLEAN = "boolean"
+    CHAPTER_REF = "chapter_ref"
+    KNOWLEDGE_REF = "knowledge_ref"
+    STRING_ARRAY = "string_array"
+    RECORD_ARRAY = "record_array"
 
 
-class FactionKnowledgeFields(DomainModel):
-    """Type-specific fields for faction cards."""
+class KnowledgeFieldOption(DomainModel):
+    """One Chinese-labeled option for an enum field."""
 
-    faction_type: str | None = None
-    leader: str | None = None
-    base: str | None = None
-    territory: str | None = None
-    relationships: str | None = None
-    core_rules: str | None = None
-    important_members: list[str] = Field(default_factory=list)
-    related_locations: list[str] = Field(default_factory=list)
+    value: str
+    label: str
 
 
-class RealmKnowledgeFields(DomainModel):
-    """Type-specific fields for realm cards."""
+class KnowledgeFieldSchema(DomainModel):
+    """One schema registry field definition."""
 
-    system: str | None = None
-    order: str | None = None
-    ability_boundary: str | None = None
-    breakthrough_condition: str | None = None
-    typical_manifestation: str | None = None
-    cost_or_limit: str | None = None
-
-
-class TechniqueKnowledgeFields(DomainModel):
-    """Type-specific fields for technique cards."""
-
-    technique_type: str | None = None
-    practice_condition: str | None = None
-    effect: str | None = None
-    limit_or_cost: str | None = None
-    related_characters: str | None = None
-    related_realm: str | None = None
-    origin: str | None = None
+    field_key: str = Field(min_length=1)
+    label: str = Field(min_length=1)
+    field_type: KnowledgeSchemaFieldType
+    required_when_active: bool = False
+    options: list[KnowledgeFieldOption] = Field(default_factory=list)
+    placeholder: str = ""
+    display_group: str = Field(min_length=1)
+    list_display: bool = False
+    ai_usage: str = ""
 
 
-class ItemKnowledgeFields(DomainModel):
-    """Type-specific fields for item cards."""
+class KnowledgeTypeSchema(DomainModel):
+    """Schema definition for one knowledge card type."""
 
-    item_type: str | None = None
-    holder: str | None = None
-    ability: str | None = None
-    limit: str | None = None
-    origin: str | None = None
-    current_status: str | None = None
-    related_events: list[str] = Field(default_factory=list)
-
-
-class RuleKnowledgeFields(DomainModel):
-    """Type-specific fields for rule cards."""
-
-    rule_content: str | None = None
-    scope: str | None = None
-    limits: str | None = None
-    exceptions: str | None = None
-    related_settings: list[str] = Field(default_factory=list)
-
-
-class EventKnowledgeFields(DomainModel):
-    """Type-specific fields for event cards."""
-
-    chapter_id: str | None = None
-    related_characters: list[str] = Field(default_factory=list)
-    related_locations: list[str] = Field(default_factory=list)
-    event_summary: str | None = None
-    impact: str | None = None
-
-
-class ForeshadowKnowledgeFields(DomainModel):
-    """Type-specific fields for foreshadow cards."""
-
-    planted_chapter_id: str | None = None
-    content: str | None = None
-    related_characters_or_items: list[str] = Field(default_factory=list)
-    current_status: str | None = None
-    planned_resolution: str | None = None
+    type: StructuredKnowledgeType
+    label: str = Field(min_length=1)
+    fields: list[KnowledgeFieldSchema] = Field(default_factory=list)
 
 
 class StructuredKnowledgeCard(DomainModel):
-    """One JSON-file structured knowledge card."""
+    """One JSON-file knowledge card using first-version top-level fields."""
 
     id: str = Field(min_length=1)
     type: StructuredKnowledgeType
     name: str = ""
     aliases: list[str] = Field(default_factory=list)
     summary: str = ""
-    body: str = ""
-    tags: list[str] = Field(default_factory=list)
     importance: StructuredKnowledgeImportance = StructuredKnowledgeImportance.NORMAL
     status: StructuredKnowledgeStatus = StructuredKnowledgeStatus.DRAFT
-    source_refs: list[SourceReference] = Field(default_factory=list)
-    fields: dict[str, Any] = Field(default_factory=dict)
+    source_origin: StructuredKnowledgeSourceOrigin | None = None
+    source_note: str = ""
+    role_type: str | None = None
+    identity: str | None = None
+    relationship_summary: str | None = None
+    death_chapter_id: str | None = None
+    current_realm_text: str | None = None
+    first_seen_chapter_id: str | None = None
+    last_seen_chapter_id: str | None = None
+    system: str | None = None
+    level_order: float | None = None
+    technique_type: str | None = None
+    grade: str | None = None
+    practice_condition: str | None = None
+    owner_faction_id: str | None = None
+    controlling_faction_id: str | None = None
+    faction_type: str | None = None
+    leader_id: str | None = None
+    item_type: str | None = None
+    current_holder_id: str | None = None
+    exceptions: str | None = None
+    chapter_id: str | None = None
+    description: str | None = None
     created_at: str = Field(min_length=1)
     updated_at: str = Field(min_length=1)
 
     def can_be_used_as_effective_knowledge(self) -> bool:
         """Return whether this card can participate in future AI reference."""
         return self.status is StructuredKnowledgeStatus.ACTIVE
+
+
+KNOWLEDGE_TYPE_LABELS: dict[StructuredKnowledgeType, str] = {
+    StructuredKnowledgeType.CHARACTER: "角色",
+    StructuredKnowledgeType.REALM: "境界",
+    StructuredKnowledgeType.TECHNIQUE: "功法",
+    StructuredKnowledgeType.LOCATION: "地点",
+    StructuredKnowledgeType.FACTION: "势力",
+    StructuredKnowledgeType.ITEM: "物品",
+    StructuredKnowledgeType.RULE: "规则",
+    StructuredKnowledgeType.EVENT: "事件",
+}
+
+FORBIDDEN_KNOWLEDGE_FIELD_KEYS = frozenset(
+    {
+        "body",
+        "tags",
+        "fields",
+        "confidence",
+        "source_refs",
+        "relations",
+        "foreshadow",
+        "personality",
+        "motivation",
+        "appearance",
+    }
+)
+
+COMMON_KNOWLEDGE_FIELD_KEYS = frozenset(
+    {
+        "name",
+        "aliases",
+        "summary",
+        "importance",
+        "status",
+        "source_origin",
+        "source_note",
+    }
+)
+
+
+def all_knowledge_type_schemas() -> list[KnowledgeTypeSchema]:
+    """Return schema definitions for all supported knowledge types."""
+    return [knowledge_type_schema(knowledge_type) for knowledge_type in StructuredKnowledgeType]
+
+
+def knowledge_type_schema(
+    knowledge_type: StructuredKnowledgeType,
+) -> KnowledgeTypeSchema:
+    """Return the schema definition for one knowledge type."""
+    return KnowledgeTypeSchema(
+        type=knowledge_type,
+        label=KNOWLEDGE_TYPE_LABELS[knowledge_type],
+        fields=[*_COMMON_FIELD_SCHEMAS, *_TYPE_FIELD_SCHEMAS[knowledge_type]],
+    )
+
+
+def knowledge_type_field_keys(knowledge_type: StructuredKnowledgeType) -> set[str]:
+    """Return editable field keys allowed for one knowledge type."""
+    return {
+        field.field_key
+        for field in knowledge_type_schema(knowledge_type).fields
+    }
+
+
+def type_specific_field_keys(knowledge_type: StructuredKnowledgeType) -> set[str]:
+    """Return type-specific top-level field keys for one knowledge type."""
+    return {field.field_key for field in _TYPE_FIELD_SCHEMAS[knowledge_type]}
+
+
+def knowledge_type_label(knowledge_type: StructuredKnowledgeType) -> str:
+    """Return the Chinese label for one knowledge type."""
+    return KNOWLEDGE_TYPE_LABELS[knowledge_type]
+
+
+def all_knowledge_card_field_keys() -> set[str]:
+    """Return all first-version card field keys, including system-managed keys."""
+    editable_keys = set(COMMON_KNOWLEDGE_FIELD_KEYS)
+    for knowledge_type in StructuredKnowledgeType:
+        editable_keys.update(type_specific_field_keys(knowledge_type))
+    return {
+        "id",
+        "type",
+        *editable_keys,
+        "created_at",
+        "updated_at",
+    }
+
+
+def _option(value: str, label: str) -> KnowledgeFieldOption:
+    return KnowledgeFieldOption(value=value, label=label)
+
+
+def _field(
+    field_key: str,
+    label: str,
+    field_type: KnowledgeSchemaFieldType,
+    *,
+    required_when_active: bool = False,
+    options: list[KnowledgeFieldOption] | None = None,
+    placeholder: str = "",
+    display_group: str = "基础信息",
+    list_display: bool = False,
+    ai_usage: str = "",
+) -> KnowledgeFieldSchema:
+    return KnowledgeFieldSchema(
+        field_key=field_key,
+        label=label,
+        field_type=field_type,
+        required_when_active=required_when_active,
+        options=options or [],
+        placeholder=placeholder,
+        display_group=display_group,
+        list_display=list_display,
+        ai_usage=ai_usage,
+    )
+
+
+_IMPORTANCE_OPTIONS = [
+    _option("core", "核心"),
+    _option("major", "重要"),
+    _option("normal", "普通"),
+    _option("minor", "次要"),
+]
+
+_STATUS_OPTIONS = [
+    _option("draft", "草稿"),
+    _option("active", "有效"),
+    _option("deprecated", "已废弃"),
+]
+
+_SOURCE_ORIGIN_OPTIONS = [
+    _option("inbox_fact", "收件箱事实转化"),
+    _option("agent_extract", "正文自动提取"),
+    _option("manual", "人工添加"),
+]
+
+_COMMON_FIELD_SCHEMAS = [
+    _field(
+        "name",
+        "名称",
+        KnowledgeSchemaFieldType.SHORT_TEXT,
+        required_when_active=True,
+        placeholder="输入知识卡名称",
+        list_display=True,
+        ai_usage="知识卡主名称，用于检索和引用。",
+    ),
+    _field(
+        "aliases",
+        "别名",
+        KnowledgeSchemaFieldType.STRING_ARRAY,
+        placeholder="多个别名用换行或逗号分隔",
+        list_display=True,
+        ai_usage="名称、称号、旧名和简称。",
+    ),
+    _field(
+        "summary",
+        "摘要",
+        KnowledgeSchemaFieldType.LONG_TEXT,
+        required_when_active=True,
+        placeholder="一句话或一段摘要",
+        list_display=True,
+        ai_usage="面向写作和 AI 引用的核心事实摘要。",
+    ),
+    _field(
+        "importance",
+        "重要程度",
+        KnowledgeSchemaFieldType.ENUM,
+        options=_IMPORTANCE_OPTIONS,
+        list_display=True,
+        ai_usage="决定知识卡在列表和检索中的优先级。",
+    ),
+    _field(
+        "status",
+        "状态",
+        KnowledgeSchemaFieldType.ENUM,
+        options=_STATUS_OPTIONS,
+        list_display=True,
+        ai_usage="草稿不参与 AI 检索，有效卡可用于后续引用。",
+    ),
+    _field(
+        "source_origin",
+        "来源方式",
+        KnowledgeSchemaFieldType.ENUM,
+        required_when_active=True,
+        options=_SOURCE_ORIGIN_OPTIONS,
+        placeholder="选择来源方式",
+        display_group="来源",
+        list_display=True,
+        ai_usage="说明知识卡来源类型。",
+    ),
+    _field(
+        "source_note",
+        "来源说明",
+        KnowledgeSchemaFieldType.LONG_TEXT,
+        required_when_active=True,
+        placeholder="作者手动添加。可写章节、原文摘录、人工说明。",
+        display_group="来源",
+        list_display=True,
+        ai_usage="知识卡可被信任和追溯的自由文本来源说明。",
+    ),
+]
+
+_ROLE_TYPE_OPTIONS = [
+    _option("protagonist", "主角"),
+    _option("supporting", "配角"),
+    _option("antagonist", "反派"),
+    _option("passerby", "路人"),
+    _option("faction_representative", "势力代表"),
+]
+
+_TECHNIQUE_TYPE_OPTIONS = [
+    _option("cultivation_method", "功法"),
+    _option("spell", "术法"),
+    _option("divine_ability", "神通"),
+    _option("sword_art", "剑诀"),
+    _option("forbidden_art", "禁术"),
+    _option("alchemy", "炼丹"),
+    _option("formation", "阵法"),
+    _option("other", "其他"),
+]
+
+_FACTION_TYPE_OPTIONS = [
+    _option("sect", "宗门"),
+    _option("family", "家族"),
+    _option("dynasty", "王朝"),
+    _option("guild", "商会"),
+    _option("demonic", "魔道"),
+    _option("alliance", "联盟"),
+    _option("academy", "学院"),
+    _option("other", "其他"),
+]
+
+_ITEM_TYPE_OPTIONS = [
+    _option("magic_treasure", "法宝"),
+    _option("pill", "丹药"),
+    _option("material", "材料"),
+    _option("other", "其他"),
+]
+
+_TYPE_FIELD_SCHEMAS: dict[StructuredKnowledgeType, list[KnowledgeFieldSchema]] = {
+    StructuredKnowledgeType.CHARACTER: [
+        _field(
+            "role_type",
+            "角色定位",
+            KnowledgeSchemaFieldType.ENUM,
+            options=_ROLE_TYPE_OPTIONS,
+            display_group="类型字段",
+            list_display=True,
+            ai_usage="角色在故事中的基础定位。",
+        ),
+        _field(
+            "identity",
+            "身份",
+            KnowledgeSchemaFieldType.SHORT_TEXT,
+            display_group="类型字段",
+            list_display=True,
+            ai_usage="角色出身、身份或公开身份。",
+        ),
+        _field(
+            "relationship_summary",
+            "关系摘要",
+            KnowledgeSchemaFieldType.LONG_TEXT,
+            display_group="类型字段",
+            ai_usage="人物关系的文字概述。",
+        ),
+        _field(
+            "death_chapter_id",
+            "死亡章节",
+            KnowledgeSchemaFieldType.CHAPTER_REF,
+            display_group="类型字段",
+            ai_usage="角色死亡确认章节的稳定 chapter_id。",
+        ),
+        _field(
+            "current_realm_text",
+            "当前境界",
+            KnowledgeSchemaFieldType.SHORT_TEXT,
+            display_group="类型字段",
+            list_display=True,
+            ai_usage="角色当前境界文本。",
+        ),
+        _field(
+            "first_seen_chapter_id",
+            "首次登场章节",
+            KnowledgeSchemaFieldType.CHAPTER_REF,
+            display_group="类型字段",
+            ai_usage="角色首次登场章节的稳定 chapter_id。",
+        ),
+        _field(
+            "last_seen_chapter_id",
+            "最近出现章节",
+            KnowledgeSchemaFieldType.CHAPTER_REF,
+            display_group="类型字段",
+            ai_usage="角色最近出现章节的稳定 chapter_id。",
+        ),
+    ],
+    StructuredKnowledgeType.REALM: [
+        _field(
+            "system",
+            "修炼体系",
+            KnowledgeSchemaFieldType.SHORT_TEXT,
+            display_group="类型字段",
+            list_display=True,
+            ai_usage="境界所属修炼体系。",
+        ),
+        _field(
+            "level_order",
+            "境界排序值",
+            KnowledgeSchemaFieldType.NUMBER,
+            display_group="类型字段",
+            list_display=True,
+            ai_usage="用于比较境界高低的数字。",
+        ),
+    ],
+    StructuredKnowledgeType.TECHNIQUE: [
+        _field(
+            "technique_type",
+            "功法类型",
+            KnowledgeSchemaFieldType.ENUM,
+            options=_TECHNIQUE_TYPE_OPTIONS,
+            display_group="类型字段",
+            list_display=True,
+            ai_usage="功法、术法、神通等类型。",
+        ),
+        _field(
+            "grade",
+            "品阶",
+            KnowledgeSchemaFieldType.SHORT_TEXT,
+            display_group="类型字段",
+            list_display=True,
+            ai_usage="功法品阶或等级。",
+        ),
+        _field(
+            "practice_condition",
+            "修炼条件",
+            KnowledgeSchemaFieldType.LONG_TEXT,
+            display_group="类型字段",
+            ai_usage="修炼、施展或学习条件。",
+        ),
+        _field(
+            "owner_faction_id",
+            "所属势力",
+            KnowledgeSchemaFieldType.KNOWLEDGE_REF,
+            display_group="类型字段",
+            ai_usage="所属势力或传承的知识卡 id。",
+        ),
+    ],
+    StructuredKnowledgeType.LOCATION: [
+        _field(
+            "controlling_faction_id",
+            "控制势力",
+            KnowledgeSchemaFieldType.KNOWLEDGE_REF,
+            display_group="类型字段",
+            list_display=True,
+            ai_usage="控制该地点的势力知识卡 id。",
+        ),
+        _field(
+            "first_seen_chapter_id",
+            "首次出现章节",
+            KnowledgeSchemaFieldType.CHAPTER_REF,
+            display_group="类型字段",
+            ai_usage="地点首次出现章节的稳定 chapter_id。",
+        ),
+    ],
+    StructuredKnowledgeType.FACTION: [
+        _field(
+            "faction_type",
+            "势力类型",
+            KnowledgeSchemaFieldType.ENUM,
+            options=_FACTION_TYPE_OPTIONS,
+            display_group="类型字段",
+            list_display=True,
+            ai_usage="宗门、家族、王朝等势力类型。",
+        ),
+        _field(
+            "leader_id",
+            "当前首领",
+            KnowledgeSchemaFieldType.KNOWLEDGE_REF,
+            display_group="类型字段",
+            list_display=True,
+            ai_usage="当前首领角色知识卡 id。",
+        ),
+    ],
+    StructuredKnowledgeType.ITEM: [
+        _field(
+            "item_type",
+            "物品类型",
+            KnowledgeSchemaFieldType.ENUM,
+            options=_ITEM_TYPE_OPTIONS,
+            display_group="类型字段",
+            list_display=True,
+            ai_usage="法宝、丹药、材料或其他物品类型。",
+        ),
+        _field(
+            "grade",
+            "品阶",
+            KnowledgeSchemaFieldType.SHORT_TEXT,
+            display_group="类型字段",
+            list_display=True,
+            ai_usage="物品品阶。",
+        ),
+        _field(
+            "current_holder_id",
+            "当前持有人",
+            KnowledgeSchemaFieldType.KNOWLEDGE_REF,
+            display_group="类型字段",
+            list_display=True,
+            ai_usage="当前持有者的角色知识卡 id。",
+        ),
+        _field(
+            "first_seen_chapter_id",
+            "首次出现章节",
+            KnowledgeSchemaFieldType.CHAPTER_REF,
+            display_group="类型字段",
+            ai_usage="物品首次出现章节的稳定 chapter_id。",
+        ),
+        _field(
+            "last_seen_chapter_id",
+            "最近出现章节",
+            KnowledgeSchemaFieldType.CHAPTER_REF,
+            display_group="类型字段",
+            ai_usage="物品最近出现章节的稳定 chapter_id。",
+        ),
+    ],
+    StructuredKnowledgeType.RULE: [
+        _field(
+            "exceptions",
+            "例外情况",
+            KnowledgeSchemaFieldType.LONG_TEXT,
+            display_group="类型字段",
+            ai_usage="规则例外情况。",
+        ),
+    ],
+    StructuredKnowledgeType.EVENT: [
+        _field(
+            "chapter_id",
+            "发生章节",
+            KnowledgeSchemaFieldType.CHAPTER_REF,
+            display_group="类型字段",
+            list_display=True,
+            ai_usage="事件发生或首次确认章节的稳定 chapter_id。",
+        ),
+        _field(
+            "description",
+            "事件描述",
+            KnowledgeSchemaFieldType.LONG_TEXT,
+            display_group="类型字段",
+            ai_usage="事件内容与影响的简要描述。",
+        ),
+    ],
+}

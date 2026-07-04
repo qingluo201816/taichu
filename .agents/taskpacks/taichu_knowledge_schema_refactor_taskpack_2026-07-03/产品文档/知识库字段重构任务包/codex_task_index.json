@@ -1,0 +1,60 @@
+{
+  "taskpack": "taichu_knowledge_schema_refactor",
+  "updated_at": "2026-07-03",
+  "root": "产品文档/知识库字段重构任务包/",
+  "phases": [
+    {
+      "id": "phase_0",
+      "name": "Preflight / 现状确认与规则写入",
+      "file": "01-阶段任务.md"
+    },
+    {
+      "id": "phase_1",
+      "name": "数据清理与目录收敛",
+      "file": "01-阶段任务.md"
+    },
+    {
+      "id": "phase_2",
+      "name": "后端知识卡模型与 schema 注册表",
+      "file": "01-阶段任务.md"
+    },
+    {
+      "id": "phase_3",
+      "name": "知识库 API 与校验规则",
+      "file": "01-阶段任务.md"
+    },
+    {
+      "id": "phase_4",
+      "name": "前端 schema 驱动知识卡编辑界面",
+      "file": "01-阶段任务.md"
+    },
+    {
+      "id": "phase_5",
+      "name": "测试、验收与清理",
+      "file": "01-阶段任务.md"
+    }
+  ],
+  "hard_decisions": [
+    "旧知识卡全部清理，不迁移，不兼容",
+    "删除 foreshadow 第一版类型",
+    "新结构废弃 source_refs，使用 source_origin + source_note",
+    "后端维护 schema 注册表，前端按 schema 渲染",
+    "章节引用保存稳定 chapter_id，不保存展示序号",
+    "后端字段名必须是正式英文，前端展示中文"
+  ],
+  "files": [
+    "00-任务包总览.md",
+    "01-阶段任务.md",
+    "02-字段契约.md",
+    "03-类型字段契约.md",
+    "04-schema注册表契约.md",
+    "05-数据清理规则.md",
+    "06-验收清单.md",
+    "07-证据返回模板.md",
+    "08-Codex总提示词.md",
+    "09-知识卡JSON示例.md",
+    "10-前端交互说明.md",
+    "11-停止条件与禁止事项.md",
+    "codex_task_index.json"
+  ]
+}

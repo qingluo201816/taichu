@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -20,6 +19,7 @@ from taichu.domain.models.knowledge import (
     KnowledgeCardType,
 )
 from taichu.domain.models.pending_fact import PendingFact, PendingFactStatus
+from taichu.domain.models.structured_knowledge import StructuredKnowledgeSourceOrigin
 from taichu.domain.rules.card_state import assert_pending_fact_transition_allowed
 
 
@@ -34,7 +34,6 @@ _KNOWLEDGE_TYPE_BY_PENDING_TYPE: dict[str, KnowledgeCardType] = {
     "item": KnowledgeCardType.ITEM,
     "rule": KnowledgeCardType.RULE,
     "event": KnowledgeCardType.EVENT,
-    "foreshadow": KnowledgeCardType.FORESHADOW,
     "other": KnowledgeCardType.RULE,
 }
 
@@ -46,7 +45,6 @@ class PendingFactConfirmationEdits:
     name: str | None = None
     summary: str | None = None
     aliases: list[str] | None = None
-    fields: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -224,14 +222,16 @@ def _knowledge_card_from_pending_fact(
     edits: PendingFactConfirmationEdits | None,
 ) -> KnowledgeCard:
     now = _now_iso()
-    fields = _fields_from_content(pending_fact.content)
-    if edits is not None and edits.fields is not None:
-        fields = dict(edits.fields)
-    fields["pending_fact_id"] = pending_fact.id
+    knowledge_type = _knowledge_type_for_pending_fact(pending_fact)
+    type_updates: dict[str, Any] = {}
+    if knowledge_type is KnowledgeCardType.EVENT:
+        type_updates["description"] = _summary_from_content(pending_fact.content)
+    if knowledge_type is KnowledgeCardType.RULE:
+        type_updates["exceptions"] = ""
     return KnowledgeCard(
         id=pending_fact.target_knowledge_id
         or _knowledge_id_for_pending_fact(pending_fact),
-        type=_knowledge_type_for_pending_fact(pending_fact),
+        type=knowledge_type,
         name=(edits.name if edits and edits.name else pending_fact.title),
         aliases=edits.aliases if edits and edits.aliases is not None else [],
         summary=(
@@ -239,11 +239,12 @@ def _knowledge_card_from_pending_fact(
             if edits and edits.summary
             else _summary_from_content(pending_fact.content)
         ),
-        fields=fields,
-        source_refs=pending_fact.source_refs,
-        status=KnowledgeCardStatus.CONFIRMED,
+        status=KnowledgeCardStatus.ACTIVE,
+        source_origin=StructuredKnowledgeSourceOrigin.INBOX_FACT,
+        source_note=_source_note_for_pending_fact(pending_fact),
         created_at=now,
         updated_at=now,
+        **type_updates,
     )
 
 
@@ -266,20 +267,25 @@ def _knowledge_id_for_pending_fact(pending_fact: PendingFact) -> str:
     return f"knowledge_{digest}"
 
 
-def _fields_from_content(content: dict[str, Any] | str) -> dict[str, Any]:
-    if isinstance(content, dict):
-        return dict(content)
-    return {"text": content}
-
-
 def _summary_from_content(content: dict[str, Any] | str) -> str:
     if isinstance(content, str):
         return content
-    for key in ("summary", "body", "content", "text", "rule", "description"):
+    for key in ("summary", "content", "text", "rule", "description"):
         value = content.get(key)
         if isinstance(value, str) and value.strip():
             return value
-    return json.dumps(content, ensure_ascii=False, sort_keys=True)
+    return str(content)
+
+
+def _source_note_for_pending_fact(pending_fact: PendingFact) -> str:
+    parts = [f"收件箱待确认事实：{pending_fact.id}"]
+    for source_ref in pending_fact.source_refs:
+        if source_ref.chapter_id:
+            parts.append(f"章节：{source_ref.chapter_id}")
+        if source_ref.excerpt:
+            parts.append(f"摘录：{source_ref.excerpt}")
+            break
+    return "；".join(parts)
 
 
 def _now_iso() -> str:

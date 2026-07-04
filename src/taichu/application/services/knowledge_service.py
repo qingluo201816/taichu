@@ -11,20 +11,17 @@ from taichu.domain.models.knowledge import (
     KnowledgeCardStatus,
     KnowledgeCardType,
 )
-from taichu.domain.models.source_ref import SourceRef
-from taichu.domain.rules.source_ref import validate_source_ref_contract
 
 
 _KNOWLEDGE_CATEGORY_BY_TYPE: dict[KnowledgeCardType, str] = {
-    KnowledgeCardType.CHARACTER: "characters",
-    KnowledgeCardType.REALM: "worldbuilding",
-    KnowledgeCardType.TECHNIQUE: "techniques",
-    KnowledgeCardType.LOCATION: "locations",
-    KnowledgeCardType.FACTION: "factions",
-    KnowledgeCardType.ITEM: "items",
-    KnowledgeCardType.RULE: "worldbuilding",
-    KnowledgeCardType.EVENT: "events",
-    KnowledgeCardType.FORESHADOW: "foreshadows",
+    KnowledgeCardType.CHARACTER: "character",
+    KnowledgeCardType.REALM: "realm",
+    KnowledgeCardType.TECHNIQUE: "technique",
+    KnowledgeCardType.LOCATION: "location",
+    KnowledgeCardType.FACTION: "faction",
+    KnowledgeCardType.ITEM: "item",
+    KnowledgeCardType.RULE: "rule",
+    KnowledgeCardType.EVENT: "event",
 }
 
 
@@ -43,9 +40,9 @@ class KnowledgeService:
         self._storage = storage
 
     async def list_cards(self) -> list[KnowledgeCard]:
-        """List all confirmed knowledge records from source/knowledge."""
+        """List all active knowledge records from source/knowledge."""
         cards = await self.list_all_cards()
-        return [card for card in cards if card.status is KnowledgeCardStatus.CONFIRMED]
+        return [card for card in cards if card.status is KnowledgeCardStatus.ACTIVE]
 
     async def list_all_cards(self) -> list[KnowledgeCard]:
         """List all knowledge records from source/knowledge."""
@@ -60,14 +57,14 @@ class KnowledgeService:
                 return card
         return None
 
-    async def write_confirmed_card(
+    async def write_active_card(
         self,
         card: KnowledgeCard,
     ) -> KnowledgeWriteResult:
-        """Write a confirmed KnowledgeCard, or reuse the existing same id."""
-        if card.status is not KnowledgeCardStatus.CONFIRMED:
-            raise KnowledgeWriteError("只有已确认知识可以写入知识库")
-        _validate_knowledge_source_refs(card.source_refs)
+        """Write an active KnowledgeCard, or reuse the existing same id."""
+        if card.status is not KnowledgeCardStatus.ACTIVE:
+            raise KnowledgeWriteError("只有有效知识可以写入知识库")
+        _validate_active_knowledge_source(card)
 
         category = knowledge_category_for_type(card.type)
         existing_record = await self._storage.read_knowledge_record(
@@ -85,6 +82,13 @@ class KnowledgeService:
             card.model_dump(mode="json"),
         )
         return KnowledgeWriteResult(card=card, created=True)
+
+    async def write_confirmed_card(
+        self,
+        card: KnowledgeCard,
+    ) -> KnowledgeWriteResult:
+        """Deprecated name kept for older application services."""
+        return await self.write_active_card(card)
 
     async def _assert_no_identity_conflict(self, card: KnowledgeCard) -> None:
         new_terms = _identity_terms(card.name, card.aliases)
@@ -107,8 +111,8 @@ class KnowledgeIdentityConflictError(KnowledgeWriteError):
     """Raised when a Knowledge name or alias conflicts with an existing card."""
 
 
-class KnowledgeSourceRefError(KnowledgeWriteError):
-    """Raised when confirmed Knowledge lacks valid SourceRef evidence."""
+class KnowledgeSourceError(KnowledgeWriteError):
+    """Raised when active Knowledge lacks source origin or source note."""
 
 
 def knowledge_category_for_type(card_type: KnowledgeCardType) -> str:
@@ -116,11 +120,11 @@ def knowledge_category_for_type(card_type: KnowledgeCardType) -> str:
     return _KNOWLEDGE_CATEGORY_BY_TYPE[card_type]
 
 
-def _validate_knowledge_source_refs(source_refs: list[SourceRef]) -> None:
-    if not source_refs:
-        raise KnowledgeSourceRefError("已确认知识必须包含证据来源")
-    for source_ref in source_refs:
-        validate_source_ref_contract(source_ref)
+def _validate_active_knowledge_source(card: KnowledgeCard) -> None:
+    if not card.name.strip() or not card.summary.strip():
+        raise KnowledgeSourceError("有效知识必须包含名称和摘要")
+    if card.source_origin is None or not card.source_note.strip():
+        raise KnowledgeSourceError("有效知识必须包含来源方式和来源说明")
 
 
 def _identity_terms(name: str, aliases: list[str]) -> set[str]:

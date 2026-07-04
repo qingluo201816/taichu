@@ -20,17 +20,6 @@ _MANUSCRIPT_PATH_SEGMENT = re.compile(
 )
 _KNOWLEDGE_ID = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 
-_KNOWLEDGE_CATEGORIES = (
-    "characters",
-    "worldbuilding",
-    "techniques",
-    "locations",
-    "factions",
-    "items",
-    "events",
-    "foreshadows",
-)
-
 _STRUCTURED_KNOWLEDGE_TYPES = (
     "character",
     "realm",
@@ -40,14 +29,14 @@ _STRUCTURED_KNOWLEDGE_TYPES = (
     "item",
     "rule",
     "event",
-    "foreshadow",
 )
+
+_KNOWLEDGE_CATEGORIES = _STRUCTURED_KNOWLEDGE_TYPES
 
 _SOURCE_DIRS = (
     "manuscripts/chapters",
     "manuscripts/deleted_chapters",
     *(f"knowledge/{knowledge_type}" for knowledge_type in _STRUCTURED_KNOWLEDGE_TYPES),
-    *(f"knowledge/{category}" for category in _KNOWLEDGE_CATEGORIES),
     "workspace",
 )
 

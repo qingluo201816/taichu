@@ -19,6 +19,7 @@ from taichu.domain.models.knowledge import (
     KnowledgeCardStatus,
     KnowledgeCardType,
 )
+from taichu.domain.models.structured_knowledge import StructuredKnowledgeSourceOrigin
 from taichu.domain.models.indexing import (
     IndexBuildJob,
     IndexBuildJobAction,
@@ -95,7 +96,7 @@ class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
         files = {file["path"]: file for file in response.json()["files"]}
         self.assertIn("source/metadata.yaml", files)
         self.assertIn("source/manuscripts/chapters/chapter_001.md", files)
-        self.assertIn("source/knowledge/items/knowledge_phase8_item.json", files)
+        self.assertIn("source/knowledge/item/knowledge_phase8_item.json", files)
         self.assertIn("source/workspace/ai_cards.jsonl", files)
 
     async def test_generated_rebuild_endpoint_preserves_source(self) -> None:
@@ -243,7 +244,11 @@ class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(save_idea.status_code, 200)
         self.assertEqual(converted.status_code, 200)
         self.assertEqual(confirmed.status_code, 200)
-        self.assertEqual(confirmed.json()["knowledge_card"]["status"], "confirmed")
+        self.assertEqual(confirmed.json()["knowledge_card"]["status"], "active")
+        self.assertEqual(
+            confirmed.json()["knowledge_card"]["source_origin"],
+            "inbox_fact",
+        )
         self.assertEqual(summary.status_code, 200)
         self.assertEqual(rebuild.json()["job"]["status"], "completed")
         chat_payload = chat.json()
@@ -264,7 +269,7 @@ class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
         export_paths = {file["path"] for file in export_bundle.json()["files"]}
         self.assertIn("source/workspace/ideas.jsonl", export_paths)
         self.assertIn("source/workspace/pending_facts.jsonl", export_paths)
-        self.assertIn("source/knowledge/items/knowledge_phase8_item.json", export_paths)
+        self.assertIn("source/knowledge/item/knowledge_phase8_item.json", export_paths)
         self.assertFalse(any(path.startswith("generated/") for path in export_paths))
         self.assertTrue(
             (self.assets_root / "generated" / "sqlite" / "taichu.db").exists()
@@ -302,9 +307,9 @@ def _knowledge_card() -> KnowledgeCard:
         name="太初古卷",
         aliases=[],
         summary="太初古卷会映照持有者的选择。",
-        fields={},
-        source_refs=[_source_ref()],
-        status=KnowledgeCardStatus.CONFIRMED,
+        status=KnowledgeCardStatus.ACTIVE,
+        source_origin=StructuredKnowledgeSourceOrigin.MANUAL,
+        source_note="作者手动确认。",
         created_at="2026-06-27T00:00:00Z",
         updated_at="2026-06-27T00:00:00Z",
     )
