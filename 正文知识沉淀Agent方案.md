@@ -6,7 +6,7 @@
 >
 > 当前状态：讨论稿，作为正文知识沉淀 Agent 的唯一有效方案文档。
 >
-> 最新讨论主题：旧 Basic Agent Chat 清理边界、候选匹配 active 知识卡规则。
+> 最新讨论主题：旧独立对话服务清理边界、候选匹配 active 知识卡规则。
 >
 > 文档维护规则：后续继续在本文内更新版本记录和章节内容，不再为每轮讨论新增独立方案文档。
 
@@ -54,7 +54,7 @@
 完整 prompt / response 保存
 逐条确认，不做批量确认
 候选匹配只匹配 active 知识卡
-旧 Basic Agent Chat 不作为正文知识沉淀 Agent 接口
+旧独立对话服务不作为正文知识沉淀 Agent 接口
 ```
 
 ### 1.2 版本记录
@@ -64,14 +64,14 @@
 | v0.1 | 2026-07-04 | 正文知识沉淀 Agent 的定位、数据层、智能体工作台入口、评测同步建设 | 已合并 |
 | v0.2 | 2026-07-04 | 第一版抽取范围、章节调度单元、JSON 中间态、LangGraph 主图草案 | 已合并 |
 | v0.3 | 2026-07-04 | 第一版入口、LLM 调用记录、类型专家节点拆分、候选确认方式、首批抽取类型 | 已合并 |
-| v0.4 | 2026-07-04 | 旧 Basic Agent Chat 清理边界、候选匹配 active 知识卡规则 | 当前有效版本 |
+| v0.4 | 2026-07-04 | 旧独立对话服务清理边界、候选匹配 active 知识卡规则 | 当前有效版本 |
 
 ### 1.3 当前有效决策摘要
 
 ```text
 只讨论第一个真实 Agent：正文知识沉淀 Agent。
 入口放在智能体工作台。
-删除现有智能体工作台示例内容，不做旧示例兼容。
+旧智能体工作台示例内容已删除，不做旧示例兼容。
 第一版只在智能体工作台选择当前章节启动。
 第一版只抽角色、地点、势力、物品。
 第一版中间态先用外部 JSON 文件。
@@ -80,7 +80,7 @@
 每次 LLM 调用必须保存完整 prompt 和 response。
 候选匹配现有知识卡时，只匹配 active 知识卡。
 draft 和 deprecated 后续也默认不参与候选匹配。
-旧 /api/agents/chat 是 Basic Agent Chat 遗留接口，不作为正文知识沉淀 Agent 接口。
+旧独立对话服务已清理，不作为正文知识沉淀 Agent 接口。
 第一版不做 RAG、不做向量库、不做 ES、不做图谱、不做 GraphRAG。
 评测和节点状态从第一版同步建设。
 ```
@@ -133,7 +133,7 @@ draft 和 deprecated 后续也默认不参与候选匹配。
 
 候选匹配现有知识卡时，只匹配 active 知识卡。draft 和 deprecated 后续也默认不参与候选匹配。
 
-当前 `/api/agents/chat` 是旧 Basic Agent Chat，会生成 AIResultCard。正文知识沉淀 Agent 不复用这个接口。该接口及相关旧示例由 Codex 后续清理，清理后需要检查仓库里是否仍有旧入口、旧类型、旧调用链残留。
+旧独立对话服务会生成 AIResultCard，不适合作为正文知识沉淀 Agent 接口；当前已清理旧入口、旧类型和旧调用链。
 
 ## 5. 数据层与中间态
 
@@ -200,7 +200,7 @@ Qdrant、ES、Neo4j、GraphRAG 都是未来层。现在只需要把来源引用�
 
 正文知识沉淀 Agent 放在“智能体工作台”页面里，不新增主导航页面。
 
-当前已有智能体工作台只是示例，后续实现时删除示例内容，不做旧示例兼容。
+旧智能体工作台示例内容已删除。后续实现正文知识沉淀 Agent 时，直接建设新的工作台页面，不做旧示例兼容。
 
 推荐页面结构：
 
@@ -753,9 +753,9 @@ model_name
 批次内候选去重
 ```
 
-## 18. 接口边界与旧 Agent Chat 清理
+## 18. 接口边界与旧对话服务清理
 
-旧 `/api/agents/chat` 是 Basic Agent Chat，会生成 AIResultCard，不适合作为正文知识沉淀 Agent 的接口。
+旧独立对话服务会生成 AIResultCard，不适合作为正文知识沉淀 Agent 的接口，当前已从代码入口中清理。
 
 正文知识沉淀 Agent 需要 run、node、candidate、review、llm_calls、metrics 等概念，因此需要独立接口。
 
@@ -777,16 +777,16 @@ POST /api/agent-workbench/knowledge-extraction/candidates/{candidate_id}/reject
 POST /api/agent-workbench/knowledge-extraction/candidates/{candidate_id}/edit-confirm
 ```
 
-Codex 清理旧 Basic Agent Chat 后，需要检查：
+旧对话服务清理后，需要检查：
 
 ```text
-/api/agents/chat 是否已移除或不再被前端调用
-web/src/app/chat/page.tsx 是否已替换为真实智能体工作台
-web/src/lib/api/agents.ts 是否不再暴露旧 runAgentChat
-web/src/lib/types/agents.ts 是否不再依赖旧 AIResultCard 输出
-后端 routes/agents.py 是否不再保留 Basic Agent Chat 端点
-ChatAgentService 相关旧服务是否删除或不再注册
-AIResultCard 旧 Agent Chat 链路是否没有被正文知识沉淀 Agent 复用
+旧对话接口是否已移除或不再被前端调用
+旧示例页面是否已删除
+前端通用 Agent API 封装是否不再暴露旧对话提交函数
+前端通用 Agent 类型是否不再依赖旧 AIResultCard 输出
+后端 Agent 路由是否不再保留旧对话端点
+旧对话应用服务是否删除或不再注册
+AIResultCard 旧对话链路是否没有被正文知识沉淀 Agent 复用
 ```
 
 ## 19. 当前不做的事情
@@ -801,7 +801,7 @@ AIResultCard 旧 Agent Chat 链路是否没有被正文知识沉淀 Agent 复用
 候选置信度
 匹配 draft 知识卡
 匹配 deprecated 知识卡
-复用 /api/agents/chat
+复用旧对话服务
 RAG
 向量库
 ES
@@ -833,7 +833,7 @@ GraphRAG
 作者逐条确认
 确认后写入 MongoDB 有效知识库
 评测和节点状态同步建设
-独立接口，不复用旧 /api/agents/chat
+独立接口，不复用旧对话服务
 ```
 
 这是最适合当前阶段的路线：既能真正用上 LangGraph 和真实 LLM，又不会一次性进入全书抽取、多类型抽取、RAG、图谱和复杂批处理。

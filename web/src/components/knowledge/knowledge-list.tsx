@@ -311,7 +311,7 @@ export function KnowledgeList() {
           </div>
         </aside>
 
-        <section className="min-w-0">
+        <section className="flex min-h-[calc(100vh-7rem)] min-w-0 flex-col">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs text-[var(--tc-text-muted)]">
@@ -382,8 +382,9 @@ export function KnowledgeList() {
             </p>
           ) : null}
 
-          <div className="max-w-[980px]">
-            {isCreating && activeSchema ? (
+          <div className="flex min-h-0 max-w-[980px] flex-1 flex-col">
+            <div className="min-h-0 flex-1">
+              {isCreating && activeSchema ? (
               <NewCardPanel
                 schema={activeSchema}
                 form={form}
@@ -463,6 +464,7 @@ export function KnowledgeList() {
                 当前分类暂无知识卡
               </div>
             )}
+            </div>
             <PaginationControls
               page={currentPage}
               pageSize={KNOWLEDGE_PAGE_SIZE}
@@ -894,28 +896,23 @@ function PaginationControls({
   onPageChange: (page: number) => void;
 }) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const [jumpDraft, setJumpDraft] = useState({ page, value: String(page) });
+  const jumpValue = jumpDraft.page === page ? jumpDraft.value : String(page);
 
   function submitPageJump(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const input = event.currentTarget.elements.namedItem(
-      "page",
-    ) as HTMLInputElement | null;
-    const parsedPage = Number(input?.value);
-    if (!Number.isFinite(parsedPage)) {
-      if (input) {
-        input.value = String(page);
-      }
+    const parsedPage = Number(jumpValue);
+    if (!jumpValue.trim() || !Number.isFinite(parsedPage)) {
+      setJumpDraft({ page, value: String(page) });
       return;
     }
     const nextPage = Math.min(totalPages, Math.max(1, Math.trunc(parsedPage)));
-    if (input) {
-      input.value = String(nextPage);
-    }
+    setJumpDraft({ page: nextPage, value: String(nextPage) });
     onPageChange(nextPage);
   }
 
   return (
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--tc-text-muted)]">
+    <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-[var(--tc-border-subtle)] pt-4 text-sm text-[var(--tc-text-muted)]">
       <span className="shrink-0">
         第 {page} / {totalPages} 页
       </span>
@@ -931,13 +928,15 @@ function PaginationControls({
           跳至
         </label>
         <input
-          key={page}
           id="knowledge-page-jump"
           name="page"
-          type="number"
-          min={1}
-          max={totalPages}
-          defaultValue={page}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={jumpValue}
+          onChange={event =>
+            setJumpDraft({ page, value: event.target.value })
+          }
           className="h-8 w-16 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-2 text-center text-sm text-[var(--tc-text-primary)] outline-none"
         />
         <Button type="submit" size="sm" variant="outline">

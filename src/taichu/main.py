@@ -9,7 +9,6 @@ from fastapi.responses import JSONResponse
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from taichu.api.router import register_routes
-from taichu.application.agents.chat.service import ChatAgentService
 from taichu.application.agents.registry import AgentRegistry
 from taichu.application.capabilities import CapabilityContext
 from taichu.application.services.ai_card_service import AICardService
@@ -74,13 +73,6 @@ def create_app(
     projection_rebuilder = SqliteProjectionRebuilder(app_settings.project_assets_dir)
     index_service = IndexService(project_storage, projection_rebuilder)
     export_service = ExportService(project_storage)
-    chat_agent_service = ChatAgentService(
-        chapter_service=chapter_service,
-        knowledge_service=knowledge_service,
-        retrieval=retrieval_backend,
-        llm=llm_service,
-        ai_card_service=ai_card_service,
-    )
     chapter_summary_service = ChapterSummaryService(
         storage=project_storage,
         chapter_service=chapter_service,
@@ -109,7 +101,6 @@ def create_app(
     application.state.tool_registry = tool_registry
     application.state.storage = storage
     application.state.project_storage = project_storage
-    application.state.chat_agent_service = chat_agent_service
     application.state.chapter_service = chapter_service
     application.state.outline_service = outline_service
     application.state.ai_card_service = ai_card_service

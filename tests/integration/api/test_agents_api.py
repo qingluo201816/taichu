@@ -3,21 +3,15 @@
 import unittest
 
 from httpx import ASGITransport, AsyncClient
-from langchain_core.language_models.fake_chat_models import (
-    FakeMessagesListChatModel,
-)
-from langchain_core.messages import AIMessage
 
 from taichu.main import create_app
 
 
 class AgentApiTest(unittest.IsolatedAsyncioTestCase):
-    """验证 Agent manifest API，旧 /api/chat 不再作为产品入口保留。"""
+    """验证通用 Agent manifest API 保留，但旧 Chat 入口已移除。"""
 
     async def asyncSetUp(self) -> None:
-        app = create_app(
-            llm=FakeMessagesListChatModel(responses=[AIMessage(content="测试回复")])
-        )
+        app = create_app()
         self.client = AsyncClient(
             transport=ASGITransport(app=app),
             base_url="http://test",
@@ -26,20 +20,24 @@ class AgentApiTest(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         await self.client.aclose()
 
-    async def test_list_agents_returns_manifest_fields(self) -> None:
+    async def test_list_agents_keeps_generic_api_without_chat_manifest(self) -> None:
         response = await self.client.get("/api/agents")
 
         self.assertEqual(response.status_code, 200)
-        agent = response.json()["agents"][0]
-        self.assertEqual(agent["name"], "chat")
-        self.assertEqual(agent["required_capabilities"], ["llm", "retrieval"])
-        self.assertEqual(agent["exposures"], ["api", "mcp", "ui"])
-        self.assertFalse(agent["supports_streaming"])
+        self.assertEqual(response.json()["agents"], [])
 
     async def test_legacy_chat_endpoint_is_removed(self) -> None:
         response = await self.client.post(
             "/api/chat",
             json={"agent": "chat", "message": "你好"},
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    async def test_agent_chat_endpoint_is_removed(self) -> None:
+        response = await self.client.post(
+            "/api/agents/chat",
+            json={"message": "你好"},
         )
 
         self.assertEqual(response.status_code, 404)

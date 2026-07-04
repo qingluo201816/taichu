@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Bot,
   BookOpen,
   History,
   Inbox,
@@ -19,7 +18,6 @@ const navigation = [
   { label: "知识库", href: "/knowledge", icon: Library },
   { label: "收件箱", href: "/inbox", icon: Inbox },
   { label: "AI 历史", href: "/ai-history", icon: History },
-  { label: "智能体工作台", href: "/chat", icon: Bot, badge: "实验功能" },
   { label: "设置", href: "/settings", icon: Settings },
 ];
 
@@ -131,11 +129,6 @@ export function AppShell({
                   >
                     <Icon className="size-4" />
                     {item.label}
-                    {item.badge ? (
-                      <span className="rounded-full border border-[var(--tc-deep-forest-teal)] px-2 py-0.5 text-[11px] text-[var(--tc-deep-forest-teal)]">
-                        {item.badge}
-                      </span>
-                    ) : null}
                   </Link>
                 );
               })}

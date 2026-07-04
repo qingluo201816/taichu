@@ -8,7 +8,7 @@
 
 **主价值**：减少上下文切换，维护设定一致性，辅助正文推进。
 
-**主 AI 形态**：编辑器内轻量工作流 + 独立 Agent 深度对话。
+**主 AI 形态**：编辑器内轻量工作流 + 写作区 AI 历史。
 
 **主数据原则**：正文和作者确认内容是事实源，索引与缓存可重建。
 
@@ -24,7 +24,7 @@
 
 > 更新日期：2026-06-27
 
-MVP-0.1 RC 的闭环是：章节写作 → Selection AI → AIResultCard → Inbox → PendingFact → 作者确认 Knowledge → generated rebuild → Agent Chat 基于 fact_scope 对话 → Export source bundle。
+MVP-0.1 RC 的闭环是：章节写作 → Selection AI → AIResultCard → Inbox → PendingFact → 作者确认 Knowledge → generated rebuild → Export source bundle。
 
 ### 数据边界
 

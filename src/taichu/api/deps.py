@@ -2,7 +2,6 @@
 
 from fastapi import Request
 
-from taichu.application.agents.chat.service import ChatAgentService
 from taichu.application.agents.registry import AgentRegistry
 from taichu.application.contracts.storage import StorageBackend
 from taichu.application.services.ai_card_service import AICardService
@@ -28,11 +27,6 @@ from taichu.application.services.settings_service import SettingsPreferenceServi
 def provide_agent_registry(request: Request) -> AgentRegistry:
     """返回应用启动时创建的 Agent 注册中心。"""
     return request.app.state.agent_registry
-
-
-def provide_chat_agent_service(request: Request) -> ChatAgentService:
-    """Return the Basic Agent Chat application service."""
-    return request.app.state.chat_agent_service
 
 
 def provide_storage(request: Request) -> StorageBackend:

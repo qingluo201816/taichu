@@ -16,7 +16,6 @@ from taichu.domain.models.ai_workspace import (
     AIWorkspaceTaskType,
     PromptSnapshot,
 )
-from taichu.domain.models.agent_chat import AgentConversation
 from taichu.domain.models.chapter import (
     Chapter,
     ChapterManifest,
@@ -115,7 +114,6 @@ __all__ = [
     "AIWorkspaceSubtaskType",
     "AIWorkspaceTaskType",
     "PromptSnapshot",
-    "AgentConversation",
     "Chapter",
     "ChapterManifest",
     "ChapterStatus",

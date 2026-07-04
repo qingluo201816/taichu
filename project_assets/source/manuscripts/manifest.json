@@ -1,6 +1,6 @@
 {
   "schema_version": "1",
-  "current_chapter_id": "chapter-360f60d8aee34bbbb279c28b989bf59e",
+  "current_chapter_id": "chapter-1692b7a5c347465b8383e59e9d64aa3e",
   "volumes": [
     {
       "id": "volume-e7cb3c7f437548e6b2d95ee8060c7c8b",
@@ -218,9 +218,9 @@
       "order": 18,
       "markdown_path": "manuscripts/chapters/volume_001_第一卷/chapter_018_狱中霸王自在身.md",
       "status": "active",
-      "word_count": 3311,
+      "word_count": 3299,
       "created_at": "2026-07-02T14:41:11.336422Z",
-      "updated_at": "2026-07-03T17:57:18.442394Z"
+      "updated_at": "2026-07-04T02:19:25.884945Z"
     },
     {
       "id": "chapter-3c172caecc6b4f0c991c122ec5d189dc",
@@ -1125,5 +1125,5 @@
       "updated_at": "2026-07-03T17:57:18.442394Z"
     }
   ],
-  "updated_at": "2026-07-03T17:57:18.442394Z"
+  "updated_at": "2026-07-04T02:19:25.884945Z"
 }

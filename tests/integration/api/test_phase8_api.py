@@ -37,7 +37,7 @@ from taichu.main import create_app
 
 
 class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
-    """Verify Phase 8 API endpoints compose without source pollution."""
+    """Verify Phase 8 export and rebuild endpoints compose without source pollution."""
 
     async def asyncSetUp(self) -> None:
         self._temporary_directory = tempfile.TemporaryDirectory()
@@ -66,28 +66,6 @@ class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         await self.client.aclose()
         self._temporary_directory.cleanup()
-
-    async def test_agent_chat_returns_and_persists_ai_result_card(self) -> None:
-        response = await self.client.post(
-            "/api/agents/chat",
-            json={
-                "message": "下一场戏怎么推进？",
-                "chapter_id": "chapter_001",
-                "include_current_chapter": True,
-                "include_confirmed_facts": True,
-            },
-        )
-        cards_response = await self.client.get("/api/ai-cards")
-
-        self.assertEqual(response.status_code, 200)
-        payload = response.json()
-        self.assertEqual(payload["card"]["workflow"], "chat")
-        self.assertEqual(payload["card"]["type"], "suggestion")
-        self.assertGreaterEqual(len(payload["card"]["source_refs"]), 1)
-        self.assertEqual(
-            cards_response.json()["cards"][0]["id"],
-            payload["card"]["id"],
-        )
 
     async def test_export_bundle_endpoint_returns_readable_files(self) -> None:
         response = await self.client.get("/api/export/bundle")
@@ -171,7 +149,6 @@ class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
                         )
                     ),
                     AIMessage(content=_summary_json()),
-                    AIMessage(content="可以从古卷代价推进。[S1]"),
                 ]
             ),
         )
@@ -230,15 +207,6 @@ class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
 
             summary = await client.post("/api/chapters/chapter_001/summary")
             rebuild = await client.post("/api/generated/rebuild")
-            chat = await client.post(
-                "/api/agents/chat",
-                json={
-                    "message": "下一幕怎么推进？",
-                    "chapter_id": "chapter_001",
-                    "include_current_chapter": True,
-                    "include_confirmed_facts": True,
-                },
-            )
             export_bundle = await client.get("/api/export/bundle")
 
         self.assertEqual(save_idea.status_code, 200)
@@ -251,21 +219,6 @@ class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(summary.status_code, 200)
         self.assertEqual(rebuild.json()["job"]["status"], "completed")
-        chat_payload = chat.json()
-        self.assertEqual(chat_payload["card"]["workflow"], "chat")
-        self.assertGreaterEqual(
-            len(chat_payload["conversation"]["source_refs"]),
-            1,
-        )
-        for source_ref in chat_payload["conversation"]["source_refs"]:
-            normalized_path = source_ref["path"].replace("\\", "/")
-            self.assertNotIn("project_assets/generated", normalized_path)
-            self.assertNotIn("/sqlite/", normalized_path)
-            self.assertFalse(normalized_path.endswith(".db"))
-        self.assertEqual(
-            chat_payload["card"]["content"]["citations"][0]["label"],
-            "S1",
-        )
         export_paths = {file["path"] for file in export_bundle.json()["files"]}
         self.assertIn("source/workspace/ideas.jsonl", export_paths)
         self.assertIn("source/workspace/pending_facts.jsonl", export_paths)
