@@ -2,70 +2,39 @@
 
 > 更新日期：2026-07-04
 >
-> 当前版本：v0.6
+> 当前版本：v1.0
 >
-> 当前状态：讨论稿，作为正文知识沉淀 Agent 的唯一有效方案文档。
+> 当前状态：任务包前最终定稿。
 >
-> 最新讨论主题：第一版 API 契约、运行 JSON 严格结构、候选审核字段、Prompt 草案。
+> 用途：作为后续生成 Codex 执行任务包的唯一事实输入。
 >
-> 文档维护规则：后续继续在本文内更新版本记录和章节内容，不再为每轮讨论新增独立方案文档。
+> 文档维护规则：后续如有新讨论，继续在本文内追加版本记录和修改章节，不再为每轮讨论新增独立方案文档。
 
 ## 目录
 
 1. 更新状态与版本记录
-2. 文档目的
-3. 当前核心结论
-4. 当前有效决策
+2. 定稿结论
+3. 目标与非目标
+4. 页面入口与工作台布局
 5. 数据层与中间态
-6. 为什么第一版不做 RAG
-7. 智能体工作台页面定位
-8. 抽取范围与处理单元
-9. 第一版抽取类型
-10. LangGraph 第一版主图
-11. 类型专家节点设计
-12. 运行 JSON 严格结构
-13. API 契约
-14. Prompt 结构与草案
-15. 专家节点输出 schema
-16. 哪些节点需要 LLM
-17. 候选项、匹配规则与作者审核
-18. 评测与仪表盘
-19. 与写作页的关系
-20. 增量更新与后续批量任务
-21. 接口边界与旧独立对话服务清理
-22. 当前不做的事情
-23. 当前推荐总方案
-24. 下一轮讨论建议
+6. 抽取范围与处理单元
+7. LangGraph 工作流
+8. 类型专家节点
+9. 运行 JSON 结构
+10. API 契约
+11. Prompt 契约
+12. 专家节点输出 schema
+13. 候选判断、匹配与审核
+14. 评测与回放
+15. 与知识库和写作页的关系
+16. 第一版不做的事情
+17. Codex 任务包生成边界
 
 ## 1. 更新状态与版本记录
 
 ### 1.1 当前更新状态
 
-本文已合并此前所有正文知识沉淀 Agent 讨论内容。后续只维护这一份文档。
-
-已合并内容包括：
-
-```text
-正文知识沉淀 Agent 的定位
-数据层与 JSON 中间态
-智能体工作台入口
-评测同步建设
-章节调度单元与 LLM 实际输入单元的区别
-第一版当前章节抽取范围
-通用抽取器 + 类型专家节点
-首批只抽角色、地点、势力、物品
-完整 prompt / response 保存
-逐条确认，不做批量确认
-候选匹配只匹配 active 知识卡
-旧独立对话服务不作为正文知识沉淀 Agent 接口
-智能体工作台第一版布局
-JSON 中间态目录和单文件结构
-通用抽取 prompt、角色专家 prompt、实体专家 prompt 的拆分
-角色专家和实体专家输出贴近 StructuredKnowledgeCard 顶层字段
-第一版 API 契约
-review_items 严格字段结构
-三类 prompt 草案
-```
+本文已从讨论稿收敛为任务包前最终定稿。后续生成 Codex 任务包时，以本文为准。
 
 ### 1.2 版本记录
 
@@ -76,175 +45,87 @@ review_items 严格字段结构
 | v0.3 | 2026-07-04 | 第一版入口、LLM 调用记录、类型专家节点拆分、候选确认方式、首批抽取类型 | 已合并 |
 | v0.4 | 2026-07-04 | 旧独立对话服务清理边界、候选匹配 active 知识卡规则 | 已合并 |
 | v0.5 | 2026-07-04 | 智能体工作台布局、JSON 中间态、Prompt 拆分、输出 schema、审核流与接口边界 | 已合并 |
-| v0.6 | 2026-07-04 | 第一版 API 契约、运行 JSON 严格结构、候选审核字段、Prompt 草案 | 当前有效版本 |
+| v0.6 | 2026-07-04 | 第一版 API 契约、运行 JSON 严格结构、候选审核字段、Prompt 草案 | 已合并 |
+| v1.0 | 2026-07-04 | 任务包前最终定稿 | 当前有效版本 |
 
-### 1.3 当前有效决策摘要
+## 2. 定稿结论
 
-```text
-只讨论第一个真实 Agent：正文知识沉淀 Agent。
-入口放在智能体工作台。
-旧 /chat 独立对话页面和旧 /api/agents/chat 已清理，不作为本 Agent 接口。
-新的智能体工作台路由使用 /agent-workbench。
-主导航入口等真实工作台页面壳子完成后再恢复。
-第一版只在智能体工作台选择当前章节启动。
-第一版只抽角色、地点、势力、物品。
-第一版中间态先用外部 JSON 文件。
-每次运行一个 JSON 文件，放在 project_assets/derived/agent_runs/knowledge_extraction/。
-确认后的有效知识卡进入 MongoDB 主数据。
-确认后的有效知识卡立即可被写作页结构化查询使用。
-每次 LLM 调用必须保存完整 prompt 和 response，并允许前端展开查看。
-候选匹配现有知识卡时，只匹配 active 知识卡。
-draft 和 deprecated 后续也默认不参与候选匹配。
-第一版不做 RAG、不做向量库、不做 ES、不做图谱、不做 GraphRAG。
-评测和节点状态从第一版同步建设，先用表格和状态标签，不做曲线。
-第一版运行接口可以同步执行，不做 streaming，不做后台队列。
-```
+正文知识沉淀 Agent 是太初第一个真实 LLM + LangGraph Agent。
 
-## 2. 文档目的
-
-本文只讨论太初的第一个真实 Agent：**正文知识沉淀 Agent**。
-
-它的目标不是写作页续写，不是 RAG 问答，也不是图谱推理，而是把 Markdown 正文中的有效信息抽取成可审核的知识库草稿或更新建议，最终由作者确认后进入结构化知识库主数据。
-
-本文是讨论稿，用于反复迭代方案，不是最终实现任务包。
-
-## 3. 当前核心结论
-
-正文知识沉淀 Agent 是太初第一个真正适合 LangGraph 的 Agent。
-
-原因是它不是单轮问答，而是一个长流程任务：读取正文、切分或整理章节输入、调用真实 LLM 抽取、类型归类、字段填充、匹配已有知识卡、生成草稿或补丁、校验、冲突检测、人工确认、写入知识库。
-
-推荐定位：
+它的定位是：
 
 ```text
-正文知识沉淀 Agent = 正文 → 候选知识卡 / 更新建议 → 人工确认 → MongoDB 有效知识库
+Markdown 正文 → 候选知识卡 / 更新建议 → 作者审核 → MongoDB 有效知识库
 ```
 
-第一版重点是做成一个可控、可追溯、可评测的真实 Agent，而不是追求一次性全书自动入库。
+它不是写作页 AI，不是 RAG，不是图谱推理，不是一次性全书自动入库工具。
 
-## 4. 当前有效决策
+第一版只做当前章节抽取，只抽角色、地点、势力、物品。抽取结果先写入 JSON 中间态，作者逐条确认后才写入 MongoDB 有效知识库。
 
-第一版正文知识沉淀 Agent 只在智能体工作台中选择章节启动，不从写作页当前章节入口跳转。
+第一版使用真实 LLM，但不评测文学质量，不评测写作页回答质量。评测重点是结构、链路、候选、节点状态、prompt/response、作者处理结果。
 
-新的智能体工作台使用 `/agent-workbench` 路由，和旧 `/chat` 完全切开。
+## 3. 目标与非目标
 
-主导航中的“智能体工作台”入口等真实工作台页面壳子完成后再恢复，不在空页面阶段提前暴露。
+### 3.1 第一版目标
 
-每次 LLM 调用必须保存完整 prompt 和 response，用于后续评测、回放、调试和效果对比。
-
-第一版采用“通用抽取器 + 三个类型专家节点”的折中结构。
-
-三个类型专家节点为：
+第一版目标是做出一个可用、可追溯、可评测的正文知识沉淀闭环：
 
 ```text
-角色专家节点：人物状态与关系
-实体专家节点：世界中存在的对象
-事件规则专家节点：剧情变化、因果、限制、伏笔
+选择当前章节
+读取 Markdown 正文
+运行 LangGraph
+调用真实 LLM
+生成候选角色 / 地点 / 势力 / 物品
+写入 JSON 中间态
+展示运行状态、候选项、LLM 调用记录和评测指标
+作者逐条确认、编辑后确认、废弃或稍后处理
+确认后写入 MongoDB 有效知识库
+写作页后续可以查询有效知识卡
 ```
 
-候选项第一版不需要置信度字段。
+### 3.2 第一版非目标
 
-候选确认第一版只支持逐条确认，不做批量确认。
-
-第一版先只抽取角色、地点、势力、物品。先把基本盘调好，再逐步加入事件、规则、境界、功法、伏笔等类型。
-
-候选匹配现有知识卡时，只匹配 active 知识卡。draft 和 deprecated 后续也默认不参与候选匹配。
-
-候选更新不允许自动覆盖已有非空字段。空字段补充可以在作者确认后写入；已有非空字段不一致时进入候选冲突或编辑后确认。
-
-旧 `/api/agents/chat` 是旧独立对话服务，会生成 AIResultCard，不作为正文知识沉淀 Agent 接口。正文知识沉淀 Agent 使用独立接口前缀。
-
-## 5. 数据层与中间态
-
-当前推荐分层：
+第一版不做：
 
 ```text
-Markdown 正文
-  ↓
-JSON 中间态：待确认候选卡、更新建议、冲突项、运行记录
-  ↓
-MongoDB 主数据：作者确认后的角色卡、地点卡、势力卡、物品卡等结构化知识
-  ↓
-未来：Qdrant 向量层、ES 全文索引、Neo4j / 事件层 / GraphRAG
+写作页入口跳转
+当前卷抽取
+全书抽取
+批量确认
+候选置信度
+匹配 draft 知识卡
+匹配 deprecated 知识卡
+复用 /api/agents/chat
+RAG
+向量库
+ES
+Neo4j
+GraphRAG
+事件卡抽取
+规则卡抽取
+境界卡抽取
+功法卡抽取
+伏笔卡抽取
+复杂 LangGraph interrupt / resume
+自动写入有效知识库
+复杂曲线评测
+流式运行状态
+后台队列
 ```
 
-正文继续存 Markdown。
+## 4. 页面入口与工作台布局
 
-知识卡有效主数据存 MongoDB，用于结构化查询和写作页知识参考。
-
-抽取 Agent 生成的候选内容先放在中间态。第一版使用外部 JSON 文件承载中间态，便于调试、回放、删除和人工审核。
-
-中间态不是有效知识库。它可以校验宽松，可以包含不确定字段，可以保存候选文本和节点过程，但不能被写作页当作已确认知识使用。
-
-### 5.1 中间态目录
-
-第一版 JSON 中间态目录：
-
-```text
-project_assets/derived/agent_runs/knowledge_extraction/
-```
-
-该目录属于派生运行产物，不属于作者确认主数据。候选内容不能放进 `project_assets/source/knowledge/`，避免污染知识库主数据。
-
-### 5.2 JSON 文件粒度与命名
-
-第一版采用“每次运行一个 JSON 文件”。
-
-文件命名：
-
-```text
-extract_run_<日期时间>_<短ID>.json
-```
-
-示例：
-
-```text
-extract_run_20260704_153022_a1b2c3.json
-```
-
-使用日期时间是为了便于按运行顺序排查，短 ID 用于避免冲突。不能只用章节 ID 命名，因为同一章会多次运行，需要保留历史记录用于评测和回放。
-
-## 6. 为什么第一版不做 RAG
-
-正文知识沉淀 Agent 的输入就是正文。它不需要先检索再增强。
-
-RAG 的典型场景是：用户问一个问题，系统先从知识库或正文里检索材料，再交给 LLM 整理回答。
-
-正文知识沉淀 Agent 的场景是：系统读取当前章节正文，从正文中抽取结构化事实。
-
-所以第一版的重点是：
-
-```text
-读取正文 → 抽取候选知识 → 生成草稿 / 更新建议 → 人工确认
-```
-
-不是：
-
-```text
-用户提问 → 检索 → 增强 → 回答
-```
-
-Qdrant、ES、Neo4j、GraphRAG 都是未来层。现在只需要把来源说明、章节 ID、知识卡 ID、运行记录、候选项这些字段设计好，为未来扩展留接口。
-
-## 7. 智能体工作台页面定位
-
-正文知识沉淀 Agent 放在“智能体工作台”页面里，不新增主导航页面。
-
-新的智能体工作台路由：
+新的智能体工作台路由为：
 
 ```text
 /agent-workbench
 ```
 
-旧 `/chat` 已清理，不复用旧路由。
+旧 `/chat` 独立对话页面和旧 `/api/agents/chat` 已清理，不复用。
 
 主导航中的“智能体工作台”入口等真实工作台页面壳子完成后再恢复。
 
-### 7.1 页面布局
-
-第一版采用“左侧 Agent 列表 + 中间四个 Tab + 右侧详情”的布局。
-
-推荐页面结构：
+第一版工作台布局：
 
 ```text
 智能体工作台
@@ -266,9 +147,7 @@ Qdrant、ES、Neo4j、GraphRAG 都是未来层。现在只需要把来源说明�
     - 错误信息
 ```
 
-### 7.2 四个固定 Tab
-
-第一版固定四个 Tab：
+四个固定 Tab：
 
 ```text
 运行任务
@@ -285,40 +164,72 @@ Qdrant、ES、Neo4j、GraphRAG 都是未来层。现在只需要把来源说明�
 
 评测指标：展示候选数量、schema 校验、作者处理结果、节点耗时、LLM 调用次数。
 
-## 8. 抽取范围与处理单元
+## 5. 数据层与中间态
 
-更准确的说法是：
-
-```text
-章节是调度、溯源、状态记录和增量重跑的基本单元。
-LLM 实际处理单元可以是整章，也可以是章内场景片段。
-```
-
-系统层面按章节管理任务，但模型层面不一定每次把整章全部塞给 LLM。
-
-如果章节较短，可以整章抽取。
-
-如果章节较长，应在章节内部按场景片段或段落窗口切分，再做章内汇总。
-
-推荐结构：
+### 5.1 数据分层
 
 ```text
-任务范围：当前章 / 多章 / 当前卷 / 全书
+Markdown 正文
   ↓
-调度单元：章节
+JSON 中间态：待确认候选卡、更新建议、冲突项、运行记录
   ↓
-LLM 输入单元：整章或章内片段
+MongoDB 主数据：作者确认后的角色卡、地点卡、势力卡、物品卡等结构化知识
   ↓
-章内汇总：合并本章候选
-  ↓
-批次汇总：多章任务再做批次内去重和合并
+未来：Qdrant 向量层、ES 全文索引、Neo4j / 事件层 / GraphRAG
 ```
+
+正文继续存 Markdown。
+
+MongoDB 只保存作者确认后的有效知识卡。
+
+JSON 中间态保存未确认候选、运行记录、节点状态、LLM 调用记录、评测指标和错误信息。
+
+### 5.2 中间态目录
+
+第一版 JSON 中间态目录：
+
+```text
+project_assets/derived/agent_runs/knowledge_extraction/
+```
+
+该目录属于派生运行产物，不属于作者确认主数据。候选内容不能放进 `project_assets/source/knowledge/`。
+
+### 5.3 文件粒度与命名
+
+第一版采用“每次运行一个 JSON 文件”。
+
+文件命名：
+
+```text
+extract_run_<日期时间>_<短ID>.json
+```
+
+示例：
+
+```text
+extract_run_20260704_153022_a1b2c3.json
+```
+
+同一章节允许多次运行，每次运行都保留独立 run 文件，用于评测、回放和 prompt 对比。
+
+## 6. 抽取范围与处理单元
 
 第一版只开放当前章节抽取。
 
-第二版再做多章节批量处理。
+章节是调度、溯源、状态记录和增量重跑的基本单元。
 
-推荐版本节奏：
+LLM 实际处理单元可以是整章，也可以是章内场景片段。
+
+处理规则：
+
+```text
+章节较短：整章作为 LLM 输入
+章节较长：按场景片段或段落窗口切分
+片段抽取后：章内合并候选
+多章节版本：再做批次汇总、批次内去重和失败章节重试
+```
+
+版本节奏：
 
 ```text
 V1：当前章节抽取
@@ -327,44 +238,9 @@ V3：当前卷抽取
 V4：全书抽取
 ```
 
-## 9. 第一版抽取类型
+## 7. LangGraph 工作流
 
-第一版先只抽取：
-
-```text
-角色
-地点
-势力
-物品
-```
-
-角色、地点、势力、物品是玄幻小说知识库的基本盘。
-
-它们有几个优势：
-
-```text
-实体边界相对清楚
-来源引用容易定位
-字段契约相对稳定
-作者审核成本较低
-对写作页后续参考价值高
-```
-
-事件、规则、境界、功法、伏笔虽然重要，但第一版不优先开启，原因如下：
-
-```text
-事件容易和章节摘要混淆
-规则容易抽成推测
-境界需要排序和体系判断
-功法容易和术法、神通、物品混淆
-伏笔需要长期上下文，单章抽取不稳定
-```
-
-## 10. LangGraph 第一版主图
-
-第一版主图围绕“当前章节抽取”设计。
-
-推荐主图：
+第一版主图围绕当前章节抽取设计：
 
 ```text
 Start
@@ -420,27 +296,21 @@ WriteIntermediateJsonNode
 End
 ```
 
-第一版 HumanReview 不必强行放进 LangGraph 的 interrupt 流程里。
+第一版 HumanReview 不放进 LangGraph interrupt 流程。LangGraph 运行完成后写入 JSON 中间态，前端读取候选，作者逐条审核，确认后调用普通 API 写入 MongoDB。
 
-第一版采用更稳的做法：LangGraph 运行完成后写入 JSON 中间态；前端智能体工作台读取中间态，作者逐条审核；确认后调用普通 API 写入 MongoDB。
+后续再升级为 LangGraph interrupt / resume。
 
-后续再升级为真正的 LangGraph interrupt / resume。
+## 8. 类型专家节点
 
-## 11. 类型专家节点设计
+第一版采用三个专家节点，但只有两个启用。
 
-第一版采用三个专家节点，但不是每个专家都在第一版全部启用。
-
-### 11.1 角色专家节点
+### 8.1 角色专家节点
 
 职责：处理人物状态与关系。
 
 第一版启用。
 
-输入：通用抽取器发现的人物候选、相关原文摘录、章节信息。
-
-输出：角色卡草稿或角色卡更新建议。
-
-第一版字段重点：
+字段重点：
 
 ```text
 name
@@ -470,7 +340,7 @@ secret
 known_secrets
 ```
 
-### 11.2 实体专家节点
+### 8.2 实体专家节点
 
 职责：处理世界中存在的对象。
 
@@ -491,17 +361,13 @@ known_secrets
 境界
 ```
 
-实体专家节点不负责事件因果，也不负责复杂时间线推理。
-
-它负责把候选实体填成地点卡、势力卡、物品卡草稿，或生成对已有 active 卡的更新建议。
-
-### 11.3 事件规则专家节点
+### 8.3 事件规则专家节点
 
 职责：处理剧情变化、因果、限制、伏笔。
 
-第一版先设计接口，但默认不启用抽取。
+第一版只设计接口，默认不启用。
 
-后续逐步开启：
+后续开启：
 
 ```text
 事件卡
@@ -509,11 +375,9 @@ known_secrets
 伏笔卡
 ```
 
-## 12. 运行 JSON 严格结构
+## 9. 运行 JSON 结构
 
-第一版 run JSON 文件同时保存运行记录、节点状态、LLM 调用、候选项和指标。
-
-### 12.1 顶层结构
+### 9.1 顶层结构
 
 ```json
 {
@@ -542,9 +406,7 @@ known_secrets
 }
 ```
 
-### 12.2 run status
-
-第一版支持：
+run status：
 
 ```text
 pending
@@ -553,9 +415,9 @@ completed
 failed
 ```
 
-第一版运行接口可以同步执行，不做 streaming，不做后台队列。状态字段仍保留，是为了前端展示和后续升级异步任务。
+第一版运行接口同步执行，不做 streaming，不做后台队列。状态字段仍保留，方便前端展示和后续升级异步任务。
 
-### 12.3 node 结构
+### 9.2 node 结构
 
 ```json
 {
@@ -570,7 +432,7 @@ failed
 }
 ```
 
-node status 支持：
+node status：
 
 ```text
 pending
@@ -580,7 +442,7 @@ failed
 skipped
 ```
 
-### 12.4 llm_calls 结构
+### 9.3 llm_calls 结构
 
 ```json
 {
@@ -598,7 +460,7 @@ skipped
 }
 ```
 
-### 12.5 review_items 严格字段
+### 9.4 review_items 结构
 
 ```json
 {
@@ -628,7 +490,7 @@ skipped
 }
 ```
 
-candidate_action 支持：
+candidate_action：
 
 ```text
 create_card
@@ -637,7 +499,7 @@ conflict
 ignore
 ```
 
-candidate_status 支持：
+candidate_status：
 
 ```text
 pending
@@ -646,7 +508,7 @@ rejected
 deferred
 ```
 
-knowledge_type 第一版只支持：
+knowledge_type 第一版：
 
 ```text
 character
@@ -655,9 +517,7 @@ faction
 item
 ```
 
-`suggested_card` 使用接近 `StructuredKnowledgeCard` 的顶层字段。`source_excerpt`、`schema_validation`、`internal_conflicts`、`external_conflicts` 是中间态字段，不写入有效知识卡。
-
-## 13. API 契约
+## 10. API 契约
 
 第一版新增独立接口前缀：
 
@@ -667,7 +527,7 @@ item
 
 第一版接口只做运行、详情、候选审核三类。metrics、nodes、llm_calls 包含在 run detail 中，不单独拆 metrics/logs API。
 
-### 13.1 创建运行
+### 10.1 创建运行
 
 ```text
 POST /api/agent-workbench/knowledge-extraction/runs
@@ -681,14 +541,6 @@ POST /api/agent-workbench/knowledge-extraction/runs
   "model_name": null,
   "force": false
 }
-```
-
-字段说明：
-
-```text
-chapter_id：必填，当前章节稳定 ID。
-model_name：可选，不填则使用系统默认模型。
-force：可选。false 时如果 content_hash 未变化，后端可以提示最近运行仍有效；true 时强制重新运行。
 ```
 
 响应：
@@ -711,9 +563,7 @@ force：可选。false 时如果 content_hash 未变化，后端可以提示最�
 }
 ```
 
-第一版可以同步执行：请求完成时已经生成 run JSON。前端无需做流式节点更新，刷新 run detail 即可查看节点状态。
-
-### 13.2 运行列表
+### 10.2 运行列表
 
 ```text
 GET /api/agent-workbench/knowledge-extraction/runs?page=1&page_size=20&status=all
@@ -723,27 +573,14 @@ GET /api/agent-workbench/knowledge-extraction/runs?page=1&page_size=20&status=al
 
 ```json
 {
-  "runs": [
-    {
-      "run_id": "extract_run_20260704_153022_a1b2c3",
-      "status": "completed",
-      "chapter_id": "chapter_0012",
-      "chapter_title": "第12章 xxx",
-      "candidate_count": 8,
-      "pending_count": 8,
-      "confirmed_count": 0,
-      "rejected_count": 0,
-      "started_at": "2026-07-04T15:30:22+09:00",
-      "finished_at": "2026-07-04T15:30:58+09:00"
-    }
-  ],
+  "runs": [],
   "page": 1,
   "page_size": 20,
-  "total": 1
+  "total": 0
 }
 ```
 
-### 13.3 运行详情
+### 10.3 运行详情
 
 ```text
 GET /api/agent-workbench/knowledge-extraction/runs/{run_id}
@@ -771,7 +608,7 @@ GET /api/agent-workbench/knowledge-extraction/runs/{run_id}
 }
 ```
 
-### 13.4 候选列表
+### 10.4 候选列表
 
 ```text
 GET /api/agent-workbench/knowledge-extraction/runs/{run_id}/candidates?status=pending&action=all
@@ -787,9 +624,7 @@ GET /api/agent-workbench/knowledge-extraction/runs/{run_id}/candidates?status=pe
 }
 ```
 
-第一版候选也可以直接来自 run detail。保留候选列表接口，是为了前端待处理候选 Tab 不必每次解析完整 run detail。
-
-### 13.5 确认候选
+### 10.5 确认候选
 
 ```text
 POST /api/agent-workbench/knowledge-extraction/candidates/{candidate_id}/confirm
@@ -820,7 +655,7 @@ ignore：不允许 confirm。
 }
 ```
 
-### 13.6 编辑后确认
+### 10.6 编辑后确认
 
 ```text
 POST /api/agent-workbench/knowledge-extraction/candidates/{candidate_id}/edit-confirm
@@ -838,13 +673,6 @@ POST /api/agent-workbench/knowledge-extraction/candidates/{candidate_id}/edit-co
 }
 ```
 
-字段说明：
-
-```text
-card_updates：作者编辑后的字段。
-target_card_id：可选。用于把候选合并或更新到指定 active 知识卡。
-```
-
 响应：
 
 ```json
@@ -855,7 +683,7 @@ target_card_id：可选。用于把候选合并或更新到指定 active 知识�
 }
 ```
 
-### 13.7 废弃候选
+### 10.7 废弃候选
 
 ```text
 POST /api/agent-workbench/knowledge-extraction/candidates/{candidate_id}/reject
@@ -878,7 +706,7 @@ POST /api/agent-workbench/knowledge-extraction/candidates/{candidate_id}/reject
 }
 ```
 
-### 13.8 稍后处理
+### 10.8 稍后处理
 
 ```text
 POST /api/agent-workbench/knowledge-extraction/candidates/{candidate_id}/defer
@@ -899,19 +727,15 @@ POST /api/agent-workbench/knowledge-extraction/candidates/{candidate_id}/defer
 }
 ```
 
-## 14. Prompt 结构与草案
+## 11. Prompt 契约
 
-第一版 prompt 拆为三类：
+Prompt 分三类：
 
 ```text
 通用抽取 prompt
 角色专家 prompt
 实体专家 prompt
 ```
-
-不使用一个大 prompt 全部完成，也不在第一版拆成每种知识类型一个 prompt。
-
-### 14.1 Prompt 字段说明来源
 
 Agent prompt 应从知识卡 schema registry 读取字段说明，而不是手写死字段。
 
@@ -926,9 +750,7 @@ required_when_active
 ai_usage
 ```
 
-这样知识库字段发生调整时，Agent prompt 可以跟着 schema 变化，不需要重复维护字段说明。
-
-### 14.2 通用抽取 prompt 草案
+### 11.1 通用抽取 prompt 草案
 
 ```text
 你是长篇玄幻小说的知识抽取助手。
@@ -957,26 +779,15 @@ ai_usage
 
 输出 JSON：
 {
-  "characters": [
-    {
-      "name": "",
-      "evidence_excerpt": "",
-      "reason": ""
-    }
-  ],
+  "characters": [],
   "locations": [],
   "factions": [],
   "items": [],
-  "ignored": [
-    {
-      "text": "",
-      "reason": ""
-    }
-  ]
+  "ignored": []
 }
 ```
 
-### 14.3 角色专家 prompt 草案
+### 11.2 角色专家 prompt 草案
 
 ```text
 你是长篇玄幻小说的角色知识卡整理助手。
@@ -1013,7 +824,7 @@ chapter_title={{chapter_title}}
 }
 ```
 
-### 14.4 实体专家 prompt 草案
+### 11.3 实体专家 prompt 草案
 
 ```text
 你是长篇玄幻小说的实体知识卡整理助手。
@@ -1052,173 +863,59 @@ chapter_title={{chapter_title}}
 }
 ```
 
-## 15. 专家节点输出 schema
+## 12. 专家节点输出 schema
 
 专家节点输出应直接贴近当前 `StructuredKnowledgeCard` 的顶层字段，不输出 `fields` 对象，也不输出自然语言让后端二次解析。
 
-### 15.1 角色专家输出示例
-
-```json
-{
-  "knowledge_type": "character",
-  "cards": [
-    {
-      "name": "秦浩轩",
-      "aliases": [],
-      "summary": "根据本章正文生成的角色摘要。",
-      "importance": "normal",
-      "source_origin": "agent_extract",
-      "source_note": "正文自动提取：第12章《章节标题》。原文摘录：……",
-      "role_type": "supporting",
-      "identity": "角色身份文本",
-      "relationship_summary": "人物关系摘要",
-      "death_chapter_id": null,
-      "current_realm_text": null,
-      "first_seen_chapter_id": "chapter_0012",
-      "last_seen_chapter_id": "chapter_0012",
-      "evidence_excerpt": "原文摘录"
-    }
-  ]
-}
-```
-
-### 15.2 地点输出示例
-
-```json
-{
-  "knowledge_type": "location",
-  "cards": [
-    {
-      "name": "白鹿城",
-      "aliases": [],
-      "summary": "根据本章正文生成的地点摘要。",
-      "importance": "normal",
-      "source_origin": "agent_extract",
-      "source_note": "正文自动提取：第12章《章节标题》。原文摘录：……",
-      "controlling_faction_id": null,
-      "first_seen_chapter_id": "chapter_0012",
-      "evidence_excerpt": "原文摘录"
-    }
-  ]
-}
-```
-
-### 15.3 势力输出示例
-
-```json
-{
-  "knowledge_type": "faction",
-  "cards": [
-    {
-      "name": "至上仙尊真乙太初教",
-      "aliases": [],
-      "summary": "根据本章正文生成的势力摘要。",
-      "importance": "normal",
-      "source_origin": "agent_extract",
-      "source_note": "正文自动提取：第12章《章节标题》。原文摘录：……",
-      "faction_type": "sect",
-      "leader_id": null,
-      "evidence_excerpt": "原文摘录"
-    }
-  ]
-}
-```
-
-### 15.4 物品输出示例
-
-```json
-{
-  "knowledge_type": "item",
-  "cards": [
-    {
-      "name": "黑骑士",
-      "aliases": [],
-      "summary": "根据本章正文生成的物品摘要。",
-      "importance": "normal",
-      "source_origin": "agent_extract",
-      "source_note": "正文自动提取：第12章《章节标题》。原文摘录：……",
-      "item_type": "other",
-      "grade": null,
-      "current_holder_id": null,
-      "first_seen_chapter_id": "chapter_0012",
-      "last_seen_chapter_id": "chapter_0012",
-      "evidence_excerpt": "原文摘录"
-    }
-  ]
-}
-```
-
-## 16. 哪些节点需要 LLM
-
-第一版必须用 LLM：
+角色、地点、势力、物品输出均必须包含：
 
 ```text
-GeneralExtractionNode
-CharacterExpertNode
-EntityExpertNode
+name
+aliases
+summary
+importance
+source_origin
+source_note
+evidence_excerpt
 ```
 
-第一版先不启用但后续可能用 LLM：
+角色额外字段：
 
 ```text
-EventRuleExpertNode
+role_type
+identity
+relationship_summary
+death_chapter_id
+current_realm_text
+first_seen_chapter_id
+last_seen_chapter_id
 ```
 
-可选用 LLM：
+地点额外字段：
 
 ```text
-MatchExistingKnowledgeNode 中的模糊同名判断
-候选冲突解释
-候选更新说明
+controlling_faction_id
+first_seen_chapter_id
 ```
 
-不需要 LLM：
+势力额外字段：
 
 ```text
-读取 Markdown
-计算 content_hash
-切分章节
-生成 run_id
-写 JSON 中间态
-字段 schema 校验
-枚举合法性检查
-来源摘录裁剪
-MongoDB 写入
-状态流转
-匹配范围过滤 active 知识卡
+faction_type
+leader_id
 ```
 
-原则：
+物品额外字段：
 
 ```text
-写死更稳定的，不用 LLM。
-需要语义理解和归纳的，用 LLM。
-成本高但收益不明显的，先不用 LLM。
+item_type
+grade
+current_holder_id
+first_seen_chapter_id
+last_seen_chapter_id
 ```
 
-## 17. 候选项、匹配规则与作者审核
-
-第一版候选项不设置 confidence / high / medium / low。
-
-原因：LLM 自报置信度容易产生误导，而且第一版所有候选都必须经过作者逐条确认。与其展示一个不稳定的置信度，不如展示更可验证的信息。
-
-第一版候选项重点展示：
-
-```text
-候选类型：新卡 / 更新 / 冲突 / 建议忽略
-知识类型：角色 / 地点 / 势力 / 物品
-名称
-摘要
-建议动作
-来源章节
-原文摘录
-schema 校验结果
-是否命中已有 active 卡
-冲突说明
-作者处理状态
-```
-
-### 17.1 候选判断顺序
+## 13. 候选判断、匹配与审核
 
 第一步：本轮内部检测。
 
@@ -1241,12 +938,6 @@ schema 校验结果
 5. 摘要或 source_note 中出现明显同指称文本
 ```
 
-第一版只匹配 active 知识卡。
-
-draft 和 deprecated 后续也默认不参与自动匹配。
-
-### 17.2 候选类型判断
-
 候选新卡：同类型下没有命中 active 卡的 name / aliases / 明显同指称。
 
 候选更新：命中已有 active 卡，并且新增字段是空白补充，或是 last_seen_chapter_id / source_note / summary 的补充。
@@ -1255,11 +946,7 @@ draft 和 deprecated 后续也默认不参与自动匹配。
 
 建议忽略：候选信息太碎、没有足够来源摘录、或者不属于第一版抽取类型。
 
-### 17.3 作者审核
-
-作者审核第一版只允许逐条确认。
-
-支持动作：
+作者审核第一版只允许逐条确认，支持：
 
 ```text
 确认入库
@@ -1268,21 +955,11 @@ draft 和 deprecated 后续也默认不参与自动匹配。
 稍后处理
 ```
 
-第一版不做批量确认。
+候选更新不允许自动覆盖已有非空字段。空字段补充可以在作者确认后写入。已有非空字段与候选字段不一致时，进入候选冲突或编辑后确认。
 
-### 17.4 字段覆盖规则
+## 14. 评测与回放
 
-候选更新不允许自动覆盖已有非空字段。
-
-空字段补充可以在作者确认后写入。
-
-已有非空字段与候选字段不一致时，进入候选冲突或编辑后确认。
-
-## 18. 评测与仪表盘
-
-评测必须和 Agent 同步做，但第一版不做复杂曲线。
-
-第一版以表格、状态标签、运行详情为主。
+第一版评测不做复杂曲线，以表格、状态标签、运行详情为主。
 
 必须有：
 
@@ -1319,33 +996,15 @@ schema 失败数
 LLM 调用次数
 ```
 
-节点级状态：
+LangSmith 可选，不作为第一版硬依赖。产品内必须自建运行记录、节点状态、候选状态、指标面板。
 
-```text
-节点名称
-状态：待执行 / 执行中 / 成功 / 失败 / 跳过
-开始时间
-结束时间
-耗时
-输入摘要
-输出摘要
-错误信息
-重试次数
-```
-
-后续再做曲线和趋势，例如通过率、废弃率、平均每章候选数、不同 prompt 版本表现对比。
-
-LangSmith 可选接入，不作为第一版硬依赖。
-
-产品内必须自建运行记录、节点状态、候选状态、指标面板。LangSmith 可以作为开发调试工具，但不能替代产品内评测和审核记录。
-
-## 19. 与写作页的关系
+## 15. 与知识库和写作页的关系
 
 确认后的知识卡只要状态为有效，就立即进入写作页可参考知识库。
 
 即使非必填字段缺失，也可以被写作页结构化查询使用。
 
-这意味着后续正文知识沉淀 Agent 再次运行时，可能不是创建新卡，而是对已有 active 知识卡生成补充建议：
+后续正文知识沉淀 Agent 再次运行时，可能不是创建新卡，而是对已有 active 知识卡生成补充建议：
 
 ```text
 补充摘要
@@ -1358,59 +1017,7 @@ LangSmith 可选接入，不作为第一版硬依赖。
 
 这类更新建议也进入待处理候选，由作者逐条确认。
 
-## 20. 增量更新与后续批量任务
-
-章节修改后，不应该重建全书。
-
-每章需要保存：
-
-```text
-chapter_id
-content_hash
-last_extracted_hash
-last_extracted_at
-extract_schema_version
-prompt_version
-model_name
-```
-
-如果正文 hash 未变化，跳过抽取。
-
-如果正文 hash 变化，只重跑该章节或包含该章节的任务范围。
-
-已确认知识卡不因正文变化自动删除或覆盖。系统只生成新的候选更新或提示来源可能过期。
-
-当前章节任务第一版可以不做中断恢复。
-
-第二版多章节任务至少需要支持失败章节重试。
-
-第一版最低要求：
-
-```text
-单章运行失败时记录错误
-允许重新运行当前章节
-不需要复杂断点恢复
-```
-
-第二版多章节批量处理需要：
-
-```text
-每章独立状态
-失败章节可重试
-成功章节不重复跑
-批次级运行记录
-批次内候选去重
-```
-
-## 21. 接口边界与旧独立对话服务清理
-
-旧 `/api/agents/chat` 是独立对话服务，会生成 AIResultCard，不适合作为正文知识沉淀 Agent 的接口。
-
-正文知识沉淀 Agent 需要 run、node、candidate、review、llm_calls、metrics 等概念，因此需要独立接口。
-
-旧独立对话服务已清理。正文知识沉淀 Agent 不复用旧接口，不复用 AIResultCard 链路。
-
-## 22. 当前不做的事情
+## 16. 当前不做的事情
 
 第一版不做：
 
@@ -1440,51 +1047,37 @@ GraphRAG
 后台队列
 ```
 
-## 23. 当前推荐总方案
+## 17. Codex 任务包生成边界
 
-正文知识沉淀 Agent 第一版应收敛为：
+下一步应生成 Codex 执行任务包。
 
-```text
-智能体工作台内启动
-新路由 /agent-workbench
-主导航入口等页面壳子完成后恢复
-只选当前章节
-真实 LLM 参与抽取
-通用抽取器 + 角色专家节点 + 实体专家节点
-事件规则专家节点只设计接口，第一版不启用
-只抽角色、地点、势力、物品
-prompt 从 schema registry 读取字段说明
-保存完整 prompt 和 response
-每次运行一个 JSON 中间态文件
-中间态放在 project_assets/derived/agent_runs/knowledge_extraction/
-候选匹配只匹配 active 知识卡
-作者逐条确认
-确认后写入 MongoDB 有效知识库
-评测和节点状态同步建设
-独立接口，不复用旧 /api/agents/chat
-```
+任务包应以本文为唯一方案输入，并以真实仓库当前代码为实现锚点。
 
-这是最适合当前阶段的路线：既能真正用上 LangGraph 和真实 LLM，又不会一次性进入全书抽取、多类型抽取、RAG、图谱和复杂批处理。
-
-关键原则：
+任务包阶段建议：
 
 ```text
-LLM 负责理解和建议。
-程序负责校验和状态流转。
-作者负责最终确认。
-MongoDB 只保存确认后的主数据。
-JSON 中间态保存未确认候选。
-只匹配 active 知识卡。
-评测仪表盘和节点状态从第一版同步建设。
+阶段 0：Preflight
+  读取必读文档、检查仓库状态、确认旧 /chat 和 /api/agents/chat 已清理。
+
+阶段 1：后端模型与 JSON 中间态
+  新增 run / node / llm_call / review_item 的模型和读写服务。
+
+阶段 2：LangGraph 主图骨架
+  实现 LoadChapterNode、SegmentChapterNode、GeneralExtractionNode、CharacterExpertNode、EntityExpertNode、NormalizeAndValidateNode、RunInternalConflictCheckNode、MatchExistingKnowledgeNode、BuildReviewItemsNode、WriteIntermediateJsonNode。
+
+阶段 3：API 契约
+  实现 /api/agent-workbench/knowledge-extraction 前缀下的运行、详情、候选审核接口。
+
+阶段 4：前端智能体工作台
+  新增 /agent-workbench 页面，恢复导航入口，实现左侧 Agent 列表、中间四个 Tab、右侧详情。
+
+阶段 5：评测与回放展示
+  展示 nodes、llm_calls、review_items、metrics，支持展开完整 prompt / response。
+
+阶段 6：端到端验收与清理
+  跑通当前章节抽取 → JSON 中间态 → 候选审核 → MongoDB active 知识卡 → 写作页可查。
 ```
 
-## 24. 下一轮讨论建议
+每个阶段完成后必须停下来返回证据，不自动进入下一阶段。
 
-下一轮建议继续讨论：
-
-1. 第一版智能体工作台页面各 Tab 的空状态、加载态、错误态。
-2. `review_items` 在前端卡片上的折叠态和展开态展示。
-3. 第一版运行是否允许同一章节重复运行并保留多条历史。
-4. 第一版模型配置从哪里读取，不在设置页暴露还是放开发配置。
-5. 第一版是否需要在知识卡详情里显示“由正文知识沉淀 Agent 创建”。
-6. 第一版任务包阶段拆分。
+阶段 commit 应发生在阶段完成、测试通过、返回证据并由用户确认之后，不能在停机点前自动提交。
