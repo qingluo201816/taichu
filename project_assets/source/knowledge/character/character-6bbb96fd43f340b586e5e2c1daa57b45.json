@@ -1,0 +1,17 @@
+{
+  "id": "character-6bbb96fd43f340b586e5e2c1daa57b45",
+  "type": "character",
+  "name": "镇长",
+  "aliases": [],
+  "summary": "大田镇镇长，恭敬迎接仙人，主持本镇少年挑选事宜。",
+  "importance": "normal",
+  "status": "deprecated",
+  "source_origin": "agent_extract",
+  "source_note": "第3章 至上仙尊真乙太初教 摘录：镇长率先跪在地上，请两位仙长挑选；在镇长等人的惋惜中，张狂走了上去。",
+  "role_type": "passerby",
+  "identity": "大田镇镇长",
+  "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+  "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+  "created_at": "2026-07-04T16:20:18.534473Z",
+  "updated_at": "2026-07-04T16:39:37.830740Z"
+}

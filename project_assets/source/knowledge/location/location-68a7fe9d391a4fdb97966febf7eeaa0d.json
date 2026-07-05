@@ -1,0 +1,14 @@
+{
+  "id": "location-68a7fe9d391a4fdb97966febf7eeaa0d",
+  "type": "location",
+  "name": "小屿山",
+  "aliases": [],
+  "summary": "大田镇背靠的山，传说中有神仙和妖魔鬼怪，猎户不敢深入，深入者失踪。",
+  "importance": "normal",
+  "status": "active",
+  "source_origin": "agent_extract",
+  "source_note": "第1章 大田金鳞元神出：“大田镇世代狩猎，但都在外围转悠，哪怕猎物越来越稀少的今天也没人敢深入小屿山，也曾有胆大的猎户深入小屿山，却再也不见出来。”；“传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。”",
+  "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+  "created_at": "2026-07-05T03:04:08.834517Z",
+  "updated_at": "2026-07-05T03:04:08.834517Z"
+}

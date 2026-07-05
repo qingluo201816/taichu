@@ -1,0 +1,1995 @@
+{
+  "run_id": "extract_run_20260705_043202_0e32ba",
+  "agent_name": "knowledge_extraction",
+  "agent_version": "v0.1",
+  "schema_version": "knowledge_fields_v2",
+  "prompt_version": "knowledge_extraction_prompt_v2",
+  "model_name": "deepseek-v4-pro",
+  "status": "completed",
+  "scope": {
+    "scope_type": "chapter",
+    "chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+    "chapter_title": "第3章 至上仙尊真乙太初教",
+    "content_hash": "cfa9efd30d84720bab0d8fc2e01f59761ce2d689781dce0c2ade93889457be64"
+  },
+  "started_at": "2026-07-05T04:32:02.131451Z",
+  "finished_at": "2026-07-05T04:34:33.176001Z",
+  "nodes": [
+    {
+      "node_name": "LoadChapterNode",
+      "status": "success",
+      "started_at": "2026-07-05T04:32:02.136451Z",
+      "finished_at": "2026-07-05T04:32:02.153335Z",
+      "duration_ms": 17,
+      "input_summary": "",
+      "output_summary": "读取章节“第3章 至上仙尊真乙太初教”，约 3998 字。",
+      "error": null
+    },
+    {
+      "node_name": "SegmentChapterNode",
+      "status": "success",
+      "started_at": "2026-07-05T04:32:02.153335Z",
+      "finished_at": "2026-07-05T04:32:02.153335Z",
+      "duration_ms": 0,
+      "input_summary": "",
+      "output_summary": "生成 1 个处理片段。",
+      "error": null
+    },
+    {
+      "node_name": "GeneralExtractionNode",
+      "status": "success",
+      "started_at": "2026-07-05T04:32:02.153335Z",
+      "finished_at": "2026-07-05T04:33:00.252252Z",
+      "duration_ms": 58097,
+      "input_summary": "1 个章节片段。",
+      "output_summary": "生成 14 个 raw mentions。",
+      "error": null
+    },
+    {
+      "node_name": "MentionNormalizeNode",
+      "status": "success",
+      "started_at": "2026-07-05T04:33:00.252252Z",
+      "finished_at": "2026-07-05T04:33:00.252252Z",
+      "duration_ms": 0,
+      "input_summary": "14 个原始 mention。",
+      "output_summary": "保留 14 个有效 mention。",
+      "error": null
+    },
+    {
+      "node_name": "EntityAggregationNode",
+      "status": "success",
+      "started_at": "2026-07-05T04:33:00.253251Z",
+      "finished_at": "2026-07-05T04:33:00.253251Z",
+      "duration_ms": 0,
+      "input_summary": "14 个规范 mention。",
+      "output_summary": "聚合为 14 个 entity_groups。",
+      "error": null
+    },
+    {
+      "node_name": "CandidateQualityGateNode",
+      "status": "success",
+      "started_at": "2026-07-05T04:33:00.253582Z",
+      "finished_at": "2026-07-05T04:33:00.294026Z",
+      "duration_ms": 40,
+      "input_summary": "14 个实体聚合组。",
+      "output_summary": "通过 12 个实体组，过滤 2 个。",
+      "error": null
+    },
+    {
+      "node_name": "TypeDispatchNode",
+      "status": "success",
+      "started_at": "2026-07-05T04:33:00.295024Z",
+      "finished_at": "2026-07-05T04:33:00.295024Z",
+      "duration_ms": 0,
+      "input_summary": "12 个通过质量闸门的实体组。",
+      "output_summary": "角色组 6 个，实体组 6 个。",
+      "error": null
+    },
+    {
+      "node_name": "CharacterExpertNode",
+      "status": "success",
+      "started_at": "2026-07-05T04:33:00.295024Z",
+      "finished_at": "2026-07-05T04:33:43.011927Z",
+      "duration_ms": 42716,
+      "input_summary": "12 个通过质量闸门的实体组。",
+      "output_summary": "",
+      "error": null
+    },
+    {
+      "node_name": "EntityExpertNode",
+      "status": "success",
+      "started_at": "2026-07-05T04:33:43.011927Z",
+      "finished_at": "2026-07-05T04:34:33.137668Z",
+      "duration_ms": 50125,
+      "input_summary": "12 个通过质量闸门的实体组。",
+      "output_summary": "",
+      "error": null
+    },
+    {
+      "node_name": "NormalizeAndValidateNode",
+      "status": "success",
+      "started_at": "2026-07-05T04:34:33.138673Z",
+      "finished_at": "2026-07-05T04:34:33.138673Z",
+      "duration_ms": 0,
+      "input_summary": "",
+      "output_summary": "",
+      "error": null
+    },
+    {
+      "node_name": "RunInternalConflictCheckNode",
+      "status": "success",
+      "started_at": "2026-07-05T04:34:33.139176Z",
+      "finished_at": "2026-07-05T04:34:33.139176Z",
+      "duration_ms": 0,
+      "input_summary": "",
+      "output_summary": "",
+      "error": null
+    },
+    {
+      "node_name": "MatchExistingKnowledgeNode",
+      "status": "success",
+      "started_at": "2026-07-05T04:34:33.139176Z",
+      "finished_at": "2026-07-05T04:34:33.175002Z",
+      "duration_ms": 35,
+      "input_summary": "",
+      "output_summary": "",
+      "error": null
+    },
+    {
+      "node_name": "BuildReviewItemsNode",
+      "status": "success",
+      "started_at": "2026-07-05T04:34:33.175002Z",
+      "finished_at": "2026-07-05T04:34:33.175002Z",
+      "duration_ms": 0,
+      "input_summary": "",
+      "output_summary": "生成 12 个审核项。",
+      "error": null
+    },
+    {
+      "node_name": "WriteIntermediateJsonNode",
+      "status": "success",
+      "started_at": "2026-07-05T04:34:33.176001Z",
+      "finished_at": "2026-07-05T04:34:33.176001Z",
+      "duration_ms": 0,
+      "input_summary": "12 个审核项。",
+      "output_summary": "已写入 JSON 中间态。",
+      "error": null
+    }
+  ],
+  "llm_calls": [
+    {
+      "call_id": "llm_call_001",
+      "node_name": "GeneralExtractionNode",
+      "model_name": "deepseek-v4-pro",
+      "prompt_version": "general_extraction_v2",
+      "input_prompt": "你是长篇玄幻小说的知识抽取助手。\n\n任务：\n从当前章节正文中抽取可以进入后续证据聚合流程的 raw mentions。你只负责发现正文中出现的角色、地点、势力、物品提及，不负责生成最终知识卡。\n\n硬规则：\n1. 只根据给定正文抽取，不要补写正文没有的信息。\n2. 第一版只抽取 character、location、faction、item。\n3. 不抽取 event、rule、realm、technique、foreshadow。\n4. 不生成最终知识卡，不输出 summary、importance、source_note 或任何类型专属字段。\n5. 每个 mention 必须提供至少一条原文摘录。\n6. 原文摘录必须来自正文，不能改写，单条长度不超过 300 字。\n7. 如果信息太碎、不确定、属于第一版不抽取类型，或明显只是泛称、临时称呼、普通空间、普通消耗品，放入 ignored 并写明原因。\n8. 输出必须是 JSON，不要输出解释性文字。\n9. 不要输出 Markdown 代码块。\n10. 不要输出任何多余字段。\n\n第一版允许抽取类型：\ncharacter、location、faction、item\n\n第一版禁止抽取类型：\nevent、rule、realm、technique、foreshadow\n\n优先忽略：\n- 临时描述性称呼，例如“另一生面孔”“小山羊胡子”“穿青衫的人”“一个少年”\n- 相对指代，例如“另一人”“其中一个”“那人”“他们”“众人”\n- 泛称，例如“少年们”“村民”“大人们”“徒弟们”\n- 单句功能性台词、无姓名、无后续作用的路人\n- 只有外貌特征、没有稳定身份或专名的对象\n- 普通功能空间，例如“酒家”“药铺门口”“小店铺”“内院”“小镇广场”\n- 泛称地点，例如“山里”“镇上”“北街”“家中”\n- 单次环境描写，例如“小山谷”“普通树林”“路边”“广场”\n- 普通消耗品、普通银两、普通衣物、普通器具\n- 普通人群泛称，例如“少年们”“村民”“镇上的人”“猎户”“徒弟们”“大人们”\n\n输入：\n章节 ID：chapter-f3a712cf4fdf404b935942fe3ff297a0\n章节标题：第3章 至上仙尊真乙太初教\n章节正文：\n# 第3章 至上仙尊真乙太初教\n\n第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖，许多家长通宵达旦跪在自家神台前，祈祷自家娃儿被神仙选中，从此飞黄腾达。\n　　秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。\n　　在二十多名健壮猎户的开路护送下，一行四十名十六岁适龄少年浩浩荡荡前往坡子岭。\n　　坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。\n　　秦浩轩等人到达不久，两道白光从东方天际破雾腾云，御剑而来，落地时，秦浩轩赫然发现，他们就是昨天想高价购买自己黄精的那二人。\n　　不止秦浩轩，其他少年也被这二人就是昨天出现在大田镇的外地人所震惊。\n　　张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精，说不定他们对秦浩轩怀恨在心，那样秦浩轩的机会就更小了。\n　　那两人落地后，他们脚下的飞剑绕场一周，驱散四周雾气，形成一小块真空界，飞剑随后自动飞回他们背后剑鞘。\n　　这一手飞剑驱雾的手法，当场倾倒了在场的少年。\n　　两名神仙到来后，镇长率先跪在地上：“大田镇今年有四十一名适龄少年，请两位仙长挑选。”\n　　四十一名少年，连同护送的二十个猎户虔诚的跪地行礼。\n　　扫视四十一名前来测试的适龄少年，良莠不齐，大多低着脑袋畏畏缩缩，也有几个高昂着头，一副胸有成竹的模样，但眉眼间都参杂着自卑和自信的复杂神色。\n　　唯独一个穿着灰色布衫的少年，举止得体，神情端庄，气质沉稳，颇有风度，令他们眼睛一亮，这不是昨天在陈家药铺卖黄精的那少年么？他们心中倒有几分期待这少年的测试成绩。\n　　在大田镇他们也听说了秦浩轩的大名，而且还亲眼看到他拿黄精来卖，采一两次灵药可以说运气好，但秦浩轩经常能拿出不逊色黄精的好东西，绝对不是运气这么简单了，如果能将这小子收入宗门，对自己倒有些好处。\n　　“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”\n　　“第一个。”\n　　按照镇长之前排好的顺序，第一个少年走上去接受测试。\n　　不过测试之前，还要进行一整套熏香、漱洗的复杂程序。\n　　测试少年伸出左手，徐吞虎接过一阵揉捏，皱起眉头，道：“凡骨……下一个。”\n　　所谓摸道骨就是对骨骼经脉进行初步的试探，这都不能过关，那也没必要进行下一项了。\n　　一连上了好几个，全部被徐吞虎贴上渣的标签，好不容易有一个过了摸道骨这一关，进入由赵嘉龙负责的测仙种。\n　　测仙种就是测试仙种，几乎每个人都有仙种，但很多人的仙种在他出生后就死了，即便仙种还活着的，也要等十六年后看仙种是否还活着，因为要满十六岁才能灌输吸收天地灵气，所以必须满十六岁才能修仙，而在这十六年中，又有很多人的仙种干涸死了。\n　　那名通过摸骨测试的少年在测仙根中发现，他的仙种已经死了。\n　　山上神仙挑选弟子本就是一个莫大的仙缘，不是谁都能接到这份仙缘的，经常每年抱着希望而来，一无所获的带着失望而回也是常有的事。\n　　紧接着几个人都通过了第一道摸骨测试，却在测仙种上全军覆没。\n　　在镇长等人的惋惜中，张狂走了上去，又重新点燃了镇长等人的希望。\n　　张狂这孩子性子跋扈不讨喜，但他继承了他父亲的优良基因，从小就表现不凡。他父亲当年差点就被山上神仙带走，即便现在也是大田镇首屈一指的优秀猎户。\n　　接过张狂的手，徐吞虎一阵揉捏，一改脸上阴霾，喜上眉梢，连连称好。\n　　张狂顺利通过第一关摸道骨，虽然是意料之中的事，但从徐吞虎的表现来看，他的资质那是相当了不得，说不定就要成为大田镇几十年来第一个仙人弟子。\n　　在众多羡慕的目光中，张狂来到赵嘉龙身前。\n　　神采飞扬的张狂走到赵嘉龙身前，换上一脸谦逊的笑容，恭恭敬敬的行礼。\n　　见到张狂，赵嘉龙眼睛一亮，可张狂眉宇间那一股遮掩不了的傲气让他微微皱起了眉头，但不论他个人喜恶如何，测试还是要继续。\n　　赵嘉龙哈了一道仙灵之气打入张狂体内，随即割破张狂食指，滴下一滴含有仙灵之气的鲜血在仙灵花上，如果仙灵花毫无动静则说明仙种已死，仙灵花开得越茂密则证明仙种越饱满。\n　　鲜血滴在仙灵花上立即被吸收，随后从一个干瘪的小花骨朵迅速变大饱满，随后花瓣缓缓张合，盛开。\n　　最终，仙灵花以怒放的姿态，展示了张狂仙种的饱满和活力。\n　　大田镇的人爆出一阵又一阵欢呼和尖叫，几十年来，大田镇的又出现了一名仙人弟子，未来的神仙人物。\n　　原本对张狂印象不好的人，再看向他的眼神异常复杂，羡慕嫉妒还有巴结讨好的味道。\n　　秦浩轩双眉微微收紧，心中也有些担忧，这张狂居然真的得志了，看两位上仙的表情，怕是天赋极好，这还真是出门赴宴先踩一脚狗屎——不是好兆头。\n　　随后，赵嘉龙正式宣布张狂通过考核。\n　　在张狂之后又有几名少年参加测试失败，很快，轮到秦浩轩。\n　　秦浩轩一直是大田镇这群少年中的标杆式人物，不但身手敏捷会打猎，还能采来许多陈老头都采不到的奇珍妙药，风头稳稳盖过张狂，这两人也一直彼此看不顺眼。\n　　在四十一人中，秦浩轩被选中的呼声最大，眼下呼声还不如他的张狂被仙人选中，秦浩轩压力巨大。\n　　接过秦浩轩递来的左手，徐吞虎破天荒打了个招呼：“你来了，别让我们失望！”\n　　秦浩轩微微一笑，任由徐吞虎摸着自己手骨：“细长有余，命骨稍短；骨骼精奇，脉络略阻！可惜，可惜，可惜啊！”\n　　徐吞虎一连说了三个可惜，看着秦浩轩的眼神也是一脸惋惜：“你虽然能算过关，但资质实在一般。”\n　　秦浩轩鞠躬回礼：“谢谢徐仙长。”\n　　走到赵嘉龙身前，秦浩轩毫不做作的不卑不亢谦虚做派，让赵嘉龙心中暗赞不已。\n　　赵嘉龙朝他微微一笑，哈出一道仙灵之气打入秦浩轩体内。\n　　秦浩轩只觉得一道温和的暖流从自己背部涌入经脉，瞬间流遍全身，即便连血液中也暂时融入了仙灵之气。\n　　丹田中出现了一个原不存在的灰绿色小种子，在层层雾气包围中看不清模样，在正式修仙前，就算暂时有这一口仙灵之气也无法内视。\n　　割破食指，滴下一滴鲜血灌浇又恢复小骨朵模样的仙灵花。\n　　这一次仙灵花虽然有动静，却不像张狂的立竿见影，小花骨朵以一种相当慢的速度缓慢变大，好半晌才变成正常花骨朵大小，然后花瓣间开了一小条缝。\n　　然后左等右等，仙灵花就是没有动静，这说明秦浩轩的仙种虽然没死，但干涸得相当严重了，再过上几个月，仙种干涸而死也不是没可能。\n　　赵嘉龙思量半晌，秦浩轩的资质介于可收可不收之间，究竟是去是留的决定权就在他们两人手中。\n　　望着秦浩轩的赵嘉龙一脸可惜，他想不到能时不时采来黄精那般珍贵药材的秦浩轩资质如此普通，普通到让他犯难了。\n　　这时徐吞虎凑近赵嘉龙耳边，悄悄耳语了几句，赵嘉龙眼神闪烁，似乎在权衡利弊。\n　　片刻后，赵嘉龙宣布秦浩轩也被收录。\n　　大田镇的人们再一次沸腾了，要知道大田镇这种贫瘠的地方，几十年甚至上百年选不上一个是很正常的事，赵嘉龙和徐吞虎二人也只抱着例行公事的心思走个过场罢了，却没想到一举收了两个。\n　　紧接着，又是大批大批被刷掉，令人意外的是，张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝，证明张扬的仙种比秦浩轩更有活力。\n　　张狂的脸上填满了少年人得志时的骄傲气色，看向秦浩轩的眼神充满藐视，心里更是得意洋洋，叫你仗着身强体壮，喜好多管闲事，等我学好灵法做了神仙，看我以后怎么整你！\n　　对于张狂挑衅的眼神，秦浩轩视而不见，不就资质比我好点，仙种活力比我强点，有什么了不起的，修仙路上变数万千，资质好并不代表未来成就一定会高，否则那些神仙们还满大街寻个屁啊，直接招些一流资质的人不就得了。\n　　很快，四十一名少年全部测试完毕，今年的大田镇一举出了三名仙人弟子，可谓皆大欢喜。\n　　“你们三人回去准备下，告别父母亲人，明天就随我等上山。”赵嘉龙说罢，将三袋沉甸甸的银子分别递给他们三人，道：“这是你们的安家费，妥善安置后，明天清晨镇口见！”\n　　交代完毕，赵嘉龙和徐吞虎二人祭出仙剑腾空离去，那些落选的少年将对两位神仙的艳羡转投到通过测试的三人身上，尤其是测试成绩最为优异的张狂，不久的将来他们就能像神仙一样高来高去。\n　　神仙在大田镇选了三名少年的消息传出，方圆百里的人无不震惊，许多几代前就断绝往来的远房亲戚纷纷登门，送来礼物，说尽好话，想尽千方百计和未来的神仙打好关系，资质最优秀的张狂家门槛都被认识或不认识的送礼人踏破了，另外两家也是不少。\n　　一宿热闹后，三名少年在无数家乡父老的簇拥下来到镇口，徐吞虎和赵嘉龙已经再此等候了。\n　　由于路途遥远，镇长连夜在县城里购了五匹好马，供他们驱驰代步。\n　　五人翻身上马，徐吞虎一甩手，五张黄色符纸分别贴在五匹马屁股上，这五匹马仿佛打了鸡血，嘶鸣一声飞快朝前冲去。\n　　来不及挥手道别，回头望时只能看到亲人眼中噙着的泪花，饱含幸福和伤感，渐行渐远。\n　　修仙路漫漫，一去不复还。\n　　“两位仙长，不知怎么称呼二位，才不失礼数？”秦浩轩策马快行一步，赶上徐吞虎和赵嘉龙，不卑不亢的询问。\n　　“师兄！”赵嘉龙面无表情，冷冰冰的吐出两个字。\n　　张狂、张扬两人眼看秦浩轩吃瘪，心头暗笑不已，却做出一副老实巴交的模样，张狂故作憨厚道：“能被两位师兄看中，收列门墙，是张狂天大的福分，往后还请师兄多提携呢！”\n　　对于张狂拍的劣质马屁，不论徐吞虎还是赵嘉龙都兴致缺缺，自动忽略，张狂心里很不高兴，但表面还摆出一副笑脸。\n　　“赵师兄，徐师兄，我们三人出身偏远小地方，见识浅薄，只知年年有您这般的神仙来挑选弟子，却不知更加详尽的情况，为了避免到了师门闹出笑话，让作为引路人的两位师兄脸上无光，能否请两位师兄提点几句？”\n　　秦浩轩一番话说得不卑不亢，十分得体，性子冷傲的赵嘉龙“嗯”了一声，表示同意。\n　　“我们师门乃是翔龙国护国神教，上天曾降下仙班仙谱，赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！”说起师门太初教，即便是性情冷傲的赵嘉龙也是宝相端庄一脸憧憬，更是听得秦浩轩三人眉飞色舞心驰神往。\n\n\n允许抽取类型：\ncharacter, location, faction, item\n\n输出 JSON：\n{\n  \"mentions\": [\n    {\n      \"name\": \"\",\n      \"knowledge_type\": \"character|location|faction|item\",\n      \"description\": \"\",\n      \"evidence_excerpts\": [\"\"],\n      \"reason\": \"\"\n    }\n  ],\n  \"ignored\": [\n    {\n      \"text\": \"\",\n      \"reason\": \"\"\n    }\n  ]\n}\n",
+      "raw_response": "{\n  \"mentions\": [\n    {\n      \"name\": \"秦浩轩\",\n      \"knowledge_type\": \"character\",\n      \"description\": \"主角，大田镇少年，通过测试成为太初教弟子。\",\n      \"evidence_excerpts\": [\n        \"秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。\"\n      ],\n      \"reason\": \"主角，有明确姓名，在对话和剧情中反复出现。\"\n    },\n    {\n      \"name\": \"张狂\",\n      \"knowledge_type\": \"character\",\n      \"description\": \"大田镇少年，测试成绩优异，被太初教收录。\",\n      \"evidence_excerpts\": [\n        \"张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。\"\n      ],\n      \"reason\": \"有名有姓，重要配角，通过测试。\"\n    },\n    {\n      \"name\": \"张扬\",\n      \"knowledge_type\": \"character\",\n      \"description\": \"张狂的族弟，同样通过测试。\",\n      \"evidence_excerpts\": [\n        \"张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。\"\n      ],\n      \"reason\": \"有名字，通过测试的弟子之一。\"\n    },\n    {\n      \"name\": \"徐吞虎\",\n      \"knowledge_type\": \"character\",\n      \"description\": \"太初教弟子，负责摸骨测试。\",\n      \"evidence_excerpts\": [\n        \"“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”\"\n      ],\n      \"reason\": \"有名有姓的神仙，测试者。\"\n    },\n    {\n      \"name\": \"赵嘉龙\",\n      \"knowledge_type\": \"character\",\n      \"description\": \"太初教弟子，负责测仙种。\",\n      \"evidence_excerpts\": [\n        \"“本仙徐吞虎，这位乃我师兄赵嘉龙。”\"\n      ],\n      \"reason\": \"有名有姓的神仙，测试者。\"\n    },\n    {\n      \"name\": \"陈老头\",\n      \"knowledge_type\": \"character\",\n      \"description\": \"大田镇陈家药铺的老头，曾以高价卖出黄精。\",\n      \"evidence_excerpts\": [\n        \"后来在陈老头手上以五百两天价买下那枚黄精。\"\n      ],\n      \"reason\": \"有特定称呼，作为有名字的角色出现。\"\n    },\n    {\n      \"name\": \"大田镇\",\n      \"knowledge_type\": \"location\",\n      \"description\": \"秦浩轩等人生活的镇子。\",\n      \"evidence_excerpts\": [\n        \"第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。\"\n      ],\n      \"reason\": \"重要地点，反复出现。\"\n    },\n    {\n      \"name\": \"坡子岭\",\n      \"knowledge_type\": \"location\",\n      \"description\": \"小屿山内山与外围的分界点，测试地点。\",\n      \"evidence_excerpts\": [\n        \"坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。\"\n      ],\n      \"reason\": \"具体地点，测试发生地。\"\n    },\n    {\n      \"name\": \"小屿山\",\n      \"knowledge_type\": \"location\",\n      \"description\": \"大田镇附近的山脉。\",\n      \"evidence_excerpts\": [\n        \"坡子岭是小屿山内山与外围的分界点。\"\n      ],\n      \"reason\": \"地理名称，与剧情相关。\"\n    },\n    {\n      \"name\": \"大屿山黄帝峰\",\n      \"knowledge_type\": \"location\",\n      \"description\": \"太初教宗门所在地。\",\n      \"evidence_excerpts\": [\n        \"宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！\"\n      ],\n      \"reason\": \"重要地点，宗门所在。\"\n    },\n    {\n      \"name\": \"翔龙国\",\n      \"knowledge_type\": \"location\",\n      \"description\": \"国家，太初教为其护国神教。\",\n      \"evidence_excerpts\": [\n        \"我们师门乃是翔龙国护国神教，上天曾降下仙班仙谱，赐名‘至上仙尊真乙太初教’。\"\n      ],\n      \"reason\": \"重要地理政治实体。\"\n    },\n    {\n      \"name\": \"至上仙尊真乙太初教\",\n      \"knowledge_type\": \"faction\",\n      \"description\": \"翔龙国唯一仙门，简称太初教。\",\n      \"evidence_excerpts\": [\n        \"赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！\"\n      ],\n      \"reason\": \"核心势力，整个故事的背景。\"\n    },\n    {\n      \"name\": \"黄精\",\n      \"knowledge_type\": \"item\",\n      \"description\": \"一种灵药，秦浩轩曾采摘。\",\n      \"evidence_excerpts\": [\n        \"要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。\"\n      ],\n      \"reason\": \"重要灵药，多次提及。\"\n    },\n    {\n      \"name\": \"仙灵花\",\n      \"knowledge_type\": \"item\",\n      \"description\": \"测试仙种的道具，吸收鲜血后开花。\",\n      \"evidence_excerpts\": [\n        \"滴下一滴含有仙灵之气的鲜血在仙灵花上，如果仙灵花毫无动静则说明仙种已死，仙灵花开得越茂密则证明仙种越饱满。\"\n      ],\n      \"reason\": \"测试关键道具，多次出现。\"\n    }\n  ],\n  \"ignored\": [\n    {\n      \"text\": \"镇长率先跪在地上\",\n      \"reason\": \"无名泛称，临时功能性角色。\"\n    },\n    {\n      \"text\": \"在二十多名健壮猎户的开路护送下\",\n      \"reason\": \"泛称群体，无具体姓名。\"\n    },\n    {\n      \"text\": \"一行四十名十六岁适龄少年浩浩荡荡前往坡子岭\",\n      \"reason\": \"泛称群体。\"\n    },\n    {\n      \"text\": \"陈家药铺\",\n      \"reason\": \"普通功能空间，仅作为交易地点提及。\"\n    },\n    {\n      \"text\": \"三袋沉甸甸的银子\",\n      \"reason\": \"普通银两，无特殊性。\"\n    },\n    {\n      \"text\": \"五张黄色符纸\",\n      \"reason\": \"一次性消耗品，无独特名称。\"\n    },\n    {\n      \"text\": \"他们脚下的飞剑绕场一周\",\n      \"reason\": \"普通仙家法器，无独特名称。\"\n    }\n  ]\n}",
+      "parsed_output": {
+        "mentions": [
+          {
+            "name": "秦浩轩",
+            "knowledge_type": "character",
+            "description": "主角，大田镇少年，通过测试成为太初教弟子。",
+            "evidence_excerpts": [
+              "秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。"
+            ],
+            "reason": "主角，有明确姓名，在对话和剧情中反复出现。"
+          },
+          {
+            "name": "张狂",
+            "knowledge_type": "character",
+            "description": "大田镇少年，测试成绩优异，被太初教收录。",
+            "evidence_excerpts": [
+              "张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。"
+            ],
+            "reason": "有名有姓，重要配角，通过测试。"
+          },
+          {
+            "name": "张扬",
+            "knowledge_type": "character",
+            "description": "张狂的族弟，同样通过测试。",
+            "evidence_excerpts": [
+              "张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。"
+            ],
+            "reason": "有名字，通过测试的弟子之一。"
+          },
+          {
+            "name": "徐吞虎",
+            "knowledge_type": "character",
+            "description": "太初教弟子，负责摸骨测试。",
+            "evidence_excerpts": [
+              "“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”"
+            ],
+            "reason": "有名有姓的神仙，测试者。"
+          },
+          {
+            "name": "赵嘉龙",
+            "knowledge_type": "character",
+            "description": "太初教弟子，负责测仙种。",
+            "evidence_excerpts": [
+              "“本仙徐吞虎，这位乃我师兄赵嘉龙。”"
+            ],
+            "reason": "有名有姓的神仙，测试者。"
+          },
+          {
+            "name": "陈老头",
+            "knowledge_type": "character",
+            "description": "大田镇陈家药铺的老头，曾以高价卖出黄精。",
+            "evidence_excerpts": [
+              "后来在陈老头手上以五百两天价买下那枚黄精。"
+            ],
+            "reason": "有特定称呼，作为有名字的角色出现。"
+          },
+          {
+            "name": "大田镇",
+            "knowledge_type": "location",
+            "description": "秦浩轩等人生活的镇子。",
+            "evidence_excerpts": [
+              "第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。"
+            ],
+            "reason": "重要地点，反复出现。"
+          },
+          {
+            "name": "坡子岭",
+            "knowledge_type": "location",
+            "description": "小屿山内山与外围的分界点，测试地点。",
+            "evidence_excerpts": [
+              "坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。"
+            ],
+            "reason": "具体地点，测试发生地。"
+          },
+          {
+            "name": "小屿山",
+            "knowledge_type": "location",
+            "description": "大田镇附近的山脉。",
+            "evidence_excerpts": [
+              "坡子岭是小屿山内山与外围的分界点。"
+            ],
+            "reason": "地理名称，与剧情相关。"
+          },
+          {
+            "name": "大屿山黄帝峰",
+            "knowledge_type": "location",
+            "description": "太初教宗门所在地。",
+            "evidence_excerpts": [
+              "宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！"
+            ],
+            "reason": "重要地点，宗门所在。"
+          },
+          {
+            "name": "翔龙国",
+            "knowledge_type": "location",
+            "description": "国家，太初教为其护国神教。",
+            "evidence_excerpts": [
+              "我们师门乃是翔龙国护国神教，上天曾降下仙班仙谱，赐名‘至上仙尊真乙太初教’。"
+            ],
+            "reason": "重要地理政治实体。"
+          },
+          {
+            "name": "至上仙尊真乙太初教",
+            "knowledge_type": "faction",
+            "description": "翔龙国唯一仙门，简称太初教。",
+            "evidence_excerpts": [
+              "赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！"
+            ],
+            "reason": "核心势力，整个故事的背景。"
+          },
+          {
+            "name": "黄精",
+            "knowledge_type": "item",
+            "description": "一种灵药，秦浩轩曾采摘。",
+            "evidence_excerpts": [
+              "要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。"
+            ],
+            "reason": "重要灵药，多次提及。"
+          },
+          {
+            "name": "仙灵花",
+            "knowledge_type": "item",
+            "description": "测试仙种的道具，吸收鲜血后开花。",
+            "evidence_excerpts": [
+              "滴下一滴含有仙灵之气的鲜血在仙灵花上，如果仙灵花毫无动静则说明仙种已死，仙灵花开得越茂密则证明仙种越饱满。"
+            ],
+            "reason": "测试关键道具，多次出现。"
+          }
+        ],
+        "ignored": [
+          {
+            "text": "镇长率先跪在地上",
+            "reason": "无名泛称，临时功能性角色。"
+          },
+          {
+            "text": "在二十多名健壮猎户的开路护送下",
+            "reason": "泛称群体，无具体姓名。"
+          },
+          {
+            "text": "一行四十名十六岁适龄少年浩浩荡荡前往坡子岭",
+            "reason": "泛称群体。"
+          },
+          {
+            "text": "陈家药铺",
+            "reason": "普通功能空间，仅作为交易地点提及。"
+          },
+          {
+            "text": "三袋沉甸甸的银子",
+            "reason": "普通银两，无特殊性。"
+          },
+          {
+            "text": "五张黄色符纸",
+            "reason": "一次性消耗品，无独特名称。"
+          },
+          {
+            "text": "他们脚下的飞剑绕场一周",
+            "reason": "普通仙家法器，无独特名称。"
+          }
+        ]
+      },
+      "started_at": "2026-07-05T04:32:02.153335Z",
+      "finished_at": "2026-07-05T04:33:00.252252Z",
+      "duration_ms": 58096,
+      "error": null
+    },
+    {
+      "call_id": "llm_call_002",
+      "node_name": "CharacterExpertNode",
+      "model_name": "deepseek-v4-pro",
+      "prompt_version": "character_expert_v2",
+      "input_prompt": "你是长篇玄幻小说的角色知识卡整理助手。\n\n任务：\n根据通过质量闸门的角色 entity_groups 和多条原文证据，生成角色卡草稿或角色卡更新建议。\n\n硬规则：\n1. 只根据 entity_groups 和 evidence_excerpts 填写字段。\n2. 不要补写正文没有的信息。\n3. 不要输出 personality、motivation、appearance、relations、current_goal、secret、known_secrets。\n4. 不要输出 body、tags、fields、confidence、source_refs。\n5. role_type 只能从 schema options 中选择，无法判断时填 null。\n6. death_chapter_id 只有正文明确确认死亡时才填写，否则填 null。\n7. current_realm_text 只有正文出现境界或修为信息时才填写，否则填 null。\n8. first_seen_chapter_id 和 last_seen_chapter_id 第一版都可以使用当前 chapter_id。\n9. source_origin 固定为 agent_extract。\n10. source_note 必须写成作者可读中文文本，包含章节标题和关键原文摘录。\n11. evidence_excerpt 可以是主证据，evidence_excerpts 必须保留多条证据。\n12. summary 和 source_note 必须基于多条 evidence_excerpts 综合生成，不能只复述第一条证据。\n13. 输出必须是 JSON，不要输出解释性文字。\n14. 不要输出 Markdown 代码块。\n15. 不要输出任何多余字段。\n\n字段 schema：\n{\n  \"type\": \"character\",\n  \"label\": \"角色\",\n  \"fields\": [\n    {\n      \"field_key\": \"name\",\n      \"label\": \"名称\",\n      \"field_type\": \"short_text\",\n      \"required_when_active\": true,\n      \"options\": [],\n      \"placeholder\": \"输入知识卡名称\",\n      \"display_group\": \"基础信息\",\n      \"list_display\": true,\n      \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n    },\n    {\n      \"field_key\": \"aliases\",\n      \"label\": \"别名\",\n      \"field_type\": \"string_array\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"多个别名用换行或逗号分隔\",\n      \"display_group\": \"基础信息\",\n      \"list_display\": true,\n      \"ai_usage\": \"名称、称号、旧名和简称。\"\n    },\n    {\n      \"field_key\": \"summary\",\n      \"label\": \"摘要\",\n      \"field_type\": \"long_text\",\n      \"required_when_active\": true,\n      \"options\": [],\n      \"placeholder\": \"一句话或一段摘要\",\n      \"display_group\": \"基础信息\",\n      \"list_display\": true,\n      \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n    },\n    {\n      \"field_key\": \"importance\",\n      \"label\": \"重要程度\",\n      \"field_type\": \"enum\",\n      \"required_when_active\": false,\n      \"options\": [\n        {\n          \"value\": \"core\",\n          \"label\": \"核心\"\n        },\n        {\n          \"value\": \"major\",\n          \"label\": \"重要\"\n        },\n        {\n          \"value\": \"normal\",\n          \"label\": \"普通\"\n        },\n        {\n          \"value\": \"minor\",\n          \"label\": \"次要\"\n        }\n      ],\n      \"placeholder\": \"\",\n      \"display_group\": \"基础信息\",\n      \"list_display\": true,\n      \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n    },\n    {\n      \"field_key\": \"status\",\n      \"label\": \"状态\",\n      \"field_type\": \"enum\",\n      \"required_when_active\": false,\n      \"options\": [\n        {\n          \"value\": \"draft\",\n          \"label\": \"草稿\"\n        },\n        {\n          \"value\": \"active\",\n          \"label\": \"有效\"\n        },\n        {\n          \"value\": \"deprecated\",\n          \"label\": \"已废弃\"\n        }\n      ],\n      \"placeholder\": \"\",\n      \"display_group\": \"基础信息\",\n      \"list_display\": true,\n      \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n    },\n    {\n      \"field_key\": \"source_origin\",\n      \"label\": \"来源方式\",\n      \"field_type\": \"enum\",\n      \"required_when_active\": true,\n      \"options\": [\n        {\n          \"value\": \"inbox_fact\",\n          \"label\": \"收件箱事实转化\"\n        },\n        {\n          \"value\": \"agent_extract\",\n          \"label\": \"正文自动提取\"\n        },\n        {\n          \"value\": \"manual\",\n          \"label\": \"人工添加\"\n        }\n      ],\n      \"placeholder\": \"选择来源方式\",\n      \"display_group\": \"来源\",\n      \"list_display\": true,\n      \"ai_usage\": \"说明知识卡来源类型。\"\n    },\n    {\n      \"field_key\": \"source_note\",\n      \"label\": \"来源说明\",\n      \"field_type\": \"long_text\",\n      \"required_when_active\": true,\n      \"options\": [],\n      \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n      \"display_group\": \"来源\",\n      \"list_display\": true,\n      \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n    },\n    {\n      \"field_key\": \"role_type\",\n      \"label\": \"角色定位\",\n      \"field_type\": \"enum\",\n      \"required_when_active\": false,\n      \"options\": [\n        {\n          \"value\": \"protagonist\",\n          \"label\": \"主角\"\n        },\n        {\n          \"value\": \"supporting\",\n          \"label\": \"配角\"\n        },\n        {\n          \"value\": \"antagonist\",\n          \"label\": \"反派\"\n        },\n        {\n          \"value\": \"passerby\",\n          \"label\": \"路人\"\n        },\n        {\n          \"value\": \"faction_representative\",\n          \"label\": \"势力代表\"\n        }\n      ],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": true,\n      \"ai_usage\": \"角色在故事中的基础定位。\"\n    },\n    {\n      \"field_key\": \"identity\",\n      \"label\": \"身份\",\n      \"field_type\": \"short_text\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": true,\n      \"ai_usage\": \"角色出身、身份或公开身份。\"\n    },\n    {\n      \"field_key\": \"relationship_summary\",\n      \"label\": \"关系摘要\",\n      \"field_type\": \"long_text\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": false,\n      \"ai_usage\": \"人物关系的文字概述。\"\n    },\n    {\n      \"field_key\": \"death_chapter_id\",\n      \"label\": \"死亡章节\",\n      \"field_type\": \"chapter_ref\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": false,\n      \"ai_usage\": \"角色死亡确认章节的稳定 chapter_id。\"\n    },\n    {\n      \"field_key\": \"current_realm_text\",\n      \"label\": \"当前境界\",\n      \"field_type\": \"short_text\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": true,\n      \"ai_usage\": \"角色当前境界文本。\"\n    },\n    {\n      \"field_key\": \"first_seen_chapter_id\",\n      \"label\": \"首次登场章节\",\n      \"field_type\": \"chapter_ref\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": false,\n      \"ai_usage\": \"角色首次登场章节的稳定 chapter_id。\"\n    },\n    {\n      \"field_key\": \"last_seen_chapter_id\",\n      \"label\": \"最近出现章节\",\n      \"field_type\": \"chapter_ref\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": false,\n      \"ai_usage\": \"角色最近出现章节的稳定 chapter_id。\"\n    }\n  ]\n}\n\n章节信息：\nchapter_id=chapter-f3a712cf4fdf404b935942fe3ff297a0\nchapter_title=第3章 至上仙尊真乙太初教\n\n角色 entity_groups：\n[\n  {\n    \"entity_group_id\": \"entity_group_001\",\n    \"canonical_name\": \"秦浩轩\",\n    \"knowledge_type\": \"character\",\n    \"raw_names\": [\n      \"秦浩轩\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"命中已有有效知识卡，可作为更新候选。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_002\",\n    \"canonical_name\": \"张狂\",\n    \"knowledge_type\": \"character\",\n    \"raw_names\": [\n      \"张狂\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"命中已有有效知识卡，可作为更新候选。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_003\",\n    \"canonical_name\": \"张扬\",\n    \"knowledge_type\": \"character\",\n    \"raw_names\": [\n      \"张扬\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备稳定专名特征。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_004\",\n    \"canonical_name\": \"徐吞虎\",\n    \"knowledge_type\": \"character\",\n    \"raw_names\": [\n      \"徐吞虎\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备稳定专名特征。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_005\",\n    \"canonical_name\": \"赵嘉龙\",\n    \"knowledge_type\": \"character\",\n    \"raw_names\": [\n      \"赵嘉龙\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"“本仙徐吞虎，这位乃我师兄赵嘉龙。”\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备稳定专名特征。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_006\",\n    \"canonical_name\": \"陈老头\",\n    \"knowledge_type\": \"character\",\n    \"raw_names\": [\n      \"陈老头\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"后来在陈老头手上以五百两天价买下那枚黄精。\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"命中已有有效知识卡，可作为更新候选。\"\n  }\n]\n\n输出 JSON：\n{\n  \"knowledge_type\": \"character\",\n  \"cards\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"role_type\": null,\n      \"identity\": null,\n      \"relationship_summary\": null,\n      \"death_chapter_id\": null,\n      \"current_realm_text\": null,\n      \"first_seen_chapter_id\": \"chapter-f3a712cf4fdf404b935942fe3ff297a0\",\n      \"last_seen_chapter_id\": \"chapter-f3a712cf4fdf404b935942fe3ff297a0\"\n    }\n  ]\n}\n",
+      "raw_response": "{\"knowledge_type\":\"character\",\"cards\":[{\"entity_group_id\":\"entity_group_001\",\"name\":\"秦浩轩\",\"aliases\":[],\"summary\":\"秦浩轩在离家前告别跪了一宿的父母，心情沉重。\",\"importance\":\"normal\",\"source_origin\":\"agent_extract\",\"source_note\":\"第3章 至上仙尊真乙太初教 原文摘录：“秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。”\",\"evidence_excerpt\":\"秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。\",\"evidence_excerpts\":[\"秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。\"],\"role_type\":null,\"identity\":null,\"relationship_summary\":null,\"death_chapter_id\":null,\"current_realm_text\":null,\"first_seen_chapter_id\":\"chapter-f3a712cf4fdf404b935942fe3ff297a0\",\"last_seen_chapter_id\":\"chapter-f3a712cf4fdf404b935942fe3ff297a0\"},{\"entity_group_id\":\"entity_group_002\",\"name\":\"张狂\",\"aliases\":[],\"summary\":\"张狂是张扬的族兄，曾欲向秦浩轩购买黄精未果，后以五百两高价从陈老头处购得。\",\"importance\":\"normal\",\"source_origin\":\"agent_extract\",\"source_note\":\"第3章 至上仙尊真乙太初教 原文摘录：“张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。”\",\"evidence_excerpt\":\"张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。\",\"evidence_excerpts\":[\"张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。\"],\"role_type\":null,\"identity\":null,\"relationship_summary\":\"张狂是张扬的族兄，曾向秦浩轩购买黄精，后从陈老头处高价购得。\",\"death_chapter_id\":null,\"current_realm_text\":null,\"first_seen_chapter_id\":\"chapter-f3a712cf4fdf404b935942fe3ff297a0\",\"last_seen_chapter_id\":\"chapter-f3a712cf4fdf404b935942fe3ff297a0\"},{\"entity_group_id\":\"entity_group_003\",\"name\":\"张扬\",\"aliases\":[],\"summary\":\"张扬是张狂的族弟，在教派考核中通过，成绩略优于秦浩轩，其仙灵花多开了一条缝。\",\"importance\":\"normal\",\"source_origin\":\"agent_extract\",\"source_note\":\"第3章 至上仙尊真乙太初教 原文摘录：“张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。”\",\"evidence_excerpt\":\"张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。\",\"evidence_excerpts\":[\"张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。\"],\"role_type\":null,\"identity\":null,\"relationship_summary\":\"张扬是张狂的族弟，与秦浩轩同批考核，成绩略胜。\",\"death_chapter_id\":null,\"current_realm_text\":null,\"first_seen_chapter_id\":\"chapter-f3a712cf4fdf404b935942fe3ff297a0\",\"last_seen_chapter_id\":\"chapter-f3a712cf4fdf404b935942fe3ff297a0\"},{\"entity_group_id\":\"entity_group_004\",\"name\":\"徐吞虎\",\"aliases\":[],\"summary\":\"徐吞虎是负责选苗的仙人，留有山羊胡，与师兄赵嘉龙共同主持考核，宣布摸道骨与测仙种的选拔规则。\",\"importance\":\"normal\",\"source_origin\":\"agent_extract\",\"source_note\":\"第3章 至上仙尊真乙太初教 原文摘录：“‘本仙徐吞虎，这位乃我师兄赵嘉龙。’那山羊胡子徐吞虎简单介绍后，也不废话，道：‘选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。’”\",\"evidence_excerpt\":\"“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”\",\"evidence_excerpts\":[\"“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”\"],\"role_type\":null,\"identity\":null,\"relationship_summary\":\"徐吞虎是赵嘉龙的师弟。\",\"death_chapter_id\":null,\"current_realm_text\":null,\"first_seen_chapter_id\":\"chapter-f3a712cf4fdf404b935942fe3ff297a0\",\"last_seen_chapter_id\":\"chapter-f3a712cf4fdf404b935942fe3ff297a0\"},{\"entity_group_id\":\"entity_group_005\",\"name\":\"赵嘉龙\",\"aliases\":[],\"summary\":\"赵嘉龙是徐吞虎的师兄，一同参与选苗考核。\",\"importance\":\"normal\",\"source_origin\":\"agent_extract\",\"source_note\":\"第3章 至上仙尊真乙太初教 原文摘录：“‘本仙徐吞虎，这位乃我师兄赵嘉龙。’”\",\"evidence_excerpt\":\"“本仙徐吞虎，这位乃我师兄赵嘉龙。”\",\"evidence_excerpts\":[\"“本仙徐吞虎，这位乃我师兄赵嘉龙。”\"],\"role_type\":null,\"identity\":null,\"relationship_summary\":\"赵嘉龙是徐吞虎的师兄。\",\"death_chapter_id\":null,\"current_realm_text\":null,\"first_seen_chapter_id\":\"chapter-f3a712cf4fdf404b935942fe3ff297a0\",\"last_seen_chapter_id\":\"chapter-f3a712cf4fdf404b935942fe3ff297a0\"},{\"entity_group_id\":\"entity_group_006\",\"name\":\"陈老头\",\"aliases\":[],\"summary\":\"陈老头以五百两高价卖给张狂一枚黄精。\",\"importance\":\"normal\",\"source_origin\":\"agent_extract\",\"source_note\":\"第3章 至上仙尊真乙太初教 原文摘录：“后来在陈老头手上以五百两天价买下那枚黄精。”\",\"evidence_excerpt\":\"后来在陈老头手上以五百两天价买下那枚黄精。\",\"evidence_excerpts\":[\"后来在陈老头手上以五百两天价买下那枚黄精。\"],\"role_type\":null,\"identity\":null,\"relationship_summary\":\"陈老头与张狂有黄精交易。\",\"death_chapter_id\":null,\"current_realm_text\":null,\"first_seen_chapter_id\":\"chapter-f3a712cf4fdf404b935942fe3ff297a0\",\"last_seen_chapter_id\":\"chapter-f3a712cf4fdf404b935942fe3ff297a0\"}]}",
+      "parsed_output": {
+        "knowledge_type": "character",
+        "cards": [
+          {
+            "entity_group_id": "entity_group_001",
+            "name": "秦浩轩",
+            "aliases": [],
+            "summary": "秦浩轩在离家前告别跪了一宿的父母，心情沉重。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。”",
+            "evidence_excerpt": "秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。",
+            "evidence_excerpts": [
+              "秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。"
+            ],
+            "role_type": null,
+            "identity": null,
+            "relationship_summary": null,
+            "death_chapter_id": null,
+            "current_realm_text": null,
+            "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+            "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+          },
+          {
+            "entity_group_id": "entity_group_002",
+            "name": "张狂",
+            "aliases": [],
+            "summary": "张狂是张扬的族兄，曾欲向秦浩轩购买黄精未果，后以五百两高价从陈老头处购得。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。”",
+            "evidence_excerpt": "张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。",
+            "evidence_excerpts": [
+              "张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。"
+            ],
+            "role_type": null,
+            "identity": null,
+            "relationship_summary": "张狂是张扬的族兄，曾向秦浩轩购买黄精，后从陈老头处高价购得。",
+            "death_chapter_id": null,
+            "current_realm_text": null,
+            "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+            "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+          },
+          {
+            "entity_group_id": "entity_group_003",
+            "name": "张扬",
+            "aliases": [],
+            "summary": "张扬是张狂的族弟，在教派考核中通过，成绩略优于秦浩轩，其仙灵花多开了一条缝。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。”",
+            "evidence_excerpt": "张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。",
+            "evidence_excerpts": [
+              "张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。"
+            ],
+            "role_type": null,
+            "identity": null,
+            "relationship_summary": "张扬是张狂的族弟，与秦浩轩同批考核，成绩略胜。",
+            "death_chapter_id": null,
+            "current_realm_text": null,
+            "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+            "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+          },
+          {
+            "entity_group_id": "entity_group_004",
+            "name": "徐吞虎",
+            "aliases": [],
+            "summary": "徐吞虎是负责选苗的仙人，留有山羊胡，与师兄赵嘉龙共同主持考核，宣布摸道骨与测仙种的选拔规则。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“‘本仙徐吞虎，这位乃我师兄赵嘉龙。’那山羊胡子徐吞虎简单介绍后，也不废话，道：‘选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。’”",
+            "evidence_excerpt": "“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”",
+            "evidence_excerpts": [
+              "“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”"
+            ],
+            "role_type": null,
+            "identity": null,
+            "relationship_summary": "徐吞虎是赵嘉龙的师弟。",
+            "death_chapter_id": null,
+            "current_realm_text": null,
+            "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+            "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+          },
+          {
+            "entity_group_id": "entity_group_005",
+            "name": "赵嘉龙",
+            "aliases": [],
+            "summary": "赵嘉龙是徐吞虎的师兄，一同参与选苗考核。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“‘本仙徐吞虎，这位乃我师兄赵嘉龙。’”",
+            "evidence_excerpt": "“本仙徐吞虎，这位乃我师兄赵嘉龙。”",
+            "evidence_excerpts": [
+              "“本仙徐吞虎，这位乃我师兄赵嘉龙。”"
+            ],
+            "role_type": null,
+            "identity": null,
+            "relationship_summary": "赵嘉龙是徐吞虎的师兄。",
+            "death_chapter_id": null,
+            "current_realm_text": null,
+            "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+            "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+          },
+          {
+            "entity_group_id": "entity_group_006",
+            "name": "陈老头",
+            "aliases": [],
+            "summary": "陈老头以五百两高价卖给张狂一枚黄精。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“后来在陈老头手上以五百两天价买下那枚黄精。”",
+            "evidence_excerpt": "后来在陈老头手上以五百两天价买下那枚黄精。",
+            "evidence_excerpts": [
+              "后来在陈老头手上以五百两天价买下那枚黄精。"
+            ],
+            "role_type": null,
+            "identity": null,
+            "relationship_summary": "陈老头与张狂有黄精交易。",
+            "death_chapter_id": null,
+            "current_realm_text": null,
+            "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+            "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+          }
+        ]
+      },
+      "started_at": "2026-07-05T04:33:00.295024Z",
+      "finished_at": "2026-07-05T04:33:43.011927Z",
+      "duration_ms": 42716,
+      "error": null
+    },
+    {
+      "call_id": "llm_call_003",
+      "node_name": "EntityExpertNode",
+      "model_name": "deepseek-v4-pro",
+      "prompt_version": "entity_expert_v2",
+      "input_prompt": "你是长篇玄幻小说的实体知识卡整理助手。\n\n任务：\n根据通过质量闸门的地点、势力、物品 entity_groups 和多条原文证据，生成地点卡、势力卡、物品卡草稿或更新建议。\n\n硬规则：\n1. 只根据 entity_groups 和 evidence_excerpts 填写字段。\n2. 不要补写正文没有的信息。\n3. 第一版只处理 location、faction、item。\n4. 不要输出 event、rule、realm、technique、foreshadow。\n5. 不要输出 body、tags、fields、confidence、source_refs、relations。\n6. controlling_faction_id、leader_id、current_holder_id 如果不能明确匹配已有 active 知识卡，填 null。\n7. 不能编造知识卡 ID。\n8. source_origin 固定为 agent_extract。\n9. source_note 必须写成作者可读中文文本，包含章节标题和关键原文摘录。\n10. evidence_excerpt 可以是主证据，evidence_excerpts 必须保留多条证据。\n11. summary 和 source_note 必须基于多条 evidence_excerpts 综合生成，不能只复述第一条证据。\n12. 没有稳定组织名的“山上的神仙们”第一版不建势力卡。\n13. 输出必须是 JSON，不要输出解释性文字。\n14. 不要输出 Markdown 代码块。\n15. 不要输出任何多余字段。\n\n字段 schema：\n[\n  {\n    \"type\": \"location\",\n    \"label\": \"地点\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"controlling_faction_id\",\n        \"label\": \"控制势力\",\n        \"field_type\": \"knowledge_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"控制该地点的势力知识卡 id。\"\n      },\n      {\n        \"field_key\": \"first_seen_chapter_id\",\n        \"label\": \"首次出现章节\",\n        \"field_type\": \"chapter_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"地点首次出现章节的稳定 chapter_id。\"\n      }\n    ]\n  },\n  {\n    \"type\": \"faction\",\n    \"label\": \"势力\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"faction_type\",\n        \"label\": \"势力类型\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"sect\",\n            \"label\": \"宗门\"\n          },\n          {\n            \"value\": \"family\",\n            \"label\": \"家族\"\n          },\n          {\n            \"value\": \"dynasty\",\n            \"label\": \"王朝\"\n          },\n          {\n            \"value\": \"guild\",\n            \"label\": \"商会\"\n          },\n          {\n            \"value\": \"demonic\",\n            \"label\": \"魔道\"\n          },\n          {\n            \"value\": \"alliance\",\n            \"label\": \"联盟\"\n          },\n          {\n            \"value\": \"academy\",\n            \"label\": \"学院\"\n          },\n          {\n            \"value\": \"other\",\n            \"label\": \"其他\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"宗门、家族、王朝等势力类型。\"\n      },\n      {\n        \"field_key\": \"leader_id\",\n        \"label\": \"当前首领\",\n        \"field_type\": \"knowledge_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"当前首领角色知识卡 id。\"\n      }\n    ]\n  },\n  {\n    \"type\": \"item\",\n    \"label\": \"物品\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"item_type\",\n        \"label\": \"物品类型\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"magic_treasure\",\n            \"label\": \"法宝\"\n          },\n          {\n            \"value\": \"pill\",\n            \"label\": \"丹药\"\n          },\n          {\n            \"value\": \"material\",\n            \"label\": \"材料\"\n          },\n          {\n            \"value\": \"other\",\n            \"label\": \"其他\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"法宝、丹药、材料或其他物品类型。\"\n      },\n      {\n        \"field_key\": \"grade\",\n        \"label\": \"品阶\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"物品品阶。\"\n      },\n      {\n        \"field_key\": \"current_holder_id\",\n        \"label\": \"当前持有人\",\n        \"field_type\": \"knowledge_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"当前持有者的角色知识卡 id。\"\n      },\n      {\n        \"field_key\": \"first_seen_chapter_id\",\n        \"label\": \"首次出现章节\",\n        \"field_type\": \"chapter_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"物品首次出现章节的稳定 chapter_id。\"\n      },\n      {\n        \"field_key\": \"last_seen_chapter_id\",\n        \"label\": \"最近出现章节\",\n        \"field_type\": \"chapter_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"物品最近出现章节的稳定 chapter_id。\"\n      }\n    ]\n  }\n]\n\n已有 active 知识卡摘要：\n[\n  {\n    \"id\": \"character-1b306968a4434f15b239f67f4d0e2c46\",\n    \"type\": \"character\",\n    \"name\": \"张狂\",\n    \"aliases\": [],\n    \"summary\": \"大田镇猎户之子，天赋异禀，十二岁时徒手杀了两头饿狼，是孩子中的一霸，但极度畏惧秦浩轩，曾被其打断四根肋骨。\\n\\n大田镇富裕少年，报名参加神仙选拔，对秦浩轩怀有敌意，但被其眼神震慑。\"\n  },\n  {\n    \"id\": \"character-c27bcca52dce431ab53fa6e8057beb50\",\n    \"type\": \"character\",\n    \"name\": \"秦浩轩\",\n    \"aliases\": [],\n    \"summary\": \"大田镇孩子们中的佼佼者，身手优秀，精通狩猎技巧和辨识草药，常能获得稀罕药草换取银两。\\n\\n大田镇少年，前往药铺出售黄精，报名参加神仙选拔，与张狂发生冲突。\"\n  },\n  {\n    \"id\": \"character-5690d5a1109340d8b09d11f576df863d\",\n    \"type\": \"character\",\n    \"name\": \"镇长\",\n    \"aliases\": [],\n    \"summary\": \"大田镇镇长，负责召集适龄少年参加神仙选苗，并组织报名。\"\n  },\n  {\n    \"id\": \"character-adeeb3b1630544a4942951dfb0fab071\",\n    \"type\": \"character\",\n    \"name\": \"陈老头\",\n    \"aliases\": [],\n    \"summary\": \"大田镇药铺的老者，曾教秦浩轩辨识草药，念叨过某草药能卖好价钱。\\n\\n大田镇陈家药铺的老医生，医术高明，年近八十，对珍稀药材黄精十分珍视。\"\n  },\n  {\n    \"id\": \"item-79e94d45ed0a44a4be574fb8d47e48f0\",\n    \"type\": \"item\",\n    \"name\": \"黄精\",\n    \"aliases\": [],\n    \"summary\": \"珍贵的黄色药材，外观如石子，触感细腻，散发幽香。\\n\\n一种珍稀黄色药材，小如指甲石子，散发浓郁清香，能压制其他药香，药铺收购价二三十两，急用可值千两。\"\n  },\n  {\n    \"id\": \"location-d85c9b8ba9dc4f68b10a9c593b7a4486\",\n    \"type\": \"location\",\n    \"name\": \"坡子岭\",\n    \"aliases\": [],\n    \"summary\": \"大田镇附近的山岭，是山上神仙挑选仙苗的地点，少年们将于黎明前往。\"\n  },\n  {\n    \"id\": \"location-b7af12499f6548f68130fd83cc8629c1\",\n    \"type\": \"location\",\n    \"name\": \"大田镇\",\n    \"aliases\": [],\n    \"summary\": \"背靠小屿山的镇子，因田地稀少贫瘠而以狩猎为生。\\n\\n大田镇是陈家药铺所在的小镇，生面孔罕见，普通人家十来年的收入微薄。\"\n  },\n  {\n    \"id\": \"location-68a7fe9d391a4fdb97966febf7eeaa0d\",\n    \"type\": \"location\",\n    \"name\": \"小屿山\",\n    \"aliases\": [],\n    \"summary\": \"大田镇背靠的山，传说中有神仙和妖魔鬼怪，猎户不敢深入，深入者失踪。\"\n  },\n  {\n    \"id\": \"location-729c31bde4634a1d8ce32268e944a677\",\n    \"type\": \"location\",\n    \"name\": \"陈家药铺\",\n    \"aliases\": [],\n    \"summary\": \"大田镇的药铺，有外地客购买名贵药材。\\n\\n位于大田镇北街的小药铺，由陈老头经营，有学徒切药制药，在镇上无人不知，秦浩轩与少年们常来。\"\n  }\n]\n\n章节信息：\nchapter_id=chapter-f3a712cf4fdf404b935942fe3ff297a0\nchapter_title=第3章 至上仙尊真乙太初教\n\n实体 entity_groups：\n[\n  {\n    \"entity_group_id\": \"entity_group_007\",\n    \"canonical_name\": \"大田镇\",\n    \"knowledge_type\": \"location\",\n    \"raw_names\": [\n      \"大田镇\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"命中已有有效知识卡，可作为更新候选。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_008\",\n    \"canonical_name\": \"坡子岭\",\n    \"knowledge_type\": \"location\",\n    \"raw_names\": [\n      \"坡子岭\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"命中已有有效知识卡，可作为更新候选。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_009\",\n    \"canonical_name\": \"小屿山\",\n    \"knowledge_type\": \"location\",\n    \"raw_names\": [\n      \"小屿山\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"坡子岭是小屿山内山与外围的分界点。\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"命中已有有效知识卡，可作为更新候选。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_010\",\n    \"canonical_name\": \"大屿山黄帝峰\",\n    \"knowledge_type\": \"location\",\n    \"raw_names\": [\n      \"大屿山黄帝峰\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备可复用地点名称或空间属性。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_012\",\n    \"canonical_name\": \"至上仙尊真乙太初教\",\n    \"knowledge_type\": \"faction\",\n    \"raw_names\": [\n      \"至上仙尊真乙太初教\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备稳定组织名称或明确组织身份。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_013\",\n    \"canonical_name\": \"黄精\",\n    \"knowledge_type\": \"item\",\n    \"raw_names\": [\n      \"黄精\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"命中已有有效知识卡，可作为更新候选。\"\n  }\n]\n\n输出 JSON：\n{\n  \"locations\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"controlling_faction_id\": null,\n      \"first_seen_chapter_id\": \"chapter-f3a712cf4fdf404b935942fe3ff297a0\"\n    }\n  ],\n  \"factions\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"faction_type\": null,\n      \"leader_id\": null\n    }\n  ],\n  \"items\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"item_type\": null,\n      \"grade\": null,\n      \"current_holder_id\": null,\n      \"first_seen_chapter_id\": \"chapter-f3a712cf4fdf404b935942fe3ff297a0\",\n      \"last_seen_chapter_id\": \"chapter-f3a712cf4fdf404b935942fe3ff297a0\"\n    }\n  ]\n}\n",
+      "raw_response": "{\n  \"locations\": [\n    {\n      \"entity_group_id\": \"entity_group_007\",\n      \"name\": \"大田镇\",\n      \"aliases\": [],\n      \"summary\": \"背靠小屿山的镇子，因田地稀少贫瘠而以狩猎为生。生面孔罕见，普通人家十来年收入微薄。神仙选拔之日，适龄少年家庭张灯结彩，杀猪斩羊拜天祭祖。陈家药铺位于此镇北街。\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第3章 至上仙尊真乙太初教：第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。\",\n      \"evidence_excerpt\": \"第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。\",\n      \"evidence_excerpts\": [\n        \"第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。\"\n      ],\n      \"controlling_faction_id\": null,\n      \"first_seen_chapter_id\": \"chapter-f3a712cf4fdf404b935942fe3ff297a0\"\n    },\n    {\n      \"entity_group_id\": \"entity_group_008\",\n      \"name\": \"坡子岭\",\n      \"aliases\": [],\n      \"summary\": \"大田镇附近的山岭，是小屿山内山与外围的分界点，一块平坦的草地，也是山上神仙挑选仙苗的地点。\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第3章 至上仙尊真乙太初教：坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。\",\n      \"evidence_excerpt\": \"坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。\",\n      \"evidence_excerpts\": [\n        \"坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。\"\n      ],\n      \"controlling_faction_id\": null,\n      \"first_seen_chapter_id\": \"chapter-f3a712cf4fdf404b935942fe3ff297a0\"\n    },\n    {\n      \"entity_group_id\": \"entity_group_009\",\n      \"name\": \"小屿山\",\n      \"aliases\": [],\n      \"summary\": \"大田镇背靠的山，传说中有神仙和妖魔鬼怪，猎户不敢深入，深入者失踪。内山与外围的分界点为坡子岭。\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第3章 至上仙尊真乙太初教：坡子岭是小屿山内山与外围的分界点，暗示小屿山的内山与外围划分。\",\n      \"evidence_excerpt\": \"坡子岭是小屿山内山与外围的分界点。\",\n      \"evidence_excerpts\": [\n        \"坡子岭是小屿山内山与外围的分界点。\"\n      ],\n      \"controlling_faction_id\": null,\n      \"first_seen_chapter_id\": \"chapter-f3a712cf4fdf404b935942fe3ff297a0\"\n    },\n    {\n      \"entity_group_id\": \"entity_group_010\",\n      \"name\": \"大屿山黄帝峰\",\n      \"aliases\": [],\n      \"summary\": \"翔龙国唯一仙门至上仙尊真乙太初教的宗门所在地，弟子门人上万。\",\n      \"importance\": \"major\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第3章 至上仙尊真乙太初教：宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！\",\n      \"evidence_excerpt\": \"宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！\",\n      \"evidence_excerpts\": [\n        \"宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！\"\n      ],\n      \"controlling_faction_id\": null,\n      \"first_seen_chapter_id\": \"chapter-f3a712cf4fdf404b935942fe3ff297a0\"\n    }\n  ],\n  \"factions\": [\n    {\n      \"entity_group_id\": \"entity_group_012\",\n      \"name\": \"至上仙尊真乙太初教\",\n      \"aliases\": [\"太初教\"],\n      \"summary\": \"传承数千年的仙门，位于大屿山黄帝峰，弟子门人上万，是翔龙国唯一仙门。掌教为翔龙国护国仙师，历代皇帝登基须报备掌教批准。\",\n      \"importance\": \"core\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第3章 至上仙尊真乙太初教：赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！\",\n      \"evidence_excerpt\": \"赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！\",\n      \"evidence_excerpts\": [\n        \"赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！\"\n      ],\n      \"faction_type\": \"sect\",\n      \"leader_id\": null\n    }\n  ],\n  \"items\": [\n    {\n      \"entity_group_id\": \"entity_group_013\",\n      \"name\": \"黄精\",\n      \"aliases\": [],\n      \"summary\": \"珍贵的黄色药材，外观如石子，触感细腻，散发浓郁清香，能压制其他药香。药铺收购价二三十两，急用可值千两，曾以五百两天价成交。\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第3章 至上仙尊真乙太初教：要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。\",\n      \"evidence_excerpt\": \"要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。\",\n      \"evidence_excerpts\": [\n        \"要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。\"\n      ],\n      \"item_type\": \"material\",\n      \"grade\": null,\n      \"current_holder_id\": null,\n      \"first_seen_chapter_id\": \"chapter-f3a712cf4fdf404b935942fe3ff297a0\",\n      \"last_seen_chapter_id\": \"chapter-f3a712cf4fdf404b935942fe3ff297a0\"\n    }\n  ]\n}",
+      "parsed_output": {
+        "locations": [
+          {
+            "entity_group_id": "entity_group_007",
+            "name": "大田镇",
+            "aliases": [],
+            "summary": "背靠小屿山的镇子，因田地稀少贫瘠而以狩猎为生。生面孔罕见，普通人家十来年收入微薄。神仙选拔之日，适龄少年家庭张灯结彩，杀猪斩羊拜天祭祖。陈家药铺位于此镇北街。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第3章 至上仙尊真乙太初教：第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。",
+            "evidence_excerpt": "第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。",
+            "evidence_excerpts": [
+              "第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。"
+            ],
+            "controlling_faction_id": null,
+            "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+          },
+          {
+            "entity_group_id": "entity_group_008",
+            "name": "坡子岭",
+            "aliases": [],
+            "summary": "大田镇附近的山岭，是小屿山内山与外围的分界点，一块平坦的草地，也是山上神仙挑选仙苗的地点。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第3章 至上仙尊真乙太初教：坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。",
+            "evidence_excerpt": "坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。",
+            "evidence_excerpts": [
+              "坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。"
+            ],
+            "controlling_faction_id": null,
+            "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+          },
+          {
+            "entity_group_id": "entity_group_009",
+            "name": "小屿山",
+            "aliases": [],
+            "summary": "大田镇背靠的山，传说中有神仙和妖魔鬼怪，猎户不敢深入，深入者失踪。内山与外围的分界点为坡子岭。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第3章 至上仙尊真乙太初教：坡子岭是小屿山内山与外围的分界点，暗示小屿山的内山与外围划分。",
+            "evidence_excerpt": "坡子岭是小屿山内山与外围的分界点。",
+            "evidence_excerpts": [
+              "坡子岭是小屿山内山与外围的分界点。"
+            ],
+            "controlling_faction_id": null,
+            "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+          },
+          {
+            "entity_group_id": "entity_group_010",
+            "name": "大屿山黄帝峰",
+            "aliases": [],
+            "summary": "翔龙国唯一仙门至上仙尊真乙太初教的宗门所在地，弟子门人上万。",
+            "importance": "major",
+            "source_origin": "agent_extract",
+            "source_note": "第3章 至上仙尊真乙太初教：宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！",
+            "evidence_excerpt": "宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！",
+            "evidence_excerpts": [
+              "宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！"
+            ],
+            "controlling_faction_id": null,
+            "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+          }
+        ],
+        "factions": [
+          {
+            "entity_group_id": "entity_group_012",
+            "name": "至上仙尊真乙太初教",
+            "aliases": [
+              "太初教"
+            ],
+            "summary": "传承数千年的仙门，位于大屿山黄帝峰，弟子门人上万，是翔龙国唯一仙门。掌教为翔龙国护国仙师，历代皇帝登基须报备掌教批准。",
+            "importance": "core",
+            "source_origin": "agent_extract",
+            "source_note": "第3章 至上仙尊真乙太初教：赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！",
+            "evidence_excerpt": "赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！",
+            "evidence_excerpts": [
+              "赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！"
+            ],
+            "faction_type": "sect",
+            "leader_id": null
+          }
+        ],
+        "items": [
+          {
+            "entity_group_id": "entity_group_013",
+            "name": "黄精",
+            "aliases": [],
+            "summary": "珍贵的黄色药材，外观如石子，触感细腻，散发浓郁清香，能压制其他药香。药铺收购价二三十两，急用可值千两，曾以五百两天价成交。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第3章 至上仙尊真乙太初教：要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。",
+            "evidence_excerpt": "要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。",
+            "evidence_excerpts": [
+              "要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。"
+            ],
+            "item_type": "material",
+            "grade": null,
+            "current_holder_id": null,
+            "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+            "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+          }
+        ]
+      },
+      "started_at": "2026-07-05T04:33:43.019132Z",
+      "finished_at": "2026-07-05T04:34:33.137668Z",
+      "duration_ms": 50119,
+      "error": null
+    }
+  ],
+  "raw_mentions": [
+    {
+      "mention_id": "mention_001_001",
+      "name": "秦浩轩",
+      "knowledge_type": "character",
+      "description": "主角，大田镇少年，通过测试成为太初教弟子。",
+      "evidence_excerpts": [
+        "秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。"
+      ],
+      "reason": "主角，有明确姓名，在对话和剧情中反复出现。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_002",
+      "name": "张狂",
+      "knowledge_type": "character",
+      "description": "大田镇少年，测试成绩优异，被太初教收录。",
+      "evidence_excerpts": [
+        "张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。"
+      ],
+      "reason": "有名有姓，重要配角，通过测试。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_003",
+      "name": "张扬",
+      "knowledge_type": "character",
+      "description": "张狂的族弟，同样通过测试。",
+      "evidence_excerpts": [
+        "张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。"
+      ],
+      "reason": "有名字，通过测试的弟子之一。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_004",
+      "name": "徐吞虎",
+      "knowledge_type": "character",
+      "description": "太初教弟子，负责摸骨测试。",
+      "evidence_excerpts": [
+        "“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”"
+      ],
+      "reason": "有名有姓的神仙，测试者。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_005",
+      "name": "赵嘉龙",
+      "knowledge_type": "character",
+      "description": "太初教弟子，负责测仙种。",
+      "evidence_excerpts": [
+        "“本仙徐吞虎，这位乃我师兄赵嘉龙。”"
+      ],
+      "reason": "有名有姓的神仙，测试者。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_006",
+      "name": "陈老头",
+      "knowledge_type": "character",
+      "description": "大田镇陈家药铺的老头，曾以高价卖出黄精。",
+      "evidence_excerpts": [
+        "后来在陈老头手上以五百两天价买下那枚黄精。"
+      ],
+      "reason": "有特定称呼，作为有名字的角色出现。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_007",
+      "name": "大田镇",
+      "knowledge_type": "location",
+      "description": "秦浩轩等人生活的镇子。",
+      "evidence_excerpts": [
+        "第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。"
+      ],
+      "reason": "重要地点，反复出现。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_008",
+      "name": "坡子岭",
+      "knowledge_type": "location",
+      "description": "小屿山内山与外围的分界点，测试地点。",
+      "evidence_excerpts": [
+        "坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。"
+      ],
+      "reason": "具体地点，测试发生地。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_009",
+      "name": "小屿山",
+      "knowledge_type": "location",
+      "description": "大田镇附近的山脉。",
+      "evidence_excerpts": [
+        "坡子岭是小屿山内山与外围的分界点。"
+      ],
+      "reason": "地理名称，与剧情相关。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_010",
+      "name": "大屿山黄帝峰",
+      "knowledge_type": "location",
+      "description": "太初教宗门所在地。",
+      "evidence_excerpts": [
+        "宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！"
+      ],
+      "reason": "重要地点，宗门所在。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_011",
+      "name": "翔龙国",
+      "knowledge_type": "location",
+      "description": "国家，太初教为其护国神教。",
+      "evidence_excerpts": [
+        "我们师门乃是翔龙国护国神教，上天曾降下仙班仙谱，赐名‘至上仙尊真乙太初教’。"
+      ],
+      "reason": "重要地理政治实体。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_012",
+      "name": "至上仙尊真乙太初教",
+      "knowledge_type": "faction",
+      "description": "翔龙国唯一仙门，简称太初教。",
+      "evidence_excerpts": [
+        "赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！"
+      ],
+      "reason": "核心势力，整个故事的背景。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_013",
+      "name": "黄精",
+      "knowledge_type": "item",
+      "description": "一种灵药，秦浩轩曾采摘。",
+      "evidence_excerpts": [
+        "要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。"
+      ],
+      "reason": "重要灵药，多次提及。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_014",
+      "name": "仙灵花",
+      "knowledge_type": "item",
+      "description": "测试仙种的道具，吸收鲜血后开花。",
+      "evidence_excerpts": [
+        "滴下一滴含有仙灵之气的鲜血在仙灵花上，如果仙灵花毫无动静则说明仙种已死，仙灵花开得越茂密则证明仙种越饱满。"
+      ],
+      "reason": "测试关键道具，多次出现。",
+      "segment_index": 1
+    }
+  ],
+  "entity_groups": [
+    {
+      "entity_group_id": "entity_group_001",
+      "canonical_name": "秦浩轩",
+      "knowledge_type": "character",
+      "raw_names": [
+        "秦浩轩"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "命中已有有效知识卡，可作为更新候选。"
+    },
+    {
+      "entity_group_id": "entity_group_002",
+      "canonical_name": "张狂",
+      "knowledge_type": "character",
+      "raw_names": [
+        "张狂"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "命中已有有效知识卡，可作为更新候选。"
+    },
+    {
+      "entity_group_id": "entity_group_003",
+      "canonical_name": "张扬",
+      "knowledge_type": "character",
+      "raw_names": [
+        "张扬"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定专名特征。"
+    },
+    {
+      "entity_group_id": "entity_group_004",
+      "canonical_name": "徐吞虎",
+      "knowledge_type": "character",
+      "raw_names": [
+        "徐吞虎"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定专名特征。"
+    },
+    {
+      "entity_group_id": "entity_group_005",
+      "canonical_name": "赵嘉龙",
+      "knowledge_type": "character",
+      "raw_names": [
+        "赵嘉龙"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "“本仙徐吞虎，这位乃我师兄赵嘉龙。”"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定专名特征。"
+    },
+    {
+      "entity_group_id": "entity_group_006",
+      "canonical_name": "陈老头",
+      "knowledge_type": "character",
+      "raw_names": [
+        "陈老头"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "后来在陈老头手上以五百两天价买下那枚黄精。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "命中已有有效知识卡，可作为更新候选。"
+    },
+    {
+      "entity_group_id": "entity_group_007",
+      "canonical_name": "大田镇",
+      "knowledge_type": "location",
+      "raw_names": [
+        "大田镇"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "命中已有有效知识卡，可作为更新候选。"
+    },
+    {
+      "entity_group_id": "entity_group_008",
+      "canonical_name": "坡子岭",
+      "knowledge_type": "location",
+      "raw_names": [
+        "坡子岭"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "命中已有有效知识卡，可作为更新候选。"
+    },
+    {
+      "entity_group_id": "entity_group_009",
+      "canonical_name": "小屿山",
+      "knowledge_type": "location",
+      "raw_names": [
+        "小屿山"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "坡子岭是小屿山内山与外围的分界点。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "命中已有有效知识卡，可作为更新候选。"
+    },
+    {
+      "entity_group_id": "entity_group_010",
+      "canonical_name": "大屿山黄帝峰",
+      "knowledge_type": "location",
+      "raw_names": [
+        "大屿山黄帝峰"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备可复用地点名称或空间属性。"
+    },
+    {
+      "entity_group_id": "entity_group_011",
+      "canonical_name": "翔龙国",
+      "knowledge_type": "location",
+      "raw_names": [
+        "翔龙国"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "我们师门乃是翔龙国护国神教，上天曾降下仙班仙谱，赐名‘至上仙尊真乙太初教’。"
+      ],
+      "quality_decision": "rejected",
+      "quality_reason": "缺少稳定专有地点名或可复用空间属性。"
+    },
+    {
+      "entity_group_id": "entity_group_012",
+      "canonical_name": "至上仙尊真乙太初教",
+      "knowledge_type": "faction",
+      "raw_names": [
+        "至上仙尊真乙太初教"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定组织名称或明确组织身份。"
+    },
+    {
+      "entity_group_id": "entity_group_013",
+      "canonical_name": "黄精",
+      "knowledge_type": "item",
+      "raw_names": [
+        "黄精"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "命中已有有效知识卡，可作为更新候选。"
+    },
+    {
+      "entity_group_id": "entity_group_014",
+      "canonical_name": "仙灵花",
+      "knowledge_type": "item",
+      "raw_names": [
+        "仙灵花"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "滴下一滴含有仙灵之气的鲜血在仙灵花上，如果仙灵花毫无动静则说明仙种已死，仙灵花开得越茂密则证明仙种越饱满。"
+      ],
+      "quality_decision": "rejected",
+      "quality_reason": "缺少设定价值、稀有性或可追踪归属。"
+    }
+  ],
+  "raw_candidates": [
+    {
+      "entity_group_id": "entity_group_001",
+      "name": "秦浩轩",
+      "aliases": [],
+      "knowledge_type": "character",
+      "source_excerpt": "秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。",
+      "evidence_excerpts": [
+        "秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "命中已有有效知识卡，可作为更新候选。"
+    },
+    {
+      "entity_group_id": "entity_group_002",
+      "name": "张狂",
+      "aliases": [],
+      "knowledge_type": "character",
+      "source_excerpt": "张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。",
+      "evidence_excerpts": [
+        "张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "命中已有有效知识卡，可作为更新候选。"
+    },
+    {
+      "entity_group_id": "entity_group_003",
+      "name": "张扬",
+      "aliases": [],
+      "knowledge_type": "character",
+      "source_excerpt": "张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。",
+      "evidence_excerpts": [
+        "张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定专名特征。"
+    },
+    {
+      "entity_group_id": "entity_group_004",
+      "name": "徐吞虎",
+      "aliases": [],
+      "knowledge_type": "character",
+      "source_excerpt": "“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”",
+      "evidence_excerpts": [
+        "“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定专名特征。"
+    },
+    {
+      "entity_group_id": "entity_group_005",
+      "name": "赵嘉龙",
+      "aliases": [],
+      "knowledge_type": "character",
+      "source_excerpt": "“本仙徐吞虎，这位乃我师兄赵嘉龙。”",
+      "evidence_excerpts": [
+        "“本仙徐吞虎，这位乃我师兄赵嘉龙。”"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定专名特征。"
+    },
+    {
+      "entity_group_id": "entity_group_006",
+      "name": "陈老头",
+      "aliases": [],
+      "knowledge_type": "character",
+      "source_excerpt": "后来在陈老头手上以五百两天价买下那枚黄精。",
+      "evidence_excerpts": [
+        "后来在陈老头手上以五百两天价买下那枚黄精。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "命中已有有效知识卡，可作为更新候选。"
+    },
+    {
+      "entity_group_id": "entity_group_007",
+      "name": "大田镇",
+      "aliases": [],
+      "knowledge_type": "location",
+      "source_excerpt": "第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。",
+      "evidence_excerpts": [
+        "第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "命中已有有效知识卡，可作为更新候选。"
+    },
+    {
+      "entity_group_id": "entity_group_008",
+      "name": "坡子岭",
+      "aliases": [],
+      "knowledge_type": "location",
+      "source_excerpt": "坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。",
+      "evidence_excerpts": [
+        "坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "命中已有有效知识卡，可作为更新候选。"
+    },
+    {
+      "entity_group_id": "entity_group_009",
+      "name": "小屿山",
+      "aliases": [],
+      "knowledge_type": "location",
+      "source_excerpt": "坡子岭是小屿山内山与外围的分界点。",
+      "evidence_excerpts": [
+        "坡子岭是小屿山内山与外围的分界点。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "命中已有有效知识卡，可作为更新候选。"
+    },
+    {
+      "entity_group_id": "entity_group_010",
+      "name": "大屿山黄帝峰",
+      "aliases": [],
+      "knowledge_type": "location",
+      "source_excerpt": "宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！",
+      "evidence_excerpts": [
+        "宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备可复用地点名称或空间属性。"
+    },
+    {
+      "entity_group_id": "entity_group_012",
+      "name": "至上仙尊真乙太初教",
+      "aliases": [],
+      "knowledge_type": "faction",
+      "source_excerpt": "赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！",
+      "evidence_excerpts": [
+        "赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定组织名称或明确组织身份。"
+    },
+    {
+      "entity_group_id": "entity_group_013",
+      "name": "黄精",
+      "aliases": [],
+      "knowledge_type": "item",
+      "source_excerpt": "要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。",
+      "evidence_excerpts": [
+        "要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "命中已有有效知识卡，可作为更新候选。"
+    }
+  ],
+  "typed_candidates": [
+    {
+      "entity_group_id": "entity_group_001",
+      "name": "秦浩轩",
+      "aliases": [],
+      "summary": "秦浩轩在离家前告别跪了一宿的父母，心情沉重。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。”",
+      "evidence_excerpt": "秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。",
+      "evidence_excerpts": [
+        "秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。"
+      ],
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": null,
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "type": "character",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "target_card_id": "character-c27bcca52dce431ab53fa6e8057beb50",
+      "matched_card_name": "秦浩轩",
+      "match_reason": "命中已有有效知识卡的名称或别名。"
+    },
+    {
+      "entity_group_id": "entity_group_002",
+      "name": "张狂",
+      "aliases": [],
+      "summary": "张狂是张扬的族兄，曾欲向秦浩轩购买黄精未果，后以五百两高价从陈老头处购得。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。”",
+      "evidence_excerpt": "张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。",
+      "evidence_excerpts": [
+        "张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。"
+      ],
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": "张狂是张扬的族兄，曾向秦浩轩购买黄精，后从陈老头处高价购得。",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "type": "character",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "target_card_id": "character-1b306968a4434f15b239f67f4d0e2c46",
+      "matched_card_name": "张狂",
+      "match_reason": "命中已有有效知识卡的名称或别名。"
+    },
+    {
+      "entity_group_id": "entity_group_003",
+      "name": "张扬",
+      "aliases": [],
+      "summary": "张扬是张狂的族弟，在教派考核中通过，成绩略优于秦浩轩，其仙灵花多开了一条缝。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。”",
+      "evidence_excerpt": "张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。",
+      "evidence_excerpts": [
+        "张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。"
+      ],
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": "张扬是张狂的族弟，与秦浩轩同批考核，成绩略胜。",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "type": "character",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_004",
+      "name": "徐吞虎",
+      "aliases": [],
+      "summary": "徐吞虎是负责选苗的仙人，留有山羊胡，与师兄赵嘉龙共同主持考核，宣布摸道骨与测仙种的选拔规则。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“‘本仙徐吞虎，这位乃我师兄赵嘉龙。’那山羊胡子徐吞虎简单介绍后，也不废话，道：‘选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。’”",
+      "evidence_excerpt": "“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”",
+      "evidence_excerpts": [
+        "“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”"
+      ],
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": "徐吞虎是赵嘉龙的师弟。",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "type": "character",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_005",
+      "name": "赵嘉龙",
+      "aliases": [],
+      "summary": "赵嘉龙是徐吞虎的师兄，一同参与选苗考核。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“‘本仙徐吞虎，这位乃我师兄赵嘉龙。’”",
+      "evidence_excerpt": "“本仙徐吞虎，这位乃我师兄赵嘉龙。”",
+      "evidence_excerpts": [
+        "“本仙徐吞虎，这位乃我师兄赵嘉龙。”"
+      ],
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": "赵嘉龙是徐吞虎的师兄。",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "type": "character",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_006",
+      "name": "陈老头",
+      "aliases": [],
+      "summary": "陈老头以五百两高价卖给张狂一枚黄精。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“后来在陈老头手上以五百两天价买下那枚黄精。”",
+      "evidence_excerpt": "后来在陈老头手上以五百两天价买下那枚黄精。",
+      "evidence_excerpts": [
+        "后来在陈老头手上以五百两天价买下那枚黄精。"
+      ],
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": "陈老头与张狂有黄精交易。",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "type": "character",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "target_card_id": "character-adeeb3b1630544a4942951dfb0fab071",
+      "matched_card_name": "陈老头",
+      "match_reason": "命中已有有效知识卡的名称或别名。"
+    },
+    {
+      "entity_group_id": "entity_group_007",
+      "name": "大田镇",
+      "aliases": [],
+      "summary": "背靠小屿山的镇子，因田地稀少贫瘠而以狩猎为生。生面孔罕见，普通人家十来年收入微薄。神仙选拔之日，适龄少年家庭张灯结彩，杀猪斩羊拜天祭祖。陈家药铺位于此镇北街。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。",
+      "evidence_excerpt": "第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。",
+      "evidence_excerpts": [
+        "第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。"
+      ],
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "type": "location",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "target_card_id": "location-b7af12499f6548f68130fd83cc8629c1",
+      "matched_card_name": "大田镇",
+      "match_reason": "命中已有有效知识卡的名称或别名。"
+    },
+    {
+      "entity_group_id": "entity_group_008",
+      "name": "坡子岭",
+      "aliases": [],
+      "summary": "大田镇附近的山岭，是小屿山内山与外围的分界点，一块平坦的草地，也是山上神仙挑选仙苗的地点。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。",
+      "evidence_excerpt": "坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。",
+      "evidence_excerpts": [
+        "坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。"
+      ],
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "type": "location",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "target_card_id": "location-d85c9b8ba9dc4f68b10a9c593b7a4486",
+      "matched_card_name": "坡子岭",
+      "match_reason": "命中已有有效知识卡的名称或别名。"
+    },
+    {
+      "entity_group_id": "entity_group_009",
+      "name": "小屿山",
+      "aliases": [],
+      "summary": "大田镇背靠的山，传说中有神仙和妖魔鬼怪，猎户不敢深入，深入者失踪。内山与外围的分界点为坡子岭。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：坡子岭是小屿山内山与外围的分界点，暗示小屿山的内山与外围划分。",
+      "evidence_excerpt": "坡子岭是小屿山内山与外围的分界点。",
+      "evidence_excerpts": [
+        "坡子岭是小屿山内山与外围的分界点。"
+      ],
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "type": "location",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "target_card_id": "location-68a7fe9d391a4fdb97966febf7eeaa0d",
+      "matched_card_name": "小屿山",
+      "match_reason": "命中已有有效知识卡的名称或别名。"
+    },
+    {
+      "entity_group_id": "entity_group_010",
+      "name": "大屿山黄帝峰",
+      "aliases": [],
+      "summary": "翔龙国唯一仙门至上仙尊真乙太初教的宗门所在地，弟子门人上万。",
+      "importance": "major",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！",
+      "evidence_excerpt": "宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！",
+      "evidence_excerpts": [
+        "宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！"
+      ],
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "type": "location",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_012",
+      "name": "至上仙尊真乙太初教",
+      "aliases": [
+        "太初教"
+      ],
+      "summary": "传承数千年的仙门，位于大屿山黄帝峰，弟子门人上万，是翔龙国唯一仙门。掌教为翔龙国护国仙师，历代皇帝登基须报备掌教批准。",
+      "importance": "core",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！",
+      "evidence_excerpt": "赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！",
+      "evidence_excerpts": [
+        "赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！"
+      ],
+      "faction_type": "sect",
+      "leader_id": null,
+      "type": "faction",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_013",
+      "name": "黄精",
+      "aliases": [],
+      "summary": "珍贵的黄色药材，外观如石子，触感细腻，散发浓郁清香，能压制其他药香。药铺收购价二三十两，急用可值千两，曾以五百两天价成交。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。",
+      "evidence_excerpt": "要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。",
+      "evidence_excerpts": [
+        "要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。"
+      ],
+      "item_type": "material",
+      "grade": null,
+      "current_holder_id": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "type": "item",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "target_card_id": "item-79e94d45ed0a44a4be574fb8d47e48f0",
+      "matched_card_name": "黄精",
+      "match_reason": "命中已有有效知识卡的名称或别名。"
+    }
+  ],
+  "review_items": [
+    {
+      "review_item_id": "review_item_001",
+      "run_id": "extract_run_20260705_043202_0e32ba",
+      "candidate_action": "update_card",
+      "knowledge_type": "character",
+      "candidate_status": "pending",
+      "display_title": "秦浩轩",
+      "suggested_card": {
+        "entity_group_id": "entity_group_001",
+        "name": "秦浩轩",
+        "aliases": [],
+        "summary": "秦浩轩在离家前告别跪了一宿的父母，心情沉重。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。”",
+        "evidence_excerpt": "秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。",
+        "evidence_excerpts": [
+          "秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。"
+        ],
+        "role_type": null,
+        "identity": null,
+        "relationship_summary": null,
+        "death_chapter_id": null,
+        "current_realm_text": null,
+        "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "type": "character",
+        "status": "active"
+      },
+      "target_card_id": "character-c27bcca52dce431ab53fa6e8057beb50",
+      "matched_card_name": "秦浩轩",
+      "match_reason": "命中已有有效知识卡的名称或别名。",
+      "source_excerpt": "秦浩轩告别在神台前跪了一宿的父母，看着他们憔悴的容颜，昨夜美美睡了一宿的他心情沉重的走出家门。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议补充已有知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-05T04:34:33.175002Z",
+      "updated_at": "2026-07-05T04:34:33.175002Z"
+    },
+    {
+      "review_item_id": "review_item_002",
+      "run_id": "extract_run_20260705_043202_0e32ba",
+      "candidate_action": "update_card",
+      "knowledge_type": "character",
+      "candidate_status": "pending",
+      "display_title": "张狂",
+      "suggested_card": {
+        "entity_group_id": "entity_group_002",
+        "name": "张狂",
+        "aliases": [],
+        "summary": "张狂是张扬的族兄，曾欲向秦浩轩购买黄精未果，后以五百两高价从陈老头处购得。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。”",
+        "evidence_excerpt": "张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。",
+        "evidence_excerpts": [
+          "张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。"
+        ],
+        "role_type": null,
+        "identity": null,
+        "relationship_summary": "张狂是张扬的族兄，曾向秦浩轩购买黄精，后从陈老头处高价购得。",
+        "death_chapter_id": null,
+        "current_realm_text": null,
+        "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "type": "character",
+        "status": "active"
+      },
+      "target_card_id": "character-1b306968a4434f15b239f67f4d0e2c46",
+      "matched_card_name": "张狂",
+      "match_reason": "命中已有有效知识卡的名称或别名。",
+      "source_excerpt": "张狂面露喜色，和他的族弟兼小弟张扬相视一笑，要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议补充已有知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-05T04:34:33.175002Z",
+      "updated_at": "2026-07-05T04:34:33.175002Z"
+    },
+    {
+      "review_item_id": "review_item_003",
+      "run_id": "extract_run_20260705_043202_0e32ba",
+      "candidate_action": "create_card",
+      "knowledge_type": "character",
+      "candidate_status": "pending",
+      "display_title": "张扬",
+      "suggested_card": {
+        "entity_group_id": "entity_group_003",
+        "name": "张扬",
+        "aliases": [],
+        "summary": "张扬是张狂的族弟，在教派考核中通过，成绩略优于秦浩轩，其仙灵花多开了一条缝。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。”",
+        "evidence_excerpt": "张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。",
+        "evidence_excerpts": [
+          "张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。"
+        ],
+        "role_type": null,
+        "identity": null,
+        "relationship_summary": "张扬是张狂的族弟，与秦浩轩同批考核，成绩略胜。",
+        "death_chapter_id": null,
+        "current_realm_text": null,
+        "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "type": "character",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "张狂的族弟兼小弟张扬，竟然也通过考核，而且考核成绩还要比秦浩轩好一点，仙灵花很争气的多开了一条缝。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-05T04:34:33.175002Z",
+      "updated_at": "2026-07-05T04:34:33.175002Z"
+    },
+    {
+      "review_item_id": "review_item_004",
+      "run_id": "extract_run_20260705_043202_0e32ba",
+      "candidate_action": "create_card",
+      "knowledge_type": "character",
+      "candidate_status": "pending",
+      "display_title": "徐吞虎",
+      "suggested_card": {
+        "entity_group_id": "entity_group_004",
+        "name": "徐吞虎",
+        "aliases": [],
+        "summary": "徐吞虎是负责选苗的仙人，留有山羊胡，与师兄赵嘉龙共同主持考核，宣布摸道骨与测仙种的选拔规则。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“‘本仙徐吞虎，这位乃我师兄赵嘉龙。’那山羊胡子徐吞虎简单介绍后，也不废话，道：‘选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。’”",
+        "evidence_excerpt": "“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”",
+        "evidence_excerpts": [
+          "“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”"
+        ],
+        "role_type": null,
+        "identity": null,
+        "relationship_summary": "徐吞虎是赵嘉龙的师弟。",
+        "death_chapter_id": null,
+        "current_realm_text": null,
+        "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "type": "character",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "“本仙徐吞虎，这位乃我师兄赵嘉龙。”那山羊胡子徐吞虎简单介绍后，也不废话，道：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选。”",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-05T04:34:33.175002Z",
+      "updated_at": "2026-07-05T04:34:33.175002Z"
+    },
+    {
+      "review_item_id": "review_item_005",
+      "run_id": "extract_run_20260705_043202_0e32ba",
+      "candidate_action": "create_card",
+      "knowledge_type": "character",
+      "candidate_status": "pending",
+      "display_title": "赵嘉龙",
+      "suggested_card": {
+        "entity_group_id": "entity_group_005",
+        "name": "赵嘉龙",
+        "aliases": [],
+        "summary": "赵嘉龙是徐吞虎的师兄，一同参与选苗考核。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“‘本仙徐吞虎，这位乃我师兄赵嘉龙。’”",
+        "evidence_excerpt": "“本仙徐吞虎，这位乃我师兄赵嘉龙。”",
+        "evidence_excerpts": [
+          "“本仙徐吞虎，这位乃我师兄赵嘉龙。”"
+        ],
+        "role_type": null,
+        "identity": null,
+        "relationship_summary": "赵嘉龙是徐吞虎的师兄。",
+        "death_chapter_id": null,
+        "current_realm_text": null,
+        "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "type": "character",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "“本仙徐吞虎，这位乃我师兄赵嘉龙。”",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-05T04:34:33.175002Z",
+      "updated_at": "2026-07-05T04:34:33.175002Z"
+    },
+    {
+      "review_item_id": "review_item_006",
+      "run_id": "extract_run_20260705_043202_0e32ba",
+      "candidate_action": "update_card",
+      "knowledge_type": "character",
+      "candidate_status": "pending",
+      "display_title": "陈老头",
+      "suggested_card": {
+        "entity_group_id": "entity_group_006",
+        "name": "陈老头",
+        "aliases": [],
+        "summary": "陈老头以五百两高价卖给张狂一枚黄精。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“后来在陈老头手上以五百两天价买下那枚黄精。”",
+        "evidence_excerpt": "后来在陈老头手上以五百两天价买下那枚黄精。",
+        "evidence_excerpts": [
+          "后来在陈老头手上以五百两天价买下那枚黄精。"
+        ],
+        "role_type": null,
+        "identity": null,
+        "relationship_summary": "陈老头与张狂有黄精交易。",
+        "death_chapter_id": null,
+        "current_realm_text": null,
+        "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "type": "character",
+        "status": "active"
+      },
+      "target_card_id": "character-adeeb3b1630544a4942951dfb0fab071",
+      "matched_card_name": "陈老头",
+      "match_reason": "命中已有有效知识卡的名称或别名。",
+      "source_excerpt": "后来在陈老头手上以五百两天价买下那枚黄精。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议补充已有知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-05T04:34:33.175002Z",
+      "updated_at": "2026-07-05T04:34:33.175002Z"
+    },
+    {
+      "review_item_id": "review_item_007",
+      "run_id": "extract_run_20260705_043202_0e32ba",
+      "candidate_action": "update_card",
+      "knowledge_type": "location",
+      "candidate_status": "pending",
+      "display_title": "大田镇",
+      "suggested_card": {
+        "entity_group_id": "entity_group_007",
+        "name": "大田镇",
+        "aliases": [],
+        "summary": "背靠小屿山的镇子，因田地稀少贫瘠而以狩猎为生。生面孔罕见，普通人家十来年收入微薄。神仙选拔之日，适龄少年家庭张灯结彩，杀猪斩羊拜天祭祖。陈家药铺位于此镇北街。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第3章 至上仙尊真乙太初教：第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。",
+        "evidence_excerpt": "第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。",
+        "evidence_excerpts": [
+          "第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。"
+        ],
+        "controlling_faction_id": null,
+        "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "type": "location",
+        "status": "active"
+      },
+      "target_card_id": "location-b7af12499f6548f68130fd83cc8629c1",
+      "matched_card_name": "大田镇",
+      "match_reason": "命中已有有效知识卡的名称或别名。",
+      "source_excerpt": "第二天的黎明时分，原本应该在沉睡的大田镇热闹非凡，有十六岁适龄参选者的家庭都张灯结彩，杀猪斩羊拜天祭祖。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议补充已有知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-05T04:34:33.175002Z",
+      "updated_at": "2026-07-05T04:34:33.175002Z"
+    },
+    {
+      "review_item_id": "review_item_008",
+      "run_id": "extract_run_20260705_043202_0e32ba",
+      "candidate_action": "update_card",
+      "knowledge_type": "location",
+      "candidate_status": "pending",
+      "display_title": "坡子岭",
+      "suggested_card": {
+        "entity_group_id": "entity_group_008",
+        "name": "坡子岭",
+        "aliases": [],
+        "summary": "大田镇附近的山岭，是小屿山内山与外围的分界点，一块平坦的草地，也是山上神仙挑选仙苗的地点。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第3章 至上仙尊真乙太初教：坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。",
+        "evidence_excerpt": "坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。",
+        "evidence_excerpts": [
+          "坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。"
+        ],
+        "controlling_faction_id": null,
+        "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "type": "location",
+        "status": "active"
+      },
+      "target_card_id": "location-d85c9b8ba9dc4f68b10a9c593b7a4486",
+      "matched_card_name": "坡子岭",
+      "match_reason": "命中已有有效知识卡的名称或别名。",
+      "source_excerpt": "坡子岭是小屿山内山与外围的分界点，是一块平坦的草地。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议补充已有知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-05T04:34:33.175002Z",
+      "updated_at": "2026-07-05T04:34:33.175002Z"
+    },
+    {
+      "review_item_id": "review_item_009",
+      "run_id": "extract_run_20260705_043202_0e32ba",
+      "candidate_action": "update_card",
+      "knowledge_type": "location",
+      "candidate_status": "pending",
+      "display_title": "小屿山",
+      "suggested_card": {
+        "entity_group_id": "entity_group_009",
+        "name": "小屿山",
+        "aliases": [],
+        "summary": "大田镇背靠的山，传说中有神仙和妖魔鬼怪，猎户不敢深入，深入者失踪。内山与外围的分界点为坡子岭。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第3章 至上仙尊真乙太初教：坡子岭是小屿山内山与外围的分界点，暗示小屿山的内山与外围划分。",
+        "evidence_excerpt": "坡子岭是小屿山内山与外围的分界点。",
+        "evidence_excerpts": [
+          "坡子岭是小屿山内山与外围的分界点。"
+        ],
+        "controlling_faction_id": null,
+        "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "type": "location",
+        "status": "active"
+      },
+      "target_card_id": "location-68a7fe9d391a4fdb97966febf7eeaa0d",
+      "matched_card_name": "小屿山",
+      "match_reason": "命中已有有效知识卡的名称或别名。",
+      "source_excerpt": "坡子岭是小屿山内山与外围的分界点。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议补充已有知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-05T04:34:33.175002Z",
+      "updated_at": "2026-07-05T04:34:33.175002Z"
+    },
+    {
+      "review_item_id": "review_item_010",
+      "run_id": "extract_run_20260705_043202_0e32ba",
+      "candidate_action": "create_card",
+      "knowledge_type": "location",
+      "candidate_status": "pending",
+      "display_title": "大屿山黄帝峰",
+      "suggested_card": {
+        "entity_group_id": "entity_group_010",
+        "name": "大屿山黄帝峰",
+        "aliases": [],
+        "summary": "翔龙国唯一仙门至上仙尊真乙太初教的宗门所在地，弟子门人上万。",
+        "importance": "major",
+        "source_origin": "agent_extract",
+        "source_note": "第3章 至上仙尊真乙太初教：宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！",
+        "evidence_excerpt": "宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！",
+        "evidence_excerpts": [
+          "宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！"
+        ],
+        "controlling_faction_id": null,
+        "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "type": "location",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-05T04:34:33.175002Z",
+      "updated_at": "2026-07-05T04:34:33.175002Z"
+    },
+    {
+      "review_item_id": "review_item_011",
+      "run_id": "extract_run_20260705_043202_0e32ba",
+      "candidate_action": "create_card",
+      "knowledge_type": "faction",
+      "candidate_status": "pending",
+      "display_title": "至上仙尊真乙太初教",
+      "suggested_card": {
+        "entity_group_id": "entity_group_012",
+        "name": "至上仙尊真乙太初教",
+        "aliases": [
+          "太初教"
+        ],
+        "summary": "传承数千年的仙门，位于大屿山黄帝峰，弟子门人上万，是翔龙国唯一仙门。掌教为翔龙国护国仙师，历代皇帝登基须报备掌教批准。",
+        "importance": "core",
+        "source_origin": "agent_extract",
+        "source_note": "第3章 至上仙尊真乙太初教：赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！",
+        "evidence_excerpt": "赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！",
+        "evidence_excerpts": [
+          "赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！"
+        ],
+        "faction_type": "sect",
+        "leader_id": null,
+        "type": "faction",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-05T04:34:33.175002Z",
+      "updated_at": "2026-07-05T04:34:33.175002Z"
+    },
+    {
+      "review_item_id": "review_item_012",
+      "run_id": "extract_run_20260705_043202_0e32ba",
+      "candidate_action": "update_card",
+      "knowledge_type": "item",
+      "candidate_status": "pending",
+      "display_title": "黄精",
+      "suggested_card": {
+        "entity_group_id": "entity_group_013",
+        "name": "黄精",
+        "aliases": [],
+        "summary": "珍贵的黄色药材，外观如石子，触感细腻，散发浓郁清香，能压制其他药香。药铺收购价二三十两，急用可值千两，曾以五百两天价成交。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第3章 至上仙尊真乙太初教：要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。",
+        "evidence_excerpt": "要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。",
+        "evidence_excerpts": [
+          "要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。"
+        ],
+        "item_type": "material",
+        "grade": null,
+        "current_holder_id": null,
+        "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "type": "item",
+        "status": "active"
+      },
+      "target_card_id": "item-79e94d45ed0a44a4be574fb8d47e48f0",
+      "matched_card_name": "黄精",
+      "match_reason": "命中已有有效知识卡的名称或别名。",
+      "source_excerpt": "要知道他们昨天在秦浩轩处购买黄精失败后，后来在陈老头手上以五百两天价买下那枚黄精。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议补充已有知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-05T04:34:33.175002Z",
+      "updated_at": "2026-07-05T04:34:33.175002Z"
+    }
+  ],
+  "ignored": [
+    {
+      "text": "镇长率先跪在地上",
+      "reason": "无名泛称，临时功能性角色。",
+      "segment_index": 1
+    },
+    {
+      "text": "在二十多名健壮猎户的开路护送下",
+      "reason": "泛称群体，无具体姓名。",
+      "segment_index": 1
+    },
+    {
+      "text": "一行四十名十六岁适龄少年浩浩荡荡前往坡子岭",
+      "reason": "泛称群体。",
+      "segment_index": 1
+    },
+    {
+      "text": "陈家药铺",
+      "reason": "普通功能空间，仅作为交易地点提及。",
+      "segment_index": 1
+    },
+    {
+      "text": "三袋沉甸甸的银子",
+      "reason": "普通银两，无特殊性。",
+      "segment_index": 1
+    },
+    {
+      "text": "五张黄色符纸",
+      "reason": "一次性消耗品，无独特名称。",
+      "segment_index": 1
+    },
+    {
+      "text": "他们脚下的飞剑绕场一周",
+      "reason": "普通仙家法器，无独特名称。",
+      "segment_index": 1
+    }
+  ],
+  "metrics": {
+    "candidate_total": 12,
+    "character_candidate_count": 6,
+    "location_candidate_count": 4,
+    "faction_candidate_count": 1,
+    "item_candidate_count": 1,
+    "create_card_count": 5,
+    "update_card_count": 7,
+    "conflict_count": 0,
+    "schema_passed_count": 12,
+    "schema_failed_count": 0,
+    "confirmed_count": 0,
+    "rejected_count": 0,
+    "pending_count": 12,
+    "total_duration_ms": 151044,
+    "llm_call_count": 3,
+    "node_duration_ms": {
+      "LoadChapterNode": 17,
+      "SegmentChapterNode": 0,
+      "GeneralExtractionNode": 58097,
+      "MentionNormalizeNode": 0,
+      "EntityAggregationNode": 0,
+      "CandidateQualityGateNode": 40,
+      "TypeDispatchNode": 0,
+      "CharacterExpertNode": 42716,
+      "EntityExpertNode": 50125,
+      "NormalizeAndValidateNode": 0,
+      "RunInternalConflictCheckNode": 0,
+      "MatchExistingKnowledgeNode": 35,
+      "BuildReviewItemsNode": 0,
+      "WriteIntermediateJsonNode": 0
+    }
+  },
+  "errors": []
+}

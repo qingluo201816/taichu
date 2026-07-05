@@ -1,0 +1,17 @@
+{
+  "id": "character-5690d5a1109340d8b09d11f576df863d",
+  "type": "character",
+  "name": "镇长",
+  "aliases": [],
+  "summary": "大田镇镇长，负责召集适龄少年参加神仙选苗，并组织报名。",
+  "importance": "normal",
+  "status": "active",
+  "source_origin": "agent_extract",
+  "source_note": "第2章 山中神仙选仙苗：镇长遣人聚集镇上十六岁少年，宣布神仙选苗的消息，组织报名，次日黎明出发前往坡子岭。原文：“镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。”",
+  "role_type": "passerby",
+  "identity": "大田镇镇长",
+  "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+  "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+  "created_at": "2026-07-05T03:17:12.097652Z",
+  "updated_at": "2026-07-05T03:17:12.097652Z"
+}

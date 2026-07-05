@@ -1,0 +1,14 @@
+{
+  "id": "location-a2a0d55666c643fe88584201c4b85434",
+  "type": "location",
+  "name": "陈家药铺",
+  "aliases": [],
+  "summary": "大田镇的药铺，名贵药材被外地客全部买光，外地客还高价收购珍贵药材。\n\n大田镇的药铺，名贵药材被外地客全部买光，外地客高价收购珍贵药材。",
+  "importance": "normal",
+  "status": "deprecated",
+  "source_origin": "agent_extract",
+  "source_note": "第1章 大田金鳞元神出：陈家药铺的名贵药材被两个外地客全部买光，外地客还扬言高价收购珍贵药材。\n\n第1章 大田金鳞元神出：“有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！”",
+  "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+  "created_at": "2026-07-04T14:41:29.946620Z",
+  "updated_at": "2026-07-04T16:39:46.178136Z"
+}

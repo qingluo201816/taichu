@@ -1,0 +1,14 @@
+{
+  "id": "location-476f4c65f120469984439919fdc076d6",
+  "type": "location",
+  "name": "小屿山",
+  "aliases": [],
+  "summary": "传说山中居住着神仙和许多凶神恶煞的妖魔鬼怪。",
+  "importance": "normal",
+  "status": "deprecated",
+  "source_origin": "agent_extract",
+  "source_note": "第1章 大田金鳞元神出：“传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。”",
+  "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+  "created_at": "2026-07-04T16:11:40.474812Z",
+  "updated_at": "2026-07-04T16:39:45.338338Z"
+}

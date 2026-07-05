@@ -1,0 +1,16 @@
+{
+  "id": "character-9492d295068545438a816b147751a884",
+  "type": "character",
+  "name": "徐吞虎",
+  "aliases": [],
+  "summary": "仙人，自号本仙，赵嘉龙的师弟，负责测试大田镇少年的修仙资质。",
+  "importance": "normal",
+  "status": "deprecated",
+  "source_origin": "agent_extract",
+  "source_note": "第3章 至上仙尊真乙太初教 摘录：本仙徐吞虎，这位乃我师兄赵嘉龙；接过秦浩轩递来的左手，徐吞虎破天荒打了个招呼。",
+  "relationship_summary": "徐吞虎的师兄是赵嘉龙。",
+  "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+  "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+  "created_at": "2026-07-04T16:20:12.078088Z",
+  "updated_at": "2026-07-04T16:39:40.159359Z"
+}

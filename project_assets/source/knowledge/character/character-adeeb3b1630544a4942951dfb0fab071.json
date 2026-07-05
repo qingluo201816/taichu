@@ -1,0 +1,17 @@
+{
+  "id": "character-adeeb3b1630544a4942951dfb0fab071",
+  "type": "character",
+  "name": "陈老头",
+  "aliases": [],
+  "summary": "大田镇药铺的老者，曾教秦浩轩辨识草药，念叨过某草药能卖好价钱。\n\n大田镇陈家药铺的老医生，医术高明，年近八十，对珍稀药材黄精十分珍视。",
+  "importance": "minor",
+  "status": "active",
+  "source_origin": "agent_extract",
+  "source_note": "第1章 大田金鳞元神出。关键摘录：秦浩轩狩猎之余专门向药铺的陈老头学过辨识草药；药铺陈老头念叨了好几年，一定能卖个好价钱。\n\n第2章 山中神仙选仙苗：陈老头是陈家药铺主人，医术精湛，日常悠闲品茗看书，但对黄精等珍稀药材亲自过问，以三十两收购。原文：“陈老头悠闲得很，他常坐在药店内院一张藤椅上，品茗看书，好不自在。”",
+  "role_type": "passerby",
+  "identity": "大田镇药铺老者",
+  "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+  "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+  "created_at": "2026-07-05T03:04:05.419740Z",
+  "updated_at": "2026-07-05T03:16:46.721551Z"
+}

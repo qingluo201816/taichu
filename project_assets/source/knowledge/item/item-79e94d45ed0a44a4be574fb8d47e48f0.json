@@ -1,0 +1,17 @@
+{
+  "id": "item-79e94d45ed0a44a4be574fb8d47e48f0",
+  "type": "item",
+  "name": "黄精",
+  "aliases": [],
+  "summary": "珍贵的黄色药材，外观如石子，触感细腻，散发幽香。\n\n一种珍稀黄色药材，小如指甲石子，散发浓郁清香，能压制其他药香，药铺收购价二三十两，急用可值千两。",
+  "importance": "normal",
+  "status": "active",
+  "source_origin": "agent_extract",
+  "source_note": "第1章 大田金鳞元神出：“这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常”\n\n第2章 山中神仙选仙苗：黄精淡淡清香在浓郁的药香中仍旧十分突出；一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来，将药铺里众多药草香味都压了下去；黄精虽然珍稀，但你卖到药铺里也不过二三十两；药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过。",
+  "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+  "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+  "item_type": "material",
+  "current_holder_id": "character-c27bcca52dce431ab53fa6e8057beb50",
+  "created_at": "2026-07-05T03:04:12.575159Z",
+  "updated_at": "2026-07-05T03:17:37.216435Z"
+}
