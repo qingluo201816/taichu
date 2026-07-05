@@ -42,7 +42,7 @@ export default function HomePage() {
             太初
           </h1>
           <p className="mt-5 text-lg leading-8 text-[var(--tc-smoke)]">
-            面向单本玄幻小说的个人写作工作台。正文、大纲、知识、灵感和模拟 AI 链路在同一个作者上下文中推进。
+            面向单本玄幻小说的个人写作工作台。正文、大纲、知识、灵感和真实 AI 运行链路在同一个作者上下文中推进。
           </p>
         </div>
 

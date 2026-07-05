@@ -12,7 +12,6 @@ from taichu.api.router import register_routes
 from taichu.application.agents.registry import AgentRegistry
 from taichu.application.capabilities import CapabilityContext
 from taichu.application.services.ai_card_service import AICardService
-from taichu.application.services.ai_workspace_service import AIWorkspaceService
 from taichu.application.services.chapter_summary_service import (
     ChapterSummaryService,
 )
@@ -32,6 +31,7 @@ from taichu.application.services.pending_fact_confirmation_service import (
 )
 from taichu.application.services.selection_ai_service import SelectionAIService
 from taichu.application.services.settings_service import SettingsPreferenceService
+from taichu.application.services.writing_ai_service import WritingAIService
 from taichu.application.tools.registry import ToolRegistry
 from taichu.config import Settings, settings
 from taichu.infrastructure.llm.adapter import LangChainLLMAdapter
@@ -62,7 +62,6 @@ def create_app(
     outline_service = OutlineService(project_storage)
     mvp_knowledge_service = MVPKnowledgeService(project_storage)
     mvp_inbox_service = MVPInboxService(project_storage, mvp_knowledge_service)
-    ai_workspace_service = AIWorkspaceService(project_storage)
     settings_preference_service = SettingsPreferenceService(project_storage)
     chat_model = llm if llm is not None else create_llm(app_settings)
     llm_service = LangChainLLMAdapter(chat_model)
@@ -77,6 +76,14 @@ def create_app(
         knowledge_repository=knowledge_repository,
         run_store=knowledge_run_store,
         default_model_name=app_settings.deepseek_model,
+    )
+    writing_ai_service = WritingAIService(
+        storage=project_storage,
+        chapter_service=chapter_service,
+        knowledge_repository=knowledge_repository,
+        llm=llm_service,
+        default_model_name=app_settings.deepseek_model,
+        llm_configured=llm is not None or _has_configured_llm(app_settings),
     )
     pending_fact_confirmation_service = PendingFactConfirmationService(
         project_storage,
@@ -136,8 +143,8 @@ def create_app(
     )
     application.state.selection_ai_service = selection_ai_service
     application.state.chapter_summary_service = chapter_summary_service
-    application.state.ai_workspace_service = ai_workspace_service
     application.state.settings_preference_service = settings_preference_service
+    application.state.writing_ai_service = writing_ai_service
     application.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -152,6 +159,18 @@ def create_app(
         _validation_exception_handler,
     )
     return application
+
+
+def _has_configured_llm(app_settings: Settings) -> bool:
+    if app_settings.llm_provider == "deepseek":
+        return all(
+            [
+                app_settings.deepseek_api_key.strip(),
+                app_settings.deepseek_api_base.strip(),
+                app_settings.deepseek_model.strip(),
+            ]
+        )
+    return False
 
 
 async def _http_exception_handler(

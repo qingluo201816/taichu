@@ -18,6 +18,7 @@ _WORKSPACE_JSONL_FILES = (
     "pending_facts.jsonl",
     "chapter_issues.jsonl",
     "chapter_summaries.jsonl",
+    "writing_ai_runs.jsonl",
 )
 
 

@@ -6,16 +6,6 @@ from taichu.domain.models.ai_card import (
     AIResultCardType,
     AIWorkflow,
 )
-from taichu.domain.models.ai_workspace import (
-    AIReferenceScope,
-    AIWorkspaceConversation,
-    AIWorkspaceMessage,
-    AIWorkspaceMessageRole,
-    AIWorkspaceOutputType,
-    AIWorkspaceSubtaskType,
-    AIWorkspaceTaskType,
-    PromptSnapshot,
-)
 from taichu.domain.models.agent_run import (
     AgentLLMCall,
     AgentMetrics,
@@ -113,20 +103,25 @@ from taichu.domain.models.source_ref import (
 )
 from taichu.domain.models.summary import ChapterSummary, ChapterSummaryStatus
 from taichu.domain.models.export import ExportBundle, ExportFile
+from taichu.domain.models.writing_ai import (
+    WritingAIButtonType,
+    WritingAIInput,
+    WritingAIOutputType,
+    WritingAIPromptSnapshot,
+    WritingAIReferenceScope,
+    WritingAIRetrievalContext,
+    WritingAIRetrievalEvidenceItem,
+    WritingAIRun,
+    WritingAIRunStatus,
+    WritingAISelectionRange,
+    WritingAIStructuredOutput,
+)
 
 __all__ = [
     "AIResultCard",
     "AIResultCardStatus",
     "AIResultCardType",
     "AIWorkflow",
-    "AIReferenceScope",
-    "AIWorkspaceConversation",
-    "AIWorkspaceMessage",
-    "AIWorkspaceMessageRole",
-    "AIWorkspaceOutputType",
-    "AIWorkspaceSubtaskType",
-    "AIWorkspaceTaskType",
-    "PromptSnapshot",
     "AgentLLMCall",
     "AgentMetrics",
     "AgentReviewCandidateAction",
@@ -200,4 +195,15 @@ __all__ = [
     "ChapterSummaryStatus",
     "ExportBundle",
     "ExportFile",
+    "WritingAIButtonType",
+    "WritingAIInput",
+    "WritingAIOutputType",
+    "WritingAIPromptSnapshot",
+    "WritingAIReferenceScope",
+    "WritingAIRetrievalContext",
+    "WritingAIRetrievalEvidenceItem",
+    "WritingAIRun",
+    "WritingAIRunStatus",
+    "WritingAISelectionRange",
+    "WritingAIStructuredOutput",
 ]

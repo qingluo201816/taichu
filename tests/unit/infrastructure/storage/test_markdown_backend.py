@@ -59,7 +59,7 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
                 self.assets_root
                 / "source"
                 / "workspace"
-                / "ai_workspace_conversations.jsonl"
+                / "writing_ai_runs.jsonl"
             ).exists()
         )
         self.assertTrue(

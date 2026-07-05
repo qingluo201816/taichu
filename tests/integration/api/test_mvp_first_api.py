@@ -1,17 +1,22 @@
 """MVP first-version API integration tests."""
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 
 from httpx import ASGITransport, AsyncClient
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
 
 from taichu.application.services.import_service import ImportService
 from taichu.config import Settings
 from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
-from taichu.infrastructure.llm.mock import MVPNoRealLLMChatModel
 from taichu.main import create_app
 
 
@@ -28,7 +33,7 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         )
         app = create_app(
             app_settings=Settings(project_assets_dir=self.assets_root),
-            llm=MVPNoRealLLMChatModel(),
+            llm=_WritingAIChatModel(responses=[_writing_ai_continue_response()]),
         )
         self.client = AsyncClient(
             transport=ASGITransport(app=app),
@@ -257,65 +262,98 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("source_refs", confirm_response.json()["knowledge_card"])
         self.assertEqual(pending_list_response.json()["items"], [])
 
-    async def test_mock_ai_conversation_and_history(self) -> None:
-        chat_response = await self.client.post(
-            "/api/ai-workspace-conversations",
+    async def test_writing_ai_run_history_and_replay(self) -> None:
+        create_card_response = await self.client.post(
+            "/api/knowledge/cards",
             json={
-                "chapter_id": "chapter_001",
-                "task_type": "chat",
-                "reference_scope": "none",
+                "type": "character",
+                "data": {
+                    "id": "character-qin-yang",
+                    "name": "秦阳",
+                    "summary": "主角，掌心出现过金鳞异象。",
+                    "source_origin": "manual",
+                    "source_note": "作者手动确认。",
+                    "role_type": "protagonist",
+                },
             },
         )
-        create_response = await self.client.post(
-            "/api/ai-workspace-conversations",
+        active_response = await self.client.post(
+            "/api/knowledge/cards/character-qin-yang/mark-active"
+        )
+        run_response = await self.client.post(
+            "/api/writing-ai/runs",
             json={
+                "button_type": "continue",
                 "chapter_id": "chapter_001",
-                "task_type": "continue",
                 "reference_scope": "chapter",
+                "user_input": "续写 200 字，压迫感更强。",
+                "draft_chapter_text": "秦阳掌心的金鳞异象在山门前亮起。",
             },
         )
-        conversation_id = create_response.json()["conversation"]["id"]
-        send_response = await self.client.post(
-            f"/api/ai-workspace-conversations/{conversation_id}/messages",
-            json={
-                "user_input": "续写 200 字，压迫感更强",
-                "reference": {"chapter_id": "chapter_001", "chapter_text": "正文"},
-            },
+        run = run_response.json()
+        run_id = run["run_id"]
+        list_response = await self.client.get(
+            "/api/writing-ai/runs?chapter_id=chapter_001&button_type=continue"
         )
-        history_response = await self.client.get(
-            "/api/ai-history?chapter_id=chapter_001&task_type=continue&has_source=false"
-        )
-        regenerate_response = await self.client.post(
-            f"/api/ai-workspace-conversations/{conversation_id}/regenerate"
-        )
-        delete_response = await self.client.delete(
-            f"/api/ai-workspace-conversations/{conversation_id}"
-        )
-        deleted_history_response = await self.client.get(
-            "/api/ai-history?chapter_id=chapter_001&task_type=continue"
+        read_response = await self.client.get(f"/api/writing-ai/runs/{run_id}")
+        replay_response = await self.client.post(
+            f"/api/writing-ai/runs/{run_id}/replay"
         )
 
-        self.assertEqual(chat_response.status_code, 422)
-        self.assertIn("纯对话", chat_response.json()["error"]["message"])
-        self.assertEqual(create_response.status_code, 200)
-        conversation = send_response.json()["conversation"]
-        self.assertTrue(conversation["is_mock"])
-        self.assertEqual(len(conversation["messages"]), 2)
-        self.assertIn(
-            "模拟提示词",
-            conversation["messages"][0]["prompt_snapshot"]["final_prompt"],
-        )
-        self.assertEqual(history_response.json()["conversations"][0]["id"], conversation_id)
-        regenerated = regenerate_response.json()["conversation"]
-        self.assertEqual(regenerate_response.status_code, 200)
-        self.assertEqual(len(regenerated["messages"]), 2)
-        self.assertNotEqual(
-            regenerated["messages"][1]["message_id"],
-            conversation["messages"][1]["message_id"],
-        )
-        self.assertEqual(delete_response.status_code, 200)
-        self.assertEqual(delete_response.json(), {"deleted": True})
-        self.assertEqual(deleted_history_response.json()["conversations"], [])
+        self.assertEqual(create_card_response.status_code, 200)
+        self.assertEqual(active_response.json()["card"]["status"], "active")
+        self.assertEqual(run_response.status_code, 200)
+        self.assertEqual(run["status"], "completed")
+        self.assertEqual(run["button_type"], "continue")
+        self.assertEqual(run["prompt_snapshot"]["prompt_id"], "continue_prompt_v1")
+        self.assertEqual(run["structured_output"]["output_type"], "text_candidate")
+        self.assertEqual(run["structured_output"]["content"]["text"], "真实续写正文。")
+        source_types = {
+            item["source_type"] for item in run["retrieval_context"]["items"]
+        }
+        self.assertIn("chapter", source_types)
+        self.assertIn("knowledge", source_types)
+        self.assertIn("真实续写正文", run["raw_llm_output"])
+        self.assertEqual(list_response.json()["runs"][0]["run_id"], run_id)
+        self.assertEqual(read_response.json()["run_id"], run_id)
+        self.assertEqual(replay_response.json()["run_id"], run_id)
+        self.assertEqual(replay_response.json()["raw_llm_output"], run["raw_llm_output"])
+
+    async def test_writing_ai_missing_llm_config_saves_failed_run(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            assets_root = Path(temporary_directory)
+            storage = ProjectAssetStorageBackend(assets_root)
+            await ImportService(storage).import_text(
+                "第一章 开始\n正文带着灵火向前。",
+                source_name="mvp_api_fixture.txt",
+            )
+            app = create_app(
+                app_settings=Settings(
+                    project_assets_dir=assets_root,
+                    deepseek_api_key="",
+                ),
+            )
+            async with AsyncClient(
+                transport=ASGITransport(app=app),
+                base_url="http://test",
+            ) as client:
+                run_response = await client.post(
+                    "/api/writing-ai/runs",
+                    json={
+                        "button_type": "continue",
+                        "chapter_id": "chapter_001",
+                        "reference_scope": "chapter",
+                        "user_input": "续写 200 字。",
+                    },
+                )
+                list_response = await client.get("/api/writing-ai/runs")
+
+        run = run_response.json()
+        self.assertEqual(run_response.status_code, 200)
+        self.assertEqual(run["status"], "failed")
+        self.assertEqual(run["error"], "当前未配置可用模型，无法调用真实 LLM。")
+        self.assertEqual(run["raw_llm_output"], "")
+        self.assertEqual(list_response.json()["runs"][0]["run_id"], run["run_id"])
 
     async def test_settings_preferences_do_not_expose_model_configuration(self) -> None:
         patch_response = await self.client.patch(
@@ -335,3 +373,38 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(preferences["font_size"], 20)
         self.assertNotIn("api_key", preferences)
         self.assertNotIn("model", preferences)
+
+
+class _WritingAIChatModel(BaseChatModel):
+    responses: list[str]
+
+    @property
+    def _llm_type(self) -> str:
+        return "taichu-writing-ai-test"
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        if not self.responses:
+            raise RuntimeError("没有可用的写作 AI 测试响应。")
+        return ChatResult(
+            generations=[
+                ChatGeneration(message=AIMessage(content=self.responses.pop(0)))
+            ]
+        )
+
+
+def _writing_ai_continue_response() -> str:
+    return json.dumps(
+        {
+            "output_type": "text_candidate",
+            "text": "真实续写正文。",
+            "risk_notes": [],
+            "used_evidence": ["chapter:chapter_001", "knowledge:character-qin-yang"],
+        },
+        ensure_ascii=False,
+    )

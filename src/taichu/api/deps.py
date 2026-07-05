@@ -5,7 +5,6 @@ from fastapi import Request
 from taichu.application.agents.registry import AgentRegistry
 from taichu.application.contracts.storage import StorageBackend
 from taichu.application.services.ai_card_service import AICardService
-from taichu.application.services.ai_workspace_service import AIWorkspaceService
 from taichu.application.services.chapter_summary_service import (
     ChapterSummaryService,
 )
@@ -25,6 +24,7 @@ from taichu.application.services.pending_fact_confirmation_service import (
 )
 from taichu.application.services.selection_ai_service import SelectionAIService
 from taichu.application.services.settings_service import SettingsPreferenceService
+from taichu.application.services.writing_ai_service import WritingAIService
 
 
 def provide_agent_registry(request: Request) -> AgentRegistry:
@@ -106,11 +106,11 @@ def provide_pending_fact_confirmation_service(
     return request.app.state.pending_fact_confirmation_service
 
 
-def provide_ai_workspace_service(request: Request) -> AIWorkspaceService:
-    """Return the MVP writing-area AI conversation service."""
-    return request.app.state.ai_workspace_service
-
-
 def provide_settings_preference_service(request: Request) -> SettingsPreferenceService:
     """Return the MVP settings preference service."""
     return request.app.state.settings_preference_service
+
+
+def provide_writing_ai_service(request: Request) -> WritingAIService:
+    """Return the writing-page real AI run service."""
+    return request.app.state.writing_ai_service

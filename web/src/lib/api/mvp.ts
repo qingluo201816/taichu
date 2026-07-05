@@ -1,10 +1,5 @@
 import { apiRequest } from "@/lib/api-client";
 import type {
-  AIReferenceScope,
-  AIWorkspaceConversationListResponse,
-  AIWorkspaceConversationResponse,
-  AIWorkspaceSubtaskType,
-  AIWorkspaceTaskType,
   ConfirmPendingFactResponse,
   EditorPreferences,
   InboxTab,
@@ -311,100 +306,6 @@ export async function patchInboxIssue(
       method: "PATCH",
       body: JSON.stringify({ updates }),
     },
-  );
-}
-
-export async function createAIConversation(params: {
-  chapterId: string;
-  taskType: AIWorkspaceTaskType;
-  referenceScope: AIReferenceScope;
-  subtaskType?: AIWorkspaceSubtaskType | null;
-  modelName?: string;
-}): Promise<AIWorkspaceConversationResponse> {
-  return apiRequest<AIWorkspaceConversationResponse>(
-    "/api/ai-workspace-conversations",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        chapter_id: params.chapterId,
-        task_type: params.taskType,
-        subtask_type: params.subtaskType ?? null,
-        reference_scope: params.referenceScope,
-        model_name: params.modelName ?? "mock-llm",
-      }),
-    },
-  );
-}
-
-export async function sendAIMessage(params: {
-  conversationId: string;
-  userInput: string;
-  reference: Record<string, unknown>;
-}): Promise<AIWorkspaceConversationResponse> {
-  return apiRequest<AIWorkspaceConversationResponse>(
-    `/api/ai-workspace-conversations/${encodeURIComponent(
-      params.conversationId,
-    )}/messages`,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        user_input: params.userInput,
-        reference: params.reference,
-      }),
-    },
-  );
-}
-
-export async function regenerateAIMessage(
-  conversationId: string,
-): Promise<AIWorkspaceConversationResponse> {
-  return apiRequest<AIWorkspaceConversationResponse>(
-    `/api/ai-workspace-conversations/${encodeURIComponent(
-      conversationId,
-    )}/regenerate`,
-    { method: "POST" },
-  );
-}
-
-export async function deleteAIConversation(
-  conversationId: string,
-): Promise<{ deleted: boolean }> {
-  return apiRequest<{ deleted: boolean }>(
-    `/api/ai-workspace-conversations/${encodeURIComponent(conversationId)}`,
-    { method: "DELETE" },
-  );
-}
-
-export async function listAIHistory(params: {
-  chapterId?: string;
-  chapterName?: string;
-  taskType?: AIWorkspaceTaskType;
-  page?: number;
-  pageSize?: number;
-} = {}): Promise<AIWorkspaceConversationListResponse> {
-  const search = new URLSearchParams({
-    page: String(params.page ?? 1),
-    page_size: String(params.pageSize ?? 10),
-  });
-  if (params.chapterId) {
-    search.set("chapter_id", params.chapterId);
-  }
-  if (params.chapterName?.trim()) {
-    search.set("chapter_name", params.chapterName.trim());
-  }
-  if (params.taskType) {
-    search.set("task_type", params.taskType);
-  }
-  return apiRequest<AIWorkspaceConversationListResponse>(
-    `/api/ai-history?${search.toString()}`,
-  );
-}
-
-export async function readAIHistory(
-  conversationId: string,
-): Promise<AIWorkspaceConversationResponse> {
-  return apiRequest<AIWorkspaceConversationResponse>(
-    `/api/ai-history/${encodeURIComponent(conversationId)}`,
   );
 }
 

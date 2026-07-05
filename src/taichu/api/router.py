@@ -6,8 +6,6 @@ from taichu.api.routes import (
     agent_workbench,
     agents,
     ai_cards,
-    ai_history,
-    ai_workspace,
     chapters,
     export,
     inbox,
@@ -15,6 +13,7 @@ from taichu.api.routes import (
     mvp_knowledge,
     outline,
     settings,
+    writing_ai,
 )
 
 
@@ -23,8 +22,6 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(agent_workbench.router)
     app.include_router(agents.router)
     app.include_router(ai_cards.router)
-    app.include_router(ai_workspace.router)
-    app.include_router(ai_history.router)
     app.include_router(chapters.router)
     app.include_router(export.router)
     app.include_router(inbox.router)
@@ -32,3 +29,4 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(mvp_knowledge.router)
     app.include_router(outline.router)
     app.include_router(settings.router)
+    app.include_router(writing_ai.router)

@@ -1,6 +1,6 @@
 # project_assets 目录说明
 
-> 更新日期：2026-07-04
+> 更新日期：2026-07-05
 
 `project_assets/` 是太初单本小说的本地资产根目录，用于保存正文源数据、知识库源数据、AI 运行产物、索引缓存和临时生成文件。
 
@@ -42,7 +42,7 @@ project_assets/
 │   │   ├── realm/                               # 境界知识卡
 │   │   ├── rule/                                # 规则设定知识卡
 │   │   └── technique/                           # 功法知识卡
-│   ├── workspace/                               # 工作区状态、收件箱、AI 卡片和待处理事实
+│   ├── workspace/                               # 工作区状态、收件箱、AI 卡片、待处理事实和写作 AI 运行记录
 │   ├── plots/                                   # 剧情资料根目录
 │   │   ├── arcs/                                # 剧情弧线资料
 │   │   └── outlines/                            # 大纲资料
@@ -76,7 +76,8 @@ project_assets/
 - 章节清单位于 `source/manuscripts/manifest.json`。
 - 大纲数据位于 `source/manuscripts/outline.json`。
 - 正式知识卡位于 `source/knowledge/{类型}/`。
-- 收件箱、AI 卡片、偏好设置和工作区状态位于 `source/workspace/`。
+- 收件箱、AI 卡片、偏好设置、工作区状态和写作 AI 运行记录位于 `source/workspace/`。
+- 写作页 9 个 AI 按钮的真实模型调用轨迹保存在 `source/workspace/writing_ai_runs.jsonl`，用于历史查看、提示词审计和回放，不直接写入正式知识库。
 
 ### source/knowledge
 

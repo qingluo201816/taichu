@@ -50,39 +50,37 @@ import {
   listChapterSummaries,
   readChapter,
   saveChapter,
-  summarizeChapter,
 } from "@/lib/api/chapters";
 import {
-  createAIConversation,
   createChapter,
-  createInboxIdea,
-  createInboxPendingFact,
   createVolume,
-  deleteAIConversation,
   deleteChapter,
   deleteVolume,
-  listAIHistory,
   patchPreferences,
   readOutline,
   readPreferences,
-  regenerateAIMessage,
   renameChapter,
   renameVolume,
-  sendAIMessage,
 } from "@/lib/api/mvp";
+import {
+  createWritingAIRun,
+  listWritingAIRuns,
+  replayWritingAIRun,
+} from "@/lib/api/writing-ai";
 import { formatNovelParagraphs } from "@/lib/editor/markdown";
 import type { ChapterInfo, ChapterSummaryInfo } from "@/lib/types/chapters";
 import type {
-  AIReferenceScope,
-  AIWorkspaceConversation,
-  AIWorkspaceMessage,
-  AIWorkspaceTaskType,
   EditorPreferences,
   OutlineChapter,
   OutlineVolume,
-  SourceReference,
   WritingOutline,
 } from "@/lib/types/mvp";
+import type {
+  WritingAIButtonType,
+  WritingAIReferenceScope,
+  WritingAIRetrievalEvidenceItem,
+  WritingAIRun,
+} from "@/lib/types/writing-ai";
 import { cn } from "@/lib/utils";
 
 type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
@@ -101,7 +99,7 @@ type AIEntry = {
   key: AIEntryKey;
   label: string;
   placeholder: string;
-  taskType?: AIWorkspaceTaskType;
+  buttonType: WritingAIButtonType;
 };
 
 type TextSelection = {
@@ -110,12 +108,7 @@ type TextSelection = {
   text: string;
 };
 
-type LocalMessage = {
-  role: "user" | "assistant";
-  text: string;
-};
-
-type ReferenceRangeChoice = AIReferenceScope;
+type ReferenceRangeChoice = WritingAIReferenceScope;
 type EditorPaperToneKey =
   | "mist"
   | "charcoal"
@@ -501,74 +494,78 @@ const aiEntries: AIEntry[] = [
     key: "chat",
     label: "纯对话",
     placeholder: "输入你想临时询问的内容",
+    buttonType: "chat",
   },
   {
     key: "continue",
     label: "续写",
     placeholder: "输入续写要求，可为空",
-    taskType: "continue",
+    buttonType: "continue",
   },
   {
     key: "polish",
     label: "润色",
     placeholder: "输入扩写、缩写或改写要求，可为空",
-    taskType: "polish",
+    buttonType: "polish",
   },
   {
     key: "setting",
     label: "设定",
     placeholder: "输入你想补充的设定方向",
-    taskType: "setting",
+    buttonType: "setting",
   },
   {
     key: "suggestion",
     label: "建议",
     placeholder: "输入你想判断或改进的问题",
-    taskType: "suggestion",
+    buttonType: "suggestion",
   },
   {
     key: "evidence",
     label: "证据",
     placeholder: "输入你想追问的依据或出处",
-    taskType: "evidence",
+    buttonType: "evidence",
   },
   {
     key: "chapter_summary",
     label: "章节摘要",
     placeholder: "本章暂未生成摘要",
-    taskType: "chapter_summary",
+    buttonType: "chapter_summary",
   },
   {
     key: "inspiration",
     label: "灵感",
     placeholder: "记下一条灵感",
+    buttonType: "inspiration",
   },
   {
     key: "fact",
     label: "事实",
     placeholder: "记下一条可能入库的事实",
+    buttonType: "fact",
   },
 ];
 
-const referenceOptions: Record<AIReferenceScope, string> = {
+const referenceOptions: Record<WritingAIReferenceScope, string> = {
   none: "无小说上下文",
   selection: "选区",
   chapter: "本章",
-  fulltext: "全文",
+  full_text: "全文",
 };
 
-const aiReferenceConfigs: Partial<
-  Record<
-    AIWorkspaceTaskType,
-    { defaultScope: ReferenceRangeChoice; options: ReferenceRangeChoice[] }
-  >
+const aiReferenceConfigs: Record<
+  WritingAIButtonType,
+  { defaultScope: ReferenceRangeChoice; options: ReferenceRangeChoice[] }
 > = {
+  chat: { defaultScope: "none", options: ["none"] },
   continue: { defaultScope: "chapter", options: ["chapter", "selection"] },
   polish: { defaultScope: "selection", options: ["selection"] },
-  setting: { defaultScope: "selection", options: ["selection", "chapter", "fulltext"] },
-  suggestion: { defaultScope: "chapter", options: ["selection", "chapter", "fulltext"] },
-  evidence: { defaultScope: "fulltext", options: ["chapter", "fulltext"] },
+  setting: { defaultScope: "selection", options: ["selection", "chapter", "full_text"] },
+  suggestion: { defaultScope: "chapter", options: ["selection", "chapter", "full_text"] },
+  evidence: { defaultScope: "full_text", options: ["chapter", "full_text"] },
   chapter_summary: { defaultScope: "chapter", options: ["chapter"] },
+  inspiration: { defaultScope: "chapter", options: ["selection", "chapter"] },
+  fact: { defaultScope: "selection", options: ["selection", "chapter"] },
 };
 
 const entryDescriptions: Record<AIEntryKey, string> = {
@@ -607,24 +604,10 @@ export default function EditorShell() {
   >(defaultPreferences.editor_background);
   const [activeTypographyMenu, setActiveTypographyMenu] =
     useState<EditorTypographyMenu | null>(null);
-  const [lineHeight, setLineHeight] = useState(() =>
-    readStoredEditorNumber(
-      EDITOR_LINE_HEIGHT_STORAGE_KEY,
-      DEFAULT_EDITOR_LINE_HEIGHT,
-      editorLineHeightRange.min,
-      editorLineHeightRange.max,
-    ),
-  );
-  const [lineWidth, setLineWidth] = useState(() =>
-    readStoredEditorNumber(
-      EDITOR_LINE_WIDTH_STORAGE_KEY,
-      DEFAULT_EDITOR_LINE_WIDTH,
-      editorLineWidthRange.min,
-      editorLineWidthRange.max,
-    ),
-  );
-  const [editorFontKey, setEditorFontKey] = useState<EditorFontKey>(() =>
-    readStoredEditorFontKey(),
+  const [lineHeight, setLineHeight] = useState(DEFAULT_EDITOR_LINE_HEIGHT);
+  const [lineWidth, setLineWidth] = useState(DEFAULT_EDITOR_LINE_WIDTH);
+  const [editorFontKey, setEditorFontKey] = useState<EditorFontKey>(
+    DEFAULT_EDITOR_FONT_KEY,
   );
   const [editorToast, setEditorToast] = useState<EditorToastState | null>(null);
   const paperToneKey = useSyncExternalStore(
@@ -639,18 +622,17 @@ export default function EditorShell() {
   const [selectedAiTool, setSelectedAiTool] = useState<AIEntryKey>("continue");
   const [isAssistantPanelOpen, setAssistantPanelOpen] = useState(false);
   const [collapsedVolumeIds, setCollapsedVolumeIds] = useState<Set<string>>(
-    () => readStoredCollapsedVolumeIds(),
+    () => new Set(),
   );
   const [aiInput, setAIInput] = useState("");
   const [aiBusy, setAIBusy] = useState(false);
   const [aiError, setAIError] = useState<string | null>(null);
   const [conversations, setConversations] = useState<
-    Partial<Record<AIEntryKey, AIWorkspaceConversation>>
+    Partial<Record<AIEntryKey, WritingAIRun>>
   >({});
-  const [localChatMessages, setLocalChatMessages] = useState<LocalMessage[]>([]);
   const [isHistoryPickerOpen, setHistoryPickerOpen] = useState(false);
   const [historyConversations, setHistoryConversations] = useState<
-    AIWorkspaceConversation[]
+    WritingAIRun[]
   >([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
@@ -681,13 +663,10 @@ export default function EditorShell() {
   const activeEntry =
     aiEntries.find(entry => entry.key === selectedAiTool) ?? aiEntries[1];
   const activeConversation = conversations[selectedAiTool] ?? null;
-  const isSummaryEntry = activeEntry.key === "chapter_summary";
-  const isRecordEntry =
-    activeEntry.key === "inspiration" || activeEntry.key === "fact";
-  const isConversationEntry = Boolean(activeEntry.taskType) && !isSummaryEntry;
-  const activeReferenceConfig = activeEntry.taskType
-    ? aiReferenceConfigs[activeEntry.taskType] ?? null
-    : null;
+  const isSummaryEntry = false;
+  const isRecordEntry = false;
+  const isConversationEntry = Boolean(activeEntry.buttonType);
+  const activeReferenceConfig = aiReferenceConfigs[activeEntry.buttonType] ?? null;
   const currentOutlineChapter = activeChapter
     ? outlineChapterById(outline, activeChapter.id)
     : null;
@@ -696,9 +675,10 @@ export default function EditorShell() {
   const currentChapterPrefix = currentOutlineChapter
     ? chapterNumberLabel(currentOutlineChapter.order)
     : "章节";
-  const currentReferenceScope = activeEntry.taskType
-    ? referenceScopeFor(activeEntry.taskType, referenceRange)
-    : "none";
+  const currentReferenceScope = referenceScopeFor(
+    activeEntry.buttonType,
+    referenceRange,
+  );
   const currentWordCount = useMemo(() => countReadableWords(markdown), [markdown]);
   const showSelectionPreview =
     activeReferenceConfig?.options.includes("selection") === true &&
@@ -713,6 +693,30 @@ export default function EditorShell() {
     saveState === "saving" ||
     saveState === "saved" ||
     saveState === "idle";
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setLineHeight(
+        readStoredEditorNumber(
+          EDITOR_LINE_HEIGHT_STORAGE_KEY,
+          DEFAULT_EDITOR_LINE_HEIGHT,
+          editorLineHeightRange.min,
+          editorLineHeightRange.max,
+        ),
+      );
+      setLineWidth(
+        readStoredEditorNumber(
+          EDITOR_LINE_WIDTH_STORAGE_KEY,
+          DEFAULT_EDITOR_LINE_WIDTH,
+          editorLineWidthRange.min,
+          editorLineWidthRange.max,
+        ),
+      );
+      setEditorFontKey(readStoredEditorFontKey());
+      setCollapsedVolumeIds(readStoredCollapsedVolumeIds());
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   const resizeEditorTextarea = useCallback(() => {
     const textarea = textareaRef.current;
@@ -748,12 +752,6 @@ export default function EditorShell() {
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const refreshOutline = useCallback(async () => {
-    const response = await readOutline();
-    setOutline(response.outline);
-    return response.outline;
   }, []);
 
   const loadLatestChapterSummary = useCallback(async (chapterId: string) => {
@@ -1283,9 +1281,9 @@ export default function EditorShell() {
       return;
     }
     const nextEntry = aiEntries.find(entry => entry.key === entryKey);
-    if (nextEntry?.taskType) {
+    if (nextEntry?.buttonType) {
       setReferenceRange(
-        aiReferenceConfigs[nextEntry.taskType]?.defaultScope ?? "chapter",
+        aiReferenceConfigs[nextEntry.buttonType]?.defaultScope ?? "chapter",
       );
     } else {
       setReferenceRange("none");
@@ -1303,7 +1301,7 @@ export default function EditorShell() {
 
   async function openHistoryPicker() {
     const chapter = activeChapterRef.current;
-    if (!chapter || !activeEntry.taskType || !isConversationEntry) {
+    if (!chapter || !isConversationEntry) {
       return;
     }
     if (isHistoryPickerOpen) {
@@ -1314,13 +1312,13 @@ export default function EditorShell() {
     setHistoryLoading(true);
     setHistoryError(null);
     try {
-      const response = await listAIHistory({
+      const response = await listWritingAIRuns({
         chapterId: chapter.id,
-        taskType: activeEntry.taskType,
+        buttonType: activeEntry.buttonType,
         page: 1,
         pageSize: 20,
       });
-      setHistoryConversations(response.conversations);
+      setHistoryConversations(response.runs);
     } catch (caught) {
       setHistoryError(caught instanceof Error ? caught.message : "历史对话加载失败");
     } finally {
@@ -1339,7 +1337,7 @@ export default function EditorShell() {
     setShowPromptSnapshot(false);
   }
 
-  function selectHistoryConversation(conversation: AIWorkspaceConversation) {
+  function selectHistoryConversation(conversation: WritingAIRun) {
     setConversations(current => ({
       ...current,
       [selectedAiTool]: conversation,
@@ -1363,33 +1361,25 @@ export default function EditorShell() {
   }
 
   async function regenerateCurrentConversation() {
-    if (selectedAiTool === "chat") {
-      setLocalChatMessages(current => regenerateLocalChatMessages(current));
-      setAIError(null);
-      showEditorToast("已重新生成");
-      return;
-    }
     if (!activeConversation) {
       return;
     }
     setAIBusy(true);
     setAIError(null);
     try {
-      const response = await regenerateAIMessage(activeConversation.id);
+      const response = await replayWritingAIRun(activeConversation.run_id);
       setConversations(current => ({
         ...current,
-        [selectedAiTool]: response.conversation,
+        [selectedAiTool]: response,
       }));
       setHistoryConversations(current =>
         current.map(conversation =>
-          conversation.id === response.conversation.id
-            ? response.conversation
-            : conversation,
+          conversation.run_id === response.run_id ? response : conversation,
         ),
       );
-      showEditorToast("已重新生成");
+      showEditorToast("已回放保存记录");
     } catch (caught) {
-      setAIError(caught instanceof Error ? caught.message : "重新生成失败");
+      setAIError(caught instanceof Error ? caught.message : "回放失败");
     } finally {
       setAIBusy(false);
     }
@@ -1406,39 +1396,15 @@ export default function EditorShell() {
   }
 
   async function deleteCurrentConversation() {
-    if (selectedAiTool === "chat") {
-      if (!window.confirm("确认删除当前临时对话？")) {
-        return;
-      }
-      setLocalChatMessages([]);
-      setAIError(null);
-      showEditorToast("对话已删除");
-      return;
-    }
     if (!activeConversation) {
       return;
     }
-    if (!window.confirm("确认删除当前对话？删除后 AI 历史中也不会保留。")) {
-      return;
-    }
-    setAIBusy(true);
     setAIError(null);
-    try {
-      await deleteAIConversation(activeConversation.id);
-      setConversations(current => ({
-        ...current,
-        [selectedAiTool]: undefined,
-      }));
-      setHistoryConversations(current =>
-        current.filter(conversation => conversation.id !== activeConversation.id),
-      );
-      setAIError(null);
-      showEditorToast("对话已删除");
-    } catch (caught) {
-      setAIError(caught instanceof Error ? caught.message : "删除对话失败");
-    } finally {
-      setAIBusy(false);
-    }
+    setConversations(current => ({
+      ...current,
+      [selectedAiTool]: undefined,
+    }));
+    showEditorToast("已清空当前面板，历史记录仍保留");
   }
 
   async function submitAI() {
@@ -1455,97 +1421,31 @@ export default function EditorShell() {
     setAIBusy(true);
     setAIError(null);
     try {
-      if (activeEntry.key === "chat") {
-        setLocalChatMessages(current => [
-          ...current,
-          { role: "user", text: input },
-          {
-            role: "assistant",
-            text: "这是临时对话，不会保存到 AI 历史，也不会写入知识库。",
-          },
-        ]);
-        setAIInput("");
-        return;
-      }
-      if (activeEntry.key === "inspiration") {
-        await createInboxIdea({
-          content: input,
-          source_chapter_id: chapter.id,
-          priority: "normal",
-        });
-        setAIInput("");
-        setAIError(null);
-        showEditorToast("灵感已保存到收件箱");
-        return;
-      }
-      if (activeEntry.key === "fact") {
-        await createInboxPendingFact({
-          title: input.slice(0, 24) || "待确认事实",
-          content: input,
-          source_chapter_id: chapter.id,
-          origin: "作者手动记录",
-          priority: "normal",
-        });
-        setAIInput("");
-        setAIError(null);
-        showEditorToast("事实已保存到收件箱的待确认事实");
-        return;
-      }
-      if (activeEntry.key === "chapter_summary") {
-        if (chapterSummary) {
-          setAIError(null);
-          showEditorToast("本章摘要已生成", "info");
-          return;
-        }
-        setSummaryLoading(true);
-        try {
-          const response = await summarizeChapter(chapter.id);
-          setChapterSummary(response.summary);
-          setAIInput("");
-          setAIError(null);
-          setSummaryError(null);
-          showEditorToast("本章摘要已生成");
-        } finally {
-          setSummaryLoading(false);
-        }
-        return;
-      }
-      if (!activeEntry.taskType) {
-        return;
-      }
-      const referenceScope = referenceScopeFor(activeEntry.taskType, referenceRange);
+      const referenceScope = referenceScopeFor(activeEntry.buttonType, referenceRange);
       if (referenceScope === "selection" && !selection?.text.trim()) {
         setAIError("请先在正文中选择一段文字");
         return;
       }
-      let conversation = conversations[activeEntry.key];
-      if (!conversation || conversation.reference_scope !== referenceScope) {
-        conversation = (
-          await createAIConversation({
-            chapterId: chapter.id,
-            taskType: activeEntry.taskType,
-            referenceScope,
-          })
-        ).conversation;
-      }
-      const response = await sendAIMessage({
-        conversationId: conversation.id,
-        userInput: input || defaultPromptFor(activeEntry.key),
-        reference: {
-          scope: referenceScope,
-          chapter_id: chapter.id,
-          selected_text: selection?.text ?? "",
-          selection_start: selection?.start ?? null,
-          selection_end: selection?.end ?? null,
-          chapter_text: markdown,
-        },
+      const response = await createWritingAIRun({
+        button_type: activeEntry.buttonType,
+        chapter_id: chapter.id,
+        reference_scope: referenceScope,
+        user_input: input || defaultPromptFor(activeEntry.key),
+        selected_text: selection?.text ?? "",
+        selection_range: selection
+          ? {
+              char_start: selection.start,
+              char_end: selection.end,
+            }
+          : null,
+        draft_chapter_text: markdown,
       });
       setConversations(current => ({
         ...current,
-        [activeEntry.key]: response.conversation,
+        [activeEntry.key]: response,
       }));
       setAIInput("");
-      void refreshOutline();
+      showEditorToast(response.status === "completed" ? "模型调用完成" : "模型调用失败");
     } catch (caught) {
       setAIError(caught instanceof Error ? caught.message : "右侧入口处理失败");
     } finally {
@@ -2151,7 +2051,7 @@ export default function EditorShell() {
                   conversations={historyConversations}
                   loading={historyLoading}
                   error={historyError}
-                  activeConversationId={activeConversation?.id ?? null}
+                  activeConversationId={activeConversation?.run_id ?? null}
                   onSelect={selectHistoryConversation}
                 />
               ) : null}
@@ -2164,8 +2064,6 @@ export default function EditorShell() {
               ) : null}
               {!isSummaryEntry && !isRecordEntry ? (
                 <AIMessageList
-                  entryKey={selectedAiTool}
-                  localMessages={localChatMessages}
                   conversation={activeConversation}
                   showPromptSnapshot={showPromptSnapshot}
                   actionsDisabled={aiBusy}
@@ -2267,9 +2165,10 @@ export default function EditorShell() {
                       </div>
                     </div>
                   )}
-                  {activeConversation?.is_mock ? (
+                  {activeConversation ? (
                     <p className="mt-2 text-xs text-[var(--tc-smoke)]">
-                      模拟输出
+                      状态：{runStatusLabel(activeConversation.status)} · 模型：
+                      {activeConversation.model || "未记录"}
                     </p>
                   ) : null}
                 </>
@@ -2324,8 +2223,6 @@ export default function EditorShell() {
 }
 
 function AIMessageList({
-  entryKey,
-  localMessages,
   conversation,
   showPromptSnapshot,
   actionsDisabled,
@@ -2334,9 +2231,7 @@ function AIMessageList({
   onCopy,
   onDelete,
 }: {
-  entryKey: AIEntryKey;
-  localMessages: LocalMessage[];
-  conversation: AIWorkspaceConversation | null;
+  conversation: WritingAIRun | null;
   showPromptSnapshot: boolean;
   actionsDisabled: boolean;
   onTogglePromptSnapshot: () => void;
@@ -2344,24 +2239,7 @@ function AIMessageList({
   onCopy: (message: string) => void;
   onDelete: () => void;
 }) {
-  const messages =
-    entryKey === "chat"
-      ? localMessages.map((message, index) => ({
-          id: `local-${index}`,
-          role: message.role,
-          text: message.text,
-          sourceRefs: [] as SourceReference[],
-          snapshot: null as string | null,
-          mock: true,
-        }))
-      : (conversation?.messages ?? []).map(message => ({
-          id: message.message_id,
-          role: message.role,
-          text: messageContent(message),
-          sourceRefs: message.source_refs,
-          snapshot: message.prompt_snapshot?.final_prompt ?? null,
-          mock: message.is_mock,
-        }));
+  const messages = writingRunMessages(conversation);
   const latestSnapshot = [...messages].reverse().find(message => message.snapshot);
   const latestAssistantIndex = lastAssistantMessageIndex(messages);
   if (!messages.length) {
@@ -2413,8 +2291,12 @@ function AIMessageList({
               ) : (
                 <Sparkles className="size-4" />
               )}
-              {message.role === "user" ? "作者" : "模型回答"}
-              {message.mock ? <span>模拟</span> : null}
+              {message.role === "user"
+                ? "作者"
+                : message.role === "error"
+                  ? "系统消息"
+                  : "模型回答"}
+              {message.status ? <span>{message.status}</span> : null}
             </div>
             <p className="whitespace-pre-wrap text-sm leading-6">{message.text}</p>
             {message.sourceRefs.length ? (
@@ -2437,7 +2319,7 @@ function AIMessageList({
             {message.role === "assistant" && index === latestAssistantIndex ? (
               <div className="mt-3 flex items-center justify-end gap-1 text-[var(--tc-smoke)]">
                 <MessageActionButton
-                  label="重新生成"
+                  label="回放"
                   disabled={actionsDisabled}
                   onClick={onRegenerate}
                 >
@@ -2451,7 +2333,7 @@ function AIMessageList({
                   <Copy className="size-4" />
                 </MessageActionButton>
                 <MessageActionButton
-                  label="删除"
+                  label="清空面板"
                   disabled={actionsDisabled}
                   onClick={onDelete}
                 >
@@ -2464,6 +2346,50 @@ function AIMessageList({
       ))}
     </section>
   );
+}
+
+function writingRunMessages(run: WritingAIRun | null): Array<{
+  id: string;
+  role: "user" | "assistant" | "error";
+  text: string;
+  sourceRefs: WritingAIRetrievalEvidenceItem[];
+  snapshot: string | null;
+  status: string | null;
+}> {
+  if (!run) {
+    return [];
+  }
+  const promptSnapshot = run.prompt_snapshot
+    ? [
+        "【系统提示词】",
+        run.prompt_snapshot.system_prompt,
+        "",
+        "【用户提示词】",
+        run.prompt_snapshot.user_prompt,
+      ].join("\n")
+    : null;
+  const assistantText =
+    run.status === "failed"
+      ? run.error || "模型调用失败"
+      : writingAIResultText(run);
+  return [
+    {
+      id: `${run.run_id}-user`,
+      role: "user",
+      text: run.input.user_input || "未填写额外要求",
+      sourceRefs: [],
+      snapshot: promptSnapshot,
+      status: null,
+    },
+    {
+      id: `${run.run_id}-assistant`,
+      role: run.status === "failed" ? "error" : "assistant",
+      text: assistantText,
+      sourceRefs: run.retrieval_context?.items ?? [],
+      snapshot: promptSnapshot,
+      status: runStatusLabel(run.status),
+    },
+  ];
 }
 
 function MessageActionButton({
@@ -2551,11 +2477,11 @@ function AIHistoryPicker({
   activeConversationId,
   onSelect,
 }: {
-  conversations: AIWorkspaceConversation[];
+  conversations: WritingAIRun[];
   loading: boolean;
   error: string | null;
   activeConversationId: string | null;
-  onSelect: (conversation: AIWorkspaceConversation) => void;
+  onSelect: (conversation: WritingAIRun) => void;
 }) {
   return (
     <section className="mb-4 rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-3">
@@ -2580,12 +2506,12 @@ function AIHistoryPicker({
       <div className="space-y-1">
         {conversations.map(conversation => (
           <button
-            key={conversation.id}
+            key={conversation.run_id}
             type="button"
             onClick={() => onSelect(conversation)}
             className={cn(
               "block w-full rounded-[var(--tc-radius-control)] border px-3 py-2 text-left text-sm transition-colors",
-              conversation.id === activeConversationId
+              conversation.run_id === activeConversationId
                 ? "border-[var(--tc-midnight-ink)] bg-[var(--tc-workspace-panel-soft)] text-[var(--tc-midnight-ink)]"
                 : "border-transparent text-[var(--tc-smoke)] hover:border-[var(--tc-stone-mist)] hover:text-[var(--tc-midnight-ink)]",
             )}
@@ -2809,27 +2735,8 @@ function lastAssistantMessageIndex(messages: Array<{ role: string }>): number {
   return -1;
 }
 
-function regenerateLocalChatMessages(messages: LocalMessage[]): LocalMessage[] {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    if (messages[index].role === "user") {
-      return [
-        ...messages.slice(0, index + 1),
-        {
-          role: "assistant",
-          text: "我已经准备好了，请继续说。",
-        },
-      ];
-    }
-  }
-  return messages;
-}
-
-function conversationTitle(conversation: AIWorkspaceConversation): string {
-  const userMessage = conversation.messages.find(message => message.role === "user");
-  if (!userMessage) {
-    return "未命名对话";
-  }
-  return middleEllipsis(messageContent(userMessage), 42);
+function conversationTitle(conversation: WritingAIRun): string {
+  return middleEllipsis(conversation.input.user_input || conversation.button_label, 42);
 }
 
 function shortDateLabel(value: string): string {
@@ -3006,9 +2913,9 @@ function countOccurrences(text: string, query: string): number {
 }
 
 function referenceScopeFor(
-  taskType: AIWorkspaceTaskType,
+  taskType: WritingAIButtonType,
   range: ReferenceRangeChoice,
-): AIReferenceScope {
+): WritingAIReferenceScope {
   const config = aiReferenceConfigs[taskType];
   if (!config) {
     return "none";
@@ -3016,7 +2923,7 @@ function referenceScopeFor(
   return config.options.includes(range) ? range : config.defaultScope;
 }
 
-function referenceScopeLabel(scope: AIReferenceScope): string {
+function referenceScopeLabel(scope: WritingAIReferenceScope): string {
   return referenceOptions[scope] ?? "正文参考";
 }
 
@@ -3027,51 +2934,140 @@ function defaultPromptFor(entryKey: AIEntryKey): string {
   if (entryKey === "continue") {
     return "续写当前段落";
   }
-  return "请根据当前正文参考给出模拟结果";
+  return "请根据当前正文参考给出结果";
 }
 
-function messageContent(message: AIWorkspaceMessage): string {
-  if (typeof message.content === "string") {
-    return message.content;
+function writingAIResultText(run: WritingAIRun): string {
+  const output = run.structured_output;
+  if (!output) {
+    return run.error || "暂无模型结果";
   }
-  const content = message.content;
+  const content = output.content;
+  if (output.output_type === "chat_answer") {
+    return [
+      stringValue(content.answer),
+      formatArray("推测", content.inference),
+      formatArray("不确定点", content.uncertainties),
+      formatArray("可执行建议", content.actionable_suggestions),
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
   if (typeof content.text === "string") {
     return content.text;
   }
-  if (typeof content.setting_addition === "string") {
+  if (typeof content.polished_text === "string") {
     return [
-      `设定补充：${content.setting_addition}`,
-      `使用建议：${stringValue(content.usage_suggestion)}`,
-      `可能影响：${stringValue(content.possible_impact)}`,
-    ].join("\n");
+      content.polished_text,
+      formatArray("修改说明", content.change_summary),
+      formatArray("风险提示", content.risk_notes),
+    ]
+      .filter(Boolean)
+      .join("\n");
   }
-  if (typeof content.suggestion === "string") {
+  if (Array.isArray(content.setting_supplements)) {
     return [
-      `问题：${stringValue(content.problem)}`,
-      `判断：${stringValue(content.judgement)}`,
-      `建议：${content.suggestion}`,
-    ].join("\n");
+      formatRecordList("设定补充", content.setting_supplements),
+      formatArray("使用建议", content.usage_advice),
+      formatArray("可能影响", content.possible_impacts),
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+  if (Array.isArray(content.diagnosis) || Array.isArray(content.suggestions)) {
+    return [
+      formatRecordList("问题诊断", content.diagnosis),
+      formatRecordList("修改建议", content.suggestions),
+      formatArray("建议保留", content.do_not_change),
+      formatArray("待确认点", content.uncertainties),
+    ]
+      .filter(Boolean)
+      .join("\n");
   }
   if (typeof content.conclusion === "string") {
-    const points = Array.isArray(content.unconfirmed_points)
-      ? content.unconfirmed_points.filter(
-          (item): item is string => typeof item === "string",
-        )
-      : [];
     return [
       `结论：${content.conclusion}`,
-      `推断：${stringValue(content.inference)}`,
-      points.length ? `未确认点：${points.join("；")}` : "",
+      formatRecordList("依据", content.evidence),
+      formatArray("推测", content.inference),
+      formatArray("未确认点", content.unconfirmed_points),
+      formatArray("冲突提醒", content.conflict_warnings),
     ]
       .filter(Boolean)
       .join("\n");
   }
   if (typeof content.summary === "string") {
-    return content.summary;
+    return [
+      content.summary,
+      formatArray("关键事件", content.key_events),
+      formatRecordList("角色变化", content.character_changes),
+      formatRecordList("设定候选", content.setting_candidates),
+      formatArray("伏笔或衔接", content.foreshadow_or_hooks),
+      formatArray("未确认点", content.unconfirmed_points),
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+  if (Array.isArray(content.ideas)) {
+    return [
+      formatRecordList("灵感", content.ideas),
+      formatArray("下一步", content.recommended_next_action),
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+  if (Array.isArray(content.candidates)) {
+    return [
+      formatRecordList("待确认事实候选", content.candidates),
+      formatArray("未提取项", content.ignored_items),
+    ]
+      .filter(Boolean)
+      .join("\n");
   }
   return JSON.stringify(content, null, 2);
 }
 
+function runStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    queued: "排队中",
+    retrieving: "检索中",
+    calling_llm: "调用模型中",
+    parsing: "解析中",
+    completed: "完成",
+    failed: "失败",
+  };
+  return labels[status] ?? "未知状态";
+}
+
+function formatArray(label: string, value: unknown): string {
+  if (!Array.isArray(value) || !value.length) {
+    return "";
+  }
+  const items = value
+    .map(item => (typeof item === "string" ? item : JSON.stringify(item)))
+    .filter(Boolean);
+  return items.length ? `${label}：${items.join("；")}` : "";
+}
+
+function formatRecordList(label: string, value: unknown): string {
+  if (!Array.isArray(value) || !value.length) {
+    return "";
+  }
+  const lines = value.map((item, index) => {
+    if (!isPlainRecord(item)) {
+      return `${index + 1}. ${String(item)}`;
+    }
+    return `${index + 1}. ${Object.values(item)
+      .map(field => String(field))
+      .filter(Boolean)
+      .join("；")}`;
+  });
+  return `${label}：\n${lines.join("\n")}`;
+}
+
 function stringValue(value: unknown): string {
   return typeof value === "string" ? value : "暂无";
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

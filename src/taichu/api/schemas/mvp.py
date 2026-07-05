@@ -5,7 +5,6 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from taichu.domain.models import (
-    AIWorkspaceConversation,
     EditorPreferences,
     KnowledgeTypeSchema,
     MVPInboxIdea,
@@ -167,38 +166,6 @@ class ConfirmPendingFactResponse(BaseModel):
 
     pending_fact: MVPInboxPendingFact
     knowledge_card: StructuredKnowledgeCard
-
-
-class CreateAIWorkspaceConversationRequest(BaseModel):
-    """Create a writing-area AI conversation."""
-
-    chapter_id: str
-    task_type: str
-    reference_scope: str
-    subtask_type: str | None = None
-    model_name: str = "mock-llm"
-
-
-class SendAIWorkspaceMessageRequest(BaseModel):
-    """Send one message to a writing-area AI conversation."""
-
-    user_input: str = ""
-    reference: dict[str, Any] = Field(default_factory=dict)
-
-
-class AIWorkspaceConversationResponse(BaseModel):
-    """One writing-area AI conversation."""
-
-    conversation: AIWorkspaceConversation
-
-
-class AIWorkspaceConversationListResponse(BaseModel):
-    """Conversation list response."""
-
-    conversations: list[AIWorkspaceConversation] = Field(default_factory=list)
-    page: int = 1
-    page_size: int = 10
-    total: int = 0
 
 
 class PreferencesResponse(BaseModel):

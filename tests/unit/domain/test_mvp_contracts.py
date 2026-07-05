@@ -6,12 +6,6 @@ from typing import Any, cast
 from pydantic import ValidationError
 
 from taichu.domain.models import (
-    AIReferenceScope,
-    AIWorkspaceConversation,
-    AIWorkspaceMessage,
-    AIWorkspaceMessageRole,
-    AIWorkspaceOutputType,
-    AIWorkspaceTaskType,
     EditorBackground,
     EditorFontStyle,
     EditorPreferences,
@@ -22,7 +16,6 @@ from taichu.domain.models import (
     MVPInboxStatus,
     OutlineChapter,
     OutlineVolume,
-    PromptSnapshot,
     SourceReference,
     SourceReferenceType,
     StructuredKnowledgeCard,
@@ -30,6 +23,16 @@ from taichu.domain.models import (
     StructuredKnowledgeSourceOrigin,
     StructuredKnowledgeStatus,
     StructuredKnowledgeType,
+    WritingAIButtonType,
+    WritingAIInput,
+    WritingAIOutputType,
+    WritingAIPromptSnapshot,
+    WritingAIReferenceScope,
+    WritingAIRetrievalContext,
+    WritingAIRetrievalEvidenceItem,
+    WritingAIRun,
+    WritingAIRunStatus,
+    WritingAIStructuredOutput,
     WritingOutline,
     knowledge_type_schema,
 )
@@ -170,52 +173,64 @@ class MVPContractTest(unittest.TestCase):
         self.assertEqual(pending_fact.confirmed_knowledge_card_id, "character-qin-yang")
         self.assertEqual(issue.status, MVPInboxStatus.DEPRECATED)
 
-    def test_ai_workspace_conversation_saves_prompt_snapshot(self) -> None:
-        conversation = AIWorkspaceConversation(
-            id="ai-conv-001",
+    def test_writing_ai_run_saves_prompt_retrieval_and_output(self) -> None:
+        run = WritingAIRun(
+            run_id="writing-ai-run-001",
+            status=WritingAIRunStatus.COMPLETED,
+            button_type=WritingAIButtonType.CONTINUE,
+            button_label="续写",
+            model="deepseek-chat",
             chapter_id="chapter-001",
-            task_type=AIWorkspaceTaskType.CONTINUE,
-            reference_scope=AIReferenceScope.CHAPTER,
-            model_name="mock-llm",
-            is_mock=True,
-            messages=[
-                AIWorkspaceMessage(
-                    message_id="msg-001",
-                    role=AIWorkspaceMessageRole.USER,
-                    content="续写 200 字",
-                    task_type=AIWorkspaceTaskType.CONTINUE,
-                    reference_scope=AIReferenceScope.CHAPTER,
-                    prompt_snapshot=PromptSnapshot(
-                        structured={
-                            "user_input": "续写 200 字",
-                            "route": "mock_continue_text",
-                        },
-                        final_prompt="【模拟提示词】任务：续写。",
-                    ),
-                    skill="mock-continue",
-                    route="mock_continue_text",
-                    created_at=NOW,
-                ),
-                AIWorkspaceMessage(
-                    message_id="msg-002",
-                    role=AIWorkspaceMessageRole.ASSISTANT,
-                    content={"text": "模拟正文候选。"},
-                    task_type=AIWorkspaceTaskType.CONTINUE,
-                    reference_scope=AIReferenceScope.CHAPTER,
-                    output_type=AIWorkspaceOutputType.TEXT_CANDIDATE,
-                    is_mock=True,
-                    created_at=NOW,
-                ),
-            ],
+            chapter_title="第1章 大田金鳞元神出",
+            reference_scope=WritingAIReferenceScope.CHAPTER,
+            input=WritingAIInput(user_input="续写 200 字"),
+            prompt_snapshot=WritingAIPromptSnapshot(
+                prompt_id="continue_prompt_v1",
+                prompt_version="1.0.0",
+                system_prompt="系统提示词",
+                user_prompt="用户提示词",
+                rendered_at=NOW,
+            ),
+            retrieval_context=WritingAIRetrievalContext(
+                used=True,
+                items=[
+                    WritingAIRetrievalEvidenceItem(
+                        item_id="chapter:chapter-001",
+                        source_type="chapter",
+                        source_id="chapter-001",
+                        display_name="第1章 大田金鳞元神出",
+                        excerpt="秦阳掌心出现金鳞异象。",
+                        usage="当前章节上下文",
+                    )
+                ],
+                knowledge_context="无匹配知识卡。",
+                evidence_context="当前章节上下文。",
+            ),
+            raw_llm_output='{"output_type":"text_candidate","text":"正文候选。"}',
+            structured_output=WritingAIStructuredOutput(
+                output_type=WritingAIOutputType.TEXT_CANDIDATE,
+                content={"text": "正文候选。", "risk_notes": [], "used_evidence": []},
+            ),
             created_at=NOW,
             updated_at=NOW,
         )
 
-        prompt_snapshot = conversation.messages[0].prompt_snapshot
+        prompt_snapshot = run.prompt_snapshot
         self.assertIsNotNone(prompt_snapshot)
         assert prompt_snapshot is not None
-        self.assertTrue(conversation.is_mock)
-        self.assertEqual(prompt_snapshot.final_prompt, "【模拟提示词】任务：续写。")
+        self.assertEqual(prompt_snapshot.prompt_id, "continue_prompt_v1")
+        self.assertEqual(run.reference_scope, WritingAIReferenceScope.CHAPTER)
+        structured_output = run.structured_output
+        retrieval_context = run.retrieval_context
+        self.assertIsNotNone(structured_output)
+        self.assertIsNotNone(retrieval_context)
+        assert structured_output is not None
+        assert retrieval_context is not None
+        self.assertEqual(
+            structured_output.output_type,
+            WritingAIOutputType.TEXT_CANDIDATE,
+        )
+        self.assertEqual(retrieval_context.items[0].source_type, "chapter")
 
     def test_editor_preferences_do_not_accept_llm_config(self) -> None:
         preferences = EditorPreferences(

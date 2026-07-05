@@ -55,7 +55,7 @@ _WORKSPACE_FILES = (
     "pending_facts.jsonl",
     "chapter_issues.jsonl",
     "chapter_summaries.jsonl",
-    "ai_workspace_conversations.jsonl",
+    "writing_ai_runs.jsonl",
     "inbox_ideas.jsonl",
     "inbox_pending_facts.jsonl",
     "inbox_issues.jsonl",

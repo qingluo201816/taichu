@@ -1,41 +1,50 @@
 "use client";
 
-import { type FormEvent, useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, History, Loader2 } from "lucide-react";
+import {
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { ChevronDown, ChevronRight, History, Loader2, RotateCcw } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { listChapters } from "@/lib/api/chapters";
-import { listAIHistory, readAIHistory } from "@/lib/api/mvp";
+import {
+  getWritingAIRun,
+  listWritingAIRuns,
+  replayWritingAIRun,
+} from "@/lib/api/writing-ai";
 import type { ChapterInfo } from "@/lib/types/chapters";
-import type {
-  AIWorkspaceConversation,
-  AIWorkspaceMessage,
-  AIWorkspaceTaskType,
-} from "@/lib/types/mvp";
+import type { WritingAIButtonType, WritingAIRun } from "@/lib/types/writing-ai";
 import { cn } from "@/lib/utils";
 
-const taskOptions: Array<{ value: "" | AIWorkspaceTaskType; label: string }> = [
+const taskOptions: Array<{ value: "" | WritingAIButtonType; label: string }> = [
   { value: "", label: "全部记录" },
+  { value: "chat", label: "纯对话" },
   { value: "continue", label: "续写" },
   { value: "polish", label: "润色" },
   { value: "setting", label: "设定" },
   { value: "suggestion", label: "建议" },
   { value: "evidence", label: "证据" },
   { value: "chapter_summary", label: "章节摘要" },
+  { value: "inspiration", label: "灵感" },
+  { value: "fact", label: "事实" },
 ];
+
 const HISTORY_PAGE_SIZE = 10;
 
 export default function AIHistoryPage() {
   const [chapters, setChapters] = useState<ChapterInfo[]>([]);
   const [chapterQuery, setChapterQuery] = useState("");
-  const [taskType, setTaskType] = useState<"" | AIWorkspaceTaskType>("");
-  const [conversations, setConversations] = useState<AIWorkspaceConversation[]>([]);
+  const [buttonType, setButtonType] = useState<"" | WritingAIButtonType>("");
+  const [runs, setRuns] = useState<WritingAIRun[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [expandedConversation, setExpandedConversation] =
-    useState<AIWorkspaceConversation | null>(null);
+  const [expandedRun, setExpandedRun] = useState<WritingAIRun | null>(null);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +54,7 @@ export default function AIHistoryPage() {
     [chapters],
   );
   const activeTaskLabel =
-    taskOptions.find(option => option.value === taskType)?.label ?? "全部记录";
+    taskOptions.find(option => option.value === buttonType)?.label ?? "全部记录";
 
   useEffect(() => {
     let cancelled = false;
@@ -67,17 +76,17 @@ export default function AIHistoryPage() {
       setLoading(true);
       setError(null);
       try {
-        const response = await listAIHistory({
+        const response = await listWritingAIRuns({
           chapterName: chapterQuery || undefined,
-          taskType: taskType || undefined,
+          buttonType: buttonType || undefined,
           page: currentPage,
           pageSize: HISTORY_PAGE_SIZE,
         });
         if (!cancelled) {
-          setConversations(response.conversations);
+          setRuns(response.runs);
           setTotalCount(response.total);
           setExpandedId(null);
-          setExpandedConversation(null);
+          setExpandedRun(null);
         }
       } catch (caught) {
         if (!cancelled) {
@@ -93,22 +102,38 @@ export default function AIHistoryPage() {
     return () => {
       cancelled = true;
     };
-  }, [chapterQuery, currentPage, taskType]);
+  }, [chapterQuery, currentPage, buttonType]);
 
-  async function toggleConversation(conversation: AIWorkspaceConversation) {
-    if (expandedId === conversation.id) {
+  async function toggleRun(run: WritingAIRun) {
+    if (expandedId === run.run_id) {
       setExpandedId(null);
-      setExpandedConversation(null);
+      setExpandedRun(null);
       return;
     }
-    setExpandedId(conversation.id);
-    setExpandedConversation(conversation);
+    setExpandedId(run.run_id);
+    setExpandedRun(run);
     setDetailLoading(true);
     setError(null);
     try {
-      setExpandedConversation((await readAIHistory(conversation.id)).conversation);
+      setExpandedRun(await getWritingAIRun(run.run_id));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "记录读取失败");
+    } finally {
+      setDetailLoading(false);
+    }
+  }
+
+  async function replayRun(runId: string) {
+    setDetailLoading(true);
+    setError(null);
+    try {
+      const replayed = await replayWritingAIRun(runId);
+      setExpandedRun(replayed);
+      setRuns(current =>
+        current.map(item => (item.run_id === replayed.run_id ? replayed : item)),
+      );
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "回放记录失败");
     } finally {
       setDetailLoading(false);
     }
@@ -121,7 +146,7 @@ export default function AIHistoryPage() {
           <div className="px-2 py-2">
             <p className="text-xs text-[var(--tc-text-muted)]">AI 历史</p>
             <h1 className="text-xl font-semibold text-[var(--tc-text-primary)]">
-              模块
+              运行记录
             </h1>
             <p className="mt-1 text-xs text-[var(--tc-text-muted)]">
               共 {totalCount} 条
@@ -133,12 +158,12 @@ export default function AIHistoryPage() {
                 key={option.value || "all"}
                 type="button"
                 onClick={() => {
-                  setTaskType(option.value);
+                  setButtonType(option.value);
                   setCurrentPage(1);
                 }}
                 className={cn(
                   "h-9 rounded-[var(--tc-radius-control)] px-3 text-left text-sm transition-colors",
-                  taskType === option.value
+                  buttonType === option.value
                     ? "bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
                     : "text-[var(--tc-text-secondary)] hover:bg-[var(--tc-surface-muted)] hover:text-[var(--tc-text-primary)]",
                 )}
@@ -157,7 +182,7 @@ export default function AIHistoryPage() {
                 {activeTaskLabel}
               </p>
               <h2 className="text-2xl font-semibold text-[var(--tc-text-primary)]">
-                当前模块记录
+                写作 AI 运行记录
               </h2>
             </div>
             {loading ? (
@@ -189,62 +214,67 @@ export default function AIHistoryPage() {
           <div className="flex min-h-0 max-w-[980px] flex-1 flex-col">
             <div className="min-h-0 flex-1">
               {loading ? (
-              <div className="flex h-28 items-center justify-center text-sm text-[var(--tc-text-muted)]">
-                <Loader2 className="mr-2 size-4 animate-spin" />
-                加载中
-              </div>
-            ) : conversations.length ? (
-              <div className="divide-y divide-[var(--tc-border-subtle)] border-y border-[var(--tc-border-subtle)]">
-                {conversations.map(conversation => {
-                  const expanded = expandedId === conversation.id;
-                  const detail =
-                    expanded && expandedConversation?.id === conversation.id
-                      ? expandedConversation
-                      : conversation;
-                  return (
-                    <article key={conversation.id}>
-                      <button
-                        type="button"
-                        onClick={() => void toggleConversation(conversation)}
-                        className="flex min-h-12 w-full items-center gap-3 px-1 py-2 text-left"
-                      >
-                        <span className="inline-flex size-7 shrink-0 items-center justify-center text-[var(--tc-text-muted)]">
-                          {expanded ? (
-                            <ChevronDown className="size-4" />
-                          ) : (
-                            <ChevronRight className="size-4" />
-                          )}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-medium text-[var(--tc-text-primary)]">
-                            {taskLabel(conversation.task_type)} ·{" "}
-                            {chapterTitleById.get(conversation.chapter_id) ??
-                              "当前章节"}
+                <div className="flex h-28 items-center justify-center text-sm text-[var(--tc-text-muted)]">
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  加载中
+                </div>
+              ) : runs.length ? (
+                <div className="divide-y divide-[var(--tc-border-subtle)] border-y border-[var(--tc-border-subtle)]">
+                  {runs.map(run => {
+                    const expanded = expandedId === run.run_id;
+                    const detail =
+                      expanded && expandedRun?.run_id === run.run_id
+                        ? expandedRun
+                        : run;
+                    return (
+                      <article key={run.run_id}>
+                        <button
+                          type="button"
+                          onClick={() => void toggleRun(run)}
+                          className="flex min-h-12 w-full items-center gap-3 px-1 py-2 text-left"
+                        >
+                          <span className="inline-flex size-7 shrink-0 items-center justify-center text-[var(--tc-text-muted)]">
+                            {expanded ? (
+                              <ChevronDown className="size-4" />
+                            ) : (
+                              <ChevronRight className="size-4" />
+                            )}
                           </span>
-                          <span className="block truncate text-xs text-[var(--tc-text-muted)]">
-                            {dateLabel(conversation.updated_at)} ·{" "}
-                            {conversation.is_mock ? "模拟输出" : "真实输出"}
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium text-[var(--tc-text-primary)]">
+                              {buttonLabel(run.button_type)} ·{" "}
+                              {chapterTitleById.get(run.chapter_id) ||
+                                run.chapter_title ||
+                                "当前章节"}
+                            </span>
+                            <span className="block truncate text-xs text-[var(--tc-text-muted)]">
+                              {dateLabel(run.updated_at)} · {statusLabel(run.status)} ·
+                              模型：{run.model || "未记录"}
+                            </span>
+                            <span className="mt-0.5 block truncate text-xs text-[var(--tc-text-muted)]">
+                              {inputSummary(run)}
+                            </span>
                           </span>
-                          <span className="mt-0.5 block truncate text-xs text-[var(--tc-text-muted)]">
-                            {firstUserInput(conversation)}
+                          <span className="hidden shrink-0 text-xs text-[var(--tc-text-muted)] sm:inline">
+                            知识库：{knowledgeState(run)} · 解析：{parseState(run)}
                           </span>
-                        </span>
-                      </button>
-                      {expanded ? (
-                        <ConversationDetail
-                          conversation={detail}
-                          loading={detailLoading}
-                        />
-                      ) : null}
-                    </article>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="border-y border-dashed border-[var(--tc-border-subtle)] px-3 py-16 text-center text-sm text-[var(--tc-text-muted)]">
-                暂无 AI 历史
-              </div>
-            )}
+                        </button>
+                        {expanded ? (
+                          <RunDetail
+                            run={detail}
+                            loading={detailLoading}
+                            onReplay={() => void replayRun(detail.run_id)}
+                          />
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="border-y border-dashed border-[var(--tc-border-subtle)] px-3 py-16 text-center text-sm text-[var(--tc-text-muted)]">
+                  暂无 AI 历史
+                </div>
+              )}
             </div>
             <PaginationControls
               page={currentPage}
@@ -259,101 +289,140 @@ export default function AIHistoryPage() {
   );
 }
 
-function ConversationDetail({
-  conversation,
+function RunDetail({
+  run,
   loading,
+  onReplay,
 }: {
-  conversation: AIWorkspaceConversation;
+  run: WritingAIRun;
   loading: boolean;
+  onReplay: () => void;
 }) {
   return (
     <div className="pb-5 pl-10 pr-2">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-2 text-xs text-[var(--tc-text-muted)]">
+          <span>状态：{statusLabel(run.status)}</span>
+          <span>参考范围：{scopeLabel(run.reference_scope)}</span>
+          <span>知识库：{knowledgeState(run)}</span>
+          <span>解析：{parseState(run)}</span>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={loading}
+          onClick={onReplay}
+          className="h-8"
+        >
+          {loading ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <RotateCcw className="size-4" />
+          )}
+          回放记录
+        </Button>
+      </div>
       {loading ? (
         <p className="mb-3 inline-flex items-center gap-2 text-sm text-[var(--tc-text-muted)]">
           <Loader2 className="size-4 animate-spin" />
           读取详情
         </p>
       ) : null}
-      <div className="mb-3 flex flex-wrap gap-2 text-xs text-[var(--tc-text-muted)]">
-        <span>{conversation.is_mock ? "模拟输出" : "真实输出"}</span>
-        <span>参考范围：{scopeLabel(conversation.reference_scope)}</span>
-      </div>
       <div className="grid max-w-[900px] gap-4">
-        {conversation.messages.map(message => (
-          <MessageBlock key={message.message_id} message={message} />
-        ))}
+        <TraceBlock title="输入">
+          <p>作者输入：{run.input.user_input || "未填写额外要求"}</p>
+          {run.input.selected_text ? <p>当前选区：{run.input.selected_text}</p> : null}
+        </TraceBlock>
+        <TraceBlock title="检索上下文">
+          {run.retrieval_context ? (
+            <>
+              <p>{run.retrieval_context.empty_reason || "已检索到有效知识卡"}</p>
+              {run.retrieval_context.items.map((item, index) => (
+                <p key={item.item_id}>
+                  来源 {index + 1}：{item.display_name} · {item.usage}
+                  {item.excerpt ? ` · ${item.excerpt}` : ""}
+                </p>
+              ))}
+            </>
+          ) : (
+            <p>未记录检索上下文</p>
+          )}
+        </TraceBlock>
+        {run.prompt_snapshot ? (
+          <details className="border-l border-[var(--tc-border-subtle)] pl-3">
+            <summary className="cursor-pointer text-sm text-[var(--tc-text-secondary)]">
+              Prompt 快照
+            </summary>
+            <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap text-xs leading-5 text-[var(--tc-text-muted)]">
+              {[
+                "【系统提示词】",
+                run.prompt_snapshot.system_prompt,
+                "",
+                "【用户提示词】",
+                run.prompt_snapshot.user_prompt,
+              ].join("\n")}
+            </pre>
+          </details>
+        ) : null}
+        <TraceBlock title="结构化输出">
+          <pre className="whitespace-pre-wrap text-xs leading-5">
+            {run.structured_output
+              ? JSON.stringify(run.structured_output.content, null, 2)
+              : "暂无结构化输出"}
+          </pre>
+        </TraceBlock>
+        <TraceBlock title="模型原始输出">
+          <pre className="max-h-56 overflow-auto whitespace-pre-wrap text-xs leading-5">
+            {run.raw_llm_output || "暂无原始输出"}
+          </pre>
+        </TraceBlock>
+        {run.error ? (
+          <TraceBlock title="错误信息">
+            <p>{run.error}</p>
+          </TraceBlock>
+        ) : null}
       </div>
     </div>
   );
 }
 
-function MessageBlock({ message }: { message: AIWorkspaceMessage }) {
+function TraceBlock({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
   return (
-    <article className="border-l border-[var(--tc-border-subtle)] pl-3">
-      <div className="mb-1 flex flex-wrap items-center gap-2 text-xs text-[var(--tc-text-muted)]">
-        <span>{roleLabel(message.role)}</span>
-        <span>本轮任务：{taskLabel(message.task_type)}</span>
-        <span>参考范围：{scopeLabel(message.reference_scope)}</span>
-        {message.output_type ? (
-          <span>输出类型：{outputLabel(message.output_type)}</span>
-        ) : null}
+    <section className="border-l border-[var(--tc-border-subtle)] pl-3">
+      <h3 className="mb-1 text-xs text-[var(--tc-text-muted)]">{title}</h3>
+      <div className="space-y-1 whitespace-pre-wrap text-sm leading-7 text-[var(--tc-text-secondary)]">
+        {children}
       </div>
-      <p className="whitespace-pre-wrap text-sm leading-7 text-[var(--tc-text-secondary)]">
-        {contentText(message.content)}
-      </p>
-      {message.prompt_snapshot ? (
-        <details className="mt-2">
-          <summary className="cursor-pointer text-sm text-[var(--tc-text-secondary)]">
-            提示词快照
-          </summary>
-          <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap border-l border-[var(--tc-border-subtle)] pl-3 text-xs leading-5 text-[var(--tc-text-muted)]">
-            {message.prompt_snapshot.final_prompt}
-          </pre>
-        </details>
-      ) : null}
-    </article>
+    </section>
   );
 }
 
-function firstUserInput(conversation: AIWorkspaceConversation): string {
-  const message = conversation.messages.find(item => item.role === "user");
-  if (!message) {
-    return "暂无输入";
-  }
-  return contentText(message.content);
+function inputSummary(run: WritingAIRun): string {
+  return run.input.user_input || run.input.selected_text || "未填写额外要求";
 }
 
-function contentText(content: Record<string, unknown> | string): string {
-  if (typeof content === "string") {
-    return content;
+function knowledgeState(run: WritingAIRun): string {
+  if (!run.retrieval_context) {
+    return "未记录";
   }
-  if (typeof content.text === "string") {
-    return content.text;
+  if (run.retrieval_context.items.length > 0) {
+    return "有上下文";
   }
-  if (typeof content.summary === "string") {
-    return content.summary;
-  }
-  if (typeof content.setting_addition === "string") {
-    return [
-      `设定补充：${content.setting_addition}`,
-      `使用建议：${stringValue(content.usage_suggestion)}`,
-      `可能影响：${stringValue(content.possible_impact)}`,
-    ].join("\n");
-  }
-  if (typeof content.suggestion === "string") {
-    return [
-      `问题：${stringValue(content.problem)}`,
-      `判断：${stringValue(content.judgement)}`,
-      `建议：${content.suggestion}`,
-    ].join("\n");
-  }
-  if (typeof content.conclusion === "string") {
-    return `结论：${content.conclusion}\n推断：${stringValue(content.inference)}`;
-  }
-  return JSON.stringify(content, null, 2);
+  return run.retrieval_context.empty_reason ? "空结果" : "无上下文";
 }
 
-function taskLabel(task: string): string {
+function parseState(run: WritingAIRun): string {
+  return run.structured_output ? "成功" : "未完成";
+}
+
+function buttonLabel(button: string): string {
   const labels: Record<string, string> = {
     chat: "纯对话",
     continue: "续写",
@@ -362,8 +431,10 @@ function taskLabel(task: string): string {
     suggestion: "建议",
     evidence: "证据",
     chapter_summary: "章节摘要",
+    inspiration: "灵感",
+    fact: "事实",
   };
-  return labels[task] ?? "功能入口";
+  return labels[button] ?? "功能入口";
 }
 
 function scopeLabel(scope: string): string {
@@ -371,31 +442,34 @@ function scopeLabel(scope: string): string {
     none: "无小说上下文",
     selection: "选区",
     chapter: "本章",
-    fulltext: "全文",
+    full_text: "全文",
   };
   return labels[scope] ?? "正文参考";
 }
 
-function outputLabel(output: string): string {
+function statusLabel(status: string): string {
   const labels: Record<string, string> = {
-    text_candidate: "正文候选",
-    setting_result: "设定结果",
-    suggestion_result: "建议结果",
-    evidence_result: "证据结果",
-    chapter_summary: "章节摘要",
-    error: "系统消息",
+    queued: "排队中",
+    retrieving: "检索中",
+    calling_llm: "调用模型中",
+    parsing: "解析中",
+    completed: "完成",
+    failed: "失败",
   };
-  return labels[output] ?? "输出";
+  return labels[status] ?? "未知状态";
 }
 
-function roleLabel(role: string): string {
-  if (role === "user") {
-    return "作者";
+function dateLabel(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
   }
-  if (role === "assistant") {
-    return "助手";
-  }
-  return "系统消息";
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function PaginationControls({
@@ -428,49 +502,33 @@ function PaginationControls({
   return (
     <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-[var(--tc-border-subtle)] pt-4 text-sm text-[var(--tc-text-muted)]">
       <span className="shrink-0">
-        第 {page} / {totalPages} 页
+        第 {page} / {totalPages} 页，共 {total} 条
       </span>
-      <form
-        className="flex items-center gap-2"
-        onSubmit={submitPageJump}
-        aria-label="按页搜索"
-      >
-        <label
-          htmlFor="ai-history-page-jump"
-          className="text-xs text-[var(--tc-text-muted)]"
-        >
-          跳至
-        </label>
-        <input
-          id="ai-history-page-jump"
-          name="page"
-          type="text"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          value={jumpValue}
-          onChange={event =>
-            setJumpDraft({ page, value: event.target.value })
-          }
-          className="h-8 w-16 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-2 text-center text-sm text-[var(--tc-text-primary)] outline-none"
-        />
-        <Button type="submit" size="sm" variant="outline">
-          前往
-        </Button>
-      </form>
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         <Button
           type="button"
-          size="sm"
           variant="outline"
+          size="sm"
           disabled={page <= 1}
           onClick={() => onPageChange(Math.max(1, page - 1))}
         >
           上一页
         </Button>
+        <form onSubmit={submitPageJump} className="flex items-center gap-1">
+          <input
+            value={jumpValue}
+            onChange={event => setJumpDraft({ page, value: event.target.value })}
+            className="h-8 w-14 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-2 text-center text-sm text-[var(--tc-text-primary)] outline-none"
+            aria-label="页码"
+          />
+          <Button type="submit" variant="outline" size="sm">
+            跳转
+          </Button>
+        </form>
         <Button
           type="button"
-          size="sm"
           variant="outline"
+          size="sm"
           disabled={page >= totalPages}
           onClick={() => onPageChange(Math.min(totalPages, page + 1))}
         >
@@ -479,21 +537,4 @@ function PaginationControls({
       </div>
     </div>
   );
-}
-
-function dateLabel(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "时间未知";
-  }
-  return date.toLocaleString("zh-CN", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function stringValue(value: unknown): string {
-  return typeof value === "string" ? value : "暂无";
 }
