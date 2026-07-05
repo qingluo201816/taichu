@@ -4,6 +4,7 @@ import unittest
 
 from httpx import ASGITransport, AsyncClient
 
+from taichu.infrastructure.llm.mock import MVPNoRealLLMChatModel
 from taichu.main import create_app
 
 
@@ -11,7 +12,7 @@ class AgentApiTest(unittest.IsolatedAsyncioTestCase):
     """验证通用 Agent manifest API 保留，但旧 Chat 入口已移除。"""
 
     async def asyncSetUp(self) -> None:
-        app = create_app()
+        app = create_app(llm=MVPNoRealLLMChatModel())
         self.client = AsyncClient(
             transport=ASGITransport(app=app),
             base_url="http://test",

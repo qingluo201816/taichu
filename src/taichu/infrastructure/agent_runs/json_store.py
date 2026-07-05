@@ -33,6 +33,10 @@ class JsonAgentRunStore:
         """Read one run by id."""
         return await asyncio.to_thread(self._get_run_sync, run_id)
 
+    async def delete_run(self, run_id: str) -> bool:
+        """Delete one persisted run JSON."""
+        return await asyncio.to_thread(self._delete_run_sync, run_id)
+
     async def list_runs(
         self,
         *,
@@ -76,6 +80,14 @@ class JsonAgentRunStore:
         if not path.exists():
             return None
         return _load_run(path)
+
+    def _delete_run_sync(self, run_id: str) -> bool:
+        _validate_run_id(run_id)
+        path = self._path_for_run(run_id)
+        if not path.exists():
+            return False
+        path.unlink()
+        return True
 
     def _list_runs_sync(self, status: str) -> list[AgentRun]:
         self._root.mkdir(parents=True, exist_ok=True)

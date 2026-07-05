@@ -75,6 +75,27 @@ class JSONKnowledgeRepositoryTest(unittest.IsolatedAsyncioTestCase):
                 {"summary": "不应覆盖"},
             )
 
+    async def test_search_active_identity_does_not_match_summary_mentions(
+        self,
+    ) -> None:
+        active = _card("character-zhang", "张狂", StructuredKnowledgeStatus.ACTIVE)
+        active = active.model_copy(
+            update={
+                "aliases": [],
+                "summary": "张狂与秦浩轩同章出现，但不是同一名角色。",
+                "source_note": "来自章节《第一章》。原文摘录：秦浩轩与张狂发生冲突。",
+            }
+        )
+        await self.repository.create_active_card(active)
+
+        matches = await self.repository.search_active_identity(
+            "character",
+            "秦浩轩",
+            [],
+        )
+
+        self.assertEqual(matches, [])
+
     async def _write_raw(self, card: StructuredKnowledgeCard) -> None:
         await self.storage.write_structured_knowledge_record(
             card.type.value,

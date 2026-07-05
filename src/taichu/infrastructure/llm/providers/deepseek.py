@@ -16,4 +16,6 @@ def create_deepseek(settings: Settings) -> ChatOpenAI:
         ),
         base_url=settings.deepseek_api_base,
         model=settings.deepseek_model,
+        temperature=0,
+        model_kwargs={"response_format": {"type": "json_object"}},
     )

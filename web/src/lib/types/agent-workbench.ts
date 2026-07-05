@@ -16,8 +16,9 @@ export type ReviewCandidateAction =
 export type ReviewCandidateStatus =
   | "pending"
   | "confirmed"
-  | "rejected"
-  | "deferred";
+  | "rejected";
+
+export type EditConfirmMergeMode = "append" | "overwrite";
 
 export type KnowledgeType = "character" | "location" | "faction" | "item";
 
@@ -67,6 +68,33 @@ export type AgentLLMCall = {
   error?: string | null;
 };
 
+export type AgentRawMention = {
+  mention_id: string;
+  name: string;
+  knowledge_type: KnowledgeType;
+  description: string;
+  evidence_excerpts: string[];
+  reason: string;
+  segment_index: number;
+};
+
+export type AgentEntityGroup = {
+  entity_group_id: string;
+  canonical_name: string;
+  knowledge_type: KnowledgeType;
+  raw_names: string[];
+  mention_count: number;
+  evidence_excerpts: string[];
+  quality_decision: string;
+  quality_reason: string;
+};
+
+export type AgentIgnoredExtraction = {
+  text: string;
+  reason: string;
+  segment_index?: number | null;
+};
+
 export type AgentSchemaValidation = {
   passed: boolean;
   errors: string[];
@@ -109,7 +137,6 @@ export type AgentMetrics = {
   confirmed_count: number;
   rejected_count: number;
   pending_count: number;
-  deferred_count: number;
   total_duration_ms: number;
   llm_call_count: number;
   node_duration_ms: Record<string, number>;
@@ -128,9 +155,12 @@ export type AgentRun = {
   finished_at?: string | null;
   nodes: AgentRunNode[];
   llm_calls: AgentLLMCall[];
+  raw_mentions: AgentRawMention[];
+  entity_groups: AgentEntityGroup[];
   raw_candidates: Record<string, unknown>[];
   typed_candidates: Record<string, unknown>[];
   review_items: AgentReviewItem[];
+  ignored: AgentIgnoredExtraction[];
   metrics: AgentMetrics;
   errors: string[];
 };
@@ -163,6 +193,7 @@ export type KnowledgeExtractionCandidateListResponse = {
 export type EditConfirmCandidateRequest = {
   card_updates: Record<string, unknown>;
   target_card_id?: string | null;
+  merge_mode?: EditConfirmMergeMode;
 };
 
 export type KnowledgeExtractionCandidateActionResponse = {

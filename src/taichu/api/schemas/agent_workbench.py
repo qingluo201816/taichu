@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from taichu.application.contracts.knowledge_repository import AuthorMergeMode
 from taichu.domain.models.agent_run import AgentReviewItem, AgentRun
 
 
@@ -20,6 +21,7 @@ class EditConfirmCandidateRequest(BaseModel):
 
     card_updates: dict[str, Any] = Field(default_factory=dict)
     target_card_id: str | None = None
+    merge_mode: AuthorMergeMode = "append"
 
 
 class KnowledgeExtractionRunSummary(BaseModel):
@@ -57,6 +59,13 @@ class KnowledgeExtractionRunDetailResponse(BaseModel):
     """Full run detail response."""
 
     run: AgentRun
+
+
+class KnowledgeExtractionRunDeleteResponse(BaseModel):
+    """Response after deleting one run record."""
+
+    run_id: str
+    deleted: bool = True
 
 
 class KnowledgeExtractionCandidateListResponse(BaseModel):

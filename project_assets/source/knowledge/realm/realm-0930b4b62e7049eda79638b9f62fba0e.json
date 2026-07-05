@@ -5,9 +5,9 @@
   "aliases": [],
   "summary": "设定是 是",
   "importance": "normal",
-  "status": "draft",
+  "status": "deprecated",
   "source_origin": "inbox_fact",
   "source_note": "作者手动记录：1",
   "created_at": "2026-07-03T17:32:46.722244Z",
-  "updated_at": "2026-07-03T17:32:46.722244Z"
+  "updated_at": "2026-07-04T05:32:04.679110Z"
 }

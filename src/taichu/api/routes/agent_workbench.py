@@ -10,6 +10,7 @@ from taichu.api.schemas.agent_workbench import (
     KnowledgeExtractionCandidateActionResponse,
     KnowledgeExtractionCandidateListResponse,
     KnowledgeExtractionRunCreateResponse,
+    KnowledgeExtractionRunDeleteResponse,
     KnowledgeExtractionRunDetailResponse,
     KnowledgeExtractionRunListResponse,
     KnowledgeExtractionRunSummary,
@@ -88,6 +89,23 @@ async def api_get_knowledge_extraction_run(
     return KnowledgeExtractionRunDetailResponse(run=run)
 
 
+@router.delete("/runs/{run_id}", response_model=KnowledgeExtractionRunDeleteResponse)
+async def api_delete_knowledge_extraction_run(
+    run_id: str,
+    service: KnowledgeExtractionService = Depends(
+        provide_knowledge_extraction_service
+    ),
+) -> KnowledgeExtractionRunDeleteResponse:
+    """Delete one persisted extraction run record."""
+    try:
+        await service.delete_run(run_id)
+    except KnowledgeExtractionNotFoundError as error:
+        raise _not_found(str(error)) from error
+    except (ValueError, AgentRunStoreError) as error:
+        raise _bad_request(_validation_message(error)) from error
+    return KnowledgeExtractionRunDeleteResponse(run_id=run_id, deleted=True)
+
+
 @router.get(
     "/runs/{run_id}/candidates",
     response_model=KnowledgeExtractionCandidateListResponse,
@@ -115,6 +133,25 @@ async def api_list_knowledge_extraction_candidates(
 
 
 @router.post(
+    "/runs/{run_id}/candidates/{candidate_id}/confirm",
+    response_model=KnowledgeExtractionCandidateActionResponse,
+)
+async def api_confirm_knowledge_extraction_candidate_in_run(
+    run_id: str,
+    candidate_id: str,
+    service: KnowledgeExtractionService = Depends(
+        provide_knowledge_extraction_service
+    ),
+) -> KnowledgeExtractionCandidateActionResponse:
+    """Confirm one candidate inside a specific run."""
+    return await _confirm_candidate(
+        service,
+        candidate_id,
+        run_id=run_id,
+    )
+
+
+@router.post(
     "/candidates/{candidate_id}/confirm",
     response_model=KnowledgeExtractionCandidateActionResponse,
 )
@@ -125,13 +162,28 @@ async def api_confirm_knowledge_extraction_candidate(
     ),
 ) -> KnowledgeExtractionCandidateActionResponse:
     """Confirm one create_card or update_card candidate."""
-    try:
-        run = await service.confirm_candidate(candidate_id)
-    except (KnowledgeExtractionNotFoundError, KnowledgeRepositoryNotFoundError) as error:
-        raise _not_found(str(error)) from error
-    except (KnowledgeExtractionError, KnowledgeRepositoryError) as error:
-        raise _bad_request(str(error)) from error
-    return KnowledgeExtractionCandidateActionResponse(run=run)
+    return await _confirm_candidate(service, candidate_id, run_id=None)
+
+
+@router.post(
+    "/runs/{run_id}/candidates/{candidate_id}/edit-confirm",
+    response_model=KnowledgeExtractionCandidateActionResponse,
+)
+async def api_edit_confirm_knowledge_extraction_candidate_in_run(
+    run_id: str,
+    candidate_id: str,
+    request: EditConfirmCandidateRequest,
+    service: KnowledgeExtractionService = Depends(
+        provide_knowledge_extraction_service
+    ),
+) -> KnowledgeExtractionCandidateActionResponse:
+    """Confirm one edited candidate inside a specific run."""
+    return await _edit_confirm_candidate(
+        service,
+        candidate_id,
+        request,
+        run_id=run_id,
+    )
 
 
 @router.post(
@@ -146,17 +198,27 @@ async def api_edit_confirm_knowledge_extraction_candidate(
     ),
 ) -> KnowledgeExtractionCandidateActionResponse:
     """Confirm one candidate after author edits."""
-    try:
-        run = await service.edit_confirm_candidate(
-            candidate_id,
-            card_updates=request.card_updates,
-            target_card_id=request.target_card_id,
-        )
-    except (KnowledgeExtractionNotFoundError, KnowledgeRepositoryNotFoundError) as error:
-        raise _not_found(str(error)) from error
-    except (KnowledgeExtractionError, KnowledgeRepositoryError, ValidationError) as error:
-        raise _bad_request(_validation_message(error)) from error
-    return KnowledgeExtractionCandidateActionResponse(run=run)
+    return await _edit_confirm_candidate(
+        service,
+        candidate_id,
+        request,
+        run_id=None,
+    )
+
+
+@router.post(
+    "/runs/{run_id}/candidates/{candidate_id}/reject",
+    response_model=KnowledgeExtractionCandidateActionResponse,
+)
+async def api_reject_knowledge_extraction_candidate_in_run(
+    run_id: str,
+    candidate_id: str,
+    service: KnowledgeExtractionService = Depends(
+        provide_knowledge_extraction_service
+    ),
+) -> KnowledgeExtractionCandidateActionResponse:
+    """Reject one candidate inside a specific run."""
+    return await _reject_candidate(service, candidate_id, run_id=run_id)
 
 
 @router.post(
@@ -170,28 +232,54 @@ async def api_reject_knowledge_extraction_candidate(
     ),
 ) -> KnowledgeExtractionCandidateActionResponse:
     """Reject one candidate."""
+    return await _reject_candidate(service, candidate_id, run_id=None)
+
+
+async def _confirm_candidate(
+    service: KnowledgeExtractionService,
+    candidate_id: str,
+    *,
+    run_id: str | None,
+) -> KnowledgeExtractionCandidateActionResponse:
     try:
-        run = await service.reject_candidate(candidate_id)
-    except KnowledgeExtractionNotFoundError as error:
+        run = await service.confirm_candidate(candidate_id, run_id=run_id)
+    except (KnowledgeExtractionNotFoundError, KnowledgeRepositoryNotFoundError) as error:
         raise _not_found(str(error)) from error
-    except KnowledgeExtractionError as error:
+    except (KnowledgeExtractionError, KnowledgeRepositoryError) as error:
         raise _bad_request(str(error)) from error
     return KnowledgeExtractionCandidateActionResponse(run=run)
 
 
-@router.post(
-    "/candidates/{candidate_id}/defer",
-    response_model=KnowledgeExtractionCandidateActionResponse,
-)
-async def api_defer_knowledge_extraction_candidate(
+async def _edit_confirm_candidate(
+    service: KnowledgeExtractionService,
     candidate_id: str,
-    service: KnowledgeExtractionService = Depends(
-        provide_knowledge_extraction_service
-    ),
+    request: EditConfirmCandidateRequest,
+    *,
+    run_id: str | None,
 ) -> KnowledgeExtractionCandidateActionResponse:
-    """Defer one candidate."""
     try:
-        run = await service.defer_candidate(candidate_id)
+        run = await service.edit_confirm_candidate(
+            candidate_id,
+            card_updates=request.card_updates,
+            target_card_id=request.target_card_id,
+            merge_mode=request.merge_mode,
+            run_id=run_id,
+        )
+    except (KnowledgeExtractionNotFoundError, KnowledgeRepositoryNotFoundError) as error:
+        raise _not_found(str(error)) from error
+    except (KnowledgeExtractionError, KnowledgeRepositoryError, ValidationError) as error:
+        raise _bad_request(_validation_message(error)) from error
+    return KnowledgeExtractionCandidateActionResponse(run=run)
+
+
+async def _reject_candidate(
+    service: KnowledgeExtractionService,
+    candidate_id: str,
+    *,
+    run_id: str | None,
+) -> KnowledgeExtractionCandidateActionResponse:
+    try:
+        run = await service.reject_candidate(candidate_id, run_id=run_id)
     except KnowledgeExtractionNotFoundError as error:
         raise _not_found(str(error)) from error
     except KnowledgeExtractionError as error:

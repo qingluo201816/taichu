@@ -14,6 +14,7 @@ from taichu.application.agents.knowledge_extraction.workflow import (
     initial_knowledge_extraction_state,
 )
 from taichu.application.contracts.knowledge_repository import (
+    AuthorMergeMode,
     StructuredKnowledgeRepository,
 )
 from taichu.application.contracts.llm import LLMContract
@@ -41,6 +42,11 @@ _AGENT_FORBIDDEN_FIELDS = FORBIDDEN_KNOWLEDGE_FIELD_KEYS | {
     "secret",
     "known_secrets",
 }
+_REVIEW_ONLY_FIELDS = {
+    "entity_group_id",
+    "evidence_excerpt",
+    "evidence_excerpts",
+}
 
 
 class KnowledgeExtractionService:
@@ -53,11 +59,13 @@ class KnowledgeExtractionService:
         llm: LLMContract,
         knowledge_repository: StructuredKnowledgeRepository,
         run_store: JsonAgentRunStore,
+        default_model_name: str = "",
     ) -> None:
         self._chapter_service = chapter_service
         self._llm = llm
         self._knowledge_repository = knowledge_repository
         self._run_store = run_store
+        self._default_model_name = default_model_name
 
     async def create_run(
         self,
@@ -78,7 +86,7 @@ class KnowledgeExtractionService:
         final_state = await graph.ainvoke(
             initial_knowledge_extraction_state(
                 chapter_id=chapter_id,
-                model_name=model_name,
+                model_name=model_name or self._default_model_name,
                 force=force,
             )
         )
@@ -108,6 +116,12 @@ class KnowledgeExtractionService:
             raise KnowledgeExtractionNotFoundError(f"运行记录“{run_id}”不存在。")
         return run
 
+    async def delete_run(self, run_id: str) -> None:
+        """Delete one persisted extraction run record."""
+        deleted = await self._run_store.delete_run(run_id)
+        if not deleted:
+            raise KnowledgeExtractionNotFoundError(f"运行记录“{run_id}”不存在。")
+
     async def list_candidates(
         self,
         run_id: str,
@@ -130,9 +144,14 @@ class KnowledgeExtractionService:
             ]
         return candidates
 
-    async def confirm_candidate(self, candidate_id: str) -> AgentRun:
+    async def confirm_candidate(
+        self,
+        candidate_id: str,
+        *,
+        run_id: str | None = None,
+    ) -> AgentRun:
         """Confirm a create or update candidate."""
-        run, index, item = await self._find_review_item(candidate_id)
+        run, index, item = await self._find_review_item(candidate_id, run_id=run_id)
         _assert_review_item_can_be_processed(item)
         if item.candidate_action is AgentReviewCandidateAction.CONFLICT:
             raise KnowledgeExtractionError("候选冲突必须编辑后确认。")
@@ -150,9 +169,10 @@ class KnowledgeExtractionService:
         else:
             if item.target_card_id is None:
                 raise KnowledgeExtractionError("候选更新缺少目标知识卡。")
-            written = await self._knowledge_repository.patch_active_card(
+            written = await self._knowledge_repository.apply_author_confirmed_updates(
                 item.target_card_id,
                 _patch_updates_from_payload(item.knowledge_type, item.suggested_card),
+                merge_mode="append",
             )
             updated = _mark_confirmed(
                 item,
@@ -167,16 +187,19 @@ class KnowledgeExtractionService:
         *,
         card_updates: dict[str, Any],
         target_card_id: str | None = None,
+        merge_mode: AuthorMergeMode = "append",
+        run_id: str | None = None,
     ) -> AgentRun:
         """Confirm a candidate after explicit author edits."""
-        run, index, item = await self._find_review_item(candidate_id)
+        run, index, item = await self._find_review_item(candidate_id, run_id=run_id)
         _assert_review_item_can_be_processed(item)
         merged_payload = {**item.suggested_card, **card_updates}
         target_id = target_card_id or item.target_card_id
         if target_id:
-            written = await self._knowledge_repository.patch_active_card(
+            written = await self._knowledge_repository.apply_author_confirmed_updates(
                 target_id,
                 _patch_updates_from_payload(item.knowledge_type, merged_payload),
+                merge_mode=merge_mode,
             )
             updated = _mark_confirmed(
                 item,
@@ -193,9 +216,14 @@ class KnowledgeExtractionService:
             )
         return await self._replace_review_item(run, index, updated)
 
-    async def reject_candidate(self, candidate_id: str) -> AgentRun:
+    async def reject_candidate(
+        self,
+        candidate_id: str,
+        *,
+        run_id: str | None = None,
+    ) -> AgentRun:
         """Mark one candidate as rejected without deleting it."""
-        run, index, item = await self._find_review_item(candidate_id)
+        run, index, item = await self._find_review_item(candidate_id, run_id=run_id)
         _assert_review_item_can_be_processed(item)
         return await self._replace_review_item(
             run,
@@ -209,27 +237,17 @@ class KnowledgeExtractionService:
             ),
         )
 
-    async def defer_candidate(self, candidate_id: str) -> AgentRun:
-        """Mark one candidate for later processing."""
-        run, index, item = await self._find_review_item(candidate_id)
-        _assert_review_item_can_be_processed(item)
-        return await self._replace_review_item(
-            run,
-            index,
-            item.model_copy(
-                update={
-                    "candidate_status": AgentReviewCandidateStatus.DEFERRED,
-                    "author_action": "defer",
-                    "updated_at": _now_iso(),
-                }
-            ),
-        )
-
     async def _find_review_item(
         self,
         candidate_id: str,
+        *,
+        run_id: str | None = None,
     ) -> tuple[AgentRun, int, AgentReviewItem]:
-        run = await self._run_store.find_run_for_candidate(candidate_id)
+        run = (
+            await self.get_run(run_id)
+            if run_id is not None
+            else await self._run_store.find_run_for_candidate(candidate_id)
+        )
         if run is None:
             raise KnowledgeExtractionNotFoundError(
                 f"候选记录“{candidate_id}”不存在。"
@@ -298,7 +316,7 @@ def _card_from_payload(
         raise KnowledgeExtractionError("第一版只允许角色、地点、势力、物品入库。")
     _reject_forbidden(payload)
     now = _now_iso()
-    allowed = _allowed_card_keys(knowledge_type) | {"evidence_excerpt"}
+    allowed = _allowed_card_keys(knowledge_type) | _REVIEW_ONLY_FIELDS
     unknown = set(payload) - allowed
     if unknown:
         raise KnowledgeExtractionError(
@@ -328,7 +346,7 @@ def _patch_updates_from_payload(
     if knowledge_type not in ALLOWED_KNOWLEDGE_TYPES:
         raise KnowledgeExtractionError("第一版只允许角色、地点、势力、物品入库。")
     _reject_forbidden(payload)
-    allowed = _editable_card_keys(knowledge_type) | {"evidence_excerpt", "id", "type"}
+    allowed = _editable_card_keys(knowledge_type) | _REVIEW_ONLY_FIELDS | {"id", "type"}
     unknown = set(payload) - allowed
     if unknown:
         raise KnowledgeExtractionError(
@@ -406,10 +424,6 @@ def _metrics_for_run(
             "pending_count": _count_status(
                 review_items,
                 AgentReviewCandidateStatus.PENDING,
-            ),
-            "deferred_count": _count_status(
-                review_items,
-                AgentReviewCandidateStatus.DEFERRED,
             ),
         }
     )

@@ -65,6 +65,89 @@ _GENERAL_TYPE_KEYS = {
     "factions": "faction",
     "items": "item",
 }
+_REJECT_CHARACTER_NAMES = frozenset(
+    {
+        "另一生面孔",
+        "小山羊胡子",
+        "穿青衫的人",
+        "一个少年",
+        "另一人",
+        "其中一个",
+        "那人",
+        "他们",
+        "众人",
+        "少年们",
+        "村民",
+        "大人们",
+        "徒弟们",
+        "镇上的人",
+        "猎户",
+    }
+)
+_REJECT_LOCATION_NAMES = frozenset(
+    {
+        "酒家",
+        "药铺门口",
+        "小店铺",
+        "内院",
+        "小镇广场",
+        "山里",
+        "镇上",
+        "北街",
+        "家中",
+        "小山谷",
+        "普通树林",
+        "路边",
+        "广场",
+    }
+)
+_REJECT_ITEM_NAMES = frozenset(
+    {
+        "银两",
+        "衣物",
+        "器具",
+        "普通银两",
+        "普通衣物",
+        "普通器具",
+    }
+)
+_LOCATION_NAME_MARKERS = (
+    "镇",
+    "岭",
+    "山",
+    "门",
+    "铺",
+    "谷",
+    "洞",
+    "峰",
+    "城",
+    "街",
+    "院",
+)
+_FACTION_NAME_MARKERS = (
+    "教",
+    "宗",
+    "门",
+    "派",
+    "族",
+    "家",
+    "会",
+    "盟",
+    "国",
+    "朝",
+    "院",
+)
+_SPECIAL_ITEM_MARKERS = (
+    "令",
+    "牌",
+    "丹",
+    "药",
+    "剑",
+    "符",
+    "珠",
+    "黄精",
+    "法宝",
+)
 _AGENT_FORBIDDEN_FIELDS = FORBIDDEN_KNOWLEDGE_FIELD_KEYS | {
     "current_goal",
     "secret",
@@ -86,10 +169,12 @@ class KnowledgeExtractionState(TypedDict, total=False):
     content_hash: str
     word_count: int
     segments: list[str]
+    raw_mentions: list[dict[str, Any]]
+    entity_groups: list[dict[str, Any]]
+    ignored: list[dict[str, Any]]
     raw_candidates: list[dict[str, Any]]
-    merged_candidates: list[dict[str, Any]]
-    character_candidates: list[dict[str, Any]]
-    entity_candidates: list[dict[str, Any]]
+    character_entity_groups: list[dict[str, Any]]
+    entity_entity_groups: list[dict[str, Any]]
     typed_candidates: list[dict[str, Any]]
     review_items: list[dict[str, Any]]
     nodes: list[dict[str, Any]]
@@ -127,12 +212,23 @@ def build_knowledge_extraction_graph(
         cast(Any, _node("GeneralExtractionNode", _general_extraction(dependencies))),
     )
     graph.add_node(
-        "MergeChapterCandidatesNode",
-        cast(Any, _node("MergeChapterCandidatesNode", _merge_candidates())),
+        "MentionNormalizeNode",
+        cast(Any, _node("MentionNormalizeNode", _normalize_mentions())),
+    )
+    graph.add_node(
+        "EntityAggregationNode",
+        cast(Any, _node("EntityAggregationNode", _aggregate_entities())),
+    )
+    graph.add_node(
+        "CandidateQualityGateNode",
+        cast(
+            Any,
+            _node("CandidateQualityGateNode", _candidate_quality_gate(dependencies)),
+        ),
     )
     graph.add_node(
         "TypeDispatchNode",
-        cast(Any, _node("TypeDispatchNode", _dispatch_candidates())),
+        cast(Any, _node("TypeDispatchNode", _dispatch_entity_groups())),
     )
     graph.add_node(
         "CharacterExpertNode",
@@ -169,8 +265,10 @@ def build_knowledge_extraction_graph(
     graph.add_edge(START, "LoadChapterNode")
     graph.add_edge("LoadChapterNode", "SegmentChapterNode")
     graph.add_edge("SegmentChapterNode", "GeneralExtractionNode")
-    graph.add_edge("GeneralExtractionNode", "MergeChapterCandidatesNode")
-    graph.add_edge("MergeChapterCandidatesNode", "TypeDispatchNode")
+    graph.add_edge("GeneralExtractionNode", "MentionNormalizeNode")
+    graph.add_edge("MentionNormalizeNode", "EntityAggregationNode")
+    graph.add_edge("EntityAggregationNode", "CandidateQualityGateNode")
+    graph.add_edge("CandidateQualityGateNode", "TypeDispatchNode")
     graph.add_edge("TypeDispatchNode", "CharacterExpertNode")
     graph.add_edge("CharacterExpertNode", "EntityExpertNode")
     graph.add_edge("EntityExpertNode", "NormalizeAndValidateNode")
@@ -202,10 +300,12 @@ def initial_knowledge_extraction_state(
         "content_hash": "",
         "word_count": 0,
         "segments": [],
+        "raw_mentions": [],
+        "entity_groups": [],
+        "ignored": [],
         "raw_candidates": [],
-        "merged_candidates": [],
-        "character_candidates": [],
-        "entity_candidates": [],
+        "character_entity_groups": [],
+        "entity_entity_groups": [],
         "typed_candidates": [],
         "review_items": [],
         "nodes": [],
@@ -251,9 +351,12 @@ def run_from_state(state: KnowledgeExtractionState) -> AgentRun:
         finished_at=finished_at,
         nodes=nodes,
         llm_calls=llm_calls,
+        raw_mentions=state.get("raw_mentions", []),
+        entity_groups=state.get("entity_groups", []),
         raw_candidates=state.get("raw_candidates", []),
         typed_candidates=state.get("typed_candidates", []),
         review_items=review_items,
+        ignored=state.get("ignored", []),
         metrics=metrics,
         errors=state.get("errors", []),
         prompt_version=KNOWLEDGE_EXTRACTION_PROMPT_VERSION,
@@ -362,7 +465,9 @@ def _general_extraction(
     dependencies: KnowledgeExtractionDependencies,
 ) -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
+        raw_mentions: list[dict[str, Any]] = []
         raw_candidates: list[dict[str, Any]] = []
+        ignored: list[dict[str, Any]] = []
         for index, segment in enumerate(state.get("segments", []), start=1):
             prompt = _render_prompt(
                 GENERAL_EXTRACTION_PROMPT,
@@ -381,57 +486,143 @@ def _general_extraction(
             if parsed is None:
                 state["failed"] = True
                 return state
+            raw_mentions.extend(_raw_mentions_from_general_output(parsed, index))
             raw_candidates.extend(_raw_candidates_from_general_output(parsed))
+            ignored.extend(_ignored_from_general_output(parsed, index))
+        state["raw_mentions"] = raw_mentions
         state["raw_candidates"] = raw_candidates
+        state["ignored"] = ignored
         return state
 
     return run
 
 
-def _merge_candidates() -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
+def _normalize_mentions() -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
-        merged: dict[tuple[str, str], dict[str, Any]] = {}
-        type_by_name: dict[str, str] = {}
-        for candidate in state.get("raw_candidates", []):
-            name = _name(candidate)
-            candidate_type = str(candidate.get("knowledge_type") or "")
-            normalized_name = _normalize_identity(name)
-            if normalized_name in type_by_name and type_by_name[normalized_name] != candidate_type:
-                candidate.setdefault("internal_conflicts", []).append(
-                    "同名候选出现在不同知识类型中。"
+        normalized: list[dict[str, Any]] = []
+        ignored = list(state.get("ignored", []))
+        for mention in state.get("raw_mentions", []):
+            knowledge_type = str(mention.get("knowledge_type") or "")
+            name = _first_non_empty(mention.get("name"))
+            if knowledge_type not in _GENERAL_TYPE_KEYS.values() or not name:
+                ignored.append(
+                    {
+                        "text": name,
+                        "reason": "mention 缺少名称或类型不属于第一版范围。",
+                        "segment_index": mention.get("segment_index"),
+                    }
                 )
-            type_by_name.setdefault(normalized_name, candidate_type)
-            key = (candidate_type, normalized_name)
-            if key not in merged:
-                merged[key] = candidate
                 continue
-            existing = merged[key]
-            existing["aliases"] = sorted(
+            evidence_excerpts = [
+                excerpt[:300]
+                for excerpt in _list_strings(mention.get("evidence_excerpts"))
+            ]
+            if not evidence_excerpts:
+                ignored.append(
+                    {
+                        "text": name,
+                        "reason": "mention 缺少原文证据。",
+                        "segment_index": mention.get("segment_index"),
+                    }
+                )
+                continue
+            normalized.append(
                 {
-                    *_list_strings(existing.get("aliases")),
-                    *_list_strings(candidate.get("aliases")),
+                    "mention_id": _first_non_empty(
+                        mention.get("mention_id"),
+                        f"mention_{len(normalized) + 1:03d}",
+                    ),
+                    "name": name[:80],
+                    "knowledge_type": knowledge_type,
+                    "description": _first_non_empty(mention.get("description")),
+                    "evidence_excerpts": evidence_excerpts,
+                    "reason": _first_non_empty(mention.get("reason")),
+                    "segment_index": int(mention.get("segment_index") or 1),
                 }
             )
-            existing["source_excerpt"] = _first_non_empty(
-                existing.get("source_excerpt"),
-                candidate.get("source_excerpt"),
-            )
-        state["merged_candidates"] = list(merged.values())
+        state["raw_mentions"] = normalized
+        state["ignored"] = ignored
         return state
 
     return run
 
 
-def _dispatch_candidates() -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
+def _aggregate_entities() -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
-        merged = state.get("merged_candidates", [])
-        state["character_candidates"] = [
-            item for item in merged if item.get("knowledge_type") == "character"
+        groups: dict[tuple[str, str], dict[str, Any]] = {}
+        order: list[tuple[str, str]] = []
+        for mention in state.get("raw_mentions", []):
+            knowledge_type = str(mention.get("knowledge_type") or "")
+            canonical_name = _first_non_empty(mention.get("name"))
+            normalized_name = _normalize_identity(canonical_name)
+            if not normalized_name:
+                continue
+            key = (knowledge_type, normalized_name)
+            if key not in groups:
+                groups[key] = {
+                    "entity_group_id": f"entity_group_{len(order) + 1:03d}",
+                    "canonical_name": canonical_name,
+                    "knowledge_type": knowledge_type,
+                    "raw_names": [],
+                    "mention_count": 0,
+                    "evidence_excerpts": [],
+                    "quality_decision": "pending",
+                    "quality_reason": "",
+                }
+                order.append(key)
+            group = groups[key]
+            raw_names = group.setdefault("raw_names", [])
+            if canonical_name not in raw_names:
+                raw_names.append(canonical_name)
+            group["mention_count"] = int(group.get("mention_count") or 0) + 1
+            group["evidence_excerpts"] = _append_unique_strings(
+                _list_strings(group.get("evidence_excerpts")),
+                _list_strings(mention.get("evidence_excerpts")),
+            )
+        state["entity_groups"] = [groups[key] for key in order]
+        return state
+
+    return run
+
+
+def _candidate_quality_gate(
+    dependencies: KnowledgeExtractionDependencies,
+) -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
+    async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
+        gated: list[dict[str, Any]] = []
+        for group in state.get("entity_groups", []):
+            decision, reason = await _quality_decision(group, dependencies)
+            gated_group = {
+                **group,
+                "quality_decision": decision,
+                "quality_reason": reason,
+            }
+            gated.append(gated_group)
+        state["entity_groups"] = gated
+        state["raw_candidates"] = [
+            _candidate_from_entity_group(group)
+            for group in gated
+            if group.get("quality_decision") == "accepted"
         ]
-        state["entity_candidates"] = [
-            item
-            for item in merged
-            if item.get("knowledge_type") in {"location", "faction", "item"}
+        return state
+
+    return run
+
+
+def _dispatch_entity_groups() -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
+    async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
+        accepted = [
+            group
+            for group in state.get("entity_groups", [])
+            if group.get("quality_decision") == "accepted"
+        ]
+        state["character_entity_groups"] = [
+            group for group in accepted if group.get("knowledge_type") == "character"
+        ]
+        state["entity_entity_groups"] = [
+            group
+            for group in accepted
+            if group.get("knowledge_type") in {"location", "faction", "item"}
         ]
         return state
 
@@ -442,8 +633,8 @@ def _character_expert(
     dependencies: KnowledgeExtractionDependencies,
 ) -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
-        candidates = state.get("character_candidates", [])
-        if not candidates:
+        entity_groups = state.get("character_entity_groups", [])
+        if not entity_groups:
             return state
         prompt = _render_prompt(
             CHARACTER_EXPERT_PROMPT,
@@ -454,7 +645,7 @@ def _character_expert(
             ),
             chapter_id=state["chapter_id"],
             chapter_title=state.get("chapter_title", ""),
-            character_candidates=_json_dump(candidates),
+            character_entity_groups=_json_dump(entity_groups),
         )
         parsed = await _complete_json(
             state,
@@ -480,8 +671,8 @@ def _entity_expert(
     dependencies: KnowledgeExtractionDependencies,
 ) -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
-        candidates = state.get("entity_candidates", [])
-        if not candidates:
+        entity_groups = state.get("entity_entity_groups", [])
+        if not entity_groups:
             return state
         active_index = [
             {
@@ -507,7 +698,7 @@ def _entity_expert(
             active_knowledge_index=_json_dump(active_index),
             chapter_id=state["chapter_id"],
             chapter_title=state.get("chapter_title", ""),
-            entity_candidates=_json_dump(candidates),
+            entity_groups=_json_dump(entity_groups),
         )
         parsed = await _complete_json(
             state,
@@ -654,6 +845,14 @@ def _write_intermediate_json(
 ) -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
         state["finished_at"] = _now_iso()
+        state = _record_node(
+            state,
+            node_name="WriteIntermediateJsonNode",
+            status=AgentRunNodeStatus.SUCCESS,
+            started_at=state["finished_at"],
+            input_summary=f"{len(state.get('review_items', []))} 个审核项。",
+            output_summary="已写入 JSON 中间态。",
+        )
         run_model = run_from_state(state)
         await dependencies.run_store.write_run(run_model)
         state["run"] = run_model.model_dump(mode="json")
@@ -727,6 +926,194 @@ def _raw_candidates_from_general_output(output: dict[str, Any]) -> list[dict[str
     return candidates
 
 
+def _raw_mentions_from_general_output(
+    output: dict[str, Any],
+    segment_index: int,
+) -> list[dict[str, Any]]:
+    mentions: list[dict[str, Any]] = []
+    raw_mentions = output.get("mentions")
+    if isinstance(raw_mentions, list):
+        for item in raw_mentions:
+            if isinstance(item, dict):
+                mention = _raw_mention_from_item(
+                    item,
+                    segment_index=segment_index,
+                    index=len(mentions) + 1,
+                )
+                if mention is not None:
+                    mentions.append(mention)
+        return mentions
+
+    for key, knowledge_type in _GENERAL_TYPE_KEYS.items():
+        values = output.get(key)
+        if not isinstance(values, list):
+            continue
+        for item in values:
+            if not isinstance(item, dict):
+                continue
+            payload = dict(item)
+            payload["knowledge_type"] = knowledge_type
+            mention = _raw_mention_from_item(
+                payload,
+                segment_index=segment_index,
+                index=len(mentions) + 1,
+            )
+            if mention is not None:
+                mentions.append(mention)
+    return mentions
+
+
+def _raw_mention_from_item(
+    item: dict[str, Any],
+    *,
+    segment_index: int,
+    index: int,
+) -> dict[str, Any] | None:
+    knowledge_type = str(item.get("knowledge_type") or item.get("type") or "")
+    if knowledge_type not in _GENERAL_TYPE_KEYS.values():
+        return None
+    name = _first_non_empty(item.get("name"), item.get("title"), item.get("text"))
+    if not name:
+        return None
+    return {
+        "mention_id": f"mention_{segment_index:03d}_{index:03d}",
+        "name": name,
+        "knowledge_type": knowledge_type,
+        "description": _first_non_empty(
+            item.get("description"),
+            item.get("summary"),
+            item.get("source_excerpt"),
+        ),
+        "evidence_excerpts": _evidence_excerpts_from_item(item),
+        "reason": _first_non_empty(item.get("reason"), item.get("match_reason")),
+        "segment_index": segment_index,
+    }
+
+
+def _ignored_from_general_output(
+    output: dict[str, Any],
+    segment_index: int,
+) -> list[dict[str, Any]]:
+    ignored: list[dict[str, Any]] = []
+    values = output.get("ignored")
+    if not isinstance(values, list):
+        return ignored
+    for item in values:
+        if isinstance(item, str):
+            text = item.strip()
+            reason = ""
+        elif isinstance(item, dict):
+            text = _first_non_empty(item.get("text"), item.get("name"), item.get("title"))
+            reason = _first_non_empty(item.get("reason"), item.get("description"))
+        else:
+            continue
+        if text or reason:
+            ignored.append(
+                {
+                    "text": text,
+                    "reason": reason,
+                    "segment_index": segment_index,
+                }
+            )
+    return ignored
+
+
+async def _quality_decision(
+    group: dict[str, Any],
+    dependencies: KnowledgeExtractionDependencies,
+) -> tuple[str, str]:
+    knowledge_type = str(group.get("knowledge_type") or "")
+    name = _first_non_empty(group.get("canonical_name"))
+    mention_count = int(group.get("mention_count") or 0)
+    evidence_excerpts = _list_strings(group.get("evidence_excerpts"))
+    if knowledge_type not in _GENERAL_TYPE_KEYS.values():
+        return "rejected", "知识类型不属于第一版范围。"
+    if not name:
+        return "rejected", "缺少稳定名称。"
+    if not evidence_excerpts:
+        return "rejected", "缺少可回放的原文证据。"
+    active_matches = await dependencies.knowledge_repository.search_active_identity(
+        knowledge_type,
+        name,
+        _list_strings(group.get("raw_names")),
+    )
+    if active_matches:
+        return "accepted", "命中已有有效知识卡，可作为更新候选。"
+    if knowledge_type == "character":
+        return _character_quality_decision(name, mention_count, evidence_excerpts)
+    if knowledge_type == "location":
+        return _location_quality_decision(name)
+    if knowledge_type == "faction":
+        return _faction_quality_decision(name)
+    if knowledge_type == "item":
+        return _item_quality_decision(name)
+    return "rejected", "知识类型不属于第一版范围。"
+
+
+def _character_quality_decision(
+    name: str,
+    mention_count: int,
+    evidence_excerpts: list[str],
+) -> tuple[str, str]:
+    normalized = _normalize_identity(name)
+    if normalized in {_normalize_identity(value) for value in _REJECT_CHARACTER_NAMES}:
+        return "rejected", "临时称呼、相对指代或普通人群泛称。"
+    if name.endswith(("们", "众")):
+        return "rejected", "普通人群泛称。"
+    if name in {"镇长", "村长", "族长", "掌柜", "师父"}:
+        return "accepted", "明确称号或职务，并可进入作者审核。"
+    if mention_count >= 2:
+        return "accepted", "本章出现多次，可进入作者审核。"
+    if 2 <= len(name) <= 5 and not any(marker in name for marker in ("一个", "某个", "那")):
+        return "accepted", "具备稳定专名特征。"
+    if any(name in excerpt for excerpt in evidence_excerpts):
+        return "accepted", "具备原文直接命名证据。"
+    return "rejected", "缺少稳定专名、明确职务或独立行为链。"
+
+
+def _location_quality_decision(name: str) -> tuple[str, str]:
+    normalized_rejects = {_normalize_identity(value) for value in _REJECT_LOCATION_NAMES}
+    if _normalize_identity(name) in normalized_rejects:
+        return "rejected", "普通功能空间、泛称地点或单次环境描写。"
+    if any(marker in name for marker in _LOCATION_NAME_MARKERS) and len(name) >= 3:
+        return "accepted", "具备可复用地点名称或空间属性。"
+    return "rejected", "缺少稳定专有地点名或可复用空间属性。"
+
+
+def _faction_quality_decision(name: str) -> tuple[str, str]:
+    if name.endswith("们") or "神仙们" in name:
+        return "rejected", "普通人群泛称或缺少稳定组织名。"
+    if any(marker in name for marker in _FACTION_NAME_MARKERS) and len(name) >= 2:
+        return "accepted", "具备稳定组织名称或明确组织身份。"
+    return "rejected", "缺少稳定组织名称。"
+
+
+def _item_quality_decision(name: str) -> tuple[str, str]:
+    if _normalize_identity(name) in {_normalize_identity(value) for value in _REJECT_ITEM_NAMES}:
+        return "rejected", "普通消耗品、银两、衣物或器具。"
+    if any(marker in name for marker in _SPECIAL_ITEM_MARKERS) and len(name) >= 2:
+        return "accepted", "有明确名称且具备设定价值或可追踪属性。"
+    return "rejected", "缺少设定价值、稀有性或可追踪归属。"
+
+
+def _candidate_from_entity_group(group: dict[str, Any]) -> dict[str, Any]:
+    evidence_excerpts = _list_strings(group.get("evidence_excerpts"))
+    return {
+        "entity_group_id": group.get("entity_group_id"),
+        "name": _first_non_empty(group.get("canonical_name")),
+        "aliases": [
+            name
+            for name in _list_strings(group.get("raw_names"))
+            if name != group.get("canonical_name")
+        ],
+        "knowledge_type": str(group.get("knowledge_type") or ""),
+        "source_excerpt": evidence_excerpts[0] if evidence_excerpts else "",
+        "evidence_excerpts": evidence_excerpts,
+        "quality_decision": group.get("quality_decision"),
+        "quality_reason": group.get("quality_reason"),
+    }
+
+
 def _cards_with_type(cards: list[Any], knowledge_type: str) -> list[dict[str, Any]]:
     typed: list[dict[str, Any]] = []
     for card in cards:
@@ -768,7 +1155,9 @@ def _candidate_validation_errors(card: dict[str, Any]) -> list[str]:
         "status",
         "source_origin",
         "source_note",
+        "entity_group_id",
         "evidence_excerpt",
+        "evidence_excerpts",
         *type_specific_field_keys(knowledge_type),
         "schema_validation",
         "internal_conflicts",
@@ -788,10 +1177,18 @@ def _external_conflicts(
     existing: StructuredKnowledgeCard,
 ) -> list[str]:
     conflicts: list[str] = []
+    for key in _strict_conflict_fields(existing.type):
+        value = candidate.get(key)
+        current_value = getattr(existing, key, None)
+        if _is_non_empty(current_value) and _is_non_empty(value) and current_value != value:
+            conflicts.append(f"字段“{key}”与已有有效知识卡存在互斥事实。")
+    return conflicts
     for key, value in candidate.items():
         if key in {
             "source_note",
+            "entity_group_id",
             "evidence_excerpt",
+            "evidence_excerpts",
             "status",
             "source_origin",
             "last_seen_chapter_id",
@@ -806,6 +1203,16 @@ def _external_conflicts(
         if _is_non_empty(current_value) and _is_non_empty(value) and current_value != value:
             conflicts.append(f"字段“{key}”与已有有效知识卡不一致。")
     return conflicts
+
+
+def _strict_conflict_fields(knowledge_type: StructuredKnowledgeType) -> set[str]:
+    if knowledge_type is StructuredKnowledgeType.CHARACTER:
+        return {"death_chapter_id"}
+    if knowledge_type is StructuredKnowledgeType.LOCATION:
+        return {"controlling_faction_id"}
+    if knowledge_type is StructuredKnowledgeType.ITEM:
+        return {"current_holder_id"}
+    return set()
 
 
 def _candidate_action(
@@ -856,7 +1263,6 @@ def _metrics(
         confirmed_count=_count_status(review_items, AgentReviewCandidateStatus.CONFIRMED),
         rejected_count=_count_status(review_items, AgentReviewCandidateStatus.REJECTED),
         pending_count=_count_status(review_items, AgentReviewCandidateStatus.PENDING),
-        deferred_count=_count_status(review_items, AgentReviewCandidateStatus.DEFERRED),
         total_duration_ms=_iso_duration_ms(started_at, finished_at),
         llm_call_count=len(llm_calls),
         node_duration_ms={node.node_name: node.duration_ms for node in nodes},
@@ -910,8 +1316,16 @@ def _record_node(
 def _node_input_summary(node_name: str, state: KnowledgeExtractionState) -> str:
     if node_name == "GeneralExtractionNode":
         return f"{len(state.get('segments', []))} 个章节片段。"
+    if node_name == "MentionNormalizeNode":
+        return f"{len(state.get('raw_mentions', []))} 个原始 mention。"
+    if node_name == "EntityAggregationNode":
+        return f"{len(state.get('raw_mentions', []))} 个规范 mention。"
+    if node_name == "CandidateQualityGateNode":
+        return f"{len(state.get('entity_groups', []))} 个实体聚合组。"
+    if node_name == "TypeDispatchNode":
+        return f"{len(_accepted_entity_groups(state))} 个通过质量闸门的实体组。"
     if node_name in {"CharacterExpertNode", "EntityExpertNode"}:
-        return f"{len(state.get('merged_candidates', []))} 个章内候选。"
+        return f"{len(_accepted_entity_groups(state))} 个通过质量闸门的实体组。"
     return ""
 
 
@@ -921,9 +1335,19 @@ def _node_output_summary(node_name: str, state: KnowledgeExtractionState) -> str
     if node_name == "SegmentChapterNode":
         return f"生成 {len(state.get('segments', []))} 个处理片段。"
     if node_name == "GeneralExtractionNode":
-        return f"生成 {len(state.get('raw_candidates', []))} 个原始候选。"
-    if node_name == "MergeChapterCandidatesNode":
-        return f"合并为 {len(state.get('merged_candidates', []))} 个候选。"
+        return f"生成 {len(state.get('raw_mentions', []))} 个 raw mentions。"
+    if node_name == "MentionNormalizeNode":
+        return f"保留 {len(state.get('raw_mentions', []))} 个有效 mention。"
+    if node_name == "EntityAggregationNode":
+        return f"聚合为 {len(state.get('entity_groups', []))} 个 entity_groups。"
+    if node_name == "CandidateQualityGateNode":
+        accepted_count = len(_accepted_entity_groups(state))
+        return f"通过 {accepted_count} 个实体组，过滤 {len(state.get('entity_groups', [])) - accepted_count} 个。"
+    if node_name == "TypeDispatchNode":
+        return (
+            f"角色组 {len(state.get('character_entity_groups', []))} 个，"
+            f"实体组 {len(state.get('entity_entity_groups', []))} 个。"
+        )
     if node_name == "BuildReviewItemsNode":
         return f"生成 {len(state.get('review_items', []))} 个审核项。"
     return ""
@@ -964,6 +1388,22 @@ def _list_strings(value: object) -> list[str]:
     return [item for item in value if isinstance(item, str) and item.strip()]
 
 
+def _append_unique_strings(current: list[str], incoming: list[str]) -> list[str]:
+    merged = list(current)
+    for value in incoming:
+        if value not in merged:
+            merged.append(value)
+    return merged
+
+
+def _accepted_entity_groups(state: KnowledgeExtractionState) -> list[dict[str, Any]]:
+    return [
+        group
+        for group in state.get("entity_groups", [])
+        if group.get("quality_decision") == "accepted"
+    ]
+
+
 def _name(candidate: dict[str, Any]) -> str:
     return str(candidate.get("name") or candidate.get("title") or "").strip()
 
@@ -979,6 +1419,18 @@ def _first_non_empty(*values: object) -> str:
         if isinstance(value, str) and value.strip():
             return value.strip()
     return ""
+
+
+def _evidence_excerpts_from_item(item: dict[str, Any]) -> list[str]:
+    evidence = item.get("evidence_excerpts")
+    if isinstance(evidence, list):
+        return [value.strip() for value in evidence if isinstance(value, str) and value.strip()]
+    excerpt = _first_non_empty(
+        item.get("evidence_excerpt"),
+        item.get("source_excerpt"),
+        item.get("excerpt"),
+    )
+    return [excerpt] if excerpt else []
 
 
 def _is_non_empty(value: object) -> bool:

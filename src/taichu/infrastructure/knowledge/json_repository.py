@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
+from taichu.application.contracts.knowledge_repository import AuthorMergeMode
 from taichu.application.contracts.storage import ProjectAssetStorageContract
 from taichu.domain.models.structured_knowledge import (
     FORBIDDEN_KNOWLEDGE_FIELD_KEYS,
@@ -119,13 +120,49 @@ class JSONKnowledgeRepository:
         await self._write(patched)
         return patched
 
+    async def apply_author_confirmed_updates(
+        self,
+        card_id: str,
+        updates: dict[str, Any],
+        *,
+        merge_mode: AuthorMergeMode = "append",
+    ) -> StructuredKnowledgeCard:
+        """Apply explicit author edits with append or overwrite semantics."""
+        if merge_mode not in {"append", "overwrite"}:
+            raise KnowledgeRepositoryError("编辑后确认方式不支持。")
+        current = await self.get_card(card_id)
+        if current is None:
+            raise KnowledgeRepositoryNotFoundError(f"知识卡“{card_id}”不存在。")
+        if current.status is not StructuredKnowledgeStatus.ACTIVE:
+            raise KnowledgeRepositoryError("只能更新有效知识卡。")
+        _reject_forbidden_fields(updates)
+        allowed_keys = knowledge_type_field_keys(current.type)
+        unknown_keys = set(updates) - allowed_keys
+        if unknown_keys:
+            raise KnowledgeRepositoryError(
+                f"知识卡字段不支持：{', '.join(sorted(unknown_keys))}"
+            )
+
+        payload = current.model_dump(mode="json")
+        for key, value in updates.items():
+            if merge_mode == "overwrite":
+                payload[key] = value
+                continue
+            payload[key] = _merge_author_value(key, payload.get(key), value)
+
+        payload["updated_at"] = _now_iso()
+        patched = StructuredKnowledgeCard.model_validate(payload)
+        _validate_active_agent_card(patched)
+        await self._write(patched)
+        return patched
+
     async def search_active_identity(
         self,
         type: str,
         name: str,
         aliases: list[str],
     ) -> list[StructuredKnowledgeCard]:
-        """Search active cards by names, aliases and clear textual mentions."""
+        """Search active cards by exact normalized names and aliases."""
         knowledge_type = StructuredKnowledgeType(type)
         query_terms = _identity_terms(name, aliases)
         if not query_terms:
@@ -134,12 +171,6 @@ class JSONKnowledgeRepository:
         for card in await self.list_active_cards(knowledge_type.value):
             card_terms = _identity_terms(card.name, card.aliases)
             if query_terms & card_terms:
-                matches.append(card)
-                continue
-            searchable_text = _normalize_identity(
-                f"{card.summary} {card.source_note}"
-            )
-            if any(term and term in searchable_text for term in query_terms):
                 matches.append(card)
         return matches
 
@@ -231,7 +262,37 @@ def _is_empty_value(value: object) -> bool:
     return False
 
 
+def _merge_author_value(key: str, current: object, incoming: object) -> object:
+    if key in {"summary", "source_note"}:
+        return _append_text(str(current or ""), str(incoming or ""))
+    if key == "aliases":
+        return _merge_aliases(current, incoming)
+    if key == "last_seen_chapter_id":
+        return incoming
+    if _is_empty_value(current) or current == incoming:
+        return incoming
+    return current
+
+
+def _merge_aliases(current: object, incoming: object) -> list[str]:
+    merged: list[str] = []
+    for value in [*(_as_string_list(current)), *(_as_string_list(incoming))]:
+        if value not in merged:
+            merged.append(value)
+    return merged
+
+
+def _as_string_list(value: object) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, str) and item.strip()]
+
+
 def _append_source_note(current: str, addition: str) -> str:
+    return _append_text(current, addition)
+
+
+def _append_text(current: str, addition: str) -> str:
     addition = addition.strip()
     if not addition:
         return current

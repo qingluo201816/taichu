@@ -11,6 +11,7 @@ from taichu.config import Settings
 from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
+from taichu.infrastructure.llm.mock import MVPNoRealLLMChatModel
 from taichu.main import create_app
 
 
@@ -25,7 +26,10 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
             "第一章 开始\n正文带着灵火向前。",
             source_name="mvp_api_fixture.txt",
         )
-        app = create_app(app_settings=Settings(project_assets_dir=self.assets_root))
+        app = create_app(
+            app_settings=Settings(project_assets_dir=self.assets_root),
+            llm=MVPNoRealLLMChatModel(),
+        )
         self.client = AsyncClient(
             transport=ASGITransport(app=app),
             base_url="http://test",

@@ -45,7 +45,6 @@ class AgentReviewCandidateStatus(StrEnum):
     PENDING = "pending"
     CONFIRMED = "confirmed"
     REJECTED = "rejected"
-    DEFERRED = "deferred"
 
 
 class AgentRunScope(DomainModel):
@@ -84,6 +83,39 @@ class AgentLLMCall(DomainModel):
     finished_at: str | None = None
     duration_ms: int = 0
     error: str | None = None
+
+
+class AgentRawMention(DomainModel):
+    """One raw mention extracted from chapter text before entity aggregation."""
+
+    mention_id: str = Field(min_length=1)
+    name: str = ""
+    knowledge_type: StructuredKnowledgeType
+    description: str = ""
+    evidence_excerpts: list[str] = Field(default_factory=list)
+    reason: str = ""
+    segment_index: int = 1
+
+
+class AgentEntityGroup(DomainModel):
+    """Aggregated mentions that refer to the same candidate entity."""
+
+    entity_group_id: str = Field(min_length=1)
+    canonical_name: str = ""
+    knowledge_type: StructuredKnowledgeType
+    raw_names: list[str] = Field(default_factory=list)
+    mention_count: int = 0
+    evidence_excerpts: list[str] = Field(default_factory=list)
+    quality_decision: str = ""
+    quality_reason: str = ""
+
+
+class AgentIgnoredExtraction(DomainModel):
+    """Text ignored by extraction with an author-readable reason."""
+
+    text: str = ""
+    reason: str = ""
+    segment_index: int | None = None
 
 
 class AgentSchemaValidation(DomainModel):
@@ -138,7 +170,6 @@ class AgentMetrics(DomainModel):
     confirmed_count: int = 0
     rejected_count: int = 0
     pending_count: int = 0
-    deferred_count: int = 0
     total_duration_ms: int = 0
     llm_call_count: int = 0
     node_duration_ms: dict[str, int] = Field(default_factory=dict)
@@ -151,7 +182,7 @@ class AgentRun(DomainModel):
     agent_name: str = "knowledge_extraction"
     agent_version: str = "v0.1"
     schema_version: str = "knowledge_fields_v2"
-    prompt_version: str = "knowledge_extraction_prompt_v1"
+    prompt_version: str = "knowledge_extraction_prompt_v2"
     model_name: str = ""
     status: AgentRunStatus = AgentRunStatus.PENDING
     scope: AgentRunScope
@@ -159,8 +190,11 @@ class AgentRun(DomainModel):
     finished_at: str | None = None
     nodes: list[AgentRunNode] = Field(default_factory=list)
     llm_calls: list[AgentLLMCall] = Field(default_factory=list)
+    raw_mentions: list[AgentRawMention] = Field(default_factory=list)
+    entity_groups: list[AgentEntityGroup] = Field(default_factory=list)
     raw_candidates: list[dict[str, Any]] = Field(default_factory=list)
     typed_candidates: list[dict[str, Any]] = Field(default_factory=list)
     review_items: list[AgentReviewItem] = Field(default_factory=list)
+    ignored: list[AgentIgnoredExtraction] = Field(default_factory=list)
     metrics: AgentMetrics = Field(default_factory=AgentMetrics)
     errors: list[str] = Field(default_factory=list)

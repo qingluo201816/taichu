@@ -35,7 +35,7 @@ from taichu.application.services.settings_service import SettingsPreferenceServi
 from taichu.application.tools.registry import ToolRegistry
 from taichu.config import Settings, settings
 from taichu.infrastructure.llm.adapter import LangChainLLMAdapter
-from taichu.infrastructure.llm.mock import MVPNoRealLLMChatModel
+from taichu.infrastructure.llm.factory import create_llm
 from taichu.infrastructure.plugin_discovery import (
     discover_agents,
     discover_tools,
@@ -64,7 +64,7 @@ def create_app(
     mvp_inbox_service = MVPInboxService(project_storage, mvp_knowledge_service)
     ai_workspace_service = AIWorkspaceService(project_storage)
     settings_preference_service = SettingsPreferenceService(project_storage)
-    chat_model = llm or MVPNoRealLLMChatModel()
+    chat_model = llm if llm is not None else create_llm(app_settings)
     llm_service = LangChainLLMAdapter(chat_model)
     ai_card_service = AICardService(project_storage)
     inbox_service = InboxService(project_storage, ai_card_service)
@@ -76,6 +76,7 @@ def create_app(
         llm=llm_service,
         knowledge_repository=knowledge_repository,
         run_store=knowledge_run_store,
+        default_model_name=app_settings.deepseek_model,
     )
     pending_fact_confirmation_service = PendingFactConfirmationService(
         project_storage,

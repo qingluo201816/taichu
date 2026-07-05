@@ -124,7 +124,7 @@ export async function readKnowledgeSchema(
 
 export async function listKnowledgeCards(params: {
   type: KnowledgeTypeValue;
-  status: "all" | "draft" | "active" | "deprecated";
+  status: "all" | "draft" | "active";
   q?: string;
   page?: number;
   pageSize?: number;

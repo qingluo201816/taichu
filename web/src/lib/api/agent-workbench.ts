@@ -34,6 +34,15 @@ export async function getKnowledgeExtractionRun(
   );
 }
 
+export async function deleteKnowledgeExtractionRun(
+  runId: string,
+): Promise<{ run_id: string; deleted: boolean }> {
+  return apiRequest<{ run_id: string; deleted: boolean }>(
+    `${PREFIX}/runs/${encodeURIComponent(runId)}`,
+    { method: "DELETE" },
+  );
+}
+
 export async function listKnowledgeExtractionCandidates(
   runId: string,
 ): Promise<KnowledgeExtractionCandidateListResponse> {
@@ -43,20 +52,22 @@ export async function listKnowledgeExtractionCandidates(
 }
 
 export async function confirmKnowledgeExtractionCandidate(
+  runId: string,
   candidateId: string,
 ): Promise<KnowledgeExtractionCandidateActionResponse> {
   return apiRequest<KnowledgeExtractionCandidateActionResponse>(
-    `${PREFIX}/candidates/${encodeURIComponent(candidateId)}/confirm`,
+    `${PREFIX}/runs/${encodeURIComponent(runId)}/candidates/${encodeURIComponent(candidateId)}/confirm`,
     { method: "POST" },
   );
 }
 
 export async function editConfirmKnowledgeExtractionCandidate(
+  runId: string,
   candidateId: string,
   request: EditConfirmCandidateRequest,
 ): Promise<KnowledgeExtractionCandidateActionResponse> {
   return apiRequest<KnowledgeExtractionCandidateActionResponse>(
-    `${PREFIX}/candidates/${encodeURIComponent(candidateId)}/edit-confirm`,
+    `${PREFIX}/runs/${encodeURIComponent(runId)}/candidates/${encodeURIComponent(candidateId)}/edit-confirm`,
     {
       method: "POST",
       body: JSON.stringify(request),
@@ -65,19 +76,11 @@ export async function editConfirmKnowledgeExtractionCandidate(
 }
 
 export async function rejectKnowledgeExtractionCandidate(
+  runId: string,
   candidateId: string,
 ): Promise<KnowledgeExtractionCandidateActionResponse> {
   return apiRequest<KnowledgeExtractionCandidateActionResponse>(
-    `${PREFIX}/candidates/${encodeURIComponent(candidateId)}/reject`,
-    { method: "POST" },
-  );
-}
-
-export async function deferKnowledgeExtractionCandidate(
-  candidateId: string,
-): Promise<KnowledgeExtractionCandidateActionResponse> {
-  return apiRequest<KnowledgeExtractionCandidateActionResponse>(
-    `${PREFIX}/candidates/${encodeURIComponent(candidateId)}/defer`,
+    `${PREFIX}/runs/${encodeURIComponent(runId)}/candidates/${encodeURIComponent(candidateId)}/reject`,
     { method: "POST" },
   );
 }

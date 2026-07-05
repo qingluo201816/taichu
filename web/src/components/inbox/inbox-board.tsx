@@ -34,7 +34,6 @@ import {
 } from "@/lib/api/mvp";
 import type {
   InboxPriority,
-  InboxStatus,
   InboxTab,
   KnowledgeTypeInfo,
   KnowledgeTypeValue,
@@ -51,7 +50,7 @@ const tabs: Array<{ value: InboxTab; label: string }> = [
 ];
 
 type InboxEntry = MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue;
-type InboxStatusFilter = InboxStatus | "all";
+type InboxStatusFilter = "todo" | "processed";
 type InboxPriorityFilter = InboxPriority | "all";
 type InboxToastState = {
   id: number;
@@ -72,8 +71,6 @@ const defaultTabTotals: Record<InboxTab, number> = {
 const statusFilters: Array<{ value: InboxStatusFilter; label: string }> = [
   { value: "todo", label: "待处理" },
   { value: "processed", label: "已处理" },
-  { value: "deprecated", label: "已废弃" },
-  { value: "all", label: "全部状态" },
 ];
 const priorityFilters: Array<{ value: InboxPriorityFilter; label: string }> = [
   { value: "all", label: "全部优先级" },
@@ -321,8 +318,9 @@ export function InboxBoard() {
       if (tab === "issues") {
         await patchInboxIssue(itemId, updates);
       }
-      await reloadTab(tab, itemId);
-      showInboxToast("已更新收件箱");
+      const deleted = updates.status === "deprecated";
+      await reloadTab(tab, deleted ? null : itemId);
+      showInboxToast(deleted ? "已删除条目" : "已更新收件箱");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "更新失败");
     } finally {

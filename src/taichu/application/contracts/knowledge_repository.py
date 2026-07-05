@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Literal, Protocol, runtime_checkable
 
 from taichu.domain.models.structured_knowledge import StructuredKnowledgeCard
+
+AuthorMergeMode = Literal["append", "overwrite"]
 
 
 @runtime_checkable
@@ -37,11 +39,21 @@ class StructuredKnowledgeRepository(Protocol):
         """Patch one active card without overwriting protected non-empty fields."""
         ...
 
+    async def apply_author_confirmed_updates(
+        self,
+        card_id: str,
+        updates: dict[str, Any],
+        *,
+        merge_mode: AuthorMergeMode = "append",
+    ) -> StructuredKnowledgeCard:
+        """Apply explicit author edits to one active card."""
+        ...
+
     async def search_active_identity(
         self,
         type: str,
         name: str,
         aliases: list[str],
     ) -> list[StructuredKnowledgeCard]:
-        """Find active cards with matching names, aliases or clear mentions."""
+        """Find active cards with matching normalized names or aliases."""
         ...

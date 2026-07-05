@@ -5,9 +5,11 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Loader2,
@@ -39,15 +41,18 @@ import type {
 } from "@/lib/types/mvp";
 import { cn } from "@/lib/utils";
 
-type StatusFilter = "all" | "draft" | "active" | "deprecated";
+type StatusFilter = "all" | "draft" | "active";
 type CardFormState = Record<string, string>;
+type KnowledgeToastState = {
+  id: number;
+  message: string;
+};
 const KNOWLEDGE_PAGE_SIZE = 10;
 
 const statusFilters: Array<{ value: StatusFilter; label: string }> = [
   { value: "all", label: "全部" },
   { value: "draft", label: "草稿" },
   { value: "active", label: "有效" },
-  { value: "deprecated", label: "已废弃" },
 ];
 
 export function KnowledgeList() {
@@ -67,8 +72,10 @@ export function KnowledgeList() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<KnowledgeToastState | null>(null);
   const [isFilterOpen, setFilterOpen] = useState(false);
+  const toastTimerRef = useRef<number | null>(null);
+  const toastIdRef = useRef(0);
 
   const schemaByType = useMemo(
     () => new Map(schemas.map(schema => [schema.type, schema])),
@@ -78,6 +85,34 @@ export function KnowledgeList() {
   const activeTypeLabel =
     types.find(type => type.value === activeType)?.label ?? activeSchema?.label ?? "角色";
   const selectedCardId = selectedCard?.id ?? null;
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        window.clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
+
+  function clearKnowledgeToast() {
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+    setToast(null);
+  }
+
+  function showKnowledgeToast(message: string) {
+    toastIdRef.current += 1;
+    setToast({ id: toastIdRef.current, message });
+    if (toastTimerRef.current) {
+      window.clearTimeout(toastTimerRef.current);
+    }
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast(null);
+      toastTimerRef.current = null;
+    }, 1900);
+  }
 
   const applyLoadedCards = useCallback(
     (
@@ -210,7 +245,7 @@ export function KnowledgeList() {
     setSelectedCard(null);
     setCreating(true);
     setForm(defaultForm(activeSchema));
-    setMessage(null);
+    clearKnowledgeToast();
     setError(null);
   }
 
@@ -220,7 +255,7 @@ export function KnowledgeList() {
     }
     setSaving(true);
     setError(null);
-    setMessage(null);
+    clearKnowledgeToast();
     try {
       const payload = payloadFromForm(activeSchema, form);
       const response = selectedCard
@@ -230,7 +265,7 @@ export function KnowledgeList() {
       setCurrentPage(nextPage);
       setEditingCardId(null);
       await reloadCards(response.card.id, nextPage);
-      setMessage(selectedCard ? "已保存知识卡" : "已创建知识卡");
+      showKnowledgeToast(selectedCard ? "已保存知识卡" : "已创建知识卡");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "保存知识卡失败");
     } finally {
@@ -244,11 +279,11 @@ export function KnowledgeList() {
     }
     setSaving(true);
     setError(null);
-    setMessage(null);
+    clearKnowledgeToast();
     try {
       const response = await markKnowledgeCardActive(selectedCard.id);
       await reloadCards(response.card.id);
-      setMessage("已标记为有效");
+      showKnowledgeToast("已标记为有效");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "标记有效失败");
     } finally {
@@ -262,13 +297,16 @@ export function KnowledgeList() {
     }
     setSaving(true);
     setError(null);
-    setMessage(null);
+    clearKnowledgeToast();
     try {
-      const response = await markKnowledgeCardDeprecated(selectedCard.id);
-      await reloadCards(response.card.id);
-      setMessage("已标记废弃");
+      await markKnowledgeCardDeprecated(selectedCard.id);
+      setSelectedCard(null);
+      setEditingCardId(null);
+      setForm({});
+      await reloadCards(null);
+      showKnowledgeToast("已删除知识卡");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "标记废弃失败");
+      setError(caught instanceof Error ? caught.message : "删除知识卡失败");
     } finally {
       setSaving(false);
     }
@@ -376,11 +414,6 @@ export function KnowledgeList() {
               {error}
             </p>
           ) : null}
-          {message ? (
-            <p className="tc-success mb-3 rounded-[var(--tc-radius-control)] border px-3 py-2 text-sm">
-              {message}
-            </p>
-          ) : null}
 
           <div className="flex min-h-0 max-w-[980px] flex-1 flex-col">
             <div className="min-h-0 flex-1">
@@ -474,7 +507,26 @@ export function KnowledgeList() {
           </div>
         </section>
       </section>
+      <KnowledgeFloatingToast toast={toast} />
     </AppShell>
+  );
+}
+
+function KnowledgeFloatingToast({ toast }: { toast: KnowledgeToastState | null }) {
+  if (!toast) {
+    return null;
+  }
+  return (
+    <div
+      key={toast.id}
+      role="status"
+      className="pointer-events-none fixed bottom-6 right-6 z-[80] flex max-w-[min(420px,calc(100vw-32px))] items-center gap-3 rounded-[var(--tc-radius-pill)] border border-[var(--tc-border-subtle)] bg-[color-mix(in_srgb,var(--tc-surface-panel)_92%,transparent)] px-4 py-3 text-sm font-medium text-[var(--tc-text-primary)] shadow-[0_18px_54px_rgba(0,0,0,0.22)] backdrop-blur"
+    >
+      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[var(--tc-success-soft)] text-[var(--tc-success-text)]">
+        <CheckCircle2 className="size-4" />
+      </span>
+      <span className="truncate">{toast.message}</span>
+    </div>
   );
 }
 
@@ -575,7 +627,7 @@ function KnowledgeCardDetail({
             disabled={saving}
           >
             <Trash2 className="size-4" />
-            标记废弃
+            删除
           </Button>
         </div>
       </div>
@@ -653,7 +705,7 @@ function KnowledgeEditor({
                 disabled={saving}
               >
                 <Trash2 className="size-4" />
-                标记废弃
+                删除
               </Button>
             </>
           ) : null}
