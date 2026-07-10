@@ -1,0 +1,23 @@
+{
+  "mode": "single_chapter",
+  "chapter": {
+    "chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+    "title": "第5章 显灵台上鉴仙眼",
+    "markdown_path": "manuscripts/chapters/volume_001_第一卷/chapter_005_显灵台上鉴仙眼.md"
+  },
+  "expert_counts": {
+    "character_expert": 12,
+    "entity_expert": 7,
+    "worldview_expert": 6
+  },
+  "type_counts": {
+    "character": 12,
+    "item": 1,
+    "faction": 5,
+    "location": 1,
+    "rule": 2,
+    "technique": 1,
+    "event": 3
+  },
+  "ignored_count": 4
+}

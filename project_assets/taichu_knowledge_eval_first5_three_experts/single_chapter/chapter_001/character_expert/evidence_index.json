@@ -1,0 +1,33 @@
+[
+  {
+    "card_id": "character_qin_haoxuan",
+    "type": "character",
+    "name": "秦浩轩",
+    "evidence_excerpts": [
+      "秦浩轩是大田镇少年们追赶的目标。",
+      "他能让灵魂在本体和奇异小蛇之间穿梭。",
+      "他阻止张狂殴打少年。"
+    ],
+    "source_note": "第1章 大田金鳞元神出：秦浩轩在大田镇出场，回忆中确认十二岁被奇异小蛇咬后可在人体与蛇身之间附体，并当众阻止张狂欺压少年。"
+  },
+  {
+    "card_id": "character_zhang_kuang",
+    "type": "character",
+    "name": "张狂",
+    "evidence_excerpts": [
+      "张狂被称为和秦浩轩齐名的锦衣少年。",
+      "张狂的小弟宣称不缴保险费就会挨打。",
+      "张狂畏惧秦浩轩但暗怀怨毒。"
+    ],
+    "source_note": "第1章 大田金鳞元神出：张狂带小弟殴打未缴“保险费”的少年，被秦浩轩一句威胁逼退，随后暗想借神仙选徒出气。"
+  },
+  {
+    "card_id": "character_chen_laotou",
+    "type": "character",
+    "name": "陈老头",
+    "evidence_excerpts": [
+      "秦浩轩狩猎之余专门向药铺的陈老头学过辨识草药。"
+    ],
+    "source_note": "第1章 大田金鳞元神出：秦浩轩专门向药铺陈老头学过辨识草药，并准备把黄精卖给陈家药铺。"
+  }
+]

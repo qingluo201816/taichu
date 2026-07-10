@@ -16,6 +16,14 @@ class CreateKnowledgeExtractionRunRequest(BaseModel):
     force: bool = False
 
 
+class CreateBatchKnowledgeExtractionRunRequest(BaseModel):
+    """Create one multi-chapter knowledge extraction run."""
+
+    chapter_ids: list[str] = Field(min_length=1)
+    model_name: str | None = None
+    force: bool = False
+
+
 class EditConfirmCandidateRequest(BaseModel):
     """Confirm a candidate after author edits."""
 
@@ -30,12 +38,18 @@ class KnowledgeExtractionRunSummary(BaseModel):
     run_id: str
     agent_name: str
     status: str
+    scope_type: str = "chapter"
     chapter_id: str
     chapter_title: str
+    chapter_ids: list[str] = Field(default_factory=list)
+    chapter_titles: list[str] = Field(default_factory=list)
     candidate_count: int = 0
     pending_count: int = 0
     confirmed_count: int = 0
     rejected_count: int = 0
+    total_chapter_count: int = 0
+    completed_chapter_count: int = 0
+    failed_chapter_count: int = 0
     started_at: str
     finished_at: str | None = None
 

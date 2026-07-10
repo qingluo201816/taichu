@@ -1,10 +1,14 @@
 """Agent workbench endpoints for knowledge extraction."""
 
+import json
+
 from pydantic import ValidationError
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 
 from taichu.api.deps import provide_knowledge_extraction_service
 from taichu.api.schemas.agent_workbench import (
+    CreateBatchKnowledgeExtractionRunRequest,
     CreateKnowledgeExtractionRunRequest,
     EditConfirmCandidateRequest,
     KnowledgeExtractionCandidateActionResponse,
@@ -40,6 +44,90 @@ async def api_create_knowledge_extraction_run(
     try:
         run = await service.create_run(
             chapter_id=request.chapter_id,
+            model_name=request.model_name,
+            force=request.force,
+        )
+    except KnowledgeExtractionError as error:
+        raise _bad_request(str(error)) from error
+    return KnowledgeExtractionRunCreateResponse(run=_run_summary(run))
+
+
+@router.post("/runs/stream")
+async def api_stream_knowledge_extraction_run(
+    request: CreateKnowledgeExtractionRunRequest,
+    service: KnowledgeExtractionService = Depends(
+        provide_knowledge_extraction_service
+    ),
+) -> StreamingResponse:
+    """Create one current-chapter knowledge extraction run and stream node events."""
+
+    async def event_lines():
+        async for event in service.stream_run(
+            chapter_id=request.chapter_id,
+            model_name=request.model_name,
+            force=request.force,
+        ):
+            yield json.dumps(event, ensure_ascii=False) + "\n"
+
+    return StreamingResponse(
+        event_lines(),
+        media_type="application/x-ndjson; charset=utf-8",
+    )
+
+
+@router.post("/runs/start", response_model=KnowledgeExtractionRunCreateResponse)
+async def api_start_knowledge_extraction_run(
+    request: CreateKnowledgeExtractionRunRequest,
+    service: KnowledgeExtractionService = Depends(
+        provide_knowledge_extraction_service
+    ),
+) -> KnowledgeExtractionRunCreateResponse:
+    """Start one current-chapter knowledge extraction task without blocking."""
+    try:
+        run = await service.start_run_task(
+            chapter_id=request.chapter_id,
+            model_name=request.model_name,
+            force=request.force,
+        )
+    except KnowledgeExtractionError as error:
+        raise _bad_request(str(error)) from error
+    return KnowledgeExtractionRunCreateResponse(run=_run_summary(run))
+
+
+@router.post("/batch-runs/stream")
+async def api_stream_batch_knowledge_extraction_run(
+    request: CreateBatchKnowledgeExtractionRunRequest,
+    service: KnowledgeExtractionService = Depends(
+        provide_knowledge_extraction_service
+    ),
+) -> StreamingResponse:
+    """Create one batch knowledge extraction run and stream task events."""
+
+    async def event_lines():
+        async for event in service.stream_batch_run(
+            chapter_ids=request.chapter_ids,
+            model_name=request.model_name,
+            force=request.force,
+        ):
+            yield json.dumps(event, ensure_ascii=False) + "\n"
+
+    return StreamingResponse(
+        event_lines(),
+        media_type="application/x-ndjson; charset=utf-8",
+    )
+
+
+@router.post("/batch-runs/start", response_model=KnowledgeExtractionRunCreateResponse)
+async def api_start_batch_knowledge_extraction_run(
+    request: CreateBatchKnowledgeExtractionRunRequest,
+    service: KnowledgeExtractionService = Depends(
+        provide_knowledge_extraction_service
+    ),
+) -> KnowledgeExtractionRunCreateResponse:
+    """Start one batch knowledge extraction task without blocking."""
+    try:
+        run = await service.start_batch_run_task(
+            chapter_ids=request.chapter_ids,
             model_name=request.model_name,
             force=request.force,
         )
@@ -292,12 +380,18 @@ def _run_summary(run) -> KnowledgeExtractionRunSummary:
         run_id=run.run_id,
         agent_name=run.agent_name,
         status=run.status.value,
+        scope_type=run.scope.scope_type,
         chapter_id=run.scope.chapter_id,
         chapter_title=run.scope.chapter_title,
+        chapter_ids=run.scope.chapter_ids,
+        chapter_titles=run.scope.chapter_titles,
         candidate_count=run.metrics.candidate_total,
         pending_count=run.metrics.pending_count,
         confirmed_count=run.metrics.confirmed_count,
         rejected_count=run.metrics.rejected_count,
+        total_chapter_count=run.total_chapter_count,
+        completed_chapter_count=run.completed_chapter_count,
+        failed_chapter_count=run.failed_chapter_count,
         started_at=run.started_at,
         finished_at=run.finished_at,
     )

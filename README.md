@@ -10,7 +10,7 @@
 
 **主 AI 形态**：编辑器内轻量工作流 + 写作区 AI 历史。
 
-**主数据原则**：正文和作者确认内容是事实源，索引与缓存可重建。
+**主数据原则**：Markdown 是唯一文本事实源，MongoDB 是唯一结构事实源，索引与缓存可重建。
 
 **主边界**：不做多小说平台，不做协作 SaaS，不做发布平台，不做纯自动写书工具。
 
@@ -20,17 +20,30 @@
 
 太初所有功能都应该回答一个问题：它是否能帮助作者更舒服、更连续、更准确地推进这一本小说的正文创作？ 
 
+## 数据宪法
+
+> 更新日期：2026-07-06
+
+- Markdown 是唯一文本事实源。
+- MongoDB 是唯一结构事实源。
+- 所有索引，包括 vector、Elasticsearch、graph、SQLite/FTS 和缓存，都是可重建派生层。
+- AI 不得直接写入 MongoDB，必须先生成 JSON 中间态并通过 schema、来源、冲突和生命周期校验。
+- 所有非事实数据必须显式标记 `lifecycle`，取值只能是 `draft`、`confirmed`、`rejected`。
+
 ## MVP-0.1 Release Candidate
 
-> 更新日期：2026-06-27
+> 更新日期：2026-07-06
 
 MVP-0.1 RC 的闭环是：章节写作 → Selection AI → AIResultCard → Inbox → PendingFact → 作者确认 Knowledge → generated rebuild → Export source bundle。
 
 ### 数据边界
 
-- 正式事实源：`project_assets/source/manuscripts/` 下的章节 Markdown，以及 `project_assets/source/knowledge/` 下 `status=confirmed` 的 Knowledge JSON。
+- 文本事实源：`project_assets/source/manuscripts/` 下的章节 Markdown。
+- 结构事实源：MongoDB 中 `lifecycle=confirmed` 的结构化知识记录。
+- JSON 中间态：AI 候选、待确认事实和迁移校验材料必须先以 JSON 中间态保存并校验，不得由 AI 直接写入 MongoDB。
+- 兼容目录：`project_assets/source/knowledge/` 下的 Knowledge JSON 只作为迁移前兼容层或导出快照，不再作为目标架构的结构事实源扩展。
 - workspace 资产：AIResultCard、IdeaCard、PendingFact、ChapterSummary 等保存在 `project_assets/source/workspace/`，可导出，但默认不是 fact_scope。
-- generated 投影：SQLite/FTS 等只保存在 `project_assets/generated/`，可删除并从 source 重建。
+- generated 投影：SQLite/FTS、vector、Elasticsearch、graph 和缓存只保存在 `project_assets/generated/` 或等价派生索引层，可删除并从 Markdown 与 MongoDB 重建。
 
 ### RC 导出格式
 

@@ -1,0 +1,1870 @@
+{
+  "run_id": "extract_run_20260707_135122_8bb3c7",
+  "agent_name": "knowledge_extraction",
+  "agent_version": "v0.1",
+  "schema_version": "knowledge_fields_v2",
+  "prompt_version": "knowledge_extraction_prompt_v3",
+  "model_name": "deepseek-v4-pro",
+  "status": "completed",
+  "scope": {
+    "scope_type": "chapter",
+    "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+    "chapter_title": "第1章 大田金鳞元神出",
+    "content_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+    "chapter_ids": [],
+    "chapter_titles": []
+  },
+  "started_at": "2026-07-07T13:51:22.843737Z",
+  "finished_at": "2026-07-07T13:53:31.756050Z",
+  "nodes": [
+    {
+      "node_name": "LoadChapterNode",
+      "status": "success",
+      "started_at": "2026-07-07T13:51:22.872044Z",
+      "finished_at": "2026-07-07T13:51:22.881809Z",
+      "duration_ms": 10,
+      "input_summary": "",
+      "output_summary": "读取章节“第1章 大田金鳞元神出”，约 4005 字。",
+      "error": null
+    },
+    {
+      "node_name": "SegmentChapterNode",
+      "status": "success",
+      "started_at": "2026-07-07T13:51:22.882810Z",
+      "finished_at": "2026-07-07T13:51:22.882810Z",
+      "duration_ms": 0,
+      "input_summary": "",
+      "output_summary": "生成 1 个处理片段。",
+      "error": null
+    },
+    {
+      "node_name": "GeneralExtractionNode",
+      "status": "success",
+      "started_at": "2026-07-07T13:51:22.883809Z",
+      "finished_at": "2026-07-07T13:52:44.816948Z",
+      "duration_ms": 81933,
+      "input_summary": "1 个章节片段。",
+      "output_summary": "生成 10 个 raw mentions。",
+      "error": null
+    },
+    {
+      "node_name": "MentionNormalizeNode",
+      "status": "success",
+      "started_at": "2026-07-07T13:52:44.817949Z",
+      "finished_at": "2026-07-07T13:52:44.817949Z",
+      "duration_ms": 0,
+      "input_summary": "10 个原始 mention。",
+      "output_summary": "保留 10 个有效 mention。",
+      "error": null
+    },
+    {
+      "node_name": "EntityAggregationNode",
+      "status": "success",
+      "started_at": "2026-07-07T13:52:44.818948Z",
+      "finished_at": "2026-07-07T13:52:44.818948Z",
+      "duration_ms": 0,
+      "input_summary": "10 个规范 mention。",
+      "output_summary": "聚合为 10 个 entity_groups。",
+      "error": null
+    },
+    {
+      "node_name": "CandidateQualityGateNode",
+      "status": "success",
+      "started_at": "2026-07-07T13:52:44.818948Z",
+      "finished_at": "2026-07-07T13:52:44.848884Z",
+      "duration_ms": 29,
+      "input_summary": "10 个实体聚合组。",
+      "output_summary": "通过 9 个实体组，过滤 1 个。",
+      "error": null
+    },
+    {
+      "node_name": "TypeDispatchNode",
+      "status": "success",
+      "started_at": "2026-07-07T13:52:44.849889Z",
+      "finished_at": "2026-07-07T13:52:44.849889Z",
+      "duration_ms": 0,
+      "input_summary": "9 个通过质量闸门的实体组。",
+      "output_summary": "角色组 2 个，实体组 4 个，事件规则组 3 个。",
+      "error": null
+    },
+    {
+      "node_name": "CharacterExpertNode",
+      "status": "success",
+      "started_at": "2026-07-07T13:52:44.850888Z",
+      "finished_at": "2026-07-07T13:53:31.728047Z",
+      "duration_ms": 46876,
+      "input_summary": "2 个角色实体组。",
+      "output_summary": "生成 2 个角色候选。",
+      "error": null
+    },
+    {
+      "node_name": "EntityExpertNode",
+      "status": "success",
+      "started_at": "2026-07-07T13:52:44.850888Z",
+      "finished_at": "2026-07-07T13:53:23.630639Z",
+      "duration_ms": 38779,
+      "input_summary": "4 个实体设定组。",
+      "output_summary": "生成 4 个实体候选。",
+      "error": null
+    },
+    {
+      "node_name": "EventRuleExpertNode",
+      "status": "success",
+      "started_at": "2026-07-07T13:52:44.851923Z",
+      "finished_at": "2026-07-07T13:53:13.972322Z",
+      "duration_ms": 29121,
+      "input_summary": "3 个事件规则组。",
+      "output_summary": "生成 3 个事件规则候选。",
+      "error": null
+    },
+    {
+      "node_name": "MergeExpertCandidatesNode",
+      "status": "success",
+      "started_at": "2026-07-07T13:53:31.729070Z",
+      "finished_at": "2026-07-07T13:53:31.729070Z",
+      "duration_ms": 0,
+      "input_summary": "角色 2 个，实体 4 个，事件规则 3 个。",
+      "output_summary": "合并为 9 个候选草稿。",
+      "error": null
+    },
+    {
+      "node_name": "NormalizeAndValidateNode",
+      "status": "success",
+      "started_at": "2026-07-07T13:53:31.730070Z",
+      "finished_at": "2026-07-07T13:53:31.730070Z",
+      "duration_ms": 0,
+      "input_summary": "",
+      "output_summary": "完成 9 个候选结构校验。",
+      "error": null
+    },
+    {
+      "node_name": "RunInternalConflictCheckNode",
+      "status": "success",
+      "started_at": "2026-07-07T13:53:31.730070Z",
+      "finished_at": "2026-07-07T13:53:31.730070Z",
+      "duration_ms": 0,
+      "input_summary": "",
+      "output_summary": "",
+      "error": null
+    },
+    {
+      "node_name": "MatchExistingKnowledgeNode",
+      "status": "success",
+      "started_at": "2026-07-07T13:53:31.731069Z",
+      "finished_at": "2026-07-07T13:53:31.755048Z",
+      "duration_ms": 23,
+      "input_summary": "",
+      "output_summary": "",
+      "error": null
+    },
+    {
+      "node_name": "BuildReviewItemsNode",
+      "status": "success",
+      "started_at": "2026-07-07T13:53:31.755048Z",
+      "finished_at": "2026-07-07T13:53:31.756050Z",
+      "duration_ms": 0,
+      "input_summary": "",
+      "output_summary": "生成 9 个审核项。",
+      "error": null
+    },
+    {
+      "node_name": "WriteIntermediateJsonNode",
+      "status": "success",
+      "started_at": "2026-07-07T13:53:31.756050Z",
+      "finished_at": "2026-07-07T13:53:31.756050Z",
+      "duration_ms": 0,
+      "input_summary": "9 个审核项。",
+      "output_summary": "已写入 JSON 中间态。",
+      "error": null
+    }
+  ],
+  "graph_nodes": [
+    {
+      "node_name": "LoadChapterNode",
+      "label": "读取章节",
+      "lane": "预处理"
+    },
+    {
+      "node_name": "SegmentChapterNode",
+      "label": "切分正文",
+      "lane": "预处理"
+    },
+    {
+      "node_name": "GeneralExtractionNode",
+      "label": "通用抽取",
+      "lane": "抽取"
+    },
+    {
+      "node_name": "MentionNormalizeNode",
+      "label": "提及清洗",
+      "lane": "抽取"
+    },
+    {
+      "node_name": "EntityAggregationNode",
+      "label": "实体聚合",
+      "lane": "抽取"
+    },
+    {
+      "node_name": "CandidateQualityGateNode",
+      "label": "质量闸门",
+      "lane": "抽取"
+    },
+    {
+      "node_name": "TypeDispatchNode",
+      "label": "类型分发",
+      "lane": "分发"
+    },
+    {
+      "node_name": "CharacterExpertNode",
+      "label": "角色专家",
+      "lane": "并行专家"
+    },
+    {
+      "node_name": "EntityExpertNode",
+      "label": "实体专家",
+      "lane": "并行专家"
+    },
+    {
+      "node_name": "EventRuleExpertNode",
+      "label": "事件规则专家",
+      "lane": "并行专家"
+    },
+    {
+      "node_name": "MergeExpertCandidatesNode",
+      "label": "合并候选",
+      "lane": "汇合"
+    },
+    {
+      "node_name": "NormalizeAndValidateNode",
+      "label": "规范校验",
+      "lane": "后处理"
+    },
+    {
+      "node_name": "RunInternalConflictCheckNode",
+      "label": "本轮冲突检查",
+      "lane": "后处理"
+    },
+    {
+      "node_name": "MatchExistingKnowledgeNode",
+      "label": "匹配有效知识",
+      "lane": "后处理"
+    },
+    {
+      "node_name": "BuildReviewItemsNode",
+      "label": "生成审核项",
+      "lane": "后处理"
+    },
+    {
+      "node_name": "WriteIntermediateJsonNode",
+      "label": "写入中间态",
+      "lane": "写入"
+    }
+  ],
+  "graph_edges": [
+    {
+      "source": "LoadChapterNode",
+      "target": "SegmentChapterNode"
+    },
+    {
+      "source": "SegmentChapterNode",
+      "target": "GeneralExtractionNode"
+    },
+    {
+      "source": "GeneralExtractionNode",
+      "target": "MentionNormalizeNode"
+    },
+    {
+      "source": "MentionNormalizeNode",
+      "target": "EntityAggregationNode"
+    },
+    {
+      "source": "EntityAggregationNode",
+      "target": "CandidateQualityGateNode"
+    },
+    {
+      "source": "CandidateQualityGateNode",
+      "target": "TypeDispatchNode"
+    },
+    {
+      "source": "TypeDispatchNode",
+      "target": "CharacterExpertNode"
+    },
+    {
+      "source": "TypeDispatchNode",
+      "target": "EntityExpertNode"
+    },
+    {
+      "source": "TypeDispatchNode",
+      "target": "EventRuleExpertNode"
+    },
+    {
+      "source": "CharacterExpertNode",
+      "target": "MergeExpertCandidatesNode"
+    },
+    {
+      "source": "EntityExpertNode",
+      "target": "MergeExpertCandidatesNode"
+    },
+    {
+      "source": "EventRuleExpertNode",
+      "target": "MergeExpertCandidatesNode"
+    },
+    {
+      "source": "MergeExpertCandidatesNode",
+      "target": "NormalizeAndValidateNode"
+    },
+    {
+      "source": "NormalizeAndValidateNode",
+      "target": "RunInternalConflictCheckNode"
+    },
+    {
+      "source": "RunInternalConflictCheckNode",
+      "target": "MatchExistingKnowledgeNode"
+    },
+    {
+      "source": "MatchExistingKnowledgeNode",
+      "target": "BuildReviewItemsNode"
+    },
+    {
+      "source": "BuildReviewItemsNode",
+      "target": "WriteIntermediateJsonNode"
+    }
+  ],
+  "batch_chapter_progress": [],
+  "max_concurrency": 1,
+  "current_concurrency": 0,
+  "total_chapter_count": 0,
+  "completed_chapter_count": 0,
+  "failed_chapter_count": 0,
+  "llm_calls": [
+    {
+      "call_id": "llm_call_GeneralExtractionNode_710473cd",
+      "node_name": "GeneralExtractionNode",
+      "model_name": "deepseek-v4-pro",
+      "prompt_version": "general_extraction_v3",
+      "input_prompt": "你是长篇玄幻小说的知识抽取助手。\n\n任务：\n从当前章节正文中抽取可以进入后续证据聚合流程的 raw mentions。你只负责发现正文中出现的角色、地点、势力、物品、境界、功法、事件、规则提及，不负责生成最终知识卡。\n\n硬规则：\n1. 只根据给定正文抽取，不要补写正文没有的信息。\n2. 本轮只抽取 character、location、faction、item、realm、technique、event、rule。\n3. 不抽取 foreshadow。\n4. 不生成最终知识卡，不输出 summary、importance、source_note 或任何类型专属字段。\n5. 每个 mention 必须提供至少一条原文摘录；同一候选在正文中有多个相关片段时，尽量保留多条代表性 evidence_excerpts。\n6. 原文摘录必须来自正文，不能改写，单条长度不超过 300 字；每个 mention 最多输出 5 条 evidence_excerpts。\n7. 如果信息太碎、不确定、属于第一版不抽取类型，或明显只是泛称、临时称呼、普通空间、普通消耗品，放入 ignored 并写明原因。\n8. 输出必须是 JSON，不要输出解释性文字。\n9. 不要输出 Markdown 代码块。\n10. 不要输出任何多余字段。\n\n第一版允许抽取类型：\ncharacter、location、faction、item、realm、technique、event、rule\n\n第一版禁止抽取类型：\nforeshadow\n\n优先忽略：\n- 临时描述性称呼，例如“另一生面孔”“小山羊胡子”“穿青衫的人”“一个少年”\n- 相对指代，例如“另一人”“其中一个”“那人”“他们”“众人”\n- 泛称，例如“少年们”“村民”“大人们”“徒弟们”\n- 单句功能性台词、无姓名、无后续作用的路人\n- 只有外貌特征、没有稳定身份或专名的对象\n- 普通功能空间，例如“酒家”“药铺门口”“小店铺”“内院”“小镇广场”\n- 泛称地点，例如“山里”“镇上”“北街”“家中”\n- 单次环境描写，例如“小山谷”“普通树林”“路边”“广场”\n- 普通消耗品、普通银两、普通衣物、普通器具\n- 普通人群泛称，例如“少年们”“村民”“镇上的人”“猎户”“徒弟们”“大人们”\n- 模糊氛围、单纯情绪、没有明确发生内容的片段\n- 没有稳定规则表达的修辞性句子\n\n事件抽取边界：\n- 只抽取明确发生的剧情事件、状态变化、重要行动结果。\n- 普通动作、环境描写、心理活动不要作为事件卡。\n\n规则抽取边界：\n- 只抽取明确世界规则、修炼规则、禁制、约束、因果条件或例外。\n- 单句感叹、比喻、传闻不明的说法不要作为规则卡。\n\n输入：\n章节 ID：chapter-f2a0007303a74f769e1609124c30da6b\n章节标题：第1章 大田金鳞元神出\n章节正文：\n　　时维九月，秋意薄凉。\n\n　　黎明时分，黑夜与白昼正在交鸡啼犬吠也没能惊扰大田镇的清梦，很快湮没在寂静中。接，浓雾中的大田镇还在熟睡，除了几个勤奋的猎户开始上山狩猎，偶尔几声\n\n　　依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。\n\n　　鸡啼三遍，天色渐亮，街道上渐渐有了人影，不时有“喝、喝”的练功声响彻大田镇上空。\n\n　　这些练功呼喝声中大多稚气未脱，正是晨练的少年们发出的，他们咬牙切齿，心头存着赶超秦浩轩和张狂的目标，正在刻苦勤练。\n\n　　在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。\n\n　　大田镇西头一个还算气派的院落里，他们的赶超目标秦浩轩还躺在床上沉睡。\n\n　　在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。\n\n　　没人注意到一条花色斑斓的小蛇悄悄溜进秦浩轩的房间，极为熟练的游上他的床头，然后趴在秦浩轩的枕头前一动不动了。\n\n　　这条小蛇约摸半尺长，一身五彩斑斓的蛇皮，皮上有许多密密麻麻的凸起，摸起来疙疙瘩瘩，似鳞非麟。它的脑袋不像一般蛇类的锥形，反而有些四正四方，看起来极为怪异。\n\n　　“唔……”秦浩轩揉了揉眼，一屁股坐起来，看到床头花色斑斓，一动不动的小蛇非但不吃惊，反而顺手将小蛇嘴里叼着的一个黄色物体取下来，这黄色物体约摸小指甲大，散发出幽幽清香，随即将一动不动的小蛇揣入怀中。\n\n　　这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。\n\n　　秦浩轩的手伸进怀里，摸了摸怀里冰冷的小蛇，思绪飘散，不由回忆起几年前的一幕幕。\n\n　　他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官，如今父亲只是务点农活赚钱不多，母亲在镇上做一些浆浆洗洗赚些钱补贴家用。\n\n　　自小便读书的秦浩轩，从书中悟到了读书是为了明理而非考取功名，所以懂事比寻常同龄人早的他，八岁就随大人们上山打猎，在危机和厮杀中练就了一副好身手，不满狩猎的大头都被大人们分走，他十岁那年便独自上山狩猎。\n\n　　虽然常遇到危险，但秦浩轩屡屡化险为夷，唯一受过的伤害就是十二岁时被一条奇怪的小蛇咬了一口，就这一口，他的人生彻底改变了。\n\n　　那是一个夏季的清晨，接连下了四天的暴雨，山路泥泞难走，滋生瘴气，家里没有下锅米的秦浩轩不得不在天刚濛濛亮就上山，开始搜寻猎物。\n\n　　然而附近山域的猎物早被打得七七八八了，转悠了一上午的秦浩轩一无所获，就在他一筹莫展时，一头獐子飞速窜过，秦浩轩二话不说追了上去。\n\n　　那獐子极为狡猾，在树丛中钻来钻去，秦浩轩连射几箭都扑空了，而且它还将秦浩轩引向小屿山的深处。\n\n　　大田镇世代狩猎，但都在外围转悠，哪怕猎物越来越稀少的今天也没人敢深入小屿山，也曾有胆大的猎户深入小屿山，却再也不见出来。\n\n　　传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。\n\n　　对深山中有妖魔鬼怪的传说秦浩轩将信将疑，但深山中必定是瘴气横行，有无数凶禽猛兽，所以他一直不敢深入小屿山狩猎，但眼下再不带猎物回家，就只能让父亲母亲和自己一起挨饿了。\n\n　　秦浩轩一咬牙追了上去，锲而不舍追了很远，终于将这头狡猾的獐子射杀，此时他已经深入小屿山，这里人迹罕至，合抱粗的参天大树遮天蔽日，茂密的灌木丛生，潮湿的地上铺满了一层有一层腐朽的落叶，只能确定大田镇所在方向，凭着记忆摸索来时的路。\n\n　　乱摸乱撞许久的秦浩轩没有找到回家的路，却来到一个小山谷中。\n\n　　与外面的参天古木相比，这是一个只有红花绿草的小山谷，环境清幽美丽，鸟语花香。\n\n　　秦浩轩狩猎之余专门向药铺的陈老头学过辨识草药，一眼就认出这里生长了许多价值不菲的草药，若是能带回去一些卖给陈老头，可以换一个月的粮钱了，母亲也不用那么辛苦。\n\n　　想干就干，秦浩轩顾不得这是在危机四伏的小屿山深处，大肆采起草药来。\n\n　　秦浩轩采摘得正欢时，忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。\n\n　　秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。\n\n　　也不知过了多久，以为自己必死无疑的秦浩轩从昏迷中醒来，赫然发现原本的青青小草都如参天古木一般巨大，原本不算大的小山谷在自己眼里忽然宽阔了许多。\n\n　　动一动身子，身子从未有过的灵活，在犹如参天大树般的草丛中穿梭。\n\n　　不对，自己怎么不是用走的，而是身体伏在地上游动？\n\n　　在一汪清水池边，秦浩轩看到自己的身子再不是熟悉的人体，而是一条色彩斑斓的蛇，不远处，他的身体四仰八叉躺在草丛中，没有了心跳和呼吸。\n\n　　莫非自己死了？附身在这条咬我的小蛇身上？\n\n　　一个可怕的念头在秦浩轩脑海里闪过，飞速游到自己的身体旁，想象着把灵魂穿梭回去。\n\n　　忽然，一阵强大的吸力从自己“尸体”上传来，秦浩轩但觉一阵头晕目眩，灵魂被吸走，片刻后再次睁开眼睛，自己竟然回到人体，而之前灵魂附身的奇异小蛇则卧在地上一动不动。\n\n　　再一动心念，又一阵强大吸力将灵魂扯到小蛇身上。\n\n　　如是几个轮回，秦浩轩终于确定自己的灵魂能在小蛇的躯体和自己本体来回穿梭附体，当下如获至宝，喜笑颜开。\n\n　　这一折腾已经是夜幕降临，小屿山中的毒瘴开始蔓延，人体若吸入毒瘴必死无疑，这小蛇以前长居于小屿山，毒瘴想必无法威胁到它。\n\n　　秦浩轩念头一动，将灵魂附在小蛇上，果然山谷中升起的瘴气完全无法危害到他。\n\n　　他游动身子，还发现了一个神奇妙处，蛇身游过的地方都会留下一种特殊的味道，不论走多远，都能按照这股气息寻找到来时的路，也就是说他可以借此寻找回家的路。\n\n　　在寻找回家的路时，秦浩轩还发现了蛇身的多种妙处，比如百毒不侵，比如对一些灵药异草格外敏感，一些豹子饿狼一看到小蛇吓得掉头就跑。\n\n　　自此以后，秦浩轩常在晚上附身在小蛇上，进入小屿山深处寻找珍稀的药材，然后卖给药铺陈老头赚取远比打猎多得多的银钱，他家的日子也越过越好，他本人更是成为大田镇这群少年中的楷模典型。\n\n　　附身小蛇四处寻宝虽然神奇，但每次附身后都会留下后遗症——第二天筋疲力尽，打不起精神，只想睡觉。\n\n　　换了衣衫，秦浩轩带着黄精走出家门，顶着两个黑眼圈的他一脸疲惫，勉强和路上碰到的熟人打着招呼。\n\n　　就在秦浩轩去往药铺的路上，一阵惨叫传进他的耳里。\n\n　　“哎呀……张老大我是真没钱啊，张老大饶命啊……哎呀……”\n\n　　几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。\n\n　　围观的少年很多，有气愤，有同情，也有义愤填膺的，却在那锦衣少年的面前没一个敢吭声的。\n\n　　“都给老子看好了，这就是不按时缴纳保险费的下场！”张狂身边的小弟踩着地上一名少年的脸，得意的宣称。\n\n　　这时另外一名少年终于忍无可忍，大声骂道：“强盗，张狂你这个强盗不得好死！”\n\n　　一直没动手的张狂脸上闪过一阵狰狞，只见他快速走上去，正要一脚踢在那名少年嘴上，可以想象一旦被踢实了，那少年一嘴牙齿也就不剩几颗了。\n\n　　“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”\n\n　　在大田镇这群少年中秦浩轩实属异类，八岁就接过家庭重担上山狩猎的他很少跟这群同龄人瞎混，和他齐名的张狂自然而然成了少年中的老大。\n\n　　张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼，也算是少年有成。\n\n　　然而就这么一个狠角色，可以在大田镇这群孩子们中称王称霸，惟独对秦浩轩畏惧不已，去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。\n\n　　秦浩轩的声音就像一把无形的枷锁，逼得张狂硬生生收回要踢出去的脚，望向秦浩轩，尽管心中恨不得将他碎尸万段，但表面上却不敢流露分毫。\n\n　　他知道秦浩轩说得出做得到，如果自己这一脚踢实，说绑自己丢上山喂狼就一定会做！\n\n　　心头怨毒无比的张狂脸色一转，眉角多少还挂着些寒霜：“姓秦的，这两人坏我规矩，怎么也要教训教训吧？”\n\n　　秦浩轩心中只是冷笑，这巧取豪夺什么时候也成为规矩了？他懒得跟张狂多说什么，嘴里挤出了一个字‘滚’字。\n\n　　张狂听的面色难看，却也知道翻脸只能吃亏，心中把秦浩轩臭骂千百遍，他搞不懂这秦浩轩到底是怎么想的，一个从小读书长大的人，应该深深明白‘利害’二字，跟自己联手足可以横行乡里，怎么偏偏凡事都要跟自己对着干。\n\n　　秦浩轩看到张狂那一张臭臭的脸色，也知道对方在想些什么，心中只是叹气暗暗念叨自己：秦浩轩啊秦浩轩，你自小读书明理，应该知道‘利害’二字，更该知道远离这种恶人才是，怎么遇到这种事情你便忍不住呢？\n\n　　想到这里，秦浩轩也是苦笑，自己读书读的虽然明理，却也养成了读书人的一些臭脾气，明知道有时候事不关己高高挂起，便能躲过很多恶事，却偏偏忍不下心中这个‘理’字。\n\n　　有眼力尖的一眼就看到秦浩轩紧握的拳头里似乎有什么东西，还散发出淡淡清幽的药香，道：“唔……好香啊！秦哥，今天又得了什么好东西？这是赶去陈家药铺卖么？”\n\n　　“废话，秦哥拿出来的东西什么时候不是好东西？”秦浩轩还没说话，一名少年便接过话头，讨好似地回应，很快赢来一片附和声。\n\n　　“秦哥，据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！”\n\n　　“是啊，我也听说了，秦哥你一向有不少好东西，如果他们看得上，说不定能发大财呢！”\n\n　　秦浩轩心中一动，暗感运气好，爽朗的许诺道：“看看吧，要是卖价不错的话，我请你们喝酒。”\n\n　　在一片欢呼声中，秦浩轩被众多少年簇拥着走向陈家药铺。\n\n　　一出现就吸走全部眼球的秦浩轩，身边只剩下几个铁杆小弟的张狂咬牙切齿道：“不久后就是山中神仙来挑选徒弟的日子，我一定要被神仙选上，出这一口恶气！”\n\n允许抽取类型：\ncharacter, location, faction, item, realm, technique, event, rule\n\n输出 JSON：\n{\n  \"mentions\": [\n    {\n      \"name\": \"\",\n      \"knowledge_type\": \"character|location|faction|item|realm|technique|event|rule\",\n      \"description\": \"\",\n      \"evidence_excerpts\": [\"\"],\n      \"reason\": \"\"\n    }\n  ],\n  \"ignored\": [\n    {\n      \"text\": \"\",\n      \"reason\": \"\"\n    }\n  ]\n}\n",
+      "raw_response": "{\"mentions\":[{\"name\":\"秦浩轩\",\"knowledge_type\":\"character\",\"description\":\"大田镇少年，身手最好，常采药狩猎，能灵魂附体小蛇。\",\"evidence_excerpts\":[\"在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。\",\"秦浩轩的手伸进怀里，摸了摸怀里冰冷的小蛇，思绪飘散，不由回忆起几年前的一幕幕。\",\"他八岁就随大人们上山打猎，在危机和厮杀中练就了一副好身手，不满狩猎的大头都被大人们分走，他十岁那年便独自上山狩猎。\",\"秦浩轩心中只是冷笑，这巧取豪夺什么时候也成为规矩了？他懒得跟张狂多说什么，嘴里挤出了一个字‘滚’字。\"]},{\"name\":\"张狂\",\"knowledge_type\":\"character\",\"description\":\"大田镇少年，与秦浩轩齐名，横行霸道，曾经被秦浩轩打断肋骨。\",\"evidence_excerpts\":[\"几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。\",\"张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼，也算是少年有成。\",\"去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。\"]},{\"name\":\"大田镇\",\"knowledge_type\":\"location\",\"description\":\"背靠小屿山的小镇，田地稀少贫瘠，世代狩猎。\",\"evidence_excerpts\":[\"依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。\",\"在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。\",\"大田镇西头一个还算气派的院落里，他们的赶超目标秦浩轩还躺在床上沉睡。\"]},{\"name\":\"小屿山\",\"knowledge_type\":\"location\",\"description\":\"大田镇背靠的山，传说有神仙和妖魔鬼怪，深入者凶险。\",\"evidence_excerpts\":[\"背靠着小屿山的大田镇...\",\"传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。\",\"大田镇世代狩猎，但都在外围转悠，哪怕猎物越来越稀少的今天也没人敢深入小屿山，也曾有胆大的猎户深入小屿山，却再也不见出来。\"]},{\"name\":\"陈家药铺\",\"knowledge_type\":\"location\",\"description\":\"大田镇的药铺，收购药材，老板陈老头。\",\"evidence_excerpts\":[\"有眼力尖的一眼就看到秦浩轩紧握的拳头里似乎有什么东西，还散发出淡淡清幽的药香，道：“唔……好香啊！秦哥，今天又得了什么好东西？这是赶去陈家药铺卖么？”\",\"据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！\",\"秦浩轩心中一动，暗感运气好，爽朗的许诺道：“看看吧，要是卖价不错的话，我请你们喝酒。”\"]},{\"name\":\"五彩小蛇\",\"knowledge_type\":\"item\",\"description\":\"一条怪异小蛇，被秦浩轩灵魂附体，可用来寻药探路。\",\"evidence_excerpts\":[\"这条小蛇约摸半尺长，一身五彩斑斓的蛇皮，皮上有许多密密麻麻的凸起，摸起来疙疙瘩瘩，似鳞非麟。它的脑袋不像一般蛇类的锥形，反而有些四正四方，看起来极为怪异。\",\"秦浩轩念头一动，将灵魂附在小蛇上，果然山谷中升起的瘴气完全无法危害到他。\",\"他游动身子，还发现了一个神奇妙处，蛇身游过的地方都会留下一种特殊的味道，不论走多远，都能按照这股气息寻找到来时的路...\"]},{\"name\":\"黄精\",\"knowledge_type\":\"item\",\"description\":\"一种珍贵药材，卖相如黄色石子，有异香。\",\"evidence_excerpts\":[\"这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。\"]},{\"name\":\"秦浩轩阻止张狂行凶\",\"knowledge_type\":\"event\",\"description\":\"张狂因保护费殴打少年，秦浩轩出面阻止并威胁。\",\"evidence_excerpts\":[\"“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”\",\"在大田镇这群少年中秦浩轩实属异类...张狂...可以对大田镇这群孩子们中称王称霸，惟独对秦浩轩畏惧不已...\",\"心头怨毒无比的张狂脸色一转，眉角多少还挂着些寒霜：“姓秦的，这两人坏我规矩，怎么也要教训教训吧？”\",\"去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。\"]},{\"name\":\"秦浩轩被蛇咬获得灵魂附体能力\",\"knowledge_type\":\"event\",\"description\":\"秦浩轩十二岁时深入小屿山狩猎采药，被怪蛇咬伤后获得灵魂附体蛇身的能力。\",\"evidence_excerpts\":[\"那是一个夏季的清晨...秦浩轩不得不...上山...深入小屿山...来到一个小山谷中...大肆采起草药来。\",\"忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。\",\"秦浩轩看到自己的身子再不是熟悉的人体，而是一条色彩斑斓的蛇...\"]},{\"name\":\"秦家祖训\",\"knowledge_type\":\"rule\",\"description\":\"秦家后人必须读书但不能做官。\",\"evidence_excerpts\":[\"他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官...\"]}],\"ignored\":[{\"text\":\"几个勤奋的猎户开始上山狩猎\",\"reason\":\"泛称，无具体人物。\"},{\"text\":\"晨练的少年们\",\"reason\":\"泛称群体。\"},{\"text\":\"药铺陈老头\",\"reason\":\"仅被提及一次，无实质剧情作用。\"},{\"text\":\"张狂的父亲\",\"reason\":\"仅一笔带过，无详细描述。\"},{\"text\":\"外地客\",\"reason\":\"传闻提及，未实际出场。\"},{\"text\":\"小山谷\",\"reason\":\"单次环境描写，无稳定名称。\"},{\"text\":\"一汪清水池边\",\"reason\":\"临时地点，无重要性。\"},{\"text\":\"獐子\",\"reason\":\"普通猎物，非重要物品。\"},{\"text\":\"几个少年正在狠狠踢着地上打滚的两个少年\",\"reason\":\"临时龙套，无姓名。\"},{\"text\":\"小屿山上的神仙们\",\"reason\":\"传说泛称，无具体势力。\"},{\"text\":\"妖魔鬼怪\",\"reason\":\"传说泛称。\"},{\"text\":\"小屿山中的神仙来挑选徒弟的日子\",\"reason\":\"未来事件，仅提及，未发生。\"}]}",
+      "parsed_output": {
+        "mentions": [
+          {
+            "name": "秦浩轩",
+            "knowledge_type": "character",
+            "description": "大田镇少年，身手最好，常采药狩猎，能灵魂附体小蛇。",
+            "evidence_excerpts": [
+              "在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。",
+              "秦浩轩的手伸进怀里，摸了摸怀里冰冷的小蛇，思绪飘散，不由回忆起几年前的一幕幕。",
+              "他八岁就随大人们上山打猎，在危机和厮杀中练就了一副好身手，不满狩猎的大头都被大人们分走，他十岁那年便独自上山狩猎。",
+              "秦浩轩心中只是冷笑，这巧取豪夺什么时候也成为规矩了？他懒得跟张狂多说什么，嘴里挤出了一个字‘滚’字。"
+            ]
+          },
+          {
+            "name": "张狂",
+            "knowledge_type": "character",
+            "description": "大田镇少年，与秦浩轩齐名，横行霸道，曾经被秦浩轩打断肋骨。",
+            "evidence_excerpts": [
+              "几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。",
+              "张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼，也算是少年有成。",
+              "去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。"
+            ]
+          },
+          {
+            "name": "大田镇",
+            "knowledge_type": "location",
+            "description": "背靠小屿山的小镇，田地稀少贫瘠，世代狩猎。",
+            "evidence_excerpts": [
+              "依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。",
+              "在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。",
+              "大田镇西头一个还算气派的院落里，他们的赶超目标秦浩轩还躺在床上沉睡。"
+            ]
+          },
+          {
+            "name": "小屿山",
+            "knowledge_type": "location",
+            "description": "大田镇背靠的山，传说有神仙和妖魔鬼怪，深入者凶险。",
+            "evidence_excerpts": [
+              "背靠着小屿山的大田镇...",
+              "传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。",
+              "大田镇世代狩猎，但都在外围转悠，哪怕猎物越来越稀少的今天也没人敢深入小屿山，也曾有胆大的猎户深入小屿山，却再也不见出来。"
+            ]
+          },
+          {
+            "name": "陈家药铺",
+            "knowledge_type": "location",
+            "description": "大田镇的药铺，收购药材，老板陈老头。",
+            "evidence_excerpts": [
+              "有眼力尖的一眼就看到秦浩轩紧握的拳头里似乎有什么东西，还散发出淡淡清幽的药香，道：“唔……好香啊！秦哥，今天又得了什么好东西？这是赶去陈家药铺卖么？”",
+              "据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！",
+              "秦浩轩心中一动，暗感运气好，爽朗的许诺道：“看看吧，要是卖价不错的话，我请你们喝酒。”"
+            ]
+          },
+          {
+            "name": "五彩小蛇",
+            "knowledge_type": "item",
+            "description": "一条怪异小蛇，被秦浩轩灵魂附体，可用来寻药探路。",
+            "evidence_excerpts": [
+              "这条小蛇约摸半尺长，一身五彩斑斓的蛇皮，皮上有许多密密麻麻的凸起，摸起来疙疙瘩瘩，似鳞非麟。它的脑袋不像一般蛇类的锥形，反而有些四正四方，看起来极为怪异。",
+              "秦浩轩念头一动，将灵魂附在小蛇上，果然山谷中升起的瘴气完全无法危害到他。",
+              "他游动身子，还发现了一个神奇妙处，蛇身游过的地方都会留下一种特殊的味道，不论走多远，都能按照这股气息寻找到来时的路..."
+            ]
+          },
+          {
+            "name": "黄精",
+            "knowledge_type": "item",
+            "description": "一种珍贵药材，卖相如黄色石子，有异香。",
+            "evidence_excerpts": [
+              "这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。"
+            ]
+          },
+          {
+            "name": "秦浩轩阻止张狂行凶",
+            "knowledge_type": "event",
+            "description": "张狂因保护费殴打少年，秦浩轩出面阻止并威胁。",
+            "evidence_excerpts": [
+              "“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”",
+              "在大田镇这群少年中秦浩轩实属异类...张狂...可以对大田镇这群孩子们中称王称霸，惟独对秦浩轩畏惧不已...",
+              "心头怨毒无比的张狂脸色一转，眉角多少还挂着些寒霜：“姓秦的，这两人坏我规矩，怎么也要教训教训吧？”",
+              "去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。"
+            ]
+          },
+          {
+            "name": "秦浩轩被蛇咬获得灵魂附体能力",
+            "knowledge_type": "event",
+            "description": "秦浩轩十二岁时深入小屿山狩猎采药，被怪蛇咬伤后获得灵魂附体蛇身的能力。",
+            "evidence_excerpts": [
+              "那是一个夏季的清晨...秦浩轩不得不...上山...深入小屿山...来到一个小山谷中...大肆采起草药来。",
+              "忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。",
+              "秦浩轩看到自己的身子再不是熟悉的人体，而是一条色彩斑斓的蛇..."
+            ]
+          },
+          {
+            "name": "秦家祖训",
+            "knowledge_type": "rule",
+            "description": "秦家后人必须读书但不能做官。",
+            "evidence_excerpts": [
+              "他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官..."
+            ]
+          }
+        ],
+        "ignored": [
+          {
+            "text": "几个勤奋的猎户开始上山狩猎",
+            "reason": "泛称，无具体人物。"
+          },
+          {
+            "text": "晨练的少年们",
+            "reason": "泛称群体。"
+          },
+          {
+            "text": "药铺陈老头",
+            "reason": "仅被提及一次，无实质剧情作用。"
+          },
+          {
+            "text": "张狂的父亲",
+            "reason": "仅一笔带过，无详细描述。"
+          },
+          {
+            "text": "外地客",
+            "reason": "传闻提及，未实际出场。"
+          },
+          {
+            "text": "小山谷",
+            "reason": "单次环境描写，无稳定名称。"
+          },
+          {
+            "text": "一汪清水池边",
+            "reason": "临时地点，无重要性。"
+          },
+          {
+            "text": "獐子",
+            "reason": "普通猎物，非重要物品。"
+          },
+          {
+            "text": "几个少年正在狠狠踢着地上打滚的两个少年",
+            "reason": "临时龙套，无姓名。"
+          },
+          {
+            "text": "小屿山上的神仙们",
+            "reason": "传说泛称，无具体势力。"
+          },
+          {
+            "text": "妖魔鬼怪",
+            "reason": "传说泛称。"
+          },
+          {
+            "text": "小屿山中的神仙来挑选徒弟的日子",
+            "reason": "未来事件，仅提及，未发生。"
+          }
+        ]
+      },
+      "started_at": "2026-07-07T13:51:22.883809Z",
+      "finished_at": "2026-07-07T13:52:44.816948Z",
+      "duration_ms": 81932,
+      "error": null
+    },
+    {
+      "call_id": "llm_call_CharacterExpertNode_89e78876",
+      "node_name": "CharacterExpertNode",
+      "model_name": "deepseek-v4-pro",
+      "prompt_version": "character_expert_v3",
+      "input_prompt": "你是长篇玄幻小说的角色知识卡整理助手。\n\n任务：\n根据通过质量闸门的角色 entity_groups 和多条原文证据，生成角色卡草稿或角色卡更新建议。\n\n硬规则：\n1. 只根据 entity_groups 和 evidence_excerpts 填写字段。\n2. 不要补写正文没有的信息。\n3. 不要输出 personality、motivation、appearance、relations、current_goal、secret、known_secrets。\n4. 不要输出 body、tags、fields、confidence、source_refs。\n5. role_type 只能从 schema options 中选择，无法判断时填 null。\n6. death_chapter_id 只有正文明确确认死亡时才填写，否则填 null。\n7. current_realm_text 只有正文出现境界或修为信息时才填写，否则填 null。\n8. first_seen_chapter_id 和 last_seen_chapter_id 第一版都可以使用当前 chapter_id。\n9. source_origin 固定为 agent_extract。\n10. source_note 必须写成作者可读中文文本，包含章节标题和关键原文摘录。\n11. evidence_excerpt 可以是主证据，evidence_excerpts 必须保留多条证据。\n12. summary 和 source_note 必须基于多条 evidence_excerpts 综合生成，不能只复述第一条证据。\n13. 输出必须是 JSON，不要输出解释性文字。\n14. 不要输出 Markdown 代码块。\n15. 不要输出任何多余字段。\n\n字段 schema：\n{\n  \"type\": \"character\",\n  \"label\": \"角色\",\n  \"fields\": [\n    {\n      \"field_key\": \"name\",\n      \"label\": \"名称\",\n      \"field_type\": \"short_text\",\n      \"required_when_active\": true,\n      \"options\": [],\n      \"placeholder\": \"输入知识卡名称\",\n      \"display_group\": \"基础信息\",\n      \"list_display\": true,\n      \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n    },\n    {\n      \"field_key\": \"aliases\",\n      \"label\": \"别名\",\n      \"field_type\": \"string_array\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"多个别名用换行或逗号分隔\",\n      \"display_group\": \"基础信息\",\n      \"list_display\": true,\n      \"ai_usage\": \"名称、称号、旧名和简称。\"\n    },\n    {\n      \"field_key\": \"summary\",\n      \"label\": \"摘要\",\n      \"field_type\": \"long_text\",\n      \"required_when_active\": true,\n      \"options\": [],\n      \"placeholder\": \"一句话或一段摘要\",\n      \"display_group\": \"基础信息\",\n      \"list_display\": true,\n      \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n    },\n    {\n      \"field_key\": \"importance\",\n      \"label\": \"重要程度\",\n      \"field_type\": \"enum\",\n      \"required_when_active\": false,\n      \"options\": [\n        {\n          \"value\": \"core\",\n          \"label\": \"核心\"\n        },\n        {\n          \"value\": \"major\",\n          \"label\": \"重要\"\n        },\n        {\n          \"value\": \"normal\",\n          \"label\": \"普通\"\n        },\n        {\n          \"value\": \"minor\",\n          \"label\": \"次要\"\n        }\n      ],\n      \"placeholder\": \"\",\n      \"display_group\": \"基础信息\",\n      \"list_display\": true,\n      \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n    },\n    {\n      \"field_key\": \"status\",\n      \"label\": \"状态\",\n      \"field_type\": \"enum\",\n      \"required_when_active\": false,\n      \"options\": [\n        {\n          \"value\": \"draft\",\n          \"label\": \"草稿\"\n        },\n        {\n          \"value\": \"active\",\n          \"label\": \"有效\"\n        },\n        {\n          \"value\": \"deprecated\",\n          \"label\": \"已废弃\"\n        }\n      ],\n      \"placeholder\": \"\",\n      \"display_group\": \"基础信息\",\n      \"list_display\": true,\n      \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n    },\n    {\n      \"field_key\": \"source_origin\",\n      \"label\": \"来源方式\",\n      \"field_type\": \"enum\",\n      \"required_when_active\": true,\n      \"options\": [\n        {\n          \"value\": \"inbox_fact\",\n          \"label\": \"收件箱事实转化\"\n        },\n        {\n          \"value\": \"agent_extract\",\n          \"label\": \"正文自动提取\"\n        },\n        {\n          \"value\": \"manual\",\n          \"label\": \"人工添加\"\n        }\n      ],\n      \"placeholder\": \"选择来源方式\",\n      \"display_group\": \"来源\",\n      \"list_display\": true,\n      \"ai_usage\": \"说明知识卡来源类型。\"\n    },\n    {\n      \"field_key\": \"source_note\",\n      \"label\": \"来源说明\",\n      \"field_type\": \"long_text\",\n      \"required_when_active\": true,\n      \"options\": [],\n      \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n      \"display_group\": \"来源\",\n      \"list_display\": true,\n      \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n    },\n    {\n      \"field_key\": \"role_type\",\n      \"label\": \"角色定位\",\n      \"field_type\": \"enum\",\n      \"required_when_active\": false,\n      \"options\": [\n        {\n          \"value\": \"protagonist\",\n          \"label\": \"主角\"\n        },\n        {\n          \"value\": \"supporting\",\n          \"label\": \"配角\"\n        },\n        {\n          \"value\": \"antagonist\",\n          \"label\": \"反派\"\n        },\n        {\n          \"value\": \"passerby\",\n          \"label\": \"路人\"\n        },\n        {\n          \"value\": \"faction_representative\",\n          \"label\": \"势力代表\"\n        }\n      ],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": true,\n      \"ai_usage\": \"角色在故事中的基础定位。\"\n    },\n    {\n      \"field_key\": \"identity\",\n      \"label\": \"身份\",\n      \"field_type\": \"short_text\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": true,\n      \"ai_usage\": \"角色出身、身份或公开身份。\"\n    },\n    {\n      \"field_key\": \"relationship_summary\",\n      \"label\": \"关系摘要\",\n      \"field_type\": \"long_text\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": false,\n      \"ai_usage\": \"人物关系的文字概述。\"\n    },\n    {\n      \"field_key\": \"death_chapter_id\",\n      \"label\": \"死亡章节\",\n      \"field_type\": \"chapter_ref\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": false,\n      \"ai_usage\": \"角色死亡确认章节的稳定 chapter_id。\"\n    },\n    {\n      \"field_key\": \"current_realm_text\",\n      \"label\": \"当前境界\",\n      \"field_type\": \"short_text\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": true,\n      \"ai_usage\": \"角色当前境界文本。\"\n    },\n    {\n      \"field_key\": \"first_seen_chapter_id\",\n      \"label\": \"首次登场章节\",\n      \"field_type\": \"chapter_ref\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": false,\n      \"ai_usage\": \"角色首次登场章节的稳定 chapter_id。\"\n    },\n    {\n      \"field_key\": \"last_seen_chapter_id\",\n      \"label\": \"最近出现章节\",\n      \"field_type\": \"chapter_ref\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": false,\n      \"ai_usage\": \"角色最近出现章节的稳定 chapter_id。\"\n    }\n  ]\n}\n\n章节信息：\nchapter_id=chapter-f2a0007303a74f769e1609124c30da6b\nchapter_title=第1章 大田金鳞元神出\n\n角色 entity_groups：\n[\n  {\n    \"entity_group_id\": \"entity_group_001\",\n    \"canonical_name\": \"秦浩轩\",\n    \"knowledge_type\": \"character\",\n    \"raw_names\": [\n      \"秦浩轩\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。\",\n      \"秦浩轩的手伸进怀里，摸了摸怀里冰冷的小蛇，思绪飘散，不由回忆起几年前的一幕幕。\",\n      \"他八岁就随大人们上山打猎，在危机和厮杀中练就了一副好身手，不满狩猎的大头都被大人们分走，他十岁那年便独自上山狩猎。\",\n      \"秦浩轩心中只是冷笑，这巧取豪夺什么时候也成为规矩了？他懒得跟张狂多说什么，嘴里挤出了一个字‘滚’字。\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备稳定专名特征。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_002\",\n    \"canonical_name\": \"张狂\",\n    \"knowledge_type\": \"character\",\n    \"raw_names\": [\n      \"张狂\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。\",\n      \"张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼，也算是少年有成。\",\n      \"去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备稳定专名特征。\"\n  }\n]\n\n输出 JSON：\n{\n  \"knowledge_type\": \"character\",\n  \"cards\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"role_type\": null,\n      \"identity\": null,\n      \"relationship_summary\": null,\n      \"death_chapter_id\": null,\n      \"current_realm_text\": null,\n      \"first_seen_chapter_id\": \"chapter-f2a0007303a74f769e1609124c30da6b\",\n      \"last_seen_chapter_id\": \"chapter-f2a0007303a74f769e1609124c30da6b\"\n    }\n  ]\n}\n",
+      "raw_response": "{\"knowledge_type\":\"character\",\"cards\":[{\"entity_group_id\":\"entity_group_001\",\"name\":\"秦浩轩\",\"aliases\":[],\"summary\":\"大田镇少年猎手，在同龄人中身手最为优秀，自幼随大人狩猎，十岁便独立上山，掌握精湛狩猎技巧，偶尔贩卖药草补贴家用，深受镇民赞赏。性格强硬，曾打断张狂肋骨并呵斥其滚。\",\"importance\":\"normal\",\"source_origin\":\"agent_extract\",\"source_note\":\"第1章 大田金鳞元神出。原文摘录：‘在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。’‘他八岁就随大人们上山打猎，在危机和厮杀中练就了一副好身手...十岁那年便独自上山狩猎。’\",\"evidence_excerpt\":\"在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。\",\"evidence_excerpts\":[\"在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。\",\"秦浩轩的手伸进怀里，摸了摸怀里冰冷的小蛇，思绪飘散，不由回忆起几年前的一幕幕。\",\"他八岁就随大人们上山打猎，在危机和厮杀中练就了一副好身手，不满狩猎的大头都被大人们分走，他十岁那年便独自上山狩猎。\",\"秦浩轩心中只是冷笑，这巧取豪夺什么时候也成为规矩了？他懒得跟张狂多说什么，嘴里挤出了一个字‘滚’字。\"],\"role_type\":null,\"identity\":null,\"relationship_summary\":\"曾与张狂冲突，将其打断四根肋骨，使其卧床三月，再见时直接喝令其滚。\",\"death_chapter_id\":null,\"current_realm_text\":null,\"first_seen_chapter_id\":\"chapter-f2a0007303a74f769e1609124c30da6b\",\"last_seen_chapter_id\":\"chapter-f2a0007303a74f769e1609124c30da6b\"},{\"entity_group_id\":\"entity_group_002\",\"name\":\"张狂\",\"aliases\":[],\"summary\":\"大田镇与秦浩轩齐名的少年，父亲是镇中最优秀的猎手。天赋异禀，十二岁时曾徒手杀狼。喜欢欺凌弱小，但去年被秦浩轩打断四根肋骨后，不敢再招惹秦浩轩。\",\"importance\":\"normal\",\"source_origin\":\"agent_extract\",\"source_note\":\"第1章 大田金鳞元神出。原文摘录：‘几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。’‘张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼，也算是少年有成。’‘去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。’\",\"evidence_excerpt\":\"几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。\",\"evidence_excerpts\":[\"几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。\",\"张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼，也算是少年有成。\",\"去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。\"],\"role_type\":null,\"identity\":null,\"relationship_summary\":\"曾被秦浩轩打断肋骨，此后不敢再与其冲突。\",\"death_chapter_id\":null,\"current_realm_text\":null,\"first_seen_chapter_id\":\"chapter-f2a0007303a74f769e1609124c30da6b\",\"last_seen_chapter_id\":\"chapter-f2a0007303a74f769e1609124c30da6b\"}]}",
+      "parsed_output": {
+        "knowledge_type": "character",
+        "cards": [
+          {
+            "entity_group_id": "entity_group_001",
+            "name": "秦浩轩",
+            "aliases": [],
+            "summary": "大田镇少年猎手，在同龄人中身手最为优秀，自幼随大人狩猎，十岁便独立上山，掌握精湛狩猎技巧，偶尔贩卖药草补贴家用，深受镇民赞赏。性格强硬，曾打断张狂肋骨并呵斥其滚。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第1章 大田金鳞元神出。原文摘录：‘在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。’‘他八岁就随大人们上山打猎，在危机和厮杀中练就了一副好身手...十岁那年便独自上山狩猎。’",
+            "evidence_excerpt": "在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。",
+            "evidence_excerpts": [
+              "在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。",
+              "秦浩轩的手伸进怀里，摸了摸怀里冰冷的小蛇，思绪飘散，不由回忆起几年前的一幕幕。",
+              "他八岁就随大人们上山打猎，在危机和厮杀中练就了一副好身手，不满狩猎的大头都被大人们分走，他十岁那年便独自上山狩猎。",
+              "秦浩轩心中只是冷笑，这巧取豪夺什么时候也成为规矩了？他懒得跟张狂多说什么，嘴里挤出了一个字‘滚’字。"
+            ],
+            "role_type": null,
+            "identity": null,
+            "relationship_summary": "曾与张狂冲突，将其打断四根肋骨，使其卧床三月，再见时直接喝令其滚。",
+            "death_chapter_id": null,
+            "current_realm_text": null,
+            "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+            "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b"
+          },
+          {
+            "entity_group_id": "entity_group_002",
+            "name": "张狂",
+            "aliases": [],
+            "summary": "大田镇与秦浩轩齐名的少年，父亲是镇中最优秀的猎手。天赋异禀，十二岁时曾徒手杀狼。喜欢欺凌弱小，但去年被秦浩轩打断四根肋骨后，不敢再招惹秦浩轩。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第1章 大田金鳞元神出。原文摘录：‘几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。’‘张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼，也算是少年有成。’‘去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。’",
+            "evidence_excerpt": "几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。",
+            "evidence_excerpts": [
+              "几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。",
+              "张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼，也算是少年有成。",
+              "去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。"
+            ],
+            "role_type": null,
+            "identity": null,
+            "relationship_summary": "曾被秦浩轩打断肋骨，此后不敢再与其冲突。",
+            "death_chapter_id": null,
+            "current_realm_text": null,
+            "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+            "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b"
+          }
+        ]
+      },
+      "started_at": "2026-07-07T13:52:44.850888Z",
+      "finished_at": "2026-07-07T13:53:31.728047Z",
+      "duration_ms": 46876,
+      "error": null
+    },
+    {
+      "call_id": "llm_call_EntityExpertNode_b62c59c3",
+      "node_name": "EntityExpertNode",
+      "model_name": "deepseek-v4-pro",
+      "prompt_version": "entity_expert_v3",
+      "input_prompt": "你是长篇玄幻小说的实体知识卡整理助手。\n\n任务：\n根据通过质量闸门的地点、势力、物品、境界、功法 entity_groups 和多条原文证据，生成对应知识卡草稿或更新建议。\n\n硬规则：\n1. 只根据 entity_groups 和 evidence_excerpts 填写字段。\n2. 不要补写正文没有的信息。\n3. 本节点只处理 location、faction、item、realm、technique。\n4. 不要输出 event、rule、foreshadow。\n5. 不要输出 body、tags、fields、confidence、source_refs、relations。\n6. controlling_faction_id、leader_id、current_holder_id 如果不能明确匹配已有 active 知识卡，填 null。\n7. 不能编造知识卡 ID。\n8. source_origin 固定为 agent_extract。\n9. source_note 必须写成作者可读中文文本，包含章节标题和关键原文摘录。\n10. evidence_excerpt 可以是主证据，evidence_excerpts 必须保留多条证据。\n11. summary 和 source_note 必须基于多条 evidence_excerpts 综合生成，不能只复述第一条证据。\n12. 没有稳定组织名的“山上的神仙们”第一版不建势力卡。\n13. 境界必须是明确境界、阶段、等级或修炼层次；无法判断排序值时 level_order 填 null。\n14. 功法必须是明确功法、术法、神通、剑诀、禁术、炼丹、阵法等可复用设定；无法判断类型时 technique_type 填 null。\n15. 输出必须是 JSON，不要输出解释性文字。\n16. 不要输出 Markdown 代码块。\n17. 不要输出任何多余字段。\n\n字段 schema：\n[\n  {\n    \"type\": \"location\",\n    \"label\": \"地点\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"controlling_faction_id\",\n        \"label\": \"控制势力\",\n        \"field_type\": \"knowledge_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"控制该地点的势力知识卡 id。\"\n      },\n      {\n        \"field_key\": \"first_seen_chapter_id\",\n        \"label\": \"首次出现章节\",\n        \"field_type\": \"chapter_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"地点首次出现章节的稳定 chapter_id。\"\n      }\n    ]\n  },\n  {\n    \"type\": \"faction\",\n    \"label\": \"势力\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"faction_type\",\n        \"label\": \"势力类型\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"sect\",\n            \"label\": \"宗门\"\n          },\n          {\n            \"value\": \"family\",\n            \"label\": \"家族\"\n          },\n          {\n            \"value\": \"dynasty\",\n            \"label\": \"王朝\"\n          },\n          {\n            \"value\": \"guild\",\n            \"label\": \"商会\"\n          },\n          {\n            \"value\": \"demonic\",\n            \"label\": \"魔道\"\n          },\n          {\n            \"value\": \"alliance\",\n            \"label\": \"联盟\"\n          },\n          {\n            \"value\": \"academy\",\n            \"label\": \"学院\"\n          },\n          {\n            \"value\": \"other\",\n            \"label\": \"其他\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"宗门、家族、王朝等势力类型。\"\n      },\n      {\n        \"field_key\": \"leader_id\",\n        \"label\": \"当前首领\",\n        \"field_type\": \"knowledge_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"当前首领角色知识卡 id。\"\n      }\n    ]\n  },\n  {\n    \"type\": \"item\",\n    \"label\": \"物品\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"item_type\",\n        \"label\": \"物品类型\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"magic_treasure\",\n            \"label\": \"法宝\"\n          },\n          {\n            \"value\": \"pill\",\n            \"label\": \"丹药\"\n          },\n          {\n            \"value\": \"material\",\n            \"label\": \"材料\"\n          },\n          {\n            \"value\": \"other\",\n            \"label\": \"其他\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"法宝、丹药、材料或其他物品类型。\"\n      },\n      {\n        \"field_key\": \"grade\",\n        \"label\": \"品阶\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"物品品阶。\"\n      },\n      {\n        \"field_key\": \"current_holder_id\",\n        \"label\": \"当前持有人\",\n        \"field_type\": \"knowledge_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"当前持有者的角色知识卡 id。\"\n      },\n      {\n        \"field_key\": \"first_seen_chapter_id\",\n        \"label\": \"首次出现章节\",\n        \"field_type\": \"chapter_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"物品首次出现章节的稳定 chapter_id。\"\n      },\n      {\n        \"field_key\": \"last_seen_chapter_id\",\n        \"label\": \"最近出现章节\",\n        \"field_type\": \"chapter_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"物品最近出现章节的稳定 chapter_id。\"\n      }\n    ]\n  },\n  {\n    \"type\": \"realm\",\n    \"label\": \"境界\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"system\",\n        \"label\": \"修炼体系\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"境界所属修炼体系。\"\n      },\n      {\n        \"field_key\": \"level_order\",\n        \"label\": \"境界排序值\",\n        \"field_type\": \"number\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"用于比较境界高低的数字。\"\n      }\n    ]\n  },\n  {\n    \"type\": \"technique\",\n    \"label\": \"功法\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"technique_type\",\n        \"label\": \"功法类型\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"cultivation_method\",\n            \"label\": \"功法\"\n          },\n          {\n            \"value\": \"spell\",\n            \"label\": \"术法\"\n          },\n          {\n            \"value\": \"divine_ability\",\n            \"label\": \"神通\"\n          },\n          {\n            \"value\": \"sword_art\",\n            \"label\": \"剑诀\"\n          },\n          {\n            \"value\": \"forbidden_art\",\n            \"label\": \"禁术\"\n          },\n          {\n            \"value\": \"alchemy\",\n            \"label\": \"炼丹\"\n          },\n          {\n            \"value\": \"formation\",\n            \"label\": \"阵法\"\n          },\n          {\n            \"value\": \"other\",\n            \"label\": \"其他\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"功法、术法、神通等类型。\"\n      },\n      {\n        \"field_key\": \"grade\",\n        \"label\": \"品阶\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"功法品阶或等级。\"\n      },\n      {\n        \"field_key\": \"practice_condition\",\n        \"label\": \"修炼条件\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"修炼、施展或学习条件。\"\n      },\n      {\n        \"field_key\": \"owner_faction_id\",\n        \"label\": \"所属势力\",\n        \"field_type\": \"knowledge_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"所属势力或传承的知识卡 id。\"\n      }\n    ]\n  }\n]\n\n已有 active 知识卡摘要：\n[]\n\n章节信息：\nchapter_id=chapter-f2a0007303a74f769e1609124c30da6b\nchapter_title=第1章 大田金鳞元神出\n\n实体 entity_groups：\n[\n  {\n    \"entity_group_id\": \"entity_group_003\",\n    \"canonical_name\": \"大田镇\",\n    \"knowledge_type\": \"location\",\n    \"raw_names\": [\n      \"大田镇\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。\",\n      \"在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。\",\n      \"大田镇西头一个还算气派的院落里，他们的赶超目标秦浩轩还躺在床上沉睡。\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备可复用地点名称或空间属性。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_004\",\n    \"canonical_name\": \"小屿山\",\n    \"knowledge_type\": \"location\",\n    \"raw_names\": [\n      \"小屿山\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"背靠着小屿山的大田镇...\",\n      \"传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。\",\n      \"大田镇世代狩猎，但都在外围转悠，哪怕猎物越来越稀少的今天也没人敢深入小屿山，也曾有胆大的猎户深入小屿山，却再也不见出来。\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备可复用地点名称或空间属性。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_005\",\n    \"canonical_name\": \"陈家药铺\",\n    \"knowledge_type\": \"location\",\n    \"raw_names\": [\n      \"陈家药铺\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"有眼力尖的一眼就看到秦浩轩紧握的拳头里似乎有什么东西，还散发出淡淡清幽的药香，道：“唔……好香啊！秦哥，今天又得了什么好东西？这是赶去陈家药铺卖么？”\",\n      \"据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！\",\n      \"秦浩轩心中一动，暗感运气好，爽朗的许诺道：“看看吧，要是卖价不错的话，我请你们喝酒。”\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备可复用地点名称或空间属性。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_007\",\n    \"canonical_name\": \"黄精\",\n    \"knowledge_type\": \"item\",\n    \"raw_names\": [\n      \"黄精\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"有明确名称且具备设定价值或可追踪属性。\"\n  }\n]\n\n输出 JSON：\n{\n  \"realms\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"system\": null,\n      \"level_order\": null\n    }\n  ],\n  \"techniques\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"technique_type\": null,\n      \"grade\": null,\n      \"practice_condition\": null,\n      \"owner_faction_id\": null\n    }\n  ],\n  \"locations\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"controlling_faction_id\": null,\n      \"first_seen_chapter_id\": \"chapter-f2a0007303a74f769e1609124c30da6b\"\n    }\n  ],\n  \"factions\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"faction_type\": null,\n      \"leader_id\": null\n    }\n  ],\n  \"items\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"item_type\": null,\n      \"grade\": null,\n      \"current_holder_id\": null,\n      \"first_seen_chapter_id\": \"chapter-f2a0007303a74f769e1609124c30da6b\",\n      \"last_seen_chapter_id\": \"chapter-f2a0007303a74f769e1609124c30da6b\"\n    }\n  ]\n}\n",
+      "raw_response": "{\n  \"locations\": [\n    {\n      \"entity_group_id\": \"entity_group_003\",\n      \"name\": \"大田镇\",\n      \"aliases\": [],\n      \"summary\": \"背靠小屿山的小镇，田地稀少贫瘠，居民世代以狩猎为生。少年们梦想被神仙收为徒弟或成为优秀猎户。秦浩轩的住处在镇西头。\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第1章 大田金鳞元神出：大田镇背靠小屿山，名字虽有耕田寓意，但土地贫瘠稀少，只能世代狩猎；少年们除了追赶秦浩轩和张狂，还梦想被小屿山上的神仙收为徒弟，再不济也要成为优秀猎户；秦浩轩躺在大田镇西头一个还算气派的院落里。\",\n      \"evidence_excerpt\": \"依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。\",\n      \"evidence_excerpts\": [\n        \"依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。\",\n        \"在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。\",\n        \"大田镇西头一个还算气派的院落里，他们的赶超目标秦浩轩还躺在床上沉睡。\"\n      ],\n      \"controlling_faction_id\": null,\n      \"first_seen_chapter_id\": \"chapter-f2a0007303a74f769e1609124c30da6b\"\n    },\n    {\n      \"entity_group_id\": \"entity_group_004\",\n      \"name\": \"小屿山\",\n      \"aliases\": [],\n      \"summary\": \"位于大田镇附近的山脉，传说中既有神仙居住，也有凶神恶煞的妖魔鬼怪。猎户们只敢在外围活动，深入者皆有去无回。\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第1章 大田金鳞元神出：大田镇背靠小屿山，传说山中有神仙和妖魔鬼怪。世代狩猎都只在外围，尽管猎物越来越少，也没人敢深入，曾有胆大猎户进去后再未出来。\",\n      \"evidence_excerpt\": \"传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。\",\n      \"evidence_excerpts\": [\n        \"背靠着小屿山的大田镇...\",\n        \"传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。\",\n        \"大田镇世代狩猎，但都在外围转悠，哪怕猎物越来越稀少的今天也没人敢深入小屿山，也曾有胆大的猎户深入小屿山，却再也不见出来。\"\n      ],\n      \"controlling_faction_id\": null,\n      \"first_seen_chapter_id\": \"chapter-f2a0007303a74f769e1609124c30da6b\"\n    },\n    {\n      \"entity_group_id\": \"entity_group_005\",\n      \"name\": \"陈家药铺\",\n      \"aliases\": [],\n      \"summary\": \"大田镇上的一家药铺，收购药材，拥有名贵药材库存。时有外地客商来大量采购，并愿意高价收购珍贵药材。\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第1章 大田金鳞元神出：秦浩轩得到黄精后打算去陈家药铺售卖；当天有两个外地客人买光了陈家药铺的名贵药材，并声称愿意出更高价格收购珍贵药材。\",\n      \"evidence_excerpt\": \"据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！\",\n      \"evidence_excerpts\": [\n        \"有眼力尖的一眼就看到秦浩轩紧握的拳头里似乎有什么东西，还散发出淡淡清幽的药香，道：“唔……好香啊！秦哥，今天又得了什么好东西？这是赶去陈家药铺卖么？”\",\n        \"据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！\",\n        \"秦浩轩心中一动，暗感运气好，爽朗的许诺道：“看看吧，要是卖价不错的话，我请你们喝酒。”\"\n      ],\n      \"controlling_faction_id\": null,\n      \"first_seen_chapter_id\": \"chapter-f2a0007303a74f769e1609124c30da6b\"\n    }\n  ],\n  \"factions\": [],\n  \"items\": [\n    {\n      \"entity_group_id\": \"entity_group_007\",\n      \"name\": \"黄精\",\n      \"aliases\": [],\n      \"summary\": \"一种珍贵药材，外观像黄色石子，触感细腻，散发幽香。在大田镇，药铺陈老头念叨好几年，认为能卖个好价钱。\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第1章 大田金鳞元神出：秦浩轩手中的黄色物体是黄精，卖相虽不好看，但触感细腻、香气幽远，药铺陈老头一直想收，可卖出好价钱。\",\n      \"evidence_excerpt\": \"这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。\",\n      \"evidence_excerpts\": [\n        \"这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。\"\n      ],\n      \"item_type\": \"material\",\n      \"grade\": null,\n      \"current_holder_id\": null,\n      \"first_seen_chapter_id\": \"chapter-f2a0007303a74f769e1609124c30da6b\",\n      \"last_seen_chapter_id\": \"chapter-f2a0007303a74f769e1609124c30da6b\"\n    }\n  ],\n  \"realms\": [],\n  \"techniques\": []\n}",
+      "parsed_output": {
+        "locations": [
+          {
+            "entity_group_id": "entity_group_003",
+            "name": "大田镇",
+            "aliases": [],
+            "summary": "背靠小屿山的小镇，田地稀少贫瘠，居民世代以狩猎为生。少年们梦想被神仙收为徒弟或成为优秀猎户。秦浩轩的住处在镇西头。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第1章 大田金鳞元神出：大田镇背靠小屿山，名字虽有耕田寓意，但土地贫瘠稀少，只能世代狩猎；少年们除了追赶秦浩轩和张狂，还梦想被小屿山上的神仙收为徒弟，再不济也要成为优秀猎户；秦浩轩躺在大田镇西头一个还算气派的院落里。",
+            "evidence_excerpt": "依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。",
+            "evidence_excerpts": [
+              "依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。",
+              "在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。",
+              "大田镇西头一个还算气派的院落里，他们的赶超目标秦浩轩还躺在床上沉睡。"
+            ],
+            "controlling_faction_id": null,
+            "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b"
+          },
+          {
+            "entity_group_id": "entity_group_004",
+            "name": "小屿山",
+            "aliases": [],
+            "summary": "位于大田镇附近的山脉，传说中既有神仙居住，也有凶神恶煞的妖魔鬼怪。猎户们只敢在外围活动，深入者皆有去无回。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第1章 大田金鳞元神出：大田镇背靠小屿山，传说山中有神仙和妖魔鬼怪。世代狩猎都只在外围，尽管猎物越来越少，也没人敢深入，曾有胆大猎户进去后再未出来。",
+            "evidence_excerpt": "传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。",
+            "evidence_excerpts": [
+              "背靠着小屿山的大田镇...",
+              "传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。",
+              "大田镇世代狩猎，但都在外围转悠，哪怕猎物越来越稀少的今天也没人敢深入小屿山，也曾有胆大的猎户深入小屿山，却再也不见出来。"
+            ],
+            "controlling_faction_id": null,
+            "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b"
+          },
+          {
+            "entity_group_id": "entity_group_005",
+            "name": "陈家药铺",
+            "aliases": [],
+            "summary": "大田镇上的一家药铺，收购药材，拥有名贵药材库存。时有外地客商来大量采购，并愿意高价收购珍贵药材。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第1章 大田金鳞元神出：秦浩轩得到黄精后打算去陈家药铺售卖；当天有两个外地客人买光了陈家药铺的名贵药材，并声称愿意出更高价格收购珍贵药材。",
+            "evidence_excerpt": "据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！",
+            "evidence_excerpts": [
+              "有眼力尖的一眼就看到秦浩轩紧握的拳头里似乎有什么东西，还散发出淡淡清幽的药香，道：“唔……好香啊！秦哥，今天又得了什么好东西？这是赶去陈家药铺卖么？”",
+              "据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！",
+              "秦浩轩心中一动，暗感运气好，爽朗的许诺道：“看看吧，要是卖价不错的话，我请你们喝酒。”"
+            ],
+            "controlling_faction_id": null,
+            "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b"
+          }
+        ],
+        "factions": [],
+        "items": [
+          {
+            "entity_group_id": "entity_group_007",
+            "name": "黄精",
+            "aliases": [],
+            "summary": "一种珍贵药材，外观像黄色石子，触感细腻，散发幽香。在大田镇，药铺陈老头念叨好几年，认为能卖个好价钱。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第1章 大田金鳞元神出：秦浩轩手中的黄色物体是黄精，卖相虽不好看，但触感细腻、香气幽远，药铺陈老头一直想收，可卖出好价钱。",
+            "evidence_excerpt": "这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。",
+            "evidence_excerpts": [
+              "这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。"
+            ],
+            "item_type": "material",
+            "grade": null,
+            "current_holder_id": null,
+            "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+            "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b"
+          }
+        ],
+        "realms": [],
+        "techniques": []
+      },
+      "started_at": "2026-07-07T13:52:44.864206Z",
+      "finished_at": "2026-07-07T13:53:23.630639Z",
+      "duration_ms": 38766,
+      "error": null
+    },
+    {
+      "call_id": "llm_call_EventRuleExpertNode_d788c0d4",
+      "node_name": "EventRuleExpertNode",
+      "model_name": "deepseek-v4-pro",
+      "prompt_version": "event_rule_expert_v1",
+      "input_prompt": "你是长篇玄幻小说的事件与规则知识卡整理助手。\n\n任务：\n根据通过质量闸门的事件、规则 entity_groups 和多条原文证据，生成事件卡、规则卡草稿或更新建议。\n\n硬规则：\n1. 只根据 entity_groups 和 evidence_excerpts 填写字段。\n2. 不要补写正文没有的信息。\n3. 本节点只处理 event、rule。\n4. 不要输出 character、location、faction、item、realm、technique、foreshadow。\n5. 不要输出 body、tags、fields、confidence、source_refs、relations。\n6. 事件卡只记录明确发生的剧情事件、状态变化、重要行动结果；普通动作或环境描写不要生成事件卡。\n7. 规则卡只记录明确世界规则、修炼规则、禁制、约束、因果条件或例外；不确定传闻不要写成规则。\n8. source_origin 固定为 agent_extract。\n9. source_note 必须写成作者可读中文文本，包含章节标题和关键原文摘录。\n10. evidence_excerpt 可以是主证据，evidence_excerpts 必须保留多条证据。\n11. summary 和 source_note 必须基于多条 evidence_excerpts 综合生成，不能只复述第一条证据。\n12. chapter_id 对事件卡固定使用当前 chapter_id。\n13. 输出必须是 JSON，不要输出解释性文字。\n14. 不要输出 Markdown 代码块。\n15. 不要输出任何多余字段。\n\n字段 schema：\n[\n  {\n    \"type\": \"event\",\n    \"label\": \"事件\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"chapter_id\",\n        \"label\": \"发生章节\",\n        \"field_type\": \"chapter_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"事件发生或首次确认章节的稳定 chapter_id。\"\n      },\n      {\n        \"field_key\": \"description\",\n        \"label\": \"事件描述\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"事件内容与影响的简要描述。\"\n      }\n    ]\n  },\n  {\n    \"type\": \"rule\",\n    \"label\": \"规则\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"exceptions\",\n        \"label\": \"例外情况\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"规则例外情况。\"\n      }\n    ]\n  }\n]\n\n章节信息：\nchapter_id=chapter-f2a0007303a74f769e1609124c30da6b\nchapter_title=第1章 大田金鳞元神出\n\n事件与规则 entity_groups：\n[\n  {\n    \"entity_group_id\": \"entity_group_008\",\n    \"canonical_name\": \"秦浩轩阻止张狂行凶\",\n    \"knowledge_type\": \"event\",\n    \"raw_names\": [\n      \"秦浩轩阻止张狂行凶\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”\",\n      \"在大田镇这群少年中秦浩轩实属异类...张狂...可以对大田镇这群孩子们中称王称霸，惟独对秦浩轩畏惧不已...\",\n      \"心头怨毒无比的张狂脸色一转，眉角多少还挂着些寒霜：“姓秦的，这两人坏我规矩，怎么也要教训教训吧？”\",\n      \"去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备明确剧情事件或状态变化证据。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_009\",\n    \"canonical_name\": \"秦浩轩被蛇咬获得灵魂附体能力\",\n    \"knowledge_type\": \"event\",\n    \"raw_names\": [\n      \"秦浩轩被蛇咬获得灵魂附体能力\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"那是一个夏季的清晨...秦浩轩不得不...上山...深入小屿山...来到一个小山谷中...大肆采起草药来。\",\n      \"忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。\",\n      \"秦浩轩看到自己的身子再不是熟悉的人体，而是一条色彩斑斓的蛇...\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备明确剧情事件或状态变化证据。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_010\",\n    \"canonical_name\": \"秦家祖训\",\n    \"knowledge_type\": \"rule\",\n    \"raw_names\": [\n      \"秦家祖训\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官...\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备明确规则、禁制、约束或因果条件证据。\"\n  }\n]\n\n输出 JSON：\n{\n  \"events\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"chapter_id\": \"chapter-f2a0007303a74f769e1609124c30da6b\",\n      \"description\": \"\"\n    }\n  ],\n  \"rules\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"exceptions\": null\n    }\n  ]\n}\n",
+      "raw_response": "{\"events\":[{\"entity_group_id\":\"entity_group_008\",\"name\":\"秦浩轩阻止张狂行凶\",\"aliases\":[],\"summary\":\"秦浩轩在大田镇阻止张狂踢人，以武力威胁，因去年曾打断张狂四根肋骨，使张狂畏惧。\",\"importance\":\"normal\",\"source_origin\":\"agent_extract\",\"source_note\":\"在《第1章 大田金鳞元神出》中，秦浩轩路过时制止张狂行凶，说道“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”，去年张狂曾被秦浩轩打断四根肋骨，故对其畏惧不已。\",\"evidence_excerpt\":\"“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”\",\"evidence_excerpts\":[\"“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”\",\"在大田镇这群少年中秦浩轩实属异类...张狂...可以对大田镇这群孩子们中称王称霸，惟独对秦浩轩畏惧不已...\",\"心头怨毒无比的张狂脸色一转，眉角多少还挂着些寒霜：“姓秦的，这两人坏我规矩，怎么也要教训教训吧？”\",\"去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。\"],\"chapter_id\":\"chapter-f2a0007303a74f769e1609124c30da6b\",\"description\":\"秦浩轩在大田镇阻止张狂伤人，以喂狼威胁，张狂因去年曾被秦浩轩打断肋骨而畏惧退让。\"},{\"entity_group_id\":\"entity_group_009\",\"name\":\"秦浩轩被蛇咬获得灵魂附体能力\",\"aliases\":[],\"summary\":\"秦浩轩在小屿山采药时被五彩小蛇咬伤，昏死后灵魂附体蛇身。\",\"importance\":\"normal\",\"source_origin\":\"agent_extract\",\"source_note\":\"在《第1章 大田金鳞元神出》中，秦浩轩于夏季清晨深入小屿山采药，在小山谷被一条五彩斑斓的小蛇咬中右手虎口，昏死过去，醒来发现自己的灵魂附在了蛇身上。\",\"evidence_excerpt\":\"忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。\",\"evidence_excerpts\":[\"那是一个夏季的清晨...秦浩轩不得不...上山...深入小屿山...来到一个小山谷中...大肆采起草药来。\",\"忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。\",\"秦浩轩看到自己的身子再不是熟悉的人体，而是一条色彩斑斓的蛇...\"],\"chapter_id\":\"chapter-f2a0007303a74f769e1609124c30da6b\",\"description\":\"夏季清晨秦浩轩入山采药，在小山谷被五彩小蛇咬中虎口，昏厥后灵魂附于蛇身。\"}],\"rules\":[{\"entity_group_id\":\"entity_group_010\",\"name\":\"秦家祖训\",\"aliases\":[],\"summary\":\"秦家祖上规定后人必须读书但不能做官。\",\"importance\":\"normal\",\"source_origin\":\"agent_extract\",\"source_note\":\"在《第1章 大田金鳞元神出》中提到，秦家祖上迁居大田镇后立下规矩，必须读书却不能做官。\",\"evidence_excerpt\":\"他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官...\",\"evidence_excerpts\":[\"他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官...\"],\"exceptions\":null}]}",
+      "parsed_output": {
+        "events": [
+          {
+            "entity_group_id": "entity_group_008",
+            "name": "秦浩轩阻止张狂行凶",
+            "aliases": [],
+            "summary": "秦浩轩在大田镇阻止张狂踢人，以武力威胁，因去年曾打断张狂四根肋骨，使张狂畏惧。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "在《第1章 大田金鳞元神出》中，秦浩轩路过时制止张狂行凶，说道“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”，去年张狂曾被秦浩轩打断四根肋骨，故对其畏惧不已。",
+            "evidence_excerpt": "“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”",
+            "evidence_excerpts": [
+              "“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”",
+              "在大田镇这群少年中秦浩轩实属异类...张狂...可以对大田镇这群孩子们中称王称霸，惟独对秦浩轩畏惧不已...",
+              "心头怨毒无比的张狂脸色一转，眉角多少还挂着些寒霜：“姓秦的，这两人坏我规矩，怎么也要教训教训吧？”",
+              "去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。"
+            ],
+            "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+            "description": "秦浩轩在大田镇阻止张狂伤人，以喂狼威胁，张狂因去年曾被秦浩轩打断肋骨而畏惧退让。"
+          },
+          {
+            "entity_group_id": "entity_group_009",
+            "name": "秦浩轩被蛇咬获得灵魂附体能力",
+            "aliases": [],
+            "summary": "秦浩轩在小屿山采药时被五彩小蛇咬伤，昏死后灵魂附体蛇身。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "在《第1章 大田金鳞元神出》中，秦浩轩于夏季清晨深入小屿山采药，在小山谷被一条五彩斑斓的小蛇咬中右手虎口，昏死过去，醒来发现自己的灵魂附在了蛇身上。",
+            "evidence_excerpt": "忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。",
+            "evidence_excerpts": [
+              "那是一个夏季的清晨...秦浩轩不得不...上山...深入小屿山...来到一个小山谷中...大肆采起草药来。",
+              "忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。",
+              "秦浩轩看到自己的身子再不是熟悉的人体，而是一条色彩斑斓的蛇..."
+            ],
+            "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+            "description": "夏季清晨秦浩轩入山采药，在小山谷被五彩小蛇咬中虎口，昏厥后灵魂附于蛇身。"
+          }
+        ],
+        "rules": [
+          {
+            "entity_group_id": "entity_group_010",
+            "name": "秦家祖训",
+            "aliases": [],
+            "summary": "秦家祖上规定后人必须读书但不能做官。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "在《第1章 大田金鳞元神出》中提到，秦家祖上迁居大田镇后立下规矩，必须读书却不能做官。",
+            "evidence_excerpt": "他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官...",
+            "evidence_excerpts": [
+              "他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官..."
+            ],
+            "exceptions": null
+          }
+        ]
+      },
+      "started_at": "2026-07-07T13:52:44.851923Z",
+      "finished_at": "2026-07-07T13:53:13.972322Z",
+      "duration_ms": 29120,
+      "error": null
+    }
+  ],
+  "raw_mentions": [
+    {
+      "mention_id": "mention_001_001",
+      "name": "秦浩轩",
+      "knowledge_type": "character",
+      "description": "大田镇少年，身手最好，常采药狩猎，能灵魂附体小蛇。",
+      "evidence_excerpts": [
+        "在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。",
+        "秦浩轩的手伸进怀里，摸了摸怀里冰冷的小蛇，思绪飘散，不由回忆起几年前的一幕幕。",
+        "他八岁就随大人们上山打猎，在危机和厮杀中练就了一副好身手，不满狩猎的大头都被大人们分走，他十岁那年便独自上山狩猎。",
+        "秦浩轩心中只是冷笑，这巧取豪夺什么时候也成为规矩了？他懒得跟张狂多说什么，嘴里挤出了一个字‘滚’字。"
+      ],
+      "reason": "",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_002",
+      "name": "张狂",
+      "knowledge_type": "character",
+      "description": "大田镇少年，与秦浩轩齐名，横行霸道，曾经被秦浩轩打断肋骨。",
+      "evidence_excerpts": [
+        "几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。",
+        "张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼，也算是少年有成。",
+        "去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。"
+      ],
+      "reason": "",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_003",
+      "name": "大田镇",
+      "knowledge_type": "location",
+      "description": "背靠小屿山的小镇，田地稀少贫瘠，世代狩猎。",
+      "evidence_excerpts": [
+        "依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。",
+        "在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。",
+        "大田镇西头一个还算气派的院落里，他们的赶超目标秦浩轩还躺在床上沉睡。"
+      ],
+      "reason": "",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_004",
+      "name": "小屿山",
+      "knowledge_type": "location",
+      "description": "大田镇背靠的山，传说有神仙和妖魔鬼怪，深入者凶险。",
+      "evidence_excerpts": [
+        "背靠着小屿山的大田镇...",
+        "传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。",
+        "大田镇世代狩猎，但都在外围转悠，哪怕猎物越来越稀少的今天也没人敢深入小屿山，也曾有胆大的猎户深入小屿山，却再也不见出来。"
+      ],
+      "reason": "",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_005",
+      "name": "陈家药铺",
+      "knowledge_type": "location",
+      "description": "大田镇的药铺，收购药材，老板陈老头。",
+      "evidence_excerpts": [
+        "有眼力尖的一眼就看到秦浩轩紧握的拳头里似乎有什么东西，还散发出淡淡清幽的药香，道：“唔……好香啊！秦哥，今天又得了什么好东西？这是赶去陈家药铺卖么？”",
+        "据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！",
+        "秦浩轩心中一动，暗感运气好，爽朗的许诺道：“看看吧，要是卖价不错的话，我请你们喝酒。”"
+      ],
+      "reason": "",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_006",
+      "name": "五彩小蛇",
+      "knowledge_type": "item",
+      "description": "一条怪异小蛇，被秦浩轩灵魂附体，可用来寻药探路。",
+      "evidence_excerpts": [
+        "这条小蛇约摸半尺长，一身五彩斑斓的蛇皮，皮上有许多密密麻麻的凸起，摸起来疙疙瘩瘩，似鳞非麟。它的脑袋不像一般蛇类的锥形，反而有些四正四方，看起来极为怪异。",
+        "秦浩轩念头一动，将灵魂附在小蛇上，果然山谷中升起的瘴气完全无法危害到他。",
+        "他游动身子，还发现了一个神奇妙处，蛇身游过的地方都会留下一种特殊的味道，不论走多远，都能按照这股气息寻找到来时的路..."
+      ],
+      "reason": "",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_007",
+      "name": "黄精",
+      "knowledge_type": "item",
+      "description": "一种珍贵药材，卖相如黄色石子，有异香。",
+      "evidence_excerpts": [
+        "这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。"
+      ],
+      "reason": "",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_008",
+      "name": "秦浩轩阻止张狂行凶",
+      "knowledge_type": "event",
+      "description": "张狂因保护费殴打少年，秦浩轩出面阻止并威胁。",
+      "evidence_excerpts": [
+        "“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”",
+        "在大田镇这群少年中秦浩轩实属异类...张狂...可以对大田镇这群孩子们中称王称霸，惟独对秦浩轩畏惧不已...",
+        "心头怨毒无比的张狂脸色一转，眉角多少还挂着些寒霜：“姓秦的，这两人坏我规矩，怎么也要教训教训吧？”",
+        "去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。"
+      ],
+      "reason": "",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_009",
+      "name": "秦浩轩被蛇咬获得灵魂附体能力",
+      "knowledge_type": "event",
+      "description": "秦浩轩十二岁时深入小屿山狩猎采药，被怪蛇咬伤后获得灵魂附体蛇身的能力。",
+      "evidence_excerpts": [
+        "那是一个夏季的清晨...秦浩轩不得不...上山...深入小屿山...来到一个小山谷中...大肆采起草药来。",
+        "忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。",
+        "秦浩轩看到自己的身子再不是熟悉的人体，而是一条色彩斑斓的蛇..."
+      ],
+      "reason": "",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_010",
+      "name": "秦家祖训",
+      "knowledge_type": "rule",
+      "description": "秦家后人必须读书但不能做官。",
+      "evidence_excerpts": [
+        "他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官..."
+      ],
+      "reason": "",
+      "segment_index": 1
+    }
+  ],
+  "entity_groups": [
+    {
+      "entity_group_id": "entity_group_001",
+      "canonical_name": "秦浩轩",
+      "knowledge_type": "character",
+      "raw_names": [
+        "秦浩轩"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。",
+        "秦浩轩的手伸进怀里，摸了摸怀里冰冷的小蛇，思绪飘散，不由回忆起几年前的一幕幕。",
+        "他八岁就随大人们上山打猎，在危机和厮杀中练就了一副好身手，不满狩猎的大头都被大人们分走，他十岁那年便独自上山狩猎。",
+        "秦浩轩心中只是冷笑，这巧取豪夺什么时候也成为规矩了？他懒得跟张狂多说什么，嘴里挤出了一个字‘滚’字。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定专名特征。"
+    },
+    {
+      "entity_group_id": "entity_group_002",
+      "canonical_name": "张狂",
+      "knowledge_type": "character",
+      "raw_names": [
+        "张狂"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。",
+        "张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼，也算是少年有成。",
+        "去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定专名特征。"
+    },
+    {
+      "entity_group_id": "entity_group_003",
+      "canonical_name": "大田镇",
+      "knowledge_type": "location",
+      "raw_names": [
+        "大田镇"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。",
+        "在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。",
+        "大田镇西头一个还算气派的院落里，他们的赶超目标秦浩轩还躺在床上沉睡。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备可复用地点名称或空间属性。"
+    },
+    {
+      "entity_group_id": "entity_group_004",
+      "canonical_name": "小屿山",
+      "knowledge_type": "location",
+      "raw_names": [
+        "小屿山"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "背靠着小屿山的大田镇...",
+        "传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。",
+        "大田镇世代狩猎，但都在外围转悠，哪怕猎物越来越稀少的今天也没人敢深入小屿山，也曾有胆大的猎户深入小屿山，却再也不见出来。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备可复用地点名称或空间属性。"
+    },
+    {
+      "entity_group_id": "entity_group_005",
+      "canonical_name": "陈家药铺",
+      "knowledge_type": "location",
+      "raw_names": [
+        "陈家药铺"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "有眼力尖的一眼就看到秦浩轩紧握的拳头里似乎有什么东西，还散发出淡淡清幽的药香，道：“唔……好香啊！秦哥，今天又得了什么好东西？这是赶去陈家药铺卖么？”",
+        "据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！",
+        "秦浩轩心中一动，暗感运气好，爽朗的许诺道：“看看吧，要是卖价不错的话，我请你们喝酒。”"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备可复用地点名称或空间属性。"
+    },
+    {
+      "entity_group_id": "entity_group_006",
+      "canonical_name": "五彩小蛇",
+      "knowledge_type": "item",
+      "raw_names": [
+        "五彩小蛇"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "这条小蛇约摸半尺长，一身五彩斑斓的蛇皮，皮上有许多密密麻麻的凸起，摸起来疙疙瘩瘩，似鳞非麟。它的脑袋不像一般蛇类的锥形，反而有些四正四方，看起来极为怪异。",
+        "秦浩轩念头一动，将灵魂附在小蛇上，果然山谷中升起的瘴气完全无法危害到他。",
+        "他游动身子，还发现了一个神奇妙处，蛇身游过的地方都会留下一种特殊的味道，不论走多远，都能按照这股气息寻找到来时的路..."
+      ],
+      "quality_decision": "rejected",
+      "quality_reason": "缺少设定价值、稀有性或可追踪归属。"
+    },
+    {
+      "entity_group_id": "entity_group_007",
+      "canonical_name": "黄精",
+      "knowledge_type": "item",
+      "raw_names": [
+        "黄精"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "有明确名称且具备设定价值或可追踪属性。"
+    },
+    {
+      "entity_group_id": "entity_group_008",
+      "canonical_name": "秦浩轩阻止张狂行凶",
+      "knowledge_type": "event",
+      "raw_names": [
+        "秦浩轩阻止张狂行凶"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”",
+        "在大田镇这群少年中秦浩轩实属异类...张狂...可以对大田镇这群孩子们中称王称霸，惟独对秦浩轩畏惧不已...",
+        "心头怨毒无比的张狂脸色一转，眉角多少还挂着些寒霜：“姓秦的，这两人坏我规矩，怎么也要教训教训吧？”",
+        "去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备明确剧情事件或状态变化证据。"
+    },
+    {
+      "entity_group_id": "entity_group_009",
+      "canonical_name": "秦浩轩被蛇咬获得灵魂附体能力",
+      "knowledge_type": "event",
+      "raw_names": [
+        "秦浩轩被蛇咬获得灵魂附体能力"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "那是一个夏季的清晨...秦浩轩不得不...上山...深入小屿山...来到一个小山谷中...大肆采起草药来。",
+        "忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。",
+        "秦浩轩看到自己的身子再不是熟悉的人体，而是一条色彩斑斓的蛇..."
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备明确剧情事件或状态变化证据。"
+    },
+    {
+      "entity_group_id": "entity_group_010",
+      "canonical_name": "秦家祖训",
+      "knowledge_type": "rule",
+      "raw_names": [
+        "秦家祖训"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官..."
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备明确规则、禁制、约束或因果条件证据。"
+    }
+  ],
+  "raw_candidates": [
+    {
+      "entity_group_id": "entity_group_001",
+      "name": "秦浩轩",
+      "aliases": [],
+      "knowledge_type": "character",
+      "source_excerpt": "在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。",
+      "evidence_excerpts": [
+        "在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。",
+        "秦浩轩的手伸进怀里，摸了摸怀里冰冷的小蛇，思绪飘散，不由回忆起几年前的一幕幕。",
+        "他八岁就随大人们上山打猎，在危机和厮杀中练就了一副好身手，不满狩猎的大头都被大人们分走，他十岁那年便独自上山狩猎。",
+        "秦浩轩心中只是冷笑，这巧取豪夺什么时候也成为规矩了？他懒得跟张狂多说什么，嘴里挤出了一个字‘滚’字。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定专名特征。"
+    },
+    {
+      "entity_group_id": "entity_group_002",
+      "name": "张狂",
+      "aliases": [],
+      "knowledge_type": "character",
+      "source_excerpt": "几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。",
+      "evidence_excerpts": [
+        "几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。",
+        "张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼，也算是少年有成。",
+        "去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定专名特征。"
+    },
+    {
+      "entity_group_id": "entity_group_003",
+      "name": "大田镇",
+      "aliases": [],
+      "knowledge_type": "location",
+      "source_excerpt": "依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。",
+      "evidence_excerpts": [
+        "依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。",
+        "在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。",
+        "大田镇西头一个还算气派的院落里，他们的赶超目标秦浩轩还躺在床上沉睡。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备可复用地点名称或空间属性。"
+    },
+    {
+      "entity_group_id": "entity_group_004",
+      "name": "小屿山",
+      "aliases": [],
+      "knowledge_type": "location",
+      "source_excerpt": "背靠着小屿山的大田镇...",
+      "evidence_excerpts": [
+        "背靠着小屿山的大田镇...",
+        "传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。",
+        "大田镇世代狩猎，但都在外围转悠，哪怕猎物越来越稀少的今天也没人敢深入小屿山，也曾有胆大的猎户深入小屿山，却再也不见出来。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备可复用地点名称或空间属性。"
+    },
+    {
+      "entity_group_id": "entity_group_005",
+      "name": "陈家药铺",
+      "aliases": [],
+      "knowledge_type": "location",
+      "source_excerpt": "有眼力尖的一眼就看到秦浩轩紧握的拳头里似乎有什么东西，还散发出淡淡清幽的药香，道：“唔……好香啊！秦哥，今天又得了什么好东西？这是赶去陈家药铺卖么？”",
+      "evidence_excerpts": [
+        "有眼力尖的一眼就看到秦浩轩紧握的拳头里似乎有什么东西，还散发出淡淡清幽的药香，道：“唔……好香啊！秦哥，今天又得了什么好东西？这是赶去陈家药铺卖么？”",
+        "据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！",
+        "秦浩轩心中一动，暗感运气好，爽朗的许诺道：“看看吧，要是卖价不错的话，我请你们喝酒。”"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备可复用地点名称或空间属性。"
+    },
+    {
+      "entity_group_id": "entity_group_007",
+      "name": "黄精",
+      "aliases": [],
+      "knowledge_type": "item",
+      "source_excerpt": "这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。",
+      "evidence_excerpts": [
+        "这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "有明确名称且具备设定价值或可追踪属性。"
+    },
+    {
+      "entity_group_id": "entity_group_008",
+      "name": "秦浩轩阻止张狂行凶",
+      "aliases": [],
+      "knowledge_type": "event",
+      "source_excerpt": "“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”",
+      "evidence_excerpts": [
+        "“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”",
+        "在大田镇这群少年中秦浩轩实属异类...张狂...可以对大田镇这群孩子们中称王称霸，惟独对秦浩轩畏惧不已...",
+        "心头怨毒无比的张狂脸色一转，眉角多少还挂着些寒霜：“姓秦的，这两人坏我规矩，怎么也要教训教训吧？”",
+        "去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备明确剧情事件或状态变化证据。"
+    },
+    {
+      "entity_group_id": "entity_group_009",
+      "name": "秦浩轩被蛇咬获得灵魂附体能力",
+      "aliases": [],
+      "knowledge_type": "event",
+      "source_excerpt": "那是一个夏季的清晨...秦浩轩不得不...上山...深入小屿山...来到一个小山谷中...大肆采起草药来。",
+      "evidence_excerpts": [
+        "那是一个夏季的清晨...秦浩轩不得不...上山...深入小屿山...来到一个小山谷中...大肆采起草药来。",
+        "忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。",
+        "秦浩轩看到自己的身子再不是熟悉的人体，而是一条色彩斑斓的蛇..."
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备明确剧情事件或状态变化证据。"
+    },
+    {
+      "entity_group_id": "entity_group_010",
+      "name": "秦家祖训",
+      "aliases": [],
+      "knowledge_type": "rule",
+      "source_excerpt": "他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官...",
+      "evidence_excerpts": [
+        "他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官..."
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备明确规则、禁制、约束或因果条件证据。"
+    }
+  ],
+  "typed_candidates": [
+    {
+      "entity_group_id": "entity_group_001",
+      "name": "秦浩轩",
+      "aliases": [],
+      "summary": "大田镇少年猎手，在同龄人中身手最为优秀，自幼随大人狩猎，十岁便独立上山，掌握精湛狩猎技巧，偶尔贩卖药草补贴家用，深受镇民赞赏。性格强硬，曾打断张狂肋骨并呵斥其滚。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出。原文摘录：‘在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。’‘他八岁就随大人们上山打猎，在危机和厮杀中练就了一副好身手...十岁那年便独自上山狩猎。’",
+      "evidence_excerpt": "在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。",
+      "evidence_excerpts": [
+        "在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。",
+        "秦浩轩的手伸进怀里，摸了摸怀里冰冷的小蛇，思绪飘散，不由回忆起几年前的一幕幕。",
+        "他八岁就随大人们上山打猎，在危机和厮杀中练就了一副好身手，不满狩猎的大头都被大人们分走，他十岁那年便独自上山狩猎。",
+        "秦浩轩心中只是冷笑，这巧取豪夺什么时候也成为规矩了？他懒得跟张狂多说什么，嘴里挤出了一个字‘滚’字。"
+      ],
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": "曾与张狂冲突，将其打断四根肋骨，使其卧床三月，再见时直接喝令其滚。",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "type": "character",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_002",
+      "name": "张狂",
+      "aliases": [],
+      "summary": "大田镇与秦浩轩齐名的少年，父亲是镇中最优秀的猎手。天赋异禀，十二岁时曾徒手杀狼。喜欢欺凌弱小，但去年被秦浩轩打断四根肋骨后，不敢再招惹秦浩轩。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出。原文摘录：‘几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。’‘张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼，也算是少年有成。’‘去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。’",
+      "evidence_excerpt": "几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。",
+      "evidence_excerpts": [
+        "几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。",
+        "张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼，也算是少年有成。",
+        "去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。"
+      ],
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": "曾被秦浩轩打断肋骨，此后不敢再与其冲突。",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "type": "character",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_003",
+      "name": "大田镇",
+      "aliases": [],
+      "summary": "背靠小屿山的小镇，田地稀少贫瘠，居民世代以狩猎为生。少年们梦想被神仙收为徒弟或成为优秀猎户。秦浩轩的住处在镇西头。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：大田镇背靠小屿山，名字虽有耕田寓意，但土地贫瘠稀少，只能世代狩猎；少年们除了追赶秦浩轩和张狂，还梦想被小屿山上的神仙收为徒弟，再不济也要成为优秀猎户；秦浩轩躺在大田镇西头一个还算气派的院落里。",
+      "evidence_excerpt": "依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。",
+      "evidence_excerpts": [
+        "依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。",
+        "在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。",
+        "大田镇西头一个还算气派的院落里，他们的赶超目标秦浩轩还躺在床上沉睡。"
+      ],
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "type": "location",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_004",
+      "name": "小屿山",
+      "aliases": [],
+      "summary": "位于大田镇附近的山脉，传说中既有神仙居住，也有凶神恶煞的妖魔鬼怪。猎户们只敢在外围活动，深入者皆有去无回。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：大田镇背靠小屿山，传说山中有神仙和妖魔鬼怪。世代狩猎都只在外围，尽管猎物越来越少，也没人敢深入，曾有胆大猎户进去后再未出来。",
+      "evidence_excerpt": "传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。",
+      "evidence_excerpts": [
+        "背靠着小屿山的大田镇...",
+        "传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。",
+        "大田镇世代狩猎，但都在外围转悠，哪怕猎物越来越稀少的今天也没人敢深入小屿山，也曾有胆大的猎户深入小屿山，却再也不见出来。"
+      ],
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "type": "location",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_005",
+      "name": "陈家药铺",
+      "aliases": [],
+      "summary": "大田镇上的一家药铺，收购药材，拥有名贵药材库存。时有外地客商来大量采购，并愿意高价收购珍贵药材。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：秦浩轩得到黄精后打算去陈家药铺售卖；当天有两个外地客人买光了陈家药铺的名贵药材，并声称愿意出更高价格收购珍贵药材。",
+      "evidence_excerpt": "据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！",
+      "evidence_excerpts": [
+        "有眼力尖的一眼就看到秦浩轩紧握的拳头里似乎有什么东西，还散发出淡淡清幽的药香，道：“唔……好香啊！秦哥，今天又得了什么好东西？这是赶去陈家药铺卖么？”",
+        "据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！",
+        "秦浩轩心中一动，暗感运气好，爽朗的许诺道：“看看吧，要是卖价不错的话，我请你们喝酒。”"
+      ],
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "type": "location",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_007",
+      "name": "黄精",
+      "aliases": [],
+      "summary": "一种珍贵药材，外观像黄色石子，触感细腻，散发幽香。在大田镇，药铺陈老头念叨好几年，认为能卖个好价钱。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：秦浩轩手中的黄色物体是黄精，卖相虽不好看，但触感细腻、香气幽远，药铺陈老头一直想收，可卖出好价钱。",
+      "evidence_excerpt": "这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。",
+      "evidence_excerpts": [
+        "这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。"
+      ],
+      "item_type": "material",
+      "grade": null,
+      "current_holder_id": null,
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "type": "item",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_008",
+      "name": "秦浩轩阻止张狂行凶",
+      "aliases": [],
+      "summary": "秦浩轩在大田镇阻止张狂踢人，以武力威胁，因去年曾打断张狂四根肋骨，使张狂畏惧。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "在《第1章 大田金鳞元神出》中，秦浩轩路过时制止张狂行凶，说道“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”，去年张狂曾被秦浩轩打断四根肋骨，故对其畏惧不已。",
+      "evidence_excerpt": "“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”",
+      "evidence_excerpts": [
+        "“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”",
+        "在大田镇这群少年中秦浩轩实属异类...张狂...可以对大田镇这群孩子们中称王称霸，惟独对秦浩轩畏惧不已...",
+        "心头怨毒无比的张狂脸色一转，眉角多少还挂着些寒霜：“姓秦的，这两人坏我规矩，怎么也要教训教训吧？”",
+        "去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。"
+      ],
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "description": "秦浩轩在大田镇阻止张狂伤人，以喂狼威胁，张狂因去年曾被秦浩轩打断肋骨而畏惧退让。",
+      "type": "event",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_009",
+      "name": "秦浩轩被蛇咬获得灵魂附体能力",
+      "aliases": [],
+      "summary": "秦浩轩在小屿山采药时被五彩小蛇咬伤，昏死后灵魂附体蛇身。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "在《第1章 大田金鳞元神出》中，秦浩轩于夏季清晨深入小屿山采药，在小山谷被一条五彩斑斓的小蛇咬中右手虎口，昏死过去，醒来发现自己的灵魂附在了蛇身上。",
+      "evidence_excerpt": "忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。",
+      "evidence_excerpts": [
+        "那是一个夏季的清晨...秦浩轩不得不...上山...深入小屿山...来到一个小山谷中...大肆采起草药来。",
+        "忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。",
+        "秦浩轩看到自己的身子再不是熟悉的人体，而是一条色彩斑斓的蛇..."
+      ],
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "description": "夏季清晨秦浩轩入山采药，在小山谷被五彩小蛇咬中虎口，昏厥后灵魂附于蛇身。",
+      "type": "event",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_010",
+      "name": "秦家祖训",
+      "aliases": [],
+      "summary": "秦家祖上规定后人必须读书但不能做官。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "在《第1章 大田金鳞元神出》中提到，秦家祖上迁居大田镇后立下规矩，必须读书却不能做官。",
+      "evidence_excerpt": "他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官...",
+      "evidence_excerpts": [
+        "他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官..."
+      ],
+      "exceptions": null,
+      "type": "rule",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    }
+  ],
+  "review_items": [
+    {
+      "review_item_id": "review_item_001",
+      "run_id": "extract_run_20260707_135122_8bb3c7",
+      "candidate_action": "create_card",
+      "knowledge_type": "character",
+      "candidate_status": "pending",
+      "display_title": "秦浩轩",
+      "suggested_card": {
+        "entity_group_id": "entity_group_001",
+        "name": "秦浩轩",
+        "aliases": [],
+        "summary": "大田镇少年猎手，在同龄人中身手最为优秀，自幼随大人狩猎，十岁便独立上山，掌握精湛狩猎技巧，偶尔贩卖药草补贴家用，深受镇民赞赏。性格强硬，曾打断张狂肋骨并呵斥其滚。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第1章 大田金鳞元神出。原文摘录：‘在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。’‘他八岁就随大人们上山打猎，在危机和厮杀中练就了一副好身手...十岁那年便独自上山狩猎。’",
+        "evidence_excerpt": "在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。",
+        "evidence_excerpts": [
+          "在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。",
+          "秦浩轩的手伸进怀里，摸了摸怀里冰冷的小蛇，思绪飘散，不由回忆起几年前的一幕幕。",
+          "他八岁就随大人们上山打猎，在危机和厮杀中练就了一副好身手，不满狩猎的大头都被大人们分走，他十岁那年便独自上山狩猎。",
+          "秦浩轩心中只是冷笑，这巧取豪夺什么时候也成为规矩了？他懒得跟张狂多说什么，嘴里挤出了一个字‘滚’字。"
+        ],
+        "role_type": null,
+        "identity": null,
+        "relationship_summary": "曾与张狂冲突，将其打断四根肋骨，使其卧床三月，再见时直接喝令其滚。",
+        "death_chapter_id": null,
+        "current_realm_text": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "type": "character",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T13:53:31.755048Z",
+      "updated_at": "2026-07-07T13:53:31.755048Z"
+    },
+    {
+      "review_item_id": "review_item_002",
+      "run_id": "extract_run_20260707_135122_8bb3c7",
+      "candidate_action": "create_card",
+      "knowledge_type": "character",
+      "candidate_status": "pending",
+      "display_title": "张狂",
+      "suggested_card": {
+        "entity_group_id": "entity_group_002",
+        "name": "张狂",
+        "aliases": [],
+        "summary": "大田镇与秦浩轩齐名的少年，父亲是镇中最优秀的猎手。天赋异禀，十二岁时曾徒手杀狼。喜欢欺凌弱小，但去年被秦浩轩打断四根肋骨后，不敢再招惹秦浩轩。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第1章 大田金鳞元神出。原文摘录：‘几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。’‘张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼，也算是少年有成。’‘去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。’",
+        "evidence_excerpt": "几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。",
+        "evidence_excerpts": [
+          "几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。",
+          "张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼，也算是少年有成。",
+          "去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。"
+        ],
+        "role_type": null,
+        "identity": null,
+        "relationship_summary": "曾被秦浩轩打断肋骨，此后不敢再与其冲突。",
+        "death_chapter_id": null,
+        "current_realm_text": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "type": "character",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T13:53:31.755048Z",
+      "updated_at": "2026-07-07T13:53:31.755048Z"
+    },
+    {
+      "review_item_id": "review_item_003",
+      "run_id": "extract_run_20260707_135122_8bb3c7",
+      "candidate_action": "create_card",
+      "knowledge_type": "location",
+      "candidate_status": "pending",
+      "display_title": "大田镇",
+      "suggested_card": {
+        "entity_group_id": "entity_group_003",
+        "name": "大田镇",
+        "aliases": [],
+        "summary": "背靠小屿山的小镇，田地稀少贫瘠，居民世代以狩猎为生。少年们梦想被神仙收为徒弟或成为优秀猎户。秦浩轩的住处在镇西头。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第1章 大田金鳞元神出：大田镇背靠小屿山，名字虽有耕田寓意，但土地贫瘠稀少，只能世代狩猎；少年们除了追赶秦浩轩和张狂，还梦想被小屿山上的神仙收为徒弟，再不济也要成为优秀猎户；秦浩轩躺在大田镇西头一个还算气派的院落里。",
+        "evidence_excerpt": "依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。",
+        "evidence_excerpts": [
+          "依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。",
+          "在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。",
+          "大田镇西头一个还算气派的院落里，他们的赶超目标秦浩轩还躺在床上沉睡。"
+        ],
+        "controlling_faction_id": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "type": "location",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T13:53:31.755048Z",
+      "updated_at": "2026-07-07T13:53:31.755048Z"
+    },
+    {
+      "review_item_id": "review_item_004",
+      "run_id": "extract_run_20260707_135122_8bb3c7",
+      "candidate_action": "create_card",
+      "knowledge_type": "location",
+      "candidate_status": "pending",
+      "display_title": "小屿山",
+      "suggested_card": {
+        "entity_group_id": "entity_group_004",
+        "name": "小屿山",
+        "aliases": [],
+        "summary": "位于大田镇附近的山脉，传说中既有神仙居住，也有凶神恶煞的妖魔鬼怪。猎户们只敢在外围活动，深入者皆有去无回。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第1章 大田金鳞元神出：大田镇背靠小屿山，传说山中有神仙和妖魔鬼怪。世代狩猎都只在外围，尽管猎物越来越少，也没人敢深入，曾有胆大猎户进去后再未出来。",
+        "evidence_excerpt": "传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。",
+        "evidence_excerpts": [
+          "背靠着小屿山的大田镇...",
+          "传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。",
+          "大田镇世代狩猎，但都在外围转悠，哪怕猎物越来越稀少的今天也没人敢深入小屿山，也曾有胆大的猎户深入小屿山，却再也不见出来。"
+        ],
+        "controlling_faction_id": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "type": "location",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T13:53:31.755048Z",
+      "updated_at": "2026-07-07T13:53:31.755048Z"
+    },
+    {
+      "review_item_id": "review_item_005",
+      "run_id": "extract_run_20260707_135122_8bb3c7",
+      "candidate_action": "create_card",
+      "knowledge_type": "location",
+      "candidate_status": "pending",
+      "display_title": "陈家药铺",
+      "suggested_card": {
+        "entity_group_id": "entity_group_005",
+        "name": "陈家药铺",
+        "aliases": [],
+        "summary": "大田镇上的一家药铺，收购药材，拥有名贵药材库存。时有外地客商来大量采购，并愿意高价收购珍贵药材。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第1章 大田金鳞元神出：秦浩轩得到黄精后打算去陈家药铺售卖；当天有两个外地客人买光了陈家药铺的名贵药材，并声称愿意出更高价格收购珍贵药材。",
+        "evidence_excerpt": "据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！",
+        "evidence_excerpts": [
+          "有眼力尖的一眼就看到秦浩轩紧握的拳头里似乎有什么东西，还散发出淡淡清幽的药香，道：“唔……好香啊！秦哥，今天又得了什么好东西？这是赶去陈家药铺卖么？”",
+          "据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！",
+          "秦浩轩心中一动，暗感运气好，爽朗的许诺道：“看看吧，要是卖价不错的话，我请你们喝酒。”"
+        ],
+        "controlling_faction_id": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "type": "location",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T13:53:31.755048Z",
+      "updated_at": "2026-07-07T13:53:31.755048Z"
+    },
+    {
+      "review_item_id": "review_item_006",
+      "run_id": "extract_run_20260707_135122_8bb3c7",
+      "candidate_action": "create_card",
+      "knowledge_type": "item",
+      "candidate_status": "pending",
+      "display_title": "黄精",
+      "suggested_card": {
+        "entity_group_id": "entity_group_007",
+        "name": "黄精",
+        "aliases": [],
+        "summary": "一种珍贵药材，外观像黄色石子，触感细腻，散发幽香。在大田镇，药铺陈老头念叨好几年，认为能卖个好价钱。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第1章 大田金鳞元神出：秦浩轩手中的黄色物体是黄精，卖相虽不好看，但触感细腻、香气幽远，药铺陈老头一直想收，可卖出好价钱。",
+        "evidence_excerpt": "这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。",
+        "evidence_excerpts": [
+          "这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。"
+        ],
+        "item_type": "material",
+        "grade": null,
+        "current_holder_id": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "type": "item",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T13:53:31.755048Z",
+      "updated_at": "2026-07-07T13:53:31.755048Z"
+    },
+    {
+      "review_item_id": "review_item_007",
+      "run_id": "extract_run_20260707_135122_8bb3c7",
+      "candidate_action": "create_card",
+      "knowledge_type": "event",
+      "candidate_status": "pending",
+      "display_title": "秦浩轩阻止张狂行凶",
+      "suggested_card": {
+        "entity_group_id": "entity_group_008",
+        "name": "秦浩轩阻止张狂行凶",
+        "aliases": [],
+        "summary": "秦浩轩在大田镇阻止张狂踢人，以武力威胁，因去年曾打断张狂四根肋骨，使张狂畏惧。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "在《第1章 大田金鳞元神出》中，秦浩轩路过时制止张狂行凶，说道“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”，去年张狂曾被秦浩轩打断四根肋骨，故对其畏惧不已。",
+        "evidence_excerpt": "“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”",
+        "evidence_excerpts": [
+          "“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”",
+          "在大田镇这群少年中秦浩轩实属异类...张狂...可以对大田镇这群孩子们中称王称霸，惟独对秦浩轩畏惧不已...",
+          "心头怨毒无比的张狂脸色一转，眉角多少还挂着些寒霜：“姓秦的，这两人坏我规矩，怎么也要教训教训吧？”",
+          "去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。"
+        ],
+        "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "description": "秦浩轩在大田镇阻止张狂伤人，以喂狼威胁，张狂因去年曾被秦浩轩打断肋骨而畏惧退让。",
+        "type": "event",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T13:53:31.755048Z",
+      "updated_at": "2026-07-07T13:53:31.755048Z"
+    },
+    {
+      "review_item_id": "review_item_008",
+      "run_id": "extract_run_20260707_135122_8bb3c7",
+      "candidate_action": "create_card",
+      "knowledge_type": "event",
+      "candidate_status": "pending",
+      "display_title": "秦浩轩被蛇咬获得灵魂附体能力",
+      "suggested_card": {
+        "entity_group_id": "entity_group_009",
+        "name": "秦浩轩被蛇咬获得灵魂附体能力",
+        "aliases": [],
+        "summary": "秦浩轩在小屿山采药时被五彩小蛇咬伤，昏死后灵魂附体蛇身。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "在《第1章 大田金鳞元神出》中，秦浩轩于夏季清晨深入小屿山采药，在小山谷被一条五彩斑斓的小蛇咬中右手虎口，昏死过去，醒来发现自己的灵魂附在了蛇身上。",
+        "evidence_excerpt": "忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。",
+        "evidence_excerpts": [
+          "那是一个夏季的清晨...秦浩轩不得不...上山...深入小屿山...来到一个小山谷中...大肆采起草药来。",
+          "忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。",
+          "秦浩轩看到自己的身子再不是熟悉的人体，而是一条色彩斑斓的蛇..."
+        ],
+        "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "description": "夏季清晨秦浩轩入山采药，在小山谷被五彩小蛇咬中虎口，昏厥后灵魂附于蛇身。",
+        "type": "event",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T13:53:31.755048Z",
+      "updated_at": "2026-07-07T13:53:31.755048Z"
+    },
+    {
+      "review_item_id": "review_item_009",
+      "run_id": "extract_run_20260707_135122_8bb3c7",
+      "candidate_action": "create_card",
+      "knowledge_type": "rule",
+      "candidate_status": "pending",
+      "display_title": "秦家祖训",
+      "suggested_card": {
+        "entity_group_id": "entity_group_010",
+        "name": "秦家祖训",
+        "aliases": [],
+        "summary": "秦家祖上规定后人必须读书但不能做官。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "在《第1章 大田金鳞元神出》中提到，秦家祖上迁居大田镇后立下规矩，必须读书却不能做官。",
+        "evidence_excerpt": "他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官...",
+        "evidence_excerpts": [
+          "他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官..."
+        ],
+        "exceptions": null,
+        "type": "rule",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官...",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T13:53:31.755048Z",
+      "updated_at": "2026-07-07T13:53:31.755048Z"
+    }
+  ],
+  "ignored": [
+    {
+      "text": "几个勤奋的猎户开始上山狩猎",
+      "reason": "泛称，无具体人物。",
+      "segment_index": 1
+    },
+    {
+      "text": "晨练的少年们",
+      "reason": "泛称群体。",
+      "segment_index": 1
+    },
+    {
+      "text": "药铺陈老头",
+      "reason": "仅被提及一次，无实质剧情作用。",
+      "segment_index": 1
+    },
+    {
+      "text": "张狂的父亲",
+      "reason": "仅一笔带过，无详细描述。",
+      "segment_index": 1
+    },
+    {
+      "text": "外地客",
+      "reason": "传闻提及，未实际出场。",
+      "segment_index": 1
+    },
+    {
+      "text": "小山谷",
+      "reason": "单次环境描写，无稳定名称。",
+      "segment_index": 1
+    },
+    {
+      "text": "一汪清水池边",
+      "reason": "临时地点，无重要性。",
+      "segment_index": 1
+    },
+    {
+      "text": "獐子",
+      "reason": "普通猎物，非重要物品。",
+      "segment_index": 1
+    },
+    {
+      "text": "几个少年正在狠狠踢着地上打滚的两个少年",
+      "reason": "临时龙套，无姓名。",
+      "segment_index": 1
+    },
+    {
+      "text": "小屿山上的神仙们",
+      "reason": "传说泛称，无具体势力。",
+      "segment_index": 1
+    },
+    {
+      "text": "妖魔鬼怪",
+      "reason": "传说泛称。",
+      "segment_index": 1
+    },
+    {
+      "text": "小屿山中的神仙来挑选徒弟的日子",
+      "reason": "未来事件，仅提及，未发生。",
+      "segment_index": 1
+    }
+  ],
+  "metrics": {
+    "candidate_total": 9,
+    "character_candidate_count": 2,
+    "location_candidate_count": 3,
+    "faction_candidate_count": 0,
+    "item_candidate_count": 1,
+    "realm_candidate_count": 0,
+    "technique_candidate_count": 0,
+    "rule_candidate_count": 1,
+    "event_candidate_count": 2,
+    "candidate_count_by_type": {
+      "technique": 0,
+      "event": 2,
+      "realm": 0,
+      "location": 3,
+      "faction": 0,
+      "character": 2,
+      "item": 1,
+      "rule": 1
+    },
+    "create_card_count": 9,
+    "update_card_count": 0,
+    "conflict_count": 0,
+    "schema_passed_count": 9,
+    "schema_failed_count": 0,
+    "confirmed_count": 0,
+    "rejected_count": 0,
+    "pending_count": 9,
+    "total_duration_ms": 128912,
+    "llm_call_count": 4,
+    "node_duration_ms": {
+      "LoadChapterNode": 10,
+      "SegmentChapterNode": 0,
+      "GeneralExtractionNode": 81933,
+      "MentionNormalizeNode": 0,
+      "EntityAggregationNode": 0,
+      "CandidateQualityGateNode": 29,
+      "TypeDispatchNode": 0,
+      "CharacterExpertNode": 46876,
+      "EntityExpertNode": 38779,
+      "EventRuleExpertNode": 29121,
+      "MergeExpertCandidatesNode": 0,
+      "NormalizeAndValidateNode": 0,
+      "RunInternalConflictCheckNode": 0,
+      "MatchExistingKnowledgeNode": 23,
+      "BuildReviewItemsNode": 0,
+      "WriteIntermediateJsonNode": 0
+    }
+  },
+  "errors": []
+}

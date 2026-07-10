@@ -1,0 +1,137 @@
+[
+  {
+    "card_id": "character_qin_haoxuan",
+    "type": "character",
+    "name": "秦浩轩",
+    "evidence_excerpts": [
+      "秦浩轩在第1—5章范围内被抽取并合并为同一角色卡。"
+    ],
+    "source_note": "第1—5章综合：秦浩轩是大田镇出身的核心角色，身手出众，掌握灵魂附身五彩小蛇的能力；他因讲理制止张狂欺压少年，保留黄精给陈老头，后通过坡子岭初选进入太初教，并在新弟子宿舍保护徐羽、击退慕容超。"
+  },
+  {
+    "card_id": "character_zhang_kuang",
+    "type": "character",
+    "name": "张狂",
+    "evidence_excerpts": [
+      "张狂在第1—5章范围内被抽取并合并为同一角色卡。"
+    ],
+    "source_note": "第1—5章综合：张狂是大田镇少年头目，欺压同龄少年且长期畏惧秦浩轩；通过坡子岭选苗后进入太初教，入门后积极笼络新人并继续敌视秦浩轩。"
+  },
+  {
+    "card_id": "character_chen_laotou",
+    "type": "character",
+    "name": "陈老头",
+    "evidence_excerpts": [
+      "陈老头在第1—2章范围内被抽取并合并为同一角色卡。"
+    ],
+    "source_note": "第1—2章综合：陈老头经营陈家药铺，懂药材，曾教秦浩轩辨药；第2章以三十两从秦浩轩手中买下黄精。"
+  },
+  {
+    "card_id": "character_xu_tunhu",
+    "type": "character",
+    "name": "徐吞虎",
+    "evidence_excerpts": [
+      "徐吞虎在第3—4章范围内被抽取并合并为同一角色卡。"
+    ],
+    "source_note": "第3—4章综合：徐吞虎是太初教弟子，负责大田镇选苗中的摸道骨，与赵嘉龙带秦浩轩、张狂、张扬回太初教，并在途中介绍绝仙毒谷与修仙境界。"
+  },
+  {
+    "card_id": "character_zhao_jialong",
+    "type": "character",
+    "name": "赵嘉龙",
+    "evidence_excerpts": [
+      "赵嘉龙在第3—4章范围内被抽取并合并为同一角色卡。"
+    ],
+    "source_note": "第3—4章综合：赵嘉龙是徐吞虎师兄，负责大田镇选苗中的测仙种，带三名少年抵达太初教，并介绍太初教宗门地位。"
+  },
+  {
+    "card_id": "character_zhang_yang",
+    "type": "character",
+    "name": "张扬",
+    "evidence_excerpts": [
+      "张扬在第3—5章范围内被抽取并合并为同一角色卡。"
+    ],
+    "source_note": "第3—5章综合：张扬是张狂族弟兼小弟，通过坡子岭初选进入太初教；第5章在明鉴仙眼最终测试中测出灰色仙种，受到多位堂主争抢。"
+  },
+  {
+    "card_id": "character_li_jing",
+    "type": "character",
+    "name": "李靖",
+    "evidence_excerpts": [
+      "李靖在第4—5章范围内被抽取并合并为同一角色卡。"
+    ],
+    "source_note": "第4—5章综合：李靖是翔龙国三皇子，初入太初教时因住宿条件质问引路道人，后主动结交秦浩轩；第5章中暗示权贵子弟抢被，见秦浩轩武力后转为示好。"
+  },
+  {
+    "card_id": "character_xu_yu",
+    "type": "character",
+    "name": "徐羽",
+    "evidence_excerpts": [
+      "徐羽在第4—5章范围内被抽取并合并为同一角色卡。"
+    ],
+    "source_note": "第4—5章综合：徐羽是瘦小秀气的新入门弟子，初到宿舍时畏缩无措，被秦浩轩主动照顾；第5章被抢被后由秦浩轩保护。注意：前5章尚未揭示后续身份信息。"
+  },
+  {
+    "card_id": "character_murong_chao",
+    "type": "character",
+    "name": "慕容超",
+    "evidence_excerpts": [
+      "慕容超在第5—5章范围内被抽取并合并为同一角色卡。"
+    ],
+    "source_note": "第5—5章综合：慕容超是李靖身边的权贵少年，抢秦浩轩被子并拔匕首攻击，被秦浩轩迅速制服。"
+  },
+  {
+    "card_id": "character_huanglong_zhenren",
+    "type": "character",
+    "name": "黄龙真人",
+    "evidence_excerpts": [
+      "黄龙真人在第5—5章范围内被抽取并合并为同一角色卡。"
+    ],
+    "source_note": "第5—5章综合：黄龙真人是太初教掌教，亲临第5章新弟子最终测试，见张扬测出灰种后激动重视。"
+  },
+  {
+    "card_id": "character_luoye_zhenren",
+    "type": "character",
+    "name": "落叶真人",
+    "evidence_excerpts": [
+      "落叶真人在第5—5章范围内被抽取并合并为同一角色卡。"
+    ],
+    "source_note": "第5—5章综合：落叶真人是黄龙真人师叔，在最终测试中宣布仙种等级，并使用明鉴仙眼为新弟子测试。"
+  },
+  {
+    "card_id": "character_guyunzi",
+    "type": "character",
+    "name": "古云子",
+    "evidence_excerpts": [
+      "古云子在第5—5章范围内被抽取并合并为同一角色卡。"
+    ],
+    "source_note": "第5—5章综合：古云子代表古云堂争抢灰种张扬，率先提出张扬与古云堂有师徒缘。"
+  },
+  {
+    "card_id": "character_xiayunzi",
+    "type": "character",
+    "name": "夏云子",
+    "evidence_excerpts": [
+      "夏云子在第5—5章范围内被抽取并合并为同一角色卡。"
+    ],
+    "source_note": "第5—5章综合：夏云子代表夏云堂争抢张扬，自称夏云堂六爻卦在太初教无人能及。"
+  },
+  {
+    "card_id": "character_bizhuzi",
+    "type": "character",
+    "name": "碧竹子",
+    "evidence_excerpts": [
+      "碧竹子在第5—5章范围内被抽取并合并为同一角色卡。"
+    ],
+    "source_note": "第5—5章综合：碧竹子以书生形象出现，自称碧竹堂与世无争，也参与争夺张扬。"
+  },
+  {
+    "card_id": "character_su_baihua",
+    "type": "character",
+    "name": "苏百花",
+    "evidence_excerpts": [
+      "苏百花在第5—5章范围内被抽取并合并为同一角色卡。"
+    ],
+    "source_note": "第5—5章综合：苏百花是百花堂堂主，称百花堂一贯只收女弟子，但在灰种张扬面前也提出破例意向。"
+  }
+]

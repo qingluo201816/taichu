@@ -1,0 +1,22 @@
+{
+  "mode": "single_chapter",
+  "chapter": {
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "title": "第2章 山中神仙选仙苗",
+    "markdown_path": "manuscripts/chapters/volume_001_第一卷/chapter_002_山中神仙选仙苗.md"
+  },
+  "expert_counts": {
+    "character_expert": 3,
+    "entity_expert": 5,
+    "worldview_expert": 3
+  },
+  "type_counts": {
+    "character": 3,
+    "location": 3,
+    "faction": 1,
+    "item": 1,
+    "rule": 1,
+    "event": 2
+  },
+  "ignored_count": 3
+}

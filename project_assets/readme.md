@@ -1,21 +1,30 @@
 # project_assets 目录说明
 
-> 更新日期：2026-07-05
+> 更新日期：2026-07-07
 
-`project_assets/` 是太初单本小说的本地资产根目录，用于保存正文源数据、知识库源数据、AI 运行产物、索引缓存和临时生成文件。
+`project_assets/` 是太初单本小说的本地资产根目录，用于保存正文 Markdown、工作区资产、AI 运行产物、过渡 JSON、索引缓存和临时生成文件。结构化事实的目标事实源是 MongoDB，不是 `project_assets/` 下的 JSON 文件。
 
 ## 维护规则
 
 - 修改 `project_assets/` 下的目录结构时，必须同步热更新本文件。
 - 新增、删除、移动或改变任一目录职责时，必须在同一次变更里更新“目录结构”和“目录职责说明”。
-- 正式源数据优先放在 `source/`；可再生成的运行产物放在 `derived/`；缓存、索引、日志和导出物放在 `generated/`。
+- 文本事实源优先放在 `source/`；结构事实源归属 MongoDB；可再生成的运行产物放在 `derived/`；缓存、索引、日志和导出物放在 `generated/`。
 - 不要把可再生成的缓存或日志当作正式源数据依赖。
+
+## 数据宪法
+
+- Markdown 是唯一文本事实源，正文与需要保留作者原始表达的长文本必须以 Markdown 为准。
+- MongoDB 是唯一结构事实源，作者确认后的角色、地点、势力、物品、事件、规则等结构化事实只以 MongoDB 中 `lifecycle=confirmed` 的记录为准。
+- 所有索引都是可重建派生层，包括 vector、Elasticsearch、graph、SQLite/FTS 和缓存。
+- AI 不得直接写入 MongoDB，必须先生成 JSON 中间态并通过 schema、来源、冲突和生命周期校验。
+- 所有非事实数据必须显式标记 `lifecycle`，取值只能是 `draft`、`confirmed`、`rejected`。
 
 ## 数据分层
 
-- `source/`：作者和系统长期维护的源数据。这里的数据代表当前小说的事实来源、正文、知识卡和工作区状态。
-- `derived/`：由正文、知识库或 Agent 运行派生出的中间态与运行记录。用于回放、审计和调试，不等同于正式知识库。
-- `generated/`：可重建的生成物、缓存、索引、导出包和临时日志。通常不应承载唯一事实。
+- `source/`：作者和系统长期维护的本地源数据。这里保存正文 Markdown、目录清单、大纲、工作区状态和迁移前兼容 JSON。
+- MongoDB：结构化事实源。这里不属于 `project_assets/` 目录树，但它是角色、地点、势力、物品、事件、规则等结构事实的目标事实源。
+- `derived/`：由正文、结构化知识或 Agent 运行派生出的 JSON 中间态、运行快照与审计记录。不等同于正式知识库。
+- `generated/`：可重建的生成物、缓存、索引、导出包和临时日志。不得承载唯一事实。
 
 ## 目录结构
 
@@ -33,7 +42,7 @@ project_assets/
 │   │   │   └── volume_004_第四卷/               # 第四卷章节正文
 │   │   └── deleted_chapters/                    # 被删除章节的归档区
 │   │       └── volume_004_第四卷/               # 第四卷删除章节归档
-│   ├── knowledge/                               # 第一版结构化知识库源数据
+│   ├── knowledge/                               # 迁移前结构化知识 JSON 兼容目录，目标架构不以此作为结构事实源
 │   │   ├── character/                           # 角色知识卡
 │   │   ├── event/                               # 事件知识卡
 │   │   ├── faction/                             # 势力知识卡
@@ -42,18 +51,7 @@ project_assets/
 │   │   ├── realm/                               # 境界知识卡
 │   │   ├── rule/                                # 规则设定知识卡
 │   │   └── technique/                           # 功法知识卡
-│   ├── workspace/                               # 工作区状态、收件箱、AI 卡片、待处理事实和写作 AI 运行记录
-│   ├── plots/                                   # 剧情资料根目录
-│   │   ├── arcs/                                # 剧情弧线资料
-│   │   └── outlines/                            # 大纲资料
-│   ├── characters/                              # 旧角色资料占位目录，当前知识卡以 knowledge/character 为准
-│   ├── factions/                                # 旧势力资料占位目录，当前知识卡以 knowledge/faction 为准
-│   ├── inspirations/                            # 灵感资料占位目录
-│   ├── locations/                               # 旧地点资料占位目录，当前知识卡以 knowledge/location 为准
-│   ├── techniques/                              # 旧功法资料占位目录，当前知识卡以 knowledge/technique 为准
-│   ├── templates/                               # 模板资料占位目录
-│   ├── timeline/                                # 时间线资料占位目录
-│   └── worldbuilding/                           # 世界观资料占位目录
+│   └── workspace/                               # 工作区状态、收件箱、待处理事实和写作 AI 运行记录
 ├── derived/                                     # 派生数据和 Agent 运行记录
 │   └── agent_runs/                              # Agent 运行快照根目录
 │       └── knowledge_extraction/                # 正文知识沉淀 Agent 的运行记录和候选审核项
@@ -70,32 +68,39 @@ project_assets/
 
 ### source
 
-`source/` 是正式源数据层。只要数据需要长期保留、被视为当前小说事实、或需要人工审阅维护，就应优先放在这里。
+`source/` 是本地文本源数据和工作区资产层。正文 Markdown 是文本事实源；结构化事实的目标事实源是 MongoDB。
 
 - 正文源文件位于 `source/manuscripts/chapters/`。
 - 章节清单位于 `source/manuscripts/manifest.json`。
 - 大纲数据位于 `source/manuscripts/outline.json`。
-- 正式知识卡位于 `source/knowledge/{类型}/`。
-- 收件箱、AI 卡片、偏好设置、工作区状态和写作 AI 运行记录位于 `source/workspace/`。
+- 迁移前兼容知识卡位于 `source/knowledge/{类型}/`；新增架构不得继续把该目录定义为结构事实源。
+- 收件箱、偏好设置、工作区状态、待处理事实和写作 AI 运行记录位于 `source/workspace/`。
 - 写作页 9 个 AI 按钮的真实模型调用轨迹保存在 `source/workspace/writing_ai_runs.jsonl`，用于历史查看、提示词审计和回放，不直接写入正式知识库。
+- 旧版 `source/characters/`、`source/factions/`、`source/locations/`、`source/techniques/`、`source/plots/` 等空占位目录已移除；结构化知识统一查看 `source/knowledge/{类型}/`。
 
 ### source/knowledge
 
-`source/knowledge/` 是当前结构化知识库的正式源目录。每张正式知识卡是一个独立 JSON 文件，按类型分目录保存。
+`source/knowledge/` 是迁移前结构化知识 JSON 兼容目录。每张知识卡是一个独立 JSON 文件，按类型分目录保存；MongoDB 接入完成后，该目录只能作为迁移材料、导出快照或人工排查材料，不再作为结构事实源扩展。
 
-知识卡状态通过 `status` 表达生命周期：
+兼容知识卡当前仍通过 `status` 表达业务状态：
 
 - `active`：有效知识卡，会参与后续检索和 Agent 匹配。
 - `draft`：草稿。
 - `deprecated`：已弃用，相当于软删除；文件保留，但不应作为有效知识使用，也不应出现在前端普通列表、筛选结果、搜索结果或默认视图中。
 
+新增非事实数据必须使用 `lifecycle` 表达事实生命周期：
+
+- `draft`：草稿或候选。
+- `confirmed`：作者确认。
+- `rejected`：作者拒绝或废弃。
+
 ### derived
 
-`derived/` 是派生数据层。这里保存 Agent 运行快照、LLM 调用记录、中间态和候选审核项，用于审计与回放。
+`derived/` 是派生数据层。这里保存 Agent 运行快照、LLM 调用记录、JSON 中间态和候选审核项，用于审计与回放。
 
-正文知识沉淀 Agent 的候选卡不单独落到 `source/knowledge/`，而是保存在运行 JSON 的 `review_items[*].suggested_card` 中。只有用户确认后，才会写入 `source/knowledge/{类型}/` 成为正式知识卡。
+正文知识沉淀 Agent 的候选卡不单独落到 `source/knowledge/`，而是保存在运行 JSON 的 `review_items[*].suggested_card` 中。只有用户确认并通过 JSON 中间态校验后，才允许由应用层服务写入 MongoDB 成为结构事实。
 
-候选项状态通过 `candidate_status` 表达：
+兼容运行记录中的候选项状态当前通过 `candidate_status` 表达；新增非事实数据必须同时或改用 `lifecycle` 表达事实生命周期：
 
 - `pending`：待处理；保留在待处理队列中，本身就表示可以稍后再处理。
 - `confirmed`：已确认。
@@ -105,4 +110,4 @@ project_assets/
 
 `generated/` 是可重建生成物层。这里可以保存缓存、索引、导出文件、临时日志和本地数据库文件。
 
-该目录下的数据原则上不应成为唯一事实来源。若生成物丢失，系统应能从 `source/` 和必要的运行流程重新生成。
+该目录下的数据不得成为唯一事实来源。若生成物丢失，系统应能从 Markdown 文本事实源、MongoDB 结构事实源和必要的运行流程重新生成。

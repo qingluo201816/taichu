@@ -1,0 +1,58 @@
+[
+  {
+    "card_id": "location_da_tian_zhen",
+    "type": "location",
+    "name": "大田镇",
+    "evidence_excerpts": [
+      "背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。"
+    ],
+    "source_note": "第1章 大田金鳞元神出：正文介绍大田镇背靠小屿山，因田地稀少贫瘠而世代狩猎。"
+  },
+  {
+    "card_id": "location_xiao_yu_shan",
+    "type": "location",
+    "name": "小屿山",
+    "evidence_excerpts": [
+      "传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。"
+    ],
+    "source_note": "第1章 大田金鳞元神出：小屿山是大田镇依靠的山，深处危险，人们传说其中有神仙和妖魔鬼怪。"
+  },
+  {
+    "card_id": "location_chenjia_yaopu",
+    "type": "location",
+    "name": "陈家药铺",
+    "evidence_excerpts": [
+      "秦浩轩带着黄精走出家门，去往药铺。",
+      "有人说两个外地客把陈家药铺的名贵药材全部买光。"
+    ],
+    "source_note": "第1章 大田金鳞元神出：秦浩轩带着黄精去往药铺，少年们提到陈家药铺有人高价收购名贵药材。"
+  },
+  {
+    "card_id": "faction_chenjia_yaopu",
+    "type": "faction",
+    "name": "陈家药铺",
+    "evidence_excerpts": [
+      "陈老头念叨黄精多年，秦浩轩准备去药铺卖药材。"
+    ],
+    "source_note": "第1章 大田金鳞元神出：第1章中陈家药铺被作为药材买卖渠道提及，陈老头多年想要黄精。"
+  },
+  {
+    "card_id": "item_wucai_xiaoshe",
+    "type": "item",
+    "name": "五彩小蛇",
+    "evidence_excerpts": [
+      "一条花色斑斓的小蛇悄悄溜进秦浩轩的房间。",
+      "秦浩轩确认自己的灵魂能在小蛇躯体和本体来回穿梭附体。"
+    ],
+    "source_note": "第1章 大田金鳞元神出：小蛇溜进秦浩轩房间，回忆中确认秦浩轩可反复在蛇身和本体之间附体。"
+  },
+  {
+    "card_id": "item_huangjing",
+    "type": "item",
+    "name": "黄精",
+    "evidence_excerpts": [
+      "这小块黄色物体是一枚珍贵的黄精。"
+    ],
+    "source_note": "第1章 大田金鳞元神出：秦浩轩从小蛇嘴里取下小块黄色物体，正文明确称其为珍贵黄精。"
+  }
+]

@@ -23,6 +23,7 @@ from taichu.application.services.knowledge_service import KnowledgeService
 from taichu.application.services.knowledge_extraction_service import (
     KnowledgeExtractionService,
 )
+from taichu.application.services.agent_task_event_service import AgentTaskEventCenter
 from taichu.application.services.mvp_inbox_service import MVPInboxService
 from taichu.application.services.mvp_knowledge_service import MVPKnowledgeService
 from taichu.application.services.outline_service import OutlineService
@@ -70,12 +71,14 @@ def create_app(
     knowledge_service = KnowledgeService(project_storage)
     knowledge_repository = JSONKnowledgeRepository(project_storage)
     knowledge_run_store = JsonAgentRunStore(app_settings.project_assets_dir)
+    agent_task_events = AgentTaskEventCenter()
     knowledge_extraction_service = KnowledgeExtractionService(
         chapter_service=chapter_service,
         llm=llm_service,
         knowledge_repository=knowledge_repository,
         run_store=knowledge_run_store,
         default_model_name=app_settings.deepseek_model,
+        task_events=agent_task_events,
     )
     writing_ai_service = WritingAIService(
         storage=project_storage,
@@ -136,6 +139,7 @@ def create_app(
     application.state.knowledge_service = knowledge_service
     application.state.knowledge_repository = knowledge_repository
     application.state.knowledge_run_store = knowledge_run_store
+    application.state.agent_task_events = agent_task_events
     application.state.knowledge_extraction_service = knowledge_extraction_service
     application.state.mvp_knowledge_service = mvp_knowledge_service
     application.state.pending_fact_confirmation_service = (

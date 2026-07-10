@@ -1,0 +1,60 @@
+{
+  "source_model": "src/taichu/domain/models/structured_knowledge.py::StructuredKnowledgeCard",
+  "top_level_fields": [
+    "id",
+    "type",
+    "name",
+    "aliases",
+    "summary",
+    "importance",
+    "status",
+    "source_origin",
+    "source_note",
+    "role_type",
+    "identity",
+    "relationship_summary",
+    "death_chapter_id",
+    "current_realm_text",
+    "first_seen_chapter_id",
+    "last_seen_chapter_id",
+    "system",
+    "level_order",
+    "technique_type",
+    "grade",
+    "practice_condition",
+    "owner_faction_id",
+    "controlling_faction_id",
+    "faction_type",
+    "leader_id",
+    "item_type",
+    "current_holder_id",
+    "exceptions",
+    "chapter_id",
+    "description",
+    "created_at",
+    "updated_at"
+  ],
+  "experts": {
+    "character_expert": {
+      "types": [
+        "character"
+      ]
+    },
+    "entity_expert": {
+      "types": [
+        "location",
+        "faction",
+        "item"
+      ]
+    },
+    "worldview_expert": {
+      "types": [
+        "realm",
+        "technique",
+        "rule",
+        "event"
+      ]
+    }
+  },
+  "note": "cards/*.json are strict card payloads; evidence_index.json keeps evaluator-only evidence excerpts outside the card schema."
+}

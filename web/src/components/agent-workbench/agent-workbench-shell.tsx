@@ -16,6 +16,7 @@ import {
   RefreshCw,
   Trash2,
 } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -23,12 +24,13 @@ import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import {
   confirmKnowledgeExtractionCandidate,
-  createKnowledgeExtractionRun,
   deleteKnowledgeExtractionRun,
   editConfirmKnowledgeExtractionCandidate,
-  getKnowledgeExtractionRun,
+  getAgentTask,
   listKnowledgeExtractionRuns,
   rejectKnowledgeExtractionCandidate,
+  startBatchKnowledgeExtractionRun,
+  startKnowledgeExtractionRun,
 } from "@/lib/api/agent-workbench";
 import { listChapters } from "@/lib/api/chapters";
 import { readKnowledgeCard } from "@/lib/api/mvp";
@@ -52,6 +54,11 @@ import { cn } from "@/lib/utils";
 
 type WorkbenchSection = "run" | "candidates" | "detail" | "metrics";
 type CandidateStatusFilter = ReviewCandidateStatus | "all";
+type RunNotice = {
+  message: string;
+  runId?: string;
+  state: "submitting" | "started";
+};
 
 const sections: Array<{
   key: WorkbenchSection;
@@ -61,14 +68,14 @@ const sections: Array<{
 }> = [
   {
     key: "run",
-    label: "运行任务",
+    label: "任务配置",
     description: "选择当前章节并启动正文知识沉淀",
     icon: Play,
   },
   {
     key: "candidates",
     label: "待处理候选",
-    description: "审核抽取出的角色、地点、势力和物品",
+    description: "审核抽取出的角色、实体、事件和规则",
     icon: Database,
   },
   {
@@ -130,9 +137,13 @@ const candidateActionLabel: Record<ReviewCandidateAction, string> = {
 
 const knowledgeTypeLabel: Record<KnowledgeType, string> = {
   character: "角色",
+  realm: "境界",
+  technique: "功法",
   location: "地点",
   faction: "势力",
   item: "物品",
+  rule: "规则",
+  event: "事件",
 };
 
 const qualityDecisionLabels: Record<string, string> = {
@@ -151,6 +162,8 @@ const nodeLabel: Record<string, string> = {
   TypeDispatchNode: "类型分发",
   CharacterExpertNode: "角色专家",
   EntityExpertNode: "实体专家",
+  EventRuleExpertNode: "事件规则专家",
+  MergeExpertCandidatesNode: "合并候选",
   NormalizeAndValidateNode: "规范校验",
   RunInternalConflictCheckNode: "本轮冲突检查",
   MatchExistingKnowledgeNode: "匹配有效知识",
@@ -161,7 +174,7 @@ const nodeLabel: Record<string, string> = {
 export function AgentWorkbenchShell() {
   const [chapters, setChapters] = useState<ChapterInfo[]>([]);
   const [runs, setRuns] = useState<AgentRunSummary[]>([]);
-  const [selectedChapterId, setSelectedChapterId] = useState("");
+  const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([]);
   const [selectedRunId, setSelectedRunId] = useState("");
   const [currentRun, setCurrentRun] = useState<AgentRun | null>(null);
   const [activeSection, setActiveSection] = useState<WorkbenchSection>("run");
@@ -186,6 +199,7 @@ export function AgentWorkbenchShell() {
   const [actionBusyKey, setActionBusyKey] = useState("");
   const [deletingRunId, setDeletingRunId] = useState("");
   const [error, setError] = useState("");
+  const [runNotice, setRunNotice] = useState<RunNotice | null>(null);
 
   const selectedCandidate = useMemo(
     () => {
@@ -231,7 +245,7 @@ export function AgentWorkbenchShell() {
 
   const openRun = useCallback(async (runId: string): Promise<AgentRun> => {
     setSelectedRunId(runId);
-    const response = await getKnowledgeExtractionRun(runId);
+    const response = await getAgentTask(runId);
     setCurrentRun(response.run);
     setSelectedCandidateId(
       response.run.review_items.find(item => item.candidate_status === "pending")
@@ -258,7 +272,7 @@ export function AgentWorkbenchShell() {
 
   async function handleDeleteRun(runId: string) {
     const targetRun = runs.find(run => run.run_id === runId);
-    const title = targetRun?.chapter_title || "未命名章节";
+    const title = targetRun ? runSummaryTitle(targetRun) : "未命名任务";
     const confirmed = window.confirm(
       `删除“${title}”这次抽取运行记录？已入库知识卡不会回滚。`,
     );
@@ -316,7 +330,9 @@ export function AgentWorkbenchShell() {
         }
         setChapters(chapterResponse.chapters);
         setRuns(runResponse.runs);
-        setSelectedChapterId(chapterResponse.chapters[0]?.id ?? "");
+        setSelectedChapterIds(
+          chapterResponse.chapters[0] ? [chapterResponse.chapters[0].id] : [],
+        );
         if (runResponse.runs[0]) {
           await openRun(runResponse.runs[0].run_id);
           setActiveSection("run");
@@ -337,6 +353,14 @@ export function AgentWorkbenchShell() {
       ignore = true;
     };
   }, [openRun]);
+
+  useEffect(() => {
+    if (!runNotice || runNotice.state === "submitting") {
+      return;
+    }
+    const timer = window.setTimeout(() => setRunNotice(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [runNotice]);
 
   useEffect(() => {
     const targetId = selectedCandidate?.target_card_id;
@@ -379,21 +403,53 @@ export function AgentWorkbenchShell() {
   }, [selectedCandidate?.target_card_id, targetCards]);
 
   async function handleCreateRun() {
-    if (!selectedChapterId) {
-      setError("请先选择当前章节。");
+    if (selectedChapterIds.length === 0) {
+      setError("请先勾选至少一个章节。");
       return;
     }
     setRunning(true);
     setError("");
+    const isBatchRun = selectedChapterIds.length > 1;
+    setRunNotice({
+      state: "submitting",
+      message: isBatchRun
+        ? "正在提交批量知识沉淀任务..."
+        : "正在提交知识沉淀任务...",
+    });
     try {
-      const response = await createKnowledgeExtractionRun({
-        chapter_id: selectedChapterId,
+      const response = isBatchRun
+        ? await startBatchKnowledgeExtractionRun({
+            chapter_ids: selectedChapterIds,
+          })
+        : await startKnowledgeExtractionRun({
+            chapter_id: selectedChapterIds[0],
+          });
+      setSelectedRunId(response.run.run_id);
+      setRuns(current => upsertRunSummary(current, response.run));
+      setRunNotice({
+        state: "started",
+        runId: response.run.run_id,
+        message: isBatchRun
+          ? "批量任务已开始，可前往任务监控查看节点流转。"
+          : "任务已开始，可前往任务监控查看节点流转。",
       });
-      await reloadRuns();
-      await openRun(response.run.run_id);
-      setActiveSection("candidates");
+      try {
+        const taskResponse = await getAgentTask(response.run.run_id);
+        setCurrentRun(taskResponse.run);
+        setSelectedCandidateId(
+          taskResponse.run.review_items.find(
+            item => item.candidate_status === "pending",
+          )?.review_item_id ??
+            taskResponse.run.review_items[0]?.review_item_id ??
+            "",
+        );
+        setSelectedCallId(taskResponse.run.llm_calls[0]?.call_id ?? "");
+      } catch {
+        void reloadRuns();
+      }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "抽取运行失败");
+      setError(caught instanceof Error ? caught.message : "任务启动失败");
+      setRunNotice(null);
     } finally {
       setRunning(false);
     }
@@ -471,7 +527,8 @@ export function AgentWorkbenchShell() {
 
   return (
     <AppShell activePath="/agent-workbench">
-      <section className="mx-auto grid max-w-[1440px] gap-5 px-5 py-6 xl:grid-cols-[220px_minmax(0,1fr)]">
+      {runNotice ? <RunStartNotice notice={runNotice} /> : null}
+      <section className="mx-auto grid max-w-[1440px] gap-4 px-4 py-4 xl:grid-cols-[210px_minmax(0,1fr)]">
         <aside className="rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2">
           <div className="px-2 py-2">
             <p className="text-xs text-[var(--tc-text-muted)]">智能体工作台</p>
@@ -486,7 +543,7 @@ export function AgentWorkbenchShell() {
           <div className="mt-2 grid gap-1">
             <button
               type="button"
-              className="rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] px-3 py-3 text-left text-sm text-[var(--tc-text-primary)]"
+              className="rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] px-3 py-2 text-left text-sm text-[var(--tc-text-primary)]"
             >
               <span className="flex items-center gap-2 font-semibold">
                 <Bot className="size-4" />
@@ -499,14 +556,14 @@ export function AgentWorkbenchShell() {
             <button
               type="button"
               disabled
-              className="rounded-[var(--tc-radius-control)] px-3 py-3 text-left text-sm text-[var(--tc-text-muted)] opacity-60"
+              className="rounded-[var(--tc-radius-control)] px-3 py-2 text-left text-sm text-[var(--tc-text-muted)] opacity-60"
             >
               后续智能体
               <span className="mt-1 block text-xs">暂未启用</span>
             </button>
           </div>
 
-          <div className="mt-6 border-t border-[var(--tc-border-subtle)] pt-4">
+          <div className="mt-4 border-t border-[var(--tc-border-subtle)] pt-3">
             <div className="mb-2 flex items-center justify-between gap-2 px-2">
               <h2 className="text-sm font-semibold text-[var(--tc-text-primary)]">
                 最近运行
@@ -531,14 +588,14 @@ export function AgentWorkbenchShell() {
           </div>
         </aside>
 
-        <section className="flex min-h-[calc(100vh-7rem)] min-w-0 flex-col">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <section className="flex min-h-0 min-w-0 flex-col">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="flex items-center gap-2 text-xs text-[var(--tc-text-muted)]">
                 <Bot className="size-4" />
                 正文知识沉淀
               </p>
-              <h2 className="text-2xl font-semibold text-[var(--tc-text-primary)]">
+              <h2 className="text-xl font-semibold text-[var(--tc-text-primary)]">
                 当前智能体条目
               </h2>
             </div>
@@ -562,13 +619,13 @@ export function AgentWorkbenchShell() {
 
           <RunSummaryStrip run={currentRun} loading={loading} />
 
-          <div className="mt-5 grid min-w-0 max-w-[1240px] gap-5 xl:grid-cols-[minmax(0,1fr)_140px]">
-            <section className="min-w-0 border-t border-[var(--tc-border-subtle)] pt-5">
-              <div className="mb-5">
-                <h3 className="text-lg font-semibold text-[var(--tc-text-primary)]">
+          <div className="mt-4 grid min-w-0 max-w-[1240px] gap-4 xl:grid-cols-[minmax(0,1fr)_128px]">
+            <section className="min-w-0 border-t border-[var(--tc-border-subtle)] pt-4">
+              <div className="mb-3">
+                <h3 className="text-base font-semibold text-[var(--tc-text-primary)]">
                   {activeSectionInfo.label}
                 </h3>
-                <p className="mt-1 text-sm text-[var(--tc-text-muted)]">
+                <p className="mt-1 text-xs text-[var(--tc-text-muted)]">
                   {activeSectionInfo.description}
                 </p>
               </div>
@@ -578,10 +635,18 @@ export function AgentWorkbenchShell() {
               ) : activeSection === "run" ? (
                 <RunTaskPanel
                   chapters={chapters}
-                  selectedChapterId={selectedChapterId}
+                  selectedChapterIds={selectedChapterIds}
                   currentRun={currentRun}
                   running={running}
-                  onChapterChange={setSelectedChapterId}
+                  onChapterToggle={(chapterId, checked) => {
+                    setSelectedChapterIds(current =>
+                      checked
+                        ? current.includes(chapterId)
+                          ? current
+                          : [...current, chapterId]
+                        : current.filter(item => item !== chapterId),
+                    );
+                  }}
                   onCreateRun={() => void handleCreateRun()}
                 />
               ) : activeSection === "candidates" ? (
@@ -651,7 +716,7 @@ function SectionRail({
   return (
     <nav
       aria-label="智能体工作台功能"
-      className="grid h-max gap-2 self-start xl:sticky xl:top-24"
+      className="grid h-max gap-2 self-start xl:sticky xl:top-20"
     >
       {sections.map(section => {
         const Icon = section.icon;
@@ -664,7 +729,7 @@ function SectionRail({
             size="sm"
             aria-pressed={isActive}
             onClick={() => onSectionChange(section.key)}
-            className="h-11 w-full justify-start px-4"
+            className="h-9 w-full justify-start px-3"
           >
             <Icon className="size-4" />
             {section.label}
@@ -694,48 +759,56 @@ function RecentRunList({
     );
   }
   return (
-    <div className="grid max-h-[360px] gap-1 overflow-y-auto pr-1">
-      {runs.map(run => (
-        <div
-          key={run.run_id}
-          className={cn(
-            "flex items-stretch gap-1 rounded-[var(--tc-radius-control)] text-sm transition-colors",
-            selectedRunId === run.run_id
-              ? "bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
-              : "text-[var(--tc-text-secondary)] hover:bg-[var(--tc-surface-muted)] hover:text-[var(--tc-text-primary)]",
-          )}
-        >
-          <button
-            type="button"
-            onClick={() => onOpenRun(run.run_id)}
-            className="min-w-0 flex-1 px-3 py-2 text-left"
+    <div className="grid max-h-[300px] gap-1 overflow-y-auto pr-1">
+      {runs.map(run => {
+        const title = runSummaryTitle(run);
+        return (
+          <div
+            key={run.run_id}
+            className={cn(
+              "flex items-stretch gap-1 rounded-[var(--tc-radius-control)] text-sm transition-colors",
+              selectedRunId === run.run_id
+                ? "bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
+                : "text-[var(--tc-text-secondary)] hover:bg-[var(--tc-surface-muted)] hover:text-[var(--tc-text-primary)]",
+            )}
           >
-            <span className="block truncate font-medium">
-              {run.chapter_title || "未命名章节"}
-            </span>
-            <span className="mt-1 flex items-center justify-between gap-2 text-xs text-[var(--tc-text-muted)]">
-              <span>{formatRunTimestamp(run.started_at)}</span>
-              <span>{run.candidate_count} 个候选</span>
-            </span>
-            <span className="mt-1 block text-xs text-[var(--tc-text-muted)]">
-              {runStatusLabel[run.status] ?? "未知状态"}
-            </span>
-          </button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            disabled={deletingRunId !== ""}
-            aria-label={`删除${run.chapter_title || "未命名章节"}运行记录`}
-            onClick={() => onDeleteRun(run.run_id)}
-            className="my-1 mr-1 shrink-0 text-[var(--tc-text-muted)]"
-          >
-            <Trash2 className="size-4" />
-          </Button>
-        </div>
-      ))}
+            <button
+              type="button"
+              onClick={() => onOpenRun(run.run_id)}
+              className="min-w-0 flex-1 px-3 py-2 text-left"
+            >
+              <span className="block truncate font-medium">{title}</span>
+              <span className="mt-1 flex items-center justify-between gap-2 text-xs text-[var(--tc-text-muted)]">
+                <span>{formatRunTimestamp(run.started_at)}</span>
+                <span>{run.candidate_count} 个候选</span>
+              </span>
+              <span className="mt-1 block text-xs text-[var(--tc-text-muted)]">
+                {runStatusLabel[run.status] ?? "未知状态"}
+              </span>
+            </button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              disabled={deletingRunId !== ""}
+              aria-label={`删除${title}运行记录`}
+              onClick={() => onDeleteRun(run.run_id)}
+              className="my-1 mr-1 shrink-0 text-[var(--tc-text-muted)]"
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
+        );
+      })}
     </div>
   );
+}
+
+function runSummaryTitle(run: AgentRunSummary): string {
+  if (run.scope_type === "chapter_batch") {
+    return `批量知识沉淀 · ${run.total_chapter_count || run.chapter_ids.length} 章`;
+  }
+  return run.chapter_title || "未命名章节";
 }
 
 function RunSummaryStrip({
@@ -745,22 +818,26 @@ function RunSummaryStrip({
   run: AgentRun | null;
   loading: boolean;
 }) {
+  const scopeLabel =
+    run?.scope.scope_type === "chapter_batch"
+      ? `${run.total_chapter_count} 章批量`
+      : run?.scope.chapter_title || "未命名章节";
   const values = run
     ? [
         ["运行状态", runStatusLabel[run.status] ?? "未知状态"],
-        ["当前章节", run.scope.chapter_title || "未命名章节"],
+        ["任务范围", scopeLabel],
         ["候选数量", `${run.metrics.candidate_total} 个`],
         ["总耗时", formatDuration(run.metrics.total_duration_ms)],
       ]
     : [
         ["运行状态", loading ? "加载中" : "未运行"],
-        ["当前章节", "尚未选择运行"],
+        ["任务范围", "尚未选择运行"],
         ["候选数量", "0 个"],
         ["总耗时", "0 毫秒"],
       ];
 
   return (
-    <dl className="grid max-w-[1080px] gap-2 border-y border-[var(--tc-border-subtle)] py-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+    <dl className="grid max-w-[1080px] gap-2 border-y border-[var(--tc-border-subtle)] py-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
       {values.map(([label, value]) => (
         <div key={label} className="min-w-0">
           <dt className="text-xs text-[var(--tc-text-muted)]">{label}</dt>
@@ -771,69 +848,155 @@ function RunSummaryStrip({
   );
 }
 
+function upsertRunSummary(
+  runs: AgentRunSummary[],
+  next: AgentRunSummary,
+): AgentRunSummary[] {
+  const rest = runs.filter(run => run.run_id !== next.run_id);
+  return [next, ...rest];
+}
+
+function RunStartNotice({ notice }: { notice: RunNotice }) {
+  const submitting = notice.state === "submitting";
+  return (
+    <div className="pointer-events-none fixed inset-x-0 top-20 z-50 flex justify-center px-4">
+      <div className="pointer-events-auto flex max-w-[min(92vw,560px)] items-center gap-3 rounded-[var(--tc-radius-pill)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-4 py-2 text-sm text-[var(--tc-text-primary)] shadow-[0_18px_48px_rgba(0,0,0,0.36)]">
+        <span
+          className={cn(
+            "flex size-6 items-center justify-center rounded-full border",
+            submitting
+              ? "border-amber-300/35 text-amber-200"
+              : "border-emerald-300/35 text-emerald-200",
+          )}
+        >
+          {submitting ? (
+            <Activity className="size-3.5" />
+          ) : (
+            <Check className="size-3.5" />
+          )}
+        </span>
+        <span className="min-w-0 flex-1 truncate">{notice.message}</span>
+        {notice.state === "started" ? (
+          <Link
+            href="/task-monitor/knowledge-extraction"
+            className="shrink-0 rounded-[var(--tc-radius-pill)] border border-[var(--tc-border-subtle)] px-2.5 py-1 text-xs text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
+          >
+            前往监控台
+          </Link>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function RunTaskPanel({
   chapters,
-  selectedChapterId,
+  selectedChapterIds,
   currentRun,
   running,
-  onChapterChange,
+  onChapterToggle,
   onCreateRun,
 }: {
   chapters: ChapterInfo[];
-  selectedChapterId: string;
+  selectedChapterIds: string[];
   currentRun: AgentRun | null;
   running: boolean;
-  onChapterChange: (chapterId: string) => void;
+  onChapterToggle: (chapterId: string, checked: boolean) => void;
   onCreateRun: () => void;
 }) {
-  const selectedChapter = chapters.find(chapter => chapter.id === selectedChapterId);
+  const selectedChapterSet = new Set(selectedChapterIds);
+  const selectedChapters = chapters.filter(chapter =>
+    selectedChapterSet.has(chapter.id),
+  );
+  const selectedCount = selectedChapters.length;
+  const buttonLabel =
+    running
+      ? selectedCount > 1
+        ? "正在批量生成"
+        : "正在抽取"
+      : selectedCount > 1
+        ? "批量生成候选"
+        : "开始抽取";
   return (
-    <div className="grid max-w-[860px] gap-3">
-      <label className="grid gap-2 text-sm">
-        <span className="font-medium text-[var(--tc-text-primary)]">当前章节</span>
-        <select
-          className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)] outline-none"
-          value={selectedChapterId}
-          onChange={event => onChapterChange(event.target.value)}
-        >
-          {chapters.length === 0 ? (
-            <option value="">暂无章节</option>
-          ) : (
-            chapters.map(chapter => (
-              <option key={chapter.id} value={chapter.id}>
-                {chapter.title}
-              </option>
-            ))
-          )}
-        </select>
-      </label>
+    <div className="grid max-w-[860px] gap-2">
+      <div className="grid gap-2 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="font-medium text-[var(--tc-text-primary)]">
+            勾选章节
+          </span>
+          <span className="text-xs text-[var(--tc-text-muted)]">
+            已选 {selectedCount} 章，批量并发上限 5
+          </span>
+        </div>
+        {chapters.length === 0 ? (
+          <div className="rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-4 text-[var(--tc-text-muted)]">
+            暂无可运行章节，请先在写作页创建章节。
+          </div>
+        ) : (
+          <div className="max-h-[292px] overflow-y-auto rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)]">
+            {chapters.map(chapter => {
+              const checked = selectedChapterSet.has(chapter.id);
+              return (
+                <label
+                  key={chapter.id}
+                  className={cn(
+                    "flex cursor-pointer items-start gap-2.5 border-b border-[var(--tc-border-subtle)] px-3 py-2 text-sm last:border-b-0",
+                    checked
+                      ? "bg-[color-mix(in_srgb,var(--tc-surface-card),var(--tc-aurora-line)_8%)]"
+                      : "hover:bg-[var(--tc-surface-card)]",
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    className="mt-1 size-4 accent-[var(--tc-workspace-focus)]"
+                    checked={checked}
+                    onChange={event =>
+                      onChapterToggle(chapter.id, event.target.checked)
+                    }
+                  />
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium text-[var(--tc-text-primary)]">
+                      {chapter.title}
+                    </span>
+                    <span className="block text-xs text-[var(--tc-text-muted)]">
+                      正文约 {chapter.word_count} 字
+                    </span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
-      <div className="border-y border-[var(--tc-border-subtle)] py-3 text-sm">
-        {selectedChapter ? (
-          <>
-            <p className="font-medium text-[var(--tc-text-primary)]">
-              {selectedChapter.title}
-            </p>
-            <p className="mt-1 text-[var(--tc-text-muted)]">
-              正文约 {selectedChapter.word_count} 字，运行后生成 JSON 中间态。
-            </p>
-          </>
+      <div className="border-y border-[var(--tc-border-subtle)] py-2 text-sm">
+        {selectedCount > 0 ? (
+          <p className="text-[var(--tc-text-muted)]">
+            将为 {selectedCount} 章生成候选知识卡；节点流转请到任务监控查看，候选审核仍在当前工作台处理。
+          </p>
         ) : (
           <p className="text-[var(--tc-text-muted)]">
-            暂无可运行章节，请先在写作页创建章节。
+            请至少勾选一个章节后再启动正文知识沉淀。
           </p>
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           type="button"
-          disabled={!selectedChapterId || running}
+          disabled={selectedCount === 0 || running}
           onClick={onCreateRun}
         >
           <Play className="size-4" />
-          {running ? "正在抽取" : "开始抽取"}
+          {buttonLabel}
         </Button>
+        <Link
+          href="/task-monitor/knowledge-extraction"
+          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-[var(--tc-radius-control)] border border-[var(--tc-workspace-border)] px-2.5 text-sm text-[var(--tc-workspace-text)] hover:bg-[var(--tc-workspace-panel-soft)]"
+        >
+          <Activity className="size-4" />
+          任务监控
+        </Link>
         {currentRun ? (
           <span className="text-sm text-[var(--tc-text-muted)]">
             最近一次：{runStatusLabel[currentRun.status] ?? "未知状态"}，
@@ -1272,9 +1435,13 @@ function MetricsPanel({ run }: { run: AgentRun | null }) {
   const metrics: Array<[string, string | number]> = [
     ["候选总数", run.metrics.candidate_total],
     ["角色候选数", run.metrics.character_candidate_count],
+    ["境界候选数", run.metrics.realm_candidate_count],
+    ["功法候选数", run.metrics.technique_candidate_count],
     ["地点候选数", run.metrics.location_candidate_count],
     ["势力候选数", run.metrics.faction_candidate_count],
     ["物品候选数", run.metrics.item_candidate_count],
+    ["规则候选数", run.metrics.rule_candidate_count],
+    ["事件候选数", run.metrics.event_candidate_count],
     ["候选新卡数", run.metrics.create_card_count],
     ["候选更新数", run.metrics.update_card_count],
     ["候选冲突数", run.metrics.conflict_count],
@@ -1353,9 +1520,9 @@ function ReplayDataSection({ run }: { run: AgentRun }) {
 function RawMentionList({ mentions }: { mentions: AgentRawMention[] }) {
   return (
     <ReplayList title="原始提及" emptyText="本次运行没有记录原始提及。">
-      {mentions.map(mention => (
+      {mentions.map((mention, index) => (
         <ReplayItem
-          key={mention.mention_id}
+          key={`${mention.mention_id}-${mention.knowledge_type}-${mention.segment_index}-${index}`}
           title={mention.name || "未命名提及"}
           meta={`${knowledgeTypeLabel[mention.knowledge_type] ?? mention.knowledge_type} · 第 ${mention.segment_index} 段`}
           detail={formatJson(mention)}
@@ -1372,9 +1539,9 @@ function RawMentionList({ mentions }: { mentions: AgentRawMention[] }) {
 function EntityGroupList({ groups }: { groups: AgentEntityGroup[] }) {
   return (
     <ReplayList title="实体聚合" emptyText="本次运行没有记录实体聚合。">
-      {groups.map(group => (
+      {groups.map((group, index) => (
         <ReplayItem
-          key={group.entity_group_id}
+          key={`${group.entity_group_id}-${group.knowledge_type}-${group.canonical_name}-${index}`}
           title={group.canonical_name || "未命名实体组"}
           meta={`${knowledgeTypeLabel[group.knowledge_type] ?? group.knowledge_type} · ${qualityDecisionLabel(group.quality_decision)} · ${group.mention_count} 次提及`}
           detail={formatJson(group)}
@@ -1586,6 +1753,10 @@ function KnowledgeCardPreview({ card }: { card: StructuredKnowledgeCard }) {
 
 function buildRunLLMTrace(run: AgentRun): string {
   const nodeByName = new Map(run.nodes.map(node => [node.node_name, node]));
+  const scopeLine =
+    run.scope.scope_type === "chapter_batch"
+      ? `- 任务范围：批量 ${run.total_chapter_count} 章（完成 ${run.completed_chapter_count}，失败 ${run.failed_chapter_count}）`
+      : `- 章节：${run.scope.chapter_title || "未命名章节"}（${run.scope.chapter_id}）`;
   const orderedCalls = run.llm_calls
     .map((call, index) => ({ call, index }))
     .sort((left, right) => compareCallOrder(left, right))
@@ -1598,7 +1769,7 @@ function buildRunLLMTrace(run: AgentRun): string {
     `- 运行 ID：${run.run_id}`,
     `- Agent：${run.agent_name} / ${run.agent_version}`,
     `- 运行状态：${runStatusLabel[run.status] ?? run.status}`,
-    `- 章节：${run.scope.chapter_title || "未命名章节"}（${run.scope.chapter_id}）`,
+    scopeLine,
     `- 模型：${run.model_name || "未记录"}`,
     `- Schema 版本：${run.schema_version}`,
     `- Prompt 版本：${run.prompt_version}`,

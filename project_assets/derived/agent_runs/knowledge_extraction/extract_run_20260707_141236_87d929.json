@@ -1,0 +1,1999 @@
+{
+  "run_id": "extract_run_20260707_141236_87d929",
+  "agent_name": "knowledge_extraction",
+  "agent_version": "v0.1",
+  "schema_version": "knowledge_fields_v2",
+  "prompt_version": "knowledge_extraction_prompt_v3",
+  "model_name": "deepseek-v4-pro",
+  "status": "completed",
+  "scope": {
+    "scope_type": "chapter",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "chapter_title": "第2章 山中神仙选仙苗",
+    "content_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+    "chapter_ids": [],
+    "chapter_titles": []
+  },
+  "started_at": "2026-07-07T14:12:36.030351Z",
+  "finished_at": "2026-07-07T14:14:40.961534Z",
+  "nodes": [
+    {
+      "node_name": "LoadChapterNode",
+      "status": "success",
+      "started_at": "2026-07-07T14:12:36.054377Z",
+      "finished_at": "2026-07-07T14:12:36.063844Z",
+      "duration_ms": 9,
+      "input_summary": "",
+      "output_summary": "读取章节“第2章 山中神仙选仙苗”，约 3028 字。",
+      "error": null
+    },
+    {
+      "node_name": "SegmentChapterNode",
+      "status": "success",
+      "started_at": "2026-07-07T14:12:36.064845Z",
+      "finished_at": "2026-07-07T14:12:36.064845Z",
+      "duration_ms": 0,
+      "input_summary": "",
+      "output_summary": "生成 1 个处理片段。",
+      "error": null
+    },
+    {
+      "node_name": "GeneralExtractionNode",
+      "status": "success",
+      "started_at": "2026-07-07T14:12:36.064845Z",
+      "finished_at": "2026-07-07T14:13:47.175888Z",
+      "duration_ms": 71111,
+      "input_summary": "1 个章节片段。",
+      "output_summary": "生成 10 个 raw mentions。",
+      "error": null
+    },
+    {
+      "node_name": "MentionNormalizeNode",
+      "status": "success",
+      "started_at": "2026-07-07T14:13:47.176892Z",
+      "finished_at": "2026-07-07T14:13:47.176892Z",
+      "duration_ms": 0,
+      "input_summary": "10 个原始 mention。",
+      "output_summary": "保留 10 个有效 mention。",
+      "error": null
+    },
+    {
+      "node_name": "EntityAggregationNode",
+      "status": "success",
+      "started_at": "2026-07-07T14:13:47.177892Z",
+      "finished_at": "2026-07-07T14:13:47.177892Z",
+      "duration_ms": 0,
+      "input_summary": "10 个规范 mention。",
+      "output_summary": "聚合为 10 个 entity_groups。",
+      "error": null
+    },
+    {
+      "node_name": "CandidateQualityGateNode",
+      "status": "success",
+      "started_at": "2026-07-07T14:13:47.178685Z",
+      "finished_at": "2026-07-07T14:13:47.214620Z",
+      "duration_ms": 36,
+      "input_summary": "10 个实体聚合组。",
+      "output_summary": "通过 10 个实体组，过滤 0 个。",
+      "error": null
+    },
+    {
+      "node_name": "TypeDispatchNode",
+      "status": "success",
+      "started_at": "2026-07-07T14:13:47.216131Z",
+      "finished_at": "2026-07-07T14:13:47.216131Z",
+      "duration_ms": 0,
+      "input_summary": "10 个通过质量闸门的实体组。",
+      "output_summary": "角色组 4 个，实体组 4 个，事件规则组 2 个。",
+      "error": null
+    },
+    {
+      "node_name": "CharacterExpertNode",
+      "status": "success",
+      "started_at": "2026-07-07T14:13:47.217398Z",
+      "finished_at": "2026-07-07T14:14:40.922340Z",
+      "duration_ms": 53704,
+      "input_summary": "4 个角色实体组。",
+      "output_summary": "生成 4 个角色候选。",
+      "error": null
+    },
+    {
+      "node_name": "EntityExpertNode",
+      "status": "success",
+      "started_at": "2026-07-07T14:13:47.218397Z",
+      "finished_at": "2026-07-07T14:14:20.036273Z",
+      "duration_ms": 32818,
+      "input_summary": "4 个实体设定组。",
+      "output_summary": "生成 4 个实体候选。",
+      "error": null
+    },
+    {
+      "node_name": "EventRuleExpertNode",
+      "status": "success",
+      "started_at": "2026-07-07T14:13:47.218397Z",
+      "finished_at": "2026-07-07T14:14:16.017671Z",
+      "duration_ms": 28800,
+      "input_summary": "2 个事件规则组。",
+      "output_summary": "生成 2 个事件规则候选。",
+      "error": null
+    },
+    {
+      "node_name": "MergeExpertCandidatesNode",
+      "status": "success",
+      "started_at": "2026-07-07T14:14:40.923548Z",
+      "finished_at": "2026-07-07T14:14:40.923548Z",
+      "duration_ms": 0,
+      "input_summary": "角色 4 个，实体 4 个，事件规则 2 个。",
+      "output_summary": "合并为 10 个候选草稿。",
+      "error": null
+    },
+    {
+      "node_name": "NormalizeAndValidateNode",
+      "status": "success",
+      "started_at": "2026-07-07T14:14:40.924547Z",
+      "finished_at": "2026-07-07T14:14:40.924547Z",
+      "duration_ms": 0,
+      "input_summary": "",
+      "output_summary": "完成 10 个候选结构校验。",
+      "error": null
+    },
+    {
+      "node_name": "RunInternalConflictCheckNode",
+      "status": "success",
+      "started_at": "2026-07-07T14:14:40.925548Z",
+      "finished_at": "2026-07-07T14:14:40.925548Z",
+      "duration_ms": 0,
+      "input_summary": "",
+      "output_summary": "",
+      "error": null
+    },
+    {
+      "node_name": "MatchExistingKnowledgeNode",
+      "status": "success",
+      "started_at": "2026-07-07T14:14:40.925548Z",
+      "finished_at": "2026-07-07T14:14:40.959435Z",
+      "duration_ms": 33,
+      "input_summary": "",
+      "output_summary": "",
+      "error": null
+    },
+    {
+      "node_name": "BuildReviewItemsNode",
+      "status": "success",
+      "started_at": "2026-07-07T14:14:40.960535Z",
+      "finished_at": "2026-07-07T14:14:40.960535Z",
+      "duration_ms": 0,
+      "input_summary": "",
+      "output_summary": "生成 10 个审核项。",
+      "error": null
+    },
+    {
+      "node_name": "WriteIntermediateJsonNode",
+      "status": "success",
+      "started_at": "2026-07-07T14:14:40.961534Z",
+      "finished_at": "2026-07-07T14:14:40.961534Z",
+      "duration_ms": 0,
+      "input_summary": "10 个审核项。",
+      "output_summary": "已写入 JSON 中间态。",
+      "error": null
+    }
+  ],
+  "graph_nodes": [
+    {
+      "node_name": "LoadChapterNode",
+      "label": "读取章节",
+      "lane": "预处理"
+    },
+    {
+      "node_name": "SegmentChapterNode",
+      "label": "切分正文",
+      "lane": "预处理"
+    },
+    {
+      "node_name": "GeneralExtractionNode",
+      "label": "通用抽取",
+      "lane": "抽取"
+    },
+    {
+      "node_name": "MentionNormalizeNode",
+      "label": "提及清洗",
+      "lane": "抽取"
+    },
+    {
+      "node_name": "EntityAggregationNode",
+      "label": "实体聚合",
+      "lane": "抽取"
+    },
+    {
+      "node_name": "CandidateQualityGateNode",
+      "label": "质量闸门",
+      "lane": "抽取"
+    },
+    {
+      "node_name": "TypeDispatchNode",
+      "label": "类型分发",
+      "lane": "分发"
+    },
+    {
+      "node_name": "CharacterExpertNode",
+      "label": "角色专家",
+      "lane": "并行专家"
+    },
+    {
+      "node_name": "EntityExpertNode",
+      "label": "实体专家",
+      "lane": "并行专家"
+    },
+    {
+      "node_name": "EventRuleExpertNode",
+      "label": "事件规则专家",
+      "lane": "并行专家"
+    },
+    {
+      "node_name": "MergeExpertCandidatesNode",
+      "label": "合并候选",
+      "lane": "汇合"
+    },
+    {
+      "node_name": "NormalizeAndValidateNode",
+      "label": "规范校验",
+      "lane": "后处理"
+    },
+    {
+      "node_name": "RunInternalConflictCheckNode",
+      "label": "本轮冲突检查",
+      "lane": "后处理"
+    },
+    {
+      "node_name": "MatchExistingKnowledgeNode",
+      "label": "匹配有效知识",
+      "lane": "后处理"
+    },
+    {
+      "node_name": "BuildReviewItemsNode",
+      "label": "生成审核项",
+      "lane": "后处理"
+    },
+    {
+      "node_name": "WriteIntermediateJsonNode",
+      "label": "写入中间态",
+      "lane": "写入"
+    }
+  ],
+  "graph_edges": [
+    {
+      "source": "LoadChapterNode",
+      "target": "SegmentChapterNode"
+    },
+    {
+      "source": "SegmentChapterNode",
+      "target": "GeneralExtractionNode"
+    },
+    {
+      "source": "GeneralExtractionNode",
+      "target": "MentionNormalizeNode"
+    },
+    {
+      "source": "MentionNormalizeNode",
+      "target": "EntityAggregationNode"
+    },
+    {
+      "source": "EntityAggregationNode",
+      "target": "CandidateQualityGateNode"
+    },
+    {
+      "source": "CandidateQualityGateNode",
+      "target": "TypeDispatchNode"
+    },
+    {
+      "source": "TypeDispatchNode",
+      "target": "CharacterExpertNode"
+    },
+    {
+      "source": "TypeDispatchNode",
+      "target": "EntityExpertNode"
+    },
+    {
+      "source": "TypeDispatchNode",
+      "target": "EventRuleExpertNode"
+    },
+    {
+      "source": "CharacterExpertNode",
+      "target": "MergeExpertCandidatesNode"
+    },
+    {
+      "source": "EntityExpertNode",
+      "target": "MergeExpertCandidatesNode"
+    },
+    {
+      "source": "EventRuleExpertNode",
+      "target": "MergeExpertCandidatesNode"
+    },
+    {
+      "source": "MergeExpertCandidatesNode",
+      "target": "NormalizeAndValidateNode"
+    },
+    {
+      "source": "NormalizeAndValidateNode",
+      "target": "RunInternalConflictCheckNode"
+    },
+    {
+      "source": "RunInternalConflictCheckNode",
+      "target": "MatchExistingKnowledgeNode"
+    },
+    {
+      "source": "MatchExistingKnowledgeNode",
+      "target": "BuildReviewItemsNode"
+    },
+    {
+      "source": "BuildReviewItemsNode",
+      "target": "WriteIntermediateJsonNode"
+    }
+  ],
+  "batch_chapter_progress": [],
+  "max_concurrency": 1,
+  "current_concurrency": 0,
+  "total_chapter_count": 0,
+  "completed_chapter_count": 0,
+  "failed_chapter_count": 0,
+  "llm_calls": [
+    {
+      "call_id": "llm_call_GeneralExtractionNode_9052f2a1",
+      "node_name": "GeneralExtractionNode",
+      "model_name": "deepseek-v4-pro",
+      "prompt_version": "general_extraction_v3",
+      "input_prompt": "你是长篇玄幻小说的知识抽取助手。\n\n任务：\n从当前章节正文中抽取可以进入后续证据聚合流程的 raw mentions。你只负责发现正文中出现的角色、地点、势力、物品、境界、功法、事件、规则提及，不负责生成最终知识卡。\n\n硬规则：\n1. 只根据给定正文抽取，不要补写正文没有的信息。\n2. 本轮只抽取 character、location、faction、item、realm、technique、event、rule。\n3. 不抽取 foreshadow。\n4. 不生成最终知识卡，不输出 summary、importance、source_note 或任何类型专属字段。\n5. 每个 mention 必须提供至少一条原文摘录；同一候选在正文中有多个相关片段时，尽量保留多条代表性 evidence_excerpts。\n6. 原文摘录必须来自正文，不能改写，单条长度不超过 300 字；每个 mention 最多输出 5 条 evidence_excerpts。\n7. 如果信息太碎、不确定、属于第一版不抽取类型，或明显只是泛称、临时称呼、普通空间、普通消耗品，放入 ignored 并写明原因。\n8. 输出必须是 JSON，不要输出解释性文字。\n9. 不要输出 Markdown 代码块。\n10. 不要输出任何多余字段。\n\n第一版允许抽取类型：\ncharacter、location、faction、item、realm、technique、event、rule\n\n第一版禁止抽取类型：\nforeshadow\n\n优先忽略：\n- 临时描述性称呼，例如“另一生面孔”“小山羊胡子”“穿青衫的人”“一个少年”\n- 相对指代，例如“另一人”“其中一个”“那人”“他们”“众人”\n- 泛称，例如“少年们”“村民”“大人们”“徒弟们”\n- 单句功能性台词、无姓名、无后续作用的路人\n- 只有外貌特征、没有稳定身份或专名的对象\n- 普通功能空间，例如“酒家”“药铺门口”“小店铺”“内院”“小镇广场”\n- 泛称地点，例如“山里”“镇上”“北街”“家中”\n- 单次环境描写，例如“小山谷”“普通树林”“路边”“广场”\n- 普通消耗品、普通银两、普通衣物、普通器具\n- 普通人群泛称，例如“少年们”“村民”“镇上的人”“猎户”“徒弟们”“大人们”\n- 模糊氛围、单纯情绪、没有明确发生内容的片段\n- 没有稳定规则表达的修辞性句子\n\n事件抽取边界：\n- 只抽取明确发生的剧情事件、状态变化、重要行动结果。\n- 普通动作、环境描写、心理活动不要作为事件卡。\n\n规则抽取边界：\n- 只抽取明确世界规则、修炼规则、禁制、约束、因果条件或例外。\n- 单句感叹、比喻、传闻不明的说法不要作为规则卡。\n\n输入：\n章节 ID：chapter-333d692f21224f15a5735317ee278132\n章节标题：第2章 山中神仙选仙苗\n章节正文：\n　　陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。\n\n　　北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。\n\n　　虽然药铺的生意很好，但全部交给徒弟打理的陈老头悠闲得很，他常坐在药店内院一张藤椅上，品茗看书，好不自在，除了徒弟们拿不准的疑难杂症，或者要收买的药材太过珍贵不敢做主，等闲事务他已经不在插手。\n\n　　秦浩轩在少年们簇拥下，浩浩荡荡来到药铺，吸引来不少注意目光。\n\n　　镇上的人都知道，肯定是秦浩轩又来卖药材了，而且这么大阵仗，说不定又是一个价值不菲的好东西呢！\n\n　　陈家药铺除了一些受伤的猎户，前来卖药的零散采药人，就只有两个生面孔。\n\n　　在大田镇上看到两个生面孔实属罕见，这两人正在陈老头那些眼高于顶的徒弟们殷勤推荐下挑选名贵药材，从陈老头徒弟们近乎谄媚的笑容来看，他们肯定已经买下了不少，想必就是那两个财大气粗的外地豪客吧。\n\n　　秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出，立刻将两个生面孔的注意力拉了过来。\n\n　　“后生，你是来卖药吗？”其中一个穿着青衫，留着小山羊胡的男子走到秦浩轩面前：“这小村镇居然有上好的黄精？”\n\n　　秦浩轩还没来得及说话，一名少年就已经抢在秦浩轩前头说道：“黄精不黄精的我不知道，不过秦哥出手的东西没一个是次货！”\n\n　　小山羊胡子直视秦浩轩脸庞，见秦浩轩不置可否，默认了黄精的说法，小山羊胡接着说道：“小兄弟，我正在配一个药方，其中恰恰需要黄精这一味药，今天这块黄精你直接开价，我买下，如何？”\n\n　　秦浩轩知道眼前这人定是有来历的人，自己这黄精还没拿出来，人家便能一语叫破，如此能人还是不要乱报价的好。\n\n　　秦浩轩没有报价，他身旁跟来凑热闹的村中少年已经争先恐后的开始胡乱报价了。\n\n　　“五两……”\n\n　　“五两怎么可以，最少也要十两！”\n\n　　“有点出息好不好，秦哥的好东西只值得十两？我看最少也要十五两！”\n\n　　不知黄精为何物的少年们争得面红耳赤，报价也一路上扬，从五两喊道五十两。\n\n　　这两个生面孔相视一笑，小山羊胡子从包裹里取出五锭白灿灿的银子，道：“这里是一百两银子，只要小兄弟愿意将这块黄精卖给我，这些银子就是你的了。”\n\n　　一百两银子摆出来，直接将这群山里少年震住了，别看他们报价报得欢，但除了秦浩轩，都是连十两银子都没见过的土包子，更别说一次性看到一百两银子这么多。\n\n　　即便父亲是大田镇最优秀猎手的张狂家，一年打猎的收入也不过二三十两，但在大田镇已经算得上极为富裕的人家了。\n\n　　在这群少年流了一地哈喇子的表情来看，那两人以为这笔买卖做定了。\n\n　　秦昊轩也被这价格惊的虎心乱跳，半晌才摇头说：“这个真不能卖给两位……”\n\n　　听到秦浩轩这话，小山羊胡子一愣，随即道：“黄精虽然珍稀，但你卖到药铺里也不过二三十两，而我愿意出一百两……”\n\n　　一直没有做声的另一个生面孔打断了山羊胡子的话，道：“价格不满意，我再加二十两，如何？”\n\n　　一百二十两，大田镇普通人家十来年的收入，即便是秦浩轩也要三四年才能赚到一百二十两，已经有少年涨得满脸通红，看着那在阳光下银光熠熠的六个银锭，感觉呼吸都不畅通了。\n\n　　秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。\n\n　　“陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？”\n\n　　秦浩轩抛出自己的观点，包括这两名陌生面孔在内的所有人，都听得赞许不已，店里买药的其他大人更是一脸痛惜，怎么自己就生不出这样的儿子！\n\n　　“有点意思，有点意思。”这两个生面孔微微一笑，很有风度的离开了，他们前脚刚走，得知消息的陈老头匆匆从内院赶出来。\n\n　　“黄精，你采到黄精了？”陈老头人未到声音先到，年近八十的他中气十足，一脸红润，健步如飞，一看到秦浩轩，便紧张地喊道：“听说有人高价跟我抢黄精？黄精呢？卖了吗？”\n\n　　“喏，还给您老留着呢。”秦浩轩松开紧紧握着黄精的手，一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来，将药铺里众多药草香味都压了下去。\n\n　　“黄精，果然是黄精……”陈老头一大把年纪，看到黄精再也压抑不住情绪，三步并作两步跨上去，接过秦浩轩手中黄精捧在手上仔细端详，激动得老泪纵横。\n\n　　“秦娃子，这块黄精你要卖多少钱？”好一会儿，陈老头才敛去激动的神色，正色询问：“听说刚才有人开到一百二十两？”\n\n　　秦浩轩点点头，道：“您觉得能给多少呢？”\n\n　　“药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过，但是眼下我只能开三十两。”陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”\n\n　　这个价格与之前的一百二十两相差太远，秦浩轩还没表态，他身后的少年们便起哄了。\n\n　　“别人开高价你却开这么低的价，枉秦哥还为你留着呢！”\n\n　　“是啊，太离谱了，差这么多……”\n\n　　……\n\n　　“我不勉强你，如果不能卖你就收回去吧！”陈老头加快捻动速度，一副依依不舍的模样，黄精虽然十分珍稀有价无市，但他给出的三十两价格已经很公道了。\n\n　　秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！”\n\n　　陈老头感动之余喜出望外，一把死死捏住手中黄精，生怕迟一秒就会被人夺走似的。\n\n　　在陈老头手中接过三十两银子，秦浩轩呼朋引伴，领着一群少年来到镇上的酒家痛饮一顿，各自尽兴方才散去。\n\n　　在酒家中饮酒时，少年们听到一个十分振奋的消息：“有消息说，明天是山上神仙们开山选苗的大日子！”\n\n　　回到家中，秦浩轩狠狠睡了一觉，直到傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。\n\n　　“明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟，这可是难得的际遇，你们可都要打起精神认真对待了，一旦被神仙们选中，还将得到神仙们赠予的每年两百两白银的安家费！”\n\n　　两百两白银！还是每年都有！\n\n　　两百两白银这对秦浩轩来说都是一笔巨款，何况这些没见过多少钱的少年，更是直接被每年两百两这个天文数字击晕了。\n\n　　“如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭。”\n\n　　就算没有每年两百两白银的诱惑，被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了，秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？\n\n　　但眼下有每年两百两银子的安家费就不同了，一旦被神仙们选中，这每年两百两银子的安家费也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事，想必双亲也一定会支持的！\n\n　　秦浩轩随着激动的少年们一起，在镇长处登基报名，也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。\n\n　　“秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算。”\n\n　　秦浩轩在报名薄上写上自己的大名，身后传来张狂近乎嚣张的声音，他转过身，一双眼睛瞪着自信满满的张狂，眼神中厉光闪烁，却默不作声。\n\n　　张狂但觉秦浩轩这一眼直抵心房，看穿灵魂，忍不住一个哆嗦，起了一身鸡皮疙瘩。\n\n　　被秦浩轩瞪了一眼的张狂很快冷静下来，眼神中闪过一道阴冷，暗自责怪自己得意忘形太过冲动，怨毒的瞪了秦浩轩一眼，在众多看热闹的人前默默转身离去，招来一阵嗤笑，当真是搬起石头砸自己的脚。\n\n　　看着张狂离去的背影，饶是秦浩轩也忍不住心底一寒，张狂这种懂进退的阴险小人，如果真和自己一起被选中，必须得加倍小心。\n\n允许抽取类型：\ncharacter, location, faction, item, realm, technique, event, rule\n\n输出 JSON：\n{\n  \"mentions\": [\n    {\n      \"name\": \"\",\n      \"knowledge_type\": \"character|location|faction|item|realm|technique|event|rule\",\n      \"description\": \"\",\n      \"evidence_excerpts\": [\"\"],\n      \"reason\": \"\"\n    }\n  ],\n  \"ignored\": [\n    {\n      \"text\": \"\",\n      \"reason\": \"\"\n    }\n  ]\n}\n",
+      "raw_response": "{\n  \"mentions\": [\n    {\n      \"name\": \"秦浩轩\",\n      \"knowledge_type\": \"character\",\n      \"description\": \"主角，山野少年，以采药为生，孝顺父母，聪慧果断。\",\n      \"evidence_excerpts\": [\n        \"秦浩轩在少年们簇拥下，浩浩荡荡来到药铺，吸引来不少注意目光。\",\n        \"秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。\",\n        \"秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！”\",\n        \"秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？但眼下有每年两百两银子的安家费就不同了，一旦被神仙们选中，这每年两百两银子的安家费也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事，想必双亲也一定会支持的！\",\n        \"秦浩轩随着激动的少年们一起，在镇长处登基报名\"\n      ],\n      \"reason\": \"故事核心人物，贯穿全文主线。\"\n    },\n    {\n      \"name\": \"陈老头\",\n      \"knowledge_type\": \"character\",\n      \"description\": \"陈家药铺老板，年近八十，医术精湛，声望高，对黄精渴望已久。\",\n      \"evidence_excerpts\": [\n        \"陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。\",\n        \"陈老头人未到声音先到，年近八十的他中气十足，一脸红润，健步如飞，一看到秦浩轩，便紧张地喊道：“听说有人高价跟我抢黄精？黄精呢？卖了吗？”\",\n        \"陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”\",\n        \"我不勉强你，如果不能卖你就收回去吧！”陈老头加快捻动速度，一副依依不舍的模样\"\n      ],\n      \"reason\": \"重要角色，与主角有多次互动，推动关键情节。\"\n    },\n    {\n      \"name\": \"张狂\",\n      \"knowledge_type\": \"character\",\n      \"description\": \"大田镇少年，父亲是优秀猎手，性格嚣张阴险，与秦浩轩有矛盾。\",\n      \"evidence_excerpts\": [\n        \"即便父亲是大田镇最优秀猎手的张狂家，一年打猎的收入也不过二三十两\",\n        \"也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。\",\n        \"秦浩轩在报名薄上写上自己的大名，身后传来张狂近乎嚣张的声音：“秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算。”\",\n        \"被秦浩轩瞪了一眼的张狂很快冷静下来，眼神中闪过一道阴冷，暗自责怪自己得意忘形太过冲动，怨毒的瞪了秦浩轩一眼，在众多看热闹的人前默默转身离去\"\n      ],\n      \"reason\": \"主要配角，与主角冲突，可能成为后续剧情伏笔。\"\n    },\n    {\n      \"name\": \"镇长\",\n      \"knowledge_type\": \"character\",\n      \"description\": \"大田镇镇长，组织少年报名参加神仙选苗。\",\n      \"evidence_excerpts\": [\n        \"傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。\",\n        \"如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭。\"\n      ],\n      \"reason\": \"关键事件的组织者，代表官方角色。\"\n    },\n    {\n      \"name\": \"大田镇\",\n      \"knowledge_type\": \"location\",\n      \"description\": \"故事发生的主要小镇，秦浩轩与其父母居住地。\",\n      \"evidence_excerpts\": [\n        \"陈家药铺在大田镇无人不知无人不晓\",\n        \"在大田镇上看到两个生面孔实属罕见\",\n        \"大田镇普通人家十来年的收入\"\n      ],\n      \"reason\": \"故事核心地点，多个事件发生于此。\"\n    },\n    {\n      \"name\": \"陈家药铺\",\n      \"knowledge_type\": \"location\",\n      \"description\": \"大田镇上的药铺，陈老头经营，收售药材，声誉高。\",\n      \"evidence_excerpts\": [\n        \"北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。\",\n        \"秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出\",\n        \"得知消息的陈老头匆匆从内院赶出来\"\n      ],\n      \"reason\": \"重要场景，多次出现，与主角直接相关。\"\n    },\n    {\n      \"name\": \"坡子岭\",\n      \"knowledge_type\": \"location\",\n      \"description\": \"神仙挑选仙苗的地点。\",\n      \"evidence_excerpts\": [\n        \"明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟\"\n      ],\n      \"reason\": \"关键事件发生地，推动剧情发展。\"\n    },\n    {\n      \"name\": \"黄精\",\n      \"knowledge_type\": \"item\",\n      \"description\": \"珍稀药材，小指甲大小黄色石子，清香浓郁，有价无市。\",\n      \"evidence_excerpts\": [\n        \"黄精淡淡清香在浓郁的药香中仍旧十分突出\",\n        \"秦浩轩松开紧紧握着黄精的手，一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来，将药铺里众多药草香味都压了下去。\",\n        \"陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”\",\n        \"药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过\"\n      ],\n      \"reason\": \"重要物品，贯穿本章主线情节。\"\n    },\n    {\n      \"name\": \"秦浩轩出售黄精\",\n      \"knowledge_type\": \"event\",\n      \"description\": \"秦浩轩拒绝外地豪客高价收购，最终以三十两将黄精卖给陈老头。\",\n      \"evidence_excerpts\": [\n        \"秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。‘陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？’\",\n        \"秦浩轩微微一笑，挡住陈老头递来黄精的手，道：‘三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！’\",\n        \"在陈老头手中接过三十两银子，秦浩轩呼朋引伴，领着一群少年来到镇上的酒家痛饮一顿\"\n      ],\n      \"reason\": \"本章核心事件，展现主角性格与处事方式。\"\n    },\n    {\n      \"name\": \"神仙选苗消息宣布及报名\",\n      \"knowledge_type\": \"event\",\n      \"description\": \"少年们得知神仙开山选苗的大日子，镇长宣布消息并组织适龄少年报名。\",\n      \"evidence_excerpts\": [\n        \"在酒家中饮酒时，少年们听到一个十分振奋的消息：‘有消息说，明天是山上神仙们开山选苗的大日子！’\",\n        \"傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。\",\n        \"秦浩轩随着激动的少年们一起，在镇长处登基报名\",\n        \"就算没有每年两百两白银的诱惑，被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了\"\n      ],\n      \"reason\": \"推动情节发展的关键事件，为下一章选苗做铺垫。\"\n    }\n  ],\n  \"ignored\": [\n    {\n      \"text\": \"小山羊胡子\",\n      \"reason\": \"临时描述性称呼，无专名，属于路人角色。\"\n    },\n    {\n      \"text\": \"另一个生面孔\",\n      \"reason\": \"临时描述性称呼，无专名，属于路人角色。\"\n    },\n    {\n      \"text\": \"少年们\",\n      \"reason\": \"泛称，无具体指向。\"\n    },\n    {\n      \"text\": \"一百两银子\",\n      \"reason\": \"普通消耗品，非特殊物品。\"\n    },\n    {\n      \"text\": \"酒家\",\n      \"reason\": \"普通功能空间，不属于特殊地点。\"\n    },\n    {\n      \"text\": \"徒弟们\",\n      \"reason\": \"泛称，没有稳定身份。\"\n    },\n    {\n      \"text\": \"山上神仙\",\n      \"reason\": \"作为势力泛称，无具体名称，不宜作为faction抽取。\"\n    }\n  ]\n}",
+      "parsed_output": {
+        "mentions": [
+          {
+            "name": "秦浩轩",
+            "knowledge_type": "character",
+            "description": "主角，山野少年，以采药为生，孝顺父母，聪慧果断。",
+            "evidence_excerpts": [
+              "秦浩轩在少年们簇拥下，浩浩荡荡来到药铺，吸引来不少注意目光。",
+              "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。",
+              "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！”",
+              "秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？但眼下有每年两百两银子的安家费就不同了，一旦被神仙们选中，这每年两百两银子的安家费也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事，想必双亲也一定会支持的！",
+              "秦浩轩随着激动的少年们一起，在镇长处登基报名"
+            ],
+            "reason": "故事核心人物，贯穿全文主线。"
+          },
+          {
+            "name": "陈老头",
+            "knowledge_type": "character",
+            "description": "陈家药铺老板，年近八十，医术精湛，声望高，对黄精渴望已久。",
+            "evidence_excerpts": [
+              "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。",
+              "陈老头人未到声音先到，年近八十的他中气十足，一脸红润，健步如飞，一看到秦浩轩，便紧张地喊道：“听说有人高价跟我抢黄精？黄精呢？卖了吗？”",
+              "陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”",
+              "我不勉强你，如果不能卖你就收回去吧！”陈老头加快捻动速度，一副依依不舍的模样"
+            ],
+            "reason": "重要角色，与主角有多次互动，推动关键情节。"
+          },
+          {
+            "name": "张狂",
+            "knowledge_type": "character",
+            "description": "大田镇少年，父亲是优秀猎手，性格嚣张阴险，与秦浩轩有矛盾。",
+            "evidence_excerpts": [
+              "即便父亲是大田镇最优秀猎手的张狂家，一年打猎的收入也不过二三十两",
+              "也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。",
+              "秦浩轩在报名薄上写上自己的大名，身后传来张狂近乎嚣张的声音：“秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算。”",
+              "被秦浩轩瞪了一眼的张狂很快冷静下来，眼神中闪过一道阴冷，暗自责怪自己得意忘形太过冲动，怨毒的瞪了秦浩轩一眼，在众多看热闹的人前默默转身离去"
+            ],
+            "reason": "主要配角，与主角冲突，可能成为后续剧情伏笔。"
+          },
+          {
+            "name": "镇长",
+            "knowledge_type": "character",
+            "description": "大田镇镇长，组织少年报名参加神仙选苗。",
+            "evidence_excerpts": [
+              "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+              "如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭。"
+            ],
+            "reason": "关键事件的组织者，代表官方角色。"
+          },
+          {
+            "name": "大田镇",
+            "knowledge_type": "location",
+            "description": "故事发生的主要小镇，秦浩轩与其父母居住地。",
+            "evidence_excerpts": [
+              "陈家药铺在大田镇无人不知无人不晓",
+              "在大田镇上看到两个生面孔实属罕见",
+              "大田镇普通人家十来年的收入"
+            ],
+            "reason": "故事核心地点，多个事件发生于此。"
+          },
+          {
+            "name": "陈家药铺",
+            "knowledge_type": "location",
+            "description": "大田镇上的药铺，陈老头经营，收售药材，声誉高。",
+            "evidence_excerpts": [
+              "北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。",
+              "秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出",
+              "得知消息的陈老头匆匆从内院赶出来"
+            ],
+            "reason": "重要场景，多次出现，与主角直接相关。"
+          },
+          {
+            "name": "坡子岭",
+            "knowledge_type": "location",
+            "description": "神仙挑选仙苗的地点。",
+            "evidence_excerpts": [
+              "明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟"
+            ],
+            "reason": "关键事件发生地，推动剧情发展。"
+          },
+          {
+            "name": "黄精",
+            "knowledge_type": "item",
+            "description": "珍稀药材，小指甲大小黄色石子，清香浓郁，有价无市。",
+            "evidence_excerpts": [
+              "黄精淡淡清香在浓郁的药香中仍旧十分突出",
+              "秦浩轩松开紧紧握着黄精的手，一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来，将药铺里众多药草香味都压了下去。",
+              "陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”",
+              "药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过"
+            ],
+            "reason": "重要物品，贯穿本章主线情节。"
+          },
+          {
+            "name": "秦浩轩出售黄精",
+            "knowledge_type": "event",
+            "description": "秦浩轩拒绝外地豪客高价收购，最终以三十两将黄精卖给陈老头。",
+            "evidence_excerpts": [
+              "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。‘陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？’",
+              "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：‘三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！’",
+              "在陈老头手中接过三十两银子，秦浩轩呼朋引伴，领着一群少年来到镇上的酒家痛饮一顿"
+            ],
+            "reason": "本章核心事件，展现主角性格与处事方式。"
+          },
+          {
+            "name": "神仙选苗消息宣布及报名",
+            "knowledge_type": "event",
+            "description": "少年们得知神仙开山选苗的大日子，镇长宣布消息并组织适龄少年报名。",
+            "evidence_excerpts": [
+              "在酒家中饮酒时，少年们听到一个十分振奋的消息：‘有消息说，明天是山上神仙们开山选苗的大日子！’",
+              "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+              "秦浩轩随着激动的少年们一起，在镇长处登基报名",
+              "就算没有每年两百两白银的诱惑，被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了"
+            ],
+            "reason": "推动情节发展的关键事件，为下一章选苗做铺垫。"
+          }
+        ],
+        "ignored": [
+          {
+            "text": "小山羊胡子",
+            "reason": "临时描述性称呼，无专名，属于路人角色。"
+          },
+          {
+            "text": "另一个生面孔",
+            "reason": "临时描述性称呼，无专名，属于路人角色。"
+          },
+          {
+            "text": "少年们",
+            "reason": "泛称，无具体指向。"
+          },
+          {
+            "text": "一百两银子",
+            "reason": "普通消耗品，非特殊物品。"
+          },
+          {
+            "text": "酒家",
+            "reason": "普通功能空间，不属于特殊地点。"
+          },
+          {
+            "text": "徒弟们",
+            "reason": "泛称，没有稳定身份。"
+          },
+          {
+            "text": "山上神仙",
+            "reason": "作为势力泛称，无具体名称，不宜作为faction抽取。"
+          }
+        ]
+      },
+      "started_at": "2026-07-07T14:12:36.064845Z",
+      "finished_at": "2026-07-07T14:13:47.175888Z",
+      "duration_ms": 71110,
+      "error": null
+    },
+    {
+      "call_id": "llm_call_CharacterExpertNode_109f41e5",
+      "node_name": "CharacterExpertNode",
+      "model_name": "deepseek-v4-pro",
+      "prompt_version": "character_expert_v3",
+      "input_prompt": "你是长篇玄幻小说的角色知识卡整理助手。\n\n任务：\n根据通过质量闸门的角色 entity_groups 和多条原文证据，生成角色卡草稿或角色卡更新建议。\n\n硬规则：\n1. 只根据 entity_groups 和 evidence_excerpts 填写字段。\n2. 不要补写正文没有的信息。\n3. 不要输出 personality、motivation、appearance、relations、current_goal、secret、known_secrets。\n4. 不要输出 body、tags、fields、confidence、source_refs。\n5. role_type 只能从 schema options 中选择，无法判断时填 null。\n6. death_chapter_id 只有正文明确确认死亡时才填写，否则填 null。\n7. current_realm_text 只有正文出现境界或修为信息时才填写，否则填 null。\n8. first_seen_chapter_id 和 last_seen_chapter_id 第一版都可以使用当前 chapter_id。\n9. source_origin 固定为 agent_extract。\n10. source_note 必须写成作者可读中文文本，包含章节标题和关键原文摘录。\n11. evidence_excerpt 可以是主证据，evidence_excerpts 必须保留多条证据。\n12. summary 和 source_note 必须基于多条 evidence_excerpts 综合生成，不能只复述第一条证据。\n13. 输出必须是 JSON，不要输出解释性文字。\n14. 不要输出 Markdown 代码块。\n15. 不要输出任何多余字段。\n\n字段 schema：\n{\n  \"type\": \"character\",\n  \"label\": \"角色\",\n  \"fields\": [\n    {\n      \"field_key\": \"name\",\n      \"label\": \"名称\",\n      \"field_type\": \"short_text\",\n      \"required_when_active\": true,\n      \"options\": [],\n      \"placeholder\": \"输入知识卡名称\",\n      \"display_group\": \"基础信息\",\n      \"list_display\": true,\n      \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n    },\n    {\n      \"field_key\": \"aliases\",\n      \"label\": \"别名\",\n      \"field_type\": \"string_array\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"多个别名用换行或逗号分隔\",\n      \"display_group\": \"基础信息\",\n      \"list_display\": true,\n      \"ai_usage\": \"名称、称号、旧名和简称。\"\n    },\n    {\n      \"field_key\": \"summary\",\n      \"label\": \"摘要\",\n      \"field_type\": \"long_text\",\n      \"required_when_active\": true,\n      \"options\": [],\n      \"placeholder\": \"一句话或一段摘要\",\n      \"display_group\": \"基础信息\",\n      \"list_display\": true,\n      \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n    },\n    {\n      \"field_key\": \"importance\",\n      \"label\": \"重要程度\",\n      \"field_type\": \"enum\",\n      \"required_when_active\": false,\n      \"options\": [\n        {\n          \"value\": \"core\",\n          \"label\": \"核心\"\n        },\n        {\n          \"value\": \"major\",\n          \"label\": \"重要\"\n        },\n        {\n          \"value\": \"normal\",\n          \"label\": \"普通\"\n        },\n        {\n          \"value\": \"minor\",\n          \"label\": \"次要\"\n        }\n      ],\n      \"placeholder\": \"\",\n      \"display_group\": \"基础信息\",\n      \"list_display\": true,\n      \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n    },\n    {\n      \"field_key\": \"status\",\n      \"label\": \"状态\",\n      \"field_type\": \"enum\",\n      \"required_when_active\": false,\n      \"options\": [\n        {\n          \"value\": \"draft\",\n          \"label\": \"草稿\"\n        },\n        {\n          \"value\": \"active\",\n          \"label\": \"有效\"\n        },\n        {\n          \"value\": \"deprecated\",\n          \"label\": \"已废弃\"\n        }\n      ],\n      \"placeholder\": \"\",\n      \"display_group\": \"基础信息\",\n      \"list_display\": true,\n      \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n    },\n    {\n      \"field_key\": \"source_origin\",\n      \"label\": \"来源方式\",\n      \"field_type\": \"enum\",\n      \"required_when_active\": true,\n      \"options\": [\n        {\n          \"value\": \"inbox_fact\",\n          \"label\": \"收件箱事实转化\"\n        },\n        {\n          \"value\": \"agent_extract\",\n          \"label\": \"正文自动提取\"\n        },\n        {\n          \"value\": \"manual\",\n          \"label\": \"人工添加\"\n        }\n      ],\n      \"placeholder\": \"选择来源方式\",\n      \"display_group\": \"来源\",\n      \"list_display\": true,\n      \"ai_usage\": \"说明知识卡来源类型。\"\n    },\n    {\n      \"field_key\": \"source_note\",\n      \"label\": \"来源说明\",\n      \"field_type\": \"long_text\",\n      \"required_when_active\": true,\n      \"options\": [],\n      \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n      \"display_group\": \"来源\",\n      \"list_display\": true,\n      \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n    },\n    {\n      \"field_key\": \"role_type\",\n      \"label\": \"角色定位\",\n      \"field_type\": \"enum\",\n      \"required_when_active\": false,\n      \"options\": [\n        {\n          \"value\": \"protagonist\",\n          \"label\": \"主角\"\n        },\n        {\n          \"value\": \"supporting\",\n          \"label\": \"配角\"\n        },\n        {\n          \"value\": \"antagonist\",\n          \"label\": \"反派\"\n        },\n        {\n          \"value\": \"passerby\",\n          \"label\": \"路人\"\n        },\n        {\n          \"value\": \"faction_representative\",\n          \"label\": \"势力代表\"\n        }\n      ],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": true,\n      \"ai_usage\": \"角色在故事中的基础定位。\"\n    },\n    {\n      \"field_key\": \"identity\",\n      \"label\": \"身份\",\n      \"field_type\": \"short_text\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": true,\n      \"ai_usage\": \"角色出身、身份或公开身份。\"\n    },\n    {\n      \"field_key\": \"relationship_summary\",\n      \"label\": \"关系摘要\",\n      \"field_type\": \"long_text\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": false,\n      \"ai_usage\": \"人物关系的文字概述。\"\n    },\n    {\n      \"field_key\": \"death_chapter_id\",\n      \"label\": \"死亡章节\",\n      \"field_type\": \"chapter_ref\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": false,\n      \"ai_usage\": \"角色死亡确认章节的稳定 chapter_id。\"\n    },\n    {\n      \"field_key\": \"current_realm_text\",\n      \"label\": \"当前境界\",\n      \"field_type\": \"short_text\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": true,\n      \"ai_usage\": \"角色当前境界文本。\"\n    },\n    {\n      \"field_key\": \"first_seen_chapter_id\",\n      \"label\": \"首次登场章节\",\n      \"field_type\": \"chapter_ref\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": false,\n      \"ai_usage\": \"角色首次登场章节的稳定 chapter_id。\"\n    },\n    {\n      \"field_key\": \"last_seen_chapter_id\",\n      \"label\": \"最近出现章节\",\n      \"field_type\": \"chapter_ref\",\n      \"required_when_active\": false,\n      \"options\": [],\n      \"placeholder\": \"\",\n      \"display_group\": \"类型字段\",\n      \"list_display\": false,\n      \"ai_usage\": \"角色最近出现章节的稳定 chapter_id。\"\n    }\n  ]\n}\n\n章节信息：\nchapter_id=chapter-333d692f21224f15a5735317ee278132\nchapter_title=第2章 山中神仙选仙苗\n\n角色 entity_groups：\n[\n  {\n    \"entity_group_id\": \"entity_group_001\",\n    \"canonical_name\": \"秦浩轩\",\n    \"knowledge_type\": \"character\",\n    \"raw_names\": [\n      \"秦浩轩\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"秦浩轩在少年们簇拥下，浩浩荡荡来到药铺，吸引来不少注意目光。\",\n      \"秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。\",\n      \"秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！”\",\n      \"秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？但眼下有每年两百两银子的安家费就不同了，一旦被神仙们选中，这每年两百两银子的安家费也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事，想必双亲也一定会支持的！\",\n      \"秦浩轩随着激动的少年们一起，在镇长处登基报名\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备稳定专名特征。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_002\",\n    \"canonical_name\": \"陈老头\",\n    \"knowledge_type\": \"character\",\n    \"raw_names\": [\n      \"陈老头\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。\",\n      \"陈老头人未到声音先到，年近八十的他中气十足，一脸红润，健步如飞，一看到秦浩轩，便紧张地喊道：“听说有人高价跟我抢黄精？黄精呢？卖了吗？”\",\n      \"陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”\",\n      \"我不勉强你，如果不能卖你就收回去吧！”陈老头加快捻动速度，一副依依不舍的模样\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备稳定专名特征。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_003\",\n    \"canonical_name\": \"张狂\",\n    \"knowledge_type\": \"character\",\n    \"raw_names\": [\n      \"张狂\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"即便父亲是大田镇最优秀猎手的张狂家，一年打猎的收入也不过二三十两\",\n      \"也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。\",\n      \"秦浩轩在报名薄上写上自己的大名，身后传来张狂近乎嚣张的声音：“秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算。”\",\n      \"被秦浩轩瞪了一眼的张狂很快冷静下来，眼神中闪过一道阴冷，暗自责怪自己得意忘形太过冲动，怨毒的瞪了秦浩轩一眼，在众多看热闹的人前默默转身离去\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备稳定专名特征。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_004\",\n    \"canonical_name\": \"镇长\",\n    \"knowledge_type\": \"character\",\n    \"raw_names\": [\n      \"镇长\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。\",\n      \"如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭。\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"明确称号或职务，并可进入作者审核。\"\n  }\n]\n\n输出 JSON：\n{\n  \"knowledge_type\": \"character\",\n  \"cards\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"role_type\": null,\n      \"identity\": null,\n      \"relationship_summary\": null,\n      \"death_chapter_id\": null,\n      \"current_realm_text\": null,\n      \"first_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\",\n      \"last_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\"\n    }\n  ]\n}\n",
+      "raw_response": "{\n  \"knowledge_type\": \"character\",\n  \"cards\": [\n    {\n      \"entity_group_id\": \"entity_group_001\",\n      \"name\": \"秦浩轩\",\n      \"aliases\": [],\n      \"summary\": \"大田镇少年，以采药为生，孝顺父母。因担心离家后双亲无人照料，本不愿参加神仙选拔，但得知每年有二百两安家费后报名。与药铺陈老头关系很好，低价卖予黄精。与猎户之子张狂有旧怨，报名时遭其挑衅，但以眼神将其震慑。\",\n      \"importance\": \"core\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第2章 山中神仙选仙苗。秦浩轩在药铺将黄精以三十两卖给陈老头，称‘若没有您哪有我的今天’；他担心父母衣食无着，得知安家费后心想‘也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事’；在镇长处报名时，张狂放话‘明天一定会被神仙们选中，到时候有些帐我们好好算一算’，秦浩轩瞪眼后张狂冷静离去。\",\n      \"evidence_excerpt\": \"秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？但眼下有每年两百两银子的安家费就不同了，一旦被神仙们选中，这每年两百两银子的安家费也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事，想必双亲也一定会支持的！\",\n      \"evidence_excerpts\": [\n        \"秦浩轩在少年们簇拥下，浩浩荡荡来到药铺，吸引来不少注意目光。\",\n        \"秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。\",\n        \"秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！”\",\n        \"秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？但眼下有每年两百两银子的安家费就不同了，一旦被神仙们选中，这每年两百两银子的安家费也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事，想必双亲也一定会支持的！\",\n        \"秦浩轩随着激动的少年们一起，在镇长处登基报名\"\n      ],\n      \"role_type\": \"protagonist\",\n      \"identity\": \"大田镇采药少年\",\n      \"relationship_summary\": \"与药铺陈老头交好，感念其恩情；与猎户之子张狂有旧怨，张狂欲借选拔之机报复。\",\n      \"death_chapter_id\": null,\n      \"current_realm_text\": null,\n      \"first_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\",\n      \"last_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\"\n    },\n    {\n      \"entity_group_id\": \"entity_group_002\",\n      \"name\": \"陈老头\",\n      \"aliases\": [],\n      \"summary\": \"大田镇陈家药铺老板，年近八十，医术高明，声誉极高。对黄精十分珍视，想以高价从秦浩轩处购买，最终秦浩轩仅收三十两，他爱不释手。\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第2章 山中神仙选仙苗。陈老头人未到声先到，年近八十中气十足，一看到秦浩轩便紧张黄精；将黄精放在两指间轻捻赞‘好宝贝’；秦浩轩坚持只收三十两，他加快捻动速度依依不舍。\",\n      \"evidence_excerpt\": \"陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。\",\n      \"evidence_excerpts\": [\n        \"陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。\",\n        \"陈老头人未到声音先到，年近八十的他中气十足，一脸红润，健步如飞，一看到秦浩轩，便紧张地喊道：“听说有人高价跟我抢黄精？黄精呢？卖了吗？”\",\n        \"陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”\",\n        \"我不勉强你，如果不能卖你就收回去吧！”陈老头加快捻动速度，一副依依不舍的模样\"\n      ],\n      \"role_type\": \"supporting\",\n      \"identity\": \"陈家药铺老板\",\n      \"relationship_summary\": \"与秦浩轩有买卖黄精的交情，秦浩轩感念其过去恩情低价卖药。\",\n      \"death_chapter_id\": null,\n      \"current_realm_text\": null,\n      \"first_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\",\n      \"last_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\"\n    },\n    {\n      \"entity_group_id\": \"entity_group_003\",\n      \"name\": \"张狂\",\n      \"aliases\": [],\n      \"summary\": \"大田镇猎户之子，家境较好，性格嚣张。报名参加神仙选拔，自认为会被选中，当众威胁秦浩轩，但被秦浩轩眼神震慑后冷静，怨毒离去。\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第2章 山中神仙选仙苗。张狂父亲是大田镇最优秀猎手，年收入二三十两；张狂在报名时在几名小弟吹捧中自信满满，看到秦浩轩也不像以前那般畏惧；他放话‘明天一定会被神仙们选中，到时候有些帐我们好好算一算’，被秦浩轩瞪眼后冷静，眼神阴冷怨毒地离去。\",\n      \"evidence_excerpt\": \"也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。\",\n      \"evidence_excerpts\": [\n        \"即便父亲是大田镇最优秀猎手的张狂家，一年打猎的收入也不过二三十两\",\n        \"也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。\",\n        \"秦浩轩在报名薄上写上自己的大名，身后传来张狂近乎嚣张的声音：“秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算。”\",\n        \"被秦浩轩瞪了一眼的张狂很快冷静下来，眼神中闪过一道阴冷，暗自责怪自己得意忘形太过冲动，怨毒的瞪了秦浩轩一眼，在众多看热闹的人前默默转身离去\"\n      ],\n      \"role_type\": \"antagonist\",\n      \"identity\": \"猎户之子\",\n      \"relationship_summary\": \"与秦浩轩有旧怨，曾在报名时威胁秦浩轩，反被其震慑。\",\n      \"death_chapter_id\": null,\n      \"current_realm_text\": null,\n      \"first_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\",\n      \"last_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\"\n    },\n    {\n      \"entity_group_id\": \"entity_group_004\",\n      \"name\": \"镇长\",\n      \"aliases\": [],\n      \"summary\": \"大田镇的镇长，负责组织适龄少年参加神仙选拔，宣布消息并接受报名。\",\n      \"importance\": \"minor\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第2章 山中神仙选仙苗。傍晚时分，镇长遣人将镇上十六岁适龄少年聚集，在广场宣布神仙选拔消息；表示想报名的来他那里报名，明天黎明进发坡子岭。\",\n      \"evidence_excerpt\": \"傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。\",\n      \"evidence_excerpts\": [\n        \"傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。\",\n        \"如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭。\"\n      ],\n      \"role_type\": \"passerby\",\n      \"identity\": \"大田镇镇长\",\n      \"relationship_summary\": null,\n      \"death_chapter_id\": null,\n      \"current_realm_text\": null,\n      \"first_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\",\n      \"last_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\"\n    }\n  ]\n}",
+      "parsed_output": {
+        "knowledge_type": "character",
+        "cards": [
+          {
+            "entity_group_id": "entity_group_001",
+            "name": "秦浩轩",
+            "aliases": [],
+            "summary": "大田镇少年，以采药为生，孝顺父母。因担心离家后双亲无人照料，本不愿参加神仙选拔，但得知每年有二百两安家费后报名。与药铺陈老头关系很好，低价卖予黄精。与猎户之子张狂有旧怨，报名时遭其挑衅，但以眼神将其震慑。",
+            "importance": "core",
+            "source_origin": "agent_extract",
+            "source_note": "第2章 山中神仙选仙苗。秦浩轩在药铺将黄精以三十两卖给陈老头，称‘若没有您哪有我的今天’；他担心父母衣食无着，得知安家费后心想‘也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事’；在镇长处报名时，张狂放话‘明天一定会被神仙们选中，到时候有些帐我们好好算一算’，秦浩轩瞪眼后张狂冷静离去。",
+            "evidence_excerpt": "秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？但眼下有每年两百两银子的安家费就不同了，一旦被神仙们选中，这每年两百两银子的安家费也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事，想必双亲也一定会支持的！",
+            "evidence_excerpts": [
+              "秦浩轩在少年们簇拥下，浩浩荡荡来到药铺，吸引来不少注意目光。",
+              "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。",
+              "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！”",
+              "秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？但眼下有每年两百两银子的安家费就不同了，一旦被神仙们选中，这每年两百两银子的安家费也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事，想必双亲也一定会支持的！",
+              "秦浩轩随着激动的少年们一起，在镇长处登基报名"
+            ],
+            "role_type": "protagonist",
+            "identity": "大田镇采药少年",
+            "relationship_summary": "与药铺陈老头交好，感念其恩情；与猎户之子张狂有旧怨，张狂欲借选拔之机报复。",
+            "death_chapter_id": null,
+            "current_realm_text": null,
+            "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+            "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132"
+          },
+          {
+            "entity_group_id": "entity_group_002",
+            "name": "陈老头",
+            "aliases": [],
+            "summary": "大田镇陈家药铺老板，年近八十，医术高明，声誉极高。对黄精十分珍视，想以高价从秦浩轩处购买，最终秦浩轩仅收三十两，他爱不释手。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第2章 山中神仙选仙苗。陈老头人未到声先到，年近八十中气十足，一看到秦浩轩便紧张黄精；将黄精放在两指间轻捻赞‘好宝贝’；秦浩轩坚持只收三十两，他加快捻动速度依依不舍。",
+            "evidence_excerpt": "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。",
+            "evidence_excerpts": [
+              "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。",
+              "陈老头人未到声音先到，年近八十的他中气十足，一脸红润，健步如飞，一看到秦浩轩，便紧张地喊道：“听说有人高价跟我抢黄精？黄精呢？卖了吗？”",
+              "陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”",
+              "我不勉强你，如果不能卖你就收回去吧！”陈老头加快捻动速度，一副依依不舍的模样"
+            ],
+            "role_type": "supporting",
+            "identity": "陈家药铺老板",
+            "relationship_summary": "与秦浩轩有买卖黄精的交情，秦浩轩感念其过去恩情低价卖药。",
+            "death_chapter_id": null,
+            "current_realm_text": null,
+            "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+            "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132"
+          },
+          {
+            "entity_group_id": "entity_group_003",
+            "name": "张狂",
+            "aliases": [],
+            "summary": "大田镇猎户之子，家境较好，性格嚣张。报名参加神仙选拔，自认为会被选中，当众威胁秦浩轩，但被秦浩轩眼神震慑后冷静，怨毒离去。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第2章 山中神仙选仙苗。张狂父亲是大田镇最优秀猎手，年收入二三十两；张狂在报名时在几名小弟吹捧中自信满满，看到秦浩轩也不像以前那般畏惧；他放话‘明天一定会被神仙们选中，到时候有些帐我们好好算一算’，被秦浩轩瞪眼后冷静，眼神阴冷怨毒地离去。",
+            "evidence_excerpt": "也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。",
+            "evidence_excerpts": [
+              "即便父亲是大田镇最优秀猎手的张狂家，一年打猎的收入也不过二三十两",
+              "也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。",
+              "秦浩轩在报名薄上写上自己的大名，身后传来张狂近乎嚣张的声音：“秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算。”",
+              "被秦浩轩瞪了一眼的张狂很快冷静下来，眼神中闪过一道阴冷，暗自责怪自己得意忘形太过冲动，怨毒的瞪了秦浩轩一眼，在众多看热闹的人前默默转身离去"
+            ],
+            "role_type": "antagonist",
+            "identity": "猎户之子",
+            "relationship_summary": "与秦浩轩有旧怨，曾在报名时威胁秦浩轩，反被其震慑。",
+            "death_chapter_id": null,
+            "current_realm_text": null,
+            "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+            "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132"
+          },
+          {
+            "entity_group_id": "entity_group_004",
+            "name": "镇长",
+            "aliases": [],
+            "summary": "大田镇的镇长，负责组织适龄少年参加神仙选拔，宣布消息并接受报名。",
+            "importance": "minor",
+            "source_origin": "agent_extract",
+            "source_note": "第2章 山中神仙选仙苗。傍晚时分，镇长遣人将镇上十六岁适龄少年聚集，在广场宣布神仙选拔消息；表示想报名的来他那里报名，明天黎明进发坡子岭。",
+            "evidence_excerpt": "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+            "evidence_excerpts": [
+              "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+              "如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭。"
+            ],
+            "role_type": "passerby",
+            "identity": "大田镇镇长",
+            "relationship_summary": null,
+            "death_chapter_id": null,
+            "current_realm_text": null,
+            "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+            "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132"
+          }
+        ]
+      },
+      "started_at": "2026-07-07T14:13:47.217398Z",
+      "finished_at": "2026-07-07T14:14:40.922340Z",
+      "duration_ms": 53704,
+      "error": null
+    },
+    {
+      "call_id": "llm_call_EntityExpertNode_fc7cf4f3",
+      "node_name": "EntityExpertNode",
+      "model_name": "deepseek-v4-pro",
+      "prompt_version": "entity_expert_v3",
+      "input_prompt": "你是长篇玄幻小说的实体知识卡整理助手。\n\n任务：\n根据通过质量闸门的地点、势力、物品、境界、功法 entity_groups 和多条原文证据，生成对应知识卡草稿或更新建议。\n\n硬规则：\n1. 只根据 entity_groups 和 evidence_excerpts 填写字段。\n2. 不要补写正文没有的信息。\n3. 本节点只处理 location、faction、item、realm、technique。\n4. 不要输出 event、rule、foreshadow。\n5. 不要输出 body、tags、fields、confidence、source_refs、relations。\n6. controlling_faction_id、leader_id、current_holder_id 如果不能明确匹配已有 active 知识卡，填 null。\n7. 不能编造知识卡 ID。\n8. source_origin 固定为 agent_extract。\n9. source_note 必须写成作者可读中文文本，包含章节标题和关键原文摘录。\n10. evidence_excerpt 可以是主证据，evidence_excerpts 必须保留多条证据。\n11. summary 和 source_note 必须基于多条 evidence_excerpts 综合生成，不能只复述第一条证据。\n12. 没有稳定组织名的“山上的神仙们”第一版不建势力卡。\n13. 境界必须是明确境界、阶段、等级或修炼层次；无法判断排序值时 level_order 填 null。\n14. 功法必须是明确功法、术法、神通、剑诀、禁术、炼丹、阵法等可复用设定；无法判断类型时 technique_type 填 null。\n15. 输出必须是 JSON，不要输出解释性文字。\n16. 不要输出 Markdown 代码块。\n17. 不要输出任何多余字段。\n\n字段 schema：\n[\n  {\n    \"type\": \"location\",\n    \"label\": \"地点\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"controlling_faction_id\",\n        \"label\": \"控制势力\",\n        \"field_type\": \"knowledge_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"控制该地点的势力知识卡 id。\"\n      },\n      {\n        \"field_key\": \"first_seen_chapter_id\",\n        \"label\": \"首次出现章节\",\n        \"field_type\": \"chapter_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"地点首次出现章节的稳定 chapter_id。\"\n      }\n    ]\n  },\n  {\n    \"type\": \"faction\",\n    \"label\": \"势力\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"faction_type\",\n        \"label\": \"势力类型\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"sect\",\n            \"label\": \"宗门\"\n          },\n          {\n            \"value\": \"family\",\n            \"label\": \"家族\"\n          },\n          {\n            \"value\": \"dynasty\",\n            \"label\": \"王朝\"\n          },\n          {\n            \"value\": \"guild\",\n            \"label\": \"商会\"\n          },\n          {\n            \"value\": \"demonic\",\n            \"label\": \"魔道\"\n          },\n          {\n            \"value\": \"alliance\",\n            \"label\": \"联盟\"\n          },\n          {\n            \"value\": \"academy\",\n            \"label\": \"学院\"\n          },\n          {\n            \"value\": \"other\",\n            \"label\": \"其他\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"宗门、家族、王朝等势力类型。\"\n      },\n      {\n        \"field_key\": \"leader_id\",\n        \"label\": \"当前首领\",\n        \"field_type\": \"knowledge_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"当前首领角色知识卡 id。\"\n      }\n    ]\n  },\n  {\n    \"type\": \"item\",\n    \"label\": \"物品\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"item_type\",\n        \"label\": \"物品类型\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"magic_treasure\",\n            \"label\": \"法宝\"\n          },\n          {\n            \"value\": \"pill\",\n            \"label\": \"丹药\"\n          },\n          {\n            \"value\": \"material\",\n            \"label\": \"材料\"\n          },\n          {\n            \"value\": \"other\",\n            \"label\": \"其他\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"法宝、丹药、材料或其他物品类型。\"\n      },\n      {\n        \"field_key\": \"grade\",\n        \"label\": \"品阶\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"物品品阶。\"\n      },\n      {\n        \"field_key\": \"current_holder_id\",\n        \"label\": \"当前持有人\",\n        \"field_type\": \"knowledge_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"当前持有者的角色知识卡 id。\"\n      },\n      {\n        \"field_key\": \"first_seen_chapter_id\",\n        \"label\": \"首次出现章节\",\n        \"field_type\": \"chapter_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"物品首次出现章节的稳定 chapter_id。\"\n      },\n      {\n        \"field_key\": \"last_seen_chapter_id\",\n        \"label\": \"最近出现章节\",\n        \"field_type\": \"chapter_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"物品最近出现章节的稳定 chapter_id。\"\n      }\n    ]\n  },\n  {\n    \"type\": \"realm\",\n    \"label\": \"境界\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"system\",\n        \"label\": \"修炼体系\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"境界所属修炼体系。\"\n      },\n      {\n        \"field_key\": \"level_order\",\n        \"label\": \"境界排序值\",\n        \"field_type\": \"number\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"用于比较境界高低的数字。\"\n      }\n    ]\n  },\n  {\n    \"type\": \"technique\",\n    \"label\": \"功法\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"technique_type\",\n        \"label\": \"功法类型\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"cultivation_method\",\n            \"label\": \"功法\"\n          },\n          {\n            \"value\": \"spell\",\n            \"label\": \"术法\"\n          },\n          {\n            \"value\": \"divine_ability\",\n            \"label\": \"神通\"\n          },\n          {\n            \"value\": \"sword_art\",\n            \"label\": \"剑诀\"\n          },\n          {\n            \"value\": \"forbidden_art\",\n            \"label\": \"禁术\"\n          },\n          {\n            \"value\": \"alchemy\",\n            \"label\": \"炼丹\"\n          },\n          {\n            \"value\": \"formation\",\n            \"label\": \"阵法\"\n          },\n          {\n            \"value\": \"other\",\n            \"label\": \"其他\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"功法、术法、神通等类型。\"\n      },\n      {\n        \"field_key\": \"grade\",\n        \"label\": \"品阶\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"功法品阶或等级。\"\n      },\n      {\n        \"field_key\": \"practice_condition\",\n        \"label\": \"修炼条件\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"修炼、施展或学习条件。\"\n      },\n      {\n        \"field_key\": \"owner_faction_id\",\n        \"label\": \"所属势力\",\n        \"field_type\": \"knowledge_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"所属势力或传承的知识卡 id。\"\n      }\n    ]\n  }\n]\n\n已有 active 知识卡摘要：\n[]\n\n章节信息：\nchapter_id=chapter-333d692f21224f15a5735317ee278132\nchapter_title=第2章 山中神仙选仙苗\n\n实体 entity_groups：\n[\n  {\n    \"entity_group_id\": \"entity_group_005\",\n    \"canonical_name\": \"大田镇\",\n    \"knowledge_type\": \"location\",\n    \"raw_names\": [\n      \"大田镇\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"陈家药铺在大田镇无人不知无人不晓\",\n      \"在大田镇上看到两个生面孔实属罕见\",\n      \"大田镇普通人家十来年的收入\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备可复用地点名称或空间属性。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_006\",\n    \"canonical_name\": \"陈家药铺\",\n    \"knowledge_type\": \"location\",\n    \"raw_names\": [\n      \"陈家药铺\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。\",\n      \"秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出\",\n      \"得知消息的陈老头匆匆从内院赶出来\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备可复用地点名称或空间属性。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_007\",\n    \"canonical_name\": \"坡子岭\",\n    \"knowledge_type\": \"location\",\n    \"raw_names\": [\n      \"坡子岭\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备可复用地点名称或空间属性。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_008\",\n    \"canonical_name\": \"黄精\",\n    \"knowledge_type\": \"item\",\n    \"raw_names\": [\n      \"黄精\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"黄精淡淡清香在浓郁的药香中仍旧十分突出\",\n      \"秦浩轩松开紧紧握着黄精的手，一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来，将药铺里众多药草香味都压了下去。\",\n      \"陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”\",\n      \"药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"有明确名称且具备设定价值或可追踪属性。\"\n  }\n]\n\n输出 JSON：\n{\n  \"realms\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"system\": null,\n      \"level_order\": null\n    }\n  ],\n  \"techniques\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"technique_type\": null,\n      \"grade\": null,\n      \"practice_condition\": null,\n      \"owner_faction_id\": null\n    }\n  ],\n  \"locations\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"controlling_faction_id\": null,\n      \"first_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\"\n    }\n  ],\n  \"factions\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"faction_type\": null,\n      \"leader_id\": null\n    }\n  ],\n  \"items\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"item_type\": null,\n      \"grade\": null,\n      \"current_holder_id\": null,\n      \"first_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\",\n      \"last_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\"\n    }\n  ]\n}\n",
+      "raw_response": "{\n  \"realms\": [],\n  \"techniques\": [],\n  \"locations\": [\n    {\n      \"entity_group_id\": \"entity_group_005\",\n      \"name\": \"大田镇\",\n      \"aliases\": [],\n      \"summary\": \"大田镇是一个封闭小镇，陈家药铺闻名全镇，居民收入不高，外来人罕见。\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第2章 山中神仙选仙苗。证据1：“陈家药铺在大田镇无人不知无人不晓”；证据2：“在大田镇上看到两个生面孔实属罕见”；证据3：“大田镇普通人家十来年的收入”。综合表明大田镇是一个小镇，陈家药铺很有名，生人少，居民收入低。\",\n      \"evidence_excerpt\": \"陈家药铺在大田镇无人不知无人不晓\",\n      \"evidence_excerpts\": [\n        \"陈家药铺在大田镇无人不知无人不晓\",\n        \"在大田镇上看到两个生面孔实属罕见\",\n        \"大田镇普通人家十来年的收入\"\n      ],\n      \"controlling_faction_id\": null,\n      \"first_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\"\n    },\n    {\n      \"entity_group_id\": \"entity_group_006\",\n      \"name\": \"陈家药铺\",\n      \"aliases\": [],\n      \"summary\": \"陈家药铺是大田镇北街的一个小药铺，由陈老头经营，内有学徒切药制药，药香浓郁。\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第2章 山中神仙选仙苗。证据1：“北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。”；证据2：“秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出”；证据3：“得知消息的陈老头匆匆从内院赶出来”。综合表明陈家药铺是大田镇北街的小药铺，由陈老头经营，有学徒制药，药香浓郁。\",\n      \"evidence_excerpt\": \"北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。\",\n      \"evidence_excerpts\": [\n        \"北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。\",\n        \"秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出\",\n        \"得知消息的陈老头匆匆从内院赶出来\"\n      ],\n      \"controlling_faction_id\": null,\n      \"first_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\"\n    },\n    {\n      \"entity_group_id\": \"entity_group_007\",\n      \"name\": \"坡子岭\",\n      \"aliases\": [],\n      \"summary\": \"坡子岭是山上神仙挑选仙苗的地点。\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第2章 山中神仙选仙苗。证据：“明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟”。表明坡子岭是神仙选苗的地点。\",\n      \"evidence_excerpt\": \"明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟\",\n      \"evidence_excerpts\": [\n        \"明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟\"\n      ],\n      \"controlling_faction_id\": null,\n      \"first_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\"\n    }\n  ],\n  \"factions\": [],\n  \"items\": [\n    {\n      \"entity_group_id\": \"entity_group_008\",\n      \"name\": \"黄精\",\n      \"aliases\": [],\n      \"summary\": \"黄精是一种珍贵药材，外观为小指甲大小的黄色石子，散发淡然却浓郁的清香，能压制其他药香，价值可达千两。\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"第2章 山中神仙选仙苗。证据1：“黄精淡淡清香在浓郁的药香中仍旧十分突出”；证据2：“秦浩轩松开紧紧握着黄精的手，一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来，将药铺里众多药草香味都压了下去。”；证据3：“陈老头将黄精放在两指间轻轻捻动，赞道：‘好宝贝，好宝贝！’”；证据4：“药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过”。综合表明黄精是一种黄色石状珍贵药材，香气独特，价值极高，可卖到千两。\",\n      \"evidence_excerpt\": \"黄精淡淡清香在浓郁的药香中仍旧十分突出\",\n      \"evidence_excerpts\": [\n        \"黄精淡淡清香在浓郁的药香中仍旧十分突出\",\n        \"秦浩轩松开紧紧握着黄精的手，一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来，将药铺里众多药草香味都压了下去。\",\n        \"陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”\",\n        \"药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过\"\n      ],\n      \"item_type\": \"material\",\n      \"grade\": null,\n      \"current_holder_id\": null,\n      \"first_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\",\n      \"last_seen_chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\"\n    }\n  ]\n}",
+      "parsed_output": {
+        "realms": [],
+        "techniques": [],
+        "locations": [
+          {
+            "entity_group_id": "entity_group_005",
+            "name": "大田镇",
+            "aliases": [],
+            "summary": "大田镇是一个封闭小镇，陈家药铺闻名全镇，居民收入不高，外来人罕见。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第2章 山中神仙选仙苗。证据1：“陈家药铺在大田镇无人不知无人不晓”；证据2：“在大田镇上看到两个生面孔实属罕见”；证据3：“大田镇普通人家十来年的收入”。综合表明大田镇是一个小镇，陈家药铺很有名，生人少，居民收入低。",
+            "evidence_excerpt": "陈家药铺在大田镇无人不知无人不晓",
+            "evidence_excerpts": [
+              "陈家药铺在大田镇无人不知无人不晓",
+              "在大田镇上看到两个生面孔实属罕见",
+              "大田镇普通人家十来年的收入"
+            ],
+            "controlling_faction_id": null,
+            "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132"
+          },
+          {
+            "entity_group_id": "entity_group_006",
+            "name": "陈家药铺",
+            "aliases": [],
+            "summary": "陈家药铺是大田镇北街的一个小药铺，由陈老头经营，内有学徒切药制药，药香浓郁。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第2章 山中神仙选仙苗。证据1：“北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。”；证据2：“秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出”；证据3：“得知消息的陈老头匆匆从内院赶出来”。综合表明陈家药铺是大田镇北街的小药铺，由陈老头经营，有学徒制药，药香浓郁。",
+            "evidence_excerpt": "北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。",
+            "evidence_excerpts": [
+              "北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。",
+              "秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出",
+              "得知消息的陈老头匆匆从内院赶出来"
+            ],
+            "controlling_faction_id": null,
+            "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132"
+          },
+          {
+            "entity_group_id": "entity_group_007",
+            "name": "坡子岭",
+            "aliases": [],
+            "summary": "坡子岭是山上神仙挑选仙苗的地点。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第2章 山中神仙选仙苗。证据：“明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟”。表明坡子岭是神仙选苗的地点。",
+            "evidence_excerpt": "明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟",
+            "evidence_excerpts": [
+              "明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟"
+            ],
+            "controlling_faction_id": null,
+            "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132"
+          }
+        ],
+        "factions": [],
+        "items": [
+          {
+            "entity_group_id": "entity_group_008",
+            "name": "黄精",
+            "aliases": [],
+            "summary": "黄精是一种珍贵药材，外观为小指甲大小的黄色石子，散发淡然却浓郁的清香，能压制其他药香，价值可达千两。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第2章 山中神仙选仙苗。证据1：“黄精淡淡清香在浓郁的药香中仍旧十分突出”；证据2：“秦浩轩松开紧紧握着黄精的手，一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来，将药铺里众多药草香味都压了下去。”；证据3：“陈老头将黄精放在两指间轻轻捻动，赞道：‘好宝贝，好宝贝！’”；证据4：“药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过”。综合表明黄精是一种黄色石状珍贵药材，香气独特，价值极高，可卖到千两。",
+            "evidence_excerpt": "黄精淡淡清香在浓郁的药香中仍旧十分突出",
+            "evidence_excerpts": [
+              "黄精淡淡清香在浓郁的药香中仍旧十分突出",
+              "秦浩轩松开紧紧握着黄精的手，一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来，将药铺里众多药草香味都压了下去。",
+              "陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”",
+              "药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过"
+            ],
+            "item_type": "material",
+            "grade": null,
+            "current_holder_id": null,
+            "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+            "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132"
+          }
+        ]
+      },
+      "started_at": "2026-07-07T14:13:47.228943Z",
+      "finished_at": "2026-07-07T14:14:20.036273Z",
+      "duration_ms": 32807,
+      "error": null
+    },
+    {
+      "call_id": "llm_call_EventRuleExpertNode_e0d00585",
+      "node_name": "EventRuleExpertNode",
+      "model_name": "deepseek-v4-pro",
+      "prompt_version": "event_rule_expert_v1",
+      "input_prompt": "你是长篇玄幻小说的事件与规则知识卡整理助手。\n\n任务：\n根据通过质量闸门的事件、规则 entity_groups 和多条原文证据，生成事件卡、规则卡草稿或更新建议。\n\n硬规则：\n1. 只根据 entity_groups 和 evidence_excerpts 填写字段。\n2. 不要补写正文没有的信息。\n3. 本节点只处理 event、rule。\n4. 不要输出 character、location、faction、item、realm、technique、foreshadow。\n5. 不要输出 body、tags、fields、confidence、source_refs、relations。\n6. 事件卡只记录明确发生的剧情事件、状态变化、重要行动结果；普通动作或环境描写不要生成事件卡。\n7. 规则卡只记录明确世界规则、修炼规则、禁制、约束、因果条件或例外；不确定传闻不要写成规则。\n8. source_origin 固定为 agent_extract。\n9. source_note 必须写成作者可读中文文本，包含章节标题和关键原文摘录。\n10. evidence_excerpt 可以是主证据，evidence_excerpts 必须保留多条证据。\n11. summary 和 source_note 必须基于多条 evidence_excerpts 综合生成，不能只复述第一条证据。\n12. chapter_id 对事件卡固定使用当前 chapter_id。\n13. 输出必须是 JSON，不要输出解释性文字。\n14. 不要输出 Markdown 代码块。\n15. 不要输出任何多余字段。\n\n字段 schema：\n[\n  {\n    \"type\": \"event\",\n    \"label\": \"事件\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"chapter_id\",\n        \"label\": \"发生章节\",\n        \"field_type\": \"chapter_ref\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": true,\n        \"ai_usage\": \"事件发生或首次确认章节的稳定 chapter_id。\"\n      },\n      {\n        \"field_key\": \"description\",\n        \"label\": \"事件描述\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"事件内容与影响的简要描述。\"\n      }\n    ]\n  },\n  {\n    \"type\": \"rule\",\n    \"label\": \"规则\",\n    \"fields\": [\n      {\n        \"field_key\": \"name\",\n        \"label\": \"名称\",\n        \"field_type\": \"short_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"输入知识卡名称\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡主名称，用于检索和引用。\"\n      },\n      {\n        \"field_key\": \"aliases\",\n        \"label\": \"别名\",\n        \"field_type\": \"string_array\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"多个别名用换行或逗号分隔\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"名称、称号、旧名和简称。\"\n      },\n      {\n        \"field_key\": \"summary\",\n        \"label\": \"摘要\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"一句话或一段摘要\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"面向写作和 AI 引用的核心事实摘要。\"\n      },\n      {\n        \"field_key\": \"importance\",\n        \"label\": \"重要程度\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"core\",\n            \"label\": \"核心\"\n          },\n          {\n            \"value\": \"major\",\n            \"label\": \"重要\"\n          },\n          {\n            \"value\": \"normal\",\n            \"label\": \"普通\"\n          },\n          {\n            \"value\": \"minor\",\n            \"label\": \"次要\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"决定知识卡在列表和检索中的优先级。\"\n      },\n      {\n        \"field_key\": \"status\",\n        \"label\": \"状态\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": false,\n        \"options\": [\n          {\n            \"value\": \"draft\",\n            \"label\": \"草稿\"\n          },\n          {\n            \"value\": \"active\",\n            \"label\": \"有效\"\n          },\n          {\n            \"value\": \"deprecated\",\n            \"label\": \"已废弃\"\n          }\n        ],\n        \"placeholder\": \"\",\n        \"display_group\": \"基础信息\",\n        \"list_display\": true,\n        \"ai_usage\": \"草稿不参与 AI 检索，有效卡可用于后续引用。\"\n      },\n      {\n        \"field_key\": \"source_origin\",\n        \"label\": \"来源方式\",\n        \"field_type\": \"enum\",\n        \"required_when_active\": true,\n        \"options\": [\n          {\n            \"value\": \"inbox_fact\",\n            \"label\": \"收件箱事实转化\"\n          },\n          {\n            \"value\": \"agent_extract\",\n            \"label\": \"正文自动提取\"\n          },\n          {\n            \"value\": \"manual\",\n            \"label\": \"人工添加\"\n          }\n        ],\n        \"placeholder\": \"选择来源方式\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"说明知识卡来源类型。\"\n      },\n      {\n        \"field_key\": \"source_note\",\n        \"label\": \"来源说明\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": true,\n        \"options\": [],\n        \"placeholder\": \"作者手动添加。可写章节、原文摘录、人工说明。\",\n        \"display_group\": \"来源\",\n        \"list_display\": true,\n        \"ai_usage\": \"知识卡可被信任和追溯的自由文本来源说明。\"\n      },\n      {\n        \"field_key\": \"exceptions\",\n        \"label\": \"例外情况\",\n        \"field_type\": \"long_text\",\n        \"required_when_active\": false,\n        \"options\": [],\n        \"placeholder\": \"\",\n        \"display_group\": \"类型字段\",\n        \"list_display\": false,\n        \"ai_usage\": \"规则例外情况。\"\n      }\n    ]\n  }\n]\n\n章节信息：\nchapter_id=chapter-333d692f21224f15a5735317ee278132\nchapter_title=第2章 山中神仙选仙苗\n\n事件与规则 entity_groups：\n[\n  {\n    \"entity_group_id\": \"entity_group_009\",\n    \"canonical_name\": \"秦浩轩出售黄精\",\n    \"knowledge_type\": \"event\",\n    \"raw_names\": [\n      \"秦浩轩出售黄精\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。‘陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？’\",\n      \"秦浩轩微微一笑，挡住陈老头递来黄精的手，道：‘三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！’\",\n      \"在陈老头手中接过三十两银子，秦浩轩呼朋引伴，领着一群少年来到镇上的酒家痛饮一顿\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备明确剧情事件或状态变化证据。\"\n  },\n  {\n    \"entity_group_id\": \"entity_group_010\",\n    \"canonical_name\": \"神仙选苗消息宣布及报名\",\n    \"knowledge_type\": \"event\",\n    \"raw_names\": [\n      \"神仙选苗消息宣布及报名\"\n    ],\n    \"mention_count\": 1,\n    \"evidence_excerpts\": [\n      \"在酒家中饮酒时，少年们听到一个十分振奋的消息：‘有消息说，明天是山上神仙们开山选苗的大日子！’\",\n      \"傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。\",\n      \"秦浩轩随着激动的少年们一起，在镇长处登基报名\",\n      \"就算没有每年两百两白银的诱惑，被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了\"\n    ],\n    \"quality_decision\": \"accepted\",\n    \"quality_reason\": \"具备明确剧情事件或状态变化证据。\"\n  }\n]\n\n输出 JSON：\n{\n  \"events\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\",\n      \"description\": \"\"\n    }\n  ],\n  \"rules\": [\n    {\n      \"entity_group_id\": \"\",\n      \"name\": \"\",\n      \"aliases\": [],\n      \"summary\": \"\",\n      \"importance\": \"normal\",\n      \"source_origin\": \"agent_extract\",\n      \"source_note\": \"\",\n      \"evidence_excerpt\": \"\",\n      \"evidence_excerpts\": [],\n      \"exceptions\": null\n    }\n  ]\n}\n",
+      "raw_response": "{\"events\": [{\"entity_group_id\": \"entity_group_009\", \"name\": \"秦浩轩出售黄精\", \"aliases\": [], \"summary\": \"秦浩轩将采到的黄精以三十两银子卖给陈老头，圆其心愿，同时婉拒了一百两的出价以维持与陈老伯的长期药材交易关系，事后用所得银两请客痛饮。\", \"importance\": \"normal\", \"source_origin\": \"agent_extract\", \"source_note\": \"第2章 山中神仙选仙苗：秦浩轩考虑陈老伯对黄精的念叨及日后收药价格，拒绝了一百两的出价；随后以三十两卖给陈老头，说“三十两就三十两……就当圆了您一个心愿呗”；拿到三十两银子后呼朋引伴在镇上酒家痛饮。综合多条原文摘录。\", \"evidence_excerpt\": \"秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。“陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？”\", \"evidence_excerpts\": [\"秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。“陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？”\", \"秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！”\", \"在陈老头手中接过三十两银子，秦浩轩呼朋引伴，领着一群少年来到镇上的酒家痛饮一顿\"], \"chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\", \"description\": \"秦浩轩将黄精以三十两卖给陈老头，拒绝一百两出价，并用银两请客。\"}, {\"entity_group_id\": \"entity_group_010\", \"name\": \"神仙选苗消息宣布及报名\", \"aliases\": [], \"summary\": \"秦浩轩等少年在酒家听闻山上神仙将于明日选苗，傍晚镇长聚集适龄少年宣布消息，秦浩轩等人报名，期盼被神仙收为徒弟并获得丰厚奖励。\", \"importance\": \"normal\", \"source_origin\": \"agent_extract\", \"source_note\": \"第2章 山中神仙选仙苗：少年们在酒家饮酒时听说“明天是山上神仙们开山选苗的大日子”；傍晚镇长在广场召集十六岁少年正式宣布；秦浩轩等人登基报名，因“被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了”。综合多条原文。\", \"evidence_excerpt\": \"在酒家中饮酒时，少年们听到一个十分振奋的消息：“有消息说，明天是山上神仙们开山选苗的大日子！”\", \"evidence_excerpts\": [\"在酒家中饮酒时，少年们听到一个十分振奋的消息：“有消息说，明天是山上神仙们开山选苗的大日子！”\", \"傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。\", \"秦浩轩随着激动的少年们一起，在镇长处登基报名\", \"就算没有每年两百两白银的诱惑，被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了\"], \"chapter_id\": \"chapter-333d692f21224f15a5735317ee278132\", \"description\": \"神仙选苗消息传出，镇长宣布后秦浩轩报名。\"}], \"rules\": []}",
+      "parsed_output": {
+        "events": [
+          {
+            "entity_group_id": "entity_group_009",
+            "name": "秦浩轩出售黄精",
+            "aliases": [],
+            "summary": "秦浩轩将采到的黄精以三十两银子卖给陈老头，圆其心愿，同时婉拒了一百两的出价以维持与陈老伯的长期药材交易关系，事后用所得银两请客痛饮。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第2章 山中神仙选仙苗：秦浩轩考虑陈老伯对黄精的念叨及日后收药价格，拒绝了一百两的出价；随后以三十两卖给陈老头，说“三十两就三十两……就当圆了您一个心愿呗”；拿到三十两银子后呼朋引伴在镇上酒家痛饮。综合多条原文摘录。",
+            "evidence_excerpt": "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。“陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？”",
+            "evidence_excerpts": [
+              "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。“陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？”",
+              "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！”",
+              "在陈老头手中接过三十两银子，秦浩轩呼朋引伴，领着一群少年来到镇上的酒家痛饮一顿"
+            ],
+            "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+            "description": "秦浩轩将黄精以三十两卖给陈老头，拒绝一百两出价，并用银两请客。"
+          },
+          {
+            "entity_group_id": "entity_group_010",
+            "name": "神仙选苗消息宣布及报名",
+            "aliases": [],
+            "summary": "秦浩轩等少年在酒家听闻山上神仙将于明日选苗，傍晚镇长聚集适龄少年宣布消息，秦浩轩等人报名，期盼被神仙收为徒弟并获得丰厚奖励。",
+            "importance": "normal",
+            "source_origin": "agent_extract",
+            "source_note": "第2章 山中神仙选仙苗：少年们在酒家饮酒时听说“明天是山上神仙们开山选苗的大日子”；傍晚镇长在广场召集十六岁少年正式宣布；秦浩轩等人登基报名，因“被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了”。综合多条原文。",
+            "evidence_excerpt": "在酒家中饮酒时，少年们听到一个十分振奋的消息：“有消息说，明天是山上神仙们开山选苗的大日子！”",
+            "evidence_excerpts": [
+              "在酒家中饮酒时，少年们听到一个十分振奋的消息：“有消息说，明天是山上神仙们开山选苗的大日子！”",
+              "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+              "秦浩轩随着激动的少年们一起，在镇长处登基报名",
+              "就算没有每年两百两白银的诱惑，被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了"
+            ],
+            "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+            "description": "神仙选苗消息传出，镇长宣布后秦浩轩报名。"
+          }
+        ],
+        "rules": []
+      },
+      "started_at": "2026-07-07T14:13:47.218397Z",
+      "finished_at": "2026-07-07T14:14:16.017671Z",
+      "duration_ms": 28799,
+      "error": null
+    }
+  ],
+  "raw_mentions": [
+    {
+      "mention_id": "mention_001_001",
+      "name": "秦浩轩",
+      "knowledge_type": "character",
+      "description": "主角，山野少年，以采药为生，孝顺父母，聪慧果断。",
+      "evidence_excerpts": [
+        "秦浩轩在少年们簇拥下，浩浩荡荡来到药铺，吸引来不少注意目光。",
+        "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。",
+        "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！”",
+        "秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？但眼下有每年两百两银子的安家费就不同了，一旦被神仙们选中，这每年两百两银子的安家费也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事，想必双亲也一定会支持的！",
+        "秦浩轩随着激动的少年们一起，在镇长处登基报名"
+      ],
+      "reason": "故事核心人物，贯穿全文主线。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_002",
+      "name": "陈老头",
+      "knowledge_type": "character",
+      "description": "陈家药铺老板，年近八十，医术精湛，声望高，对黄精渴望已久。",
+      "evidence_excerpts": [
+        "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。",
+        "陈老头人未到声音先到，年近八十的他中气十足，一脸红润，健步如飞，一看到秦浩轩，便紧张地喊道：“听说有人高价跟我抢黄精？黄精呢？卖了吗？”",
+        "陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”",
+        "我不勉强你，如果不能卖你就收回去吧！”陈老头加快捻动速度，一副依依不舍的模样"
+      ],
+      "reason": "重要角色，与主角有多次互动，推动关键情节。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_003",
+      "name": "张狂",
+      "knowledge_type": "character",
+      "description": "大田镇少年，父亲是优秀猎手，性格嚣张阴险，与秦浩轩有矛盾。",
+      "evidence_excerpts": [
+        "即便父亲是大田镇最优秀猎手的张狂家，一年打猎的收入也不过二三十两",
+        "也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。",
+        "秦浩轩在报名薄上写上自己的大名，身后传来张狂近乎嚣张的声音：“秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算。”",
+        "被秦浩轩瞪了一眼的张狂很快冷静下来，眼神中闪过一道阴冷，暗自责怪自己得意忘形太过冲动，怨毒的瞪了秦浩轩一眼，在众多看热闹的人前默默转身离去"
+      ],
+      "reason": "主要配角，与主角冲突，可能成为后续剧情伏笔。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_004",
+      "name": "镇长",
+      "knowledge_type": "character",
+      "description": "大田镇镇长，组织少年报名参加神仙选苗。",
+      "evidence_excerpts": [
+        "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+        "如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭。"
+      ],
+      "reason": "关键事件的组织者，代表官方角色。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_005",
+      "name": "大田镇",
+      "knowledge_type": "location",
+      "description": "故事发生的主要小镇，秦浩轩与其父母居住地。",
+      "evidence_excerpts": [
+        "陈家药铺在大田镇无人不知无人不晓",
+        "在大田镇上看到两个生面孔实属罕见",
+        "大田镇普通人家十来年的收入"
+      ],
+      "reason": "故事核心地点，多个事件发生于此。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_006",
+      "name": "陈家药铺",
+      "knowledge_type": "location",
+      "description": "大田镇上的药铺，陈老头经营，收售药材，声誉高。",
+      "evidence_excerpts": [
+        "北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。",
+        "秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出",
+        "得知消息的陈老头匆匆从内院赶出来"
+      ],
+      "reason": "重要场景，多次出现，与主角直接相关。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_007",
+      "name": "坡子岭",
+      "knowledge_type": "location",
+      "description": "神仙挑选仙苗的地点。",
+      "evidence_excerpts": [
+        "明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟"
+      ],
+      "reason": "关键事件发生地，推动剧情发展。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_008",
+      "name": "黄精",
+      "knowledge_type": "item",
+      "description": "珍稀药材，小指甲大小黄色石子，清香浓郁，有价无市。",
+      "evidence_excerpts": [
+        "黄精淡淡清香在浓郁的药香中仍旧十分突出",
+        "秦浩轩松开紧紧握着黄精的手，一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来，将药铺里众多药草香味都压了下去。",
+        "陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”",
+        "药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过"
+      ],
+      "reason": "重要物品，贯穿本章主线情节。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_009",
+      "name": "秦浩轩出售黄精",
+      "knowledge_type": "event",
+      "description": "秦浩轩拒绝外地豪客高价收购，最终以三十两将黄精卖给陈老头。",
+      "evidence_excerpts": [
+        "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。‘陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？’",
+        "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：‘三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！’",
+        "在陈老头手中接过三十两银子，秦浩轩呼朋引伴，领着一群少年来到镇上的酒家痛饮一顿"
+      ],
+      "reason": "本章核心事件，展现主角性格与处事方式。",
+      "segment_index": 1
+    },
+    {
+      "mention_id": "mention_001_010",
+      "name": "神仙选苗消息宣布及报名",
+      "knowledge_type": "event",
+      "description": "少年们得知神仙开山选苗的大日子，镇长宣布消息并组织适龄少年报名。",
+      "evidence_excerpts": [
+        "在酒家中饮酒时，少年们听到一个十分振奋的消息：‘有消息说，明天是山上神仙们开山选苗的大日子！’",
+        "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+        "秦浩轩随着激动的少年们一起，在镇长处登基报名",
+        "就算没有每年两百两白银的诱惑，被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了"
+      ],
+      "reason": "推动情节发展的关键事件，为下一章选苗做铺垫。",
+      "segment_index": 1
+    }
+  ],
+  "entity_groups": [
+    {
+      "entity_group_id": "entity_group_001",
+      "canonical_name": "秦浩轩",
+      "knowledge_type": "character",
+      "raw_names": [
+        "秦浩轩"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "秦浩轩在少年们簇拥下，浩浩荡荡来到药铺，吸引来不少注意目光。",
+        "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。",
+        "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！”",
+        "秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？但眼下有每年两百两银子的安家费就不同了，一旦被神仙们选中，这每年两百两银子的安家费也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事，想必双亲也一定会支持的！",
+        "秦浩轩随着激动的少年们一起，在镇长处登基报名"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定专名特征。"
+    },
+    {
+      "entity_group_id": "entity_group_002",
+      "canonical_name": "陈老头",
+      "knowledge_type": "character",
+      "raw_names": [
+        "陈老头"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。",
+        "陈老头人未到声音先到，年近八十的他中气十足，一脸红润，健步如飞，一看到秦浩轩，便紧张地喊道：“听说有人高价跟我抢黄精？黄精呢？卖了吗？”",
+        "陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”",
+        "我不勉强你，如果不能卖你就收回去吧！”陈老头加快捻动速度，一副依依不舍的模样"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定专名特征。"
+    },
+    {
+      "entity_group_id": "entity_group_003",
+      "canonical_name": "张狂",
+      "knowledge_type": "character",
+      "raw_names": [
+        "张狂"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "即便父亲是大田镇最优秀猎手的张狂家，一年打猎的收入也不过二三十两",
+        "也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。",
+        "秦浩轩在报名薄上写上自己的大名，身后传来张狂近乎嚣张的声音：“秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算。”",
+        "被秦浩轩瞪了一眼的张狂很快冷静下来，眼神中闪过一道阴冷，暗自责怪自己得意忘形太过冲动，怨毒的瞪了秦浩轩一眼，在众多看热闹的人前默默转身离去"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定专名特征。"
+    },
+    {
+      "entity_group_id": "entity_group_004",
+      "canonical_name": "镇长",
+      "knowledge_type": "character",
+      "raw_names": [
+        "镇长"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+        "如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "明确称号或职务，并可进入作者审核。"
+    },
+    {
+      "entity_group_id": "entity_group_005",
+      "canonical_name": "大田镇",
+      "knowledge_type": "location",
+      "raw_names": [
+        "大田镇"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "陈家药铺在大田镇无人不知无人不晓",
+        "在大田镇上看到两个生面孔实属罕见",
+        "大田镇普通人家十来年的收入"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备可复用地点名称或空间属性。"
+    },
+    {
+      "entity_group_id": "entity_group_006",
+      "canonical_name": "陈家药铺",
+      "knowledge_type": "location",
+      "raw_names": [
+        "陈家药铺"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。",
+        "秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出",
+        "得知消息的陈老头匆匆从内院赶出来"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备可复用地点名称或空间属性。"
+    },
+    {
+      "entity_group_id": "entity_group_007",
+      "canonical_name": "坡子岭",
+      "knowledge_type": "location",
+      "raw_names": [
+        "坡子岭"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备可复用地点名称或空间属性。"
+    },
+    {
+      "entity_group_id": "entity_group_008",
+      "canonical_name": "黄精",
+      "knowledge_type": "item",
+      "raw_names": [
+        "黄精"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "黄精淡淡清香在浓郁的药香中仍旧十分突出",
+        "秦浩轩松开紧紧握着黄精的手，一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来，将药铺里众多药草香味都压了下去。",
+        "陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”",
+        "药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "有明确名称且具备设定价值或可追踪属性。"
+    },
+    {
+      "entity_group_id": "entity_group_009",
+      "canonical_name": "秦浩轩出售黄精",
+      "knowledge_type": "event",
+      "raw_names": [
+        "秦浩轩出售黄精"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。‘陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？’",
+        "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：‘三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！’",
+        "在陈老头手中接过三十两银子，秦浩轩呼朋引伴，领着一群少年来到镇上的酒家痛饮一顿"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备明确剧情事件或状态变化证据。"
+    },
+    {
+      "entity_group_id": "entity_group_010",
+      "canonical_name": "神仙选苗消息宣布及报名",
+      "knowledge_type": "event",
+      "raw_names": [
+        "神仙选苗消息宣布及报名"
+      ],
+      "mention_count": 1,
+      "evidence_excerpts": [
+        "在酒家中饮酒时，少年们听到一个十分振奋的消息：‘有消息说，明天是山上神仙们开山选苗的大日子！’",
+        "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+        "秦浩轩随着激动的少年们一起，在镇长处登基报名",
+        "就算没有每年两百两白银的诱惑，被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备明确剧情事件或状态变化证据。"
+    }
+  ],
+  "raw_candidates": [
+    {
+      "entity_group_id": "entity_group_001",
+      "name": "秦浩轩",
+      "aliases": [],
+      "knowledge_type": "character",
+      "source_excerpt": "秦浩轩在少年们簇拥下，浩浩荡荡来到药铺，吸引来不少注意目光。",
+      "evidence_excerpts": [
+        "秦浩轩在少年们簇拥下，浩浩荡荡来到药铺，吸引来不少注意目光。",
+        "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。",
+        "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！”",
+        "秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？但眼下有每年两百两银子的安家费就不同了，一旦被神仙们选中，这每年两百两银子的安家费也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事，想必双亲也一定会支持的！",
+        "秦浩轩随着激动的少年们一起，在镇长处登基报名"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定专名特征。"
+    },
+    {
+      "entity_group_id": "entity_group_002",
+      "name": "陈老头",
+      "aliases": [],
+      "knowledge_type": "character",
+      "source_excerpt": "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。",
+      "evidence_excerpts": [
+        "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。",
+        "陈老头人未到声音先到，年近八十的他中气十足，一脸红润，健步如飞，一看到秦浩轩，便紧张地喊道：“听说有人高价跟我抢黄精？黄精呢？卖了吗？”",
+        "陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”",
+        "我不勉强你，如果不能卖你就收回去吧！”陈老头加快捻动速度，一副依依不舍的模样"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定专名特征。"
+    },
+    {
+      "entity_group_id": "entity_group_003",
+      "name": "张狂",
+      "aliases": [],
+      "knowledge_type": "character",
+      "source_excerpt": "即便父亲是大田镇最优秀猎手的张狂家，一年打猎的收入也不过二三十两",
+      "evidence_excerpts": [
+        "即便父亲是大田镇最优秀猎手的张狂家，一年打猎的收入也不过二三十两",
+        "也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。",
+        "秦浩轩在报名薄上写上自己的大名，身后传来张狂近乎嚣张的声音：“秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算。”",
+        "被秦浩轩瞪了一眼的张狂很快冷静下来，眼神中闪过一道阴冷，暗自责怪自己得意忘形太过冲动，怨毒的瞪了秦浩轩一眼，在众多看热闹的人前默默转身离去"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备稳定专名特征。"
+    },
+    {
+      "entity_group_id": "entity_group_004",
+      "name": "镇长",
+      "aliases": [],
+      "knowledge_type": "character",
+      "source_excerpt": "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+      "evidence_excerpts": [
+        "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+        "如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭。"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "明确称号或职务，并可进入作者审核。"
+    },
+    {
+      "entity_group_id": "entity_group_005",
+      "name": "大田镇",
+      "aliases": [],
+      "knowledge_type": "location",
+      "source_excerpt": "陈家药铺在大田镇无人不知无人不晓",
+      "evidence_excerpts": [
+        "陈家药铺在大田镇无人不知无人不晓",
+        "在大田镇上看到两个生面孔实属罕见",
+        "大田镇普通人家十来年的收入"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备可复用地点名称或空间属性。"
+    },
+    {
+      "entity_group_id": "entity_group_006",
+      "name": "陈家药铺",
+      "aliases": [],
+      "knowledge_type": "location",
+      "source_excerpt": "北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。",
+      "evidence_excerpts": [
+        "北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。",
+        "秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出",
+        "得知消息的陈老头匆匆从内院赶出来"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备可复用地点名称或空间属性。"
+    },
+    {
+      "entity_group_id": "entity_group_007",
+      "name": "坡子岭",
+      "aliases": [],
+      "knowledge_type": "location",
+      "source_excerpt": "明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟",
+      "evidence_excerpts": [
+        "明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备可复用地点名称或空间属性。"
+    },
+    {
+      "entity_group_id": "entity_group_008",
+      "name": "黄精",
+      "aliases": [],
+      "knowledge_type": "item",
+      "source_excerpt": "黄精淡淡清香在浓郁的药香中仍旧十分突出",
+      "evidence_excerpts": [
+        "黄精淡淡清香在浓郁的药香中仍旧十分突出",
+        "秦浩轩松开紧紧握着黄精的手，一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来，将药铺里众多药草香味都压了下去。",
+        "陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”",
+        "药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "有明确名称且具备设定价值或可追踪属性。"
+    },
+    {
+      "entity_group_id": "entity_group_009",
+      "name": "秦浩轩出售黄精",
+      "aliases": [],
+      "knowledge_type": "event",
+      "source_excerpt": "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。‘陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？’",
+      "evidence_excerpts": [
+        "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。‘陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？’",
+        "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：‘三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！’",
+        "在陈老头手中接过三十两银子，秦浩轩呼朋引伴，领着一群少年来到镇上的酒家痛饮一顿"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备明确剧情事件或状态变化证据。"
+    },
+    {
+      "entity_group_id": "entity_group_010",
+      "name": "神仙选苗消息宣布及报名",
+      "aliases": [],
+      "knowledge_type": "event",
+      "source_excerpt": "在酒家中饮酒时，少年们听到一个十分振奋的消息：‘有消息说，明天是山上神仙们开山选苗的大日子！’",
+      "evidence_excerpts": [
+        "在酒家中饮酒时，少年们听到一个十分振奋的消息：‘有消息说，明天是山上神仙们开山选苗的大日子！’",
+        "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+        "秦浩轩随着激动的少年们一起，在镇长处登基报名",
+        "就算没有每年两百两白银的诱惑，被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了"
+      ],
+      "quality_decision": "accepted",
+      "quality_reason": "具备明确剧情事件或状态变化证据。"
+    }
+  ],
+  "typed_candidates": [
+    {
+      "entity_group_id": "entity_group_001",
+      "name": "秦浩轩",
+      "aliases": [],
+      "summary": "大田镇少年，以采药为生，孝顺父母。因担心离家后双亲无人照料，本不愿参加神仙选拔，但得知每年有二百两安家费后报名。与药铺陈老头关系很好，低价卖予黄精。与猎户之子张狂有旧怨，报名时遭其挑衅，但以眼神将其震慑。",
+      "importance": "core",
+      "source_origin": "agent_extract",
+      "source_note": "第2章 山中神仙选仙苗。秦浩轩在药铺将黄精以三十两卖给陈老头，称‘若没有您哪有我的今天’；他担心父母衣食无着，得知安家费后心想‘也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事’；在镇长处报名时，张狂放话‘明天一定会被神仙们选中，到时候有些帐我们好好算一算’，秦浩轩瞪眼后张狂冷静离去。",
+      "evidence_excerpt": "秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？但眼下有每年两百两银子的安家费就不同了，一旦被神仙们选中，这每年两百两银子的安家费也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事，想必双亲也一定会支持的！",
+      "evidence_excerpts": [
+        "秦浩轩在少年们簇拥下，浩浩荡荡来到药铺，吸引来不少注意目光。",
+        "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。",
+        "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！”",
+        "秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？但眼下有每年两百两银子的安家费就不同了，一旦被神仙们选中，这每年两百两银子的安家费也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事，想必双亲也一定会支持的！",
+        "秦浩轩随着激动的少年们一起，在镇长处登基报名"
+      ],
+      "role_type": "protagonist",
+      "identity": "大田镇采药少年",
+      "relationship_summary": "与药铺陈老头交好，感念其恩情；与猎户之子张狂有旧怨，张狂欲借选拔之机报复。",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "type": "character",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_002",
+      "name": "陈老头",
+      "aliases": [],
+      "summary": "大田镇陈家药铺老板，年近八十，医术高明，声誉极高。对黄精十分珍视，想以高价从秦浩轩处购买，最终秦浩轩仅收三十两，他爱不释手。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第2章 山中神仙选仙苗。陈老头人未到声先到，年近八十中气十足，一看到秦浩轩便紧张黄精；将黄精放在两指间轻捻赞‘好宝贝’；秦浩轩坚持只收三十两，他加快捻动速度依依不舍。",
+      "evidence_excerpt": "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。",
+      "evidence_excerpts": [
+        "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。",
+        "陈老头人未到声音先到，年近八十的他中气十足，一脸红润，健步如飞，一看到秦浩轩，便紧张地喊道：“听说有人高价跟我抢黄精？黄精呢？卖了吗？”",
+        "陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”",
+        "我不勉强你，如果不能卖你就收回去吧！”陈老头加快捻动速度，一副依依不舍的模样"
+      ],
+      "role_type": "supporting",
+      "identity": "陈家药铺老板",
+      "relationship_summary": "与秦浩轩有买卖黄精的交情，秦浩轩感念其过去恩情低价卖药。",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "type": "character",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_003",
+      "name": "张狂",
+      "aliases": [],
+      "summary": "大田镇猎户之子，家境较好，性格嚣张。报名参加神仙选拔，自认为会被选中，当众威胁秦浩轩，但被秦浩轩眼神震慑后冷静，怨毒离去。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第2章 山中神仙选仙苗。张狂父亲是大田镇最优秀猎手，年收入二三十两；张狂在报名时在几名小弟吹捧中自信满满，看到秦浩轩也不像以前那般畏惧；他放话‘明天一定会被神仙们选中，到时候有些帐我们好好算一算’，被秦浩轩瞪眼后冷静，眼神阴冷怨毒地离去。",
+      "evidence_excerpt": "也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。",
+      "evidence_excerpts": [
+        "即便父亲是大田镇最优秀猎手的张狂家，一年打猎的收入也不过二三十两",
+        "也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。",
+        "秦浩轩在报名薄上写上自己的大名，身后传来张狂近乎嚣张的声音：“秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算。”",
+        "被秦浩轩瞪了一眼的张狂很快冷静下来，眼神中闪过一道阴冷，暗自责怪自己得意忘形太过冲动，怨毒的瞪了秦浩轩一眼，在众多看热闹的人前默默转身离去"
+      ],
+      "role_type": "antagonist",
+      "identity": "猎户之子",
+      "relationship_summary": "与秦浩轩有旧怨，曾在报名时威胁秦浩轩，反被其震慑。",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "type": "character",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_004",
+      "name": "镇长",
+      "aliases": [],
+      "summary": "大田镇的镇长，负责组织适龄少年参加神仙选拔，宣布消息并接受报名。",
+      "importance": "minor",
+      "source_origin": "agent_extract",
+      "source_note": "第2章 山中神仙选仙苗。傍晚时分，镇长遣人将镇上十六岁适龄少年聚集，在广场宣布神仙选拔消息；表示想报名的来他那里报名，明天黎明进发坡子岭。",
+      "evidence_excerpt": "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+      "evidence_excerpts": [
+        "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+        "如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭。"
+      ],
+      "role_type": "passerby",
+      "identity": "大田镇镇长",
+      "relationship_summary": null,
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "type": "character",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_005",
+      "name": "大田镇",
+      "aliases": [],
+      "summary": "大田镇是一个封闭小镇，陈家药铺闻名全镇，居民收入不高，外来人罕见。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第2章 山中神仙选仙苗。证据1：“陈家药铺在大田镇无人不知无人不晓”；证据2：“在大田镇上看到两个生面孔实属罕见”；证据3：“大田镇普通人家十来年的收入”。综合表明大田镇是一个小镇，陈家药铺很有名，生人少，居民收入低。",
+      "evidence_excerpt": "陈家药铺在大田镇无人不知无人不晓",
+      "evidence_excerpts": [
+        "陈家药铺在大田镇无人不知无人不晓",
+        "在大田镇上看到两个生面孔实属罕见",
+        "大田镇普通人家十来年的收入"
+      ],
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "type": "location",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_006",
+      "name": "陈家药铺",
+      "aliases": [],
+      "summary": "陈家药铺是大田镇北街的一个小药铺，由陈老头经营，内有学徒切药制药，药香浓郁。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第2章 山中神仙选仙苗。证据1：“北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。”；证据2：“秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出”；证据3：“得知消息的陈老头匆匆从内院赶出来”。综合表明陈家药铺是大田镇北街的小药铺，由陈老头经营，有学徒制药，药香浓郁。",
+      "evidence_excerpt": "北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。",
+      "evidence_excerpts": [
+        "北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。",
+        "秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出",
+        "得知消息的陈老头匆匆从内院赶出来"
+      ],
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "type": "location",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_007",
+      "name": "坡子岭",
+      "aliases": [],
+      "summary": "坡子岭是山上神仙挑选仙苗的地点。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第2章 山中神仙选仙苗。证据：“明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟”。表明坡子岭是神仙选苗的地点。",
+      "evidence_excerpt": "明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟",
+      "evidence_excerpts": [
+        "明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟"
+      ],
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "type": "location",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_008",
+      "name": "黄精",
+      "aliases": [],
+      "summary": "黄精是一种珍贵药材，外观为小指甲大小的黄色石子，散发淡然却浓郁的清香，能压制其他药香，价值可达千两。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第2章 山中神仙选仙苗。证据1：“黄精淡淡清香在浓郁的药香中仍旧十分突出”；证据2：“秦浩轩松开紧紧握着黄精的手，一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来，将药铺里众多药草香味都压了下去。”；证据3：“陈老头将黄精放在两指间轻轻捻动，赞道：‘好宝贝，好宝贝！’”；证据4：“药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过”。综合表明黄精是一种黄色石状珍贵药材，香气独特，价值极高，可卖到千两。",
+      "evidence_excerpt": "黄精淡淡清香在浓郁的药香中仍旧十分突出",
+      "evidence_excerpts": [
+        "黄精淡淡清香在浓郁的药香中仍旧十分突出",
+        "秦浩轩松开紧紧握着黄精的手，一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来，将药铺里众多药草香味都压了下去。",
+        "陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”",
+        "药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过"
+      ],
+      "item_type": "material",
+      "grade": null,
+      "current_holder_id": null,
+      "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "type": "item",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_009",
+      "name": "秦浩轩出售黄精",
+      "aliases": [],
+      "summary": "秦浩轩将采到的黄精以三十两银子卖给陈老头，圆其心愿，同时婉拒了一百两的出价以维持与陈老伯的长期药材交易关系，事后用所得银两请客痛饮。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第2章 山中神仙选仙苗：秦浩轩考虑陈老伯对黄精的念叨及日后收药价格，拒绝了一百两的出价；随后以三十两卖给陈老头，说“三十两就三十两……就当圆了您一个心愿呗”；拿到三十两银子后呼朋引伴在镇上酒家痛饮。综合多条原文摘录。",
+      "evidence_excerpt": "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。“陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？”",
+      "evidence_excerpts": [
+        "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。“陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？”",
+        "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！”",
+        "在陈老头手中接过三十两银子，秦浩轩呼朋引伴，领着一群少年来到镇上的酒家痛饮一顿"
+      ],
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "description": "秦浩轩将黄精以三十两卖给陈老头，拒绝一百两出价，并用银两请客。",
+      "type": "event",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    },
+    {
+      "entity_group_id": "entity_group_010",
+      "name": "神仙选苗消息宣布及报名",
+      "aliases": [],
+      "summary": "秦浩轩等少年在酒家听闻山上神仙将于明日选苗，傍晚镇长聚集适龄少年宣布消息，秦浩轩等人报名，期盼被神仙收为徒弟并获得丰厚奖励。",
+      "importance": "normal",
+      "source_origin": "agent_extract",
+      "source_note": "第2章 山中神仙选仙苗：少年们在酒家饮酒时听说“明天是山上神仙们开山选苗的大日子”；傍晚镇长在广场召集十六岁少年正式宣布；秦浩轩等人登基报名，因“被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了”。综合多条原文。",
+      "evidence_excerpt": "在酒家中饮酒时，少年们听到一个十分振奋的消息：“有消息说，明天是山上神仙们开山选苗的大日子！”",
+      "evidence_excerpts": [
+        "在酒家中饮酒时，少年们听到一个十分振奋的消息：“有消息说，明天是山上神仙们开山选苗的大日子！”",
+        "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+        "秦浩轩随着激动的少年们一起，在镇长处登基报名",
+        "就算没有每年两百两白银的诱惑，被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了"
+      ],
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "description": "神仙选苗消息传出，镇长宣布后秦浩轩报名。",
+      "type": "event",
+      "status": "active",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      }
+    }
+  ],
+  "review_items": [
+    {
+      "review_item_id": "review_item_001",
+      "run_id": "extract_run_20260707_141236_87d929",
+      "candidate_action": "create_card",
+      "knowledge_type": "character",
+      "candidate_status": "pending",
+      "display_title": "秦浩轩",
+      "suggested_card": {
+        "entity_group_id": "entity_group_001",
+        "name": "秦浩轩",
+        "aliases": [],
+        "summary": "大田镇少年，以采药为生，孝顺父母。因担心离家后双亲无人照料，本不愿参加神仙选拔，但得知每年有二百两安家费后报名。与药铺陈老头关系很好，低价卖予黄精。与猎户之子张狂有旧怨，报名时遭其挑衅，但以眼神将其震慑。",
+        "importance": "core",
+        "source_origin": "agent_extract",
+        "source_note": "第2章 山中神仙选仙苗。秦浩轩在药铺将黄精以三十两卖给陈老头，称‘若没有您哪有我的今天’；他担心父母衣食无着，得知安家费后心想‘也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事’；在镇长处报名时，张狂放话‘明天一定会被神仙们选中，到时候有些帐我们好好算一算’，秦浩轩瞪眼后张狂冷静离去。",
+        "evidence_excerpt": "秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？但眼下有每年两百两银子的安家费就不同了，一旦被神仙们选中，这每年两百两银子的安家费也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事，想必双亲也一定会支持的！",
+        "evidence_excerpts": [
+          "秦浩轩在少年们簇拥下，浩浩荡荡来到药铺，吸引来不少注意目光。",
+          "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。",
+          "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！”",
+          "秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？但眼下有每年两百两银子的安家费就不同了，一旦被神仙们选中，这每年两百两银子的安家费也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事，想必双亲也一定会支持的！",
+          "秦浩轩随着激动的少年们一起，在镇长处登基报名"
+        ],
+        "role_type": "protagonist",
+        "identity": "大田镇采药少年",
+        "relationship_summary": "与药铺陈老头交好，感念其恩情；与猎户之子张狂有旧怨，张狂欲借选拔之机报复。",
+        "death_chapter_id": null,
+        "current_realm_text": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "type": "character",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？但眼下有每年两百两银子的安家费就不同了，一旦被神仙们选中，这每年两百两银子的安家费也可以让父母亲衣食无忧，安享晚年，他也可以安心的追随神仙学长生不老的本事，想必双亲也一定会支持的！",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T14:14:40.960535Z",
+      "updated_at": "2026-07-07T14:14:40.960535Z"
+    },
+    {
+      "review_item_id": "review_item_002",
+      "run_id": "extract_run_20260707_141236_87d929",
+      "candidate_action": "create_card",
+      "knowledge_type": "character",
+      "candidate_status": "pending",
+      "display_title": "陈老头",
+      "suggested_card": {
+        "entity_group_id": "entity_group_002",
+        "name": "陈老头",
+        "aliases": [],
+        "summary": "大田镇陈家药铺老板，年近八十，医术高明，声誉极高。对黄精十分珍视，想以高价从秦浩轩处购买，最终秦浩轩仅收三十两，他爱不释手。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第2章 山中神仙选仙苗。陈老头人未到声先到，年近八十中气十足，一看到秦浩轩便紧张黄精；将黄精放在两指间轻捻赞‘好宝贝’；秦浩轩坚持只收三十两，他加快捻动速度依依不舍。",
+        "evidence_excerpt": "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。",
+        "evidence_excerpts": [
+          "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。",
+          "陈老头人未到声音先到，年近八十的他中气十足，一脸红润，健步如飞，一看到秦浩轩，便紧张地喊道：“听说有人高价跟我抢黄精？黄精呢？卖了吗？”",
+          "陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”",
+          "我不勉强你，如果不能卖你就收回去吧！”陈老头加快捻动速度，一副依依不舍的模样"
+        ],
+        "role_type": "supporting",
+        "identity": "陈家药铺老板",
+        "relationship_summary": "与秦浩轩有买卖黄精的交情，秦浩轩感念其过去恩情低价卖药。",
+        "death_chapter_id": null,
+        "current_realm_text": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "type": "character",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T14:14:40.960535Z",
+      "updated_at": "2026-07-07T14:14:40.960535Z"
+    },
+    {
+      "review_item_id": "review_item_003",
+      "run_id": "extract_run_20260707_141236_87d929",
+      "candidate_action": "create_card",
+      "knowledge_type": "character",
+      "candidate_status": "pending",
+      "display_title": "张狂",
+      "suggested_card": {
+        "entity_group_id": "entity_group_003",
+        "name": "张狂",
+        "aliases": [],
+        "summary": "大田镇猎户之子，家境较好，性格嚣张。报名参加神仙选拔，自认为会被选中，当众威胁秦浩轩，但被秦浩轩眼神震慑后冷静，怨毒离去。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第2章 山中神仙选仙苗。张狂父亲是大田镇最优秀猎手，年收入二三十两；张狂在报名时在几名小弟吹捧中自信满满，看到秦浩轩也不像以前那般畏惧；他放话‘明天一定会被神仙们选中，到时候有些帐我们好好算一算’，被秦浩轩瞪眼后冷静，眼神阴冷怨毒地离去。",
+        "evidence_excerpt": "也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。",
+        "evidence_excerpts": [
+          "即便父亲是大田镇最优秀猎手的张狂家，一年打猎的收入也不过二三十两",
+          "也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。",
+          "秦浩轩在报名薄上写上自己的大名，身后传来张狂近乎嚣张的声音：“秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算。”",
+          "被秦浩轩瞪了一眼的张狂很快冷静下来，眼神中闪过一道阴冷，暗自责怪自己得意忘形太过冲动，怨毒的瞪了秦浩轩一眼，在众多看热闹的人前默默转身离去"
+        ],
+        "role_type": "antagonist",
+        "identity": "猎户之子",
+        "relationship_summary": "与秦浩轩有旧怨，曾在报名时威胁秦浩轩，反被其震慑。",
+        "death_chapter_id": null,
+        "current_realm_text": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "type": "character",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T14:14:40.960535Z",
+      "updated_at": "2026-07-07T14:14:40.960535Z"
+    },
+    {
+      "review_item_id": "review_item_004",
+      "run_id": "extract_run_20260707_141236_87d929",
+      "candidate_action": "create_card",
+      "knowledge_type": "character",
+      "candidate_status": "pending",
+      "display_title": "镇长",
+      "suggested_card": {
+        "entity_group_id": "entity_group_004",
+        "name": "镇长",
+        "aliases": [],
+        "summary": "大田镇的镇长，负责组织适龄少年参加神仙选拔，宣布消息并接受报名。",
+        "importance": "minor",
+        "source_origin": "agent_extract",
+        "source_note": "第2章 山中神仙选仙苗。傍晚时分，镇长遣人将镇上十六岁适龄少年聚集，在广场宣布神仙选拔消息；表示想报名的来他那里报名，明天黎明进发坡子岭。",
+        "evidence_excerpt": "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+        "evidence_excerpts": [
+          "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+          "如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭。"
+        ],
+        "role_type": "passerby",
+        "identity": "大田镇镇长",
+        "relationship_summary": null,
+        "death_chapter_id": null,
+        "current_realm_text": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "type": "character",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T14:14:40.960535Z",
+      "updated_at": "2026-07-07T14:14:40.960535Z"
+    },
+    {
+      "review_item_id": "review_item_005",
+      "run_id": "extract_run_20260707_141236_87d929",
+      "candidate_action": "create_card",
+      "knowledge_type": "location",
+      "candidate_status": "pending",
+      "display_title": "大田镇",
+      "suggested_card": {
+        "entity_group_id": "entity_group_005",
+        "name": "大田镇",
+        "aliases": [],
+        "summary": "大田镇是一个封闭小镇，陈家药铺闻名全镇，居民收入不高，外来人罕见。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第2章 山中神仙选仙苗。证据1：“陈家药铺在大田镇无人不知无人不晓”；证据2：“在大田镇上看到两个生面孔实属罕见”；证据3：“大田镇普通人家十来年的收入”。综合表明大田镇是一个小镇，陈家药铺很有名，生人少，居民收入低。",
+        "evidence_excerpt": "陈家药铺在大田镇无人不知无人不晓",
+        "evidence_excerpts": [
+          "陈家药铺在大田镇无人不知无人不晓",
+          "在大田镇上看到两个生面孔实属罕见",
+          "大田镇普通人家十来年的收入"
+        ],
+        "controlling_faction_id": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "type": "location",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "陈家药铺在大田镇无人不知无人不晓",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T14:14:40.960535Z",
+      "updated_at": "2026-07-07T14:14:40.960535Z"
+    },
+    {
+      "review_item_id": "review_item_006",
+      "run_id": "extract_run_20260707_141236_87d929",
+      "candidate_action": "create_card",
+      "knowledge_type": "location",
+      "candidate_status": "pending",
+      "display_title": "陈家药铺",
+      "suggested_card": {
+        "entity_group_id": "entity_group_006",
+        "name": "陈家药铺",
+        "aliases": [],
+        "summary": "陈家药铺是大田镇北街的一个小药铺，由陈老头经营，内有学徒切药制药，药香浓郁。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第2章 山中神仙选仙苗。证据1：“北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。”；证据2：“秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出”；证据3：“得知消息的陈老头匆匆从内院赶出来”。综合表明陈家药铺是大田镇北街的小药铺，由陈老头经营，有学徒制药，药香浓郁。",
+        "evidence_excerpt": "北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。",
+        "evidence_excerpts": [
+          "北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。",
+          "秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出",
+          "得知消息的陈老头匆匆从内院赶出来"
+        ],
+        "controlling_faction_id": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "type": "location",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T14:14:40.960535Z",
+      "updated_at": "2026-07-07T14:14:40.960535Z"
+    },
+    {
+      "review_item_id": "review_item_007",
+      "run_id": "extract_run_20260707_141236_87d929",
+      "candidate_action": "create_card",
+      "knowledge_type": "location",
+      "candidate_status": "pending",
+      "display_title": "坡子岭",
+      "suggested_card": {
+        "entity_group_id": "entity_group_007",
+        "name": "坡子岭",
+        "aliases": [],
+        "summary": "坡子岭是山上神仙挑选仙苗的地点。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第2章 山中神仙选仙苗。证据：“明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟”。表明坡子岭是神仙选苗的地点。",
+        "evidence_excerpt": "明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟",
+        "evidence_excerpts": [
+          "明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟"
+        ],
+        "controlling_faction_id": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "type": "location",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T14:14:40.960535Z",
+      "updated_at": "2026-07-07T14:14:40.960535Z"
+    },
+    {
+      "review_item_id": "review_item_008",
+      "run_id": "extract_run_20260707_141236_87d929",
+      "candidate_action": "create_card",
+      "knowledge_type": "item",
+      "candidate_status": "pending",
+      "display_title": "黄精",
+      "suggested_card": {
+        "entity_group_id": "entity_group_008",
+        "name": "黄精",
+        "aliases": [],
+        "summary": "黄精是一种珍贵药材，外观为小指甲大小的黄色石子，散发淡然却浓郁的清香，能压制其他药香，价值可达千两。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第2章 山中神仙选仙苗。证据1：“黄精淡淡清香在浓郁的药香中仍旧十分突出”；证据2：“秦浩轩松开紧紧握着黄精的手，一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来，将药铺里众多药草香味都压了下去。”；证据3：“陈老头将黄精放在两指间轻轻捻动，赞道：‘好宝贝，好宝贝！’”；证据4：“药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过”。综合表明黄精是一种黄色石状珍贵药材，香气独特，价值极高，可卖到千两。",
+        "evidence_excerpt": "黄精淡淡清香在浓郁的药香中仍旧十分突出",
+        "evidence_excerpts": [
+          "黄精淡淡清香在浓郁的药香中仍旧十分突出",
+          "秦浩轩松开紧紧握着黄精的手，一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来，将药铺里众多药草香味都压了下去。",
+          "陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”",
+          "药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过"
+        ],
+        "item_type": "material",
+        "grade": null,
+        "current_holder_id": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "type": "item",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "黄精淡淡清香在浓郁的药香中仍旧十分突出",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T14:14:40.960535Z",
+      "updated_at": "2026-07-07T14:14:40.960535Z"
+    },
+    {
+      "review_item_id": "review_item_009",
+      "run_id": "extract_run_20260707_141236_87d929",
+      "candidate_action": "create_card",
+      "knowledge_type": "event",
+      "candidate_status": "pending",
+      "display_title": "秦浩轩出售黄精",
+      "suggested_card": {
+        "entity_group_id": "entity_group_009",
+        "name": "秦浩轩出售黄精",
+        "aliases": [],
+        "summary": "秦浩轩将采到的黄精以三十两银子卖给陈老头，圆其心愿，同时婉拒了一百两的出价以维持与陈老伯的长期药材交易关系，事后用所得银两请客痛饮。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第2章 山中神仙选仙苗：秦浩轩考虑陈老伯对黄精的念叨及日后收药价格，拒绝了一百两的出价；随后以三十两卖给陈老头，说“三十两就三十两……就当圆了您一个心愿呗”；拿到三十两银子后呼朋引伴在镇上酒家痛饮。综合多条原文摘录。",
+        "evidence_excerpt": "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。“陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？”",
+        "evidence_excerpts": [
+          "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。“陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？”",
+          "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！”",
+          "在陈老头手中接过三十两银子，秦浩轩呼朋引伴，领着一群少年来到镇上的酒家痛饮一顿"
+        ],
+        "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "description": "秦浩轩将黄精以三十两卖给陈老头，拒绝一百两出价，并用银两请客。",
+        "type": "event",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。“陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了，一百两虽然诱人，却不能断了我的后路是吧？”",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T14:14:40.960535Z",
+      "updated_at": "2026-07-07T14:14:40.960535Z"
+    },
+    {
+      "review_item_id": "review_item_010",
+      "run_id": "extract_run_20260707_141236_87d929",
+      "candidate_action": "create_card",
+      "knowledge_type": "event",
+      "candidate_status": "pending",
+      "display_title": "神仙选苗消息宣布及报名",
+      "suggested_card": {
+        "entity_group_id": "entity_group_010",
+        "name": "神仙选苗消息宣布及报名",
+        "aliases": [],
+        "summary": "秦浩轩等少年在酒家听闻山上神仙将于明日选苗，傍晚镇长聚集适龄少年宣布消息，秦浩轩等人报名，期盼被神仙收为徒弟并获得丰厚奖励。",
+        "importance": "normal",
+        "source_origin": "agent_extract",
+        "source_note": "第2章 山中神仙选仙苗：少年们在酒家饮酒时听说“明天是山上神仙们开山选苗的大日子”；傍晚镇长在广场召集十六岁少年正式宣布；秦浩轩等人登基报名，因“被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了”。综合多条原文。",
+        "evidence_excerpt": "在酒家中饮酒时，少年们听到一个十分振奋的消息：“有消息说，明天是山上神仙们开山选苗的大日子！”",
+        "evidence_excerpts": [
+          "在酒家中饮酒时，少年们听到一个十分振奋的消息：“有消息说，明天是山上神仙们开山选苗的大日子！”",
+          "傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。",
+          "秦浩轩随着激动的少年们一起，在镇长处登基报名",
+          "就算没有每年两百两白银的诱惑，被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了"
+        ],
+        "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "description": "神仙选苗消息传出，镇长宣布后秦浩轩报名。",
+        "type": "event",
+        "status": "active"
+      },
+      "target_card_id": null,
+      "matched_card_name": null,
+      "match_reason": "",
+      "source_excerpt": "在酒家中饮酒时，少年们听到一个十分振奋的消息：“有消息说，明天是山上神仙们开山选苗的大日子！”",
+      "schema_validation": {
+        "passed": true,
+        "errors": []
+      },
+      "internal_conflicts": [],
+      "external_conflicts": [],
+      "suggested_action_label": "建议创建新知识卡",
+      "author_action": null,
+      "created_knowledge_card_id": null,
+      "updated_knowledge_card_id": null,
+      "created_at": "2026-07-07T14:14:40.960535Z",
+      "updated_at": "2026-07-07T14:14:40.960535Z"
+    }
+  ],
+  "ignored": [
+    {
+      "text": "小山羊胡子",
+      "reason": "临时描述性称呼，无专名，属于路人角色。",
+      "segment_index": 1
+    },
+    {
+      "text": "另一个生面孔",
+      "reason": "临时描述性称呼，无专名，属于路人角色。",
+      "segment_index": 1
+    },
+    {
+      "text": "少年们",
+      "reason": "泛称，无具体指向。",
+      "segment_index": 1
+    },
+    {
+      "text": "一百两银子",
+      "reason": "普通消耗品，非特殊物品。",
+      "segment_index": 1
+    },
+    {
+      "text": "酒家",
+      "reason": "普通功能空间，不属于特殊地点。",
+      "segment_index": 1
+    },
+    {
+      "text": "徒弟们",
+      "reason": "泛称，没有稳定身份。",
+      "segment_index": 1
+    },
+    {
+      "text": "山上神仙",
+      "reason": "作为势力泛称，无具体名称，不宜作为faction抽取。",
+      "segment_index": 1
+    }
+  ],
+  "metrics": {
+    "candidate_total": 10,
+    "character_candidate_count": 4,
+    "location_candidate_count": 3,
+    "faction_candidate_count": 0,
+    "item_candidate_count": 1,
+    "realm_candidate_count": 0,
+    "technique_candidate_count": 0,
+    "rule_candidate_count": 0,
+    "event_candidate_count": 2,
+    "candidate_count_by_type": {
+      "technique": 0,
+      "event": 2,
+      "realm": 0,
+      "location": 3,
+      "faction": 0,
+      "character": 4,
+      "item": 1,
+      "rule": 0
+    },
+    "create_card_count": 10,
+    "update_card_count": 0,
+    "conflict_count": 0,
+    "schema_passed_count": 10,
+    "schema_failed_count": 0,
+    "confirmed_count": 0,
+    "rejected_count": 0,
+    "pending_count": 10,
+    "total_duration_ms": 124931,
+    "llm_call_count": 4,
+    "node_duration_ms": {
+      "LoadChapterNode": 9,
+      "SegmentChapterNode": 0,
+      "GeneralExtractionNode": 71111,
+      "MentionNormalizeNode": 0,
+      "EntityAggregationNode": 0,
+      "CandidateQualityGateNode": 36,
+      "TypeDispatchNode": 0,
+      "CharacterExpertNode": 53704,
+      "EntityExpertNode": 32818,
+      "EventRuleExpertNode": 28800,
+      "MergeExpertCandidatesNode": 0,
+      "NormalizeAndValidateNode": 0,
+      "RunInternalConflictCheckNode": 0,
+      "MatchExistingKnowledgeNode": 33,
+      "BuildReviewItemsNode": 0,
+      "WriteIntermediateJsonNode": 0
+    }
+  },
+  "errors": []
+}

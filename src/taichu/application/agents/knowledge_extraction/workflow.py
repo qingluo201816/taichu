@@ -9,7 +9,7 @@ import hashlib
 import json
 import re
 from time import perf_counter
-from typing import Any, TypedDict, cast
+from typing import Annotated, Any, TypedDict, cast
 from uuid import uuid4
 
 from langgraph.graph import END, START, StateGraph
@@ -20,6 +20,8 @@ from taichu.application.agents.knowledge_extraction.prompts import (
     CHARACTER_EXPERT_PROMPT_VERSION,
     ENTITY_EXPERT_PROMPT,
     ENTITY_EXPERT_PROMPT_VERSION,
+    EVENT_RULE_EXPERT_PROMPT,
+    EVENT_RULE_EXPERT_PROMPT_VERSION,
     GENERAL_EXTRACTION_PROMPT,
     GENERAL_EXTRACTION_PROMPT_VERSION,
     KNOWLEDGE_EXTRACTION_PROMPT_VERSION,
@@ -54,17 +56,31 @@ from taichu.infrastructure.agent_runs.json_store import JsonAgentRunStore
 ALLOWED_KNOWLEDGE_TYPES = frozenset(
     {
         StructuredKnowledgeType.CHARACTER,
+        StructuredKnowledgeType.REALM,
+        StructuredKnowledgeType.TECHNIQUE,
         StructuredKnowledgeType.LOCATION,
         StructuredKnowledgeType.FACTION,
         StructuredKnowledgeType.ITEM,
+        StructuredKnowledgeType.RULE,
+        StructuredKnowledgeType.EVENT,
     }
 )
 _GENERAL_TYPE_KEYS = {
     "characters": "character",
+    "realms": "realm",
+    "techniques": "technique",
     "locations": "location",
     "factions": "faction",
     "items": "item",
+    "rules": "rule",
+    "events": "event",
 }
+_ALLOWED_TYPE_LABEL = "character, location, faction, item, realm, technique, event, rule"
+_ENTITY_EXPERT_TYPES = {"location", "faction", "item", "realm", "technique"}
+_EVENT_RULE_EXPERT_TYPES = {"event", "rule"}
+_MAX_MENTION_EVIDENCE_COUNT = 5
+_MAX_GROUP_EVIDENCE_COUNT = 12
+_JSON_REPAIR_MAX_RETRIES = 2
 _REJECT_CHARACTER_NAMES = frozenset(
     {
         "另一生面孔",
@@ -148,11 +164,50 @@ _SPECIAL_ITEM_MARKERS = (
     "黄精",
     "法宝",
 )
+_REALM_NAME_MARKERS = (
+    "境",
+    "阶",
+    "层",
+    "炼气",
+    "筑基",
+    "金丹",
+    "元婴",
+    "化神",
+)
+_TECHNIQUE_NAME_MARKERS = (
+    "功",
+    "法",
+    "诀",
+    "术",
+    "神通",
+    "禁术",
+    "剑诀",
+    "阵",
+    "丹",
+)
 _AGENT_FORBIDDEN_FIELDS = FORBIDDEN_KNOWLEDGE_FIELD_KEYS | {
     "current_goal",
     "secret",
     "known_secrets",
 }
+
+
+KnowledgeExtractionEventSink = Callable[[dict[str, Any]], Awaitable[None]]
+
+
+def _append_state_list(
+    left: list[dict[str, Any]],
+    right: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    return [*left, *right]
+
+
+def _append_state_strings(left: list[str], right: list[str]) -> list[str]:
+    return [*left, *right]
+
+
+def _or_state_bool(left: bool, right: bool) -> bool:
+    return bool(left) or bool(right)
 
 
 class KnowledgeExtractionState(TypedDict, total=False):
@@ -175,12 +230,16 @@ class KnowledgeExtractionState(TypedDict, total=False):
     raw_candidates: list[dict[str, Any]]
     character_entity_groups: list[dict[str, Any]]
     entity_entity_groups: list[dict[str, Any]]
+    event_rule_entity_groups: list[dict[str, Any]]
+    character_typed_candidates: list[dict[str, Any]]
+    entity_typed_candidates: list[dict[str, Any]]
+    event_rule_typed_candidates: list[dict[str, Any]]
     typed_candidates: list[dict[str, Any]]
     review_items: list[dict[str, Any]]
-    nodes: list[dict[str, Any]]
-    llm_calls: list[dict[str, Any]]
-    errors: list[str]
-    failed: bool
+    nodes: Annotated[list[dict[str, Any]], _append_state_list]
+    llm_calls: Annotated[list[dict[str, Any]], _append_state_list]
+    errors: Annotated[list[str], _append_state_strings]
+    failed: Annotated[bool, _or_state_bool]
     run: dict[str, Any]
 
 
@@ -192,6 +251,82 @@ class KnowledgeExtractionDependencies:
     llm: LLMContract
     knowledge_repository: StructuredKnowledgeRepository
     run_store: JsonAgentRunStore
+    event_sink: KnowledgeExtractionEventSink | None = None
+
+
+KNOWLEDGE_EXTRACTION_GRAPH_NODES: list[dict[str, str]] = [
+    {"node_name": "LoadChapterNode", "label": "读取章节", "lane": "预处理"},
+    {"node_name": "SegmentChapterNode", "label": "切分正文", "lane": "预处理"},
+    {"node_name": "GeneralExtractionNode", "label": "通用抽取", "lane": "抽取"},
+    {"node_name": "MentionNormalizeNode", "label": "提及清洗", "lane": "抽取"},
+    {"node_name": "EntityAggregationNode", "label": "实体聚合", "lane": "抽取"},
+    {"node_name": "CandidateQualityGateNode", "label": "质量闸门", "lane": "抽取"},
+    {"node_name": "TypeDispatchNode", "label": "类型分发", "lane": "分发"},
+    {"node_name": "CharacterExpertNode", "label": "角色专家", "lane": "并行专家"},
+    {"node_name": "EntityExpertNode", "label": "实体专家", "lane": "并行专家"},
+    {"node_name": "EventRuleExpertNode", "label": "事件规则专家", "lane": "并行专家"},
+    {"node_name": "MergeExpertCandidatesNode", "label": "合并候选", "lane": "汇合"},
+    {"node_name": "NormalizeAndValidateNode", "label": "规范校验", "lane": "后处理"},
+    {
+        "node_name": "RunInternalConflictCheckNode",
+        "label": "本轮冲突检查",
+        "lane": "后处理",
+    },
+    {
+        "node_name": "MatchExistingKnowledgeNode",
+        "label": "匹配有效知识",
+        "lane": "后处理",
+    },
+    {"node_name": "BuildReviewItemsNode", "label": "生成审核项", "lane": "后处理"},
+    {"node_name": "WriteIntermediateJsonNode", "label": "写入中间态", "lane": "写入"},
+]
+
+KNOWLEDGE_EXTRACTION_GRAPH_EDGES: list[dict[str, str]] = [
+    {"source": "LoadChapterNode", "target": "SegmentChapterNode"},
+    {"source": "SegmentChapterNode", "target": "GeneralExtractionNode"},
+    {"source": "GeneralExtractionNode", "target": "MentionNormalizeNode"},
+    {"source": "MentionNormalizeNode", "target": "EntityAggregationNode"},
+    {"source": "EntityAggregationNode", "target": "CandidateQualityGateNode"},
+    {"source": "CandidateQualityGateNode", "target": "TypeDispatchNode"},
+    {"source": "TypeDispatchNode", "target": "CharacterExpertNode"},
+    {"source": "TypeDispatchNode", "target": "EntityExpertNode"},
+    {"source": "TypeDispatchNode", "target": "EventRuleExpertNode"},
+    {"source": "CharacterExpertNode", "target": "MergeExpertCandidatesNode"},
+    {"source": "EntityExpertNode", "target": "MergeExpertCandidatesNode"},
+    {"source": "EventRuleExpertNode", "target": "MergeExpertCandidatesNode"},
+    {"source": "MergeExpertCandidatesNode", "target": "NormalizeAndValidateNode"},
+    {
+        "source": "NormalizeAndValidateNode",
+        "target": "RunInternalConflictCheckNode",
+    },
+    {
+        "source": "RunInternalConflictCheckNode",
+        "target": "MatchExistingKnowledgeNode",
+    },
+    {"source": "MatchExistingKnowledgeNode", "target": "BuildReviewItemsNode"},
+    {"source": "BuildReviewItemsNode", "target": "WriteIntermediateJsonNode"},
+]
+
+BATCH_KNOWLEDGE_EXTRACTION_GRAPH_NODES: list[dict[str, str]] = [
+    {"node_name": "BatchChapterPoolNode", "label": "章节并行抽取池", "lane": "并行抽取"},
+    {"node_name": "BatchCardAggregationNode", "label": "多章卡片聚合", "lane": "统一后处理"},
+    {"node_name": "BatchConflictCheckNode", "label": "批量冲突检查", "lane": "统一后处理"},
+    {
+        "node_name": "BatchMatchExistingKnowledgeNode",
+        "label": "匹配有效知识",
+        "lane": "统一后处理",
+    },
+    {"node_name": "BatchBuildReviewItemsNode", "label": "生成审核项", "lane": "统一后处理"},
+    {"node_name": "BatchWriteRunNode", "label": "写入批量运行", "lane": "写入"},
+]
+
+BATCH_KNOWLEDGE_EXTRACTION_GRAPH_EDGES: list[dict[str, str]] = [
+    {"source": "BatchChapterPoolNode", "target": "BatchCardAggregationNode"},
+    {"source": "BatchCardAggregationNode", "target": "BatchConflictCheckNode"},
+    {"source": "BatchConflictCheckNode", "target": "BatchMatchExistingKnowledgeNode"},
+    {"source": "BatchMatchExistingKnowledgeNode", "target": "BatchBuildReviewItemsNode"},
+    {"source": "BatchBuildReviewItemsNode", "target": "BatchWriteRunNode"},
+]
 
 
 def build_knowledge_extraction_graph(
@@ -201,64 +336,99 @@ def build_knowledge_extraction_graph(
     graph = StateGraph(KnowledgeExtractionState)
     graph.add_node(
         "LoadChapterNode",
-        cast(Any, _node("LoadChapterNode", _load_chapter(dependencies))),
+        cast(Any, _node("LoadChapterNode", _load_chapter(dependencies), dependencies)),
     )
     graph.add_node(
         "SegmentChapterNode",
-        cast(Any, _node("SegmentChapterNode", _segment_chapter())),
+        cast(Any, _node("SegmentChapterNode", _segment_chapter(), dependencies)),
     )
     graph.add_node(
         "GeneralExtractionNode",
-        cast(Any, _node("GeneralExtractionNode", _general_extraction(dependencies))),
+        cast(
+            Any,
+            _node("GeneralExtractionNode", _general_extraction(dependencies), dependencies),
+        ),
     )
     graph.add_node(
         "MentionNormalizeNode",
-        cast(Any, _node("MentionNormalizeNode", _normalize_mentions())),
+        cast(Any, _node("MentionNormalizeNode", _normalize_mentions(), dependencies)),
     )
     graph.add_node(
         "EntityAggregationNode",
-        cast(Any, _node("EntityAggregationNode", _aggregate_entities())),
+        cast(Any, _node("EntityAggregationNode", _aggregate_entities(), dependencies)),
     )
     graph.add_node(
         "CandidateQualityGateNode",
         cast(
             Any,
-            _node("CandidateQualityGateNode", _candidate_quality_gate(dependencies)),
+            _node(
+                "CandidateQualityGateNode",
+                _candidate_quality_gate(dependencies),
+                dependencies,
+            ),
         ),
     )
     graph.add_node(
         "TypeDispatchNode",
-        cast(Any, _node("TypeDispatchNode", _dispatch_entity_groups())),
+        cast(Any, _node("TypeDispatchNode", _dispatch_entity_groups(), dependencies)),
     )
     graph.add_node(
         "CharacterExpertNode",
-        cast(Any, _node("CharacterExpertNode", _character_expert(dependencies))),
+        cast(Any, _node("CharacterExpertNode", _character_expert(dependencies), dependencies)),
     )
     graph.add_node(
         "EntityExpertNode",
-        cast(Any, _node("EntityExpertNode", _entity_expert(dependencies))),
+        cast(Any, _node("EntityExpertNode", _entity_expert(dependencies), dependencies)),
+    )
+    graph.add_node(
+        "EventRuleExpertNode",
+        cast(
+            Any,
+            _node("EventRuleExpertNode", _event_rule_expert(dependencies), dependencies),
+        ),
+    )
+    graph.add_node(
+        "MergeExpertCandidatesNode",
+        cast(
+            Any,
+            _node("MergeExpertCandidatesNode", _merge_expert_candidates(), dependencies),
+        ),
     )
     graph.add_node(
         "NormalizeAndValidateNode",
-        cast(Any, _node("NormalizeAndValidateNode", _normalize_and_validate())),
+        cast(Any, _node("NormalizeAndValidateNode", _normalize_and_validate(), dependencies)),
     )
     graph.add_node(
         "RunInternalConflictCheckNode",
-        cast(Any, _node("RunInternalConflictCheckNode", _internal_conflict_check())),
+        cast(
+            Any,
+            _node(
+                "RunInternalConflictCheckNode",
+                _internal_conflict_check(),
+                dependencies,
+            ),
+        ),
     )
     graph.add_node(
         "MatchExistingKnowledgeNode",
-        cast(Any, _node("MatchExistingKnowledgeNode", _match_existing(dependencies))),
+        cast(
+            Any,
+            _node("MatchExistingKnowledgeNode", _match_existing(dependencies), dependencies),
+        ),
     )
     graph.add_node(
         "BuildReviewItemsNode",
-        cast(Any, _node("BuildReviewItemsNode", _build_review_items())),
+        cast(Any, _node("BuildReviewItemsNode", _build_review_items(), dependencies)),
     )
     graph.add_node(
         "WriteIntermediateJsonNode",
         cast(
             Any,
-            _node("WriteIntermediateJsonNode", _write_intermediate_json(dependencies)),
+            _node(
+                "WriteIntermediateJsonNode",
+                _write_intermediate_json(dependencies),
+                dependencies,
+            ),
         ),
     )
 
@@ -270,13 +440,100 @@ def build_knowledge_extraction_graph(
     graph.add_edge("EntityAggregationNode", "CandidateQualityGateNode")
     graph.add_edge("CandidateQualityGateNode", "TypeDispatchNode")
     graph.add_edge("TypeDispatchNode", "CharacterExpertNode")
-    graph.add_edge("CharacterExpertNode", "EntityExpertNode")
-    graph.add_edge("EntityExpertNode", "NormalizeAndValidateNode")
+    graph.add_edge("TypeDispatchNode", "EntityExpertNode")
+    graph.add_edge("TypeDispatchNode", "EventRuleExpertNode")
+    graph.add_edge("CharacterExpertNode", "MergeExpertCandidatesNode")
+    graph.add_edge("EntityExpertNode", "MergeExpertCandidatesNode")
+    graph.add_edge("EventRuleExpertNode", "MergeExpertCandidatesNode")
+    graph.add_edge("MergeExpertCandidatesNode", "NormalizeAndValidateNode")
     graph.add_edge("NormalizeAndValidateNode", "RunInternalConflictCheckNode")
     graph.add_edge("RunInternalConflictCheckNode", "MatchExistingKnowledgeNode")
     graph.add_edge("MatchExistingKnowledgeNode", "BuildReviewItemsNode")
     graph.add_edge("BuildReviewItemsNode", "WriteIntermediateJsonNode")
     graph.add_edge("WriteIntermediateJsonNode", END)
+    return graph.compile()
+
+
+def build_knowledge_extraction_branch_graph(
+    dependencies: KnowledgeExtractionDependencies,
+) -> CompiledStateGraph:
+    """Build one branch graph for batch extraction before final review generation."""
+    graph = StateGraph(KnowledgeExtractionState)
+    graph.add_node(
+        "LoadChapterNode",
+        cast(Any, _node("LoadChapterNode", _load_chapter(dependencies), dependencies)),
+    )
+    graph.add_node(
+        "SegmentChapterNode",
+        cast(Any, _node("SegmentChapterNode", _segment_chapter(), dependencies)),
+    )
+    graph.add_node(
+        "GeneralExtractionNode",
+        cast(
+            Any,
+            _node("GeneralExtractionNode", _general_extraction(dependencies), dependencies),
+        ),
+    )
+    graph.add_node(
+        "MentionNormalizeNode",
+        cast(Any, _node("MentionNormalizeNode", _normalize_mentions(), dependencies)),
+    )
+    graph.add_node(
+        "EntityAggregationNode",
+        cast(Any, _node("EntityAggregationNode", _aggregate_entities(), dependencies)),
+    )
+    graph.add_node(
+        "CandidateQualityGateNode",
+        cast(
+            Any,
+            _node(
+                "CandidateQualityGateNode",
+                _candidate_quality_gate(dependencies),
+                dependencies,
+            ),
+        ),
+    )
+    graph.add_node(
+        "TypeDispatchNode",
+        cast(Any, _node("TypeDispatchNode", _dispatch_entity_groups(), dependencies)),
+    )
+    graph.add_node(
+        "CharacterExpertNode",
+        cast(Any, _node("CharacterExpertNode", _character_expert(dependencies), dependencies)),
+    )
+    graph.add_node(
+        "EntityExpertNode",
+        cast(Any, _node("EntityExpertNode", _entity_expert(dependencies), dependencies)),
+    )
+    graph.add_node(
+        "EventRuleExpertNode",
+        cast(
+            Any,
+            _node("EventRuleExpertNode", _event_rule_expert(dependencies), dependencies),
+        ),
+    )
+    graph.add_node(
+        "MergeExpertCandidatesNode",
+        cast(
+            Any,
+            _node("MergeExpertCandidatesNode", _merge_expert_candidates(), dependencies),
+        ),
+    )
+
+    graph.add_edge(START, "LoadChapterNode")
+    graph.add_edge("LoadChapterNode", "SegmentChapterNode")
+    graph.add_edge("SegmentChapterNode", "GeneralExtractionNode")
+    graph.add_edge("GeneralExtractionNode", "MentionNormalizeNode")
+    graph.add_edge("MentionNormalizeNode", "EntityAggregationNode")
+    graph.add_edge("EntityAggregationNode", "CandidateQualityGateNode")
+    graph.add_edge("CandidateQualityGateNode", "TypeDispatchNode")
+    graph.add_edge("TypeDispatchNode", "CharacterExpertNode")
+    graph.add_edge("TypeDispatchNode", "EntityExpertNode")
+    graph.add_edge("TypeDispatchNode", "EventRuleExpertNode")
+    graph.add_edge("CharacterExpertNode", "MergeExpertCandidatesNode")
+    graph.add_edge("EntityExpertNode", "MergeExpertCandidatesNode")
+    graph.add_edge("EventRuleExpertNode", "MergeExpertCandidatesNode")
+    graph.add_edge("MergeExpertCandidatesNode", END)
     return graph.compile()
 
 
@@ -306,6 +563,10 @@ def initial_knowledge_extraction_state(
         "raw_candidates": [],
         "character_entity_groups": [],
         "entity_entity_groups": [],
+        "event_rule_entity_groups": [],
+        "character_typed_candidates": [],
+        "entity_typed_candidates": [],
+        "event_rule_typed_candidates": [],
         "typed_candidates": [],
         "review_items": [],
         "nodes": [],
@@ -317,8 +578,21 @@ def initial_knowledge_extraction_state(
 
 def run_from_state(state: KnowledgeExtractionState) -> AgentRun:
     """Convert graph state into a persisted AgentRun model."""
-    status = AgentRunStatus.FAILED if state.get("failed") else AgentRunStatus.COMPLETED
-    finished_at = state.get("finished_at") or _now_iso()
+    return run_snapshot_from_state(
+        state,
+        status=AgentRunStatus.FAILED if state.get("failed") else AgentRunStatus.COMPLETED,
+        finished_at=state.get("finished_at") or _now_iso(),
+    )
+
+
+def run_snapshot_from_state(
+    state: KnowledgeExtractionState,
+    *,
+    status: AgentRunStatus,
+    finished_at: str | None = None,
+) -> AgentRun:
+    """Convert current graph state into a run snapshot for storage or streaming."""
+    metrics_finished_at = finished_at or _now_iso()
     nodes = [
         AgentRunNode.model_validate(node)
         for node in state.get("nodes", [])
@@ -336,20 +610,31 @@ def run_from_state(state: KnowledgeExtractionState) -> AgentRun:
         nodes=nodes,
         llm_calls=llm_calls,
         started_at=state["started_at"],
-        finished_at=finished_at,
+        finished_at=metrics_finished_at,
     )
     return AgentRun(
         run_id=state["run_id"],
         model_name=state.get("model_name", ""),
         status=status,
         scope=AgentRunScope(
-            chapter_id=state["chapter_id"],
+            scope_type=state.get("scope_type", "chapter"),
+            chapter_id=state.get("chapter_id", ""),
             chapter_title=state.get("chapter_title", ""),
             content_hash=state.get("content_hash", ""),
+            chapter_ids=state.get("chapter_ids", []),
+            chapter_titles=state.get("chapter_titles", []),
         ),
         started_at=state["started_at"],
         finished_at=finished_at,
         nodes=nodes,
+        graph_nodes=state.get("graph_nodes", KNOWLEDGE_EXTRACTION_GRAPH_NODES),
+        graph_edges=state.get("graph_edges", KNOWLEDGE_EXTRACTION_GRAPH_EDGES),
+        batch_chapter_progress=state.get("batch_chapter_progress", []),
+        max_concurrency=int(state.get("max_concurrency") or 1),
+        current_concurrency=int(state.get("current_concurrency") or 0),
+        total_chapter_count=int(state.get("total_chapter_count") or 0),
+        completed_chapter_count=int(state.get("completed_chapter_count") or 0),
+        failed_chapter_count=int(state.get("failed_chapter_count") or 0),
         llm_calls=llm_calls,
         raw_mentions=state.get("raw_mentions", []),
         entity_groups=state.get("entity_groups", []),
@@ -366,32 +651,38 @@ def run_from_state(state: KnowledgeExtractionState) -> AgentRun:
 def _node(
     node_name: str,
     handler: Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]],
+    dependencies: KnowledgeExtractionDependencies,
 ) -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
         if state.get("failed") and node_name != "WriteIntermediateJsonNode":
-            return _record_node(
-                state,
+            record = _node_record(
                 node_name=node_name,
                 status=AgentRunNodeStatus.SKIPPED,
                 started_at=_now_iso(),
                 output_summary="前序节点失败，已跳过。",
             )
+            await _emit_node_finished(dependencies, state, record)
+            return cast(KnowledgeExtractionState, {"nodes": [record]})
         started = _now_iso()
         timer = perf_counter()
+        baselines = _additive_baselines(state)
+        await _emit_node_started(dependencies, state, node_name, started)
         try:
-            next_state = await handler(cast(KnowledgeExtractionState, dict(state)))
+            next_state = await handler(_state_working_copy(state))
         except Exception as caught:  # noqa: BLE001
-            next_state = cast(KnowledgeExtractionState, dict(state))
+            next_state = _state_working_copy(state)
             next_state["failed"] = True
             next_state.setdefault("errors", []).append(str(caught))
-            return _record_node(
-                next_state,
+            record = _node_record(
                 node_name=node_name,
                 status=AgentRunNodeStatus.FAILED,
                 started_at=started,
                 duration_ms=_elapsed_ms(timer),
                 error=str(caught),
             )
+            next_state.setdefault("nodes", []).append(record)
+            await _emit_node_finished(dependencies, next_state, record)
+            return _state_delta(state, next_state, baselines)
         status = (
             AgentRunNodeStatus.FAILED
             if next_state.get("failed") and node_name != "WriteIntermediateJsonNode"
@@ -402,16 +693,30 @@ def _node(
             if status is AgentRunNodeStatus.FAILED
             else None
         )
-        return _record_node(
-            next_state,
-            node_name=node_name,
-            status=status,
-            started_at=started,
-            duration_ms=_elapsed_ms(timer),
-            input_summary=_node_input_summary(node_name, state),
-            output_summary=_node_output_summary(node_name, next_state),
-            error=node_error,
-        )
+        if node_name == "WriteIntermediateJsonNode":
+            records = next_state.get("nodes", [])
+            record = records[-1] if records else _node_record(
+                node_name=node_name,
+                status=status,
+                started_at=started,
+                duration_ms=_elapsed_ms(timer),
+                input_summary=_node_input_summary(node_name, state),
+                output_summary=_node_output_summary(node_name, next_state),
+                error=node_error,
+            )
+        else:
+            record = _node_record(
+                node_name=node_name,
+                status=status,
+                started_at=started,
+                duration_ms=_elapsed_ms(timer),
+                input_summary=_node_input_summary(node_name, state),
+                output_summary=_node_output_summary(node_name, next_state),
+                error=node_error,
+            )
+            next_state.setdefault("nodes", []).append(record)
+        await _emit_node_finished(dependencies, next_state, record)
+        return _state_delta(state, next_state, baselines)
 
     return run
 
@@ -474,7 +779,7 @@ def _general_extraction(
                 chapter_id=state["chapter_id"],
                 chapter_title=_segment_title(state, index),
                 chapter_text=segment,
-                allowed_types="character, location, faction, item",
+                allowed_types=_ALLOWED_TYPE_LABEL,
             )
             parsed = await _complete_json(
                 state,
@@ -516,7 +821,7 @@ def _normalize_mentions() -> Callable[[KnowledgeExtractionState], Awaitable[Know
             evidence_excerpts = [
                 excerpt[:300]
                 for excerpt in _list_strings(mention.get("evidence_excerpts"))
-            ]
+            ][:_MAX_MENTION_EVIDENCE_COUNT]
             if not evidence_excerpts:
                 ignored.append(
                     {
@@ -578,7 +883,7 @@ def _aggregate_entities() -> Callable[[KnowledgeExtractionState], Awaitable[Know
             group["evidence_excerpts"] = _append_unique_strings(
                 _list_strings(group.get("evidence_excerpts")),
                 _list_strings(mention.get("evidence_excerpts")),
-            )
+            )[:_MAX_GROUP_EVIDENCE_COUNT]
         state["entity_groups"] = [groups[key] for key in order]
         return state
 
@@ -622,7 +927,12 @@ def _dispatch_entity_groups() -> Callable[[KnowledgeExtractionState], Awaitable[
         state["entity_entity_groups"] = [
             group
             for group in accepted
-            if group.get("knowledge_type") in {"location", "faction", "item"}
+            if group.get("knowledge_type") in _ENTITY_EXPERT_TYPES
+        ]
+        state["event_rule_entity_groups"] = [
+            group
+            for group in accepted
+            if group.get("knowledge_type") in _EVENT_RULE_EXPERT_TYPES
         ]
         return state
 
@@ -659,9 +969,7 @@ def _character_expert(
             return state
         cards = parsed.get("cards") if isinstance(parsed, dict) else []
         if isinstance(cards, list):
-            state.setdefault("typed_candidates", []).extend(
-                _cards_with_type(cards, "character")
-            )
+            state["character_typed_candidates"] = _cards_with_type(cards, "character")
         return state
 
     return run
@@ -690,6 +998,8 @@ def _entity_expert(
                 StructuredKnowledgeType.LOCATION,
                 StructuredKnowledgeType.FACTION,
                 StructuredKnowledgeType.ITEM,
+                StructuredKnowledgeType.REALM,
+                StructuredKnowledgeType.TECHNIQUE,
             )
         ]
         prompt = _render_prompt(
@@ -711,15 +1021,74 @@ def _entity_expert(
             state["failed"] = True
             return state
         for key, knowledge_type in (
+            ("realms", "realm"),
+            ("techniques", "technique"),
             ("locations", "location"),
             ("factions", "faction"),
             ("items", "item"),
         ):
             cards = parsed.get(key) if isinstance(parsed, dict) else []
             if isinstance(cards, list):
-                state.setdefault("typed_candidates", []).extend(
+                state.setdefault("entity_typed_candidates", []).extend(
                     _cards_with_type(cards, knowledge_type)
                 )
+        return state
+
+    return run
+
+
+def _event_rule_expert(
+    dependencies: KnowledgeExtractionDependencies,
+) -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
+    async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
+        entity_groups = state.get("event_rule_entity_groups", [])
+        if not entity_groups:
+            return state
+        event_rule_schemas = [
+            knowledge_type_schema(knowledge_type).model_dump(mode="json")
+            for knowledge_type in (
+                StructuredKnowledgeType.EVENT,
+                StructuredKnowledgeType.RULE,
+            )
+        ]
+        prompt = _render_prompt(
+            EVENT_RULE_EXPERT_PROMPT,
+            event_rule_schemas=_json_dump(event_rule_schemas),
+            chapter_id=state["chapter_id"],
+            chapter_title=state.get("chapter_title", ""),
+            event_rule_entity_groups=_json_dump(entity_groups),
+        )
+        parsed = await _complete_json(
+            state,
+            dependencies,
+            node_name="EventRuleExpertNode",
+            prompt_version=EVENT_RULE_EXPERT_PROMPT_VERSION,
+            prompt=prompt,
+        )
+        if parsed is None:
+            state["failed"] = True
+            return state
+        for key, knowledge_type in (
+            ("events", "event"),
+            ("rules", "rule"),
+        ):
+            cards = parsed.get(key) if isinstance(parsed, dict) else []
+            if isinstance(cards, list):
+                state.setdefault("event_rule_typed_candidates", []).extend(
+                    _cards_with_type(cards, knowledge_type)
+                )
+        return state
+
+    return run
+
+
+def _merge_expert_candidates() -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
+    async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
+        state["typed_candidates"] = [
+            *state.get("character_typed_candidates", []),
+            *state.get("entity_typed_candidates", []),
+            *state.get("event_rule_typed_candidates", []),
+        ]
         return state
 
     return run
@@ -869,36 +1238,136 @@ async def _complete_json(
     prompt_version: str,
     prompt: str,
 ) -> dict[str, Any] | None:
-    started_at = _now_iso()
-    timer = perf_counter()
-    raw_response = ""
-    parsed: dict[str, Any] = {}
-    error: str | None = None
-    try:
-        raw_response = await dependencies.llm.complete(prompt)
-        parsed_value = json.loads(raw_response)
-        if not isinstance(parsed_value, dict):
-            raise ValueError("LLM 响应 JSON 顶层必须是对象。")
-        parsed = parsed_value
-    except Exception as caught:  # noqa: BLE001
-        error = f"{node_name} 的 LLM 响应不是有效 JSON：{caught}"
-        state.setdefault("errors", []).append(error)
-    state.setdefault("llm_calls", []).append(
+    current_prompt = prompt
+    current_prompt_version = prompt_version
+    last_raw_response = ""
+    last_parse_error: Exception | None = None
+
+    for attempt_index in range(_JSON_REPAIR_MAX_RETRIES + 1):
+        started_at = _now_iso()
+        timer = perf_counter()
+        raw_response = ""
+        parsed: dict[str, Any] = {}
+        call_error: str | None = None
+
+        try:
+            raw_response = await dependencies.llm.complete(current_prompt)
+            parsed_value = json.loads(raw_response)
+            if not isinstance(parsed_value, dict):
+                raise ValueError("LLM 响应 JSON 顶层必须是对象。")
+            parsed = parsed_value
+        except (json.JSONDecodeError, ValueError) as caught:
+            last_raw_response = raw_response
+            last_parse_error = caught
+            call_error = f"{node_name} 的 LLM 响应不是有效 JSON：{caught}"
+        except Exception as caught:  # noqa: BLE001
+            call_error = f"{node_name} 的 LLM 调用失败：{caught}"
+            await _record_llm_completion(
+                state,
+                dependencies,
+                node_name=node_name,
+                prompt_version=current_prompt_version,
+                prompt=current_prompt,
+                raw_response=raw_response,
+                parsed=parsed,
+                started_at=started_at,
+                duration_ms=_elapsed_ms(timer),
+                error=call_error,
+            )
+            state.setdefault("errors", []).append(call_error)
+            return None
+
+        await _record_llm_completion(
+            state,
+            dependencies,
+            node_name=node_name,
+            prompt_version=current_prompt_version,
+            prompt=current_prompt,
+            raw_response=raw_response,
+            parsed=parsed,
+            started_at=started_at,
+            duration_ms=_elapsed_ms(timer),
+            error=call_error,
+        )
+
+        if call_error is None:
+            return parsed
+
+        if attempt_index < _JSON_REPAIR_MAX_RETRIES:
+            current_prompt = _json_repair_prompt(
+                node_name=node_name,
+                parse_error=str(last_parse_error),
+                raw_response=last_raw_response,
+            )
+            current_prompt_version = f"{prompt_version}_json_repair_v1"
+            continue
+
+        final_error = (
+            f"{node_name} 的 LLM 响应不是有效 JSON，"
+            f"已重试 {_JSON_REPAIR_MAX_RETRIES} 次：{last_parse_error}"
+        )
+        state.setdefault("errors", []).append(final_error)
+        return None
+
+    return None
+
+
+async def _record_llm_completion(
+    state: KnowledgeExtractionState,
+    dependencies: KnowledgeExtractionDependencies,
+    *,
+    node_name: str,
+    prompt_version: str,
+    prompt: str,
+    raw_response: str,
+    parsed: dict[str, Any],
+    started_at: str,
+    duration_ms: int,
+    error: str | None,
+) -> None:
+    call = {
+        "call_id": f"llm_call_{node_name}_{uuid4().hex[:8]}",
+        "node_name": node_name,
+        "model_name": state.get("model_name") or "默认模型",
+        "prompt_version": prompt_version,
+        "input_prompt": prompt,
+        "raw_response": raw_response,
+        "parsed_output": parsed,
+        "started_at": started_at,
+        "finished_at": _now_iso(),
+        "duration_ms": duration_ms,
+        "error": error,
+    }
+    state.setdefault("llm_calls", []).append(call)
+    await _emit_event(
+        dependencies,
         {
-            "call_id": f"llm_call_{len(state.get('llm_calls', [])) + 1:03d}",
-            "node_name": node_name,
-            "model_name": state.get("model_name") or "默认模型",
-            "prompt_version": prompt_version,
-            "input_prompt": prompt,
-            "raw_response": raw_response,
-            "parsed_output": parsed,
-            "started_at": started_at,
-            "finished_at": _now_iso(),
-            "duration_ms": _elapsed_ms(timer),
-            "error": error,
-        }
+            "event_type": "llm_call_finished",
+            "run_id": state.get("run_id", ""),
+            "message": f"模型调用完成：{_node_label(node_name)}。",
+            "llm_call": call,
+        },
     )
-    return None if error else parsed
+
+
+def _json_repair_prompt(
+    *,
+    node_name: str,
+    parse_error: str,
+    raw_response: str,
+) -> str:
+    return (
+        "你是严格的 JSON 修复器。\n"
+        f"节点：{node_name}\n"
+        f"解析错误：{parse_error}\n\n"
+        "任务：只把下面的模型输出修复为合法 JSON。\n"
+        "硬规则：\n"
+        "1. 不允许改写字段名、字段含义、事实内容、数组顺序或对象结构。\n"
+        "2. 只修复 JSON 语法问题，例如中文弯引号、缺失英文双引号、非法换行、尾随逗号。\n"
+        "3. 输出必须是 JSON 对象，不要输出解释、Markdown 或代码块。\n\n"
+        "待修复输出：\n"
+        f"{raw_response}"
+    )
 
 
 def _raw_candidates_from_general_output(output: dict[str, Any]) -> list[dict[str, Any]]:
@@ -1047,6 +1516,14 @@ async def _quality_decision(
         return _faction_quality_decision(name)
     if knowledge_type == "item":
         return _item_quality_decision(name)
+    if knowledge_type == "realm":
+        return _realm_quality_decision(name)
+    if knowledge_type == "technique":
+        return _technique_quality_decision(name)
+    if knowledge_type == "event":
+        return _event_quality_decision(name, evidence_excerpts)
+    if knowledge_type == "rule":
+        return _rule_quality_decision(name, evidence_excerpts)
     return "rejected", "知识类型不属于第一版范围。"
 
 
@@ -1096,6 +1573,36 @@ def _item_quality_decision(name: str) -> tuple[str, str]:
     return "rejected", "缺少设定价值、稀有性或可追踪归属。"
 
 
+def _realm_quality_decision(name: str) -> tuple[str, str]:
+    if any(marker in name for marker in _REALM_NAME_MARKERS) and len(name) >= 2:
+        return "accepted", "具备明确境界、阶段或修炼层次名称。"
+    return "rejected", "缺少稳定境界或修炼阶段名称。"
+
+
+def _technique_quality_decision(name: str) -> tuple[str, str]:
+    if any(marker in name for marker in _TECHNIQUE_NAME_MARKERS) and len(name) >= 2:
+        return "accepted", "具备明确功法、术法或神通名称。"
+    return "rejected", "缺少稳定功法、术法或可复用设定名称。"
+
+
+def _event_quality_decision(
+    name: str,
+    evidence_excerpts: list[str],
+) -> tuple[str, str]:
+    if len(name) >= 4 and evidence_excerpts:
+        return "accepted", "具备明确剧情事件或状态变化证据。"
+    return "rejected", "缺少明确事件名称或可回放事件证据。"
+
+
+def _rule_quality_decision(
+    name: str,
+    evidence_excerpts: list[str],
+) -> tuple[str, str]:
+    if len(name) >= 4 and evidence_excerpts:
+        return "accepted", "具备明确规则、禁制、约束或因果条件证据。"
+    return "rejected", "缺少稳定规则名称或明确规则证据。"
+
+
 def _candidate_from_entity_group(group: dict[str, Any]) -> dict[str, Any]:
     evidence_excerpts = _list_strings(group.get("evidence_excerpts"))
     return {
@@ -1137,7 +1644,7 @@ def _candidate_validation_errors(card: dict[str, Any]) -> list[str]:
         errors.append("知识类型不属于第一版范围。")
         return errors
     if knowledge_type not in ALLOWED_KNOWLEDGE_TYPES:
-        errors.append("第一版只允许角色、地点、势力、物品。")
+        errors.append("正文知识沉淀只允许角色、境界、功法、地点、势力、物品、规则、事件。")
     for field_key in ("name", "summary", "source_note", "evidence_excerpt"):
         if not str(card.get(field_key) or "").strip():
             errors.append(f"缺少必填字段：{field_key}")
@@ -1251,10 +1758,18 @@ def _metrics(
 ) -> AgentMetrics:
     return AgentMetrics(
         candidate_total=len(review_items),
+        candidate_count_by_type={
+            knowledge_type.value: _count_items(review_items, knowledge_type.value)
+            for knowledge_type in ALLOWED_KNOWLEDGE_TYPES
+        },
         character_candidate_count=_count_items(review_items, "character"),
+        realm_candidate_count=_count_items(review_items, "realm"),
+        technique_candidate_count=_count_items(review_items, "technique"),
         location_candidate_count=_count_items(review_items, "location"),
         faction_candidate_count=_count_items(review_items, "faction"),
         item_candidate_count=_count_items(review_items, "item"),
+        rule_candidate_count=_count_items(review_items, "rule"),
+        event_candidate_count=_count_items(review_items, "event"),
         create_card_count=_count_actions(review_items, AgentReviewCandidateAction.CREATE_CARD),
         update_card_count=_count_actions(review_items, AgentReviewCandidateAction.UPDATE_CARD),
         conflict_count=_count_actions(review_items, AgentReviewCandidateAction.CONFLICT),
@@ -1287,6 +1802,100 @@ def _count_status(
     return sum(1 for item in items if item.candidate_status is status)
 
 
+_ADDITIVE_STATE_KEYS = {"nodes", "llm_calls", "errors"}
+
+
+def _state_working_copy(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
+    copied: dict[str, Any] = {}
+    for key, value in state.items():
+        if isinstance(value, list):
+            copied[key] = [
+                dict(item) if isinstance(item, dict) else item
+                for item in value
+            ]
+        elif isinstance(value, dict):
+            copied[key] = dict(value)
+        else:
+            copied[key] = value
+    return cast(KnowledgeExtractionState, copied)
+
+
+def _additive_baselines(state: KnowledgeExtractionState) -> dict[str, int]:
+    return {
+        key: len(cast(list[Any], state.get(key, [])))
+        for key in _ADDITIVE_STATE_KEYS
+    }
+
+
+def _state_delta(
+    before: KnowledgeExtractionState,
+    after: KnowledgeExtractionState,
+    baselines: dict[str, int],
+) -> KnowledgeExtractionState:
+    delta: dict[str, Any] = {}
+    for key, value in after.items():
+        if key in _ADDITIVE_STATE_KEYS:
+            appended = cast(list[Any], value)[baselines.get(key, 0) :]
+            if appended:
+                delta[key] = appended
+            continue
+        if before.get(key) != value:
+            delta[key] = value
+    return cast(KnowledgeExtractionState, delta)
+
+
+async def _emit_node_started(
+    dependencies: KnowledgeExtractionDependencies,
+    state: KnowledgeExtractionState,
+    node_name: str,
+    started_at: str,
+) -> None:
+    await _emit_event(
+        dependencies,
+        {
+            "event_type": "node_started",
+            "run_id": state.get("run_id", ""),
+            "message": f"开始执行：{_node_label(node_name)}。",
+            "node": _node_record(
+                node_name=node_name,
+                status=AgentRunNodeStatus.RUNNING,
+                started_at=started_at,
+                input_summary=_node_input_summary(node_name, state),
+            ),
+        },
+    )
+
+
+async def _emit_node_finished(
+    dependencies: KnowledgeExtractionDependencies,
+    state: KnowledgeExtractionState,
+    record: dict[str, Any],
+) -> None:
+    status = str(record.get("status") or "")
+    label = _node_label(str(record.get("node_name") or ""))
+    message = f"节点完成：{label}。" if status == "success" else f"节点状态：{label}。"
+    await _emit_event(
+        dependencies,
+        {
+            "event_type": "node_finished",
+            "run_id": state.get("run_id", ""),
+            "message": message,
+            "node": record,
+        },
+    )
+
+
+async def _emit_event(
+    dependencies: KnowledgeExtractionDependencies,
+    event: dict[str, Any],
+) -> None:
+    if dependencies.event_sink is None:
+        return
+    if "type" not in event and "event_type" in event:
+        event = {"type": event["event_type"], **event}
+    await dependencies.event_sink(event)
+
+
 def _record_node(
     state: KnowledgeExtractionState,
     *,
@@ -1299,18 +1908,46 @@ def _record_node(
     error: str | None = None,
 ) -> KnowledgeExtractionState:
     state.setdefault("nodes", []).append(
-        {
-            "node_name": node_name,
-            "status": status.value,
-            "started_at": started_at,
-            "finished_at": _now_iso(),
-            "duration_ms": duration_ms,
-            "input_summary": input_summary,
-            "output_summary": output_summary,
-            "error": error,
-        }
+        _node_record(
+            node_name=node_name,
+            status=status,
+            started_at=started_at,
+            duration_ms=duration_ms,
+            input_summary=input_summary,
+            output_summary=output_summary,
+            error=error,
+        )
     )
     return state
+
+
+def _node_record(
+    *,
+    node_name: str,
+    status: AgentRunNodeStatus,
+    started_at: str,
+    duration_ms: int = 0,
+    input_summary: str = "",
+    output_summary: str = "",
+    error: str | None = None,
+) -> dict[str, Any]:
+    return {
+        "node_name": node_name,
+        "status": status.value,
+        "started_at": started_at,
+        "finished_at": None if status is AgentRunNodeStatus.RUNNING else _now_iso(),
+        "duration_ms": duration_ms,
+        "input_summary": input_summary,
+        "output_summary": output_summary,
+        "error": error,
+    }
+
+
+def _node_label(node_name: str) -> str:
+    for node in KNOWLEDGE_EXTRACTION_GRAPH_NODES:
+        if node["node_name"] == node_name:
+            return node["label"]
+    return node_name
 
 
 def _node_input_summary(node_name: str, state: KnowledgeExtractionState) -> str:
@@ -1324,8 +1961,18 @@ def _node_input_summary(node_name: str, state: KnowledgeExtractionState) -> str:
         return f"{len(state.get('entity_groups', []))} 个实体聚合组。"
     if node_name == "TypeDispatchNode":
         return f"{len(_accepted_entity_groups(state))} 个通过质量闸门的实体组。"
-    if node_name in {"CharacterExpertNode", "EntityExpertNode"}:
-        return f"{len(_accepted_entity_groups(state))} 个通过质量闸门的实体组。"
+    if node_name == "CharacterExpertNode":
+        return f"{len(state.get('character_entity_groups', []))} 个角色实体组。"
+    if node_name == "EntityExpertNode":
+        return f"{len(state.get('entity_entity_groups', []))} 个实体设定组。"
+    if node_name == "EventRuleExpertNode":
+        return f"{len(state.get('event_rule_entity_groups', []))} 个事件规则组。"
+    if node_name == "MergeExpertCandidatesNode":
+        return (
+            f"角色 {len(state.get('character_typed_candidates', []))} 个，"
+            f"实体 {len(state.get('entity_typed_candidates', []))} 个，"
+            f"事件规则 {len(state.get('event_rule_typed_candidates', []))} 个。"
+        )
     return ""
 
 
@@ -1346,8 +1993,19 @@ def _node_output_summary(node_name: str, state: KnowledgeExtractionState) -> str
     if node_name == "TypeDispatchNode":
         return (
             f"角色组 {len(state.get('character_entity_groups', []))} 个，"
-            f"实体组 {len(state.get('entity_entity_groups', []))} 个。"
+            f"实体组 {len(state.get('entity_entity_groups', []))} 个，"
+            f"事件规则组 {len(state.get('event_rule_entity_groups', []))} 个。"
         )
+    if node_name == "CharacterExpertNode":
+        return f"生成 {len(state.get('character_typed_candidates', []))} 个角色候选。"
+    if node_name == "EntityExpertNode":
+        return f"生成 {len(state.get('entity_typed_candidates', []))} 个实体候选。"
+    if node_name == "EventRuleExpertNode":
+        return f"生成 {len(state.get('event_rule_typed_candidates', []))} 个事件规则候选。"
+    if node_name == "MergeExpertCandidatesNode":
+        return f"合并为 {len(state.get('typed_candidates', []))} 个候选草稿。"
+    if node_name == "NormalizeAndValidateNode":
+        return f"完成 {len(state.get('typed_candidates', []))} 个候选结构校验。"
     if node_name == "BuildReviewItemsNode":
         return f"生成 {len(state.get('review_items', []))} 个审核项。"
     return ""
@@ -1424,7 +2082,11 @@ def _first_non_empty(*values: object) -> str:
 def _evidence_excerpts_from_item(item: dict[str, Any]) -> list[str]:
     evidence = item.get("evidence_excerpts")
     if isinstance(evidence, list):
-        return [value.strip() for value in evidence if isinstance(value, str) and value.strip()]
+        return [
+            value.strip()[:300]
+            for value in evidence
+            if isinstance(value, str) and value.strip()
+        ][:_MAX_MENTION_EVIDENCE_COUNT]
     excerpt = _first_non_empty(
         item.get("evidence_excerpt"),
         item.get("source_excerpt"),

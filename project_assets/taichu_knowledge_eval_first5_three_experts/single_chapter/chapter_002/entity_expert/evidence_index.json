@@ -1,0 +1,48 @@
+[
+  {
+    "card_id": "location_chenjia_yaopu",
+    "type": "location",
+    "name": "陈家药铺",
+    "evidence_excerpts": [
+      "陈家药铺在大田镇无人不知无人不晓。"
+    ],
+    "source_note": "第2章 山中神仙选仙苗：正文开篇介绍陈家药铺在大田镇无人不知，并描写药铺位置与经营状态。"
+  },
+  {
+    "card_id": "faction_chenjia_yaopu",
+    "type": "faction",
+    "name": "陈家药铺",
+    "evidence_excerpts": [
+      "陈老头的学徒正在忙着切药制药等种种工序。"
+    ],
+    "source_note": "第2章 山中神仙选仙苗：药铺有学徒切药制药，陈老头处理珍贵药材收购。"
+  },
+  {
+    "card_id": "item_huangjing",
+    "type": "item",
+    "name": "黄精",
+    "evidence_excerpts": [
+      "这里是一百两银子，只要小兄弟愿意将这块黄精卖给我。",
+      "三十两就三十两。"
+    ],
+    "source_note": "第2章 山中神仙选仙苗：黄精引起外地豪客与陈老头争购，是本章交易核心。"
+  },
+  {
+    "card_id": "location_da_tian_zhen",
+    "type": "location",
+    "name": "大田镇",
+    "evidence_excerpts": [
+      "镇长便遣人将镇上十六岁的适龄少年都聚集起来。"
+    ],
+    "source_note": "第2章 山中神仙选仙苗：镇长在傍晚将镇上十六岁适龄少年聚集起来宣布选苗。"
+  },
+  {
+    "card_id": "location_pozi_ling",
+    "type": "location",
+    "name": "坡子岭",
+    "evidence_excerpts": [
+      "明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟。"
+    ],
+    "source_note": "第2章 山中神仙选仙苗：镇长宣布明天在坡子岭由山上神仙挑选弟子。"
+  }
+]

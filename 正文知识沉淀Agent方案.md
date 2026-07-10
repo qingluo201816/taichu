@@ -1,14 +1,14 @@
 # 正文知识沉淀 Agent 方案
 
-> 更新日期：2026-07-04
+> 更新日期：2026-07-06
 >
-> 当前版本：v1.2
+> 当前版本：v1.3
 >
 > 当前状态：任务包前最终定稿。
 >
 > 用途：作为后续生成 Codex 执行任务包的唯一事实输入。
 >
-> 最新修正：加入候选质量闸门、章内证据聚合、泛名过滤、冲突判定收窄；任务包必须固定 prompt，不允许 Codex 执行时自行设计 prompt。
+> 最新修正：补入太初数据宪法；Markdown 是唯一文本事实源，MongoDB 是唯一结构事实源，JSON 只作为 AI 中间态与校验材料。
 >
 > 文档维护规则：后续如有新讨论，继续在本文内追加版本记录和修改章节，不再为每轮讨论新增独立方案文档。
 
@@ -16,7 +16,7 @@
 
 1. 更新状态与版本记录
 2. 定稿结论
-3. 存储决策：JSON 先行，MongoDB 后置
+3. 数据宪法与存储决策
 4. 目标与非目标
 5. 页面入口与工作台布局
 6. 数据层与中间态
@@ -50,12 +50,13 @@ v1.2 修正正文知识沉淀 Agent 试跑暴露的四类问题：同一实体�
 | v0.1 | 2026-07-04 | 正文知识沉淀 Agent 的定位、数据层、智能体工作台入口、评测同步建设 | 已合并 |
 | v0.2 | 2026-07-04 | 第一版抽取范围、章节调度单元、JSON 中间态、LangGraph 主图草案 | 已合并 |
 | v0.3 | 2026-07-04 | 第一版入口、LLM 调用记录、类型专家节点拆分、候选确认方式、首批抽取类型 | 已合并 |
-| v0.4 | 2026-07-04 | 旧独立对话服务清理边界、候选匹配 active 知识卡规则 | 已合并 |
+| v0.4 | 2026-07-04 | 旧独立对话服务清理边界、候选匹配有效知识卡规则 | 已合并 |
 | v0.5 | 2026-07-04 | 智能体工作台布局、JSON 中间态、Prompt 拆分、输出 schema、审核流与接口边界 | 已合并 |
 | v0.6 | 2026-07-04 | 第一版 API 契约、运行 JSON 严格结构、候选审核字段、Prompt 草案 | 已合并 |
 | v1.0 | 2026-07-04 | 任务包前最终定稿 | 已合并 |
 | v1.1 | 2026-07-04 | JSON 先行、MongoDB 后置的存储决策修正 | 已合并 |
-| v1.2 | 2026-07-04 | 候选质量闸门、证据聚合、泛名过滤、冲突判定收窄 | 当前有效版本 |
+| v1.2 | 2026-07-04 | 候选质量闸门、证据聚合、泛名过滤、冲突判定收窄 | 已合并 |
+| v1.3 | 2026-07-06 | 数据宪法：Markdown 文本事实源、MongoDB 结构事实源、JSON 中间态校验 | 当前有效版本 |
 
 ## 2. 定稿结论
 
@@ -67,47 +68,53 @@ v1.2 修正正文知识沉淀 Agent 试跑暴露的四类问题：同一实体�
 Markdown 正文 → 候选知识卡 / 更新建议 → 作者审核 → 当前有效知识库
 ```
 
-当前有效知识库第一版使用现有 JSON 知识库实现；MongoDB 是后续主数据存储目标，不作为第一版前置条件。
+当前有效结构知识库以 MongoDB 为结构事实源。现有 JSON 知识卡只能作为迁移前兼容层、导出快照或人工排查材料，不能继续被定义为目标架构的结构事实源。
 
 正文知识沉淀 Agent 不是写作页 AI，不是 RAG，不是图谱推理，不是一次性全书自动入库工具。
 
-第一版只做当前章节抽取，只抽角色、地点、势力、物品。抽取结果先写入 JSON 中间态，作者逐条确认后才写入有效知识库。
+第一版只做当前章节抽取，只抽角色、地点、势力、物品。抽取结果先写入 JSON 中间态，作者逐条确认并通过校验后，才允许由应用层服务写入 MongoDB。
 
 第一版使用真实 LLM，但不评测文学质量，不评测写作页回答质量。评测重点是结构、链路、候选、节点状态、prompt/response、作者处理结果。
 
 v1.2 后，第一版不再是“出现即候选”。系统必须先做章内证据聚合和入库资格判断，再生成 create / update / conflict / ignore 审核项。
 
-## 3. 存储决策：JSON 先行，MongoDB 后置
+## 3. 数据宪法与存储决策
 
-第一版不先上 MongoDB。
+太初数据宪法：
 
-第一版采用：
+- Markdown 是唯一文本事实源。
+- MongoDB 是唯一结构事实源。
+- 所有索引，包括 vector、ES、graph、SQLite/FTS 和缓存，都是可重建派生层。
+- AI 不得直接写入 MongoDB，必须先生成 JSON 中间态并通过校验。
+- 所有非事实数据必须显式标记 `lifecycle`，取值只能是 `draft`、`confirmed`、`rejected`。
+
+正文知识沉淀 Agent 采用：
 
 ```text
 正文 Markdown：继续存 Markdown
 Agent 中间态：project_assets/derived/agent_runs/knowledge_extraction/*.json
-有效知识库：当前 JSON 知识卡存储
-未来主数据：MongoDB
+有效结构知识库：MongoDB lifecycle=confirmed 记录
+可重建派生层：vector / ES / graph / SQLite/FTS / cache
 ```
 
-虽然第一版不接 MongoDB，但实现时必须抽象知识库读写边界，例如：
+必须抽象知识库读写边界，例如：
 
 ```text
 KnowledgeRepository / StructuredKnowledgeRepository
-  list_active_cards(type?: string)
+  list_confirmed_cards(type?: string)
   get_card(card_id)
-  create_active_card(card)
-  patch_active_card(card_id, updates)
-  search_active_identity(type, name, aliases)
+  create_confirmed_card(card)
+  patch_confirmed_card(card_id, updates)
+  search_confirmed_identity(type, name, aliases)
 ```
 
-第一版实现：JSONKnowledgeRepository。
+目标实现：MongoKnowledgeRepository。
 
-后续实现：MongoKnowledgeRepository。
+兼容实现：JSONKnowledgeRepository 只能用于迁移前兼容、测试夹具或导出快照，不得作为目标结构事实源继续扩展。
 
 Agent、API、前端都依赖抽象服务，不直接依赖 MongoDB 或 JSON 文件路径。
 
-候选匹配已有知识卡时，只匹配当前 JSON 知识库中的 active 卡。draft 和 deprecated 后续也默认不参与候选匹配。
+候选匹配已有知识卡时，只匹配 MongoDB 中 `lifecycle=confirmed` 的有效卡。`draft` 和 `rejected` 不参与候选匹配。
 
 ## 4. 目标与非目标
 
@@ -127,7 +134,7 @@ Agent、API、前端都依赖抽象服务，不直接依赖 MongoDB 或 JSON 文
 写入 JSON 中间态
 展示运行状态、候选项、LLM 调用记录和评测指标
 作者逐条确认、编辑后确认、废弃或稍后处理
-确认后写入当前 JSON 有效知识库
+确认后由应用层服务写入 MongoDB 结构事实库
 写作页后续可以通过知识库服务查询有效知识卡
 ```
 
@@ -136,14 +143,14 @@ Agent、API、前端都依赖抽象服务，不直接依赖 MongoDB 或 JSON 文
 第一版不做：
 
 ```text
-先上 MongoDB
+AI 直写 MongoDB
 写作页入口跳转
 当前卷抽取
 全书抽取
 批量确认
 候选置信度
-匹配 draft 知识卡
-匹配 deprecated 知识卡
+匹配 `lifecycle=draft` 知识卡
+匹配 `lifecycle=rejected` 知识卡
 复用 /api/agents/chat
 RAG
 向量库
@@ -215,11 +222,11 @@ Markdown 正文
   ↓
 JSON 中间态：mentions、entity_groups、待确认候选卡、更新建议、冲突项、运行记录
   ↓
-当前 JSON 有效知识库：作者确认后的角色卡、地点卡、势力卡、物品卡等结构化知识
+MongoDB 结构事实库：作者确认后的角色卡、地点卡、势力卡、物品卡等结构化知识
   ↓
-未来 MongoDB 主数据
+可重建派生索引
   ↓
-未来：Qdrant 向量层、ES 全文索引、Neo4j / 事件层 / GraphRAG
+Qdrant / ES / Neo4j / GraphRAG / SQLite/FTS
 ```
 
 ### 6.2 中间态目录
@@ -230,7 +237,7 @@ JSON 中间态：mentions、entity_groups、待确认候选卡、更新建议、
 project_assets/derived/agent_runs/knowledge_extraction/
 ```
 
-中间态属于派生运行产物，不属于作者确认主数据。候选内容不能放进 `project_assets/source/knowledge/`。
+中间态属于派生运行产物，不属于作者确认主数据。候选内容不能放进 `project_assets/source/knowledge/` 伪装成事实，也不能由 AI 直接写入 MongoDB。
 
 ### 6.3 文件粒度与命名
 
@@ -329,7 +336,7 @@ RunInternalConflictCheckNode
 
   ↓
 MatchExistingKnowledgeNode
-  只与 active 知识卡做名称、别名和摘要级匹配
+  只与 `lifecycle=confirmed` 知识卡做名称、别名和摘要级匹配
 
   ↓
 BuildReviewItemsNode
@@ -389,7 +396,7 @@ CandidateQualityGateNode 是第一版必做节点，不是后续优化。
 1. 稳定专名，例如“秦浩轩”“张狂”“陈老头”。
 2. 明确称号或职务，且在本章承担独立行为，例如“镇长”。
 3. 本章出现次数 >= 2，并且有独立行为链。
-4. 命中已有 active 角色卡，可作为 update_card。
+4. 命中已有 `lifecycle=confirmed` 角色卡，可作为 update_card。
 ```
 
 以下角色类 mentions 默认不建新卡，应进入 ignored：
@@ -402,7 +409,7 @@ CandidateQualityGateNode 是第一版必做节点，不是后续优化。
 只有外貌特征、没有稳定身份或专名的对象
 ```
 
-例外：如果这类对象命中已有 active 卡，或者后续章节/本章中反复出现并获得稳定名称，才允许成为 update 或 create。
+例外：如果这类对象命中已有 `lifecycle=confirmed` 卡，或者后续章节/本章中反复出现并获得稳定名称，才允许成为 update 或 create。
 
 ### 10.2 地点入库门槛
 
@@ -411,7 +418,7 @@ CandidateQualityGateNode 是第一版必做节点，不是后续优化。
 ```text
 1. 稳定专有地点名，例如“大田镇”“坡子岭”“陈家药铺”。
 2. 具备可复用空间属性，后续可能作为剧情地点反复引用。
-3. 命中已有 active 地点卡，可作为 update_card。
+3. 命中已有 `lifecycle=confirmed` 地点卡，可作为 update_card。
 ```
 
 以下地点类 mentions 默认不建新卡，应进入 ignored：
@@ -432,7 +439,7 @@ CandidateQualityGateNode 是第一版必做节点，不是后续优化。
 ```text
 1. 有明确名称且具备设定价值，例如“黄精”。
 2. 是珍稀、特殊、可追踪归属或后续可能反复使用的物品。
-3. 命中已有 active 物品卡，可作为 update_card。
+3. 命中已有 `lifecycle=confirmed` 物品卡，可作为 update_card。
 ```
 
 以下物品类 mentions 默认不建新卡：
@@ -485,7 +492,7 @@ quality_reason
 
 同名不是冲突。
 
-命中已有 active 卡后，默认先判断是否为 update_card。
+命中已有 `lifecycle=confirmed` 卡后，默认先判断是否为 update_card。
 
 以下情况不是冲突：
 
@@ -632,12 +639,12 @@ ignored
   "run_id": "extract_run_20260704_153022_a1b2c3",
   "candidate_action": "update_card",
   "knowledge_type": "character",
-  "candidate_status": "pending",
+  "lifecycle": "draft",
   "display_title": "秦浩轩",
   "suggested_card": {},
   "target_card_id": "character-ca7cc4f1b6404192a845b49a3a279014",
   "matched_card_name": "秦浩轩",
-  "match_reason": "命中已有 active 角色卡，本章新增行为和来源证据，属于知识补充而非冲突。",
+  "match_reason": "命中已有 lifecycle=confirmed 角色卡，本章新增行为和来源证据，属于知识补充而非冲突。",
   "source_excerpt": "主证据摘录，不超过300字",
   "evidence_excerpts": ["证据1", "证据2"],
   "schema_validation": {
@@ -664,13 +671,12 @@ conflict
 ignore
 ```
 
-candidate_status：
+lifecycle：
 
 ```text
-pending
+draft
 confirmed
 rejected
-deferred
 ```
 
 knowledge_type 第一版：
@@ -753,9 +759,9 @@ GET /api/agent-workbench/knowledge-extraction/runs/{run_id}/candidates?status=pe
 POST /api/agent-workbench/knowledge-extraction/candidates/{candidate_id}/confirm
 ```
 
-create_card：把 suggested_card 写成 active 知识卡。
+create_card：把 suggested_card 写成 MongoDB 中 `lifecycle=confirmed` 的知识卡。
 
-update_card：只补充已有 active 卡的空字段，或追加 source_note / evidence_excerpts / last_seen_chapter_id；不覆盖已有非空字段。
+update_card：只补充已有 `lifecycle=confirmed` 卡的空字段，或追加 source_note / evidence_excerpts / last_seen_chapter_id；不覆盖已有非空字段。
 
 conflict：不允许直接 confirm，必须 edit-confirm。
 
@@ -840,7 +846,7 @@ ai_usage
 
 入库倾向提醒：
 - 稳定专名、多次出现、有独立行为链的对象更可能进入候选。
-- “另一生面孔”“小山羊胡子”“穿青衫的人”“一个少年”“酒家”“小镇广场”这类临时描述或泛名，默认不要作为新卡，只能进入 ignored，除非它们命中已有 active 卡或本章反复出现并承担持续剧情功能。
+- “另一生面孔”“小山羊胡子”“穿青衫的人”“一个少年”“酒家”“小镇广场”这类临时描述或泛名，默认不要作为新卡，只能进入 ignored，除非它们命中已有 `lifecycle=confirmed` 卡或本章反复出现并承担持续剧情功能。
 
 输入：
 章节 ID：{{chapter_id}}
@@ -930,8 +936,8 @@ chapter_title={{chapter_title}}
 4. 不要输出 event、rule、realm、technique、foreshadow。
 5. 不要输出 body、tags、fields、confidence、source_refs、relations。
 6. 普通功能空间、泛称地点、单次环境描写不生成地点卡。
-7. “酒家”“小镇广场”“小山谷”“山里”“镇上”默认进入 ignored，除非命中已有 active 卡或有稳定专名与持续剧情功能。
-8. controlling_faction_id、leader_id、current_holder_id 如果不能明确匹配已有 active 知识卡，填 null。
+7. “酒家”“小镇广场”“小山谷”“山里”“镇上”默认进入 ignored，除非命中已有 `lifecycle=confirmed` 卡或有稳定专名与持续剧情功能。
+8. controlling_faction_id、leader_id、current_holder_id 如果不能明确匹配已有 `lifecycle=confirmed` 知识卡，填 null。
 9. 不能编造知识卡 ID。
 10. summary 必须综合多条 evidence_excerpts，而不是只复述第一条证据。
 11. source_origin 固定为 agent_extract。
@@ -944,7 +950,7 @@ chapter_title={{chapter_title}}
 字段 schema：
 {{entity_schemas}}
 
-已有 active 知识卡摘要：
+已有 `lifecycle=confirmed` 知识卡摘要：
 {{active_knowledge_index}}
 
 章节信息：
@@ -1026,7 +1032,7 @@ last_seen_chapter_id
 如果别名互相包含，标记疑似重复。
 ```
 
-第二步：和已有 active 知识卡比对。
+第二步：和已有 `lifecycle=confirmed` 知识卡比对。
 
 比对顺序：
 
@@ -1039,11 +1045,11 @@ last_seen_chapter_id
 6. 摘要或 source_note 中出现明显同指称文本
 ```
 
-候选新卡：同类型下没有命中 active 卡，且通过质量闸门。
+候选新卡：同类型下没有命中 `lifecycle=confirmed` 卡，且通过质量闸门。
 
-候选更新：命中已有 active 卡，并且新增信息是空字段补充、summary 丰富、source_note 追加、evidence_excerpts 追加、last_seen_chapter_id 更新等。
+候选更新：命中已有 `lifecycle=confirmed` 卡，并且新增信息是空字段补充、summary 丰富、source_note 追加、evidence_excerpts 追加、last_seen_chapter_id 更新等。
 
-候选冲突：命中已有 active 卡，但出现互斥事实。
+候选冲突：命中已有 `lifecycle=confirmed` 卡，但出现互斥事实。
 
 建议忽略：描述性、泛化、单次无沉淀价值、不属于第一版类型、或质量闸门未通过。
 
@@ -1108,11 +1114,11 @@ LangSmith 可选，不作为第一版硬依赖。产品内必须自建运行记�
 
 ## 18. 与知识库和写作页的关系
 
-确认后的知识卡只要状态为 active，就立即进入写作页可参考知识库。
+确认后的知识卡只要 `lifecycle=confirmed`，就立即进入写作页可参考知识库。
 
 即使非必填字段缺失，也可以被写作页结构化查询使用。
 
-后续正文知识沉淀 Agent 再次运行时，可能不是创建新卡，而是对已有 active 知识卡生成补充建议：
+后续正文知识沉淀 Agent 再次运行时，可能不是创建新卡，而是对已有 `lifecycle=confirmed` 知识卡生成补充建议：
 
 ```text
 补充摘要
@@ -1131,14 +1137,14 @@ LangSmith 可选，不作为第一版硬依赖。产品内必须自建运行记�
 第一版不做：
 
 ```text
-先上 MongoDB
+AI 直写 MongoDB
 写作页入口跳转
 当前卷抽取
 全书抽取
 批量确认
 候选置信度
-匹配 draft 知识卡
-匹配 deprecated 知识卡
+匹配 `lifecycle=draft` 知识卡
+匹配 `lifecycle=rejected` 知识卡
 复用 /api/agents/chat
 RAG
 向量库
@@ -1174,7 +1180,7 @@ GraphRAG
 
 阶段 1：后端模型与 JSON 中间态
   新增 run / node / llm_call / raw_mention / entity_group / review_item 的模型和 JSON 读写服务。
-  新增 KnowledgeRepository 抽象，第一版实现 JSONKnowledgeRepository。
+  新增 KnowledgeRepository 抽象，目标实现 MongoKnowledgeRepository；JSONKnowledgeRepository 仅可作为迁移前兼容或测试实现。
 
 阶段 2：LangGraph 主图骨架
   实现 LoadChapterNode、SegmentChapterNode、GeneralExtractionNode、MentionNormalizeNode、EntityAggregationNode、CandidateQualityGateNode、CharacterExpertNode、EntityExpertNode、NormalizeAndValidateNode、RunInternalConflictCheckNode、MatchExistingKnowledgeNode、BuildReviewItemsNode、WriteIntermediateJsonNode。
@@ -1193,7 +1199,7 @@ GraphRAG
   展示 nodes、llm_calls、raw_mentions、entity_groups、review_items、metrics，支持展开完整 prompt / response。
 
 阶段 7：端到端验收与清理
-  跑通当前章节抽取 → raw_mentions → entity_groups → 质量闸门 → JSON 中间态 → 候选审核 → JSON active 知识卡 → 写作页可查。
+  跑通当前章节抽取 → raw_mentions → entity_groups → 质量闸门 → JSON 中间态 → 候选审核 → MongoDB lifecycle=confirmed 知识卡 → 写作页可查。
 ```
 
 每个阶段完成后必须停下来返回证据，不自动进入下一阶段。

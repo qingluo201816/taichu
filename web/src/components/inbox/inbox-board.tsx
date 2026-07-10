@@ -46,7 +46,7 @@ import { cn } from "@/lib/utils";
 const tabs: Array<{ value: InboxTab; label: string }> = [
   { value: "ideas", label: "灵感" },
   { value: "pending-facts", label: "待确认事实" },
-  { value: "issues", label: "待处理问题" },
+  { value: "issues", label: "系统问题与改进项记录" },
 ];
 
 type InboxEntry = MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue;

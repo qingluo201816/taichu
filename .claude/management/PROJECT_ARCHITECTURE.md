@@ -1,6 +1,6 @@
 # 太初项目架构
 
-> 更新日期：2026-06-27
+> 更新日期：2026-07-06
 >
 > 状态：已落地的架构基线。新增功能必须按本文结构落位。
 
@@ -12,7 +12,7 @@
 - 开发辅助能力、产品运行代码、小说数据互不混合。
 - API、业务用例、小说领域规则、技术实现职责清晰。
 - Agent、Tool、存储、检索、LLM 和 MCP 均有稳定扩展入口。
-- 用户创作内容是唯一事实来源，索引和缓存可以完整重建。
+- 用户创作文本和作者确认结构是唯一事实来源，索引和缓存可以完整重建。
 - 新增 Agent 只需新增目录并实现协议，不修改已有注册逻辑。
 - 不以“当前实现简单”或“以后再拆”为理由合并已经明确不同的职责。
 
@@ -86,12 +86,12 @@ flowchart LR
 
 ```text
 project_assets/                      # 单本小说数据态资产根目录
-├── source/                          # 唯一事实来源，必须备份
+├── source/                          # 文本事实源与本地源数据，必须备份
 │   ├── metadata.yaml               # 小说元信息、schema_version
 │   ├── manuscripts/                 # 正文稿件源数据
 │   │   ├── manifest.json            # 章节清单
 │   │   └── chapters/                # 章节 Markdown，正式事实源
-│   ├── knowledge/                   # 作者确认 Knowledge JSON，正式事实源
+│   ├── knowledge/                   # 过渡期 Knowledge JSON 兼容目录；目标架构不以 JSON 文件作为结构事实源
 │   │   ├── characters/
 │   │   ├── events/
 │   │   ├── factions/
@@ -131,26 +131,53 @@ project_assets/                      # 单本小说数据态资产根目录
 
 数据态遵循以下强制规则：
 
-- `source/manuscripts/` 与 `source/knowledge/` 是默认 `fact_scope` 的唯一事实来源；`source/workspace/` 可导出但默认不是事实范围。
-- `generated/sqlite/`、向量库、搜索索引和缓存不能反向成为业务主数据。
+- Markdown 是唯一文本事实源。正文、章节级原文和需要保留作者原始表达的长文本，必须以 Markdown 为准。
+- MongoDB 是唯一结构事实源。角色、地点、势力、物品、事件、规则等作者确认后的结构化事实，目标架构只以 MongoDB 中 `lifecycle=confirmed` 的记录为准。
+- `project_assets/source/knowledge/` 下的 Knowledge JSON 只作为迁移前兼容目录、导出快照或人工校验材料；新增架构不得继续把 JSON 文件定义为结构事实源。
+- `source/workspace/` 可导出但默认不是事实范围。
+- 所有索引都是可重建派生层。`generated/sqlite/`、向量库、Elasticsearch 全文索引、Graph/GraphRAG/Neo4j 投影和缓存不能反向成为业务主数据。
 - 所有检索范围默认是当前唯一小说，不设计跨小说过滤条件。
-- 删除整个 `generated/` 后，系统必须能根据 `source/` 完整重建。
+- 删除整个 `generated/` 或任一索引后，系统必须能根据 Markdown 文本事实源和 MongoDB 结构事实源完整重建。
+- AI 不得直接写入 MongoDB。AI 输出必须先落为 JSON 中间态，经过 schema 校验、来源校验、生命周期标记和作者确认后，才允许由应用层服务写入 MongoDB。
+- 所有非事实数据必须显式标记 `lifecycle`，取值只能是 `draft`、`confirmed`、`rejected`。业务状态字段可以另设，但不得替代 `lifecycle`。
 - Agent、API 路由和前端不得直接读写 `project_assets/`。
 - 应用层通过 `StorageContract` 和 `RetrievalContract` 访问数据。
 - 人物、地点、势力、功法和事件使用稳定 ID 关联，不以中文名或文件名作为主键。
 - 源数据包含 `schema_version`，为未来数据迁移保留依据。
 
-### 2.3.1 MVP v1 数据契约锁定
+### 2.3.1 数据宪法
+
+太初数据宪法是后续存储、检索、Agent 和导入导出实现的最高优先级数据规则：
+
+1. Markdown 是唯一文本事实源。
+2. MongoDB 是唯一结构事实源。
+3. 所有索引，包括 vector、Elasticsearch、Graph/GraphRAG、SQLite/FTS 和缓存，都是可重建派生层。
+4. AI 不得直接写入 MongoDB，必须先生成 JSON 中间态并通过校验。
+5. 所有非事实数据必须显式标记 `lifecycle`，且只允许 `draft`、`confirmed`、`rejected` 三种值。
+
+结构事实的标准写入链路：
+
+```text
+AI 输出或用户草稿
+→ JSON 中间态
+→ schema 校验、来源校验、冲突校验、lifecycle 校验
+→ 作者确认
+→ 应用层服务写入 MongoDB
+→ 重建 vector / Elasticsearch / graph / SQLite 等派生索引
+```
+
+### 2.3.2 MVP v1 数据契约锁定
 
 Phase 0 固定以下产品与数据契约，后续阶段不得绕过：
 
-- 正式小说事实源只有 `project_assets/source/manuscripts/` 下的章节 Markdown，以及 `project_assets/source/knowledge/` 下 `status=confirmed` 的 Knowledge JSON。
+- 正式小说事实源分为两类：`project_assets/source/manuscripts/` 下的章节 Markdown 是文本事实源；MongoDB 中 `lifecycle=confirmed` 的结构记录是结构事实源。
+- `project_assets/source/knowledge/` 下的 JSON 知识卡属于迁移前兼容层，不再作为目标架构的结构事实源扩展。
 - `project_assets/source/workspace/` 保存 AIResultCard、IdeaCard、PendingFact、ChapterSummary、编辑器状态等用户创作资产；这些内容默认不进入 `fact_scope`，在 UI 或检索中使用时必须标记为非事实。
 - `project_assets/generated/` 只保存可删除、可重建的投影。SQLite 固定为 `project_assets/generated/sqlite/taichu.db` 一类 generated projection，不得保存删库后无法从 source 重建的唯一用户资产。
 - Selection AI 是编辑器应用工作流，由 `application/services/selection_ai_service.py` 或等价 Service/Workflow 承载，不注册为 AgentRegistry 内的 MVP Agent，也不新增 `application/agents/selection_assistant/` 作为主逻辑。
 - AI 面向前端的输出必须是 AIResultCard。续写、建议、设定补充、检索证据和摘要都不得以裸字符串作为产品响应绕过卡片状态机。
 - 旧 `/api/chat` 裸字符串响应入口不符合 MVP v1 AIResultCard 契约，已从产品 API 移除；后续若重建 Agent Chat 调用入口，必须按当前架构返回 AIResultCard 或其明确封装，不做旧接口兼容。
-- PendingFact 在 `pending` 状态不是事实，只有作者确认为 `confirmed` 或 `edited_confirmed` 后，才能写入 Knowledge JSON 并进入默认 `fact_scope`。
+- PendingFact 在未确认状态不是事实，只有作者确认并通过 JSON 中间态校验后，才能由应用层服务写入 MongoDB 并进入默认 `fact_scope`。
 - SourceRef v1 统一采用段落级/字段级证据定位；章节段落索引在运行代码中按 0-based 处理，选区偏移 `char_start/char_end` 只相对 `paragraph_start` 对应段落，不使用全文字符 offset。
 - SourceRef 不得指向 generated SQLite 行或 EmbeddingChunk id；EmbeddingChunk 是派生投影，外部证据只认其内部携带的 SourceRef。
 

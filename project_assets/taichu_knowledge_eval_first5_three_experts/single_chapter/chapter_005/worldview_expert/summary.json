@@ -1,0 +1,9 @@
+{
+  "expert": "worldview_expert",
+  "count": 6,
+  "by_type": {
+    "rule": 2,
+    "technique": 1,
+    "event": 3
+  }
+}

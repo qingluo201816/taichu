@@ -1,0 +1,22 @@
+{
+  "mode": "single_chapter",
+  "chapter": {
+    "chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+    "title": "第3章 至上仙尊真乙太初教",
+    "markdown_path": "manuscripts/chapters/volume_001_第一卷/chapter_003_至上仙尊真乙太初教.md"
+  },
+  "expert_counts": {
+    "character_expert": 5,
+    "entity_expert": 9,
+    "worldview_expert": 4
+  },
+  "type_counts": {
+    "character": 5,
+    "location": 4,
+    "faction": 2,
+    "item": 3,
+    "rule": 2,
+    "event": 2
+  },
+  "ignored_count": 3
+}

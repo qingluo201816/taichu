@@ -1,0 +1,16 @@
+{
+  "id": "faction-f06a18fb2d2a412cabeff57fb3b56acb",
+  "type": "faction",
+  "name": "至上仙尊真乙太初教",
+  "aliases": [
+    "太初教"
+  ],
+  "summary": "传承数千年的仙门，位于大屿山黄帝峰，弟子门人上万，是翔龙国唯一仙门。掌教为翔龙国护国仙师，历代皇帝登基须报备掌教批准。",
+  "importance": "core",
+  "status": "deprecated",
+  "source_origin": "agent_extract",
+  "source_note": "第3章 至上仙尊真乙太初教：赐名‘至上仙尊真乙太初教’，一般称为太初教，传承数千年，宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！掌教是翔龙国护国仙师，历代皇帝登基，都必须报备掌教批准同意！",
+  "faction_type": "sect",
+  "created_at": "2026-07-05T08:38:08.176023Z",
+  "updated_at": "2026-07-07T12:35:10.506137Z"
+}

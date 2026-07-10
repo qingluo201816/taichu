@@ -1,6 +1,6 @@
 {
   "schema_version": "1",
-  "current_chapter_id": "chapter-1692b7a5c347465b8383e59e9d64aa3e",
+  "current_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
   "volumes": [
     {
       "id": "volume-e7cb3c7f437548e6b2d95ee8060c7c8b",
@@ -55,7 +55,7 @@
       "status": "active",
       "word_count": 3998,
       "created_at": "2026-07-02T14:41:11.148185Z",
-      "updated_at": "2026-07-03T17:57:18.442394Z"
+      "updated_at": "2026-07-05T08:29:44.054690Z"
     },
     {
       "id": "chapter-cecd924ed73c43a1880b24584ed49537",
@@ -1125,5 +1125,5 @@
       "updated_at": "2026-07-03T17:57:18.442394Z"
     }
   ],
-  "updated_at": "2026-07-04T02:19:25.884945Z"
+  "updated_at": "2026-07-05T08:29:44.054690Z"
 }

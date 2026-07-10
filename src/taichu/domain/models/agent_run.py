@@ -51,9 +51,11 @@ class AgentRunScope(DomainModel):
     """Scope covered by one Agent run."""
 
     scope_type: str = "chapter"
-    chapter_id: str = Field(min_length=1)
+    chapter_id: str = ""
     chapter_title: str = ""
     content_hash: str = ""
+    chapter_ids: list[str] = Field(default_factory=list)
+    chapter_titles: list[str] = Field(default_factory=list)
 
 
 class AgentRunNode(DomainModel):
@@ -66,6 +68,34 @@ class AgentRunNode(DomainModel):
     duration_ms: int = 0
     input_summary: str = ""
     output_summary: str = ""
+    error: str | None = None
+
+
+class AgentRunGraphNode(DomainModel):
+    """One node in the persisted Agent graph blueprint."""
+
+    node_name: str = Field(min_length=1)
+    label: str = Field(min_length=1)
+    lane: str = ""
+
+
+class AgentRunGraphEdge(DomainModel):
+    """One directed edge in the persisted Agent graph blueprint."""
+
+    source: str = Field(min_length=1)
+    target: str = Field(min_length=1)
+
+
+class AgentBatchChapterProgress(DomainModel):
+    """Progress for one chapter branch inside a batch Agent run."""
+
+    chapter_id: str = Field(min_length=1)
+    chapter_title: str = ""
+    status: AgentRunNodeStatus = AgentRunNodeStatus.PENDING
+    started_at: str | None = None
+    finished_at: str | None = None
+    candidate_count: int = 0
+    nodes: list[AgentRunNode] = Field(default_factory=list)
     error: str | None = None
 
 
@@ -162,6 +192,11 @@ class AgentMetrics(DomainModel):
     location_candidate_count: int = 0
     faction_candidate_count: int = 0
     item_candidate_count: int = 0
+    realm_candidate_count: int = 0
+    technique_candidate_count: int = 0
+    rule_candidate_count: int = 0
+    event_candidate_count: int = 0
+    candidate_count_by_type: dict[str, int] = Field(default_factory=dict)
     create_card_count: int = 0
     update_card_count: int = 0
     conflict_count: int = 0
@@ -189,6 +224,16 @@ class AgentRun(DomainModel):
     started_at: str = Field(min_length=1)
     finished_at: str | None = None
     nodes: list[AgentRunNode] = Field(default_factory=list)
+    graph_nodes: list[AgentRunGraphNode] = Field(default_factory=list)
+    graph_edges: list[AgentRunGraphEdge] = Field(default_factory=list)
+    batch_chapter_progress: list[AgentBatchChapterProgress] = Field(
+        default_factory=list
+    )
+    max_concurrency: int = 1
+    current_concurrency: int = 0
+    total_chapter_count: int = 0
+    completed_chapter_count: int = 0
+    failed_chapter_count: int = 0
     llm_calls: list[AgentLLMCall] = Field(default_factory=list)
     raw_mentions: list[AgentRawMention] = Field(default_factory=list)
     entity_groups: list[AgentEntityGroup] = Field(default_factory=list)

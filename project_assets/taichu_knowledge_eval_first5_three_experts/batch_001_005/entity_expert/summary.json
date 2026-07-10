@@ -1,0 +1,9 @@
+{
+  "expert": "entity_expert",
+  "count": 25,
+  "by_type": {
+    "location": 12,
+    "faction": 7,
+    "item": 6
+  }
+}

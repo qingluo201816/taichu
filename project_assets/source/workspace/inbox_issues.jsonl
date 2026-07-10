@@ -1,0 +1,1 @@
+{"id": "issue-json-repair-20260707", "title": "系统问题与改进项记录", "content": "知识沉淀事件专家偶发输出非法 JSON，中文弯引号导致 source_note 未闭合并使章节失败；已补解析失败后最多两次 JSON 修复重试。保守处理", "source_chapter_id": null, "priority": "high", "status": "processed", "created_at": "2026-07-07T08:00:00Z", "updated_at": "2026-07-07T16:32:41.409632Z"}

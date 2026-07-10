@@ -1,0 +1,16 @@
+{
+  "id": "character-5eaa67ba08c14daf895010fb56d6f6d4",
+  "type": "character",
+  "name": "赵嘉龙",
+  "aliases": [],
+  "summary": "赵嘉龙是徐吞虎的师兄，一同参与选苗考核。",
+  "importance": "normal",
+  "status": "deprecated",
+  "source_origin": "agent_extract",
+  "source_note": "第3章 至上仙尊真乙太初教 原文摘录：“‘本仙徐吞虎，这位乃我师兄赵嘉龙。’”",
+  "relationship_summary": "赵嘉龙是徐吞虎的师兄。",
+  "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+  "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+  "created_at": "2026-07-05T08:36:29.835288Z",
+  "updated_at": "2026-07-07T12:35:00.972434Z"
+}

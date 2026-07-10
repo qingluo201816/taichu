@@ -1,0 +1,22 @@
+{
+  "mode": "single_chapter",
+  "chapter": {
+    "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+    "title": "第1章 大田金鳞元神出",
+    "markdown_path": "manuscripts/chapters/volume_001_第一卷/chapter_001_大田金鳞元神出.md"
+  },
+  "expert_counts": {
+    "character_expert": 3,
+    "entity_expert": 6,
+    "worldview_expert": 4
+  },
+  "type_counts": {
+    "character": 3,
+    "location": 3,
+    "faction": 1,
+    "item": 2,
+    "rule": 2,
+    "event": 2
+  },
+  "ignored_count": 3
+}

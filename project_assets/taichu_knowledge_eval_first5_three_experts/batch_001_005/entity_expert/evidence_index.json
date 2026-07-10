@@ -1,0 +1,227 @@
+[
+  {
+    "card_id": "location_da_tian_zhen",
+    "type": "location",
+    "name": "大田镇",
+    "evidence_excerpts": [
+      "大田镇在前5章综合抽取中保留为location卡。"
+    ],
+    "source_note": "第1章起综合：大田镇是秦浩轩、张狂、张扬的故乡，背靠小屿山，居民世代狩猎；前5章从这里开启选仙苗剧情。"
+  },
+  {
+    "card_id": "location_xiao_yu_shan",
+    "type": "location",
+    "name": "小屿山",
+    "evidence_excerpts": [
+      "小屿山在前5章综合抽取中保留为location卡。"
+    ],
+    "source_note": "第1章起综合：小屿山是大田镇背后的山域，外围为猎户狩猎地，深处有毒瘴、猛兽和神仙妖魔传说；秦浩轩曾借五彩小蛇深入寻药。"
+  },
+  {
+    "card_id": "location_chenjia_yaopu",
+    "type": "location",
+    "name": "陈家药铺",
+    "evidence_excerpts": [
+      "陈家药铺在前5章综合抽取中保留为location卡。"
+    ],
+    "source_note": "第1章起综合：陈家药铺是大田镇知名药铺，秦浩轩出售黄精的交易场景，也是陈老头经营和收购药材的地方。"
+  },
+  {
+    "card_id": "location_pozi_ling",
+    "type": "location",
+    "name": "坡子岭",
+    "evidence_excerpts": [
+      "坡子岭在前5章综合抽取中保留为location卡。"
+    ],
+    "source_note": "第2章起综合：坡子岭是小屿山内山与外围分界点，也是太初教在大田镇选苗的初选地点。"
+  },
+  {
+    "card_id": "location_da_yu_shan",
+    "type": "location",
+    "name": "大屿山",
+    "evidence_excerpts": [
+      "大屿山在前5章综合抽取中保留为location卡。"
+    ],
+    "source_note": "第3章起综合：大屿山是太初教所在山脉，黄帝峰为主峰，邻近绝仙毒谷，是翔龙国第一宗门所在地。"
+  },
+  {
+    "card_id": "location_huangdi_feng",
+    "type": "location",
+    "name": "黄帝峰",
+    "evidence_excerpts": [
+      "黄帝峰在前5章综合抽取中保留为location卡。"
+    ],
+    "source_note": "第3章起综合：黄帝峰是大屿山主峰，太初教山门、通天梯与太初宝殿所在，充满仙家灵气。"
+  },
+  {
+    "card_id": "location_taichu_baodian",
+    "type": "location",
+    "name": "太初宝殿",
+    "evidence_excerpts": [
+      "太初宝殿在前5章综合抽取中保留为location卡。"
+    ],
+    "source_note": "第3章起综合：太初宝殿位于通天梯尽头，是太初教核心重地，连凡人皇帝也只有特殊场合才能进入。"
+  },
+  {
+    "card_id": "location_juexian_dugu",
+    "type": "location",
+    "name": "绝仙毒谷",
+    "evidence_excerpts": [
+      "绝仙毒谷在前5章综合抽取中保留为location卡。"
+    ],
+    "source_note": "第4章起综合：绝仙毒谷是仙魔大战遗址，由万毒魔尊自爆后毒气蔓延形成，传有上古灵法、魔术、法宝和变异灵药。"
+  },
+  {
+    "card_id": "location_banshan_ting",
+    "type": "location",
+    "name": "半山亭",
+    "evidence_excerpts": [
+      "半山亭在前5章综合抽取中保留为location卡。"
+    ],
+    "source_note": "第4章起综合：半山亭是太初教半山腰接待新弟子的长廊和宣传栏，雕刻宗门历史、奇珍异兽与名山大川。"
+  },
+  {
+    "card_id": "location_tongtian_ti",
+    "type": "location",
+    "name": "通天梯",
+    "evidence_excerpts": [
+      "通天梯在前5章综合抽取中保留为location卡。"
+    ],
+    "source_note": "第4章起综合：通天梯是黄帝峰从山门通往太初宝殿的山路，气势磅礴。"
+  },
+  {
+    "card_id": "location_taichu_shanmen",
+    "type": "location",
+    "name": "太初山门",
+    "evidence_excerpts": [
+      "太初山门在前5章综合抽取中保留为location卡。"
+    ],
+    "source_note": "第4章起综合：太初山门为巨大青石镂空雕刻山门，上书血红隶书“太初”。"
+  },
+  {
+    "card_id": "location_xindizi_pingfang",
+    "type": "location",
+    "name": "新弟子平房",
+    "evidence_excerpts": [
+      "新弟子平房在前5章综合抽取中保留为location卡。"
+    ],
+    "source_note": "第4章起综合：新弟子平房是太初教给新入门弟子暂住的低矮破旧住所，阴冷潮湿，触发第5章抢被冲突。"
+  },
+  {
+    "card_id": "faction_taichu_jiao",
+    "type": "faction",
+    "name": "太初教",
+    "evidence_excerpts": [
+      "太初教在前5章综合抽取中保留为faction卡。"
+    ],
+    "source_note": "第3章起综合：太初教全称“至上仙尊真乙太初教”，是翔龙国唯一仙门和护国神教，宗门位于大屿山黄帝峰，掌教为黄龙真人。"
+  },
+  {
+    "card_id": "faction_xianglong_guo",
+    "type": "faction",
+    "name": "翔龙国",
+    "evidence_excerpts": [
+      "翔龙国在前5章综合抽取中保留为faction卡。"
+    ],
+    "source_note": "第3章起综合：翔龙国是太初教所在凡人国度，太初教为其护国神教；三皇子李靖来自翔龙国皇室。"
+  },
+  {
+    "card_id": "faction_chenjia_yaopu",
+    "type": "faction",
+    "name": "陈家药铺",
+    "evidence_excerpts": [
+      "陈家药铺在前5章综合抽取中保留为faction卡。"
+    ],
+    "source_note": "第1章起综合：陈家药铺是大田镇药材经营组织，由陈老头及学徒打理，是秦浩轩出售药材的稳定渠道。"
+  },
+  {
+    "card_id": "faction_guyun_tang",
+    "type": "faction",
+    "name": "古云堂",
+    "evidence_excerpts": [
+      "古云堂在前5章综合抽取中保留为faction卡。"
+    ],
+    "source_note": "第5章起综合：古云堂是太初教内堂支脉之一，由古云子代表，在第5章争抢灰种张扬。"
+  },
+  {
+    "card_id": "faction_xiayun_tang",
+    "type": "faction",
+    "name": "夏云堂",
+    "evidence_excerpts": [
+      "夏云堂在前5章综合抽取中保留为faction卡。"
+    ],
+    "source_note": "第5章起综合：夏云堂是太初教内堂支脉之一，由夏云子代表，以六爻卦见长。"
+  },
+  {
+    "card_id": "faction_bizhu_tang",
+    "type": "faction",
+    "name": "碧竹堂",
+    "evidence_excerpts": [
+      "碧竹堂在前5章综合抽取中保留为faction卡。"
+    ],
+    "source_note": "第5章起综合：碧竹堂是太初教内堂支脉之一，由碧竹子代表，自称与世无争，也参与强种弟子争夺。"
+  },
+  {
+    "card_id": "faction_baihua_tang",
+    "type": "faction",
+    "name": "百花堂",
+    "evidence_excerpts": [
+      "百花堂在前5章综合抽取中保留为faction卡。"
+    ],
+    "source_note": "第5章起综合：百花堂是太初教内堂支脉之一，由苏百花代表，门下清一色女弟子，通常只收女不收男。"
+  },
+  {
+    "card_id": "item_wucai_xiaoshe",
+    "type": "item",
+    "name": "五彩小蛇",
+    "evidence_excerpts": [
+      "五彩小蛇在前5章综合抽取中保留为item卡。"
+    ],
+    "source_note": "第1章起综合：五彩小蛇是秦浩轩特殊能力的载体，能让秦浩轩灵魂附身，并具备百毒不侵、感知灵药、气味寻路等能力。"
+  },
+  {
+    "card_id": "item_huangjing",
+    "type": "item",
+    "name": "黄精",
+    "evidence_excerpts": [
+      "黄精在前5章综合抽取中保留为item卡。"
+    ],
+    "source_note": "第1章起综合：黄精是珍贵药材，由五彩小蛇带回，秦浩轩最终以三十两卖给陈老头。"
+  },
+  {
+    "card_id": "item_feijian",
+    "type": "item",
+    "name": "飞剑",
+    "evidence_excerpts": [
+      "飞剑在前5章综合抽取中保留为item卡。"
+    ],
+    "source_note": "第3章起综合：飞剑是太初教弟子御剑飞行和驱雾所用法器，徐吞虎、赵嘉龙以此降临坡子岭。"
+  },
+  {
+    "card_id": "item_xianling_hua",
+    "type": "item",
+    "name": "仙灵花",
+    "evidence_excerpts": [
+      "仙灵花在前5章综合抽取中保留为item卡。"
+    ],
+    "source_note": "第3章起综合：仙灵花用于初选测仙种，吸收含仙灵之气的鲜血后以开合状态显示仙种活力。"
+  },
+  {
+    "card_id": "item_huangse_fuzhi",
+    "type": "item",
+    "name": "黄色符纸",
+    "evidence_excerpts": [
+      "黄色符纸在前5章综合抽取中保留为item卡。"
+    ],
+    "source_note": "第3章起综合：黄色符纸由徐吞虎贴在马屁股上，可让马匹高速奔行前往太初教。"
+  },
+  {
+    "card_id": "item_mingjian_xianyan",
+    "type": "item",
+    "name": "明鉴仙眼",
+    "evidence_excerpts": [
+      "明鉴仙眼在前5章综合抽取中保留为item卡。"
+    ],
+    "source_note": "第5章起综合：明鉴仙眼是太初教最终测试仙种等级的法器，第5章用于测出张扬灰色仙种。"
+  }
+]

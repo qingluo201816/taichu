@@ -1,0 +1,40 @@
+[
+  {
+    "card_id": "rule_qin_haoxuan_soul_swap_snake",
+    "type": "rule",
+    "name": "秦浩轩附身小蛇能力",
+    "evidence_excerpts": [
+      "秦浩轩终于确定自己的灵魂能在小蛇的躯体和自己本体来回穿梭附体。"
+    ],
+    "source_note": "第1章 大田金鳞元神出：秦浩轩在小山谷被小蛇咬后发现自己可在人体和蛇身之间反复切换。"
+  },
+  {
+    "card_id": "rule_wucai_snake_senses_treasure_poison",
+    "type": "rule",
+    "name": "五彩小蛇百毒不侵与寻药能力",
+    "evidence_excerpts": [
+      "毒瘴完全无法危害到他。",
+      "蛇身游过的地方都会留下一种特殊的味道。",
+      "百毒不侵，对一些灵药异草格外敏感。"
+    ],
+    "source_note": "第1章 大田金鳞元神出：秦浩轩附身小蛇后发现毒瘴无法危害蛇身，并可借蛇身气味寻路、感知灵药。"
+  },
+  {
+    "card_id": "event_qin_gains_snake_soul_ability",
+    "type": "event",
+    "name": "秦浩轩获得附身小蛇能力",
+    "evidence_excerpts": [
+      "十二岁时被一条奇怪的小蛇咬了一口，就这一口，他的人生彻底改变了。"
+    ],
+    "source_note": "第1章 大田金鳞元神出：回忆段落交代秦浩轩被小蛇咬后获得附身能力，是前5章关键能力来源。"
+  },
+  {
+    "card_id": "event_qin_stops_zhang_kuang_bullying",
+    "type": "event",
+    "name": "秦浩轩制止张狂欺压少年",
+    "evidence_excerpts": [
+      "你若敢踢下去，我就把你绑了丢小屿山喂狼去。"
+    ],
+    "source_note": "第1章 大田金鳞元神出：该事件建立秦浩轩与张狂的公开冲突。"
+  }
+]

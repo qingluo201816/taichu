@@ -1,0 +1,14 @@
+{
+  "id": "location-769926de9bc04033b8ec70ec266a07bb",
+  "type": "location",
+  "name": "大屿山黄帝峰",
+  "aliases": [],
+  "summary": "翔龙国唯一仙门至上仙尊真乙太初教的宗门所在地，弟子门人上万。",
+  "importance": "major",
+  "status": "deprecated",
+  "source_origin": "agent_extract",
+  "source_note": "第3章 至上仙尊真乙太初教：宗门位于大屿山黄帝峰，弟子门人上万，乃是翔龙国唯一仙门！",
+  "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+  "created_at": "2026-07-05T08:38:01.820693Z",
+  "updated_at": "2026-07-07T12:35:04.538961Z"
+}

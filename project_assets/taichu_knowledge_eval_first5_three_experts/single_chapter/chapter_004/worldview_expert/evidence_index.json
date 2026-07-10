@@ -1,0 +1,104 @@
+[
+  {
+    "card_id": "realm_zhongzhi_xiangen",
+    "type": "realm",
+    "name": "种植仙根境",
+    "evidence_excerpts": [
+      "修仙第一层种植仙根境，只有引导天地灵气进入体内，浇灌仙种，让仙种发芽长叶才算突破到第二层仙苗境。"
+    ],
+    "source_note": "第4章 太初山中绝毒谷：徐吞虎在路上解释修仙境界时提到种植仙根境。"
+  },
+  {
+    "card_id": "realm_xianmiao",
+    "type": "realm",
+    "name": "仙苗境",
+    "evidence_excerpts": [
+      "仙苗能生长出四十九叶，仙叶越多实力越强，生齐四十九叶后方有机会拔苗成树。"
+    ],
+    "source_note": "第4章 太初山中绝毒谷：徐吞虎在路上解释修仙境界时提到仙苗境。"
+  },
+  {
+    "card_id": "realm_xianshu",
+    "type": "realm",
+    "name": "仙树境",
+    "evidence_excerpts": [
+      "如果无法拔苗成树，突破第三层仙树境，一百五十年寿元耗尽后……"
+    ],
+    "source_note": "第4章 太初山中绝毒谷：徐吞虎在路上解释修仙境界时提到仙树境。"
+  },
+  {
+    "card_id": "realm_xianying_daoguo",
+    "type": "realm",
+    "name": "仙婴道果境",
+    "evidence_excerpts": [
+      "突破到第五层仙婴道果境，再获得几百年寿元。"
+    ],
+    "source_note": "第4章 太初山中绝毒谷：徐吞虎在路上解释修仙境界时提到仙婴道果境。"
+  },
+  {
+    "card_id": "rule_xianmiao_forty_nine_leaves",
+    "type": "rule",
+    "name": "仙苗四十九叶规则",
+    "evidence_excerpts": [
+      "仙苗能生长出四十九叶，仙叶越多实力越强。"
+    ],
+    "source_note": "第4章 太初山中绝毒谷：徐吞虎讲解仙苗境时给出四十九叶规则。"
+  },
+  {
+    "card_id": "rule_juexian_dugu_poison_origin",
+    "type": "rule",
+    "name": "绝仙毒谷毒气规则",
+    "evidence_excerpts": [
+      "万毒魔尊一怒之下自爆，毒死仙魔两道强者无数。",
+      "偌大的绝仙毒谷从来只有进没有出。"
+    ],
+    "source_note": "第4章 太初山中绝毒谷：徐吞虎解释万毒魔尊自爆与绝仙毒谷成因。"
+  },
+  {
+    "card_id": "rule_cultivation_lifespan_breakthrough",
+    "type": "rule",
+    "name": "修仙破境延寿规则",
+    "evidence_excerpts": [
+      "一百五十年寿元耗尽后，又没有灵丹妙药延长寿元，就只有死之一途。"
+    ],
+    "source_note": "第4章 太初山中绝毒谷：徐吞虎以自身与赵嘉龙为例说明仙苗境修士寿元压力。"
+  },
+  {
+    "card_id": "rule_taichu_inner_area_restriction",
+    "type": "rule",
+    "name": "太初教新弟子活动限制",
+    "evidence_excerpts": [
+      "半山腰之上乃宗门重地，你们现在没有资格进入，切记不要乱跑动，否则将逐出门墙永不收录。"
+    ],
+    "source_note": "第4章 太初山中绝毒谷：引路师兄安排新弟子住宿时说明半山腰以上限制。"
+  },
+  {
+    "card_id": "event_wandu_mozun_self_detonation",
+    "type": "event",
+    "name": "万毒魔尊自爆形成绝仙毒谷",
+    "evidence_excerpts": [
+      "万毒魔尊自爆后，毒气蔓延了大半个大屿山，形成绝仙毒谷。"
+    ],
+    "source_note": "第4章 太初山中绝毒谷：徐吞虎讲述绝仙毒谷历史成因。"
+  },
+  {
+    "card_id": "event_new_disciples_arrive_taichu",
+    "type": "event",
+    "name": "秦浩轩等新弟子抵达太初教",
+    "evidence_excerpts": [
+      "他们终于来到大屿山山脚。",
+      "你们顺着通天梯走到半山亭。"
+    ],
+    "source_note": "第4章 太初山中绝毒谷：第4章完成从大田镇到太初教宗门空间的转换。"
+  },
+  {
+    "card_id": "event_qin_meets_xu_yu_li_jing",
+    "type": "event",
+    "name": "秦浩轩结识徐羽和李靖",
+    "evidence_excerpts": [
+      "小屿山秦浩轩，你呢？",
+      "李靖，请教兄台尊姓大名。"
+    ],
+    "source_note": "第4章 太初山中绝毒谷：该事件建立秦浩轩与徐羽、李靖的初始关系。"
+  }
+]

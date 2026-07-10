@@ -1,0 +1,93 @@
+[
+  {
+    "chapter_no": 1,
+    "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+    "title": "第1章 大田金鳞元神出",
+    "expert_counts": {
+      "character_expert": 3,
+      "entity_expert": 6,
+      "worldview_expert": 4
+    },
+    "type_counts": {
+      "character": 3,
+      "location": 3,
+      "faction": 1,
+      "item": 2,
+      "rule": 2,
+      "event": 2
+    }
+  },
+  {
+    "chapter_no": 2,
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "title": "第2章 山中神仙选仙苗",
+    "expert_counts": {
+      "character_expert": 3,
+      "entity_expert": 5,
+      "worldview_expert": 3
+    },
+    "type_counts": {
+      "character": 3,
+      "location": 3,
+      "faction": 1,
+      "item": 1,
+      "rule": 1,
+      "event": 2
+    }
+  },
+  {
+    "chapter_no": 3,
+    "chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+    "title": "第3章 至上仙尊真乙太初教",
+    "expert_counts": {
+      "character_expert": 5,
+      "entity_expert": 9,
+      "worldview_expert": 4
+    },
+    "type_counts": {
+      "character": 5,
+      "location": 4,
+      "faction": 2,
+      "item": 3,
+      "rule": 2,
+      "event": 2
+    }
+  },
+  {
+    "chapter_no": 4,
+    "chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537",
+    "title": "第4章 太初山中绝毒谷",
+    "expert_counts": {
+      "character_expert": 7,
+      "entity_expert": 9,
+      "worldview_expert": 11
+    },
+    "type_counts": {
+      "character": 7,
+      "location": 7,
+      "faction": 2,
+      "realm": 4,
+      "rule": 4,
+      "event": 3
+    }
+  },
+  {
+    "chapter_no": 5,
+    "chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+    "title": "第5章 显灵台上鉴仙眼",
+    "expert_counts": {
+      "character_expert": 12,
+      "entity_expert": 7,
+      "worldview_expert": 6
+    },
+    "type_counts": {
+      "character": 12,
+      "item": 1,
+      "faction": 5,
+      "location": 1,
+      "rule": 2,
+      "technique": 1,
+      "event": 3
+    }
+  }
+]

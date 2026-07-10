@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import asyncio
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,10 +18,13 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from taichu.application.services.import_service import ImportService
 from taichu.config import Settings
 from taichu.domain.models.agent_run import (
+    AgentBatchChapterProgress,
     AgentReviewCandidateAction,
     AgentReviewCandidateStatus,
     AgentReviewItem,
     AgentRun,
+    AgentRunNode,
+    AgentRunNodeStatus,
     AgentRunScope,
     AgentRunStatus,
     AgentSchemaValidation,
@@ -93,6 +97,245 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(knowledge_response.status_code, 200)
         self.assertEqual(knowledge_response.json()["cards"][0]["name"], "秦阳")
 
+    async def test_stream_run_outputs_node_events_and_persists_run(self) -> None:
+        response = await self.client.post(
+            "/api/agent-workbench/knowledge-extraction/runs/stream",
+            json={"chapter_id": "chapter_001"},
+        )
+        events = [
+            json.loads(line)
+            for line in response.text.splitlines()
+            if line.strip()
+        ]
+        event_types = [event["type"] for event in events]
+        completed = next(
+            event for event in events if event["type"] == "run_completed"
+        )
+        detail_response = await self.client.get(
+            "/api/agent-workbench/knowledge-extraction/runs/"
+            f"{completed['run']['run_id']}"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("application/x-ndjson", response.headers["content-type"])
+        self.assertIn("run_started", event_types)
+        self.assertIn("node_started", event_types)
+        self.assertIn("node_finished", event_types)
+        self.assertIn("llm_call_finished", event_types)
+        self.assertIn("run_completed", event_types)
+        self.assertEqual(completed["run"]["status"], "completed")
+        self.assertGreaterEqual(len(completed["run"]["graph_nodes"]), 1)
+        self.assertEqual(detail_response.status_code, 200)
+
+    async def test_start_run_returns_running_task_and_monitor_can_read_it(self) -> None:
+        response = await self.client.post(
+            "/api/agent-workbench/knowledge-extraction/runs/start",
+            json={"chapter_id": "chapter_001"},
+        )
+        run_id = response.json()["run"]["run_id"]
+        monitor_response = await self.client.get(f"/api/agent-tasks/{run_id}")
+
+        completed_detail = None
+        for _ in range(20):
+            detail_response = await self.client.get(
+                f"/api/agent-tasks/{run_id}"
+            )
+            if detail_response.status_code == 200:
+                completed_detail = detail_response.json()["run"]
+                if completed_detail["status"] == "completed":
+                    break
+            await asyncio.sleep(0.05)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["run"]["status"], "running")
+        self.assertEqual(monitor_response.status_code, 200)
+        self.assertEqual(monitor_response.json()["run"]["run_id"], run_id)
+        self.assertIsNotNone(completed_detail)
+        assert completed_detail is not None
+        self.assertEqual(completed_detail["status"], "completed")
+
+    async def test_openapi_exposes_static_stream_routes(self) -> None:
+        response = await self.client.get("/openapi.json")
+        paths = response.json()["paths"]
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("/api/agent-workbench/knowledge-extraction/runs/stream", paths)
+        self.assertIn(
+            "/api/agent-workbench/knowledge-extraction/batch-runs/stream",
+            paths,
+        )
+        self.assertIn("/api/agent-workbench/knowledge-extraction/runs/start", paths)
+        self.assertIn(
+            "/api/agent-workbench/knowledge-extraction/batch-runs/start",
+            paths,
+        )
+        self.assertIn("/api/agent-tasks/stream/events", paths)
+        self.assertIn(
+            "post",
+            paths["/api/agent-workbench/knowledge-extraction/runs/stream"],
+        )
+
+    async def test_batch_stream_run_writes_monitorable_task_and_candidates(
+        self,
+    ) -> None:
+        response = await self.client.post(
+            "/api/agent-workbench/knowledge-extraction/batch-runs/stream",
+            json={"chapter_ids": ["chapter_001"]},
+        )
+        events = [
+            json.loads(line)
+            for line in response.text.splitlines()
+            if line.strip()
+        ]
+        event_types = [event["type"] for event in events]
+        completed = next(
+            event for event in events if event["type"] == "task_completed"
+        )
+        run_id = completed["run"]["run_id"]
+        monitor_list_response = await self.client.get(
+            "/api/agent-tasks?page=1&page_size=20&status=all"
+        )
+        monitor_detail_response = await self.client.get(
+            f"/api/agent-tasks/{run_id}"
+        )
+        candidate_id = completed["run"]["review_items"][0]["review_item_id"]
+        confirm_response = await self.client.post(
+            "/api/agent-workbench/knowledge-extraction/runs/"
+            f"{run_id}/candidates/{candidate_id}/confirm"
+        )
+        knowledge_response = await self.client.get(
+            "/api/knowledge/cards?type=character&status=active"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("application/x-ndjson", response.headers["content-type"])
+        self.assertIn("task_started", event_types)
+        self.assertIn("chapter_branch_started", event_types)
+        self.assertIn("chapter_branch_node_started", event_types)
+        self.assertIn("chapter_branch_node_finished", event_types)
+        self.assertIn("chapter_branch_finished", event_types)
+        self.assertIn("llm_call_finished", event_types)
+        self.assertIn("node_started", event_types)
+        self.assertIn("node_finished", event_types)
+        self.assertIn("task_completed", event_types)
+        first_branch_event = next(
+            event
+            for event in events
+            if event["type"] == "chapter_branch_node_started"
+        )
+        self.assertEqual(
+            first_branch_event["chapter_progress"]["nodes"][0]["node_name"],
+            "LoadChapterNode",
+        )
+        self.assertEqual(
+            first_branch_event["chapter_progress"]["nodes"][0]["status"],
+            "running",
+        )
+        general_started_index = _branch_node_event_index(
+            events,
+            "chapter_branch_node_started",
+            "GeneralExtractionNode",
+        )
+        general_llm_index = next(
+            index
+            for index, event in enumerate(events)
+            if event["type"] == "llm_call_finished"
+            and event["llm_call"]["node_name"] == "GeneralExtractionNode"
+        )
+        general_finished_index = _branch_node_event_index(
+            events,
+            "chapter_branch_node_finished",
+            "GeneralExtractionNode",
+        )
+        self.assertLess(general_started_index, general_llm_index)
+        self.assertLess(general_llm_index, general_finished_index)
+        self.assertEqual(completed["run"]["scope"]["scope_type"], "chapter_batch")
+        self.assertEqual(completed["run"]["max_concurrency"], 5)
+        self.assertEqual(completed["run"]["current_concurrency"], 0)
+        self.assertEqual(completed["run"]["total_chapter_count"], 1)
+        self.assertEqual(completed["run"]["completed_chapter_count"], 1)
+        self.assertEqual(
+            completed["run"]["batch_chapter_progress"][0]["status"],
+            "success",
+        )
+        self.assertTrue(completed["run"]["batch_chapter_progress"][0]["nodes"])
+        self.assertEqual(
+            completed["run"]["batch_chapter_progress"][0]["nodes"][0]["node_name"],
+            "LoadChapterNode",
+        )
+        self.assertEqual(monitor_list_response.status_code, 200)
+        self.assertTrue(
+            any(task["run_id"] == run_id for task in monitor_list_response.json()["runs"])
+        )
+        self.assertEqual(monitor_detail_response.status_code, 200)
+        self.assertEqual(monitor_detail_response.json()["run"]["run_id"], run_id)
+        self.assertEqual(confirm_response.status_code, 200)
+        self.assertEqual(knowledge_response.status_code, 200)
+        self.assertEqual(knowledge_response.json()["cards"][0]["name"], "秦阳")
+
+    async def test_start_batch_run_persists_branch_node_replay(self) -> None:
+        response = await self.client.post(
+            "/api/agent-workbench/knowledge-extraction/batch-runs/start",
+            json={"chapter_ids": ["chapter_001"]},
+        )
+        run_id = response.json()["run"]["run_id"]
+
+        completed_detail = None
+        for _ in range(30):
+            detail_response = await self.client.get(f"/api/agent-tasks/{run_id}")
+            if detail_response.status_code == 200:
+                completed_detail = detail_response.json()["run"]
+                if completed_detail["status"] == "completed":
+                    break
+            await asyncio.sleep(0.05)
+
+        persisted_response = await self.client.get(
+            f"/api/agent-workbench/knowledge-extraction/runs/{run_id}"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(completed_detail)
+        assert completed_detail is not None
+        self.assertEqual(completed_detail["status"], "completed")
+        self.assertTrue(completed_detail["batch_chapter_progress"][0]["nodes"])
+        self.assertEqual(
+            completed_detail["batch_chapter_progress"][0]["nodes"][0]["node_name"],
+            "LoadChapterNode",
+        )
+        self.assertEqual(persisted_response.status_code, 200)
+        self.assertTrue(
+            persisted_response.json()["run"]["batch_chapter_progress"][0]["nodes"]
+        )
+
+    async def test_confirm_extended_types_create_active_cards(self) -> None:
+        run = _extended_type_review_run()
+        await self.app.state.knowledge_run_store.write_run(run)
+
+        for review_item in run.review_items:
+            response = await self.client.post(
+                "/api/agent-workbench/knowledge-extraction/runs/"
+                f"{run.run_id}/candidates/{review_item.review_item_id}/confirm"
+            )
+            self.assertEqual(response.status_code, 200)
+
+        expected_names = {
+            "realm": "炼气一层",
+            "technique": "太初引气诀",
+            "event": "秦阳入山门",
+            "rule": "持令牌方可入山",
+        }
+        for knowledge_type, expected_name in expected_names.items():
+            cards_response = await self.client.get(
+                f"/api/knowledge/cards?type={knowledge_type}&status=active"
+            )
+            self.assertEqual(cards_response.status_code, 200)
+            self.assertTrue(
+                any(
+                    card["name"] == expected_name
+                    for card in cards_response.json()["cards"]
+                )
+            )
+
     async def test_delete_run_removes_run_record(self) -> None:
         await self.app.state.knowledge_run_store.write_run(_manual_review_run())
 
@@ -115,6 +358,102 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(detail_response.status_code, 404)
         self.assertEqual(list_response.status_code, 200)
         self.assertEqual(list_response.json()["total"], 0)
+
+    async def test_agent_task_delete_removes_persisted_and_active_task(self) -> None:
+        run = _manual_review_run()
+        await self.app.state.knowledge_run_store.write_run(run)
+
+        persisted_delete_response = await self.client.delete(
+            f"/api/agent-tasks/{run.run_id}"
+        )
+        persisted_detail_response = await self.client.get(
+            f"/api/agent-tasks/{run.run_id}"
+        )
+        await self.app.state.agent_task_events.publish(
+            {
+                "type": "run_started",
+                "event_type": "run_started",
+                "run_id": run.run_id,
+                "message": "测试临时任务。",
+                "run": run.model_copy(
+                    update={"run_id": "extract_run_active_only"}
+                ).model_dump(mode="json"),
+            }
+        )
+        active_delete_response = await self.client.delete(
+            "/api/agent-tasks/extract_run_active_only"
+        )
+        active_detail_response = await self.client.get(
+            "/api/agent-tasks/extract_run_active_only"
+        )
+
+        self.assertEqual(persisted_delete_response.status_code, 200)
+        self.assertEqual(persisted_detail_response.status_code, 404)
+        self.assertEqual(active_delete_response.status_code, 200)
+        self.assertEqual(active_detail_response.status_code, 404)
+
+    async def test_agent_task_event_merges_chapter_progress_with_run_snapshot(
+        self,
+    ) -> None:
+        run = AgentRun(
+            run_id="extract_run_event_merge",
+            status=AgentRunStatus.RUNNING,
+            scope=AgentRunScope(
+                scope_type="chapter_batch",
+                chapter_id="chapter_001",
+                chapter_title="第一章 山门",
+                chapter_ids=["chapter_001"],
+                chapter_titles=["第一章 山门"],
+            ),
+            started_at="2026-07-04T15:30:22Z",
+            batch_chapter_progress=[
+                AgentBatchChapterProgress(
+                    chapter_id="chapter_001",
+                    chapter_title="第一章 山门",
+                    status=AgentRunNodeStatus.RUNNING,
+                    started_at="2026-07-04T15:30:22Z",
+                )
+            ],
+            total_chapter_count=1,
+            current_concurrency=1,
+            max_concurrency=5,
+        )
+        progress = AgentBatchChapterProgress(
+            chapter_id="chapter_001",
+            chapter_title="第一章 山门",
+            status=AgentRunNodeStatus.RUNNING,
+            started_at="2026-07-04T15:30:22Z",
+            nodes=[
+                AgentRunNode(
+                    node_name="GeneralExtractionNode",
+                    status=AgentRunNodeStatus.RUNNING,
+                    started_at="2026-07-04T15:30:25Z",
+                )
+            ],
+        )
+
+        await self.app.state.agent_task_events.publish(
+            {
+                "type": "chapter_branch_node_started",
+                "event_type": "chapter_branch_node_started",
+                "run_id": run.run_id,
+                "message": "章节节点开始。",
+                "run": run.model_dump(mode="json"),
+                "chapter_progress": progress.model_dump(mode="json"),
+            }
+        )
+        detail_response = await self.client.get(f"/api/agent-tasks/{run.run_id}")
+
+        self.assertEqual(detail_response.status_code, 200)
+        detail = detail_response.json()["run"]
+        self.assertEqual(
+            detail["batch_chapter_progress"][0]["nodes"][0]["node_name"],
+            "GeneralExtractionNode",
+        )
+        self.assertEqual(
+            detail["batch_chapter_progress"][0]["nodes"][0]["status"],
+            "running",
+        )
 
     async def test_conflict_and_ignore_candidates_reject_direct_confirm(self) -> None:
         await self.app.state.knowledge_run_store.write_run(_manual_review_run())
@@ -392,6 +731,118 @@ def _success_responses() -> list[str]:
             ensure_ascii=False,
         ),
     ]
+
+
+def _branch_node_event_index(
+    events: list[dict[str, Any]],
+    event_type: str,
+    node_name: str,
+) -> int:
+    for index, event in enumerate(events):
+        if event["type"] != event_type:
+            continue
+        nodes = event["chapter_progress"]["nodes"]
+        if nodes and nodes[-1]["node_name"] == node_name:
+            return index
+    raise AssertionError(f"未找到分支节点事件：{event_type} {node_name}")
+
+
+def _extended_type_review_run() -> AgentRun:
+    now = "2026-07-04T15:30:26Z"
+    run_id = "extract_run_20260704_153026_extend"
+    base_fields = {
+        "aliases": [],
+        "importance": "normal",
+        "source_note": "来自正文知识沉淀测试。",
+    }
+    return AgentRun(
+        run_id=run_id,
+        status=AgentRunStatus.COMPLETED,
+        scope=AgentRunScope(chapter_id="chapter_001", chapter_title="第一章 山门"),
+        started_at=now,
+        finished_at=now,
+        review_items=[
+            AgentReviewItem(
+                review_item_id="review_item_realm",
+                run_id=run_id,
+                candidate_action=AgentReviewCandidateAction.CREATE_CARD,
+                knowledge_type=StructuredKnowledgeType.REALM,
+                candidate_status=AgentReviewCandidateStatus.PENDING,
+                display_title="炼气一层",
+                suggested_card={
+                    **base_fields,
+                    "type": "realm",
+                    "name": "炼气一层",
+                    "summary": "太初修炼体系的早期境界。",
+                    "system": "太初修炼体系",
+                    "level_order": 1,
+                },
+                schema_validation=AgentSchemaValidation(passed=True),
+                suggested_action_label="建议创建新知识卡",
+                created_at=now,
+                updated_at=now,
+            ),
+            AgentReviewItem(
+                review_item_id="review_item_technique",
+                run_id=run_id,
+                candidate_action=AgentReviewCandidateAction.CREATE_CARD,
+                knowledge_type=StructuredKnowledgeType.TECHNIQUE,
+                candidate_status=AgentReviewCandidateStatus.PENDING,
+                display_title="太初引气诀",
+                suggested_card={
+                    **base_fields,
+                    "type": "technique",
+                    "name": "太初引气诀",
+                    "summary": "太初教入门功法。",
+                    "technique_type": "cultivation_method",
+                    "practice_condition": "持入门令牌后可修。",
+                },
+                schema_validation=AgentSchemaValidation(passed=True),
+                suggested_action_label="建议创建新知识卡",
+                created_at=now,
+                updated_at=now,
+            ),
+            AgentReviewItem(
+                review_item_id="review_item_event",
+                run_id=run_id,
+                candidate_action=AgentReviewCandidateAction.CREATE_CARD,
+                knowledge_type=StructuredKnowledgeType.EVENT,
+                candidate_status=AgentReviewCandidateStatus.PENDING,
+                display_title="秦阳入山门",
+                suggested_card={
+                    **base_fields,
+                    "type": "event",
+                    "name": "秦阳入山门",
+                    "summary": "秦阳进入太初教山门。",
+                    "chapter_id": "chapter_001",
+                    "description": "秦阳持青铜令牌进入太初教山门。",
+                },
+                schema_validation=AgentSchemaValidation(passed=True),
+                suggested_action_label="建议创建新知识卡",
+                created_at=now,
+                updated_at=now,
+            ),
+            AgentReviewItem(
+                review_item_id="review_item_rule",
+                run_id=run_id,
+                candidate_action=AgentReviewCandidateAction.CREATE_CARD,
+                knowledge_type=StructuredKnowledgeType.RULE,
+                candidate_status=AgentReviewCandidateStatus.PENDING,
+                display_title="持令牌方可入山",
+                suggested_card={
+                    **base_fields,
+                    "type": "rule",
+                    "name": "持令牌方可入山",
+                    "summary": "太初教山门通行需要青铜令牌。",
+                    "exceptions": "未见例外。",
+                },
+                schema_validation=AgentSchemaValidation(passed=True),
+                suggested_action_label="建议创建新知识卡",
+                created_at=now,
+                updated_at=now,
+            ),
+        ],
+    )
 
 
 def _manual_review_run() -> AgentRun:

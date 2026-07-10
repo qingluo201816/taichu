@@ -1,0 +1,245 @@
+[
+  {
+    "card_id": "realm_zhongzhi_xiangen",
+    "type": "realm",
+    "name": "种植仙根境",
+    "evidence_excerpts": [
+      "太初教修仙体系第一层，需要引导天地灵气入体、浇灌仙种，使仙种发芽长叶。"
+    ],
+    "source_note": "第4章徐吞虎讲解修仙境界时提到种植仙根境。"
+  },
+  {
+    "card_id": "realm_xianmiao",
+    "type": "realm",
+    "name": "仙苗境",
+    "evidence_excerpts": [
+      "太初教修仙体系第二层，仙苗最多四十九叶，叶数越多实力越强。"
+    ],
+    "source_note": "第4章徐吞虎讲解修仙境界时提到仙苗境。"
+  },
+  {
+    "card_id": "realm_xianshu",
+    "type": "realm",
+    "name": "仙树境",
+    "evidence_excerpts": [
+      "太初教修仙体系第三层，由仙苗拔苗成树而来，关系到仙苗境修士寿元突破。"
+    ],
+    "source_note": "第4章徐吞虎讲解修仙境界时提到仙树境。"
+  },
+  {
+    "card_id": "realm_xianying_daoguo",
+    "type": "realm",
+    "name": "仙婴道果境",
+    "evidence_excerpts": [
+      "太初教老祖级追求的第五层境界，若寿元将尽的老祖突破可再添数百年寿元。"
+    ],
+    "source_note": "第4章徐吞虎讲解修仙境界时提到仙婴道果境。"
+  },
+  {
+    "card_id": "technique_liuyua_gua",
+    "type": "technique",
+    "name": "六爻卦",
+    "evidence_excerpts": [
+      "在咱们太初教，我们夏云堂的六爻卦，那可是无人能及的。"
+    ],
+    "source_note": "第5章夏云子争抢张扬时提到夏云堂六爻卦。"
+  },
+  {
+    "card_id": "rule_qin_haoxuan_soul_swap_snake",
+    "type": "rule",
+    "name": "秦浩轩附身小蛇能力",
+    "evidence_excerpts": [
+      "秦浩轩的灵魂可在人体与五彩小蛇之间穿梭附体，是其探索小屿山、后续可能探索绝仙毒谷的核心能力。"
+    ],
+    "source_note": "前5章综合抽取：秦浩轩的灵魂可在人体与五彩小蛇之间穿梭附体，是其探索小屿山、后续可能探索绝仙毒谷的核心能力。"
+  },
+  {
+    "card_id": "rule_wucai_snake_senses_treasure_poison",
+    "type": "rule",
+    "name": "五彩小蛇百毒不侵与寻药能力",
+    "evidence_excerpts": [
+      "五彩小蛇能抵御毒瘴、感知灵药异草，并通过蛇身气味寻找来路。"
+    ],
+    "source_note": "前5章综合抽取：五彩小蛇能抵御毒瘴、感知灵药异草，并通过蛇身气味寻找来路。"
+  },
+  {
+    "card_id": "rule_taichu_selection_two_tests",
+    "type": "rule",
+    "name": "太初教初选两项规则",
+    "evidence_excerpts": [
+      "太初教选苗分摸道骨与测仙种两项，两项都过关才可入选。"
+    ],
+    "source_note": "前5章综合抽取：太初教选苗分摸道骨与测仙种两项，两项都过关才可入选。"
+  },
+  {
+    "card_id": "rule_xianzhong_age_life_check",
+    "type": "rule",
+    "name": "仙种满十六岁检测规则",
+    "evidence_excerpts": [
+      "几乎人人有仙种，但可能出生后死亡或十六年间干涸；满十六岁才能灌输吸收天地灵气，所以选苗须检测仙种存活。"
+    ],
+    "source_note": "前5章综合抽取：几乎人人有仙种，但可能出生后死亡或十六年间干涸；满十六岁才能灌输吸收天地灵气，所以选苗须检测仙种存活。"
+  },
+  {
+    "card_id": "rule_juexian_dugu_poison_origin",
+    "type": "rule",
+    "name": "绝仙毒谷毒气规则",
+    "evidence_excerpts": [
+      "绝仙毒谷由万毒魔尊自爆后毒气蔓延形成，毒气强到高境界修仙者也不敢轻入，谷内从来只有进没有出。"
+    ],
+    "source_note": "前5章综合抽取：绝仙毒谷由万毒魔尊自爆后毒气蔓延形成，毒气强到高境界修仙者也不敢轻入，谷内从来只有进没有出。"
+  },
+  {
+    "card_id": "rule_xianmiao_forty_nine_leaves",
+    "type": "rule",
+    "name": "仙苗四十九叶规则",
+    "evidence_excerpts": [
+      "仙苗境可生长四十九片仙叶，仙叶越多实力越强，生齐四十九叶后才有机会拔苗成树。"
+    ],
+    "source_note": "前5章综合抽取：仙苗境可生长四十九片仙叶，仙叶越多实力越强，生齐四十九叶后才有机会拔苗成树。"
+  },
+  {
+    "card_id": "rule_cultivation_lifespan_breakthrough",
+    "type": "rule",
+    "name": "修仙破境延寿规则",
+    "evidence_excerpts": [
+      "修仙者并非真正长生，若不能突破关键境界且无灵丹妙药延寿，也会寿元耗尽死亡。"
+    ],
+    "source_note": "前5章综合抽取：修仙者并非真正长生，若不能突破关键境界且无灵丹妙药延寿，也会寿元耗尽死亡。"
+  },
+  {
+    "card_id": "rule_taichu_inner_area_restriction",
+    "type": "rule",
+    "name": "太初教新弟子活动限制",
+    "evidence_excerpts": [
+      "新入门弟子未获资格前不能进入半山腰以上宗门重地，乱跑会被逐出门墙永不收录。"
+    ],
+    "source_note": "前5章综合抽取：新入门弟子未获资格前不能进入半山腰以上宗门重地，乱跑会被逐出门墙永不收录。"
+  },
+  {
+    "card_id": "rule_xianzhong_grade_system",
+    "type": "rule",
+    "name": "仙种等级体系",
+    "evidence_excerpts": [
+      "仙种分有色与无色，无色又分饱满和不饱满；有色分灰、褐、青、橙、赤、金、紫七色。"
+    ],
+    "source_note": "前5章综合抽取：仙种分有色与无色，无色又分饱满和不饱满；有色分灰、褐、青、橙、赤、金、紫七色。"
+  },
+  {
+    "card_id": "rule_mingjian_xianyan_testing",
+    "type": "rule",
+    "name": "明鉴仙眼测试规则",
+    "evidence_excerpts": [
+      "最终测试中，新弟子将手放到明鉴仙眼上，由落叶真人打入仙灵之气，法器光芒显示仙种等级。"
+    ],
+    "source_note": "前5章综合抽取：最终测试中，新弟子将手放到明鉴仙眼上，由落叶真人打入仙灵之气，法器光芒显示仙种等级。"
+  },
+  {
+    "card_id": "event_qin_gains_snake_soul_ability",
+    "type": "event",
+    "name": "秦浩轩获得附身小蛇能力",
+    "evidence_excerpts": [
+      "秦浩轩十二岁在小屿山深处被小蛇咬后，发现灵魂可在本体与五彩小蛇之间穿梭。"
+    ],
+    "source_note": "第1章 大田金鳞元神出：秦浩轩十二岁在小屿山深处被小蛇咬后，发现灵魂可在本体与五彩小蛇之间穿梭。"
+  },
+  {
+    "card_id": "event_qin_stops_zhang_kuang_bullying",
+    "type": "event",
+    "name": "秦浩轩制止张狂欺压少年",
+    "evidence_excerpts": [
+      "秦浩轩在大田镇街头阻止张狂殴打未缴“保险费”的少年。"
+    ],
+    "source_note": "第1章 大田金鳞元神出：秦浩轩在大田镇街头阻止张狂殴打未缴“保险费”的少年。"
+  },
+  {
+    "card_id": "event_qin_sells_huangjing_to_chen",
+    "type": "event",
+    "name": "秦浩轩低价卖黄精给陈老头",
+    "evidence_excerpts": [
+      "外地豪客高价求购黄精，秦浩轩仍以三十两卖给陈老头。"
+    ],
+    "source_note": "第2章 山中神仙选仙苗：外地豪客高价求购黄精，秦浩轩仍以三十两卖给陈老头。"
+  },
+  {
+    "card_id": "event_da_tian_selection_announced",
+    "type": "event",
+    "name": "大田镇宣布开山选苗",
+    "evidence_excerpts": [
+      "镇长召集十六岁适龄少年，宣布次日赴坡子岭参加山上神仙选苗。"
+    ],
+    "source_note": "第2章 山中神仙选仙苗：镇长召集十六岁适龄少年，宣布次日赴坡子岭参加山上神仙选苗。"
+  },
+  {
+    "card_id": "event_da_tian_three_selected",
+    "type": "event",
+    "name": "大田镇三名少年通过初选",
+    "evidence_excerpts": [
+      "秦浩轩、张狂、张扬在坡子岭通过初选，被赵嘉龙、徐吞虎带往太初教。"
+    ],
+    "source_note": "第3章 至上仙尊真乙太初教：秦浩轩、张狂、张扬在坡子岭通过初选，被赵嘉龙、徐吞虎带往太初教。"
+  },
+  {
+    "card_id": "event_taichu_jiao_intro_on_road",
+    "type": "event",
+    "name": "赵嘉龙介绍太初教",
+    "evidence_excerpts": [
+      "赵嘉龙向秦浩轩等人介绍太初教全称、宗门位置和护国神教地位。"
+    ],
+    "source_note": "第3章 至上仙尊真乙太初教：赵嘉龙向秦浩轩等人介绍太初教全称、宗门位置和护国神教地位。"
+  },
+  {
+    "card_id": "event_wandu_mozun_self_detonation",
+    "type": "event",
+    "name": "万毒魔尊自爆形成绝仙毒谷",
+    "evidence_excerpts": [
+      "仙魔大战中万毒魔尊自爆，毒气蔓延大半个大屿山，形成绝仙毒谷。"
+    ],
+    "source_note": "第4章 太初山中绝毒谷：仙魔大战中万毒魔尊自爆，毒气蔓延大半个大屿山，形成绝仙毒谷。"
+  },
+  {
+    "card_id": "event_new_disciples_arrive_taichu",
+    "type": "event",
+    "name": "秦浩轩等新弟子抵达太初教",
+    "evidence_excerpts": [
+      "秦浩轩、张狂、张扬抵达大屿山黄帝峰，在太初教山门登记并入住新弟子平房。"
+    ],
+    "source_note": "第4章 太初山中绝毒谷：秦浩轩、张狂、张扬抵达大屿山黄帝峰，在太初教山门登记并入住新弟子平房。"
+  },
+  {
+    "card_id": "event_qin_meets_xu_yu_li_jing",
+    "type": "event",
+    "name": "秦浩轩结识徐羽和李靖",
+    "evidence_excerpts": [
+      "秦浩轩在新弟子宿舍主动照顾徐羽，随后被三皇子李靖主动结交。"
+    ],
+    "source_note": "第4章 太初山中绝毒谷：秦浩轩在新弟子宿舍主动照顾徐羽，随后被三皇子李靖主动结交。"
+  },
+  {
+    "card_id": "event_qin_protects_xu_yu_hits_murong",
+    "type": "event",
+    "name": "秦浩轩护徐羽并击退慕容超",
+    "evidence_excerpts": [
+      "慕容超抢被并拔匕首攻击，秦浩轩出手制服慕容超，保护徐羽。"
+    ],
+    "source_note": "第5章 显灵台上鉴仙眼：慕容超抢被并拔匕首攻击，秦浩轩出手制服慕容超，保护徐羽。"
+  },
+  {
+    "card_id": "event_final_test_begins",
+    "type": "event",
+    "name": "太初教新弟子最终测试开始",
+    "evidence_excerpts": [
+      "黄龙真人亲临，落叶真人宣布仙种等级和测试内容，最终测试开始。"
+    ],
+    "source_note": "第5章 显灵台上鉴仙眼：黄龙真人亲临，落叶真人宣布仙种等级和测试内容，最终测试开始。"
+  },
+  {
+    "card_id": "event_zhang_yang_gray_seed",
+    "type": "event",
+    "name": "张扬测出灰色仙种",
+    "evidence_excerpts": [
+      "张扬在明鉴仙眼测试中显出灰色光芒，被判定为灰种，引发太初教高层争抢。"
+    ],
+    "source_note": "第5章 显灵台上鉴仙眼：张扬在明鉴仙眼测试中显出灰色光芒，被判定为灰种，引发太初教高层争抢。"
+  }
+]

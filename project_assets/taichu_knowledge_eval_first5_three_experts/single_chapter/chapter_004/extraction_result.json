@@ -1,0 +1,22 @@
+{
+  "mode": "single_chapter",
+  "chapter": {
+    "chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537",
+    "title": "第4章 太初山中绝毒谷",
+    "markdown_path": "manuscripts/chapters/volume_001_第一卷/chapter_004_太初山中绝毒谷.md"
+  },
+  "expert_counts": {
+    "character_expert": 7,
+    "entity_expert": 9,
+    "worldview_expert": 11
+  },
+  "type_counts": {
+    "character": 7,
+    "location": 7,
+    "faction": 2,
+    "realm": 4,
+    "rule": 4,
+    "event": 3
+  },
+  "ignored_count": 3
+}

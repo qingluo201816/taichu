@@ -20,18 +20,32 @@ export type ReviewCandidateStatus =
 
 export type EditConfirmMergeMode = "append" | "overwrite";
 
-export type KnowledgeType = "character" | "location" | "faction" | "item";
+export type KnowledgeType =
+  | "character"
+  | "realm"
+  | "technique"
+  | "location"
+  | "faction"
+  | "item"
+  | "rule"
+  | "event";
 
 export type AgentRunSummary = {
   run_id: string;
   agent_name: string;
   status: AgentRunStatus;
+  scope_type: string;
   chapter_id: string;
   chapter_title: string;
+  chapter_ids: string[];
+  chapter_titles: string[];
   candidate_count: number;
   pending_count: number;
   confirmed_count: number;
   rejected_count: number;
+  total_chapter_count: number;
+  completed_chapter_count: number;
+  failed_chapter_count: number;
   started_at: string;
   finished_at?: string | null;
 };
@@ -41,6 +55,8 @@ export type AgentRunScope = {
   chapter_id: string;
   chapter_title: string;
   content_hash: string;
+  chapter_ids: string[];
+  chapter_titles: string[];
 };
 
 export type AgentRunNode = {
@@ -51,6 +67,28 @@ export type AgentRunNode = {
   duration_ms: number;
   input_summary: string;
   output_summary: string;
+  error?: string | null;
+};
+
+export type AgentRunGraphNode = {
+  node_name: string;
+  label: string;
+  lane: string;
+};
+
+export type AgentRunGraphEdge = {
+  source: string;
+  target: string;
+};
+
+export type AgentBatchChapterProgress = {
+  chapter_id: string;
+  chapter_title: string;
+  status: AgentNodeStatus;
+  started_at?: string | null;
+  finished_at?: string | null;
+  candidate_count: number;
+  nodes?: AgentRunNode[];
   error?: string | null;
 };
 
@@ -126,9 +164,14 @@ export type AgentReviewItem = {
 export type AgentMetrics = {
   candidate_total: number;
   character_candidate_count: number;
+  realm_candidate_count: number;
+  technique_candidate_count: number;
   location_candidate_count: number;
   faction_candidate_count: number;
   item_candidate_count: number;
+  rule_candidate_count: number;
+  event_candidate_count: number;
+  candidate_count_by_type: Partial<Record<KnowledgeType, number>>;
   create_card_count: number;
   update_card_count: number;
   conflict_count: number;
@@ -154,6 +197,14 @@ export type AgentRun = {
   started_at: string;
   finished_at?: string | null;
   nodes: AgentRunNode[];
+  graph_nodes: AgentRunGraphNode[];
+  graph_edges: AgentRunGraphEdge[];
+  batch_chapter_progress: AgentBatchChapterProgress[];
+  max_concurrency: number;
+  current_concurrency: number;
+  total_chapter_count: number;
+  completed_chapter_count: number;
+  failed_chapter_count: number;
   llm_calls: AgentLLMCall[];
   raw_mentions: AgentRawMention[];
   entity_groups: AgentEntityGroup[];
@@ -167,6 +218,12 @@ export type AgentRun = {
 
 export type CreateKnowledgeExtractionRunRequest = {
   chapter_id: string;
+  model_name?: string | null;
+  force?: boolean;
+};
+
+export type CreateBatchKnowledgeExtractionRunRequest = {
+  chapter_ids: string[];
   model_name?: string | null;
   force?: boolean;
 };
@@ -198,4 +255,31 @@ export type EditConfirmCandidateRequest = {
 
 export type KnowledgeExtractionCandidateActionResponse = {
   run: AgentRun;
+};
+
+export type KnowledgeExtractionStreamEventType =
+  | "run_started"
+  | "node_started"
+  | "node_finished"
+  | "llm_call_finished"
+  | "run_completed"
+  | "run_failed"
+  | "task_started"
+  | "chapter_branch_started"
+  | "chapter_branch_node_started"
+  | "chapter_branch_node_finished"
+  | "chapter_branch_finished"
+  | "task_completed"
+  | "task_failed"
+  | "task_deleted";
+
+export type KnowledgeExtractionStreamEvent = {
+  type?: KnowledgeExtractionStreamEventType;
+  event_type: KnowledgeExtractionStreamEventType;
+  run_id: string;
+  message: string;
+  run?: AgentRun;
+  node?: AgentRunNode;
+  llm_call?: AgentLLMCall;
+  chapter_progress?: AgentBatchChapterProgress;
 };
