@@ -30,7 +30,7 @@ description: 规格实现工具，适用于 cc-sdd 设计确认后生成 tasks.m
 
 ### Step 2 生成任务清单
 
-参照 `.claude/rules/KIRO_COMMAND_CALLING_SPEC.md` 的 `spec-tasks` 模板生成 `tasks.md`。
+先读取 `references/cc-sdd-tasks-implementation.md` 与 `references/tasks-generation.md`，再生成 `tasks.md`。
 
 任务清单必须满足：
 
@@ -54,7 +54,7 @@ description: 规格实现工具，适用于 cc-sdd 设计确认后生成 tasks.m
 
 ### Step 4 TDD 实现
 
-参照 `.claude/rules/KIRO_COMMAND_CALLING_SPEC.md` 的 `spec-impl` 模板执行：
+按 `references/cc-sdd-tasks-implementation.md` 执行：
 
 1. RED：补失败测试或明确可复现验收。
 2. GREEN：实现最小可用改动。

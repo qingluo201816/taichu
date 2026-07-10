@@ -1,6 +1,6 @@
 ---
 name: prd-to-plan
-description: PRD 到代码实现全流程编排工具，适用于用户要求从 prd-docs 读取 PRD、拆分功能点、生成 cc-sdd 规格并推进设计和实现时。每个阶段必须等待用户确认。
+description: PRD 到代码实现全流程编排工具，适用于用户要求从 prd-docs 读取 PRD、拆分功能点、生成 cc-sdd 规格并推进设计和实现时。功能点计划保存在 .kiro/plans，每个阶段必须等待用户确认。
 ---
 
 # PRD to Plan
@@ -29,7 +29,7 @@ description: PRD 到代码实现全流程编排工具，适用于用户要求从
 可选。检查端口 `8686`，未被占用时运行：
 
 ```bash
-uv run python .claude/scripts/spec_dashboard_server.py --port 8686
+uv run python .agents/skills/prd-to-plan/scripts/spec_dashboard_server.py --port 8686
 ```
 
 浏览器访问 `http://localhost:8686/dashboard.html` 查看规格进度。
@@ -39,8 +39,8 @@ uv run python .claude/scripts/spec_dashboard_server.py --port 8686
 使用 `prd-plan-analyze`：
 
 1. 从 `prd-docs/` 读取 PRD。
-2. 按 `.claude/rules/FUNCTION_SPLIT.md` 拆分功能点。
-3. 生成 `out/{版本号}/功能点清单.md`。
+2. 使用 `prd-plan-analyze` 自带的拆分规则拆分功能点。
+3. 生成 `.kiro/plans/{版本号}/功能点清单.md`。
 4. 展示功能点清单摘要并等待用户确认。
 
 用户未确认前不得进入阶段二。

@@ -1,61 +1,90 @@
-**产品定位**:太初是一款面向个人作者的单本玄幻长篇 AI 创作工作台。它以沉浸式编辑器为核心，把章节正文、小说设定、角色状态、世界观资料和 AI 工作流组织在同一个创作上下文中，让作者可以在不频繁切换工具、不重复解释设定的情况下，完成正文写作、续写辅助、设定查询、冲突检查、剧情推演和创作管理等功能。
- 
-**主体验**：沉浸式编辑器。
+# 太初仓库地图
 
-**主对象**：单本玄幻长篇。
+> 更新日期：2026-07-10
 
-**主用户**：个人作者。
+太初是面向个人作者的单本玄幻长篇 AI 写作工作台。本文件只回答两件事：仓库每个区域负责什么，以及想找某类资料应该去哪里。
 
-**主价值**：减少上下文切换，维护设定一致性，辅助正文推进。
+## 最常用入口
 
-**主 AI 形态**：编辑器内轻量工作流 + 写作区 AI 历史。
+| 我想做什么 | 去哪里 |
+|---|---|
+| 查看 Codex 必须遵守的项目规则 | `AGENTS.md` |
+| 修改当前前端视觉、布局或交互 | `DESIGN.md` |
+| 查看前端主题的精确实现 | `web/src/components/theme/`、`web/src/app/globals.css` |
+| 查看全部项目级 Skills | `.agents/索引.md` |
+| 查看 Skill 编写规则 | `.agents/skills/rule.md` |
+| 查看某个 Skill | `.agents/skills/{名称}/SKILL.md` |
+| 查看后端和系统架构设想 | `docs/临时架构/太初系统架构图.md` |
+| 核对真实后端代码分层 | `src/taichu/api/`、`src/taichu/application/`、`src/taichu/domain/`、`src/taichu/infrastructure/` |
+| 查看本地数据态目录结构 | `project_assets/readme.md` |
+| 查看当前结构化字段和状态 | `src/taichu/domain/models/` |
+| 查看 API 输入输出 | `src/taichu/api/schemas/` |
+| 查看存储与检索契约 | `src/taichu/application/contracts/` |
+| 查看当前产品需求草案 | `docs/临时产品文档/太初当前产品需求.md` |
+| 查看其他未确认产品设想 | `docs/临时产品文档/` |
+| 查看历史快照 | `docs/历史/` |
+| 查看测试与评测样本 | `tests/`、`tests/fixtures/evaluations/` |
 
-**主数据原则**：Markdown 是唯一文本事实源，MongoDB 是唯一结构事实源，索引与缓存可重建。
+`docs/临时架构/` 和 `docs/临时产品文档/` 可能包含未实现、只实现一部分或已经被代码超越的内容。开发前必须以当前代码、`AGENTS.md` 和数据目录说明复核，不得把临时文档直接当作已落地事实。
 
-**主边界**：不做多小说平台，不做协作 SaaS，不做发布平台，不做纯自动写书工具。
+## 仓库目录
 
-**语言规则**：所有面向用户的回答、网页文案、按钮、卡片、提示、报错、功能说明、验收说明和项目文档说明都必须使用中文。内部代码标识、接口枚举、文件路径、命令和依赖名称可以保留原始拼写，但不得把英文内部标识直接当作用户可见文案；需要提及时必须配中文名称或中文解释。
+```text
+Taichu/
+├── AGENTS.md                 # Codex 项目硬规则
+├── README.md                 # 本仓库地图
+├── DESIGN.md                 # 当前前端唯一设计规则
+├── .env.example              # 环境变量示例
+├── .gitignore                # Git 忽略规则
+├── .python-version           # Python 版本提示
+├── pyproject.toml            # Python 项目与 uv 依赖
+├── uv.lock                   # Python 依赖锁文件，应提交 Git
+├── start.bat                 # Windows 一键启动
+├── .agents/                  # Codex Skills 与开发工作流
+├── .kiro/                    # 按需生成的 PRD 计划和 cc-sdd 规格
+├── docs/                     # 文档规则、临时资料、参考资料和历史快照
+├── project_assets/           # 当前单本小说的数据态资产
+├── src/                      # FastAPI 后端代码
+├── tests/                    # 后端测试和评测夹具
+└── web/                      # Next.js 前端代码
+```
 
-太初是服务于玄幻长篇小说创作的个人 AI IDE  
+`prd-docs/` 只在用户明确启动 PRD 流程时按需创建，用作输入暂存目录；仓库不使用 `.gitkeep` 保存空目录。PRD 分析结果写入 `.kiro/plans/`，规格写入 `.kiro/specs/`。
 
-太初所有功能都应该回答一个问题：它是否能帮助作者更舒服、更连续、更准确地推进这一本小说的正文创作？ 
+## 运行方式
 
-## 数据宪法
+首次准备依赖：
 
-> 更新日期：2026-07-06
+```powershell
+uv sync
+cd web
+npm install
+```
+
+日常启动双击根目录 `start.bat`。脚本会启动或复用 MongoDB，并启动：
+
+- 前端：`http://localhost:3000`
+- 后端：`http://127.0.0.1:8000`
+- MongoDB：`mongodb://127.0.0.1:27017`
+
+## 本机外部数据位置
+
+以下内容在仓库外，不应重新复制到根目录：
+
+| 内容 | 本机位置 | 说明 |
+|---|---|---|
+| MongoDB 数据 | `E:\Taichu\MongoDB\data\db` | 结构化事实目标存储位置 |
+| MongoDB 日志 | `E:\Taichu\MongoDB\log` | MongoDB 本地运行日志 |
+| 原小说导入资料 | `E:\Taichu\导入资料\太初原小说` | PDF、EPUB、TXT 原始导入包 |
+
+原小说导入包只是外部导入材料。太初当前正文的文本事实源仍是 `project_assets/source/manuscripts/chapters/` 下的 Markdown。
+
+## 数据边界
 
 - Markdown 是唯一文本事实源。
-- MongoDB 是唯一结构事实源。
-- 所有索引，包括 vector、Elasticsearch、graph、SQLite/FTS 和缓存，都是可重建派生层。
-- AI 不得直接写入 MongoDB，必须先生成 JSON 中间态并通过 schema、来源、冲突和生命周期校验。
-- 所有非事实数据必须显式标记 `lifecycle`，取值只能是 `draft`、`confirmed`、`rejected`。
+- MongoDB 中 `lifecycle=confirmed` 的记录是目标结构事实源。
+- `project_assets/source/knowledge/` 当前仍是迁移前 JSON 兼容实现，不代表 MongoDB 已完成业务接入。
+- AI 结果先形成 JSON 中间态，经过校验和作者确认后才能晋升为结构事实。
+- SQLite、向量、Elasticsearch、图索引和缓存都是可重建派生层。
 
-## MVP-0.1 Release Candidate
-
-> 更新日期：2026-07-06
-
-MVP-0.1 RC 的闭环是：章节写作 → Selection AI → AIResultCard → Inbox → PendingFact → 作者确认 Knowledge → generated rebuild → Export source bundle。
-
-### 数据边界
-
-- 文本事实源：`project_assets/source/manuscripts/` 下的章节 Markdown。
-- 结构事实源：MongoDB 中 `lifecycle=confirmed` 的结构化知识记录。
-- JSON 中间态：AI 候选、待确认事实和迁移校验材料必须先以 JSON 中间态保存并校验，不得由 AI 直接写入 MongoDB。
-- 兼容目录：`project_assets/source/knowledge/` 下的 Knowledge JSON 只作为迁移前兼容层或导出快照，不再作为目标架构的结构事实源扩展。
-- workspace 资产：AIResultCard、IdeaCard、PendingFact、ChapterSummary 等保存在 `project_assets/source/workspace/`，可导出，但默认不是 fact_scope。
-- generated 投影：SQLite/FTS、vector、Elasticsearch、graph 和缓存只保存在 `project_assets/generated/` 或等价派生索引层，可删除并从 Markdown 与 MongoDB 重建。
-
-### RC 导出格式
-
-当前导出格式是 readable JSON bundle，包含 `path`、`media_type`、`content` 三元组；它是 MVP 备份/迁移格式，不是发布包，也不会把 workspace 内容提升为事实。
-
-### RC 验证命令
-
-```bash
-uv run python -m unittest discover tests
-uv run ruff check .
-uv run mypy
-cd web && npm run test:editor
-cd web && npm run lint
-cd web && npm run build
-```
+更完整的物理目录职责以 `project_assets/readme.md` 为准。

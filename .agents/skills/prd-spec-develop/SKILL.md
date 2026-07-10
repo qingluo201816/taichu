@@ -12,7 +12,7 @@ description: 规格开发编排工具，适用于功能点清单确认后，按 
 ## 输入
 
 - 规格名称：`{版本号}/{功能名}`，支持通配，例如 `V1.0/*`。
-- 或功能点清单路径：`out/{版本号}/功能点清单.md`。
+- 或功能点清单路径：`.kiro/plans/{版本号}/功能点清单.md`。
 
 ## 输入校验
 
@@ -36,14 +36,6 @@ description: 规格开发编排工具，适用于功能点清单确认后，按 
 
 ## 流程
 
-### Step 0 Dashboard
-
-可选启动：
-
-```bash
-uv run python .claude/scripts/spec_dashboard_server.py --port 8686
-```
-
 ### Step 1 规格选择
 
 根据输入生成规格清单，按状态分组展示。用户可选择一个、多个，或选择全部未完成规格。
@@ -52,7 +44,7 @@ uv run python .claude/scripts/spec_dashboard_server.py --port 8686
 
 对选中规格使用 `prd-to-ccsdd`：
 
-- 参照 `.claude/rules/KIRO_COMMAND_CALLING_SPEC.md` 执行 `spec-init`。
+- 由 `prd-to-ccsdd` 按自身 references 执行初始化和需求生成。
 - 生成 `requirements.md`。
 - 询问是否执行 Gap 分析。
 

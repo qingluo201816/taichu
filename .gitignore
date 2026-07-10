@@ -10,8 +10,7 @@ build/
 .venv/
 venv/
 
-# uv
-uv.lock
+# uv cache
 .uv/
 
 # Environment
@@ -19,7 +18,14 @@ uv.lock
 
 # Generated novel data
 project_assets/generated/*
-!project_assets/generated/.gitkeep
+
+# Empty directory placeholders are forbidden
+.gitkeep
+
+# Tool caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
 
 # IDE
 .idea/

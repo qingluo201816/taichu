@@ -1,8 +1,19 @@
 # project_assets 目录说明
 
-> 更新日期：2026-07-07
+> 更新日期：2026-07-10
 
 `project_assets/` 是太初单本小说的本地资产根目录，用于保存正文 Markdown、工作区资产、AI 运行产物、过渡 JSON、索引缓存和临时生成文件。结构化事实的目标事实源是 MongoDB，不是 `project_assets/` 下的 JSON 文件。
+
+## 本机实际部署位置
+
+- 本说明文件：`C:\Users\wyh\Desktop\Taichu\project_assets\readme.md`。
+- 项目资产根目录：`C:\Users\wyh\Desktop\Taichu\project_assets`，由 `PROJECT_ASSETS_DIR` 指定，仍保留在项目目录中。
+- MongoDB 数据目录：`E:\Taichu\MongoDB\data\db`，由 `MONGODB_DATA_DIR` 指定。
+- MongoDB 日志目录：`E:\Taichu\MongoDB\log`，由 `MONGODB_LOG_DIR` 指定。
+- 原小说导入资料：`E:\Taichu\导入资料\太初原小说`，只作为外部导入材料，不属于 `project_assets/`。
+- MongoDB 数据和日志不属于 `project_assets/` 目录树；当前开发机把它们放到 E 盘，避免数据库文件占用项目所在磁盘。更换开发机时，应同步更新当前用户环境变量与项目根目录 `.env`，不得仅修改本说明。
+
+当前代码仍使用 `source/knowledge/` 下的 JSON 兼容仓库；以上 MongoDB 目录是目标结构事实源的本地运行位置，不表示现有 JSON 数据已经迁移或业务代码已经完成 MongoDB 接入。
 
 ## 维护规则
 
@@ -10,6 +21,8 @@
 - 新增、删除、移动或改变任一目录职责时，必须在同一次变更里更新“目录结构”和“目录职责说明”。
 - 文本事实源优先放在 `source/`；结构事实源归属 MongoDB；可再生成的运行产物放在 `derived/`；缓存、索引、日志和导出物放在 `generated/`。
 - 不要把可再生成的缓存或日志当作正式源数据依赖。
+- 不创建或保留 `.gitkeep`；目录由存储实现按需创建。
+- 评测基准和测试夹具放在 `tests/fixtures/evaluations/`，不得作为 `project_assets/` 的额外顶层目录。
 
 ## 数据宪法
 

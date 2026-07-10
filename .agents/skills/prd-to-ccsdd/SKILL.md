@@ -7,11 +7,11 @@ description: 功能点转 cc-sdd 规格工具，适用于从功能点清单生�
 
 ## 定位
 
-从 `out/{版本号}/功能点清单.md` 提取功能点，为每个大需求模块创建 `.kiro/specs/{版本号}/{功能名}/`，并生成需求文档。
+从 `.kiro/plans/{版本号}/功能点清单.md` 提取功能点，为每个大需求模块创建 `.kiro/specs/{版本号}/{功能名}/`，并生成需求文档。
 
 ## 输入
 
-- 功能点清单路径：`out/{版本号}/功能点清单.md`。
+- 功能点清单路径：`.kiro/plans/{版本号}/功能点清单.md`。
 - 或由 `prd-spec-develop` 传入的规格名称列表。
 
 ## 输入校验
@@ -26,6 +26,7 @@ description: 功能点转 cc-sdd 规格工具，适用于从功能点清单生�
 - 禁止跳过名称唯一性检查。
 - 禁止生成英文用户文档；`requirements.md`、`design.md`、`tasks.md` 主体必须是简体中文。
 - 禁止引入多小说、多租户或 `project_id` 设计。
+- 禁止创建 `.gitkeep`；规格目录由流程按需创建。
 
 ## 执行流程
 
@@ -50,7 +51,7 @@ description: 功能点转 cc-sdd 规格工具，适用于从功能点清单生�
 └── tasks.md
 ```
 
-参照 `.claude/rules/KIRO_COMMAND_CALLING_SPEC.md` 的 `spec-init` 模板生成 `spec.json`。`spec.json` 必须包含：
+先读取 `references/cc-sdd-init-requirements.md`，按其中初始化规则生成 `spec.json`。`spec.json` 必须包含：
 
 - `name`
 - `version`
@@ -72,7 +73,7 @@ description: 功能点转 cc-sdd 规格工具，适用于从功能点清单生�
 
 ### 4. 需求文档生成
 
-仅处理用户选中的规格。参照 `.claude/rules/KIRO_COMMAND_CALLING_SPEC.md` 的 `spec-requirements` 模板生成 `requirements.md`。
+仅处理用户选中的规格。读取 `references/ears-format.md`，再按 `references/cc-sdd-init-requirements.md` 生成 `requirements.md`。
 
 要求：
 

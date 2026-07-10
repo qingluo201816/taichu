@@ -252,11 +252,6 @@ class ProjectAssetStorageBackend:
     def _ensure_skeleton_sync(self) -> None:
         for directory in _SOURCE_DIRS:
             (self._source_root / directory).mkdir(parents=True, exist_ok=True)
-        deleted_gitkeep = (
-            self._source_root / "manuscripts" / "deleted_chapters" / ".gitkeep"
-        )
-        if not deleted_gitkeep.exists():
-            deleted_gitkeep.write_text("\n", encoding="utf-8")
         self._ensure_generated_dirs()
 
         metadata_path = self._source_root / "metadata.yaml"
@@ -544,9 +539,6 @@ class ProjectAssetStorageBackend:
                 parents=True,
                 exist_ok=True,
             )
-        gitkeep = self._generated_root / ".gitkeep"
-        if not gitkeep.exists():
-            gitkeep.write_text("\n", encoding="utf-8")
 
     def _resolve_safe_chapter_path(self, relative_path: str) -> Path:
         if "\\" in relative_path:

@@ -35,15 +35,6 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
             (self.assets_root / "source" / "manuscripts" / "deleted_chapters").exists()
         )
         self.assertTrue(
-            (
-                self.assets_root
-                / "source"
-                / "manuscripts"
-                / "deleted_chapters"
-                / ".gitkeep"
-            ).exists()
-        )
-        self.assertTrue(
             (self.assets_root / "source" / "manuscripts" / "outline.json").exists()
         )
         self.assertTrue(

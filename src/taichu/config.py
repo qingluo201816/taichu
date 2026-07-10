@@ -20,5 +20,11 @@ class Settings(BaseSettings):
 
     project_assets_dir: Path = Path("project_assets")
 
+    mongodb_home: Path | None = None
+    mongodb_data_dir: Path | None = None
+    mongodb_log_dir: Path | None = None
+    mongodb_uri: str = "mongodb://127.0.0.1:27017"
+    mongodb_database: str = "taichu"
+
 
 settings = Settings()

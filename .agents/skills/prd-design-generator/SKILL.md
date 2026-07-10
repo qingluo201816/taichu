@@ -25,14 +25,14 @@ description: 技术设计文档生成工具，适用于 cc-sdd 需求规格确�
 
 ## 设计生成
 
-参照 `.claude/rules/KIRO_COMMAND_CALLING_SPEC.md` 的 `spec-design` 模板生成 `design.md`。
+先读取 `references/cc-sdd-design.md` 与 `references/design-principles.md`，再生成 `design.md`。
 
 设计文档必须覆盖：
 
 - 当前太初架构落点：`api`、`application`、`domain`、`infrastructure`、`web` 中涉及的目录。
 - 依赖方向，尤其是 `domain` 不得依赖 Agent、LangGraph、LLM、MCP 或具体存储。
 - 数据模型、接口契约、状态流转和验证策略。
-- 前端变更必须引用 `TAICHU_DESIGN.md` 和 `.agents/skills/taichu-ui-components/SKILL.md`。
+- 前端变更必须引用根目录 `DESIGN.md` 和 `.agents/skills/taichu-ui-components/SKILL.md`。
 - 启动关键文件若被影响，必须列出 `start.bat` 验证要求。
 
 生成后更新 `spec.json` 的 `stage` 与 `approvals.design`。

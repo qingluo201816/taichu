@@ -1,13 +1,13 @@
 ---
 name: prd-plan-analyze
-description: PRD 需求分析工具，适用于从 prd-docs 读取 PRD、按太初规则拆分独立可测试功能点，并生成 out 目录下的功能点清单时。
+description: PRD 需求分析工具，适用于从 prd-docs 读取 PRD、按太初规则拆分独立可测试功能点，并在 .kiro/plans 下生成功能点清单时。
 ---
 
 # PRD Plan Analyze
 
 ## 定位
 
-读取 `prd-docs/` 中的 PRD 文档，拆分为结构化功能点清单，输出到 `out/{版本号}/功能点清单.md`。
+读取 `prd-docs/` 中的 PRD 文档，拆分为结构化功能点清单，输出到 `.kiro/plans/{版本号}/功能点清单.md`。
 
 ## 输入
 
@@ -30,14 +30,14 @@ description: PRD 需求分析工具，适用于从 prd-docs 读取 PRD、按太�
 - `.pdf`、`.docx`：优先使用当前环境可用的文档读取能力；如需提取嵌入图片，运行：
 
 ```bash
-uv run python .claude/skills/prd-requirement-analyzer/scripts/extract_images.py prd-docs/{文件名} --output out/{版本号}/prd_images
+uv run python .agents/skills/prd-plan-analyze/scripts/extract_images.py prd-docs/{文件名} --output .kiro/plans/{版本号}/prd_images
 ```
 
 图片中的结构化信息必须转写为中文需求说明，不能只引用图片路径。
 
 ## 拆分规则
 
-按 `.claude/rules/FUNCTION_SPLIT.md` 拆分，核心标准：
+先读取 `references/function-split.md`，再按其中规则拆分。核心标准：
 
 - 单一业务操作：一个功能点只做一件事。
 - 状态机边界：按业务对象生命周期状态拆分。
@@ -46,7 +46,7 @@ uv run python .claude/skills/prd-requirement-analyzer/scripts/extract_images.py 
 
 ## 输出格式
 
-输出文件：`out/{版本号}/功能点清单.md`。
+输出文件：`.kiro/plans/{版本号}/功能点清单.md`。按需创建目录，不创建 `.gitkeep`。
 
 必须按 PRD 一级需求模块分组，每个模块下按“新增功能”“功能增强”“功能不变”分类；“功能不变”仅在确实存在时输出。
 
