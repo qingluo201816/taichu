@@ -1,7 +1,7 @@
 """应用层依赖的稳定契约。"""
 
 from taichu.application.contracts.indexer import IndexerContract
-from taichu.application.contracts.llm import LLMContract
+from taichu.application.contracts.llm import LLMContract, LLMModelIdentity
 from taichu.application.contracts.retrieval import (
     RetrievalBackend,
     RetrievalContract,
@@ -18,6 +18,7 @@ from taichu.application.contracts.storage import (
 __all__ = [
     "IndexerContract",
     "LLMContract",
+    "LLMModelIdentity",
     "RetrievalBackend",
     "RetrievalContract",
     "RetrievalQuery",

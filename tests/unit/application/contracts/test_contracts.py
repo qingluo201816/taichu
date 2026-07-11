@@ -2,13 +2,17 @@
 
 import unittest
 
+from pydantic import ValidationError
+
 from taichu.application.contracts import (
     IndexerContract,
     LLMContract,
+    LLMModelIdentity,
     RetrievalContract,
     RetrievalQuery,
     StorageContract,
 )
+from taichu.application.contracts.agent_run_repository import AgentRunRepository
 from taichu.domain.models import (
     RetrievalHit,
     RetrievalReason,
@@ -77,6 +81,16 @@ class DummyRetrieval:
 class DummyLLM:
     """LLM contract stub."""
 
+    @property
+    def model_identity(self) -> LLMModelIdentity:
+        return LLMModelIdentity(
+            provider="test",
+            model_id="dummy",
+            family="dummy",
+            endpoint_kind="test",
+            known=True,
+        )
+
     async def complete(self, prompt: str) -> str:
         return prompt
 
@@ -88,6 +102,31 @@ class DummyIndexer:
         return None
 
 
+class DummyAgentRunRepository:
+    """Agent run repository contract stub."""
+
+    async def write_run(self, run):
+        return run
+
+    async def get_run(self, run_id: str):
+        return None
+
+    async def delete_run(self, run_id: str) -> bool:
+        return False
+
+    async def list_runs(
+        self,
+        *,
+        page: int = 1,
+        page_size: int = 20,
+        status: str = "all",
+    ):
+        return [], 0
+
+    async def find_run_for_candidate(self, candidate_id: str):
+        return None
+
+
 class ApplicationContractTest(unittest.IsolatedAsyncioTestCase):
     """Verify Phase 0 application contract entry points exist."""
 
@@ -96,13 +135,27 @@ class ApplicationContractTest(unittest.IsolatedAsyncioTestCase):
         retrieval = DummyRetrieval()
         llm = DummyLLM()
         indexer = DummyIndexer()
+        run_repository = DummyAgentRunRepository()
 
         self.assertIsInstance(storage, StorageContract)
         self.assertIsInstance(retrieval, RetrievalContract)
         self.assertIsInstance(llm, LLMContract)
         self.assertIsInstance(indexer, IndexerContract)
+        self.assertIsInstance(run_repository, AgentRunRepository)
         self.assertEqual(
             (await retrieval.search(RetrievalQuery(text="主角")))[0]
             .source_ref.source_id,
             "chapter_001",
         )
+
+    async def test_model_identity_requires_explicit_known_or_unknown_state(
+        self,
+    ) -> None:
+        with self.assertRaisesRegex(ValidationError, "供应商和模型标识"):
+            LLMModelIdentity(known=True)
+        with self.assertRaisesRegex(ValidationError, "必须说明原因"):
+            LLMModelIdentity()
+
+        identity = LLMModelIdentity.unknown("测试无法识别模型。")
+        with self.assertRaises(ValidationError):
+            identity.model_id = "changed"

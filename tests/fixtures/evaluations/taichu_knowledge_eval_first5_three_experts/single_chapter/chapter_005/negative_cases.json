@@ -1,0 +1,47 @@
+[
+  {
+    "negative_case_id": "negative_chapter_005_01",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "抢被子的少年",
+      "其他新弟子"
+    ],
+    "reason": "无稳定专名，作为事件背景而非角色卡。",
+    "source_quote_ids": [
+      "quote_negative_chapter_005_01"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_005_02",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "几名权贵子弟"
+    ],
+    "reason": "群体称呼，其中仅慕容超被点名并建卡。",
+    "source_quote_ids": [
+      "quote_negative_chapter_005_02"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_005_03",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "白玉瓶"
+    ],
+    "reason": "第5章末仅出现器物，未说明用途和归属；等第6章结合涎灵草再建更稳。",
+    "source_quote_ids": [
+      "quote_negative_chapter_005_03"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_005_04",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "露天广场"
+    ],
+    "reason": "普通功能场景，未形成稳定专名地点。",
+    "source_quote_ids": [
+      "quote_negative_chapter_005_04"
+    ]
+  }
+]

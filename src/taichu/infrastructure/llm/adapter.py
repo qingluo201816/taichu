@@ -6,12 +6,24 @@ from typing import Any
 
 from langchain_core.language_models.chat_models import BaseChatModel
 
+from taichu.application.contracts.llm import LLMModelIdentity
+
 
 class LangChainLLMAdapter:
     """Expose a LangChain chat model through the application LLM contract."""
 
-    def __init__(self, chat_model: BaseChatModel) -> None:
+    def __init__(
+        self,
+        chat_model: BaseChatModel,
+        model_identity: LLMModelIdentity,
+    ) -> None:
         self._chat_model = chat_model
+        self._model_identity = model_identity
+
+    @property
+    def model_identity(self) -> LLMModelIdentity:
+        """Return the immutable identity attached by the runtime factory."""
+        return self._model_identity
 
     async def complete(self, prompt: str) -> str:
         """Return text content for a prompt."""

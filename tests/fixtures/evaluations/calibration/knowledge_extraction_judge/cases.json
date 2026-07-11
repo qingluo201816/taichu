@@ -1,0 +1,2306 @@
+[
+  {
+    "calibration_case_id": "character_correct_001",
+    "knowledge_type": "character",
+    "scope_kind": "single_chapter",
+    "error_mode": "correct",
+    "source_chapter_path": "sources/character_correct_001.md",
+    "expected_card": {
+      "type": "character",
+      "name": "秦照",
+      "summary": "秦照是大田镇的猎户学徒，随身佩着一把木弓。"
+    },
+    "actual_card": {
+      "type": "character",
+      "name": "秦照",
+      "summary": "秦照是大田镇的猎户学徒，随身佩着一把木弓。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_correct_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦照是大田镇的猎户学徒，随身佩着一把木弓。",
+        "source_quote_ids": [
+          "quote_character_correct_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_character_correct_001",
+        "chapter_id": "chapter_character_correct_001",
+        "text": "秦照是大田镇的猎户学徒，随身佩着一把木弓。沈砚是云岚会首领，二人并非同一人物。",
+        "start_offset": 0,
+        "end_offset": 39,
+        "source_hash": "e37d7e8cb0608ef6ccb658af4f78501e2318273dd19772a18e8a84ff36bf8711"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "character_omission_001",
+    "knowledge_type": "character",
+    "scope_kind": "single_chapter",
+    "error_mode": "omission",
+    "source_chapter_path": "sources/character_omission_001.md",
+    "expected_card": {
+      "type": "character",
+      "name": "秦照",
+      "summary": "秦照是大田镇的猎户学徒，随身佩着一把木弓。"
+    },
+    "actual_card": {
+      "type": "character",
+      "name": "秦照",
+      "summary": "秦照住在大田镇。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_omission_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦照是大田镇的猎户学徒，随身佩着一把木弓。",
+        "source_quote_ids": [
+          "quote_character_omission_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_character_omission_001",
+        "chapter_id": "chapter_character_omission_001",
+        "text": "秦照是大田镇的猎户学徒，随身佩着一把木弓。沈砚是云岚会首领，二人并非同一人物。",
+        "start_offset": 0,
+        "end_offset": 39,
+        "source_hash": "e37d7e8cb0608ef6ccb658af4f78501e2318273dd19772a18e8a84ff36bf8711"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "character_hallucination_001",
+    "knowledge_type": "character",
+    "scope_kind": "single_chapter",
+    "error_mode": "hallucination",
+    "source_chapter_path": "sources/character_hallucination_001.md",
+    "expected_card": {
+      "type": "character",
+      "name": "秦照",
+      "summary": "秦照是大田镇的猎户学徒，随身佩着一把木弓。"
+    },
+    "actual_card": {
+      "type": "character",
+      "name": "秦照",
+      "summary": "秦照是大田镇的猎户学徒，随身佩着一把木弓，并天生拥有不灭皇血。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_hallucination_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦照是大田镇的猎户学徒，随身佩着一把木弓。",
+        "source_quote_ids": [
+          "quote_character_hallucination_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_character_hallucination_001",
+        "chapter_id": "chapter_character_hallucination_001",
+        "text": "秦照是大田镇的猎户学徒，随身佩着一把木弓。沈砚是云岚会首领，二人并非同一人物。",
+        "start_offset": 0,
+        "end_offset": 39,
+        "source_hash": "e37d7e8cb0608ef6ccb658af4f78501e2318273dd19772a18e8a84ff36bf8711"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "character_contradiction_001",
+    "knowledge_type": "character",
+    "scope_kind": "single_chapter",
+    "error_mode": "contradiction",
+    "source_chapter_path": "sources/character_contradiction_001.md",
+    "expected_card": {
+      "type": "character",
+      "name": "秦照",
+      "summary": "秦照是大田镇的猎户学徒，随身佩着一把木弓。"
+    },
+    "actual_card": {
+      "type": "character",
+      "name": "秦照",
+      "summary": "秦照并非猎户学徒，而是云岚会首领。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_contradiction_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦照是大田镇的猎户学徒，随身佩着一把木弓。",
+        "source_quote_ids": [
+          "quote_character_contradiction_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_character_contradiction_001",
+        "chapter_id": "chapter_character_contradiction_001",
+        "text": "秦照是大田镇的猎户学徒，随身佩着一把木弓。沈砚是云岚会首领，二人并非同一人物。",
+        "start_offset": 0,
+        "end_offset": 39,
+        "source_hash": "e37d7e8cb0608ef6ccb658af4f78501e2318273dd19772a18e8a84ff36bf8711"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "character_future_leakage_001",
+    "knowledge_type": "character",
+    "scope_kind": "single_chapter",
+    "error_mode": "future_leakage",
+    "source_chapter_path": "sources/character_future_leakage_001.md",
+    "expected_card": {
+      "type": "character",
+      "name": "秦照",
+      "summary": "秦照是大田镇的猎户学徒，随身佩着一把木弓。"
+    },
+    "actual_card": {
+      "type": "character",
+      "name": "秦照",
+      "summary": "秦照是大田镇的猎户学徒，后来成为北境之主。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_future_leakage_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦照是大田镇的猎户学徒，随身佩着一把木弓。",
+        "source_quote_ids": [
+          "quote_character_future_leakage_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_character_future_leakage_001",
+        "chapter_id": "chapter_character_future_leakage_001",
+        "text": "秦照是大田镇的猎户学徒，随身佩着一把木弓。沈砚是云岚会首领，二人并非同一人物。",
+        "start_offset": 0,
+        "end_offset": 39,
+        "source_hash": "e37d7e8cb0608ef6ccb658af4f78501e2318273dd19772a18e8a84ff36bf8711"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "character_wrong_merge_001",
+    "knowledge_type": "character",
+    "scope_kind": "single_chapter",
+    "error_mode": "wrong_merge",
+    "source_chapter_path": "sources/character_wrong_merge_001.md",
+    "expected_card": {
+      "type": "character",
+      "name": "秦照",
+      "summary": "秦照是大田镇的猎户学徒，随身佩着一把木弓。"
+    },
+    "actual_card": {
+      "type": "character",
+      "name": "秦照",
+      "summary": "秦照既是大田镇猎户学徒，也是名为沈砚的云岚会首领。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_wrong_merge_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦照是大田镇的猎户学徒，随身佩着一把木弓。",
+        "source_quote_ids": [
+          "quote_character_wrong_merge_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_character_wrong_merge_001",
+        "chapter_id": "chapter_character_wrong_merge_001",
+        "text": "秦照是大田镇的猎户学徒，随身佩着一把木弓。沈砚是云岚会首领，二人并非同一人物。",
+        "start_offset": 0,
+        "end_offset": 39,
+        "source_hash": "e37d7e8cb0608ef6ccb658af4f78501e2318273dd19772a18e8a84ff36bf8711"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "realm_correct_001",
+    "knowledge_type": "realm",
+    "scope_kind": "single_chapter",
+    "error_mode": "correct",
+    "source_chapter_path": "sources/realm_correct_001.md",
+    "expected_card": {
+      "type": "realm",
+      "name": "淬体境",
+      "summary": "淬体境以锻炼筋骨为要，共分九重。"
+    },
+    "actual_card": {
+      "type": "realm",
+      "name": "淬体境",
+      "summary": "淬体境以锻炼筋骨为要，共分九重。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_realm_correct_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "淬体境以锻炼筋骨为要，共分九重。",
+        "source_quote_ids": [
+          "quote_realm_correct_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_realm_correct_001",
+        "chapter_id": "chapter_realm_correct_001",
+        "text": "淬体境以锻炼筋骨为要，共分九重。凝息境重在引气入脉，两种境界不可混为一谈。",
+        "start_offset": 0,
+        "end_offset": 37,
+        "source_hash": "df7626d88fb693871062c7038b2ab4fc5a35dcc7f0f5d54646cc6316c9b61bdd"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "realm_omission_001",
+    "knowledge_type": "realm",
+    "scope_kind": "single_chapter",
+    "error_mode": "omission",
+    "source_chapter_path": "sources/realm_omission_001.md",
+    "expected_card": {
+      "type": "realm",
+      "name": "淬体境",
+      "summary": "淬体境以锻炼筋骨为要，共分九重。"
+    },
+    "actual_card": {
+      "type": "realm",
+      "name": "淬体境",
+      "summary": "淬体境是一种修炼境界。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_realm_omission_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "淬体境以锻炼筋骨为要，共分九重。",
+        "source_quote_ids": [
+          "quote_realm_omission_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_realm_omission_001",
+        "chapter_id": "chapter_realm_omission_001",
+        "text": "淬体境以锻炼筋骨为要，共分九重。凝息境重在引气入脉，两种境界不可混为一谈。",
+        "start_offset": 0,
+        "end_offset": 37,
+        "source_hash": "df7626d88fb693871062c7038b2ab4fc5a35dcc7f0f5d54646cc6316c9b61bdd"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "realm_hallucination_001",
+    "knowledge_type": "realm",
+    "scope_kind": "single_chapter",
+    "error_mode": "hallucination",
+    "source_chapter_path": "sources/realm_hallucination_001.md",
+    "expected_card": {
+      "type": "realm",
+      "name": "淬体境",
+      "summary": "淬体境以锻炼筋骨为要，共分九重。"
+    },
+    "actual_card": {
+      "type": "realm",
+      "name": "淬体境",
+      "summary": "淬体境以锻炼筋骨为要，共分九重，圆满后可以永生不死。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_realm_hallucination_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "淬体境以锻炼筋骨为要，共分九重。",
+        "source_quote_ids": [
+          "quote_realm_hallucination_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_realm_hallucination_001",
+        "chapter_id": "chapter_realm_hallucination_001",
+        "text": "淬体境以锻炼筋骨为要，共分九重。凝息境重在引气入脉，两种境界不可混为一谈。",
+        "start_offset": 0,
+        "end_offset": 37,
+        "source_hash": "df7626d88fb693871062c7038b2ab4fc5a35dcc7f0f5d54646cc6316c9b61bdd"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "realm_contradiction_001",
+    "knowledge_type": "realm",
+    "scope_kind": "single_chapter",
+    "error_mode": "contradiction",
+    "source_chapter_path": "sources/realm_contradiction_001.md",
+    "expected_card": {
+      "type": "realm",
+      "name": "淬体境",
+      "summary": "淬体境以锻炼筋骨为要，共分九重。"
+    },
+    "actual_card": {
+      "type": "realm",
+      "name": "淬体境",
+      "summary": "淬体境不炼筋骨，只修神魂，而且仅有三重。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_realm_contradiction_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "淬体境以锻炼筋骨为要，共分九重。",
+        "source_quote_ids": [
+          "quote_realm_contradiction_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_realm_contradiction_001",
+        "chapter_id": "chapter_realm_contradiction_001",
+        "text": "淬体境以锻炼筋骨为要，共分九重。凝息境重在引气入脉，两种境界不可混为一谈。",
+        "start_offset": 0,
+        "end_offset": 37,
+        "source_hash": "df7626d88fb693871062c7038b2ab4fc5a35dcc7f0f5d54646cc6316c9b61bdd"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "realm_future_leakage_001",
+    "knowledge_type": "realm",
+    "scope_kind": "single_chapter",
+    "error_mode": "future_leakage",
+    "source_chapter_path": "sources/realm_future_leakage_001.md",
+    "expected_card": {
+      "type": "realm",
+      "name": "淬体境",
+      "summary": "淬体境以锻炼筋骨为要，共分九重。"
+    },
+    "actual_card": {
+      "type": "realm",
+      "name": "淬体境",
+      "summary": "淬体境共分九重，后来被新帝废除并改为十二重。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_realm_future_leakage_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "淬体境以锻炼筋骨为要，共分九重。",
+        "source_quote_ids": [
+          "quote_realm_future_leakage_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_realm_future_leakage_001",
+        "chapter_id": "chapter_realm_future_leakage_001",
+        "text": "淬体境以锻炼筋骨为要，共分九重。凝息境重在引气入脉，两种境界不可混为一谈。",
+        "start_offset": 0,
+        "end_offset": 37,
+        "source_hash": "df7626d88fb693871062c7038b2ab4fc5a35dcc7f0f5d54646cc6316c9b61bdd"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "realm_wrong_merge_001",
+    "knowledge_type": "realm",
+    "scope_kind": "single_chapter",
+    "error_mode": "wrong_merge",
+    "source_chapter_path": "sources/realm_wrong_merge_001.md",
+    "expected_card": {
+      "type": "realm",
+      "name": "淬体境",
+      "summary": "淬体境以锻炼筋骨为要，共分九重。"
+    },
+    "actual_card": {
+      "type": "realm",
+      "name": "淬体境",
+      "summary": "淬体境又名凝息境，既锻炼筋骨也专门引气入脉。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_realm_wrong_merge_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "淬体境以锻炼筋骨为要，共分九重。",
+        "source_quote_ids": [
+          "quote_realm_wrong_merge_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_realm_wrong_merge_001",
+        "chapter_id": "chapter_realm_wrong_merge_001",
+        "text": "淬体境以锻炼筋骨为要，共分九重。凝息境重在引气入脉，两种境界不可混为一谈。",
+        "start_offset": 0,
+        "end_offset": 37,
+        "source_hash": "df7626d88fb693871062c7038b2ab4fc5a35dcc7f0f5d54646cc6316c9b61bdd"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "technique_correct_001",
+    "knowledge_type": "technique",
+    "scope_kind": "single_chapter",
+    "error_mode": "correct",
+    "source_chapter_path": "sources/technique_correct_001.md",
+    "expected_card": {
+      "type": "technique",
+      "name": "引气诀",
+      "summary": "引气诀须在夜间调息，不可强行逆转经脉。"
+    },
+    "actual_card": {
+      "type": "technique",
+      "name": "引气诀",
+      "summary": "引气诀须在夜间调息，不可强行逆转经脉。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_correct_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "引气诀须在夜间调息，不可强行逆转经脉。",
+        "source_quote_ids": [
+          "quote_technique_correct_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_technique_correct_001",
+        "chapter_id": "chapter_technique_correct_001",
+        "text": "引气诀须在夜间调息，不可强行逆转经脉。断潮刀法讲究借势斩击，两门功法并非同一传承。",
+        "start_offset": 0,
+        "end_offset": 41,
+        "source_hash": "c9cbb47617e008eb45a093ff567ab86294f06ef8f078488c6f8f0020d7149850"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "technique_omission_001",
+    "knowledge_type": "technique",
+    "scope_kind": "single_chapter",
+    "error_mode": "omission",
+    "source_chapter_path": "sources/technique_omission_001.md",
+    "expected_card": {
+      "type": "technique",
+      "name": "引气诀",
+      "summary": "引气诀须在夜间调息，不可强行逆转经脉。"
+    },
+    "actual_card": {
+      "type": "technique",
+      "name": "引气诀",
+      "summary": "引气诀是一门调息功法。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_omission_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "引气诀须在夜间调息，不可强行逆转经脉。",
+        "source_quote_ids": [
+          "quote_technique_omission_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_technique_omission_001",
+        "chapter_id": "chapter_technique_omission_001",
+        "text": "引气诀须在夜间调息，不可强行逆转经脉。断潮刀法讲究借势斩击，两门功法并非同一传承。",
+        "start_offset": 0,
+        "end_offset": 41,
+        "source_hash": "c9cbb47617e008eb45a093ff567ab86294f06ef8f078488c6f8f0020d7149850"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "technique_hallucination_001",
+    "knowledge_type": "technique",
+    "scope_kind": "single_chapter",
+    "error_mode": "hallucination",
+    "source_chapter_path": "sources/technique_hallucination_001.md",
+    "expected_card": {
+      "type": "technique",
+      "name": "引气诀",
+      "summary": "引气诀须在夜间调息，不可强行逆转经脉。"
+    },
+    "actual_card": {
+      "type": "technique",
+      "name": "引气诀",
+      "summary": "引气诀须在夜间调息，练成后能召来天雷。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_hallucination_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "引气诀须在夜间调息，不可强行逆转经脉。",
+        "source_quote_ids": [
+          "quote_technique_hallucination_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_technique_hallucination_001",
+        "chapter_id": "chapter_technique_hallucination_001",
+        "text": "引气诀须在夜间调息，不可强行逆转经脉。断潮刀法讲究借势斩击，两门功法并非同一传承。",
+        "start_offset": 0,
+        "end_offset": 41,
+        "source_hash": "c9cbb47617e008eb45a093ff567ab86294f06ef8f078488c6f8f0020d7149850"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "technique_contradiction_001",
+    "knowledge_type": "technique",
+    "scope_kind": "single_chapter",
+    "error_mode": "contradiction",
+    "source_chapter_path": "sources/technique_contradiction_001.md",
+    "expected_card": {
+      "type": "technique",
+      "name": "引气诀",
+      "summary": "引气诀须在夜间调息，不可强行逆转经脉。"
+    },
+    "actual_card": {
+      "type": "technique",
+      "name": "引气诀",
+      "summary": "引气诀必须在正午修炼，并要求强行逆转经脉。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_contradiction_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "引气诀须在夜间调息，不可强行逆转经脉。",
+        "source_quote_ids": [
+          "quote_technique_contradiction_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_technique_contradiction_001",
+        "chapter_id": "chapter_technique_contradiction_001",
+        "text": "引气诀须在夜间调息，不可强行逆转经脉。断潮刀法讲究借势斩击，两门功法并非同一传承。",
+        "start_offset": 0,
+        "end_offset": 41,
+        "source_hash": "c9cbb47617e008eb45a093ff567ab86294f06ef8f078488c6f8f0020d7149850"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "technique_future_leakage_001",
+    "knowledge_type": "technique",
+    "scope_kind": "single_chapter",
+    "error_mode": "future_leakage",
+    "source_chapter_path": "sources/technique_future_leakage_001.md",
+    "expected_card": {
+      "type": "technique",
+      "name": "引气诀",
+      "summary": "引气诀须在夜间调息，不可强行逆转经脉。"
+    },
+    "actual_card": {
+      "type": "technique",
+      "name": "引气诀",
+      "summary": "引气诀须在夜间调息，后来被秦照改造成天阶功法。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_future_leakage_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "引气诀须在夜间调息，不可强行逆转经脉。",
+        "source_quote_ids": [
+          "quote_technique_future_leakage_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_technique_future_leakage_001",
+        "chapter_id": "chapter_technique_future_leakage_001",
+        "text": "引气诀须在夜间调息，不可强行逆转经脉。断潮刀法讲究借势斩击，两门功法并非同一传承。",
+        "start_offset": 0,
+        "end_offset": 41,
+        "source_hash": "c9cbb47617e008eb45a093ff567ab86294f06ef8f078488c6f8f0020d7149850"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "technique_wrong_merge_001",
+    "knowledge_type": "technique",
+    "scope_kind": "single_chapter",
+    "error_mode": "wrong_merge",
+    "source_chapter_path": "sources/technique_wrong_merge_001.md",
+    "expected_card": {
+      "type": "technique",
+      "name": "引气诀",
+      "summary": "引气诀须在夜间调息，不可强行逆转经脉。"
+    },
+    "actual_card": {
+      "type": "technique",
+      "name": "引气诀",
+      "summary": "引气诀就是断潮刀法，既用于夜间调息也用于借势斩击。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_wrong_merge_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "引气诀须在夜间调息，不可强行逆转经脉。",
+        "source_quote_ids": [
+          "quote_technique_wrong_merge_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_technique_wrong_merge_001",
+        "chapter_id": "chapter_technique_wrong_merge_001",
+        "text": "引气诀须在夜间调息，不可强行逆转经脉。断潮刀法讲究借势斩击，两门功法并非同一传承。",
+        "start_offset": 0,
+        "end_offset": 41,
+        "source_hash": "c9cbb47617e008eb45a093ff567ab86294f06ef8f078488c6f8f0020d7149850"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "location_correct_001",
+    "knowledge_type": "location",
+    "scope_kind": "single_chapter",
+    "error_mode": "correct",
+    "source_chapter_path": "sources/location_correct_001.md",
+    "expected_card": {
+      "type": "location",
+      "name": "青崖谷",
+      "summary": "青崖谷北临寒潭，谷口立有无字石碑。"
+    },
+    "actual_card": {
+      "type": "location",
+      "name": "青崖谷",
+      "summary": "青崖谷北临寒潭，谷口立有无字石碑。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_correct_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "青崖谷北临寒潭，谷口立有无字石碑。",
+        "source_quote_ids": [
+          "quote_location_correct_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_location_correct_001",
+        "chapter_id": "chapter_location_correct_001",
+        "text": "青崖谷北临寒潭，谷口立有无字石碑。赤沙原终年风热，两处地点相隔甚远。",
+        "start_offset": 0,
+        "end_offset": 34,
+        "source_hash": "7be8237f4434b497ee92f6c6f5028c7b12266777ac695e84ca09898b805bcca1"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "location_omission_001",
+    "knowledge_type": "location",
+    "scope_kind": "single_chapter",
+    "error_mode": "omission",
+    "source_chapter_path": "sources/location_omission_001.md",
+    "expected_card": {
+      "type": "location",
+      "name": "青崖谷",
+      "summary": "青崖谷北临寒潭，谷口立有无字石碑。"
+    },
+    "actual_card": {
+      "type": "location",
+      "name": "青崖谷",
+      "summary": "青崖谷是一处山谷。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_omission_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "青崖谷北临寒潭，谷口立有无字石碑。",
+        "source_quote_ids": [
+          "quote_location_omission_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_location_omission_001",
+        "chapter_id": "chapter_location_omission_001",
+        "text": "青崖谷北临寒潭，谷口立有无字石碑。赤沙原终年风热，两处地点相隔甚远。",
+        "start_offset": 0,
+        "end_offset": 34,
+        "source_hash": "7be8237f4434b497ee92f6c6f5028c7b12266777ac695e84ca09898b805bcca1"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "location_hallucination_001",
+    "knowledge_type": "location",
+    "scope_kind": "single_chapter",
+    "error_mode": "hallucination",
+    "source_chapter_path": "sources/location_hallucination_001.md",
+    "expected_card": {
+      "type": "location",
+      "name": "青崖谷",
+      "summary": "青崖谷北临寒潭，谷口立有无字石碑。"
+    },
+    "actual_card": {
+      "type": "location",
+      "name": "青崖谷",
+      "summary": "青崖谷北临寒潭，谷中藏有上古龙宫。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_hallucination_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "青崖谷北临寒潭，谷口立有无字石碑。",
+        "source_quote_ids": [
+          "quote_location_hallucination_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_location_hallucination_001",
+        "chapter_id": "chapter_location_hallucination_001",
+        "text": "青崖谷北临寒潭，谷口立有无字石碑。赤沙原终年风热，两处地点相隔甚远。",
+        "start_offset": 0,
+        "end_offset": 34,
+        "source_hash": "7be8237f4434b497ee92f6c6f5028c7b12266777ac695e84ca09898b805bcca1"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "location_contradiction_001",
+    "knowledge_type": "location",
+    "scope_kind": "single_chapter",
+    "error_mode": "contradiction",
+    "source_chapter_path": "sources/location_contradiction_001.md",
+    "expected_card": {
+      "type": "location",
+      "name": "青崖谷",
+      "summary": "青崖谷北临寒潭，谷口立有无字石碑。"
+    },
+    "actual_card": {
+      "type": "location",
+      "name": "青崖谷",
+      "summary": "青崖谷南临火湖，谷口没有任何石碑。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_contradiction_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "青崖谷北临寒潭，谷口立有无字石碑。",
+        "source_quote_ids": [
+          "quote_location_contradiction_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_location_contradiction_001",
+        "chapter_id": "chapter_location_contradiction_001",
+        "text": "青崖谷北临寒潭，谷口立有无字石碑。赤沙原终年风热，两处地点相隔甚远。",
+        "start_offset": 0,
+        "end_offset": 34,
+        "source_hash": "7be8237f4434b497ee92f6c6f5028c7b12266777ac695e84ca09898b805bcca1"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "location_future_leakage_001",
+    "knowledge_type": "location",
+    "scope_kind": "single_chapter",
+    "error_mode": "future_leakage",
+    "source_chapter_path": "sources/location_future_leakage_001.md",
+    "expected_card": {
+      "type": "location",
+      "name": "青崖谷",
+      "summary": "青崖谷北临寒潭，谷口立有无字石碑。"
+    },
+    "actual_card": {
+      "type": "location",
+      "name": "青崖谷",
+      "summary": "青崖谷北临寒潭，后来整座山谷沉入地底。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_future_leakage_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "青崖谷北临寒潭，谷口立有无字石碑。",
+        "source_quote_ids": [
+          "quote_location_future_leakage_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_location_future_leakage_001",
+        "chapter_id": "chapter_location_future_leakage_001",
+        "text": "青崖谷北临寒潭，谷口立有无字石碑。赤沙原终年风热，两处地点相隔甚远。",
+        "start_offset": 0,
+        "end_offset": 34,
+        "source_hash": "7be8237f4434b497ee92f6c6f5028c7b12266777ac695e84ca09898b805bcca1"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "location_wrong_merge_001",
+    "knowledge_type": "location",
+    "scope_kind": "single_chapter",
+    "error_mode": "wrong_merge",
+    "source_chapter_path": "sources/location_wrong_merge_001.md",
+    "expected_card": {
+      "type": "location",
+      "name": "青崖谷",
+      "summary": "青崖谷北临寒潭，谷口立有无字石碑。"
+    },
+    "actual_card": {
+      "type": "location",
+      "name": "青崖谷",
+      "summary": "青崖谷就是赤沙原，既北临寒潭又终年风热。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_wrong_merge_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "青崖谷北临寒潭，谷口立有无字石碑。",
+        "source_quote_ids": [
+          "quote_location_wrong_merge_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_location_wrong_merge_001",
+        "chapter_id": "chapter_location_wrong_merge_001",
+        "text": "青崖谷北临寒潭，谷口立有无字石碑。赤沙原终年风热，两处地点相隔甚远。",
+        "start_offset": 0,
+        "end_offset": 34,
+        "source_hash": "7be8237f4434b497ee92f6c6f5028c7b12266777ac695e84ca09898b805bcca1"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "faction_correct_001",
+    "knowledge_type": "faction",
+    "scope_kind": "single_chapter",
+    "error_mode": "correct",
+    "source_chapter_path": "sources/faction_correct_001.md",
+    "expected_card": {
+      "type": "faction",
+      "name": "云岚会",
+      "summary": "云岚会由外门弟子组成，首领是沈砚。"
+    },
+    "actual_card": {
+      "type": "faction",
+      "name": "云岚会",
+      "summary": "云岚会由外门弟子组成，首领是沈砚。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_correct_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "云岚会由外门弟子组成，首领是沈砚。",
+        "source_quote_ids": [
+          "quote_faction_correct_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_faction_correct_001",
+        "chapter_id": "chapter_faction_correct_001",
+        "text": "云岚会由外门弟子组成，首领是沈砚。玄羽盟由商旅联合建立，两个势力彼此独立。",
+        "start_offset": 0,
+        "end_offset": 37,
+        "source_hash": "50bd6f77fcf2b689f386e38bd3e0b601f22c17123f55f7b706d16670f3bab786"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "faction_omission_001",
+    "knowledge_type": "faction",
+    "scope_kind": "single_chapter",
+    "error_mode": "omission",
+    "source_chapter_path": "sources/faction_omission_001.md",
+    "expected_card": {
+      "type": "faction",
+      "name": "云岚会",
+      "summary": "云岚会由外门弟子组成，首领是沈砚。"
+    },
+    "actual_card": {
+      "type": "faction",
+      "name": "云岚会",
+      "summary": "云岚会是一个弟子组织。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_omission_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "云岚会由外门弟子组成，首领是沈砚。",
+        "source_quote_ids": [
+          "quote_faction_omission_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_faction_omission_001",
+        "chapter_id": "chapter_faction_omission_001",
+        "text": "云岚会由外门弟子组成，首领是沈砚。玄羽盟由商旅联合建立，两个势力彼此独立。",
+        "start_offset": 0,
+        "end_offset": 37,
+        "source_hash": "50bd6f77fcf2b689f386e38bd3e0b601f22c17123f55f7b706d16670f3bab786"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "faction_hallucination_001",
+    "knowledge_type": "faction",
+    "scope_kind": "single_chapter",
+    "error_mode": "hallucination",
+    "source_chapter_path": "sources/faction_hallucination_001.md",
+    "expected_card": {
+      "type": "faction",
+      "name": "云岚会",
+      "summary": "云岚会由外门弟子组成，首领是沈砚。"
+    },
+    "actual_card": {
+      "type": "faction",
+      "name": "云岚会",
+      "summary": "云岚会由外门弟子组成，并暗中统治整座王朝。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_hallucination_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "云岚会由外门弟子组成，首领是沈砚。",
+        "source_quote_ids": [
+          "quote_faction_hallucination_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_faction_hallucination_001",
+        "chapter_id": "chapter_faction_hallucination_001",
+        "text": "云岚会由外门弟子组成，首领是沈砚。玄羽盟由商旅联合建立，两个势力彼此独立。",
+        "start_offset": 0,
+        "end_offset": 37,
+        "source_hash": "50bd6f77fcf2b689f386e38bd3e0b601f22c17123f55f7b706d16670f3bab786"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "faction_contradiction_001",
+    "knowledge_type": "faction",
+    "scope_kind": "single_chapter",
+    "error_mode": "contradiction",
+    "source_chapter_path": "sources/faction_contradiction_001.md",
+    "expected_card": {
+      "type": "faction",
+      "name": "云岚会",
+      "summary": "云岚会由外门弟子组成，首领是沈砚。"
+    },
+    "actual_card": {
+      "type": "faction",
+      "name": "云岚会",
+      "summary": "云岚会由长老组成，首领不是沈砚。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_contradiction_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "云岚会由外门弟子组成，首领是沈砚。",
+        "source_quote_ids": [
+          "quote_faction_contradiction_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_faction_contradiction_001",
+        "chapter_id": "chapter_faction_contradiction_001",
+        "text": "云岚会由外门弟子组成，首领是沈砚。玄羽盟由商旅联合建立，两个势力彼此独立。",
+        "start_offset": 0,
+        "end_offset": 37,
+        "source_hash": "50bd6f77fcf2b689f386e38bd3e0b601f22c17123f55f7b706d16670f3bab786"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "faction_future_leakage_001",
+    "knowledge_type": "faction",
+    "scope_kind": "single_chapter",
+    "error_mode": "future_leakage",
+    "source_chapter_path": "sources/faction_future_leakage_001.md",
+    "expected_card": {
+      "type": "faction",
+      "name": "云岚会",
+      "summary": "云岚会由外门弟子组成，首领是沈砚。"
+    },
+    "actual_card": {
+      "type": "faction",
+      "name": "云岚会",
+      "summary": "云岚会由外门弟子组成，后来吞并了全部宗门。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_future_leakage_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "云岚会由外门弟子组成，首领是沈砚。",
+        "source_quote_ids": [
+          "quote_faction_future_leakage_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_faction_future_leakage_001",
+        "chapter_id": "chapter_faction_future_leakage_001",
+        "text": "云岚会由外门弟子组成，首领是沈砚。玄羽盟由商旅联合建立，两个势力彼此独立。",
+        "start_offset": 0,
+        "end_offset": 37,
+        "source_hash": "50bd6f77fcf2b689f386e38bd3e0b601f22c17123f55f7b706d16670f3bab786"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "faction_wrong_merge_001",
+    "knowledge_type": "faction",
+    "scope_kind": "single_chapter",
+    "error_mode": "wrong_merge",
+    "source_chapter_path": "sources/faction_wrong_merge_001.md",
+    "expected_card": {
+      "type": "faction",
+      "name": "云岚会",
+      "summary": "云岚会由外门弟子组成，首领是沈砚。"
+    },
+    "actual_card": {
+      "type": "faction",
+      "name": "云岚会",
+      "summary": "云岚会就是玄羽盟，由外门弟子和商旅共同建立。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_wrong_merge_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "云岚会由外门弟子组成，首领是沈砚。",
+        "source_quote_ids": [
+          "quote_faction_wrong_merge_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_faction_wrong_merge_001",
+        "chapter_id": "chapter_faction_wrong_merge_001",
+        "text": "云岚会由外门弟子组成，首领是沈砚。玄羽盟由商旅联合建立，两个势力彼此独立。",
+        "start_offset": 0,
+        "end_offset": 37,
+        "source_hash": "50bd6f77fcf2b689f386e38bd3e0b601f22c17123f55f7b706d16670f3bab786"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "item_correct_001",
+    "knowledge_type": "item",
+    "scope_kind": "single_chapter",
+    "error_mode": "correct",
+    "source_chapter_path": "sources/item_correct_001.md",
+    "expected_card": {
+      "type": "item",
+      "name": "玄铁灯",
+      "summary": "玄铁灯以黑铁制成，需要灵石才能点亮。"
+    },
+    "actual_card": {
+      "type": "item",
+      "name": "玄铁灯",
+      "summary": "玄铁灯以黑铁制成，需要灵石才能点亮。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_correct_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "玄铁灯以黑铁制成，需要灵石才能点亮。",
+        "source_quote_ids": [
+          "quote_item_correct_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_item_correct_001",
+        "chapter_id": "chapter_item_correct_001",
+        "text": "玄铁灯以黑铁制成，需要灵石才能点亮。青纹镜由青铜铸成，两件物品并非同一器物。",
+        "start_offset": 0,
+        "end_offset": 38,
+        "source_hash": "6a096d5079708d3e173fab44cc38200d1959141d6edb6b24a27645059da2014f"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "item_omission_001",
+    "knowledge_type": "item",
+    "scope_kind": "single_chapter",
+    "error_mode": "omission",
+    "source_chapter_path": "sources/item_omission_001.md",
+    "expected_card": {
+      "type": "item",
+      "name": "玄铁灯",
+      "summary": "玄铁灯以黑铁制成，需要灵石才能点亮。"
+    },
+    "actual_card": {
+      "type": "item",
+      "name": "玄铁灯",
+      "summary": "玄铁灯是一盏灯。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_omission_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "玄铁灯以黑铁制成，需要灵石才能点亮。",
+        "source_quote_ids": [
+          "quote_item_omission_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_item_omission_001",
+        "chapter_id": "chapter_item_omission_001",
+        "text": "玄铁灯以黑铁制成，需要灵石才能点亮。青纹镜由青铜铸成，两件物品并非同一器物。",
+        "start_offset": 0,
+        "end_offset": 38,
+        "source_hash": "6a096d5079708d3e173fab44cc38200d1959141d6edb6b24a27645059da2014f"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "item_hallucination_001",
+    "knowledge_type": "item",
+    "scope_kind": "single_chapter",
+    "error_mode": "hallucination",
+    "source_chapter_path": "sources/item_hallucination_001.md",
+    "expected_card": {
+      "type": "item",
+      "name": "玄铁灯",
+      "summary": "玄铁灯以黑铁制成，需要灵石才能点亮。"
+    },
+    "actual_card": {
+      "type": "item",
+      "name": "玄铁灯",
+      "summary": "玄铁灯以黑铁制成，点亮后可以让时间停止。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_hallucination_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "玄铁灯以黑铁制成，需要灵石才能点亮。",
+        "source_quote_ids": [
+          "quote_item_hallucination_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_item_hallucination_001",
+        "chapter_id": "chapter_item_hallucination_001",
+        "text": "玄铁灯以黑铁制成，需要灵石才能点亮。青纹镜由青铜铸成，两件物品并非同一器物。",
+        "start_offset": 0,
+        "end_offset": 38,
+        "source_hash": "6a096d5079708d3e173fab44cc38200d1959141d6edb6b24a27645059da2014f"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "item_contradiction_001",
+    "knowledge_type": "item",
+    "scope_kind": "single_chapter",
+    "error_mode": "contradiction",
+    "source_chapter_path": "sources/item_contradiction_001.md",
+    "expected_card": {
+      "type": "item",
+      "name": "玄铁灯",
+      "summary": "玄铁灯以黑铁制成，需要灵石才能点亮。"
+    },
+    "actual_card": {
+      "type": "item",
+      "name": "玄铁灯",
+      "summary": "玄铁灯以白玉制成，不需要灵石便能点亮。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_contradiction_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "玄铁灯以黑铁制成，需要灵石才能点亮。",
+        "source_quote_ids": [
+          "quote_item_contradiction_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_item_contradiction_001",
+        "chapter_id": "chapter_item_contradiction_001",
+        "text": "玄铁灯以黑铁制成，需要灵石才能点亮。青纹镜由青铜铸成，两件物品并非同一器物。",
+        "start_offset": 0,
+        "end_offset": 38,
+        "source_hash": "6a096d5079708d3e173fab44cc38200d1959141d6edb6b24a27645059da2014f"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "item_future_leakage_001",
+    "knowledge_type": "item",
+    "scope_kind": "single_chapter",
+    "error_mode": "future_leakage",
+    "source_chapter_path": "sources/item_future_leakage_001.md",
+    "expected_card": {
+      "type": "item",
+      "name": "玄铁灯",
+      "summary": "玄铁灯以黑铁制成，需要灵石才能点亮。"
+    },
+    "actual_card": {
+      "type": "item",
+      "name": "玄铁灯",
+      "summary": "玄铁灯需要灵石点亮，后来进化成了先天神器。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_future_leakage_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "玄铁灯以黑铁制成，需要灵石才能点亮。",
+        "source_quote_ids": [
+          "quote_item_future_leakage_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_item_future_leakage_001",
+        "chapter_id": "chapter_item_future_leakage_001",
+        "text": "玄铁灯以黑铁制成，需要灵石才能点亮。青纹镜由青铜铸成，两件物品并非同一器物。",
+        "start_offset": 0,
+        "end_offset": 38,
+        "source_hash": "6a096d5079708d3e173fab44cc38200d1959141d6edb6b24a27645059da2014f"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "item_wrong_merge_001",
+    "knowledge_type": "item",
+    "scope_kind": "single_chapter",
+    "error_mode": "wrong_merge",
+    "source_chapter_path": "sources/item_wrong_merge_001.md",
+    "expected_card": {
+      "type": "item",
+      "name": "玄铁灯",
+      "summary": "玄铁灯以黑铁制成，需要灵石才能点亮。"
+    },
+    "actual_card": {
+      "type": "item",
+      "name": "玄铁灯",
+      "summary": "玄铁灯又叫青纹镜，是黑铁与青铜共同铸成的镜灯。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_wrong_merge_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "玄铁灯以黑铁制成，需要灵石才能点亮。",
+        "source_quote_ids": [
+          "quote_item_wrong_merge_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_item_wrong_merge_001",
+        "chapter_id": "chapter_item_wrong_merge_001",
+        "text": "玄铁灯以黑铁制成，需要灵石才能点亮。青纹镜由青铜铸成，两件物品并非同一器物。",
+        "start_offset": 0,
+        "end_offset": 38,
+        "source_hash": "6a096d5079708d3e173fab44cc38200d1959141d6edb6b24a27645059da2014f"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "rule_correct_001",
+    "knowledge_type": "rule",
+    "scope_kind": "single_chapter",
+    "error_mode": "correct",
+    "source_chapter_path": "sources/rule_correct_001.md",
+    "expected_card": {
+      "type": "rule",
+      "name": "血契规则",
+      "summary": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。"
+    },
+    "actual_card": {
+      "type": "rule",
+      "name": "血契规则",
+      "summary": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_correct_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。",
+        "source_quote_ids": [
+          "quote_rule_correct_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_rule_correct_001",
+        "chapter_id": "chapter_rule_correct_001",
+        "text": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。门规只约束本门弟子，两条规则不可合并。",
+        "start_offset": 0,
+        "end_offset": 43,
+        "source_hash": "fe38d020d222a1cf5cc620f6be0b08d13fd4aab39c482752885b2fc04e2fe510"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "rule_omission_001",
+    "knowledge_type": "rule",
+    "scope_kind": "single_chapter",
+    "error_mode": "omission",
+    "source_chapter_path": "sources/rule_omission_001.md",
+    "expected_card": {
+      "type": "rule",
+      "name": "血契规则",
+      "summary": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。"
+    },
+    "actual_card": {
+      "type": "rule",
+      "name": "血契规则",
+      "summary": "血契是一种双方契约。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_omission_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。",
+        "source_quote_ids": [
+          "quote_rule_omission_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_rule_omission_001",
+        "chapter_id": "chapter_rule_omission_001",
+        "text": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。门规只约束本门弟子，两条规则不可合并。",
+        "start_offset": 0,
+        "end_offset": 43,
+        "source_hash": "fe38d020d222a1cf5cc620f6be0b08d13fd4aab39c482752885b2fc04e2fe510"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "rule_hallucination_001",
+    "knowledge_type": "rule",
+    "scope_kind": "single_chapter",
+    "error_mode": "hallucination",
+    "source_chapter_path": "sources/rule_hallucination_001.md",
+    "expected_card": {
+      "type": "rule",
+      "name": "血契规则",
+      "summary": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。"
+    },
+    "actual_card": {
+      "type": "rule",
+      "name": "血契规则",
+      "summary": "血契要求双方自愿，并能让缔约者获得不死之身。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_hallucination_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。",
+        "source_quote_ids": [
+          "quote_rule_hallucination_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_rule_hallucination_001",
+        "chapter_id": "chapter_rule_hallucination_001",
+        "text": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。门规只约束本门弟子，两条规则不可合并。",
+        "start_offset": 0,
+        "end_offset": 43,
+        "source_hash": "fe38d020d222a1cf5cc620f6be0b08d13fd4aab39c482752885b2fc04e2fe510"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "rule_contradiction_001",
+    "knowledge_type": "rule",
+    "scope_kind": "single_chapter",
+    "error_mode": "contradiction",
+    "source_chapter_path": "sources/rule_contradiction_001.md",
+    "expected_card": {
+      "type": "rule",
+      "name": "血契规则",
+      "summary": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。"
+    },
+    "actual_card": {
+      "type": "rule",
+      "name": "血契规则",
+      "summary": "血契可以由一方强制缔结，背约不会受到任何惩罚。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_contradiction_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。",
+        "source_quote_ids": [
+          "quote_rule_contradiction_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_rule_contradiction_001",
+        "chapter_id": "chapter_rule_contradiction_001",
+        "text": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。门规只约束本门弟子，两条规则不可合并。",
+        "start_offset": 0,
+        "end_offset": 43,
+        "source_hash": "fe38d020d222a1cf5cc620f6be0b08d13fd4aab39c482752885b2fc04e2fe510"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "rule_future_leakage_001",
+    "knowledge_type": "rule",
+    "scope_kind": "single_chapter",
+    "error_mode": "future_leakage",
+    "source_chapter_path": "sources/rule_future_leakage_001.md",
+    "expected_card": {
+      "type": "rule",
+      "name": "血契规则",
+      "summary": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。"
+    },
+    "actual_card": {
+      "type": "rule",
+      "name": "血契规则",
+      "summary": "血契背约会受反噬，后来新法允许皇族免除反噬。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_future_leakage_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。",
+        "source_quote_ids": [
+          "quote_rule_future_leakage_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_rule_future_leakage_001",
+        "chapter_id": "chapter_rule_future_leakage_001",
+        "text": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。门规只约束本门弟子，两条规则不可合并。",
+        "start_offset": 0,
+        "end_offset": 43,
+        "source_hash": "fe38d020d222a1cf5cc620f6be0b08d13fd4aab39c482752885b2fc04e2fe510"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "rule_wrong_merge_001",
+    "knowledge_type": "rule",
+    "scope_kind": "single_chapter",
+    "error_mode": "wrong_merge",
+    "source_chapter_path": "sources/rule_wrong_merge_001.md",
+    "expected_card": {
+      "type": "rule",
+      "name": "血契规则",
+      "summary": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。"
+    },
+    "actual_card": {
+      "type": "rule",
+      "name": "血契规则",
+      "summary": "血契就是门规，只约束本门弟子并由双方自愿缔结。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_wrong_merge_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。",
+        "source_quote_ids": [
+          "quote_rule_wrong_merge_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_rule_wrong_merge_001",
+        "chapter_id": "chapter_rule_wrong_merge_001",
+        "text": "血契必须由双方自愿缔结，任一方背约都会遭到反噬。门规只约束本门弟子，两条规则不可合并。",
+        "start_offset": 0,
+        "end_offset": 43,
+        "source_hash": "fe38d020d222a1cf5cc620f6be0b08d13fd4aab39c482752885b2fc04e2fe510"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "event_correct_001",
+    "knowledge_type": "event",
+    "scope_kind": "single_chapter",
+    "error_mode": "correct",
+    "source_chapter_path": "sources/event_correct_001.md",
+    "expected_card": {
+      "type": "event",
+      "name": "山门试炼",
+      "summary": "山门试炼在三月初三开始，通过石阶者才进入内门考核。"
+    },
+    "actual_card": {
+      "type": "event",
+      "name": "山门试炼",
+      "summary": "山门试炼在三月初三开始，通过石阶者才进入内门考核。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_correct_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "山门试炼在三月初三开始，通过石阶者才进入内门考核。",
+        "source_quote_ids": [
+          "quote_event_correct_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_event_correct_001",
+        "chapter_id": "chapter_event_correct_001",
+        "text": "山门试炼在三月初三开始，通过石阶者才进入内门考核。秋猎大会在九月举行，两起事件互不相同。",
+        "start_offset": 0,
+        "end_offset": 44,
+        "source_hash": "8f8751b79b070681163fff45c169854cddc21aecf2118ef19973f2b734f79953"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "event_omission_001",
+    "knowledge_type": "event",
+    "scope_kind": "single_chapter",
+    "error_mode": "omission",
+    "source_chapter_path": "sources/event_omission_001.md",
+    "expected_card": {
+      "type": "event",
+      "name": "山门试炼",
+      "summary": "山门试炼在三月初三开始，通过石阶者才进入内门考核。"
+    },
+    "actual_card": {
+      "type": "event",
+      "name": "山门试炼",
+      "summary": "山门试炼是一场入门考核。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_omission_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "山门试炼在三月初三开始，通过石阶者才进入内门考核。",
+        "source_quote_ids": [
+          "quote_event_omission_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_event_omission_001",
+        "chapter_id": "chapter_event_omission_001",
+        "text": "山门试炼在三月初三开始，通过石阶者才进入内门考核。秋猎大会在九月举行，两起事件互不相同。",
+        "start_offset": 0,
+        "end_offset": 44,
+        "source_hash": "8f8751b79b070681163fff45c169854cddc21aecf2118ef19973f2b734f79953"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "event_hallucination_001",
+    "knowledge_type": "event",
+    "scope_kind": "single_chapter",
+    "error_mode": "hallucination",
+    "source_chapter_path": "sources/event_hallucination_001.md",
+    "expected_card": {
+      "type": "event",
+      "name": "山门试炼",
+      "summary": "山门试炼在三月初三开始，通过石阶者才进入内门考核。"
+    },
+    "actual_card": {
+      "type": "event",
+      "name": "山门试炼",
+      "summary": "山门试炼在三月初三开始，冠军会直接继承掌门之位。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_hallucination_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "山门试炼在三月初三开始，通过石阶者才进入内门考核。",
+        "source_quote_ids": [
+          "quote_event_hallucination_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_event_hallucination_001",
+        "chapter_id": "chapter_event_hallucination_001",
+        "text": "山门试炼在三月初三开始，通过石阶者才进入内门考核。秋猎大会在九月举行，两起事件互不相同。",
+        "start_offset": 0,
+        "end_offset": 44,
+        "source_hash": "8f8751b79b070681163fff45c169854cddc21aecf2118ef19973f2b734f79953"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "event_contradiction_001",
+    "knowledge_type": "event",
+    "scope_kind": "single_chapter",
+    "error_mode": "contradiction",
+    "source_chapter_path": "sources/event_contradiction_001.md",
+    "expected_card": {
+      "type": "event",
+      "name": "山门试炼",
+      "summary": "山门试炼在三月初三开始，通过石阶者才进入内门考核。"
+    },
+    "actual_card": {
+      "type": "event",
+      "name": "山门试炼",
+      "summary": "山门试炼在九月开始，未通过石阶者才能进入内门考核。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_contradiction_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "山门试炼在三月初三开始，通过石阶者才进入内门考核。",
+        "source_quote_ids": [
+          "quote_event_contradiction_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_event_contradiction_001",
+        "chapter_id": "chapter_event_contradiction_001",
+        "text": "山门试炼在三月初三开始，通过石阶者才进入内门考核。秋猎大会在九月举行，两起事件互不相同。",
+        "start_offset": 0,
+        "end_offset": 44,
+        "source_hash": "8f8751b79b070681163fff45c169854cddc21aecf2118ef19973f2b734f79953"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "event_future_leakage_001",
+    "knowledge_type": "event",
+    "scope_kind": "single_chapter",
+    "error_mode": "future_leakage",
+    "source_chapter_path": "sources/event_future_leakage_001.md",
+    "expected_card": {
+      "type": "event",
+      "name": "山门试炼",
+      "summary": "山门试炼在三月初三开始，通过石阶者才进入内门考核。"
+    },
+    "actual_card": {
+      "type": "event",
+      "name": "山门试炼",
+      "summary": "山门试炼在三月初三开始，后来因宗门覆灭而永久取消。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_future_leakage_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "山门试炼在三月初三开始，通过石阶者才进入内门考核。",
+        "source_quote_ids": [
+          "quote_event_future_leakage_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_event_future_leakage_001",
+        "chapter_id": "chapter_event_future_leakage_001",
+        "text": "山门试炼在三月初三开始，通过石阶者才进入内门考核。秋猎大会在九月举行，两起事件互不相同。",
+        "start_offset": 0,
+        "end_offset": 44,
+        "source_hash": "8f8751b79b070681163fff45c169854cddc21aecf2118ef19973f2b734f79953"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  },
+  {
+    "calibration_case_id": "event_wrong_merge_001",
+    "knowledge_type": "event",
+    "scope_kind": "single_chapter",
+    "error_mode": "wrong_merge",
+    "source_chapter_path": "sources/event_wrong_merge_001.md",
+    "expected_card": {
+      "type": "event",
+      "name": "山门试炼",
+      "summary": "山门试炼在三月初三开始，通过石阶者才进入内门考核。"
+    },
+    "actual_card": {
+      "type": "event",
+      "name": "山门试炼",
+      "summary": "山门试炼又称秋猎大会，于三月和九月同时举行。"
+    },
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_wrong_merge_001",
+        "field": "summary",
+        "importance": "critical",
+        "description": "山门试炼在三月初三开始，通过石阶者才进入内门考核。",
+        "source_quote_ids": [
+          "quote_event_wrong_merge_001"
+        ]
+      }
+    ],
+    "source_quotes": [
+      {
+        "quote_id": "quote_event_wrong_merge_001",
+        "chapter_id": "chapter_event_wrong_merge_001",
+        "text": "山门试炼在三月初三开始，通过石阶者才进入内门考核。秋猎大会在九月举行，两起事件互不相同。",
+        "start_offset": 0,
+        "end_offset": 44,
+        "source_hash": "8f8751b79b070681163fff45c169854cddc21aecf2118ef19973f2b734f79953"
+      }
+    ],
+    "human_label": {
+      "lifecycle": "draft",
+      "status": null,
+      "dimension_scores": {},
+      "expected_semantic_quality_state": null,
+      "critical_findings": [],
+      "critical_flag_codes": [],
+      "reviewer_ids": [],
+      "adjudication_note": null
+    }
+  }
+]

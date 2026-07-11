@@ -1,0 +1,34 @@
+{
+  "calibration_id": "knowledge_extraction_judge_seed",
+  "lifecycle": "draft",
+  "prompt_contract_id": "knowledge_extraction_semantic_judge",
+  "knowledge_types": [
+    "character",
+    "realm",
+    "technique",
+    "location",
+    "faction",
+    "item",
+    "rule",
+    "event"
+  ],
+  "error_modes": [
+    "correct",
+    "omission",
+    "hallucination",
+    "contradiction",
+    "future_leakage",
+    "wrong_merge"
+  ],
+  "case_count": 48,
+  "cases_path": "cases.json",
+  "checksums_path": "checksums.sha256.json",
+  "annotations_path": "_metadata/annotations.json",
+  "human_label_protocol": {
+    "required_reviewers": 2,
+    "independent_annotation": true,
+    "adjudication_required": true,
+    "seed_status": "awaiting_human_review",
+    "instruction": "每个样本由两名人工独立评分，再由复核人形成唯一标签；完成前不得把生命周期改为 confirmed。"
+  }
+}

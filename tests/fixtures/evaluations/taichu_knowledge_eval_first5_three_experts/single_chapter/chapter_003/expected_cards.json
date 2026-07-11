@@ -1,0 +1,1295 @@
+[
+  {
+    "expected_card_id": "character_qin_haoxuan",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "秦浩轩",
+      "aliases": [],
+      "summary": "秦浩轩通过摸道骨和测仙种，虽资质一般、仙种干涸严重，仍被赵嘉龙和徐吞虎收录。",
+      "importance": "core",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：秦浩轩在坡子岭选苗及赴太初教途中承担关键剧情功能。",
+      "role_type": "protagonist",
+      "identity": "大田镇入选少年",
+      "relationship_summary": "与张狂、张扬同入太初教；受到徐吞虎和赵嘉龙关注。",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": null,
+      "faction_type": null,
+      "leader_id": null,
+      "item_type": null,
+      "current_holder_id": null,
+      "exceptions": null,
+      "chapter_id": null,
+      "description": null
+    },
+    "accepted_names": [
+      "秦浩轩"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_qin_haoxuan_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "秦浩轩通过摸道骨和测仙种，虽资质一般、仙种干涸严重，仍被赵嘉龙和徐吞虎收录。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02",
+          "quote_character_qin_haoxuan_03",
+          "quote_character_qin_haoxuan_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_qin_haoxuan_01",
+      "quote_character_qin_haoxuan_02",
+      "quote_character_qin_haoxuan_03",
+      "quote_character_qin_haoxuan_04"
+    ]
+  },
+  {
+    "expected_card_id": "character_xu_tunhu",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "徐吞虎",
+      "aliases": [],
+      "summary": "徐吞虎与赵嘉龙到坡子岭选苗，负责摸道骨，并参与决定收下秦浩轩。",
+      "importance": "normal",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：徐吞虎在坡子岭选苗及赴太初教途中承担关键剧情功能。",
+      "role_type": "faction_representative",
+      "identity": "太初教弟子；选苗仙长",
+      "relationship_summary": "赵嘉龙师弟；负责引秦浩轩、张狂、张扬入门。",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": null,
+      "faction_type": null,
+      "leader_id": null,
+      "item_type": null,
+      "current_holder_id": null,
+      "exceptions": null,
+      "chapter_id": null,
+      "description": null
+    },
+    "accepted_names": [
+      "徐吞虎"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_xu_tunhu_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "徐吞虎与赵嘉龙到坡子岭选苗，负责摸道骨，并参与决定收下秦浩轩。",
+        "source_quote_ids": [
+          "quote_character_xu_tunhu_01",
+          "quote_character_xu_tunhu_02",
+          "quote_character_xu_tunhu_03",
+          "quote_character_xu_tunhu_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_xu_tunhu_01",
+      "quote_character_xu_tunhu_02",
+      "quote_character_xu_tunhu_03",
+      "quote_character_xu_tunhu_04"
+    ]
+  },
+  {
+    "expected_card_id": "character_zhang_kuang",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "张狂",
+      "aliases": [],
+      "summary": "张狂通过摸道骨和测仙种，仙灵花怒放，成为大田镇几十年来罕见的仙人弟子。",
+      "importance": "major",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：张狂在坡子岭选苗及赴太初教途中承担关键剧情功能。",
+      "role_type": "antagonist",
+      "identity": "大田镇入选少年",
+      "relationship_summary": "与秦浩轩敌对；与张扬同族。",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": null,
+      "faction_type": null,
+      "leader_id": null,
+      "item_type": null,
+      "current_holder_id": null,
+      "exceptions": null,
+      "chapter_id": null,
+      "description": null
+    },
+    "accepted_names": [
+      "张狂"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_zhang_kuang_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "张狂通过摸道骨和测仙种，仙灵花怒放，成为大田镇几十年来罕见的仙人弟子。",
+        "source_quote_ids": [
+          "quote_character_zhang_kuang_01",
+          "quote_character_zhang_kuang_02",
+          "quote_character_zhang_kuang_03",
+          "quote_character_zhang_kuang_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_zhang_kuang_01",
+      "quote_character_zhang_kuang_02",
+      "quote_character_zhang_kuang_03",
+      "quote_character_zhang_kuang_04"
+    ]
+  },
+  {
+    "expected_card_id": "character_zhang_yang",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "张扬",
+      "aliases": [],
+      "summary": "张扬是张狂的族弟兼小弟，在第3章通过考核，成绩略好于秦浩轩。",
+      "importance": "normal",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：张扬在坡子岭选苗及赴太初教途中承担关键剧情功能。",
+      "role_type": "supporting",
+      "identity": "张狂族弟兼小弟；大田镇入选少年",
+      "relationship_summary": "依附张狂，与秦浩轩同批进入太初教。",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": null,
+      "faction_type": null,
+      "leader_id": null,
+      "item_type": null,
+      "current_holder_id": null,
+      "exceptions": null,
+      "chapter_id": null,
+      "description": null
+    },
+    "accepted_names": [
+      "张扬"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_zhang_yang_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "张扬是张狂的族弟兼小弟，在第3章通过考核，成绩略好于秦浩轩。",
+        "source_quote_ids": [
+          "quote_character_zhang_yang_01",
+          "quote_character_zhang_yang_02",
+          "quote_character_zhang_yang_03",
+          "quote_character_zhang_yang_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_zhang_yang_01",
+      "quote_character_zhang_yang_02",
+      "quote_character_zhang_yang_03",
+      "quote_character_zhang_yang_04"
+    ]
+  },
+  {
+    "expected_card_id": "character_zhao_jialong",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "赵嘉龙",
+      "aliases": [],
+      "summary": "赵嘉龙与徐吞虎到坡子岭选苗，负责测仙种，并向三名新弟子介绍太初教。",
+      "importance": "normal",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：赵嘉龙在坡子岭选苗及赴太初教途中承担关键剧情功能。",
+      "role_type": "faction_representative",
+      "identity": "太初教弟子；选苗仙长",
+      "relationship_summary": "徐吞虎师兄；对秦浩轩的举止有所认可。",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": null,
+      "faction_type": null,
+      "leader_id": null,
+      "item_type": null,
+      "current_holder_id": null,
+      "exceptions": null,
+      "chapter_id": null,
+      "description": null
+    },
+    "accepted_names": [
+      "赵嘉龙"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_zhao_jialong_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "赵嘉龙与徐吞虎到坡子岭选苗，负责测仙种，并向三名新弟子介绍太初教。",
+        "source_quote_ids": [
+          "quote_character_zhao_jialong_01",
+          "quote_character_zhao_jialong_02",
+          "quote_character_zhao_jialong_03",
+          "quote_character_zhao_jialong_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_zhao_jialong_01",
+      "quote_character_zhao_jialong_02",
+      "quote_character_zhao_jialong_03",
+      "quote_character_zhao_jialong_04"
+    ]
+  },
+  {
+    "expected_card_id": "event_da_tian_three_selected",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "大田镇三名少年通过初选",
+      "aliases": [],
+      "summary": "秦浩轩、张狂、张扬三人通过太初教在坡子岭的初选，成为大田镇本年入选的三名少年。",
+      "importance": "core",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：四十一名少年全部测试完毕后，大田镇一举出了三名仙人弟子。",
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": null,
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": null,
+      "last_seen_chapter_id": null,
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": null,
+      "faction_type": null,
+      "leader_id": null,
+      "item_type": null,
+      "current_holder_id": null,
+      "exceptions": null,
+      "chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "description": "秦浩轩、张狂、张扬被赵嘉龙、徐吞虎带往太初教。"
+    },
+    "accepted_names": [
+      "大田镇三名少年通过初选"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_da_tian_three_selected_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "秦浩轩、张狂、张扬三人通过太初教在坡子岭的初选，成为大田镇本年入选的三名少年。",
+        "source_quote_ids": [
+          "quote_event_da_tian_three_selected_01",
+          "quote_event_da_tian_three_selected_02",
+          "quote_event_da_tian_three_selected_03",
+          "quote_event_da_tian_three_selected_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_da_tian_three_selected_01",
+      "quote_event_da_tian_three_selected_02",
+      "quote_event_da_tian_three_selected_03",
+      "quote_event_da_tian_three_selected_04"
+    ]
+  },
+  {
+    "expected_card_id": "event_taichu_jiao_intro_on_road",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "赵嘉龙介绍太初教",
+      "aliases": [],
+      "summary": "赵嘉龙在赶往太初教途中向秦浩轩三人介绍太初教全称、宗门位置、门人规模与翔龙国护国神教地位。",
+      "importance": "major",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：秦浩轩询问师门情况，赵嘉龙介绍太初教。",
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": null,
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": null,
+      "last_seen_chapter_id": null,
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": null,
+      "faction_type": null,
+      "leader_id": null,
+      "item_type": null,
+      "current_holder_id": null,
+      "exceptions": null,
+      "chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "description": "太初教核心设定首次集中交代。"
+    },
+    "accepted_names": [
+      "赵嘉龙介绍太初教"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_taichu_jiao_intro_on_road_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "赵嘉龙在赶往太初教途中向秦浩轩三人介绍太初教全称、宗门位置、门人规模与翔龙国护国神教地位。",
+        "source_quote_ids": [
+          "quote_event_taichu_jiao_intro_on_road_01",
+          "quote_event_taichu_jiao_intro_on_road_02",
+          "quote_event_taichu_jiao_intro_on_road_03",
+          "quote_event_taichu_jiao_intro_on_road_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_taichu_jiao_intro_on_road_01",
+      "quote_event_taichu_jiao_intro_on_road_02",
+      "quote_event_taichu_jiao_intro_on_road_03",
+      "quote_event_taichu_jiao_intro_on_road_04"
+    ]
+  },
+  {
+    "expected_card_id": "faction_taichu_jiao",
+    "knowledge_type": "faction",
+    "card": {
+      "type": "faction",
+      "name": "太初教",
+      "aliases": [
+        "至上仙尊真乙太初教",
+        "太初"
+      ],
+      "summary": "翔龙国唯一仙门，全称“至上仙尊真乙太初教”，宗门位于大屿山黄帝峰，门人上万，掌教是翔龙国护国仙师。",
+      "importance": "core",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：赵嘉龙向秦浩轩三人介绍太初教全称、地位、规模和宗门位置。",
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": null,
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": null,
+      "last_seen_chapter_id": null,
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": null,
+      "faction_type": "sect",
+      "leader_id": null,
+      "item_type": null,
+      "current_holder_id": null,
+      "exceptions": null,
+      "chapter_id": null,
+      "description": null
+    },
+    "accepted_names": [
+      "太初教",
+      "至上仙尊真乙太初教",
+      "太初"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_taichu_jiao_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "翔龙国唯一仙门，全称“至上仙尊真乙太初教”，宗门位于大屿山黄帝峰，门人上万，掌教是翔龙国护国仙师。",
+        "source_quote_ids": [
+          "quote_faction_taichu_jiao_01",
+          "quote_faction_taichu_jiao_02",
+          "quote_faction_taichu_jiao_03",
+          "quote_faction_taichu_jiao_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_faction_taichu_jiao_01",
+      "quote_faction_taichu_jiao_02",
+      "quote_faction_taichu_jiao_03",
+      "quote_faction_taichu_jiao_04"
+    ]
+  },
+  {
+    "expected_card_id": "faction_xianglong_guo",
+    "knowledge_type": "faction",
+    "card": {
+      "type": "faction",
+      "name": "翔龙国",
+      "aliases": [],
+      "summary": "太初教所在的凡人国度，太初教为其护国神教，历代皇帝登基须报备掌教批准。",
+      "importance": "normal",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：赵嘉龙介绍太初教是翔龙国护国神教，掌教影响皇权。",
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": null,
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": null,
+      "last_seen_chapter_id": null,
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": null,
+      "faction_type": "dynasty",
+      "leader_id": null,
+      "item_type": null,
+      "current_holder_id": null,
+      "exceptions": null,
+      "chapter_id": null,
+      "description": null
+    },
+    "accepted_names": [
+      "翔龙国"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_xianglong_guo_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "太初教所在的凡人国度，太初教为其护国神教，历代皇帝登基须报备掌教批准。",
+        "source_quote_ids": [
+          "quote_faction_xianglong_guo_01",
+          "quote_faction_xianglong_guo_02",
+          "quote_faction_xianglong_guo_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_faction_xianglong_guo_01",
+      "quote_faction_xianglong_guo_02",
+      "quote_faction_xianglong_guo_03"
+    ]
+  },
+  {
+    "expected_card_id": "item_feijian",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "飞剑",
+      "aliases": [],
+      "summary": "赵嘉龙、徐吞虎等太初教弟子用于御剑飞行和驱散雾气的剑形法器。",
+      "importance": "normal",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：飞剑在选苗或赴太初教途中出现。",
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": null,
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": null,
+      "faction_type": null,
+      "leader_id": null,
+      "item_type": "magic_treasure",
+      "current_holder_id": null,
+      "exceptions": null,
+      "chapter_id": null,
+      "description": null
+    },
+    "accepted_names": [
+      "飞剑"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_feijian_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "赵嘉龙、徐吞虎等太初教弟子用于御剑飞行和驱散雾气的剑形法器。",
+        "source_quote_ids": [
+          "quote_item_feijian_01",
+          "quote_item_feijian_02",
+          "quote_item_feijian_03",
+          "quote_item_feijian_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_item_feijian_01",
+      "quote_item_feijian_02",
+      "quote_item_feijian_03",
+      "quote_item_feijian_04"
+    ]
+  },
+  {
+    "expected_card_id": "item_huangse_fuzhi",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "黄色符纸",
+      "aliases": [],
+      "summary": "徐吞虎贴在马屁股上的符纸，可令马匹高速奔行。",
+      "importance": "normal",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：黄色符纸在选苗或赴太初教途中出现。",
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": null,
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": null,
+      "faction_type": null,
+      "leader_id": null,
+      "item_type": "magic_treasure",
+      "current_holder_id": null,
+      "exceptions": null,
+      "chapter_id": null,
+      "description": null
+    },
+    "accepted_names": [
+      "黄色符纸"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_huangse_fuzhi_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "徐吞虎贴在马屁股上的符纸，可令马匹高速奔行。",
+        "source_quote_ids": [
+          "quote_item_huangse_fuzhi_01",
+          "quote_item_huangse_fuzhi_02",
+          "quote_item_huangse_fuzhi_03",
+          "quote_item_huangse_fuzhi_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_item_huangse_fuzhi_01",
+      "quote_item_huangse_fuzhi_02",
+      "quote_item_huangse_fuzhi_03",
+      "quote_item_huangse_fuzhi_04"
+    ]
+  },
+  {
+    "expected_card_id": "item_xianling_hua",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "仙灵花",
+      "aliases": [],
+      "summary": "用于测仙种活力的测试花，吸收含有仙灵之气的鲜血后会根据仙种状态开合。",
+      "importance": "normal",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：仙灵花在选苗或赴太初教途中出现。",
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": null,
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": null,
+      "faction_type": null,
+      "leader_id": null,
+      "item_type": "other",
+      "current_holder_id": null,
+      "exceptions": null,
+      "chapter_id": null,
+      "description": null
+    },
+    "accepted_names": [
+      "仙灵花"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_xianling_hua_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "用于测仙种活力的测试花，吸收含有仙灵之气的鲜血后会根据仙种状态开合。",
+        "source_quote_ids": [
+          "quote_item_xianling_hua_01",
+          "quote_item_xianling_hua_02",
+          "quote_item_xianling_hua_03",
+          "quote_item_xianling_hua_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_item_xianling_hua_01",
+      "quote_item_xianling_hua_02",
+      "quote_item_xianling_hua_03",
+      "quote_item_xianling_hua_04"
+    ]
+  },
+  {
+    "expected_card_id": "location_da_yu_shan",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "大屿山",
+      "aliases": [],
+      "summary": "翔龙国第一山，太初教宗门所在地，黄帝峰为其主峰。",
+      "importance": "major",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：大屿山在秦浩轩等人抵达太初教时被介绍。",
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": null,
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": null,
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": "faction_taichu_jiao",
+      "faction_type": null,
+      "leader_id": null,
+      "item_type": null,
+      "current_holder_id": null,
+      "exceptions": null,
+      "chapter_id": null,
+      "description": null
+    },
+    "accepted_names": [
+      "大屿山"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_da_yu_shan_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "翔龙国第一山，太初教宗门所在地，黄帝峰为其主峰。",
+        "source_quote_ids": [
+          "quote_location_da_yu_shan_01",
+          "quote_location_da_yu_shan_02",
+          "quote_location_da_yu_shan_03",
+          "quote_location_da_yu_shan_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_da_yu_shan_01",
+      "quote_location_da_yu_shan_02",
+      "quote_location_da_yu_shan_03",
+      "quote_location_da_yu_shan_04"
+    ]
+  },
+  {
+    "expected_card_id": "location_huangdi_feng",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "黄帝峰",
+      "aliases": [],
+      "summary": "大屿山主峰，太初教山门、通天梯和太初宝殿所在的核心区域。",
+      "importance": "major",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：黄帝峰在秦浩轩等人抵达太初教时被介绍。",
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": null,
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": null,
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": "faction_taichu_jiao",
+      "faction_type": null,
+      "leader_id": null,
+      "item_type": null,
+      "current_holder_id": null,
+      "exceptions": null,
+      "chapter_id": null,
+      "description": null
+    },
+    "accepted_names": [
+      "黄帝峰"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_huangdi_feng_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "大屿山主峰，太初教山门、通天梯和太初宝殿所在的核心区域。",
+        "source_quote_ids": [
+          "quote_location_huangdi_feng_01",
+          "quote_location_huangdi_feng_02",
+          "quote_location_huangdi_feng_03",
+          "quote_location_huangdi_feng_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_huangdi_feng_01",
+      "quote_location_huangdi_feng_02",
+      "quote_location_huangdi_feng_03",
+      "quote_location_huangdi_feng_04"
+    ]
+  },
+  {
+    "expected_card_id": "location_pozi_ling",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "坡子岭",
+      "aliases": [],
+      "summary": "小屿山内山与外围的分界点，是大田镇适龄少年接受太初教初选的草地。",
+      "importance": "major",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：正文明确坡子岭是小屿山内山与外围分界点。",
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": null,
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": null,
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": null,
+      "faction_type": null,
+      "leader_id": null,
+      "item_type": null,
+      "current_holder_id": null,
+      "exceptions": null,
+      "chapter_id": null,
+      "description": null
+    },
+    "accepted_names": [
+      "坡子岭"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_pozi_ling_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "小屿山内山与外围的分界点，是大田镇适龄少年接受太初教初选的草地。",
+        "source_quote_ids": [
+          "quote_location_pozi_ling_01",
+          "quote_location_pozi_ling_02",
+          "quote_location_pozi_ling_03",
+          "quote_location_pozi_ling_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_pozi_ling_01",
+      "quote_location_pozi_ling_02",
+      "quote_location_pozi_ling_03",
+      "quote_location_pozi_ling_04"
+    ]
+  },
+  {
+    "expected_card_id": "location_taichu_baodian",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "太初宝殿",
+      "aliases": [],
+      "summary": "通天梯尽头的太初教仙家重地，凡人皇帝也极少能进入。",
+      "importance": "normal",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：太初宝殿在秦浩轩等人抵达太初教时被介绍。",
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": null,
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": null,
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": "faction_taichu_jiao",
+      "faction_type": null,
+      "leader_id": null,
+      "item_type": null,
+      "current_holder_id": null,
+      "exceptions": null,
+      "chapter_id": null,
+      "description": null
+    },
+    "accepted_names": [
+      "太初宝殿"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_taichu_baodian_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "通天梯尽头的太初教仙家重地，凡人皇帝也极少能进入。",
+        "source_quote_ids": [
+          "quote_location_taichu_baodian_01",
+          "quote_location_taichu_baodian_02",
+          "quote_location_taichu_baodian_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_taichu_baodian_01",
+      "quote_location_taichu_baodian_02",
+      "quote_location_taichu_baodian_03"
+    ]
+  },
+  {
+    "expected_card_id": "rule_taichu_selection_two_tests",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "太初教初选两项规则",
+      "aliases": [],
+      "summary": "太初教选苗分为摸道骨与测仙种两项；两项都过关才可入选。",
+      "importance": "core",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：徐吞虎在坡子岭宣布选苗流程。",
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": null,
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": null,
+      "last_seen_chapter_id": null,
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": null,
+      "faction_type": null,
+      "leader_id": null,
+      "item_type": null,
+      "current_holder_id": null,
+      "exceptions": "最终测试尚未在第3章发生。",
+      "chapter_id": null,
+      "description": null
+    },
+    "accepted_names": [
+      "太初教初选两项规则"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "exceptions"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_taichu_selection_two_tests_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "太初教选苗分为摸道骨与测仙种两项；两项都过关才可入选。",
+        "source_quote_ids": [
+          "quote_rule_taichu_selection_two_tests_01",
+          "quote_rule_taichu_selection_two_tests_02",
+          "quote_rule_taichu_selection_two_tests_03",
+          "quote_rule_taichu_selection_two_tests_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_taichu_selection_two_tests_01",
+      "quote_rule_taichu_selection_two_tests_02",
+      "quote_rule_taichu_selection_two_tests_03",
+      "quote_rule_taichu_selection_two_tests_04"
+    ]
+  },
+  {
+    "expected_card_id": "rule_xianzhong_age_life_check",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "仙种满十六岁检测规则",
+      "aliases": [],
+      "summary": "几乎人人有仙种，但可能出生后死亡或十六年间干涸；满十六岁才能灌输吸收天地灵气，因此选苗要检测仙种是否仍活着。",
+      "importance": "major",
+      "status": "active",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：赵嘉龙负责测仙种时解释仙种存活和十六岁限制。",
+      "role_type": null,
+      "identity": null,
+      "relationship_summary": null,
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": null,
+      "last_seen_chapter_id": null,
+      "system": null,
+      "level_order": null,
+      "technique_type": null,
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null,
+      "controlling_faction_id": null,
+      "faction_type": null,
+      "leader_id": null,
+      "item_type": null,
+      "current_holder_id": null,
+      "exceptions": "第3章未给出仙种颜色等级，只说明活死与饱满程度。",
+      "chapter_id": null,
+      "description": null
+    },
+    "accepted_names": [
+      "仙种满十六岁检测规则"
+    ],
+    "exact_fields": [
+      "type",
+      "status",
+      "importance",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "exceptions"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_xianzhong_age_life_check_summary",
+        "field": "summary",
+        "importance": "major",
+        "description": "几乎人人有仙种，但可能出生后死亡或十六年间干涸；满十六岁才能灌输吸收天地灵气，因此选苗要检测仙种是否仍活着。",
+        "source_quote_ids": [
+          "quote_rule_xianzhong_age_life_check_01",
+          "quote_rule_xianzhong_age_life_check_02",
+          "quote_rule_xianzhong_age_life_check_03",
+          "quote_rule_xianzhong_age_life_check_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_xianzhong_age_life_check_01",
+      "quote_rule_xianzhong_age_life_check_02",
+      "quote_rule_xianzhong_age_life_check_03",
+      "quote_rule_xianzhong_age_life_check_04"
+    ]
+  }
+]

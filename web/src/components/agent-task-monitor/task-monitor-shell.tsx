@@ -5,6 +5,7 @@ import { Bot, ChevronLeft, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
+import { KnowledgeExtractionMonitorNav } from "@/components/agent-task-monitor/knowledge-extraction-monitor-nav";
 import { TaskFlowGraph } from "@/components/agent-task-monitor/task-flow-graph";
 import { Button } from "@/components/ui/button";
 import {
@@ -221,6 +222,9 @@ export function TaskMonitorShell() {
   return (
     <AppShell activePath="/task-monitor">
       <section className="mx-auto grid max-w-[1440px] gap-4 px-4 py-4 xl:grid-cols-[270px_minmax(0,1fr)]">
+        <div className="xl:col-span-2">
+          <KnowledgeExtractionMonitorNav />
+        </div>
         <aside className="rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2.5">
           <div className="flex items-start justify-between gap-3">
             <div>

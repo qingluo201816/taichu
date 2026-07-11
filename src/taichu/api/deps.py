@@ -16,6 +16,9 @@ from taichu.application.services.knowledge_service import KnowledgeService
 from taichu.application.services.knowledge_extraction_service import (
     KnowledgeExtractionService,
 )
+from taichu.application.services.knowledge_extraction_evaluation_service import (
+    KnowledgeExtractionEvaluationService,
+)
 from taichu.application.services.agent_task_event_service import AgentTaskEventCenter
 from taichu.application.services.mvp_inbox_service import MVPInboxService
 from taichu.application.services.mvp_knowledge_service import MVPKnowledgeService
@@ -93,6 +96,14 @@ def provide_knowledge_extraction_service(
 ) -> KnowledgeExtractionService:
     """Return the knowledge extraction Agent workbench service."""
     return request.app.state.knowledge_extraction_service
+
+
+def provide_knowledge_extraction_evaluation_service(
+    request: Request,
+) -> KnowledgeExtractionEvaluationService:
+    """返回知识沉淀效果评估应用服务。"""
+
+    return request.app.state.knowledge_extraction_evaluation_service
 
 
 def provide_agent_task_event_center(request: Request) -> AgentTaskEventCenter:

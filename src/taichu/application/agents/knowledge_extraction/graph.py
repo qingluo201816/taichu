@@ -14,9 +14,9 @@ from taichu.application.agents.knowledge_extraction.workflow import (
     build_knowledge_extraction_graph,
 )
 from taichu.application.capabilities import CapabilityContext
+from taichu.application.contracts.agent_run_repository import AgentRunRepository
 from taichu.application.contracts.llm import LLMContract
 from taichu.application.services.chapter_service import ChapterService
-from taichu.infrastructure.agent_runs.json_store import JsonAgentRunStore
 from taichu.infrastructure.knowledge.json_repository import JSONKnowledgeRepository
 
 manifest = AgentManifest(
@@ -48,6 +48,9 @@ def build_graph(context: CapabilityContext) -> CompiledStateGraph:
                 "knowledge_repository",
                 JSONKnowledgeRepository,
             ),
-            run_store=context.require("knowledge_run_store", JsonAgentRunStore),
+            run_store=context.require(
+                "knowledge_run_store",
+                cast(type[AgentRunRepository], AgentRunRepository),
+            ),
         )
     )

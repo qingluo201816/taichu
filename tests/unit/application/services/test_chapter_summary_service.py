@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from taichu.application.contracts.llm import LLMModelIdentity
 from taichu.application.services.ai_card_service import AICardService
 from taichu.application.services.chapter_service import ChapterService
 from taichu.application.services.chapter_summary_service import (
@@ -46,6 +47,10 @@ class FakeLLM:
     def __init__(self, responses: list[str]) -> None:
         self.responses = responses
         self.prompts: list[str] = []
+
+    @property
+    def model_identity(self) -> LLMModelIdentity:
+        return LLMModelIdentity.unknown("测试替身模型。")
 
     async def complete(self, prompt: str) -> str:
         self.prompts.append(prompt)

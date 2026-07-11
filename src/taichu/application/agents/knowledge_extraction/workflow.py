@@ -29,15 +29,22 @@ from taichu.application.agents.knowledge_extraction.prompts import (
 from taichu.application.contracts.knowledge_repository import (
     StructuredKnowledgeRepository,
 )
-from taichu.application.contracts.llm import LLMContract
+from taichu.application.contracts.agent_run_repository import AgentRunRepository
+from taichu.application.contracts.llm import LLMContract, LLMModelIdentity
 from taichu.application.services.chapter_service import ChapterService
-from taichu.domain.models.agent_run import (
+from taichu.application.agents.models.agent_run import (
+    AgentBatchChapterProgress,
+    AgentEntityGroup,
+    AgentIgnoredExtraction,
     AgentLLMCall,
     AgentMetrics,
+    AgentRawMention,
     AgentReviewCandidateAction,
     AgentReviewCandidateStatus,
     AgentReviewItem,
     AgentRun,
+    AgentRunGraphEdge,
+    AgentRunGraphNode,
     AgentRunNode,
     AgentRunNodeStatus,
     AgentRunScope,
@@ -51,7 +58,6 @@ from taichu.domain.models.structured_knowledge import (
     knowledge_type_schema,
     type_specific_field_keys,
 )
-from taichu.infrastructure.agent_runs.json_store import JsonAgentRunStore
 
 ALLOWED_KNOWLEDGE_TYPES = frozenset(
     {
@@ -75,7 +81,9 @@ _GENERAL_TYPE_KEYS = {
     "rules": "rule",
     "events": "event",
 }
-_ALLOWED_TYPE_LABEL = "character, location, faction, item, realm, technique, event, rule"
+_ALLOWED_TYPE_LABEL = (
+    "character, location, faction, item, realm, technique, event, rule"
+)
 _ENTITY_EXPERT_TYPES = {"location", "faction", "item", "realm", "technique"}
 _EVENT_RULE_EXPERT_TYPES = {"event", "rule"}
 _MAX_MENTION_EVIDENCE_COUNT = 5
@@ -215,7 +223,13 @@ class KnowledgeExtractionState(TypedDict, total=False):
 
     run_id: str
     chapter_id: str
+    scope_type: str
+    chapter_ids: list[str]
+    chapter_titles: list[str]
+    chapter_content_hashes: dict[str, str]
     model_name: str
+    requested_model_name: str | None
+    generation_model_identity: dict[str, Any]
     force: bool
     started_at: str
     finished_at: str | None
@@ -236,6 +250,14 @@ class KnowledgeExtractionState(TypedDict, total=False):
     event_rule_typed_candidates: list[dict[str, Any]]
     typed_candidates: list[dict[str, Any]]
     review_items: list[dict[str, Any]]
+    graph_nodes: list[dict[str, str]]
+    graph_edges: list[dict[str, str]]
+    batch_chapter_progress: list[dict[str, Any]]
+    max_concurrency: int
+    current_concurrency: int
+    total_chapter_count: int
+    completed_chapter_count: int
+    failed_chapter_count: int
     nodes: Annotated[list[dict[str, Any]], _append_state_list]
     llm_calls: Annotated[list[dict[str, Any]], _append_state_list]
     errors: Annotated[list[str], _append_state_strings]
@@ -250,7 +272,7 @@ class KnowledgeExtractionDependencies:
     chapter_service: ChapterService
     llm: LLMContract
     knowledge_repository: StructuredKnowledgeRepository
-    run_store: JsonAgentRunStore
+    run_store: AgentRunRepository
     event_sink: KnowledgeExtractionEventSink | None = None
 
 
@@ -308,15 +330,31 @@ KNOWLEDGE_EXTRACTION_GRAPH_EDGES: list[dict[str, str]] = [
 ]
 
 BATCH_KNOWLEDGE_EXTRACTION_GRAPH_NODES: list[dict[str, str]] = [
-    {"node_name": "BatchChapterPoolNode", "label": "章节并行抽取池", "lane": "并行抽取"},
-    {"node_name": "BatchCardAggregationNode", "label": "多章卡片聚合", "lane": "统一后处理"},
-    {"node_name": "BatchConflictCheckNode", "label": "批量冲突检查", "lane": "统一后处理"},
+    {
+        "node_name": "BatchChapterPoolNode",
+        "label": "章节并行抽取池",
+        "lane": "并行抽取",
+    },
+    {
+        "node_name": "BatchCardAggregationNode",
+        "label": "多章卡片聚合",
+        "lane": "统一后处理",
+    },
+    {
+        "node_name": "BatchConflictCheckNode",
+        "label": "批量冲突检查",
+        "lane": "统一后处理",
+    },
     {
         "node_name": "BatchMatchExistingKnowledgeNode",
         "label": "匹配有效知识",
         "lane": "统一后处理",
     },
-    {"node_name": "BatchBuildReviewItemsNode", "label": "生成审核项", "lane": "统一后处理"},
+    {
+        "node_name": "BatchBuildReviewItemsNode",
+        "label": "生成审核项",
+        "lane": "统一后处理",
+    },
     {"node_name": "BatchWriteRunNode", "label": "写入批量运行", "lane": "写入"},
 ]
 
@@ -324,7 +362,10 @@ BATCH_KNOWLEDGE_EXTRACTION_GRAPH_EDGES: list[dict[str, str]] = [
     {"source": "BatchChapterPoolNode", "target": "BatchCardAggregationNode"},
     {"source": "BatchCardAggregationNode", "target": "BatchConflictCheckNode"},
     {"source": "BatchConflictCheckNode", "target": "BatchMatchExistingKnowledgeNode"},
-    {"source": "BatchMatchExistingKnowledgeNode", "target": "BatchBuildReviewItemsNode"},
+    {
+        "source": "BatchMatchExistingKnowledgeNode",
+        "target": "BatchBuildReviewItemsNode",
+    },
     {"source": "BatchBuildReviewItemsNode", "target": "BatchWriteRunNode"},
 ]
 
@@ -346,7 +387,9 @@ def build_knowledge_extraction_graph(
         "GeneralExtractionNode",
         cast(
             Any,
-            _node("GeneralExtractionNode", _general_extraction(dependencies), dependencies),
+            _node(
+                "GeneralExtractionNode", _general_extraction(dependencies), dependencies
+            ),
         ),
     )
     graph.add_node(
@@ -374,29 +417,41 @@ def build_knowledge_extraction_graph(
     )
     graph.add_node(
         "CharacterExpertNode",
-        cast(Any, _node("CharacterExpertNode", _character_expert(dependencies), dependencies)),
+        cast(
+            Any,
+            _node("CharacterExpertNode", _character_expert(dependencies), dependencies),
+        ),
     )
     graph.add_node(
         "EntityExpertNode",
-        cast(Any, _node("EntityExpertNode", _entity_expert(dependencies), dependencies)),
+        cast(
+            Any, _node("EntityExpertNode", _entity_expert(dependencies), dependencies)
+        ),
     )
     graph.add_node(
         "EventRuleExpertNode",
         cast(
             Any,
-            _node("EventRuleExpertNode", _event_rule_expert(dependencies), dependencies),
+            _node(
+                "EventRuleExpertNode", _event_rule_expert(dependencies), dependencies
+            ),
         ),
     )
     graph.add_node(
         "MergeExpertCandidatesNode",
         cast(
             Any,
-            _node("MergeExpertCandidatesNode", _merge_expert_candidates(), dependencies),
+            _node(
+                "MergeExpertCandidatesNode", _merge_expert_candidates(), dependencies
+            ),
         ),
     )
     graph.add_node(
         "NormalizeAndValidateNode",
-        cast(Any, _node("NormalizeAndValidateNode", _normalize_and_validate(), dependencies)),
+        cast(
+            Any,
+            _node("NormalizeAndValidateNode", _normalize_and_validate(), dependencies),
+        ),
     )
     graph.add_node(
         "RunInternalConflictCheckNode",
@@ -413,7 +468,11 @@ def build_knowledge_extraction_graph(
         "MatchExistingKnowledgeNode",
         cast(
             Any,
-            _node("MatchExistingKnowledgeNode", _match_existing(dependencies), dependencies),
+            _node(
+                "MatchExistingKnowledgeNode",
+                _match_existing(dependencies),
+                dependencies,
+            ),
         ),
     )
     graph.add_node(
@@ -471,7 +530,9 @@ def build_knowledge_extraction_branch_graph(
         "GeneralExtractionNode",
         cast(
             Any,
-            _node("GeneralExtractionNode", _general_extraction(dependencies), dependencies),
+            _node(
+                "GeneralExtractionNode", _general_extraction(dependencies), dependencies
+            ),
         ),
     )
     graph.add_node(
@@ -499,24 +560,33 @@ def build_knowledge_extraction_branch_graph(
     )
     graph.add_node(
         "CharacterExpertNode",
-        cast(Any, _node("CharacterExpertNode", _character_expert(dependencies), dependencies)),
+        cast(
+            Any,
+            _node("CharacterExpertNode", _character_expert(dependencies), dependencies),
+        ),
     )
     graph.add_node(
         "EntityExpertNode",
-        cast(Any, _node("EntityExpertNode", _entity_expert(dependencies), dependencies)),
+        cast(
+            Any, _node("EntityExpertNode", _entity_expert(dependencies), dependencies)
+        ),
     )
     graph.add_node(
         "EventRuleExpertNode",
         cast(
             Any,
-            _node("EventRuleExpertNode", _event_rule_expert(dependencies), dependencies),
+            _node(
+                "EventRuleExpertNode", _event_rule_expert(dependencies), dependencies
+            ),
         ),
     )
     graph.add_node(
         "MergeExpertCandidatesNode",
         cast(
             Any,
-            _node("MergeExpertCandidatesNode", _merge_expert_candidates(), dependencies),
+            _node(
+                "MergeExpertCandidatesNode", _merge_expert_candidates(), dependencies
+            ),
         ),
     )
 
@@ -541,6 +611,8 @@ def initial_knowledge_extraction_state(
     *,
     chapter_id: str,
     model_name: str | None = None,
+    requested_model_name: str | None = None,
+    generation_model_identity: LLMModelIdentity | None = None,
     force: bool = False,
 ) -> KnowledgeExtractionState:
     """Create the initial graph state for one current-chapter run."""
@@ -549,6 +621,11 @@ def initial_knowledge_extraction_state(
         "run_id": _new_run_id(now),
         "chapter_id": chapter_id,
         "model_name": model_name or "",
+        "requested_model_name": requested_model_name,
+        "generation_model_identity": (
+            generation_model_identity
+            or LLMModelIdentity.unknown("运行未提供真实模型身份。")
+        ).model_dump(mode="json"),
         "force": force,
         "started_at": now,
         "finished_at": None,
@@ -580,7 +657,9 @@ def run_from_state(state: KnowledgeExtractionState) -> AgentRun:
     """Convert graph state into a persisted AgentRun model."""
     return run_snapshot_from_state(
         state,
-        status=AgentRunStatus.FAILED if state.get("failed") else AgentRunStatus.COMPLETED,
+        status=AgentRunStatus.FAILED
+        if state.get("failed")
+        else AgentRunStatus.COMPLETED,
         finished_at=state.get("finished_at") or _now_iso(),
     )
 
@@ -593,17 +672,33 @@ def run_snapshot_from_state(
 ) -> AgentRun:
     """Convert current graph state into a run snapshot for storage or streaming."""
     metrics_finished_at = finished_at or _now_iso()
-    nodes = [
-        AgentRunNode.model_validate(node)
-        for node in state.get("nodes", [])
-    ]
+    nodes = [AgentRunNode.model_validate(node) for node in state.get("nodes", [])]
     llm_calls = [
-        AgentLLMCall.model_validate(call)
-        for call in state.get("llm_calls", [])
+        AgentLLMCall.model_validate(call) for call in state.get("llm_calls", [])
     ]
     review_items = [
-        AgentReviewItem.model_validate(item)
-        for item in state.get("review_items", [])
+        AgentReviewItem.model_validate(item) for item in state.get("review_items", [])
+    ]
+    graph_nodes = [
+        AgentRunGraphNode.model_validate(item)
+        for item in state.get("graph_nodes", KNOWLEDGE_EXTRACTION_GRAPH_NODES)
+    ]
+    graph_edges = [
+        AgentRunGraphEdge.model_validate(item)
+        for item in state.get("graph_edges", KNOWLEDGE_EXTRACTION_GRAPH_EDGES)
+    ]
+    batch_chapter_progress = [
+        AgentBatchChapterProgress.model_validate(item)
+        for item in state.get("batch_chapter_progress", [])
+    ]
+    raw_mentions = [
+        AgentRawMention.model_validate(item) for item in state.get("raw_mentions", [])
+    ]
+    entity_groups = [
+        AgentEntityGroup.model_validate(item) for item in state.get("entity_groups", [])
+    ]
+    ignored = [
+        AgentIgnoredExtraction.model_validate(item) for item in state.get("ignored", [])
     ]
     metrics = _metrics(
         review_items=review_items,
@@ -615,6 +710,15 @@ def run_snapshot_from_state(
     return AgentRun(
         run_id=state["run_id"],
         model_name=state.get("model_name", ""),
+        requested_model_name=state.get("requested_model_name"),
+        generation_model_identity=LLMModelIdentity.model_validate(
+            state.get(
+                "generation_model_identity",
+                LLMModelIdentity.unknown("运行未提供真实模型身份。").model_dump(
+                    mode="json"
+                ),
+            )
+        ),
         status=status,
         scope=AgentRunScope(
             scope_type=state.get("scope_type", "chapter"),
@@ -623,25 +727,30 @@ def run_snapshot_from_state(
             content_hash=state.get("content_hash", ""),
             chapter_ids=state.get("chapter_ids", []),
             chapter_titles=state.get("chapter_titles", []),
+            chapter_content_hashes=(
+                {state.get("chapter_id", ""): state.get("content_hash", "")}
+                if state.get("chapter_id") and state.get("content_hash")
+                else {}
+            ),
         ),
         started_at=state["started_at"],
         finished_at=finished_at,
         nodes=nodes,
-        graph_nodes=state.get("graph_nodes", KNOWLEDGE_EXTRACTION_GRAPH_NODES),
-        graph_edges=state.get("graph_edges", KNOWLEDGE_EXTRACTION_GRAPH_EDGES),
-        batch_chapter_progress=state.get("batch_chapter_progress", []),
+        graph_nodes=graph_nodes,
+        graph_edges=graph_edges,
+        batch_chapter_progress=batch_chapter_progress,
         max_concurrency=int(state.get("max_concurrency") or 1),
         current_concurrency=int(state.get("current_concurrency") or 0),
         total_chapter_count=int(state.get("total_chapter_count") or 0),
         completed_chapter_count=int(state.get("completed_chapter_count") or 0),
         failed_chapter_count=int(state.get("failed_chapter_count") or 0),
         llm_calls=llm_calls,
-        raw_mentions=state.get("raw_mentions", []),
-        entity_groups=state.get("entity_groups", []),
+        raw_mentions=raw_mentions,
+        entity_groups=entity_groups,
         raw_candidates=state.get("raw_candidates", []),
         typed_candidates=state.get("typed_candidates", []),
         review_items=review_items,
-        ignored=state.get("ignored", []),
+        ignored=ignored,
         metrics=metrics,
         errors=state.get("errors", []),
         prompt_version=KNOWLEDGE_EXTRACTION_PROMPT_VERSION,
@@ -695,14 +804,18 @@ def _node(
         )
         if node_name == "WriteIntermediateJsonNode":
             records = next_state.get("nodes", [])
-            record = records[-1] if records else _node_record(
-                node_name=node_name,
-                status=status,
-                started_at=started,
-                duration_ms=_elapsed_ms(timer),
-                input_summary=_node_input_summary(node_name, state),
-                output_summary=_node_output_summary(node_name, next_state),
-                error=node_error,
+            record = (
+                records[-1]
+                if records
+                else _node_record(
+                    node_name=node_name,
+                    status=status,
+                    started_at=started,
+                    duration_ms=_elapsed_ms(timer),
+                    input_summary=_node_input_summary(node_name, state),
+                    output_summary=_node_output_summary(node_name, next_state),
+                    error=node_error,
+                )
             )
         else:
             record = _node_record(
@@ -733,16 +846,16 @@ def _load_chapter(
             return state
         state["chapter_title"] = chapter.chapter.title
         state["markdown_text"] = markdown
-        state["content_hash"] = hashlib.sha256(
-            markdown.encode("utf-8")
-        ).hexdigest()
+        state["content_hash"] = hashlib.sha256(markdown.encode("utf-8")).hexdigest()
         state["word_count"] = len(re.findall(r"\S", markdown))
         return state
 
     return run
 
 
-def _segment_chapter() -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
+def _segment_chapter() -> Callable[
+    [KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]
+]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
         markdown = state.get("markdown_text", "")
         if len(markdown) <= 6000:
@@ -802,7 +915,9 @@ def _general_extraction(
     return run
 
 
-def _normalize_mentions() -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
+def _normalize_mentions() -> Callable[
+    [KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]
+]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
         normalized: list[dict[str, Any]] = []
         ignored = list(state.get("ignored", []))
@@ -852,7 +967,9 @@ def _normalize_mentions() -> Callable[[KnowledgeExtractionState], Awaitable[Know
     return run
 
 
-def _aggregate_entities() -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
+def _aggregate_entities() -> Callable[
+    [KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]
+]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
         groups: dict[tuple[str, str], dict[str, Any]] = {}
         order: list[tuple[str, str]] = []
@@ -914,7 +1031,9 @@ def _candidate_quality_gate(
     return run
 
 
-def _dispatch_entity_groups() -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
+def _dispatch_entity_groups() -> Callable[
+    [KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]
+]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
         accepted = [
             group
@@ -1082,7 +1201,9 @@ def _event_rule_expert(
     return run
 
 
-def _merge_expert_candidates() -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
+def _merge_expert_candidates() -> Callable[
+    [KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]
+]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
         state["typed_candidates"] = [
             *state.get("character_typed_candidates", []),
@@ -1094,7 +1215,9 @@ def _merge_expert_candidates() -> Callable[[KnowledgeExtractionState], Awaitable
     return run
 
 
-def _normalize_and_validate() -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
+def _normalize_and_validate() -> Callable[
+    [KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]
+]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
         normalized: list[dict[str, Any]] = []
         for candidate in state.get("typed_candidates", []):
@@ -1113,7 +1236,9 @@ def _normalize_and_validate() -> Callable[[KnowledgeExtractionState], Awaitable[
     return run
 
 
-def _internal_conflict_check() -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
+def _internal_conflict_check() -> Callable[
+    [KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]
+]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
         seen: dict[tuple[str, str], int] = {}
         for index, candidate in enumerate(state.get("typed_candidates", [])):
@@ -1161,7 +1286,9 @@ def _match_existing(
     return run
 
 
-def _build_review_items() -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
+def _build_review_items() -> Callable[
+    [KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]
+]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
         now = _now_iso()
         review_items: list[dict[str, Any]] = []
@@ -1213,12 +1340,13 @@ def _write_intermediate_json(
     dependencies: KnowledgeExtractionDependencies,
 ) -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
-        state["finished_at"] = _now_iso()
+        finished_at = _now_iso()
+        state["finished_at"] = finished_at
         state = _record_node(
             state,
             node_name="WriteIntermediateJsonNode",
             status=AgentRunNodeStatus.SUCCESS,
-            started_at=state["finished_at"],
+            started_at=finished_at,
             input_summary=f"{len(state.get('review_items', []))} 个审核项。",
             output_summary="已写入 JSON 中间态。",
         )
@@ -1381,7 +1509,9 @@ def _raw_candidates_from_general_output(output: dict[str, Any]) -> list[dict[str
                 continue
             candidate = dict(item)
             candidate["knowledge_type"] = knowledge_type
-            candidate.setdefault("name", _first_non_empty(item.get("name"), item.get("title")))
+            candidate.setdefault(
+                "name", _first_non_empty(item.get("name"), item.get("title"))
+            )
             candidate.setdefault("aliases", [])
             candidate.setdefault(
                 "source_excerpt",
@@ -1472,7 +1602,9 @@ def _ignored_from_general_output(
             text = item.strip()
             reason = ""
         elif isinstance(item, dict):
-            text = _first_non_empty(item.get("text"), item.get("name"), item.get("title"))
+            text = _first_non_empty(
+                item.get("text"), item.get("name"), item.get("title")
+            )
             reason = _first_non_empty(item.get("reason"), item.get("description"))
         else:
             continue
@@ -1541,7 +1673,9 @@ def _character_quality_decision(
         return "accepted", "明确称号或职务，并可进入作者审核。"
     if mention_count >= 2:
         return "accepted", "本章出现多次，可进入作者审核。"
-    if 2 <= len(name) <= 5 and not any(marker in name for marker in ("一个", "某个", "那")):
+    if 2 <= len(name) <= 5 and not any(
+        marker in name for marker in ("一个", "某个", "那")
+    ):
         return "accepted", "具备稳定专名特征。"
     if any(name in excerpt for excerpt in evidence_excerpts):
         return "accepted", "具备原文直接命名证据。"
@@ -1549,7 +1683,9 @@ def _character_quality_decision(
 
 
 def _location_quality_decision(name: str) -> tuple[str, str]:
-    normalized_rejects = {_normalize_identity(value) for value in _REJECT_LOCATION_NAMES}
+    normalized_rejects = {
+        _normalize_identity(value) for value in _REJECT_LOCATION_NAMES
+    }
     if _normalize_identity(name) in normalized_rejects:
         return "rejected", "普通功能空间、泛称地点或单次环境描写。"
     if any(marker in name for marker in _LOCATION_NAME_MARKERS) and len(name) >= 3:
@@ -1566,7 +1702,9 @@ def _faction_quality_decision(name: str) -> tuple[str, str]:
 
 
 def _item_quality_decision(name: str) -> tuple[str, str]:
-    if _normalize_identity(name) in {_normalize_identity(value) for value in _REJECT_ITEM_NAMES}:
+    if _normalize_identity(name) in {
+        _normalize_identity(value) for value in _REJECT_ITEM_NAMES
+    }:
         return "rejected", "普通消耗品、银两、衣物或器具。"
     if any(marker in name for marker in _SPECIAL_ITEM_MARKERS) and len(name) >= 2:
         return "accepted", "有明确名称且具备设定价值或可追踪属性。"
@@ -1644,7 +1782,9 @@ def _candidate_validation_errors(card: dict[str, Any]) -> list[str]:
         errors.append("知识类型不属于第一版范围。")
         return errors
     if knowledge_type not in ALLOWED_KNOWLEDGE_TYPES:
-        errors.append("正文知识沉淀只允许角色、境界、功法、地点、势力、物品、规则、事件。")
+        errors.append(
+            "正文知识沉淀只允许角色、境界、功法、地点、势力、物品、规则、事件。"
+        )
     for field_key in ("name", "summary", "source_note", "evidence_excerpt"):
         if not str(card.get(field_key) or "").strip():
             errors.append(f"缺少必填字段：{field_key}")
@@ -1687,7 +1827,11 @@ def _external_conflicts(
     for key in _strict_conflict_fields(existing.type):
         value = candidate.get(key)
         current_value = getattr(existing, key, None)
-        if _is_non_empty(current_value) and _is_non_empty(value) and current_value != value:
+        if (
+            _is_non_empty(current_value)
+            and _is_non_empty(value)
+            and current_value != value
+        ):
             conflicts.append(f"字段“{key}”与已有有效知识卡存在互斥事实。")
     return conflicts
     for key, value in candidate.items():
@@ -1707,7 +1851,11 @@ def _external_conflicts(
         ):
             continue
         current_value = getattr(existing, key, None)
-        if _is_non_empty(current_value) and _is_non_empty(value) and current_value != value:
+        if (
+            _is_non_empty(current_value)
+            and _is_non_empty(value)
+            and current_value != value
+        ):
             conflicts.append(f"字段“{key}”与已有有效知识卡不一致。")
     return conflicts
 
@@ -1770,12 +1918,24 @@ def _metrics(
         item_candidate_count=_count_items(review_items, "item"),
         rule_candidate_count=_count_items(review_items, "rule"),
         event_candidate_count=_count_items(review_items, "event"),
-        create_card_count=_count_actions(review_items, AgentReviewCandidateAction.CREATE_CARD),
-        update_card_count=_count_actions(review_items, AgentReviewCandidateAction.UPDATE_CARD),
-        conflict_count=_count_actions(review_items, AgentReviewCandidateAction.CONFLICT),
-        schema_passed_count=sum(1 for item in review_items if item.schema_validation.passed),
-        schema_failed_count=sum(1 for item in review_items if not item.schema_validation.passed),
-        confirmed_count=_count_status(review_items, AgentReviewCandidateStatus.CONFIRMED),
+        create_card_count=_count_actions(
+            review_items, AgentReviewCandidateAction.CREATE_CARD
+        ),
+        update_card_count=_count_actions(
+            review_items, AgentReviewCandidateAction.UPDATE_CARD
+        ),
+        conflict_count=_count_actions(
+            review_items, AgentReviewCandidateAction.CONFLICT
+        ),
+        schema_passed_count=sum(
+            1 for item in review_items if item.schema_validation.passed
+        ),
+        schema_failed_count=sum(
+            1 for item in review_items if not item.schema_validation.passed
+        ),
+        confirmed_count=_count_status(
+            review_items, AgentReviewCandidateStatus.CONFIRMED
+        ),
         rejected_count=_count_status(review_items, AgentReviewCandidateStatus.REJECTED),
         pending_count=_count_status(review_items, AgentReviewCandidateStatus.PENDING),
         total_duration_ms=_iso_duration_ms(started_at, finished_at),
@@ -1810,8 +1970,7 @@ def _state_working_copy(state: KnowledgeExtractionState) -> KnowledgeExtractionS
     for key, value in state.items():
         if isinstance(value, list):
             copied[key] = [
-                dict(item) if isinstance(item, dict) else item
-                for item in value
+                dict(item) if isinstance(item, dict) else item for item in value
             ]
         elif isinstance(value, dict):
             copied[key] = dict(value)
@@ -1822,8 +1981,7 @@ def _state_working_copy(state: KnowledgeExtractionState) -> KnowledgeExtractionS
 
 def _additive_baselines(state: KnowledgeExtractionState) -> dict[str, int]:
     return {
-        key: len(cast(list[Any], state.get(key, [])))
-        for key in _ADDITIVE_STATE_KEYS
+        key: len(cast(list[Any], state.get(key, []))) for key in _ADDITIVE_STATE_KEYS
     }
 
 
@@ -2001,7 +2159,9 @@ def _node_output_summary(node_name: str, state: KnowledgeExtractionState) -> str
     if node_name == "EntityExpertNode":
         return f"生成 {len(state.get('entity_typed_candidates', []))} 个实体候选。"
     if node_name == "EventRuleExpertNode":
-        return f"生成 {len(state.get('event_rule_typed_candidates', []))} 个事件规则候选。"
+        return (
+            f"生成 {len(state.get('event_rule_typed_candidates', []))} 个事件规则候选。"
+        )
     if node_name == "MergeExpertCandidatesNode":
         return f"合并为 {len(state.get('typed_candidates', []))} 个候选草稿。"
     if node_name == "NormalizeAndValidateNode":
@@ -2026,10 +2186,7 @@ def _segment_title(state: KnowledgeExtractionState, index: int) -> str:
 
 def _new_run_id(now: str) -> str:
     compact = (
-        now.replace("-", "")
-        .replace(":", "")
-        .replace("+00:00", "")
-        .replace("Z", "")
+        now.replace("-", "").replace(":", "").replace("+00:00", "").replace("Z", "")
     )
     date_part = compact[:8]
     time_part = compact[9:15] if "T" in compact else compact[8:14]

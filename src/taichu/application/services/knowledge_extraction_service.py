@@ -29,10 +29,11 @@ from taichu.application.contracts.knowledge_repository import (
     AuthorMergeMode,
     StructuredKnowledgeRepository,
 )
+from taichu.application.contracts.agent_run_repository import AgentRunRepository
 from taichu.application.contracts.llm import LLMContract
 from taichu.application.services.chapter_service import ChapterService
 from taichu.application.services.agent_task_event_service import AgentTaskEventCenter
-from taichu.domain.models.agent_run import (
+from taichu.application.agents.models.agent_run import (
     AgentBatchChapterProgress,
     AgentLLMCall,
     AgentMetrics,
@@ -56,7 +57,6 @@ from taichu.domain.models.structured_knowledge import (
     StructuredKnowledgeType,
     type_specific_field_keys,
 )
-from taichu.infrastructure.agent_runs.json_store import JsonAgentRunStore
 
 _SAFE_ID = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 _AGENT_FORBIDDEN_FIELDS = FORBIDDEN_KNOWLEDGE_FIELD_KEYS | {
@@ -80,17 +80,36 @@ class KnowledgeExtractionService:
         chapter_service: ChapterService,
         llm: LLMContract,
         knowledge_repository: StructuredKnowledgeRepository,
-        run_store: JsonAgentRunStore,
-        default_model_name: str = "",
+        run_store: AgentRunRepository,
         task_events: AgentTaskEventCenter | None = None,
     ) -> None:
         self._chapter_service = chapter_service
         self._llm = llm
         self._knowledge_repository = knowledge_repository
         self._run_store = run_store
-        self._default_model_name = default_model_name
         self._task_events = task_events
         self._background_tasks: set[asyncio.Task[None]] = set()
+
+    def validate_model_selection(self, model_name: str | None) -> None:
+        """Reject request-only model switching before an Agent run is created."""
+        self._resolve_model_selection(model_name)
+
+    def _resolve_model_selection(
+        self,
+        model_name: str | None,
+    ) -> tuple[str, str | None]:
+        requested_model_name = (
+            model_name if model_name is not None and model_name.strip() else None
+        )
+        actual_model_id = self._llm.model_identity.model_id
+        if (
+            requested_model_name is not None
+            and requested_model_name.strip() != actual_model_id
+        ):
+            raise KnowledgeExtractionModelSelectionError(
+                "当前不支持切换到所选模型，请使用已配置模型"
+            )
+        return actual_model_id, requested_model_name
 
     async def create_run(
         self,
@@ -305,9 +324,14 @@ class KnowledgeExtractionService:
         force: bool,
         event_sink,
     ) -> AgentRun:
+        actual_model_id, requested_model_name = self._resolve_model_selection(
+            model_name
+        )
         initial_state = initial_knowledge_extraction_state(
             chapter_id=chapter_id,
-            model_name=model_name or self._default_model_name,
+            model_name=actual_model_id,
+            requested_model_name=requested_model_name,
+            generation_model_identity=self._llm.model_identity,
             force=force,
         )
         if event_sink is not None:
@@ -369,13 +393,14 @@ class KnowledgeExtractionService:
         force: bool,
         event_sink,
     ) -> AgentRun:
+        model, requested_model_name = self._resolve_model_selection(model_name)
         unique_chapter_ids = _unique_non_empty(chapter_ids)
         if not unique_chapter_ids:
             raise KnowledgeExtractionError("请至少选择一个章节。")
         started_at = _now_iso()
         run_id = _new_run_id(started_at)
-        model = model_name or self._default_model_name
         chapter_titles = await self._chapter_titles(unique_chapter_ids)
+        chapter_content_hashes: dict[str, str] = {}
         progress_items = [
             AgentBatchChapterProgress(
                 chapter_id=chapter_id,
@@ -403,6 +428,8 @@ class KnowledgeExtractionService:
             return AgentRun(
                 run_id=run_id,
                 model_name=model,
+                requested_model_name=requested_model_name,
+                generation_model_identity=self._llm.model_identity,
                 status=status,
                 scope=AgentRunScope(
                     scope_type="chapter_batch",
@@ -413,6 +440,7 @@ class KnowledgeExtractionService:
                         chapter_titles.get(chapter_id, "")
                         for chapter_id in unique_chapter_ids
                     ],
+                    chapter_content_hashes=dict(chapter_content_hashes),
                 ),
                 started_at=started_at,
                 finished_at=finished_at,
@@ -434,10 +462,14 @@ class KnowledgeExtractionService:
                 ),
                 total_chapter_count=len(unique_chapter_ids),
                 completed_chapter_count=sum(
-                    1 for item in progress_items if item.status is AgentRunNodeStatus.SUCCESS
+                    1
+                    for item in progress_items
+                    if item.status is AgentRunNodeStatus.SUCCESS
                 ),
                 failed_chapter_count=sum(
-                    1 for item in progress_items if item.status is AgentRunNodeStatus.FAILED
+                    1
+                    for item in progress_items
+                    if item.status is AgentRunNodeStatus.FAILED
                 ),
                 llm_calls=llm_calls,
                 raw_mentions=raw_mentions,
@@ -570,7 +602,9 @@ class KnowledgeExtractionService:
                         }
                     )
                     progress_items = _update_progress(progress_items, next_progress)
-                    source_event_type = str(event.get("event_type") or event.get("type") or "")
+                    source_event_type = str(
+                        event.get("event_type") or event.get("type") or ""
+                    )
                     branch_event_type = (
                         "chapter_branch_node_finished"
                         if source_event_type == "node_finished"
@@ -594,22 +628,28 @@ class KnowledgeExtractionService:
                     branch_state = await self._run_branch_candidate_graph(
                         chapter_id=chapter_id,
                         model_name=model,
+                        requested_model_name=requested_model_name,
                         force=force,
                         event_sink=branch_event_sink,
                     )
                     branch_states.append(branch_state)
+                    content_hash = str(branch_state.get("content_hash") or "")
+                    if content_hash:
+                        chapter_content_hashes[chapter_id] = content_hash
                     status = (
                         AgentRunNodeStatus.FAILED
                         if branch_state.get("failed")
                         else AgentRunNodeStatus.SUCCESS
                     )
-                    error = "; ".join(str(item) for item in branch_state.get("errors", []))
+                    error = "; ".join(
+                        str(item) for item in branch_state.get("errors", [])
+                    )
                     current_progress = _progress_for(progress_items, chapter_id)
-                    state_branch_nodes = _coerce_run_nodes(branch_state.get("nodes", []))
+                    state_branch_nodes = _coerce_run_nodes(
+                        branch_state.get("nodes", [])
+                    )
                     final_branch_nodes = (
-                        state_branch_nodes
-                        or branch_nodes
-                        or current_progress.nodes
+                        state_branch_nodes or branch_nodes or current_progress.nodes
                     )
                     progress_items = _update_progress(
                         progress_items,
@@ -619,13 +659,17 @@ class KnowledgeExtractionService:
                             status=status,
                             started_at=current_progress.started_at,
                             finished_at=_now_iso(),
-                            candidate_count=len(branch_state.get("typed_candidates", [])),
+                            candidate_count=len(
+                                branch_state.get("typed_candidates", [])
+                            ),
                             nodes=final_branch_nodes,
                             error=error or None,
                         ),
                     )
                 except Exception as caught:  # noqa: BLE001
-                    errors.append(f"{chapter_titles.get(chapter_id, chapter_id)}：{caught}")
+                    errors.append(
+                        f"{chapter_titles.get(chapter_id, chapter_id)}：{caught}"
+                    )
                     current_progress = _progress_for(progress_items, chapter_id)
                     progress_items = _update_progress(
                         progress_items,
@@ -656,7 +700,9 @@ class KnowledgeExtractionService:
                     }
                 )
 
-        await asyncio.gather(*(run_branch(chapter_id) for chapter_id in unique_chapter_ids))
+        await asyncio.gather(
+            *(run_branch(chapter_id) for chapter_id in unique_chapter_ids)
+        )
 
         for branch_state in branch_states:
             raw_mentions.extend(branch_state.get("raw_mentions", []))
@@ -748,7 +794,11 @@ class KnowledgeExtractionService:
             output_summary="已写入批量运行 JSON。",
         ).model_copy(update={"finished_at": finished_at})
         nodes = _upsert_node(nodes, write_node)
-        status = AgentRunStatus.FAILED if not review_items and errors else AgentRunStatus.COMPLETED
+        status = (
+            AgentRunStatus.FAILED
+            if not review_items and errors
+            else AgentRunStatus.COMPLETED
+        )
         run = snapshot(
             status=status,
             finished_at=finished_at,
@@ -757,9 +807,13 @@ class KnowledgeExtractionService:
         await self._run_store.write_run(run)
         await event_sink(
             {
-                "type": "task_failed" if status is AgentRunStatus.FAILED else "task_completed",
+                "type": "task_failed"
+                if status is AgentRunStatus.FAILED
+                else "task_completed",
                 "event_type": (
-                    "task_failed" if status is AgentRunStatus.FAILED else "task_completed"
+                    "task_failed"
+                    if status is AgentRunStatus.FAILED
+                    else "task_completed"
                 ),
                 "run_id": run_id,
                 "message": (
@@ -778,6 +832,7 @@ class KnowledgeExtractionService:
         *,
         chapter_id: str,
         model_name: str,
+        requested_model_name: str | None,
         force: bool,
         event_sink=None,
     ) -> dict[str, Any]:
@@ -792,6 +847,8 @@ class KnowledgeExtractionService:
         state = initial_knowledge_extraction_state(
             chapter_id=chapter_id,
             model_name=model_name,
+            requested_model_name=requested_model_name,
+            generation_model_identity=self._llm.model_identity,
             force=force,
         )
         return await graph.ainvoke(state)
@@ -802,7 +859,9 @@ class KnowledgeExtractionService:
     ) -> list[dict[str, Any]]:
         for candidate in candidates:
             try:
-                knowledge_type = StructuredKnowledgeType(str(candidate.get("type") or ""))
+                knowledge_type = StructuredKnowledgeType(
+                    str(candidate.get("type") or "")
+                )
             except ValueError:
                 continue
             matches = await self._knowledge_repository.search_active_identity(
@@ -1055,9 +1114,7 @@ class KnowledgeExtractionService:
             else await self._run_store.find_run_for_candidate(candidate_id)
         )
         if run is None:
-            raise KnowledgeExtractionNotFoundError(
-                f"候选记录“{candidate_id}”不存在。"
-            )
+            raise KnowledgeExtractionNotFoundError(f"候选记录“{candidate_id}”不存在。")
         for index, item in enumerate(run.review_items):
             if item.review_item_id == candidate_id:
                 return run, index, item
@@ -1083,6 +1140,12 @@ class KnowledgeExtractionService:
 
 class KnowledgeExtractionError(ValueError):
     """Raised when a knowledge extraction operation is invalid."""
+
+
+class KnowledgeExtractionModelSelectionError(KnowledgeExtractionError):
+    """Raised when a request asks for an unassembled model runtime."""
+
+    code = "AGENT_MODEL_SELECTION_UNSUPPORTED"
 
 
 class KnowledgeExtractionNotFoundError(KnowledgeExtractionError):
@@ -1487,7 +1550,9 @@ def _build_batch_review_items(
                 review_item_id=f"review_item_{index:03d}",
                 run_id=run_id,
                 candidate_action=action,
-                knowledge_type=StructuredKnowledgeType(str(candidate.get("type") or "")),
+                knowledge_type=StructuredKnowledgeType(
+                    str(candidate.get("type") or "")
+                ),
                 candidate_status=AgentReviewCandidateStatus.PENDING,
                 display_title=str(candidate.get("name") or "未命名候选"),
                 suggested_card=_strip_internal_candidate_fields(candidate),

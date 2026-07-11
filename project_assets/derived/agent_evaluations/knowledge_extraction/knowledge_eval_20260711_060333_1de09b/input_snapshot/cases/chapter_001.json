@@ -1,0 +1,1455 @@
+{
+  "checksum": "5ba1d20b06b9582c866b8cd4dd3817f6aeaed5d453cbe635051ffc1be934af7a",
+  "expected_cards": [
+    {
+      "accepted_names": [
+        "陈老头"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "grade": null,
+        "identity": "陈家药铺药师",
+        "importance": "normal",
+        "item_type": null,
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "leader_id": null,
+        "level_order": null,
+        "name": "陈老头",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": "教过秦浩轩辨识草药，是秦浩轩出售药材的主要对象。",
+        "role_type": "supporting",
+        "source_note": "第1章 大田金鳞元神出：秦浩轩专门向药铺陈老头学过辨识草药，并准备把黄精卖给陈家药铺。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "大田镇药铺老人，懂药材，曾教秦浩轩辨识草药；在第1章以秦浩轩准备卖药材的对象被提及。",
+        "system": null,
+        "technique_type": null,
+        "type": "character"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "character_chen_laotou",
+      "expected_claims": [
+        {
+          "claim_id": "claim_character_chen_laotou_summary",
+          "description": "大田镇药铺老人，懂药材，曾教秦浩轩辨识草药；在第1章以秦浩轩准备卖药材的对象被提及。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_character_chen_laotou_01",
+            "quote_character_chen_laotou_02",
+            "quote_character_chen_laotou_03",
+            "quote_character_chen_laotou_04"
+          ]
+        }
+      ],
+      "knowledge_type": "character",
+      "semantic_fields": [
+        "summary",
+        "source_note",
+        "identity",
+        "relationship_summary"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_character_chen_laotou_01",
+        "quote_character_chen_laotou_02",
+        "quote_character_chen_laotou_03",
+        "quote_character_chen_laotou_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "秦浩轩"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "grade": null,
+        "identity": "大田镇少年；猎户少年；采药者",
+        "importance": "core",
+        "item_type": null,
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "leader_id": null,
+        "level_order": null,
+        "name": "秦浩轩",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": "与张狂长期不合；与陈老头有药材交易关系；借五彩小蛇进入小屿山深处寻药。",
+        "role_type": "protagonist",
+        "source_note": "第1章 大田金鳞元神出：秦浩轩在大田镇出场，回忆中确认十二岁被奇异小蛇咬后可在人体与蛇身之间附体，并当众阻止张狂欺压少年。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "大田镇少年，身手出众，靠狩猎和采药补贴家用；掌握灵魂在本体与五彩小蛇之间穿梭附体的特殊能力，并因讲理而制止张狂欺压同龄少年。",
+        "system": null,
+        "technique_type": null,
+        "type": "character"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "character_qin_haoxuan",
+      "expected_claims": [
+        {
+          "claim_id": "claim_character_qin_haoxuan_summary",
+          "description": "大田镇少年，身手出众，靠狩猎和采药补贴家用；掌握灵魂在本体与五彩小蛇之间穿梭附体的特殊能力，并因讲理而制止张狂欺压同龄少年。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_character_qin_haoxuan_01",
+            "quote_character_qin_haoxuan_02",
+            "quote_character_qin_haoxuan_03",
+            "quote_character_qin_haoxuan_04"
+          ]
+        }
+      ],
+      "knowledge_type": "character",
+      "semantic_fields": [
+        "summary",
+        "source_note",
+        "identity",
+        "relationship_summary"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_character_qin_haoxuan_01",
+        "quote_character_qin_haoxuan_02",
+        "quote_character_qin_haoxuan_03",
+        "quote_character_qin_haoxuan_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "张狂"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "grade": null,
+        "identity": "大田镇少年头目；优秀猎手之子",
+        "importance": "major",
+        "item_type": null,
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "leader_id": null,
+        "level_order": null,
+        "name": "张狂",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": "与秦浩轩互相看不顺眼，曾被秦浩轩打断肋骨。",
+        "role_type": "antagonist",
+        "source_note": "第1章 大田金鳞元神出：张狂带小弟殴打未缴“保险费”的少年，被秦浩轩一句威胁逼退，随后暗想借神仙选徒出气。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "大田镇少年头目，锦衣少年，带小弟向同龄少年勒索所谓保险费；畏惧秦浩轩却心怀怨毒，盼着被山中神仙选中后报复。",
+        "system": null,
+        "technique_type": null,
+        "type": "character"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "character_zhang_kuang",
+      "expected_claims": [
+        {
+          "claim_id": "claim_character_zhang_kuang_summary",
+          "description": "大田镇少年头目，锦衣少年，带小弟向同龄少年勒索所谓保险费；畏惧秦浩轩却心怀怨毒，盼着被山中神仙选中后报复。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_character_zhang_kuang_01",
+            "quote_character_zhang_kuang_02",
+            "quote_character_zhang_kuang_03",
+            "quote_character_zhang_kuang_04"
+          ]
+        }
+      ],
+      "knowledge_type": "character",
+      "semantic_fields": [
+        "summary",
+        "source_note",
+        "identity",
+        "relationship_summary"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_character_zhang_kuang_01",
+        "quote_character_zhang_kuang_02",
+        "quote_character_zhang_kuang_03",
+        "quote_character_zhang_kuang_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "秦浩轩获得附身小蛇能力"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": "秦浩轩获得可附身五彩小蛇的特殊能力。",
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": null,
+        "grade": null,
+        "identity": null,
+        "importance": "core",
+        "item_type": null,
+        "last_seen_chapter_id": null,
+        "leader_id": null,
+        "level_order": null,
+        "name": "秦浩轩获得附身小蛇能力",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第1章 大田金鳞元神出：回忆段落交代秦浩轩被小蛇咬后获得附身能力，是前5章关键能力来源。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "秦浩轩十二岁在小屿山深处被奇异小蛇咬中，醒来后发现灵魂可在自己身体与小蛇之间来回穿梭。",
+        "system": null,
+        "technique_type": null,
+        "type": "event"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "event_qin_gains_snake_soul_ability",
+      "expected_claims": [
+        {
+          "claim_id": "claim_event_qin_gains_snake_soul_ability_summary",
+          "description": "秦浩轩十二岁在小屿山深处被奇异小蛇咬中，醒来后发现灵魂可在自己身体与小蛇之间来回穿梭。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_event_qin_gains_snake_soul_ability_01",
+            "quote_event_qin_gains_snake_soul_ability_02",
+            "quote_event_qin_gains_snake_soul_ability_03",
+            "quote_event_qin_gains_snake_soul_ability_04"
+          ]
+        }
+      ],
+      "knowledge_type": "event",
+      "semantic_fields": [
+        "summary",
+        "source_note",
+        "description"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_event_qin_gains_snake_soul_ability_01",
+        "quote_event_qin_gains_snake_soul_ability_02",
+        "quote_event_qin_gains_snake_soul_ability_03",
+        "quote_event_qin_gains_snake_soul_ability_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "秦浩轩制止张狂欺压少年"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": "秦浩轩在大田镇街头压制张狂。",
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": null,
+        "grade": null,
+        "identity": null,
+        "importance": "major",
+        "item_type": null,
+        "last_seen_chapter_id": null,
+        "leader_id": null,
+        "level_order": null,
+        "name": "秦浩轩制止张狂欺压少年",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第1章 大田金鳞元神出：该事件建立秦浩轩与张狂的公开冲突。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "张狂带小弟殴打未缴“保险费”的少年，秦浩轩出面威胁将其丢到小屿山喂狼，迫使张狂收手。",
+        "system": null,
+        "technique_type": null,
+        "type": "event"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "event_qin_stops_zhang_kuang_bullying",
+      "expected_claims": [
+        {
+          "claim_id": "claim_event_qin_stops_zhang_kuang_bullying_summary",
+          "description": "张狂带小弟殴打未缴“保险费”的少年，秦浩轩出面威胁将其丢到小屿山喂狼，迫使张狂收手。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_event_qin_stops_zhang_kuang_bullying_01",
+            "quote_event_qin_stops_zhang_kuang_bullying_02",
+            "quote_event_qin_stops_zhang_kuang_bullying_03",
+            "quote_event_qin_stops_zhang_kuang_bullying_04"
+          ]
+        }
+      ],
+      "knowledge_type": "event",
+      "semantic_fields": [
+        "summary",
+        "source_note",
+        "description"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_event_qin_stops_zhang_kuang_bullying_01",
+        "quote_event_qin_stops_zhang_kuang_bullying_02",
+        "quote_event_qin_stops_zhang_kuang_bullying_03",
+        "quote_event_qin_stops_zhang_kuang_bullying_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "陈家药铺",
+        "陈家药店"
+      ],
+      "card": {
+        "aliases": [
+          "陈家药店"
+        ],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": "guild",
+        "first_seen_chapter_id": null,
+        "grade": null,
+        "identity": null,
+        "importance": "normal",
+        "item_type": null,
+        "last_seen_chapter_id": null,
+        "leader_id": "character_chen_laotou",
+        "level_order": null,
+        "name": "陈家药铺",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第1章 大田金鳞元神出：第1章中陈家药铺被作为药材买卖渠道提及，陈老头多年想要黄精。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "大田镇药材买卖场所，由陈老头及其学徒经营，是秦浩轩出售药材、获取银钱的固定渠道。",
+        "system": null,
+        "technique_type": null,
+        "type": "faction"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "faction_chenjia_yaopu",
+      "expected_claims": [
+        {
+          "claim_id": "claim_faction_chenjia_yaopu_summary",
+          "description": "大田镇药材买卖场所，由陈老头及其学徒经营，是秦浩轩出售药材、获取银钱的固定渠道。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_faction_chenjia_yaopu_01",
+            "quote_faction_chenjia_yaopu_02",
+            "quote_faction_chenjia_yaopu_03",
+            "quote_faction_chenjia_yaopu_04"
+          ]
+        }
+      ],
+      "knowledge_type": "faction",
+      "semantic_fields": [
+        "summary",
+        "source_note"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_faction_chenjia_yaopu_01",
+        "quote_faction_chenjia_yaopu_02",
+        "quote_faction_chenjia_yaopu_03",
+        "quote_faction_chenjia_yaopu_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "黄精"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": "character_qin_haoxuan",
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "grade": null,
+        "identity": null,
+        "importance": "normal",
+        "item_type": "material",
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "leader_id": null,
+        "level_order": null,
+        "name": "黄精",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第1章 大田金鳞元神出：秦浩轩从小蛇嘴里取下小块黄色物体，正文明确称其为珍贵黄精。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "小指甲大小、外形似黄色石子、散发幽香的珍贵药材；由五彩小蛇带回，秦浩轩准备拿去出售。",
+        "system": null,
+        "technique_type": null,
+        "type": "item"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "item_huangjing",
+      "expected_claims": [
+        {
+          "claim_id": "claim_item_huangjing_summary",
+          "description": "小指甲大小、外形似黄色石子、散发幽香的珍贵药材；由五彩小蛇带回，秦浩轩准备拿去出售。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_item_huangjing_01",
+            "quote_item_huangjing_02",
+            "quote_item_huangjing_03",
+            "quote_item_huangjing_04"
+          ]
+        }
+      ],
+      "knowledge_type": "item",
+      "semantic_fields": [
+        "summary",
+        "source_note"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_item_huangjing_01",
+        "quote_item_huangjing_02",
+        "quote_item_huangjing_03",
+        "quote_item_huangjing_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "五彩小蛇",
+        "奇异小蛇",
+        "小蛇"
+      ],
+      "card": {
+        "aliases": [
+          "奇异小蛇",
+          "小蛇"
+        ],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": "character_qin_haoxuan",
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "grade": null,
+        "identity": null,
+        "importance": "core",
+        "item_type": "other",
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "leader_id": null,
+        "level_order": null,
+        "name": "五彩小蛇",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第1章 大田金鳞元神出：小蛇溜进秦浩轩房间，回忆中确认秦浩轩可反复在蛇身和本体之间附体。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "花色斑斓、蛇皮有密集凸起、头部方正的奇异小蛇；秦浩轩可让灵魂附在蛇身上，借其百毒不侵、感知灵药和寻路能力进入小屿山深处。",
+        "system": null,
+        "technique_type": null,
+        "type": "item"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "item_wucai_xiaoshe",
+      "expected_claims": [
+        {
+          "claim_id": "claim_item_wucai_xiaoshe_summary",
+          "description": "花色斑斓、蛇皮有密集凸起、头部方正的奇异小蛇；秦浩轩可让灵魂附在蛇身上，借其百毒不侵、感知灵药和寻路能力进入小屿山深处。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_item_wucai_xiaoshe_01",
+            "quote_item_wucai_xiaoshe_02",
+            "quote_item_wucai_xiaoshe_03",
+            "quote_item_wucai_xiaoshe_04"
+          ]
+        }
+      ],
+      "knowledge_type": "item",
+      "semantic_fields": [
+        "summary",
+        "source_note"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_item_wucai_xiaoshe_01",
+        "quote_item_wucai_xiaoshe_02",
+        "quote_item_wucai_xiaoshe_03",
+        "quote_item_wucai_xiaoshe_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "陈家药铺"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "grade": null,
+        "identity": null,
+        "importance": "normal",
+        "item_type": null,
+        "last_seen_chapter_id": null,
+        "leader_id": null,
+        "level_order": null,
+        "name": "陈家药铺",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第1章 大田金鳞元神出：秦浩轩带着黄精去往药铺，少年们提到陈家药铺有人高价收购名贵药材。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "大田镇药铺，秦浩轩常把采来的珍贵药材卖到此处。第1章中作为秦浩轩出售黄精的目的地被提及。",
+        "system": null,
+        "technique_type": null,
+        "type": "location"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "location_chenjia_yaopu",
+      "expected_claims": [
+        {
+          "claim_id": "claim_location_chenjia_yaopu_summary",
+          "description": "大田镇药铺，秦浩轩常把采来的珍贵药材卖到此处。第1章中作为秦浩轩出售黄精的目的地被提及。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_location_chenjia_yaopu_01",
+            "quote_location_chenjia_yaopu_02",
+            "quote_location_chenjia_yaopu_03",
+            "quote_location_chenjia_yaopu_04"
+          ]
+        }
+      ],
+      "knowledge_type": "location",
+      "semantic_fields": [
+        "summary",
+        "source_note"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_location_chenjia_yaopu_01",
+        "quote_location_chenjia_yaopu_02",
+        "quote_location_chenjia_yaopu_03",
+        "quote_location_chenjia_yaopu_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "大田镇"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "grade": null,
+        "identity": null,
+        "importance": "major",
+        "item_type": null,
+        "last_seen_chapter_id": null,
+        "leader_id": null,
+        "level_order": null,
+        "name": "大田镇",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第1章 大田金鳞元神出：正文介绍大田镇背靠小屿山，因田地稀少贫瘠而世代狩猎。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "背靠小屿山的贫瘠小镇，田地稀少，居民世代以狩猎为生；秦浩轩、张狂等少年在此成长。",
+        "system": null,
+        "technique_type": null,
+        "type": "location"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "location_da_tian_zhen",
+      "expected_claims": [
+        {
+          "claim_id": "claim_location_da_tian_zhen_summary",
+          "description": "背靠小屿山的贫瘠小镇，田地稀少，居民世代以狩猎为生；秦浩轩、张狂等少年在此成长。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_location_da_tian_zhen_01",
+            "quote_location_da_tian_zhen_02",
+            "quote_location_da_tian_zhen_03",
+            "quote_location_da_tian_zhen_04"
+          ]
+        }
+      ],
+      "knowledge_type": "location",
+      "semantic_fields": [
+        "summary",
+        "source_note"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_location_da_tian_zhen_01",
+        "quote_location_da_tian_zhen_02",
+        "quote_location_da_tian_zhen_03",
+        "quote_location_da_tian_zhen_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "小屿山"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "grade": null,
+        "identity": null,
+        "importance": "major",
+        "item_type": null,
+        "last_seen_chapter_id": null,
+        "leader_id": null,
+        "level_order": null,
+        "name": "小屿山",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第1章 大田金鳞元神出：小屿山是大田镇依靠的山，深处危险，人们传说其中有神仙和妖魔鬼怪。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "大田镇背后的山域，外围供猎户狩猎，深处被传有神仙、妖魔鬼怪、毒瘴与凶禽猛兽；秦浩轩依靠小蛇多次深入寻药。",
+        "system": null,
+        "technique_type": null,
+        "type": "location"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "location_xiao_yu_shan",
+      "expected_claims": [
+        {
+          "claim_id": "claim_location_xiao_yu_shan_summary",
+          "description": "大田镇背后的山域，外围供猎户狩猎，深处被传有神仙、妖魔鬼怪、毒瘴与凶禽猛兽；秦浩轩依靠小蛇多次深入寻药。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_location_xiao_yu_shan_01",
+            "quote_location_xiao_yu_shan_02",
+            "quote_location_xiao_yu_shan_03",
+            "quote_location_xiao_yu_shan_04"
+          ]
+        }
+      ],
+      "knowledge_type": "location",
+      "semantic_fields": [
+        "summary",
+        "source_note"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_location_xiao_yu_shan_01",
+        "quote_location_xiao_yu_shan_02",
+        "quote_location_xiao_yu_shan_03",
+        "quote_location_xiao_yu_shan_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "秦浩轩附身小蛇能力"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": "正文未说明该能力来源、范围上限或是否可附身其他生命。",
+        "faction_type": null,
+        "first_seen_chapter_id": null,
+        "grade": null,
+        "identity": null,
+        "importance": "core",
+        "item_type": null,
+        "last_seen_chapter_id": null,
+        "leader_id": null,
+        "level_order": null,
+        "name": "秦浩轩附身小蛇能力",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第1章 大田金鳞元神出：秦浩轩在小山谷被小蛇咬后发现自己可在人体和蛇身之间反复切换。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "秦浩轩的灵魂可以在人体本体与五彩小蛇之间穿梭附体；附身后本体会进入类似无心跳无呼吸的状态。",
+        "system": null,
+        "technique_type": null,
+        "type": "rule"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "rule_qin_haoxuan_soul_swap_snake",
+      "expected_claims": [
+        {
+          "claim_id": "claim_rule_qin_haoxuan_soul_swap_snake_summary",
+          "description": "秦浩轩的灵魂可以在人体本体与五彩小蛇之间穿梭附体；附身后本体会进入类似无心跳无呼吸的状态。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_rule_qin_haoxuan_soul_swap_snake_01",
+            "quote_rule_qin_haoxuan_soul_swap_snake_02",
+            "quote_rule_qin_haoxuan_soul_swap_snake_03",
+            "quote_rule_qin_haoxuan_soul_swap_snake_04"
+          ]
+        }
+      ],
+      "knowledge_type": "rule",
+      "semantic_fields": [
+        "summary",
+        "source_note",
+        "exceptions"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_rule_qin_haoxuan_soul_swap_snake_01",
+        "quote_rule_qin_haoxuan_soul_swap_snake_02",
+        "quote_rule_qin_haoxuan_soul_swap_snake_03",
+        "quote_rule_qin_haoxuan_soul_swap_snake_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "五彩小蛇百毒不侵与寻药能力"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": "只确认在小屿山毒瘴与普通猛兽环境中有效，尚未确认对更高层毒物或法术是否有效。",
+        "faction_type": null,
+        "first_seen_chapter_id": null,
+        "grade": null,
+        "identity": null,
+        "importance": "major",
+        "item_type": null,
+        "last_seen_chapter_id": null,
+        "leader_id": null,
+        "level_order": null,
+        "name": "五彩小蛇百毒不侵与寻药能力",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第1章 大田金鳞元神出：秦浩轩附身小蛇后发现毒瘴无法危害蛇身，并可借蛇身气味寻路、感知灵药。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "五彩小蛇能抵御小屿山毒瘴，对灵药异草格外敏感，蛇身游过处会留下特殊气味以便寻路。",
+        "system": null,
+        "technique_type": null,
+        "type": "rule"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "rule_wucai_snake_senses_treasure_poison",
+      "expected_claims": [
+        {
+          "claim_id": "claim_rule_wucai_snake_senses_treasure_poison_summary",
+          "description": "五彩小蛇能抵御小屿山毒瘴，对灵药异草格外敏感，蛇身游过处会留下特殊气味以便寻路。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_rule_wucai_snake_senses_treasure_poison_01",
+            "quote_rule_wucai_snake_senses_treasure_poison_02",
+            "quote_rule_wucai_snake_senses_treasure_poison_03",
+            "quote_rule_wucai_snake_senses_treasure_poison_04"
+          ]
+        }
+      ],
+      "knowledge_type": "rule",
+      "semantic_fields": [
+        "summary",
+        "source_note",
+        "exceptions"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_rule_wucai_snake_senses_treasure_poison_01",
+        "quote_rule_wucai_snake_senses_treasure_poison_02",
+        "quote_rule_wucai_snake_senses_treasure_poison_03",
+        "quote_rule_wucai_snake_senses_treasure_poison_04"
+      ]
+    }
+  ],
+  "negative_cases": [
+    {
+      "accepted_names": [
+        "几个少年",
+        "围观少年",
+        "猎户"
+      ],
+      "knowledge_type": "character",
+      "negative_case_id": "negative_chapter_001_01",
+      "reason": "泛称群体，无稳定专名。",
+      "source_quote_ids": [
+        "quote_negative_chapter_001_01"
+      ]
+    },
+    {
+      "accepted_names": [
+        "小山谷"
+      ],
+      "knowledge_type": "location",
+      "negative_case_id": "negative_chapter_001_02",
+      "reason": "普通环境地点，未给稳定专名；当前应作为事件证据而非地点卡。",
+      "source_quote_ids": [
+        "quote_negative_chapter_001_02"
+      ]
+    },
+    {
+      "accepted_names": [
+        "秦浩轩父母"
+      ],
+      "knowledge_type": "character",
+      "negative_case_id": "negative_chapter_001_03",
+      "reason": "仅以亲属身份出现，无姓名，暂不建角色卡。",
+      "source_quote_ids": [
+        "quote_negative_chapter_001_03"
+      ]
+    }
+  ],
+  "ref": {
+    "case_id": "chapter_001",
+    "chapter_ids": [
+      "chapter-f2a0007303a74f769e1609124c30da6b"
+    ],
+    "evaluation_rules_path": "single_chapter/chapter_001/evaluation_rules.json",
+    "expected_cards_path": "single_chapter/chapter_001/expected_cards.json",
+    "negative_cases_path": "single_chapter/chapter_001/negative_cases.json",
+    "scope_type": "chapter",
+    "source_chapter_hashes": {
+      "chapter-f2a0007303a74f769e1609124c30da6b": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952"
+    },
+    "source_evidence_path": "single_chapter/chapter_001/source_evidence.json"
+  },
+  "rules": {
+    "field_weights": {
+      "aliases": 1.0,
+      "importance": 1.0,
+      "source_origin": 1.0,
+      "status": 1.0,
+      "type": 2.0
+    },
+    "reference_fields": [
+      "owner_faction_id",
+      "controlling_faction_id",
+      "leader_id",
+      "current_holder_id"
+    ],
+    "reference_identity_map": {}
+  },
+  "source_evidence": [
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 1773,
+      "quote_id": "quote_character_chen_laotou_01",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 1695,
+      "text": "秦浩轩狩猎之余专门向药铺的陈老头学过辨识草药，一眼就认出这里生长了许多价值不菲的草药，若是能带回去一些卖给陈老头，可以换一个月的粮钱了，母亲也不用那么辛苦。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 2667,
+      "quote_id": "quote_character_chen_laotou_02",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 2579,
+      "text": "自此以后，秦浩轩常在晚上附身在小蛇上，进入小屿山深处寻找珍稀的药材，然后卖给药铺陈老头赚取远比打猎多得多的银钱，他家的日子也越过越好，他本人更是成为大田镇这群少年中的楷模典型。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 495,
+      "quote_id": "quote_character_chen_laotou_03",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 373,
+      "text": "在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 331,
+      "quote_id": "quote_character_chen_laotou_04",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 252,
+      "text": "在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 331,
+      "quote_id": "quote_character_qin_haoxuan_01",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 252,
+      "text": "在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 495,
+      "quote_id": "quote_character_qin_haoxuan_02",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 373,
+      "text": "在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用，不但被众多同龄人膜拜艳羡，即便是大人们也赞不绝口，自叹弗如。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 962,
+      "quote_id": "quote_character_qin_haoxuan_03",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 882,
+      "text": "他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官，如今父亲只是务点农活赚钱不多，母亲在镇上做一些浆浆洗洗赚些钱补贴家用。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 3231,
+      "quote_id": "quote_character_qin_haoxuan_04",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 3168,
+      "text": "在大田镇这群少年中秦浩轩实属异类，八岁就接过家庭重担上山狩猎的他很少跟这群同龄人瞎混，和他齐名的张狂自然而然成了少年中的老大。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 331,
+      "quote_id": "quote_character_zhang_kuang_01",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 252,
+      "text": "在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 2894,
+      "quote_id": "quote_character_zhang_kuang_02",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 2832,
+      "text": "几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 2940,
+      "quote_id": "quote_character_zhang_kuang_03",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 2898,
+      "text": "围观的少年很多，有气愤，有同情，也有义愤填膺的，却在那锦衣少年的面前没一个敢吭声的。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 3231,
+      "quote_id": "quote_character_zhang_kuang_04",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 3168,
+      "text": "在大田镇这群少年中秦浩轩实属异类，八岁就接过家庭重担上山狩猎的他很少跟这群同龄人瞎混，和他齐名的张狂自然而然成了少年中的老大。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 2667,
+      "quote_id": "quote_event_qin_gains_snake_soul_ability_01",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 2579,
+      "text": "自此以后，秦浩轩常在晚上附身在小蛇上，进入小屿山深处寻找珍稀的药材，然后卖给药铺陈老头赚取远比打猎多得多的银钱，他家的日子也越过越好，他本人更是成为大田镇这群少年中的楷模典型。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 1810,
+      "quote_id": "quote_event_qin_gains_snake_soul_ability_02",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 1777,
+      "text": "想干就干，秦浩轩顾不得这是在危机四伏的小屿山深处，大肆采起草药来。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 2246,
+      "quote_id": "quote_event_qin_gains_snake_soul_ability_03",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 2166,
+      "text": "忽然，一阵强大的吸力从自己“尸体”上传来，秦浩轩但觉一阵头晕目眩，灵魂被吸走，片刻后再次睁开眼睛，自己竟然回到人体，而之前灵魂附身的奇异小蛇则卧在地上一动不动。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 1130,
+      "quote_id": "quote_event_qin_gains_snake_soul_ability_04",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 1070,
+      "text": "虽然常遇到危险，但秦浩轩屡屡化险为夷，唯一受过的伤害就是十二岁时被一条奇怪的小蛇咬了一口，就这一口，他的人生彻底改变了。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 3164,
+      "quote_id": "quote_event_qin_stops_zhang_kuang_bullying_01",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 3107,
+      "text": "“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 248,
+      "quote_id": "quote_event_qin_stops_zhang_kuang_bullying_02",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 191,
+      "text": "这些练功呼喝声中大多稚气未脱，正是晨练的少年们发出的，他们咬牙切齿，心头存着赶超秦浩轩和张狂的目标，正在刻苦勤练。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 2993,
+      "quote_id": "quote_event_qin_stops_zhang_kuang_bullying_03",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 2944,
+      "text": "“都给老子看好了，这就是不按时缴纳保险费的下场！”张狂身边的小弟踩着地上一名少年的脸，得意的宣称。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 331,
+      "quote_id": "quote_event_qin_stops_zhang_kuang_bullying_04",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 252,
+      "text": "在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 3952,
+      "quote_id": "quote_faction_chenjia_yaopu_01",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 3877,
+      "text": "有眼力尖的一眼就看到秦浩轩紧握的拳头里似乎有什么东西，还散发出淡淡清幽的药香，道：“唔……好香啊！秦哥，今天又得了什么好东西？这是赶去陈家药铺卖么？”"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 4207,
+      "quote_id": "quote_faction_chenjia_yaopu_02",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 4181,
+      "text": "在一片欢呼声中，秦浩轩被众多少年簇拥着走向陈家药铺。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 2667,
+      "quote_id": "quote_faction_chenjia_yaopu_03",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 2579,
+      "text": "自此以后，秦浩轩常在晚上附身在小蛇上，进入小屿山深处寻找珍稀的药材，然后卖给药铺陈老头赚取远比打猎多得多的银钱，他家的日子也越过越好，他本人更是成为大田镇这群少年中的楷模典型。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 4086,
+      "quote_id": "quote_faction_chenjia_yaopu_04",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 4018,
+      "text": "“秦哥，据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！”"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 737,
+      "quote_id": "quote_item_huangjing_01",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 638,
+      "text": "“唔……”秦浩轩揉了揉眼，一屁股坐起来，看到床头花色斑斓，一动不动的小蛇非但不吃惊，反而顺手将小蛇嘴里叼着的一个黄色物体取下来，这黄色物体约摸小指甲大，散发出幽幽清香，随即将一动不动的小蛇揣入怀中。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 835,
+      "quote_id": "quote_item_huangjing_02",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 741,
+      "text": "这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常，也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 4086,
+      "quote_id": "quote_item_huangjing_03",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 4018,
+      "text": "“秦哥，据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！”"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 1857,
+      "quote_id": "quote_item_huangjing_04",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 1814,
+      "text": "秦浩轩采摘得正欢时，忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 2246,
+      "quote_id": "quote_item_wucai_xiaoshe_01",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 2166,
+      "text": "忽然，一阵强大的吸力从自己“尸体”上传来，秦浩轩但觉一阵头晕目眩，灵魂被吸走，片刻后再次睁开眼睛，自己竟然回到人体，而之前灵魂附身的奇异小蛇则卧在地上一动不动。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 553,
+      "quote_id": "quote_item_wucai_xiaoshe_02",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 499,
+      "text": "没人注意到一条花色斑斓的小蛇悄悄溜进秦浩轩的房间，极为熟练的游上他的床头，然后趴在秦浩轩的枕头前一动不动了。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 737,
+      "quote_id": "quote_item_wucai_xiaoshe_03",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 638,
+      "text": "“唔……”秦浩轩揉了揉眼，一屁股坐起来，看到床头花色斑斓，一动不动的小蛇非但不吃惊，反而顺手将小蛇嘴里叼着的一个黄色物体取下来，这黄色物体约摸小指甲大，散发出幽幽清香，随即将一动不动的小蛇揣入怀中。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 2430,
+      "quote_id": "quote_item_wucai_xiaoshe_04",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 2394,
+      "text": "秦浩轩念头一动，将灵魂附在小蛇上，果然山谷中升起的瘴气完全无法危害到他。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 4086,
+      "quote_id": "quote_location_chenjia_yaopu_01",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 4018,
+      "text": "“秦哥，据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！”"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 2667,
+      "quote_id": "quote_location_chenjia_yaopu_02",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 2579,
+      "text": "自此以后，秦浩轩常在晚上附身在小蛇上，进入小屿山深处寻找珍稀的药材，然后卖给药铺陈老头赚取远比打猎多得多的银钱，他家的日子也越过越好，他本人更是成为大田镇这群少年中的楷模典型。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 3952,
+      "quote_id": "quote_location_chenjia_yaopu_03",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 3877,
+      "text": "有眼力尖的一眼就看到秦浩轩紧握的拳头里似乎有什么东西，还散发出淡淡清幽的药香，道：“唔……好香啊！秦哥，今天又得了什么好东西？这是赶去陈家药铺卖么？”"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 4207,
+      "quote_id": "quote_location_chenjia_yaopu_04",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 4181,
+      "text": "在一片欢呼声中，秦浩轩被众多少年簇拥着走向陈家药铺。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 143,
+      "quote_id": "quote_location_da_tian_zhen_01",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 92,
+      "text": "依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 1315,
+      "quote_id": "quote_location_da_tian_zhen_02",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 1269,
+      "text": "那獐子极为狡猾，在树丛中钻来钻去，秦浩轩连射几箭都扑空了，而且它还将秦浩轩引向小屿山的深处。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 331,
+      "quote_id": "quote_location_da_tian_zhen_03",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 252,
+      "text": "在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 2667,
+      "quote_id": "quote_location_da_tian_zhen_04",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 2579,
+      "text": "自此以后，秦浩轩常在晚上附身在小蛇上，进入小屿山深处寻找珍稀的药材，然后卖给药铺陈老头赚取远比打猎多得多的银钱，他家的日子也越过越好，他本人更是成为大田镇这群少年中的楷模典型。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 1498,
+      "quote_id": "quote_location_xiao_yu_shan_01",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 1415,
+      "text": "对深山中有妖魔鬼怪的传说秦浩轩将信将疑，但深山中必定是瘴气横行，有无数凶禽猛兽，所以他一直不敢深入小屿山狩猎，但眼下再不带猎物回家，就只能让父亲母亲和自己一起挨饿了。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 1411,
+      "quote_id": "quote_location_xiao_yu_shan_02",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 1383,
+      "text": "传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 1379,
+      "quote_id": "quote_location_xiao_yu_shan_03",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 1319,
+      "text": "大田镇世代狩猎，但都在外围转悠，哪怕猎物越来越稀少的今天也没人敢深入小屿山，也曾有胆大的猎户深入小屿山，却再也不见出来。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 331,
+      "quote_id": "quote_location_xiao_yu_shan_04",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 252,
+      "text": "在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟，练得一身高来高去的本事，再不济也要成为一名优秀的猎户。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 2894,
+      "quote_id": "quote_negative_chapter_001_01",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 2832,
+      "text": "几个少年正在狠狠踢着地上打滚的两个少年，一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 1691,
+      "quote_id": "quote_negative_chapter_001_02",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 1653,
+      "text": "与外面的参天古木相比，这是一个只有红花绿草的小山谷，环境清幽美丽，鸟语花香。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 3371,
+      "quote_id": "quote_negative_chapter_001_03",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 3288,
+      "text": "然而就这么一个狠角色，可以在大田镇这群孩子们中称王称霸，惟独对秦浩轩畏惧不已，去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 2327,
+      "quote_id": "quote_rule_qin_haoxuan_soul_swap_snake_01",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 2277,
+      "text": "如是几个轮回，秦浩轩终于确定自己的灵魂能在小蛇的躯体和自己本体来回穿梭附体，当下如获至宝，喜笑颜开。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 553,
+      "quote_id": "quote_rule_qin_haoxuan_soul_swap_snake_02",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 499,
+      "text": "没人注意到一条花色斑斓的小蛇悄悄溜进秦浩轩的房间，极为熟练的游上他的床头，然后趴在秦浩轩的枕头前一动不动了。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 878,
+      "quote_id": "quote_rule_qin_haoxuan_soul_swap_snake_03",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 839,
+      "text": "秦浩轩的手伸进怀里，摸了摸怀里冰冷的小蛇，思绪飘散，不由回忆起几年前的一幕幕。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 1857,
+      "quote_id": "quote_rule_qin_haoxuan_soul_swap_snake_04",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 1814,
+      "text": "秦浩轩采摘得正欢时，忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 2575,
+      "quote_id": "quote_rule_wucai_snake_senses_treasure_poison_01",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 2512,
+      "text": "在寻找回家的路时，秦浩轩还发现了蛇身的多种妙处，比如百毒不侵，比如对一些灵药异草格外敏感，一些豹子饿狼一看到小蛇吓得掉头就跑。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 2390,
+      "quote_id": "quote_rule_wucai_snake_senses_treasure_poison_02",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 2331,
+      "text": "这一折腾已经是夜幕降临，小屿山中的毒瘴开始蔓延，人体若吸入毒瘴必死无疑，这小蛇以前长居于小屿山，毒瘴想必无法威胁到它。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 2667,
+      "quote_id": "quote_rule_wucai_snake_senses_treasure_poison_03",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 2579,
+      "text": "自此以后，秦浩轩常在晚上附身在小蛇上，进入小屿山深处寻找珍稀的药材，然后卖给药铺陈老头赚取远比打猎多得多的银钱，他家的日子也越过越好，他本人更是成为大田镇这群少年中的楷模典型。"
+    },
+    {
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "end_offset": 143,
+      "quote_id": "quote_rule_wucai_snake_senses_treasure_poison_04",
+      "source_hash": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+      "start_offset": 92,
+      "text": "依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。"
+    }
+  ]
+}

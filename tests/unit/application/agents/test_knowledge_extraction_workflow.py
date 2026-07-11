@@ -9,10 +9,11 @@ from pathlib import Path
 
 from taichu.application.services.import_service import ImportService
 from taichu.application.services.chapter_service import ChapterService
+from taichu.application.contracts.llm import LLMModelIdentity
 from taichu.application.services.knowledge_extraction_service import (
     KnowledgeExtractionService,
 )
-from taichu.domain.models.agent_run import AgentRunStatus
+from taichu.application.agents.models.agent_run import AgentRunStatus
 from taichu.infrastructure.agent_runs import JsonAgentRunStore
 from taichu.infrastructure.knowledge import JSONKnowledgeRepository
 from taichu.infrastructure.storage.markdown_backend import ProjectAssetStorageBackend
@@ -44,7 +45,6 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             llm=_PromptAwareLLM(),
             knowledge_repository=self.repository,
             run_store=self.run_store,
-            default_model_name="test-model",
         )
 
         run = await service.create_run(chapter_id="chapter_001")
@@ -54,6 +54,12 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(loaded)
         self.assertEqual(run.metrics.llm_call_count, 4)
         self.assertEqual(run.model_name, "test-model")
+        self.assertIsNone(run.requested_model_name)
+        self.assertEqual(run.generation_model_identity, _TEST_MODEL_IDENTITY)
+        self.assertEqual(
+            run.scope.chapter_content_hashes,
+            {"chapter_001": run.scope.content_hash},
+        )
         self.assertTrue(all(call.model_name == "test-model" for call in run.llm_calls))
         self.assertGreaterEqual(run.metrics.candidate_total, 8)
         self.assertGreaterEqual(len(run.raw_mentions), 8)
@@ -151,7 +157,22 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(run.raw_candidates, [])
 
 
-class _SequenceLLM:
+_TEST_MODEL_IDENTITY = LLMModelIdentity(
+    provider="test",
+    model_id="test-model",
+    family="test-model",
+    endpoint_kind="test",
+    known=True,
+)
+
+
+class _TestLLM:
+    @property
+    def model_identity(self) -> LLMModelIdentity:
+        return _TEST_MODEL_IDENTITY
+
+
+class _SequenceLLM(_TestLLM):
     def __init__(self, responses: list[str]) -> None:
         self._responses = responses
 
@@ -161,7 +182,7 @@ class _SequenceLLM:
         return self._responses.pop(0)
 
 
-class _PromptAwareLLM:
+class _PromptAwareLLM(_TestLLM):
     async def complete(self, prompt: str) -> str:
         if "事件与规则 entity_groups" in prompt:
             return _event_rule_response()
@@ -172,7 +193,7 @@ class _PromptAwareLLM:
         return _general_response()
 
 
-class _PromptAwareRepairLLM:
+class _PromptAwareRepairLLM(_TestLLM):
     async def complete(self, prompt: str) -> str:
         if "只把下面的模型输出修复为合法 JSON" in prompt:
             return _event_rule_response()

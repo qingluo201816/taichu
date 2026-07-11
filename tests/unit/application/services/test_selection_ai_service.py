@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from taichu.application.contracts.llm import LLMModelIdentity
 from taichu.application.services.ai_card_service import (
     AI_CARDS_FILE,
     IDEAS_FILE,
@@ -36,6 +37,10 @@ class FakeLLM:
     def __init__(self, responses: list[str]) -> None:
         self.responses = responses
         self.prompts: list[str] = []
+
+    @property
+    def model_identity(self) -> LLMModelIdentity:
+        return LLMModelIdentity.unknown("测试替身模型。")
 
     async def complete(self, prompt: str) -> str:
         self.prompts.append(prompt)
@@ -132,9 +137,7 @@ class SelectionAIServiceTest(unittest.IsolatedAsyncioTestCase):
         )
         service = SelectionAIService(llm, self.ai_card_service)
 
-        card = await service.run_selection(
-            _request(SelectionMode.ENRICH_SETTING)
-        )
+        card = await service.run_selection(_request(SelectionMode.ENRICH_SETTING))
         pending_records = await self.storage.list_workspace_records(
             "pending_facts.jsonl"
         )
@@ -212,9 +215,7 @@ class SelectionAIServiceTest(unittest.IsolatedAsyncioTestCase):
             ]
         )
         service = SelectionAIService(llm, self.ai_card_service)
-        card = await service.run_selection(
-            _request(SelectionMode.CONTINUE_TEXT)
-        )
+        card = await service.run_selection(_request(SelectionMode.CONTINUE_TEXT))
 
         inserted = await self.ai_card_service.mark_inserted(card.id)
 

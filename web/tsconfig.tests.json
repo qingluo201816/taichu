@@ -9,5 +9,10 @@
     "rootDir": ".",
     "target": "ES2022"
   },
-  "include": ["src/lib/editor/save-coordinator.ts", "tests/**/*.ts"]
+  "include": [
+    "src/lib/editor/save-coordinator.ts",
+    "src/lib/agent-evaluation/evaluation-view-model.ts",
+    "src/lib/types/agent-evaluation.ts",
+    "tests/**/*.ts"
+  ]
 }

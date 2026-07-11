@@ -1,0 +1,967 @@
+{
+  "lifecycle": "draft",
+  "status": "awaiting_human_review",
+  "note": "这是待人工复核的种子清单，不代表任何样本已经获得人工确认。",
+  "cases": [
+    {
+      "calibration_case_id": "character_correct_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "character_omission_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "character_hallucination_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "character_contradiction_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "character_future_leakage_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "character_wrong_merge_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "realm_correct_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "realm_omission_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "realm_hallucination_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "realm_contradiction_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "realm_future_leakage_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "realm_wrong_merge_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "technique_correct_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "technique_omission_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "technique_hallucination_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "technique_contradiction_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "technique_future_leakage_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "technique_wrong_merge_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "location_correct_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "location_omission_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "location_hallucination_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "location_contradiction_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "location_future_leakage_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "location_wrong_merge_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "faction_correct_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "faction_omission_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "faction_hallucination_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "faction_contradiction_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "faction_future_leakage_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "faction_wrong_merge_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "item_correct_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "item_omission_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "item_hallucination_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "item_contradiction_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "item_future_leakage_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "item_wrong_merge_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "rule_correct_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "rule_omission_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "rule_hallucination_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "rule_contradiction_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "rule_future_leakage_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "rule_wrong_merge_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "event_correct_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "event_omission_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "event_hallucination_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "event_contradiction_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "event_future_leakage_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    },
+    {
+      "calibration_case_id": "event_wrong_merge_001",
+      "independent_reviews": [
+        {
+          "slot_id": "annotator_a",
+          "reviewer_id": null,
+          "status": "pending"
+        },
+        {
+          "slot_id": "annotator_b",
+          "reviewer_id": null,
+          "status": "pending"
+        }
+      ],
+      "adjudication": {
+        "reviewer_id": null,
+        "status": "pending",
+        "note": null
+      }
+    }
+  ]
+}

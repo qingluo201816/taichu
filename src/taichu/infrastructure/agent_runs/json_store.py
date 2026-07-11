@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from taichu.domain.models.agent_run import AgentRun, AgentRunStatus
+from taichu.application.agents.models.agent_run import AgentRun, AgentRunStatus
 
 _RUN_ID_PATTERN = re.compile(r"^extract_run_\d{8}_\d{6}_[a-z0-9]{6}$")
 

@@ -1,6 +1,6 @@
 # 太初仓库地图
 
-> 更新日期：2026-07-10
+> 更新日期：2026-07-11
 
 太初是面向个人作者的单本玄幻长篇 AI 写作工作台。本文件只回答两件事：仓库每个区域负责什么，以及想找某类资料应该去哪里。
 
@@ -15,6 +15,8 @@
 | 查看 Skill 编写规则 | `.agents/skills/rule.md` |
 | 查看某个 Skill | `.agents/skills/{名称}/SKILL.md` |
 | 查看后端和系统架构设想 | `docs/临时架构/太初系统架构图.md` |
+| 查看知识沉淀智能体效果评估设计 | `docs/临时架构/知识沉淀智能体效果评估方案.md` |
+| 查看知识沉淀智能体效果评估的使用报告 | `docs/历史/知识沉淀智能体效果评估使用报告.md` |
 | 核对真实后端代码分层 | `src/taichu/api/`、`src/taichu/application/`、`src/taichu/domain/`、`src/taichu/infrastructure/` |
 | 查看本地数据态目录结构 | `project_assets/readme.md` |
 | 查看当前结构化字段和状态 | `src/taichu/domain/models/` |

@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     port: int = 8000
 
     project_assets_dir: Path = Path("project_assets")
+    evaluation_datasets_dir: Path = Path("tests/fixtures/evaluations")
+    evaluation_judge_model: str = ""
 
     mongodb_home: Path | None = None
     mongodb_data_dir: Path | None = None

@@ -20,11 +20,15 @@ def discover_agents(package_name: str) -> list[AgentPlugin]:
         ) from error
 
     plugins: list[AgentPlugin] = []
+    ignored_packages = {"models"}
     for module_info in sorted(
         iter_modules(package.__path__, f"{package_name}."),
         key=lambda item: item.name,
     ):
         if not module_info.ispkg:
+            continue
+        short_name = module_info.name.rsplit(".", maxsplit=1)[-1]
+        if short_name in ignored_packages:
             continue
 
         graph_module_name = f"{module_info.name}.graph"

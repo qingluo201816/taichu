@@ -4,8 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from taichu.application.agents.models.agent_run import AgentReviewItem, AgentRun
 from taichu.application.contracts.knowledge_repository import AuthorMergeMode
-from taichu.domain.models.agent_run import AgentReviewItem, AgentRun
 
 
 class CreateKnowledgeExtractionRunRequest(BaseModel):

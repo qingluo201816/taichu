@@ -21,6 +21,7 @@ from taichu.api.schemas.agent_workbench import (
 )
 from taichu.application.services.knowledge_extraction_service import (
     KnowledgeExtractionError,
+    KnowledgeExtractionModelSelectionError,
     KnowledgeExtractionNotFoundError,
     KnowledgeExtractionService,
 )
@@ -47,6 +48,8 @@ async def api_create_knowledge_extraction_run(
             model_name=request.model_name,
             force=request.force,
         )
+    except KnowledgeExtractionModelSelectionError as error:
+        raise _unsupported_model(str(error)) from error
     except KnowledgeExtractionError as error:
         raise _bad_request(str(error)) from error
     return KnowledgeExtractionRunCreateResponse(run=_run_summary(run))
@@ -60,6 +63,10 @@ async def api_stream_knowledge_extraction_run(
     ),
 ) -> StreamingResponse:
     """Create one current-chapter knowledge extraction run and stream node events."""
+    try:
+        service.validate_model_selection(request.model_name)
+    except KnowledgeExtractionModelSelectionError as error:
+        raise _unsupported_model(str(error)) from error
 
     async def event_lines():
         async for event in service.stream_run(
@@ -89,6 +96,8 @@ async def api_start_knowledge_extraction_run(
             model_name=request.model_name,
             force=request.force,
         )
+    except KnowledgeExtractionModelSelectionError as error:
+        raise _unsupported_model(str(error)) from error
     except KnowledgeExtractionError as error:
         raise _bad_request(str(error)) from error
     return KnowledgeExtractionRunCreateResponse(run=_run_summary(run))
@@ -102,6 +111,10 @@ async def api_stream_batch_knowledge_extraction_run(
     ),
 ) -> StreamingResponse:
     """Create one batch knowledge extraction run and stream task events."""
+    try:
+        service.validate_model_selection(request.model_name)
+    except KnowledgeExtractionModelSelectionError as error:
+        raise _unsupported_model(str(error)) from error
 
     async def event_lines():
         async for event in service.stream_batch_run(
@@ -131,6 +144,8 @@ async def api_start_batch_knowledge_extraction_run(
             model_name=request.model_name,
             force=request.force,
         )
+    except KnowledgeExtractionModelSelectionError as error:
+        raise _unsupported_model(str(error)) from error
     except KnowledgeExtractionError as error:
         raise _bad_request(str(error)) from error
     return KnowledgeExtractionRunCreateResponse(run=_run_summary(run))
@@ -408,6 +423,18 @@ def _bad_request(message: str) -> HTTPException:
     return HTTPException(
         status_code=422,
         detail={"error": {"code": "VALIDATION_ERROR", "message": message}},
+    )
+
+
+def _unsupported_model(message: str) -> HTTPException:
+    return HTTPException(
+        status_code=422,
+        detail={
+            "error": {
+                "code": "AGENT_MODEL_SELECTION_UNSUPPORTED",
+                "message": message,
+            }
+        },
     )
 
 

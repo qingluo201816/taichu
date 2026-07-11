@@ -6,7 +6,7 @@ import asyncio
 from collections.abc import AsyncIterator
 from typing import Any
 
-from taichu.domain.models.agent_run import (
+from taichu.application.agents.models.agent_run import (
     AgentBatchChapterProgress,
     AgentLLMCall,
     AgentRun,

@@ -1,0 +1,37 @@
+[
+  {
+    "negative_case_id": "negative_chapter_003_01",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "第一个少年",
+      "几名少年",
+      "猎户"
+    ],
+    "reason": "无姓名的测试对象或群体，不建卡。",
+    "source_quote_ids": [
+      "quote_negative_chapter_003_01"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_003_02",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "镇长"
+    ],
+    "reason": "仍只有职务称呼；作为选苗仪式证据，不建角色卡。",
+    "source_quote_ids": [
+      "quote_negative_chapter_003_02"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_003_03",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "五匹好马"
+    ],
+    "reason": "普通交通工具，核心设定价值不足。",
+    "source_quote_ids": [
+      "quote_negative_chapter_003_03"
+    ]
+  }
+]

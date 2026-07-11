@@ -1,6 +1,6 @@
 # project_assets 目录说明
 
-> 更新日期：2026-07-10
+> 更新日期：2026-07-11
 
 `project_assets/` 是太初单本小说的本地资产根目录，用于保存正文 Markdown、工作区资产、AI 运行产物、过渡 JSON、索引缓存和临时生成文件。结构化事实的目标事实源是 MongoDB，不是 `project_assets/` 下的 JSON 文件。
 
@@ -66,8 +66,10 @@ project_assets/
 │   │   └── technique/                           # 功法知识卡
 │   └── workspace/                               # 工作区状态、收件箱、待处理事实和写作 AI 运行记录
 ├── derived/                                     # 派生数据和 Agent 运行记录
-│   └── agent_runs/                              # Agent 运行快照根目录
-│       └── knowledge_extraction/                # 正文知识沉淀 Agent 的运行记录和候选审核项
+│   ├── agent_runs/                              # Agent 运行快照根目录
+│   │   └── knowledge_extraction/                # 正文知识沉淀 Agent 的运行记录和候选审核项
+│   └── agent_evaluations/                       # Agent 效果评估输入快照、结果与审计记录
+│       └── knowledge_extraction/                # 知识沉淀评估报告及裁判校准报告
 └── generated/                                   # 可重建生成物、缓存、索引和临时文件
     ├── embedding_cache/                         # 嵌入向量计算缓存
     ├── exports/                                 # 导出文件输出目录
@@ -110,6 +112,8 @@ project_assets/
 ### derived
 
 `derived/` 是派生数据层。这里保存 Agent 运行快照、LLM 调用记录、JSON 中间态和候选审核项，用于审计与回放。
+
+知识沉淀效果评估保存在 `derived/agent_evaluations/knowledge_extraction/`。每次评估独立冻结评测集、实际候选、正文、评分参数和模型身份，并保存确定性结果与裁判调用审计；裁判校准报告位于其 `calibration_reports/` 子目录。评估报告和校准报告都是非事实派生数据，通过 `lifecycle` 区分草稿、已确认和已废弃状态，不得反向成为正文或结构化知识事实源。
 
 正文知识沉淀 Agent 的候选卡不单独落到 `source/knowledge/`，而是保存在运行 JSON 的 `review_items[*].suggested_card` 中。只有用户确认并通过 JSON 中间态校验后，才允许由应用层服务写入 MongoDB 成为结构事实。
 

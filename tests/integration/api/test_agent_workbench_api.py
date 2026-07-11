@@ -16,8 +16,9 @@ from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 
 from taichu.application.services.import_service import ImportService
+from taichu.application.contracts.llm import LLMModelIdentity
 from taichu.config import Settings
-from taichu.domain.models.agent_run import (
+from taichu.application.agents.models.agent_run import (
     AgentBatchChapterProgress,
     AgentReviewCandidateAction,
     AgentReviewCandidateStatus,
@@ -31,6 +32,7 @@ from taichu.domain.models.agent_run import (
 )
 from taichu.domain.models.structured_knowledge import (
     StructuredKnowledgeCard,
+    StructuredKnowledgeImportance,
     StructuredKnowledgeSourceOrigin,
     StructuredKnowledgeStatus,
     StructuredKnowledgeType,
@@ -53,6 +55,13 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         self.app = create_app(
             app_settings=Settings(project_assets_dir=self.assets_root),
             llm=_SequenceChatModel(responses=_success_responses()),
+            llm_model_identity=LLMModelIdentity(
+                provider="test",
+                model_id="test-model",
+                family="test-model",
+                endpoint_kind="test",
+                known=True,
+            ),
         )
         self.client = AsyncClient(
             transport=ASGITransport(app=self.app),
@@ -97,20 +106,78 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(knowledge_response.status_code, 200)
         self.assertEqual(knowledge_response.json()["cards"][0]["name"], "秦阳")
 
+    async def test_requested_model_mismatch_returns_specific_422_without_run(
+        self,
+    ) -> None:
+        cases = [
+            (
+                "/api/agent-workbench/knowledge-extraction/runs",
+                {"chapter_id": "chapter_001", "model_name": "other-model"},
+            ),
+            (
+                "/api/agent-workbench/knowledge-extraction/runs/stream",
+                {"chapter_id": "chapter_001", "model_name": "other-model"},
+            ),
+            (
+                "/api/agent-workbench/knowledge-extraction/runs/start",
+                {"chapter_id": "chapter_001", "model_name": "other-model"},
+            ),
+            (
+                "/api/agent-workbench/knowledge-extraction/batch-runs/stream",
+                {"chapter_ids": ["chapter_001"], "model_name": "other-model"},
+            ),
+            (
+                "/api/agent-workbench/knowledge-extraction/batch-runs/start",
+                {"chapter_ids": ["chapter_001"], "model_name": "other-model"},
+            ),
+        ]
+
+        for path, payload in cases:
+            with self.subTest(path=path):
+                response = await self.client.post(path, json=payload)
+                self.assertEqual(response.status_code, 422)
+                self.assertEqual(
+                    response.json(),
+                    {
+                        "error": {
+                            "code": "AGENT_MODEL_SELECTION_UNSUPPORTED",
+                            "message": ("当前不支持切换到所选模型，请使用已配置模型"),
+                        }
+                    },
+                )
+
+        runs_response = await self.client.get(
+            "/api/agent-workbench/knowledge-extraction/runs"
+        )
+        self.assertEqual(runs_response.json()["total"], 0)
+
+    async def test_matching_requested_model_records_runtime_identity(self) -> None:
+        response = await self.client.post(
+            "/api/agent-workbench/knowledge-extraction/runs",
+            json={"chapter_id": "chapter_001", "model_name": " test-model "},
+        )
+        run_id = response.json()["run"]["run_id"]
+        detail_response = await self.client.get(
+            f"/api/agent-workbench/knowledge-extraction/runs/{run_id}"
+        )
+        run = detail_response.json()["run"]
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(run["model_name"], "test-model")
+        self.assertEqual(run["requested_model_name"], " test-model ")
+        self.assertEqual(run["generation_model_identity"]["provider"], "test")
+        self.assertTrue(run["generation_model_identity"]["known"])
+
     async def test_stream_run_outputs_node_events_and_persists_run(self) -> None:
         response = await self.client.post(
             "/api/agent-workbench/knowledge-extraction/runs/stream",
             json={"chapter_id": "chapter_001"},
         )
         events = [
-            json.loads(line)
-            for line in response.text.splitlines()
-            if line.strip()
+            json.loads(line) for line in response.text.splitlines() if line.strip()
         ]
         event_types = [event["type"] for event in events]
-        completed = next(
-            event for event in events if event["type"] == "run_completed"
-        )
+        completed = next(event for event in events if event["type"] == "run_completed")
         detail_response = await self.client.get(
             "/api/agent-workbench/knowledge-extraction/runs/"
             f"{completed['run']['run_id']}"
@@ -137,9 +204,7 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
 
         completed_detail = None
         for _ in range(20):
-            detail_response = await self.client.get(
-                f"/api/agent-tasks/{run_id}"
-            )
+            detail_response = await self.client.get(f"/api/agent-tasks/{run_id}")
             if detail_response.status_code == 200:
                 completed_detail = detail_response.json()["run"]
                 if completed_detail["status"] == "completed":
@@ -183,21 +248,15 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
             json={"chapter_ids": ["chapter_001"]},
         )
         events = [
-            json.loads(line)
-            for line in response.text.splitlines()
-            if line.strip()
+            json.loads(line) for line in response.text.splitlines() if line.strip()
         ]
         event_types = [event["type"] for event in events]
-        completed = next(
-            event for event in events if event["type"] == "task_completed"
-        )
+        completed = next(event for event in events if event["type"] == "task_completed")
         run_id = completed["run"]["run_id"]
         monitor_list_response = await self.client.get(
             "/api/agent-tasks?page=1&page_size=20&status=all"
         )
-        monitor_detail_response = await self.client.get(
-            f"/api/agent-tasks/{run_id}"
-        )
+        monitor_detail_response = await self.client.get(f"/api/agent-tasks/{run_id}")
         candidate_id = completed["run"]["review_items"][0]["review_item_id"]
         confirm_response = await self.client.post(
             "/api/agent-workbench/knowledge-extraction/runs/"
@@ -219,9 +278,7 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("node_finished", event_types)
         self.assertIn("task_completed", event_types)
         first_branch_event = next(
-            event
-            for event in events
-            if event["type"] == "chapter_branch_node_started"
+            event for event in events if event["type"] == "chapter_branch_node_started"
         )
         self.assertEqual(
             first_branch_event["chapter_progress"]["nodes"][0]["node_name"],
@@ -250,6 +307,13 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertLess(general_started_index, general_llm_index)
         self.assertLess(general_llm_index, general_finished_index)
         self.assertEqual(completed["run"]["scope"]["scope_type"], "chapter_batch")
+        self.assertEqual(
+            set(completed["run"]["scope"]["chapter_content_hashes"]),
+            {"chapter_001"},
+        )
+        self.assertTrue(
+            completed["run"]["scope"]["chapter_content_hashes"]["chapter_001"]
+        )
         self.assertEqual(completed["run"]["max_concurrency"], 5)
         self.assertEqual(completed["run"]["current_concurrency"], 0)
         self.assertEqual(completed["run"]["total_chapter_count"], 1)
@@ -265,7 +329,10 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(monitor_list_response.status_code, 200)
         self.assertTrue(
-            any(task["run_id"] == run_id for task in monitor_list_response.json()["runs"])
+            any(
+                task["run_id"] == run_id
+                for task in monitor_list_response.json()["runs"]
+            )
         )
         self.assertEqual(monitor_detail_response.status_code, 200)
         self.assertEqual(monitor_detail_response.json()["run"]["run_id"], run_id)
@@ -1009,7 +1076,7 @@ def _active_character_card(
         name="秦阳",
         aliases=aliases,
         summary=summary,
-        importance="core",
+        importance=StructuredKnowledgeImportance.CORE,
         status=StructuredKnowledgeStatus.ACTIVE,
         source_origin=StructuredKnowledgeSourceOrigin.AGENT_EXTRACT,
         source_note=source_note,

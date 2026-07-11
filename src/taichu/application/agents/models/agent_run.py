@@ -1,14 +1,20 @@
-"""Agent run records used by product workbench features."""
+"""Agent run records used by application workflows and workbench features."""
 
 from __future__ import annotations
 
 from enum import StrEnum
 from typing import Any
 
-from pydantic import Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from taichu.domain.models.base import DomainModel
+from taichu.application.contracts.llm import LLMModelIdentity
 from taichu.domain.models.structured_knowledge import StructuredKnowledgeType
+
+
+class AgentModel(BaseModel):
+    """Immutable base for application-layer Agent records."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
 
 class AgentRunStatus(StrEnum):
@@ -47,7 +53,7 @@ class AgentReviewCandidateStatus(StrEnum):
     REJECTED = "rejected"
 
 
-class AgentRunScope(DomainModel):
+class AgentRunScope(AgentModel):
     """Scope covered by one Agent run."""
 
     scope_type: str = "chapter"
@@ -56,9 +62,10 @@ class AgentRunScope(DomainModel):
     content_hash: str = ""
     chapter_ids: list[str] = Field(default_factory=list)
     chapter_titles: list[str] = Field(default_factory=list)
+    chapter_content_hashes: dict[str, str] = Field(default_factory=dict)
 
 
-class AgentRunNode(DomainModel):
+class AgentRunNode(AgentModel):
     """One LangGraph node execution record."""
 
     node_name: str = Field(min_length=1)
@@ -71,7 +78,7 @@ class AgentRunNode(DomainModel):
     error: str | None = None
 
 
-class AgentRunGraphNode(DomainModel):
+class AgentRunGraphNode(AgentModel):
     """One node in the persisted Agent graph blueprint."""
 
     node_name: str = Field(min_length=1)
@@ -79,14 +86,14 @@ class AgentRunGraphNode(DomainModel):
     lane: str = ""
 
 
-class AgentRunGraphEdge(DomainModel):
+class AgentRunGraphEdge(AgentModel):
     """One directed edge in the persisted Agent graph blueprint."""
 
     source: str = Field(min_length=1)
     target: str = Field(min_length=1)
 
 
-class AgentBatchChapterProgress(DomainModel):
+class AgentBatchChapterProgress(AgentModel):
     """Progress for one chapter branch inside a batch Agent run."""
 
     chapter_id: str = Field(min_length=1)
@@ -99,7 +106,7 @@ class AgentBatchChapterProgress(DomainModel):
     error: str | None = None
 
 
-class AgentLLMCall(DomainModel):
+class AgentLLMCall(AgentModel):
     """One complete LLM call trace."""
 
     call_id: str = Field(min_length=1)
@@ -115,7 +122,7 @@ class AgentLLMCall(DomainModel):
     error: str | None = None
 
 
-class AgentRawMention(DomainModel):
+class AgentRawMention(AgentModel):
     """One raw mention extracted from chapter text before entity aggregation."""
 
     mention_id: str = Field(min_length=1)
@@ -127,7 +134,7 @@ class AgentRawMention(DomainModel):
     segment_index: int = 1
 
 
-class AgentEntityGroup(DomainModel):
+class AgentEntityGroup(AgentModel):
     """Aggregated mentions that refer to the same candidate entity."""
 
     entity_group_id: str = Field(min_length=1)
@@ -140,7 +147,7 @@ class AgentEntityGroup(DomainModel):
     quality_reason: str = ""
 
 
-class AgentIgnoredExtraction(DomainModel):
+class AgentIgnoredExtraction(AgentModel):
     """Text ignored by extraction with an author-readable reason."""
 
     text: str = ""
@@ -148,14 +155,14 @@ class AgentIgnoredExtraction(DomainModel):
     segment_index: int | None = None
 
 
-class AgentSchemaValidation(DomainModel):
+class AgentSchemaValidation(AgentModel):
     """Schema validation result for one review item."""
 
     passed: bool = True
     errors: list[str] = Field(default_factory=list)
 
 
-class AgentReviewItem(DomainModel):
+class AgentReviewItem(AgentModel):
     """One candidate card or update waiting for author review."""
 
     review_item_id: str = Field(min_length=1)
@@ -184,7 +191,7 @@ class AgentReviewItem(DomainModel):
     updated_at: str = Field(min_length=1)
 
 
-class AgentMetrics(DomainModel):
+class AgentMetrics(AgentModel):
     """Metrics shown in the workbench replay panel."""
 
     candidate_total: int = 0
@@ -210,7 +217,7 @@ class AgentMetrics(DomainModel):
     node_duration_ms: dict[str, int] = Field(default_factory=dict)
 
 
-class AgentRun(DomainModel):
+class AgentRun(AgentModel):
     """A complete JSON intermediate state for one knowledge extraction run."""
 
     run_id: str = Field(min_length=1)
@@ -219,6 +226,12 @@ class AgentRun(DomainModel):
     schema_version: str = "knowledge_fields_v2"
     prompt_version: str = "knowledge_extraction_prompt_v2"
     model_name: str = ""
+    requested_model_name: str | None = None
+    generation_model_identity: LLMModelIdentity = Field(
+        default_factory=lambda: LLMModelIdentity.unknown(
+            "旧运行记录未保存真实模型身份。"
+        )
+    )
     status: AgentRunStatus = AgentRunStatus.PENDING
     scope: AgentRunScope
     started_at: str = Field(min_length=1)
@@ -243,3 +256,17 @@ class AgentRun(DomainModel):
     ignored: list[AgentIgnoredExtraction] = Field(default_factory=list)
     metrics: AgentMetrics = Field(default_factory=AgentMetrics)
     errors: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def add_legacy_model_identity(cls, value: Any) -> Any:
+        """Load historical JSON without claiming its display name is verified."""
+        if not isinstance(value, dict) or "generation_model_identity" in value:
+            return value
+        payload = dict(value)
+        legacy_model_name = str(payload.get("model_name") or "")
+        payload["generation_model_identity"] = LLMModelIdentity.unknown(
+            "旧运行记录未保存真实模型身份。",
+            model_id=legacy_model_name,
+        ).model_dump(mode="json")
+        return payload

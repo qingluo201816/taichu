@@ -1,0 +1,45 @@
+{
+  "files": [
+    {
+      "path": "cases/chapter_001.json",
+      "size": 62141,
+      "sha256": "569c2b488a4d72f30b15cebe21e784c9f91e33b25907cc6e1ad9510d82629caf"
+    },
+    {
+      "path": "chapters/chapter-f2a0007303a74f769e1609124c30da6b.md",
+      "size": 12573,
+      "sha256": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952"
+    },
+    {
+      "path": "dataset_manifest.json",
+      "size": 4814,
+      "sha256": "d5cd98d289fcfba6510e2fec2a028e6906de2e7efffb561987b66a76a272447a"
+    },
+    {
+      "path": "evaluation_schema.json",
+      "size": 5246,
+      "sha256": "16bfbd6e59d1b9ff26c84843832f917d1702709f8908002034132acfd56a3f77"
+    },
+    {
+      "path": "judge_contract.json",
+      "size": 9496,
+      "sha256": "18dd1f61b67c3ea78f646f48fe3cdd2ea86cf93777385b8b8a74d3734daef811"
+    },
+    {
+      "path": "metric_profile.json",
+      "size": 807,
+      "sha256": "228d7773761bd7a22a6cb6811e0a29b1e9890be325e05dc4e96388bfaf019739"
+    },
+    {
+      "path": "request.json",
+      "size": 467,
+      "sha256": "b857471e16b007506467d840ddbf132f34f26f4611c4ac0d07b9f2a212561fe8"
+    },
+    {
+      "path": "runs/extract_run_20260707_135122_8bb3c7.json",
+      "size": 202468,
+      "sha256": "bab3bb961f5b07b9af1541dd4d9c834f4008eac4b6cc92dbcc4f04b02221a766"
+    }
+  ],
+  "snapshot_root_hash": "1d946e5db3807bad4b869f8b6a3214d815c1a46e49139a4e6126f9589d2abba7"
+}

@@ -1,0 +1,631 @@
+"""Application-service tests for knowledge-extraction effect evaluation."""
+
+from __future__ import annotations
+
+import asyncio
+from collections.abc import Awaitable
+from hashlib import sha256
+import json
+from pathlib import Path
+from types import SimpleNamespace
+
+from taichu.application.agents.models.agent_run import (
+    AgentReviewCandidateAction,
+    AgentReviewItem,
+    AgentRun,
+    AgentRunScope,
+    AgentRunStatus,
+)
+from taichu.application.contracts.evaluation_judge import EvaluationJudgeResponse
+from taichu.application.contracts.llm import LLMModelIdentity
+from taichu.application.evaluations.knowledge_extraction.dataset import (
+    DatasetValidationResult,
+    EvaluationDatasetSummary,
+    LoadedEvaluationCase,
+    LoadedEvaluationDataset,
+)
+from taichu.application.evaluations.knowledge_extraction.models import (
+    DatasetManifest,
+    EvaluationCaseRef,
+    EvaluationLifecycle,
+    EvaluationRules,
+    EvaluationScopeType,
+    ExpectedCard,
+    SourceEvidence,
+)
+from taichu.application.evaluations.knowledge_extraction.records import (
+    EvaluationStatus,
+    KnowledgeEvaluationRecord,
+)
+from taichu.application.services.knowledge_extraction_evaluation_service import (
+    EvaluationServiceError,
+    KnowledgeExtractionEvaluationService,
+    derive_independence,
+)
+from taichu.domain.models.structured_knowledge import StructuredKnowledgeType
+from taichu.infrastructure.evaluations.json_result_store import (
+    JsonEvaluationResultStore,
+)
+
+
+class _DatasetRepository:
+    def __init__(self, dataset: LoadedEvaluationDataset) -> None:
+        self.dataset = dataset
+
+    async def list_datasets(
+        self,
+        *,
+        include_non_confirmed: bool = False,
+    ) -> list[EvaluationDatasetSummary]:
+        return [
+            EvaluationDatasetSummary(
+                dataset_id=self.dataset.manifest.dataset_id,
+                label=self.dataset.manifest.label,
+                lifecycle=EvaluationLifecycle.CONFIRMED,
+                case_count=1,
+                valid=True,
+                checksum=self.dataset.checksum,
+            )
+        ]
+
+    async def validate_dataset(self, dataset_id: str) -> DatasetValidationResult:
+        return DatasetValidationResult(
+            dataset_id=dataset_id,
+            valid=True,
+            lifecycle=EvaluationLifecycle.CONFIRMED,
+            checksum=self.dataset.checksum,
+        )
+
+    async def get_dataset(self, dataset_id: str) -> LoadedEvaluationDataset:
+        assert dataset_id == self.dataset.manifest.dataset_id
+        return self.dataset
+
+
+class _RunStore:
+    def __init__(self, runs: list[AgentRun]) -> None:
+        self.runs = {run.run_id: run for run in runs}
+
+    async def write_run(self, run: AgentRun) -> AgentRun:
+        self.runs[run.run_id] = run
+        return run
+
+    async def get_run(self, run_id: str) -> AgentRun | None:
+        return self.runs.get(run_id)
+
+    async def delete_run(self, run_id: str) -> bool:
+        return self.runs.pop(run_id, None) is not None
+
+    async def list_runs(
+        self,
+        *,
+        page: int = 1,
+        page_size: int = 20,
+        status: str = "all",
+    ) -> tuple[list[AgentRun], int]:
+        values = list(self.runs.values())
+        start = (page - 1) * page_size
+        return values[start : start + page_size], len(values)
+
+    async def find_run_for_candidate(self, candidate_id: str) -> AgentRun | None:
+        return next(
+            (
+                run
+                for run in self.runs.values()
+                if any(item.review_item_id == candidate_id for item in run.review_items)
+            ),
+            None,
+        )
+
+
+class _ChapterService:
+    def __init__(self, markdown: str) -> None:
+        self.markdown = markdown
+
+    async def read_chapter(self, chapter_id: str) -> SimpleNamespace:
+        assert chapter_id == "chapter-001"
+        return SimpleNamespace(markdown=self.markdown)
+
+
+class _Judge:
+    def __init__(self, *, available: bool) -> None:
+        self._available = available
+        self.calls = 0
+        self._identity = LLMModelIdentity(
+            provider="deepseek",
+            model_id="judge-model",
+            family="judge",
+            endpoint_kind="openai_compatible",
+            known=True,
+        )
+
+    @property
+    def available(self) -> bool:
+        return self._available
+
+    @property
+    def model_identity(self) -> LLMModelIdentity:
+        return self._identity
+
+    async def complete(self, prompt: str) -> EvaluationJudgeResponse:
+        self.calls += 1
+        raise AssertionError("本测试不应调用语义裁判")
+
+
+class _SuccessfulJudge(_Judge):
+    async def complete(self, prompt: str) -> EvaluationJudgeResponse:
+        self.calls += 1
+        encoded = prompt.split("<UNTRUSTED_EVALUATION_DATA>\n", 1)[1].split(
+            "\n</UNTRUSTED_EVALUATION_DATA>",
+            1,
+        )[0]
+        cases = json.loads(encoded)
+        dimensions = {
+            name: {
+                "score": 4,
+                "verdict": "equivalent",
+                "quote_ids": [],
+                "reason": "候选内容与正文和期望一致。",
+            }
+            for name in (
+                "factual_fidelity",
+                "key_fact_coverage",
+                "evidence_grounding",
+                "scope_discipline",
+                "knowledge_usability",
+            )
+        }
+        raw = json.dumps(
+            {
+                "items": [
+                    {
+                        "case_id": item["case_id"],
+                        "expected_card_id": item["expected_card_id"],
+                        "actual_review_item_id": item["actual_review_item_id"],
+                        "status": "scored",
+                        "dimensions": dimensions,
+                        "findings": [],
+                        "critical_flags": [],
+                        "reference_issues": [],
+                        "missing_quote_ids": [],
+                        "confidence": 0.95,
+                        "reason": None,
+                    }
+                    for item in cases
+                ]
+            },
+            ensure_ascii=False,
+        )
+        return EvaluationJudgeResponse(
+            raw_response=raw,
+            model_identity=self.model_identity,
+        )
+
+
+def test_preview_and_deterministic_background_use_frozen_inputs(
+    tmp_path: Path,
+) -> None:
+    asyncio.run(_preview_and_background_scenario(tmp_path))
+
+
+async def _preview_and_background_scenario(tmp_path: Path) -> None:
+    markdown = "秦阳握着青铜令牌走入山门。"
+    dataset = _dataset(markdown)
+    run = _run(markdown)
+    results = JsonEvaluationResultStore(tmp_path)
+    service = KnowledgeExtractionEvaluationService(
+        dataset_repository=_DatasetRepository(dataset),
+        result_repository=results,
+        run_store=_RunStore([run]),
+        chapter_service=_ChapterService(markdown),  # type: ignore[arg-type]
+        judge=_Judge(available=False),
+    )
+
+    preview = await service.preview(
+        dataset_id=dataset.manifest.dataset_id,
+        run_ids=[run.run_id],
+        judge_enabled=False,
+        metric_profile_id="knowledge_extraction_balanced",
+    )
+    created = await service.create_evaluation(
+        dataset_id=dataset.manifest.dataset_id,
+        run_ids=[run.run_id],
+        judge_enabled=False,
+        metric_profile_id="knowledge_extraction_balanced",
+    )
+    completed = await _wait_for_terminal(results, created.evaluation_id)
+
+    assert preview["can_create"] is True
+    assert preview["estimate"]["matched_card_count"] == 1
+    assert preview["estimate"]["judge_card_count"] == 0
+    assert completed.status is EvaluationStatus.COMPLETED
+    assert completed.progress.run_completed == 1
+    assert completed.progress.judge_card_total == 0
+    assert completed.run_results[0].metrics["candidate_f1_micro"] == 1
+    assert completed.run_results[0].metrics["evidence_score"] == 1
+    assert completed.run_results[0].overall_quality_score is None
+    assert completed.run_results[0].final_quality_state.value == "not_comparable"
+    persisted = await results.get_run_result(created.evaluation_id, run.run_id)
+    assert persisted is not None
+    assert (
+        persisted.metrics["candidate_f1_micro"]
+        == completed.run_results[0].metrics["candidate_f1_micro"]
+    )
+    assert "structured_fields" in persisted.metrics
+    assert "structured_fields" not in completed.run_results[0].metrics
+    assert persisted.comparisons
+    assert completed.run_results[0].comparisons == []
+    snapshot = await results.read_snapshot_files(created.evaluation_id)
+    assert snapshot["chapters/chapter-001.md"].decode() == markdown
+    assert "output_schema" in snapshot["judge_contract.json"].decode()
+    await service.shutdown()
+
+
+def test_judge_unavailable_is_preview_blocker_and_create_503_contract(
+    tmp_path: Path,
+) -> None:
+    asyncio.run(_judge_unavailable_scenario(tmp_path))
+
+
+async def _judge_unavailable_scenario(tmp_path: Path) -> None:
+    markdown = "秦阳握着青铜令牌走入山门。"
+    dataset = _dataset(markdown)
+    run = _run(markdown)
+    service = KnowledgeExtractionEvaluationService(
+        dataset_repository=_DatasetRepository(dataset),
+        result_repository=JsonEvaluationResultStore(tmp_path),
+        run_store=_RunStore([run]),
+        chapter_service=_ChapterService(markdown),  # type: ignore[arg-type]
+        judge=_Judge(available=False),
+    )
+
+    preview = await service.preview(
+        dataset_id=dataset.manifest.dataset_id,
+        run_ids=[run.run_id],
+        judge_enabled=True,
+        metric_profile_id="knowledge_extraction_balanced",
+    )
+
+    assert preview["can_create"] is False
+    assert preview["judge"]["available"] is False
+    caught: EvaluationServiceError | None = None
+    try:
+        await service.create_evaluation(
+            dataset_id=dataset.manifest.dataset_id,
+            run_ids=[run.run_id],
+            judge_enabled=True,
+            metric_profile_id="knowledge_extraction_balanced",
+        )
+    except EvaluationServiceError as error:
+        caught = error
+    assert caught is not None
+    assert caught.code == "EVALUATION_JUDGE_UNAVAILABLE"
+
+
+def test_freeze_rechecks_markdown_after_dataset_loading(tmp_path: Path) -> None:
+    asyncio.run(_freeze_recheck_scenario(tmp_path))
+
+
+async def _freeze_recheck_scenario(tmp_path: Path) -> None:
+    expected = "秦阳握着青铜令牌走入山门。"
+    changed = "正文在评测集加载后发生变化。"
+    dataset = _dataset(expected)
+    service = KnowledgeExtractionEvaluationService(
+        dataset_repository=_DatasetRepository(dataset),
+        result_repository=JsonEvaluationResultStore(tmp_path),
+        run_store=_RunStore([_run(expected)]),
+        chapter_service=_ChapterService(changed),  # type: ignore[arg-type]
+        judge=_Judge(available=False),
+    )
+
+    caught: EvaluationServiceError | None = None
+    try:
+        await service.preview(
+            dataset_id=dataset.manifest.dataset_id,
+            run_ids=[_run(expected).run_id],
+            judge_enabled=False,
+            metric_profile_id="knowledge_extraction_balanced",
+        )
+    except EvaluationServiceError as error:
+        caught = error
+    assert caught is not None
+    assert caught.code == "EVALUATION_SOURCE_CHANGED"
+
+
+def test_judge_failure_degrades_and_retry_reuses_parent_snapshot(
+    tmp_path: Path,
+) -> None:
+    asyncio.run(_judge_failure_and_retry_scenario(tmp_path))
+
+
+async def _judge_failure_and_retry_scenario(tmp_path: Path) -> None:
+    markdown = "秦阳握着青铜令牌走入山门。"
+    dataset = _dataset(markdown)
+    run = _run(markdown)
+    results = JsonEvaluationResultStore(tmp_path)
+    chapters = _ChapterService(markdown)
+    judge = _Judge(available=True)
+    service = KnowledgeExtractionEvaluationService(
+        dataset_repository=_DatasetRepository(dataset),
+        result_repository=results,
+        run_store=_RunStore([run]),
+        chapter_service=chapters,  # type: ignore[arg-type]
+        judge=judge,
+    )
+
+    parent = await service.create_evaluation(
+        dataset_id=dataset.manifest.dataset_id,
+        run_ids=[run.run_id],
+        judge_enabled=True,
+        metric_profile_id="knowledge_extraction_balanced",
+    )
+    parent_terminal = await _wait_for_terminal(results, parent.evaluation_id)
+    parent_snapshot = await results.read_snapshot_files(parent.evaluation_id)
+    chapters.markdown = "当前正文已经变化，但严格重试不得重新读取。"
+
+    retried = await service.retry_evaluation(parent.evaluation_id)
+    retry_terminal = await _wait_for_terminal(results, retried.evaluation_id)
+    retry_snapshot = await results.read_snapshot_files(retried.evaluation_id)
+
+    assert parent_terminal.status is EvaluationStatus.COMPLETED_WITH_WARNINGS
+    assert parent_terminal.run_results[0].metrics["candidate_f1_micro"] == 1
+    assert parent_terminal.run_results[0].overall_quality_score is None
+    assert parent_terminal.warnings[0].code == "EVALUATION_JUDGE_INVALID_OUTPUT"
+    assert retry_terminal.status is EvaluationStatus.COMPLETED_WITH_WARNINGS
+    assert retry_terminal.parent_evaluation_id == parent.evaluation_id
+    assert retry_terminal.snapshot_root_hash == parent_terminal.snapshot_root_hash
+    assert retry_snapshot == parent_snapshot
+    assert judge.calls == 2
+    await service.shutdown()
+
+
+def test_model_independence_uses_real_provider_model_and_family() -> None:
+    generation = LLMModelIdentity(
+        provider="deepseek",
+        model_id="deepseek-chat",
+        family="deepseek-v4",
+        endpoint_kind="openai_compatible",
+        known=True,
+    )
+    same_family = generation.model_copy(update={"model_id": "deepseek-reasoner"})
+    different = generation.model_copy(
+        update={"provider": "openai", "model_id": "gpt-x", "family": "gpt"}
+    )
+
+    assert derive_independence(generation, generation).value == "same_model"
+    assert (
+        derive_independence(generation, same_family).value
+        == "same_provider_family"
+    )
+    assert derive_independence(generation, different).value == "different_model"
+    assert (
+        derive_independence(
+            generation,
+            LLMModelIdentity.unknown("测试未知身份。"),
+        ).value
+        == "unknown"
+    )
+
+
+def test_successful_judge_persists_auditable_call_and_semantic_result(
+    tmp_path: Path,
+) -> None:
+    asyncio.run(_successful_judge_scenario(tmp_path))
+
+
+async def _successful_judge_scenario(tmp_path: Path) -> None:
+    markdown = "秦阳握着青铜令牌走入山门。"
+    dataset = _dataset(markdown)
+    run = _run(markdown)
+    results = JsonEvaluationResultStore(tmp_path)
+    judge = _SuccessfulJudge(available=True)
+    service = KnowledgeExtractionEvaluationService(
+        dataset_repository=_DatasetRepository(dataset),
+        result_repository=results,
+        run_store=_RunStore([run]),
+        chapter_service=_ChapterService(markdown),  # type: ignore[arg-type]
+        judge=judge,
+    )
+
+    created = await service.create_evaluation(
+        dataset_id=dataset.manifest.dataset_id,
+        run_ids=[run.run_id],
+        judge_enabled=True,
+        metric_profile_id="knowledge_extraction_balanced",
+    )
+    terminal = await _wait_for_terminal(results, created.evaluation_id)
+    persisted = await results.get_run_result(created.evaluation_id, run.run_id)
+
+    assert terminal.status is EvaluationStatus.COMPLETED
+    assert terminal.run_results[0].semantic_score == 1
+    assert persisted is not None
+    judge_result = persisted.comparisons[0].judge_result
+    assert judge_result is not None
+    call_id = judge_result["judge_call_ids"][0]
+    call = await results.get_judge_call(created.evaluation_id, call_id)
+    assert call is not None
+    assert call.self_judge is False
+    assert call.input_snapshot_hash != terminal.snapshot_root_hash
+    assert call.parsed_output is not None
+    await service.shutdown()
+
+
+def test_active_fingerprint_and_startup_recovery_are_terminal_safe(
+    tmp_path: Path,
+) -> None:
+    asyncio.run(_active_fingerprint_and_recovery_scenario(tmp_path))
+
+
+async def _active_fingerprint_and_recovery_scenario(tmp_path: Path) -> None:
+    markdown = "秦阳握着青铜令牌走入山门。"
+    dataset = _dataset(markdown)
+    run = _run(markdown)
+    results = JsonEvaluationResultStore(tmp_path)
+    gate = asyncio.Event()
+
+    def gated_task(work: Awaitable[None]) -> asyncio.Task[None]:
+        async def wait_then_run() -> None:
+            await gate.wait()
+            await work
+
+        return asyncio.create_task(wait_then_run())
+
+    service = KnowledgeExtractionEvaluationService(
+        dataset_repository=_DatasetRepository(dataset),
+        result_repository=results,
+        run_store=_RunStore([run]),
+        chapter_service=_ChapterService(markdown),  # type: ignore[arg-type]
+        judge=_Judge(available=False),
+        task_factory=gated_task,
+    )
+    first = await service.create_evaluation(
+        dataset_id=dataset.manifest.dataset_id,
+        run_ids=[run.run_id],
+        judge_enabled=False,
+        metric_profile_id="knowledge_extraction_balanced",
+    )
+    duplicate_error: Exception | None = None
+    try:
+        await service.create_evaluation(
+            dataset_id=dataset.manifest.dataset_id,
+            run_ids=[run.run_id],
+            judge_enabled=False,
+            metric_profile_id="knowledge_extraction_balanced",
+        )
+    except Exception as error:  # persistence exposes its stable code boundary
+        duplicate_error = error
+
+    assert duplicate_error is not None
+    assert getattr(duplicate_error, "code", None) == "EVALUATION_ALREADY_RUNNING"
+    await service.recover_interrupted()
+    recovered = await results.get_record(first.evaluation_id)
+    assert recovered is not None
+    assert recovered.status is EvaluationStatus.FAILED
+    assert recovered.error_code == "EVALUATION_PROCESS_INTERRUPTED"
+
+    gate.set()
+    await asyncio.sleep(0.05)
+    unchanged = await results.get_record(first.evaluation_id)
+    assert unchanged is not None
+    assert unchanged.status is EvaluationStatus.FAILED
+    assert unchanged.finished_at == recovered.finished_at
+    await service.shutdown()
+
+
+async def _wait_for_terminal(
+    repository: JsonEvaluationResultStore,
+    evaluation_id: str,
+) -> KnowledgeEvaluationRecord:
+    for _ in range(200):
+        record = await repository.get_record(evaluation_id)
+        assert record is not None
+        if record.is_terminal:
+            return record
+        await asyncio.sleep(0.01)
+    raise AssertionError("后台评估未在测试时限内结束")
+
+
+def _dataset(markdown: str) -> LoadedEvaluationDataset:
+    source_hash = sha256(markdown.encode()).hexdigest()
+    quote = "秦阳握着青铜令牌走入山门。"
+    case_ref = EvaluationCaseRef(
+        case_id="chapter-001",
+        scope_type=EvaluationScopeType.CHAPTER,
+        chapter_ids=["chapter-001"],
+        source_chapter_hashes={"chapter-001": source_hash},
+        expected_cards_path="chapter-001/expected.json",
+        evaluation_rules_path="chapter-001/rules.json",
+        source_evidence_path="chapter-001/evidence.json",
+        negative_cases_path="chapter-001/negative.json",
+    )
+    expected = ExpectedCard(
+        expected_card_id="character-qinyang",
+        knowledge_type=StructuredKnowledgeType.CHARACTER,
+        card={
+            "type": "character",
+            "name": "秦阳",
+            "aliases": [],
+            "importance": "core",
+            "summary": "秦阳走入山门。",
+        },
+        accepted_names=[],
+        exact_fields=["importance"],
+        set_fields=["aliases"],
+        semantic_fields=["summary"],
+        expected_claims=[],
+        source_quote_ids=["quote-qinyang"],
+    )
+    evidence = SourceEvidence(
+        quote_id="quote-qinyang",
+        chapter_id="chapter-001",
+        text=quote,
+        start_offset=0,
+        end_offset=len(quote),
+        source_hash=source_hash,
+    )
+    loaded_case = LoadedEvaluationCase(
+        ref=case_ref,
+        expected_cards=[expected],
+        rules=EvaluationRules(),
+        source_evidence=[evidence],
+        negative_cases=[],
+        checksum="case-checksum",
+    )
+    manifest = DatasetManifest(
+        dataset_id="service_test_dataset",
+        label="服务测试评测集",
+        lifecycle=EvaluationLifecycle.CONFIRMED,
+        agent_name="knowledge_extraction",
+        schema_snapshot_path="schema.json",
+        checksum_manifest_path="checksums.json",
+        cases=[case_ref],
+    )
+    return LoadedEvaluationDataset(
+        manifest=manifest,
+        cases={case_ref.case_id: loaded_case},
+        checksum="dataset-checksum",
+    )
+
+
+def _run(markdown: str) -> AgentRun:
+    run_id = "extract_run_20260711_120000_a1b2c3"
+    source_hash = sha256(markdown.encode()).hexdigest()
+    now = "2026-07-11T12:00:00Z"
+    return AgentRun(
+        run_id=run_id,
+        status=AgentRunStatus.COMPLETED,
+        scope=AgentRunScope(
+            scope_type="chapter",
+            chapter_id="chapter-001",
+            chapter_title="第一章",
+            content_hash=source_hash,
+        ),
+        started_at=now,
+        finished_at=now,
+        generation_model_identity=LLMModelIdentity(
+            provider="deepseek",
+            model_id="generation-model",
+            family="generation",
+            endpoint_kind="openai_compatible",
+            known=True,
+        ),
+        review_items=[
+            AgentReviewItem(
+                review_item_id="review-qinyang",
+                run_id=run_id,
+                candidate_action=AgentReviewCandidateAction.CREATE_CARD,
+                knowledge_type=StructuredKnowledgeType.CHARACTER,
+                display_title="秦阳",
+                suggested_card={
+                    "type": "character",
+                    "name": "秦阳",
+                    "aliases": [],
+                    "importance": "core",
+                    "summary": "秦阳走入山门。",
+                    "evidence_excerpt": markdown,
+                },
+                source_excerpt=markdown,
+                created_at=now,
+                updated_at=now,
+            )
+        ],
+    )

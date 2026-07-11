@@ -5,7 +5,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from taichu.domain.models.agent_run import (
+from taichu.application.agents.models.agent_run import (
+    AgentEntityGroup,
+    AgentIgnoredExtraction,
+    AgentRawMention,
     AgentRun,
     AgentRunScope,
     AgentRunStatus,
@@ -36,34 +39,40 @@ class JsonAgentRunStoreTest(unittest.IsolatedAsyncioTestCase):
             started_at="2026-07-04T15:30:22Z",
             finished_at="2026-07-04T15:30:23Z",
             raw_mentions=[
-                {
-                    "mention_id": "mention_001_001",
-                    "name": "秦阳",
-                    "knowledge_type": "character",
-                    "description": "秦阳走入太初教山门。",
-                    "evidence_excerpts": ["秦阳握着青铜令牌走入太初教山门。"],
-                    "reason": "稳定专名角色。",
-                    "segment_index": 1,
-                }
+                AgentRawMention.model_validate(
+                    {
+                        "mention_id": "mention_001_001",
+                        "name": "秦阳",
+                        "knowledge_type": "character",
+                        "description": "秦阳走入太初教山门。",
+                        "evidence_excerpts": ["秦阳握着青铜令牌走入太初教山门。"],
+                        "reason": "稳定专名角色。",
+                        "segment_index": 1,
+                    }
+                )
             ],
             entity_groups=[
-                {
-                    "entity_group_id": "entity_group_001",
-                    "canonical_name": "秦阳",
-                    "knowledge_type": "character",
-                    "raw_names": ["秦阳"],
-                    "mention_count": 1,
-                    "evidence_excerpts": ["秦阳握着青铜令牌走入太初教山门。"],
-                    "quality_decision": "accepted",
-                    "quality_reason": "稳定专名角色。",
-                }
+                AgentEntityGroup.model_validate(
+                    {
+                        "entity_group_id": "entity_group_001",
+                        "canonical_name": "秦阳",
+                        "knowledge_type": "character",
+                        "raw_names": ["秦阳"],
+                        "mention_count": 1,
+                        "evidence_excerpts": ["秦阳握着青铜令牌走入太初教山门。"],
+                        "quality_decision": "accepted",
+                        "quality_reason": "稳定专名角色。",
+                    }
+                )
             ],
             ignored=[
-                {
-                    "text": "少年们",
-                    "reason": "普通人群泛称。",
-                    "segment_index": 1,
-                }
+                AgentIgnoredExtraction.model_validate(
+                    {
+                        "text": "少年们",
+                        "reason": "普通人群泛称。",
+                        "segment_index": 1,
+                    }
+                )
             ],
         )
 
@@ -87,19 +96,17 @@ class JsonAgentRunStoreTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([item.run_id for item in runs], [run.run_id])
         self.assertTrue(path.exists())
 
-    async def test_legacy_run_json_without_replay_fields_is_still_readable(self) -> None:
+    async def test_legacy_run_json_without_replay_fields_is_still_readable(
+        self,
+    ) -> None:
         run_id = "extract_run_20260704_153023_b1c2d3"
-        root = (
-            self.assets_root
-            / "derived"
-            / "agent_runs"
-            / "knowledge_extraction"
-        )
+        root = self.assets_root / "derived" / "agent_runs" / "knowledge_extraction"
         root.mkdir(parents=True)
         (root / f"{run_id}.json").write_text(
             json.dumps(
                 {
                     "run_id": run_id,
+                    "model_name": "legacy-display-name",
                     "status": "completed",
                     "scope": {
                         "chapter_id": "chapter_001",
@@ -119,6 +126,15 @@ class JsonAgentRunStoreTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(loaded.raw_mentions, [])
         self.assertEqual(loaded.entity_groups, [])
         self.assertEqual(loaded.ignored, [])
+        self.assertFalse(loaded.generation_model_identity.known)
+        self.assertEqual(
+            loaded.generation_model_identity.model_id,
+            "legacy-display-name",
+        )
+        self.assertEqual(
+            loaded.generation_model_identity.unknown_reason,
+            "旧运行记录未保存真实模型身份。",
+        )
 
     async def test_invalid_run_id_is_rejected(self) -> None:
         run = AgentRun(

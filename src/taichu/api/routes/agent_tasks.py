@@ -22,7 +22,7 @@ from taichu.application.services.knowledge_extraction_service import (
     KnowledgeExtractionNotFoundError,
     KnowledgeExtractionService,
 )
-from taichu.domain.models.agent_run import AgentRun
+from taichu.application.agents.models.agent_run import AgentRun
 from taichu.infrastructure.agent_runs.json_store import AgentRunStoreError
 
 router = APIRouter(prefix="/api/agent-tasks")
