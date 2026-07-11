@@ -19,6 +19,7 @@ import {
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { humanReadableStructuredContent } from "@/lib/ai/human-readable-content";
 import type {
   AIResultCard,
   SelectionMode,
@@ -411,7 +412,7 @@ function cardContent(card: AIResultCard): string {
   if (typeof body === "string") {
     return body;
   }
-  return JSON.stringify(card.content, null, 2);
+  return humanReadableStructuredContent(card.content);
 }
 
 function chapterSummaryContent(content: Record<string, unknown>): string {
@@ -434,7 +435,7 @@ function chapterSummaryContent(content: Record<string, unknown>): string {
   if (hooks.length) {
     lines.push(`后续钩子\n${hooks.map(item => `- ${item}`).join("\n")}`);
   }
-  return lines.join("\n\n") || JSON.stringify(content, null, 2);
+  return lines.join("\n\n") || humanReadableStructuredContent(content);
 }
 
 function stringArray(value: unknown): string[] {

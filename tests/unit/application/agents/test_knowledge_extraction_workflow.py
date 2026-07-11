@@ -9,7 +9,11 @@ from pathlib import Path
 
 from taichu.application.services.import_service import ImportService
 from taichu.application.services.chapter_service import ChapterService
-from taichu.application.contracts.llm import LLMModelIdentity
+from taichu.application.contracts.llm import (
+    LLMModelIdentity,
+    LLMModelProfile,
+    LLMRequest,
+)
 from taichu.application.services.knowledge_extraction_service import (
     KnowledgeExtractionService,
 )
@@ -156,6 +160,46 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(run.raw_candidates, [])
 
+    async def test_batch_run_locks_selected_model_for_all_chapters(self) -> None:
+        await ImportService(self.storage).import_text(
+            "第一章 山门\n秦阳握着青铜令牌走入太初教山门。\n"
+            "第二章 入门\n秦阳在山门前确认太初教规。",
+            source_name="batch_model_fixture.txt",
+        )
+        llm = _MultiModelLLM()
+        service = KnowledgeExtractionService(
+            chapter_service=self.chapter_service,
+            llm=llm,
+            knowledge_repository=self.repository,
+            run_store=self.run_store,
+        )
+
+        events = [
+            event
+            async for event in service.stream_batch_run(
+                chapter_ids=["chapter_001", "chapter_002"],
+                model_name="alternate-model",
+            )
+        ]
+        run = next(
+            event["run"]
+            for event in reversed(events)
+            if isinstance(event.get("run"), dict)
+        )
+
+        self.assertTrue(llm.requests)
+        self.assertTrue(
+            all(request.model_id == "alternate-model" for request in llm.requests)
+        )
+        self.assertEqual(run["model_id"], "alternate-model")
+        self.assertEqual(run["upstream_model"], "upstream-alternate")
+        self.assertTrue(
+            all(
+                call["model_id"] == "alternate-model"
+                for call in run["llm_calls"]
+            )
+        )
+
 
 _TEST_MODEL_IDENTITY = LLMModelIdentity(
     provider="test",
@@ -204,6 +248,44 @@ class _PromptAwareRepairLLM(_TestLLM):
         if "entity_groups" in prompt and "cards" in prompt:
             return _character_response()
         return _general_response()
+
+
+class _MultiModelLLM:
+    def __init__(self) -> None:
+        self.requests: list[LLMRequest] = []
+
+    def list_models(self) -> list[LLMModelProfile]:
+        return [
+            _profile("test-model", "upstream-test", is_default=True),
+            _profile("alternate-model", "upstream-alternate"),
+        ]
+
+    async def complete(self, request: LLMRequest) -> str:
+        self.requests.append(request)
+        if "事件与规则 entity_groups" in request:
+            return _event_rule_response()
+        if "实体 entity_groups" in request:
+            return _entity_response()
+        if "角色 entity_groups" in request:
+            return _character_response()
+        return _general_response()
+
+
+def _profile(
+    model_id: str, upstream_model: str, *, is_default: bool = False
+) -> LLMModelProfile:
+    return LLMModelProfile(
+        id=model_id,
+        display_name=model_id,
+        provider="rightcode",
+        upstream_model=upstream_model,
+        wire_protocol="openai_responses",
+        base_url_key="RIGHTCODE_RESPONSES_BASE_URL",
+        enabled=True,
+        is_default=is_default,
+        supports_streaming=True,
+        upstream_verified=True,
+    )
 
 
 def _general_response() -> str:

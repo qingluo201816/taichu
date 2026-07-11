@@ -30,7 +30,14 @@ from taichu.application.contracts.knowledge_repository import (
     StructuredKnowledgeRepository,
 )
 from taichu.application.contracts.agent_run_repository import AgentRunRepository
-from taichu.application.contracts.llm import LLMContract, LLMModelIdentity
+from taichu.application.contracts.llm import (
+    LLMGatewayContract,
+    LLMMessage,
+    LLMModelIdentity,
+    LLMRequest,
+    LLMResponse,
+    response_text,
+)
 from taichu.application.services.chapter_service import ChapterService
 from taichu.application.agents.models.agent_run import (
     AgentBatchChapterProgress,
@@ -229,6 +236,10 @@ class KnowledgeExtractionState(TypedDict, total=False):
     chapter_content_hashes: dict[str, str]
     model_name: str
     requested_model_name: str | None
+    model_id: str
+    model_display_name: str
+    upstream_model: str
+    wire_protocol: str
     generation_model_identity: dict[str, Any]
     force: bool
     started_at: str
@@ -270,7 +281,7 @@ class KnowledgeExtractionDependencies:
     """Runtime dependencies captured by workflow nodes."""
 
     chapter_service: ChapterService
-    llm: LLMContract
+    llm: LLMGatewayContract
     knowledge_repository: StructuredKnowledgeRepository
     run_store: AgentRunRepository
     event_sink: KnowledgeExtractionEventSink | None = None
@@ -612,6 +623,10 @@ def initial_knowledge_extraction_state(
     chapter_id: str,
     model_name: str | None = None,
     requested_model_name: str | None = None,
+    model_id: str | None = None,
+    model_display_name: str | None = None,
+    upstream_model: str | None = None,
+    wire_protocol: str | None = None,
     generation_model_identity: LLMModelIdentity | None = None,
     force: bool = False,
 ) -> KnowledgeExtractionState:
@@ -622,6 +637,10 @@ def initial_knowledge_extraction_state(
         "chapter_id": chapter_id,
         "model_name": model_name or "",
         "requested_model_name": requested_model_name,
+        "model_id": model_id or model_name or "",
+        "model_display_name": model_display_name or model_name or "",
+        "upstream_model": upstream_model or model_name or "",
+        "wire_protocol": wire_protocol or "openai_responses",
         "generation_model_identity": (
             generation_model_identity
             or LLMModelIdentity.unknown("运行未提供真实模型身份。")
@@ -711,6 +730,10 @@ def run_snapshot_from_state(
         run_id=state["run_id"],
         model_name=state.get("model_name", ""),
         requested_model_name=state.get("requested_model_name"),
+        model_id=state.get("model_id", ""),
+        model_display_name=state.get("model_display_name", ""),
+        upstream_model=state.get("upstream_model", ""),
+        wire_protocol=state.get("wire_protocol", ""),
         generation_model_identity=LLMModelIdentity.model_validate(
             state.get(
                 "generation_model_identity",
@@ -1377,9 +1400,31 @@ async def _complete_json(
         raw_response = ""
         parsed: dict[str, Any] = {}
         call_error: str | None = None
+        llm_response: LLMResponse | None = None
 
         try:
-            raw_response = await dependencies.llm.complete(current_prompt)
+            response = await dependencies.llm.complete(
+                LLMRequest(
+                    model_id=state.get("model_id") or state.get("model_name") or "",
+                    messages=(
+                        LLMMessage(
+                            role="system",
+                            content=(
+                                "你是太初知识沉淀工作流节点，必须严格返回合法 JSON。"
+                            ),
+                        ),
+                        LLMMessage(role="user", content=current_prompt),
+                    ),
+                    task_type="knowledge_extraction",
+                    task_name=_node_label(node_name),
+                    run_id=state.get("run_id"),
+                    chapter_ids=(state.get("chapter_id", ""),),
+                    response_mode="json",
+                    feature="知识沉淀",
+                )
+            )
+            llm_response = response if isinstance(response, LLMResponse) else None
+            raw_response = response_text(response)
             parsed_value = json.loads(raw_response)
             if not isinstance(parsed_value, dict):
                 raise ValueError("LLM 响应 JSON 顶层必须是对象。")
@@ -1401,6 +1446,7 @@ async def _complete_json(
                 started_at=started_at,
                 duration_ms=_elapsed_ms(timer),
                 error=call_error,
+                response=llm_response,
             )
             state.setdefault("errors", []).append(call_error)
             return None
@@ -1416,6 +1462,7 @@ async def _complete_json(
             started_at=started_at,
             duration_ms=_elapsed_ms(timer),
             error=call_error,
+            response=llm_response,
         )
 
         if call_error is None:
@@ -1452,11 +1499,22 @@ async def _record_llm_completion(
     started_at: str,
     duration_ms: int,
     error: str | None,
+    response: LLMResponse | None = None,
 ) -> None:
+    usage = response.usage if response is not None else None
+    cost = response.cost if response is not None else None
     call = {
-        "call_id": f"llm_call_{node_name}_{uuid4().hex[:8]}",
+        "call_id": (
+            response.call_id
+            if response is not None and response.call_id
+            else f"llm_call_{node_name}_{uuid4().hex[:8]}"
+        ),
         "node_name": node_name,
-        "model_name": state.get("model_name") or "默认模型",
+        "model_name": state.get("model_display_name") or state.get("model_name") or "默认模型",
+        "model_id": state.get("model_id") or state.get("model_name") or "",
+        "model_display_name": state.get("model_display_name") or state.get("model_name") or "",
+        "upstream_model": state.get("upstream_model") or state.get("model_name") or "",
+        "wire_protocol": state.get("wire_protocol") or "openai_responses",
         "prompt_version": prompt_version,
         "input_prompt": prompt,
         "raw_response": raw_response,
@@ -1464,6 +1522,15 @@ async def _record_llm_completion(
         "started_at": started_at,
         "finished_at": _now_iso(),
         "duration_ms": duration_ms,
+        "input_tokens": usage.input_tokens if usage else None,
+        "cached_input_tokens": usage.cached_input_tokens if usage else None,
+        "output_tokens": usage.output_tokens if usage else None,
+        "reasoning_tokens": usage.reasoning_tokens if usage else None,
+        "total_tokens": usage.total_tokens if usage else None,
+        "cost_amount": cost.amount if cost else None,
+        "cost_currency": cost.currency if cost else "CNY",
+        "cost_kind": cost.kind if cost else "unavailable",
+        "provider_request_id": response.provider_request_id if response else None,
         "error": error,
     }
     state.setdefault("llm_calls", []).append(call)

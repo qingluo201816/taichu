@@ -13,7 +13,14 @@ from pydantic import ValidationError
 from taichu.application.contracts.knowledge_repository import (
     StructuredKnowledgeRepository,
 )
-from taichu.application.contracts.llm import LLMContract
+from taichu.application.contracts.llm import (
+    LLMGatewayContract,
+    LLMMessage,
+    LLMModelProfile,
+    LLMRequest,
+    LLMResponse,
+    response_text,
+)
 from taichu.application.contracts.storage import ProjectAssetStorageContract
 from taichu.application.services.chapter_service import ChapterService
 from taichu.application.services.writing_ai_prompts import (
@@ -119,6 +126,7 @@ class WritingAICreateRunCommand:
     selection_range: WritingAISelectionRange | None = None
     target_words: int | None = None
     draft_chapter_text: str | None = None
+    model_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -227,8 +235,8 @@ class WritingAIService:
         storage: ProjectAssetStorageContract,
         chapter_service: ChapterService,
         knowledge_repository: StructuredKnowledgeRepository,
-        llm: LLMContract,
-        default_model_name: str,
+        llm: LLMGatewayContract,
+        default_model_id: str,
         llm_configured: bool,
     ) -> None:
         self._storage = storage
@@ -237,20 +245,29 @@ class WritingAIService:
             knowledge_repository,
         )
         self._llm = llm
-        self._default_model_name = default_model_name
+        self._default_model_id = default_model_id
         self._llm_configured = llm_configured
         self._prompt_registry = WritingAIPromptRegistry()
 
     async def create_run(self, command: WritingAICreateRunCommand) -> WritingAIRun:
         """Run the complete writing AI workflow and persist the trace."""
         _validate_scope(command.button_type, command.reference_scope)
+        profile = _resolve_profile(
+            self._llm,
+            command.model_id or self._default_model_id,
+            allow_disabled=not self._llm_configured,
+        )
         now = _now_iso()
         run = WritingAIRun(
             run_id=_new_run_id(),
             status=WritingAIRunStatus.QUEUED,
             button_type=command.button_type,
             button_label=_BUTTON_LABELS[command.button_type],
-            model=self._default_model_name,
+            model=profile.display_name,
+            model_id=profile.id,
+            model_display_name=profile.display_name,
+            upstream_model=profile.upstream_model,
+            wire_protocol=profile.wire_protocol,
             chapter_id=command.chapter_id,
             reference_scope=command.reference_scope,
             input=WritingAIInput(
@@ -283,10 +300,16 @@ class WritingAIService:
             if not self._llm_configured:
                 return await self._fail_run(run, MODEL_NOT_CONFIGURED_MESSAGE)
             run = await self._set_status(run, WritingAIRunStatus.CALLING_LLM)
-            prompt_text = f"{prompt_snapshot.system_prompt}\n\n{prompt_snapshot.user_prompt}"
-            raw_output = await self._llm.complete(prompt_text)
+            llm_response = await self._llm.complete(
+                _llm_request(run, prompt_snapshot, command)
+            )
+            raw_output = response_text(llm_response)
             run = run.model_copy(
-                update={"raw_llm_output": raw_output, "updated_at": _now_iso()}
+                update={
+                    "raw_llm_output": raw_output,
+                    **_response_updates(llm_response),
+                    "updated_at": _now_iso(),
+                }
             )
             await self._replace(run)
             run = await self._set_status(run, WritingAIRunStatus.PARSING)
@@ -310,6 +333,115 @@ class WritingAIService:
             else:
                 message = f"写作 AI 运行失败：{error}"
             return await self._fail_run(run, message)
+
+    async def stream_run(self, command: WritingAICreateRunCommand):
+        """执行写作任务并输出 NDJSON 所需的增量事件。"""
+        _validate_scope(command.button_type, command.reference_scope)
+        profile = _resolve_profile(
+            self._llm,
+            command.model_id or self._default_model_id,
+            allow_disabled=not self._llm_configured,
+        )
+        now = _now_iso()
+        run = WritingAIRun(
+            run_id=_new_run_id(),
+            status=WritingAIRunStatus.QUEUED,
+            button_type=command.button_type,
+            button_label=_BUTTON_LABELS[command.button_type],
+            model=profile.display_name,
+            model_id=profile.id,
+            model_display_name=profile.display_name,
+            upstream_model=profile.upstream_model,
+            wire_protocol=profile.wire_protocol,
+            chapter_id=command.chapter_id,
+            reference_scope=command.reference_scope,
+            input=WritingAIInput(
+                user_input=command.user_input,
+                selected_text=command.selected_text,
+                selection_range=command.selection_range,
+                target_words=command.target_words,
+                draft_chapter_text=command.draft_chapter_text,
+            ),
+            created_at=now,
+            updated_at=now,
+        )
+        await self._append(run)
+        yield {"type": "run_started", "run_id": run.run_id, "model_id": profile.id}
+        try:
+            run = await self._set_status(run, WritingAIRunStatus.RETRIEVING)
+            context = await self._context_builder.build(command)
+            prompt_snapshot = self._render_prompt(command, context)
+            run = run.model_copy(
+                update={
+                    "chapter_title": context.chapter_title,
+                    "retrieval_context": context.retrieval_context,
+                    "prompt_snapshot": prompt_snapshot,
+                    "updated_at": _now_iso(),
+                }
+            )
+            await self._replace(run)
+            if not self._llm_configured:
+                raise WritingAIError(MODEL_NOT_CONFIGURED_MESSAGE)
+            run = await self._set_status(run, WritingAIRunStatus.CALLING_LLM)
+            raw_parts: list[str] = []
+            final_response: LLMResponse | None = None
+            async for event in self._llm.stream(
+                _llm_request(run, prompt_snapshot, command)
+            ):
+                if event.event_type == "text_delta":
+                    raw_parts.append(event.delta)
+                    yield {"type": "text_delta", "delta": event.delta}
+                elif event.event_type == "usage" and event.usage is not None:
+                    yield {
+                        "type": "usage",
+                        "input_tokens": event.usage.input_tokens,
+                        "cached_input_tokens": event.usage.cached_input_tokens,
+                        "output_tokens": event.usage.output_tokens,
+                        "reasoning_tokens": event.usage.reasoning_tokens,
+                        "total_tokens": event.usage.total_tokens,
+                    }
+                elif event.event_type == "completed":
+                    final_response = event.response
+                elif event.event_type == "failed":
+                    raise WritingAIError(event.error or "模型调用失败，请稍后重试。")
+            if final_response is None:
+                raise WritingAIError("模型流式输出中断，请稍后重试。")
+            raw_output = "".join(raw_parts) or final_response.text
+            run = run.model_copy(
+                update={
+                    "raw_llm_output": raw_output,
+                    **_response_updates(final_response),
+                    "updated_at": _now_iso(),
+                }
+            )
+            await self._replace(run)
+            run = await self._set_status(run, WritingAIRunStatus.PARSING)
+            structured_output = _parse_structured_output(
+                raw_output,
+                self._prompt_registry.get(command.button_type).output_type,
+            )
+            run = run.model_copy(
+                update={
+                    "status": WritingAIRunStatus.COMPLETED,
+                    "structured_output": structured_output,
+                    "error": None,
+                    "updated_at": _now_iso(),
+                }
+            )
+            await self._replace(run)
+            yield {
+                "type": "run_completed",
+                "run_id": run.run_id,
+                "call_id": final_response.call_id,
+            }
+        except Exception as error:
+            message = (
+                str(error)
+                if isinstance(error, WritingAIError)
+                else "模型调用失败，请稍后重试。"
+            )
+            await self._fail_run(run, message)
+            yield {"type": "run_failed", "run_id": run.run_id, "message": message}
 
     async def list_runs(
         self,
@@ -637,3 +769,64 @@ def _new_run_id() -> str:
 
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+
+
+def _resolve_profile(
+    llm: LLMGatewayContract, model_id: str, *, allow_disabled: bool = False
+) -> LLMModelProfile:
+    if not hasattr(llm, "list_models"):
+        return LLMModelProfile(
+            id=model_id,
+            display_name=model_id,
+            provider="rightcode",
+            upstream_model=model_id,
+            wire_protocol="openai_responses",
+            base_url_key="RIGHTCODE_RESPONSES_BASE_URL",
+            enabled=True,
+            is_default=True,
+            supports_streaming=False,
+        )
+    for profile in llm.list_models():
+        if profile.id == model_id:
+            if not profile.enabled and not allow_disabled:
+                raise WritingAIError(
+                    f"模型“{profile.display_name}”当前已停用，请选择其他模型。"
+                )
+            return profile
+    raise WritingAIError("所选模型不存在，请刷新模型列表后重试。")
+
+
+def _llm_request(
+    run: WritingAIRun,
+    prompt: WritingAIPromptSnapshot,
+    command: WritingAICreateRunCommand,
+) -> LLMRequest:
+    return LLMRequest(
+        model_id=run.model_id,
+        messages=(
+            LLMMessage(role="system", content=prompt.system_prompt),
+            LLMMessage(role="user", content=prompt.user_prompt),
+        ),
+        task_type=f"writing_{command.button_type.value}",
+        task_name=run.button_label,
+        run_id=run.run_id,
+        chapter_ids=(run.chapter_id,),
+        response_mode="json",
+        feature="写作 AI",
+    )
+
+
+def _response_updates(response: LLMResponse | str) -> dict[str, object]:
+    if not isinstance(response, LLMResponse):
+        return {}
+    return {
+        "llm_call_id": response.call_id,
+        "input_tokens": response.usage.input_tokens,
+        "cached_input_tokens": response.usage.cached_input_tokens,
+        "output_tokens": response.usage.output_tokens,
+        "reasoning_tokens": response.usage.reasoning_tokens,
+        "total_tokens": response.usage.total_tokens,
+        "cost_amount": response.cost.amount,
+        "cost_currency": response.cost.currency,
+        "cost_kind": response.cost.kind,
+    }

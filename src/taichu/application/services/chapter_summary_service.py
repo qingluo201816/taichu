@@ -7,12 +7,17 @@ import json
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any, Sequence
+from typing import Any, Sequence, cast
 from uuid import uuid4
 
 from pydantic import ValidationError
 
-from taichu.application.contracts.llm import LLMContract
+from taichu.application.contracts.llm import (
+    LLMGatewayContract,
+    LLMMessage,
+    LLMRequest,
+    response_text,
+)
 from taichu.application.contracts.retrieval import RetrievalContract, RetrievalQuery
 from taichu.application.contracts.storage import ProjectAssetStorageContract
 from taichu.application.services.ai_card_service import (
@@ -78,17 +83,21 @@ class ChapterSummaryService:
         chapter_service: ChapterService,
         knowledge_service: KnowledgeService,
         retrieval: RetrievalContract,
-        llm: LLMContract,
+        llm: object,
         ai_card_service: AICardService,
+        default_model_id: str = "deepseek-v4-pro",
     ) -> None:
         self._storage = storage
         self._chapter_service = chapter_service
         self._knowledge_service = knowledge_service
         self._retrieval = retrieval
-        self._llm = llm
+        self._llm = cast(LLMGatewayContract, llm)
         self._ai_card_service = ai_card_service
+        self._default_model_id = default_model_id
 
-    async def summarize_chapter(self, chapter_id: str) -> ChapterSummaryRunResult:
+    async def summarize_chapter(
+        self, chapter_id: str, model_id: str | None = None
+    ) -> ChapterSummaryRunResult:
         """Generate and persist a ChapterSummary draft and card."""
         chapter_content = await self._chapter_service.read_chapter(chapter_id)
         source_ref = _chapter_source_ref(
@@ -118,9 +127,29 @@ class ChapterSummaryService:
                 confirmed_knowledge=knowledge_cards,
                 retrieval_hits=retrieval_hits,
             )
+            selected_model_id = model_id or self._default_model_id
+            _ensure_selectable_model(self._llm, selected_model_id)
+            response = await self._llm.complete(
+                LLMRequest(
+                    model_id=selected_model_id,
+                    messages=(
+                        LLMMessage(
+                            role="system",
+                            content=(
+                                "你是太初章节摘要助手，必须依据正文返回合法 JSON。"
+                            ),
+                        ),
+                        LLMMessage(role="user", content=prompt),
+                    ),
+                    task_type="chapter_summary",
+                    task_name="章节摘要",
+                    chapter_ids=(chapter_id,),
+                    response_mode="json",
+                    feature="章节摘要",
+                )
+            )
             workflow_output = _parse_summary_output(
-                await self._llm.complete(prompt),
-                chapter_content.markdown,
+                response_text(response), chapter_content.markdown
             )
 
         summary = ChapterSummary(
@@ -280,6 +309,19 @@ class SummaryCandidateNotFoundError(LookupError):
 
     def __init__(self, pending_fact_id: str) -> None:
         super().__init__(f"章节整理候选“{pending_fact_id}”不存在")
+
+
+def _ensure_selectable_model(llm: LLMGatewayContract, model_id: str) -> None:
+    if not hasattr(llm, "list_models"):
+        return
+    for profile in llm.list_models():
+        if profile.id == model_id:
+            if profile.enabled:
+                return
+            raise ChapterSummaryError(
+                f"模型“{profile.display_name}”当前已停用，请选择其他模型。"
+            )
+    raise ChapterSummaryError("所选模型不存在，请刷新模型列表后重试。")
 
 
 def _parse_summary_output(raw_output: str, markdown: str) -> SummaryWorkflowOutput:

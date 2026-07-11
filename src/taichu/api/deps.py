@@ -4,6 +4,8 @@ from fastapi import Request
 
 from taichu.application.agents.registry import AgentRegistry
 from taichu.application.contracts.storage import StorageBackend
+from taichu.application.contracts.llm import LLMGatewayContract
+from taichu.application.contracts.llm_usage import LLMUsageRepository
 from taichu.application.services.ai_card_service import AICardService
 from taichu.application.services.chapter_summary_service import (
     ChapterSummaryService,
@@ -131,3 +133,13 @@ def provide_settings_preference_service(request: Request) -> SettingsPreferenceS
 def provide_writing_ai_service(request: Request) -> WritingAIService:
     """Return the writing-page real AI run service."""
     return request.app.state.writing_ai_service
+
+
+def provide_llm_gateway(request: Request) -> LLMGatewayContract:
+    """返回应用唯一模型网关。"""
+    return request.app.state.llm_gateway
+
+
+def provide_llm_usage_repository(request: Request) -> LLMUsageRepository:
+    """返回模型调用遥测仓储。"""
+    return request.app.state.llm_usage_repository

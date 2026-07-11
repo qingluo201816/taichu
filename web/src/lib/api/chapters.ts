@@ -31,10 +31,11 @@ export async function saveChapter(
 
 export async function summarizeChapter(
   chapterId: string,
+  modelId?: string,
 ): Promise<ChapterSummaryRunResponse> {
   return apiRequest<ChapterSummaryRunResponse>(
     `/api/chapters/${chapterId}/summary`,
-    { method: "POST" },
+    { method: "POST", body: JSON.stringify({ model_id: modelId }) },
   );
 }
 

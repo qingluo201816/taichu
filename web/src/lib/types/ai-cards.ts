@@ -75,6 +75,7 @@ export type SelectionAIRequest = {
   user_prompt?: string | null;
   target_words?: number | null;
   parent_card_id?: string | null;
+  model_id?: string;
 };
 
 export type AICardListResponse = {

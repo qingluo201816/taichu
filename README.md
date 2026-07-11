@@ -26,6 +26,7 @@
 | 查看其他未确认产品设想 | `docs/临时产品文档/` |
 | 查看历史快照 | `docs/历史/` |
 | 查看测试与评测样本 | `tests/`、`tests/fixtures/evaluations/` |
+| 安全探测 Right Code 模型名称与协议 | `scripts/probe_rightcode_models.py` |
 
 `docs/临时架构/` 和 `docs/临时产品文档/` 可能包含未实现、只实现一部分或已经被代码超越的内容。开发前必须以当前代码、`AGENTS.md` 和数据目录说明复核，不得把临时文档直接当作已落地事实。
 
@@ -47,6 +48,7 @@ Taichu/
 ├── docs/                     # 文档规则、临时资料、参考资料和历史快照
 ├── project_assets/           # 当前单本小说的数据态资产
 ├── src/                      # FastAPI 后端代码
+├── scripts/                  # 显式运行的开发探测与维护脚本
 ├── tests/                    # 后端测试和评测夹具
 └── web/                      # Next.js 前端代码
 ```

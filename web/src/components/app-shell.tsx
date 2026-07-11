@@ -9,6 +9,7 @@ import {
   History,
   Inbox,
   Library,
+  Gauge,
   Settings,
 } from "lucide-react";
 import { useEffect, type CSSProperties, type ReactNode } from "react";
@@ -20,6 +21,7 @@ const navigation = [
   { label: "知识库", href: "/knowledge", icon: Library },
   { label: "智能体工作台", href: "/agent-workbench", icon: Bot },
   { label: "任务监控", href: "/task-monitor", icon: GitBranch },
+  { label: "模型监控", href: "/model-monitor", icon: Gauge },
   { label: "收件箱", href: "/inbox", icon: Inbox },
   { label: "AI 历史", href: "/ai-history", icon: History },
   { label: "设置", href: "/settings", icon: Settings },

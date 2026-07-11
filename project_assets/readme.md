@@ -68,6 +68,7 @@ project_assets/
 ├── derived/                                     # 派生数据和 Agent 运行记录
 │   ├── agent_runs/                              # Agent 运行快照根目录
 │   │   └── knowledge_extraction/                # 正文知识沉淀 Agent 的运行记录和候选审核项
+│   ├── llm_usage/                               # 跨任务模型调用遥测，按需创建 calls.jsonl
 │   └── agent_evaluations/                       # Agent 效果评估输入快照、结果与审计记录
 │       └── knowledge_extraction/                # 知识沉淀评估报告及裁判校准报告
 └── generated/                                   # 可重建生成物、缓存、索引和临时文件
@@ -112,6 +113,8 @@ project_assets/
 ### derived
 
 `derived/` 是派生数据层。这里保存 Agent 运行快照、LLM 调用记录、JSON 中间态和候选审核项，用于审计与回放。
+
+跨任务模型调用遥测追加保存在 `derived/llm_usage/calls.jsonl`。每行只包含模型快照、任务来源、Token、费用、耗时、状态、上游请求 ID 和脱敏错误，不保存密钥、鉴权头、完整 Prompt 或模型原文；该目录属于可重建运行遥测，不是正文或结构化知识事实源。
 
 知识沉淀效果评估保存在 `derived/agent_evaluations/knowledge_extraction/`。每次评估独立冻结评测集、实际候选、正文、评分参数和模型身份，并保存确定性结果与裁判调用审计；裁判校准报告位于其 `calibration_reports/` 子目录。评估报告和校准报告都是非事实派生数据，通过 `lifecycle` 区分草稿、已确认和已废弃状态，不得反向成为正文或结构化知识事实源。
 

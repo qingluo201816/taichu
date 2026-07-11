@@ -45,7 +45,7 @@ async def api_create_knowledge_extraction_run(
     try:
         run = await service.create_run(
             chapter_id=request.chapter_id,
-            model_name=request.model_name,
+            model_name=request.model_id,
             force=request.force,
         )
     except KnowledgeExtractionModelSelectionError as error:
@@ -64,14 +64,14 @@ async def api_stream_knowledge_extraction_run(
 ) -> StreamingResponse:
     """Create one current-chapter knowledge extraction run and stream node events."""
     try:
-        service.validate_model_selection(request.model_name)
+        service.validate_model_selection(request.model_id)
     except KnowledgeExtractionModelSelectionError as error:
         raise _unsupported_model(str(error)) from error
 
     async def event_lines():
         async for event in service.stream_run(
             chapter_id=request.chapter_id,
-            model_name=request.model_name,
+            model_name=request.model_id,
             force=request.force,
         ):
             yield json.dumps(event, ensure_ascii=False) + "\n"
@@ -93,7 +93,7 @@ async def api_start_knowledge_extraction_run(
     try:
         run = await service.start_run_task(
             chapter_id=request.chapter_id,
-            model_name=request.model_name,
+            model_name=request.model_id,
             force=request.force,
         )
     except KnowledgeExtractionModelSelectionError as error:
@@ -112,14 +112,14 @@ async def api_stream_batch_knowledge_extraction_run(
 ) -> StreamingResponse:
     """Create one batch knowledge extraction run and stream task events."""
     try:
-        service.validate_model_selection(request.model_name)
+        service.validate_model_selection(request.model_id)
     except KnowledgeExtractionModelSelectionError as error:
         raise _unsupported_model(str(error)) from error
 
     async def event_lines():
         async for event in service.stream_batch_run(
             chapter_ids=request.chapter_ids,
-            model_name=request.model_name,
+            model_name=request.model_id,
             force=request.force,
         ):
             yield json.dumps(event, ensure_ascii=False) + "\n"
@@ -141,7 +141,7 @@ async def api_start_batch_knowledge_extraction_run(
     try:
         run = await service.start_batch_run_task(
             chapter_ids=request.chapter_ids,
-            model_name=request.model_name,
+            model_name=request.model_id,
             force=request.force,
         )
     except KnowledgeExtractionModelSelectionError as error:

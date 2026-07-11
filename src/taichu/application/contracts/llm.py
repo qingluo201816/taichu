@@ -1,14 +1,125 @@
-"""LLM contracts used by application services and workflows."""
+"""技术无关的 LLM 请求、响应与网关契约。"""
 
 from __future__ import annotations
 
-from typing import Protocol, Self, runtime_checkable
+from collections.abc import AsyncIterator
+from dataclasses import dataclass
+from decimal import Decimal
+from typing import Literal, Protocol, Self, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
 
+LLMRole = Literal["system", "user", "assistant"]
+LLMResponseMode = Literal["text", "json"]
+LLMWireProtocol = Literal["openai_responses", "anthropic_messages"]
+LLMCostKind = Literal["actual", "estimated", "unavailable"]
+LLMStreamEventType = Literal[
+    "started", "text_delta", "usage", "completed", "failed"
+]
+
+
+@dataclass(frozen=True, slots=True)
+class LLMMessage:
+    """一条保留角色边界的应用层消息。"""
+
+    role: LLMRole
+    content: str
+
+
+@dataclass(frozen=True, slots=True)
+class LLMRequest:
+    """一次不可变的模型调用快照。"""
+
+    model_id: str
+    messages: tuple[LLMMessage, ...]
+    task_type: str
+    task_name: str
+    run_id: str | None = None
+    chapter_ids: tuple[str, ...] = ()
+    response_mode: LLMResponseMode = "text"
+    temperature: float | None = None
+    max_output_tokens: int | None = None
+    feature: str = ""
+
+    def __str__(self) -> str:
+        """提供便于测试和审计的文本视图，传输层仍保留消息角色。"""
+        return "\n\n".join(message.content for message in self.messages)
+
+    def __contains__(self, value: str) -> bool:
+        """让旧测试替身可以继续按提示词片段选择固定响应。"""
+        return value in str(self)
+
+
+@dataclass(frozen=True, slots=True)
+class LLMUsage:
+    """上游返回的可空 Token 明细。"""
+
+    input_tokens: int | None = None
+    cached_input_tokens: int | None = None
+    output_tokens: int | None = None
+    reasoning_tokens: int | None = None
+    total_tokens: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class LLMCost:
+    """实际、预估或不可计算的费用。"""
+
+    amount: Decimal | None = None
+    currency: str = "CNY"
+    kind: LLMCostKind = "unavailable"
+
+
+@dataclass(frozen=True, slots=True)
+class LLMResponse:
+    """协议无关的完整模型响应。"""
+
+    text: str
+    model_id: str
+    upstream_model: str
+    usage: LLMUsage
+    cost: LLMCost
+    finish_reason: str | None = None
+    provider_request_id: str | None = None
+    call_id: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class LLMStreamEvent:
+    """流式调用的规范化事件。"""
+
+    event_type: LLMStreamEventType
+    delta: str = ""
+    usage: LLMUsage | None = None
+    response: LLMResponse | None = None
+    error: str | None = None
+    call_id: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class LLMModelProfile:
+    """后端模型目录中的稳定模型配置。"""
+
+    id: str
+    display_name: str
+    provider: Literal["rightcode"]
+    upstream_model: str
+    wire_protocol: LLMWireProtocol
+    base_url_key: str
+    enabled: bool
+    is_default: bool
+    supports_streaming: bool
+    input_price_per_million: Decimal | None = None
+    cached_input_price_per_million: Decimal | None = None
+    output_price_per_million: Decimal | None = None
+    reasoning_output_price_per_million: Decimal | None = None
+    currency: str = "CNY"
+    upstream_verified: bool = False
+
+
 class LLMModelIdentity(BaseModel):
-    """Auditable identity reported by the runtime that created an LLM."""
+    """供既有运行评估记录使用的可审计模型身份。"""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -22,7 +133,6 @@ class LLMModelIdentity(BaseModel):
 
     @model_validator(mode="after")
     def validate_identity(self) -> Self:
-        """Keep known and unknown identities explicit and reviewable."""
         if self.known:
             if not self.provider.strip() or not self.model_id.strip():
                 raise ValueError("已知模型身份必须包含供应商和模型标识。")
@@ -42,7 +152,6 @@ class LLMModelIdentity(BaseModel):
         family: str = "",
         endpoint_kind: str = "",
     ) -> LLMModelIdentity:
-        """Create an identity that must not be treated as independent evidence."""
         return cls(
             provider=provider,
             model_id=model_id,
@@ -54,14 +163,19 @@ class LLMModelIdentity(BaseModel):
 
 
 @runtime_checkable
-class LLMContract(Protocol):
-    """Minimal async text generation capability."""
+class LLMGatewayContract(Protocol):
+    """应用层唯一允许依赖的模型网关。"""
 
-    @property
-    def model_identity(self) -> LLMModelIdentity:
-        """Return the identity supplied by the actual runtime adapter."""
+    async def complete(self, request: LLMRequest) -> LLMResponse:
         ...
 
-    async def complete(self, prompt: str) -> str:
-        """Generate text for an application-level prompt."""
+    def stream(self, request: LLMRequest) -> AsyncIterator[LLMStreamEvent]:
         ...
+
+    def list_models(self) -> list[LLMModelProfile]:
+        ...
+
+
+def response_text(response: LLMResponse | str) -> str:
+    """读取响应正文，并兼容仅存在于测试替身中的字符串返回值。"""
+    return response.text if isinstance(response, LLMResponse) else response

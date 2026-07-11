@@ -85,6 +85,19 @@ export type WritingAIRun = {
   button_type: WritingAIButtonType;
   button_label: string;
   model: string;
+  model_id: string;
+  model_display_name: string;
+  upstream_model: string;
+  wire_protocol: string;
+  llm_call_id?: string | null;
+  input_tokens?: number | null;
+  cached_input_tokens?: number | null;
+  output_tokens?: number | null;
+  reasoning_tokens?: number | null;
+  total_tokens?: number | null;
+  cost_amount?: string | number | null;
+  cost_currency: string;
+  cost_kind: string;
   chapter_id: string;
   chapter_title: string;
   reference_scope: WritingAIReferenceScope;
@@ -107,7 +120,22 @@ export type CreateWritingAIRunRequest = {
   selection_range?: WritingAISelectionRange | null;
   target_words?: number | null;
   draft_chapter_text?: string | null;
+  model_id?: string;
 };
+
+export type WritingAIStreamEvent =
+  | { type: "run_started"; run_id: string; model_id: string }
+  | { type: "text_delta"; delta: string }
+  | {
+      type: "usage";
+      input_tokens?: number | null;
+      cached_input_tokens?: number | null;
+      output_tokens?: number | null;
+      reasoning_tokens?: number | null;
+      total_tokens?: number | null;
+    }
+  | { type: "run_completed"; run_id: string; call_id?: string | null }
+  | { type: "run_failed"; run_id: string; message: string };
 
 export type WritingAIRunListResponse = {
   runs: WritingAIRun[];

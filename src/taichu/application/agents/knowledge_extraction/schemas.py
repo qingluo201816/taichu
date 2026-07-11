@@ -1,13 +1,16 @@
 """Input and output schemas for the knowledge extraction Agent manifest."""
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 
 class KnowledgeExtractionAgentInput(BaseModel):
     """Input accepted by the knowledge extraction Agent graph."""
 
     chapter_id: str = Field(min_length=1)
-    model_name: str | None = None
+    model_id: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("model_id", "model_name"),
+    )
     force: bool = False
 
 

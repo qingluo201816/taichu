@@ -6,7 +6,7 @@ import asyncio
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 import re
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
 from taichu.application.agents.knowledge_extraction.workflow import (
@@ -30,7 +30,11 @@ from taichu.application.contracts.knowledge_repository import (
     StructuredKnowledgeRepository,
 )
 from taichu.application.contracts.agent_run_repository import AgentRunRepository
-from taichu.application.contracts.llm import LLMContract
+from taichu.application.contracts.llm import (
+    LLMGatewayContract,
+    LLMModelIdentity,
+    LLMModelProfile,
+)
 from taichu.application.services.chapter_service import ChapterService
 from taichu.application.services.agent_task_event_service import AgentTaskEventCenter
 from taichu.application.agents.models.agent_run import (
@@ -78,16 +82,18 @@ class KnowledgeExtractionService:
         self,
         *,
         chapter_service: ChapterService,
-        llm: LLMContract,
+        llm: object,
         knowledge_repository: StructuredKnowledgeRepository,
         run_store: AgentRunRepository,
         task_events: AgentTaskEventCenter | None = None,
+        default_model_id: str = "deepseek-v4-pro",
     ) -> None:
         self._chapter_service = chapter_service
-        self._llm = llm
+        self._llm = cast(LLMGatewayContract, llm)
         self._knowledge_repository = knowledge_repository
         self._run_store = run_store
         self._task_events = task_events
+        self._default_model_id = default_model_id
         self._background_tasks: set[asyncio.Task[None]] = set()
 
     def validate_model_selection(self, model_name: str | None) -> None:
@@ -97,19 +103,51 @@ class KnowledgeExtractionService:
     def _resolve_model_selection(
         self,
         model_name: str | None,
-    ) -> tuple[str, str | None]:
+    ) -> tuple[LLMModelProfile, str | None]:
         requested_model_name = (
             model_name if model_name is not None and model_name.strip() else None
         )
-        actual_model_id = self._llm.model_identity.model_id
-        if (
-            requested_model_name is not None
-            and requested_model_name.strip() != actual_model_id
-        ):
+        selected_id = (
+            requested_model_name.strip()
+            if requested_model_name is not None
+            else self._default_model_id
+        )
+        if hasattr(self._llm, "list_models"):
+            for profile in self._llm.list_models():
+                if profile.id != selected_id:
+                    continue
+                if not profile.enabled:
+                    raise KnowledgeExtractionModelSelectionError(
+                        f"模型“{profile.display_name}”当前已停用，请选择其他模型。"
+                    )
+                return profile, requested_model_name
             raise KnowledgeExtractionModelSelectionError(
-                "当前不支持切换到所选模型，请使用已配置模型"
+                "所选模型不存在，请刷新模型列表后重试。"
             )
-        return actual_model_id, requested_model_name
+        identity = getattr(
+            self._llm,
+            "model_identity",
+            LLMModelIdentity.unknown("测试替身未提供模型身份。"),
+        )
+        actual_model_id = identity.model_id or self._default_model_id
+        if requested_model_name is not None and selected_id != actual_model_id:
+            raise KnowledgeExtractionModelSelectionError(
+                "所选模型不存在，请刷新模型列表后重试。"
+            )
+        return (
+            LLMModelProfile(
+                id=actual_model_id,
+                display_name=actual_model_id,
+                provider="rightcode",
+                upstream_model=actual_model_id,
+                wire_protocol="openai_responses",
+                base_url_key="RIGHTCODE_RESPONSES_BASE_URL",
+                enabled=True,
+                is_default=True,
+                supports_streaming=False,
+            ),
+            requested_model_name,
+        )
 
     async def create_run(
         self,
@@ -324,14 +362,18 @@ class KnowledgeExtractionService:
         force: bool,
         event_sink,
     ) -> AgentRun:
-        actual_model_id, requested_model_name = self._resolve_model_selection(
+        profile, requested_model_name = self._resolve_model_selection(
             model_name
         )
         initial_state = initial_knowledge_extraction_state(
             chapter_id=chapter_id,
-            model_name=actual_model_id,
+            model_name=profile.display_name,
             requested_model_name=requested_model_name,
-            generation_model_identity=self._llm.model_identity,
+            model_id=profile.id,
+            model_display_name=profile.display_name,
+            upstream_model=profile.upstream_model,
+            wire_protocol=profile.wire_protocol,
+            generation_model_identity=_identity_for_gateway(self._llm, profile),
             force=force,
         )
         if event_sink is not None:
@@ -393,7 +435,7 @@ class KnowledgeExtractionService:
         force: bool,
         event_sink,
     ) -> AgentRun:
-        model, requested_model_name = self._resolve_model_selection(model_name)
+        profile, requested_model_name = self._resolve_model_selection(model_name)
         unique_chapter_ids = _unique_non_empty(chapter_ids)
         if not unique_chapter_ids:
             raise KnowledgeExtractionError("请至少选择一个章节。")
@@ -427,9 +469,13 @@ class KnowledgeExtractionService:
             items = review_items or []
             return AgentRun(
                 run_id=run_id,
-                model_name=model,
+                model_name=profile.display_name,
                 requested_model_name=requested_model_name,
-                generation_model_identity=self._llm.model_identity,
+                model_id=profile.id,
+                model_display_name=profile.display_name,
+                upstream_model=profile.upstream_model,
+                wire_protocol=profile.wire_protocol,
+                generation_model_identity=_identity_for_gateway(self._llm, profile),
                 status=status,
                 scope=AgentRunScope(
                     scope_type="chapter_batch",
@@ -627,7 +673,7 @@ class KnowledgeExtractionService:
                 try:
                     branch_state = await self._run_branch_candidate_graph(
                         chapter_id=chapter_id,
-                        model_name=model,
+                        profile=profile,
                         requested_model_name=requested_model_name,
                         force=force,
                         event_sink=branch_event_sink,
@@ -831,7 +877,7 @@ class KnowledgeExtractionService:
         self,
         *,
         chapter_id: str,
-        model_name: str,
+        profile: LLMModelProfile,
         requested_model_name: str | None,
         force: bool,
         event_sink=None,
@@ -846,9 +892,13 @@ class KnowledgeExtractionService:
         graph = build_knowledge_extraction_branch_graph(dependencies)
         state = initial_knowledge_extraction_state(
             chapter_id=chapter_id,
-            model_name=model_name,
+            model_name=profile.display_name,
             requested_model_name=requested_model_name,
-            generation_model_identity=self._llm.model_identity,
+            model_id=profile.id,
+            model_display_name=profile.display_name,
+            upstream_model=profile.upstream_model,
+            wire_protocol=profile.wire_protocol,
+            generation_model_identity=_identity_for_gateway(self._llm, profile),
             force=force,
         )
         return await graph.ainvoke(state)
@@ -1715,6 +1765,28 @@ def _count_status(
 
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+
+
+def _identity_from_profile(profile: LLMModelProfile) -> LLMModelIdentity:
+    return LLMModelIdentity(
+        provider="rightcode",
+        model_id=profile.id,
+        family=profile.id.rsplit("-", 1)[0],
+        endpoint_kind=profile.wire_protocol,
+        known=profile.upstream_verified,
+        unknown_reason=(
+            None if profile.upstream_verified else "上游模型名尚未完成真实密钥探测。"
+        ),
+    )
+
+
+def _identity_for_gateway(
+    gateway: LLMGatewayContract, profile: LLMModelProfile
+) -> LLMModelIdentity:
+    identity = getattr(gateway, "model_identity", None)
+    if isinstance(identity, LLMModelIdentity):
+        return identity
+    return _identity_from_profile(profile)
 
 
 def _consume_background_task_exception(task: asyncio.Task[Any]) -> None:

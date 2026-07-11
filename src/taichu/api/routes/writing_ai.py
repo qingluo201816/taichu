@@ -1,6 +1,9 @@
-"""Writing-page AI real LLM run endpoints."""
+"""写作页 AI 普通与流式运行接口。"""
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+import json
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import StreamingResponse
 
 from taichu.api.deps import provide_chapter_service, provide_writing_ai_service
 from taichu.api.schemas.writing_ai import (
@@ -40,10 +43,41 @@ async def api_create_writing_ai_run(
                 selection_range=request.selection_range,
                 target_words=request.target_words,
                 draft_chapter_text=request.draft_chapter_text,
+                model_id=request.model_id,
             )
         )
     except ValueError as error:
         raise _bad_request(str(error)) from error
+
+
+@router.post("/writing-ai/runs/stream")
+async def api_stream_writing_ai_run(
+    payload: CreateWritingAIRunRequest,
+    http_request: Request,
+    service: WritingAIService = Depends(provide_writing_ai_service),
+) -> StreamingResponse:
+    """以 NDJSON 输出真实模型增量，同时保存最终完整运行记录。"""
+    command = WritingAICreateRunCommand(
+        button_type=payload.button_type,
+        chapter_id=payload.chapter_id,
+        reference_scope=payload.reference_scope,
+        user_input=payload.user_input,
+        selected_text=payload.selected_text,
+        selection_range=payload.selection_range,
+        target_words=payload.target_words,
+        draft_chapter_text=payload.draft_chapter_text,
+        model_id=payload.model_id,
+    )
+
+    async def event_lines():
+        async for event in service.stream_run(command):
+            if await http_request.is_disconnected():
+                break
+            yield json.dumps(event, ensure_ascii=False) + "\n"
+
+    return StreamingResponse(
+        event_lines(), media_type="application/x-ndjson; charset=utf-8"
+    )
 
 
 @router.get("/writing-ai/runs", response_model=WritingAIRunListResponse)

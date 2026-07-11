@@ -21,7 +21,14 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
+import {
+  StructuredKnowledgeForm,
+  StructuredKnowledgeView,
+} from "@/components/knowledge/structured-knowledge-fields";
+import { ModelSelector } from "@/components/llm/model-selector";
+import type { ReturnTypeOfModelSelection } from "@/components/llm/types";
 import { Button } from "@/components/ui/button";
+import { useModelSelection } from "@/hooks/use-model-selection";
 import {
   confirmKnowledgeExtractionCandidate,
   deleteKnowledgeExtractionRun,
@@ -33,7 +40,21 @@ import {
   startKnowledgeExtractionRun,
 } from "@/lib/api/agent-workbench";
 import { listChapters } from "@/lib/api/chapters";
-import { readKnowledgeCard } from "@/lib/api/mvp";
+import {
+  listKnowledgeCards,
+  listKnowledgeSchemas,
+  readKnowledgeCard,
+} from "@/lib/api/mvp";
+import {
+  buildKnowledgeReferenceOptions,
+  CANDIDATE_LOCKED_FIELD_KEYS,
+  formStateFromKnowledgeValues,
+  knowledgePayloadFromForm,
+  validateKnowledgeForm,
+  type KnowledgeFormErrors,
+  type KnowledgeFormState,
+  type KnowledgeReferenceOptions,
+} from "@/lib/knowledge/structured-fields";
 import type {
   AgentEntityGroup,
   AgentIgnoredExtraction,
@@ -49,11 +70,18 @@ import type {
   ReviewCandidateStatus,
 } from "@/lib/types/agent-workbench";
 import type { ChapterInfo } from "@/lib/types/chapters";
-import type { StructuredKnowledgeCard } from "@/lib/types/mvp";
+import type {
+  KnowledgeTypeSchema,
+  StructuredKnowledgeCard,
+} from "@/lib/types/mvp";
 import { cn } from "@/lib/utils";
 
 type WorkbenchSection = "run" | "candidates" | "detail" | "metrics";
 type CandidateStatusFilter = ReviewCandidateStatus | "all";
+const CANDIDATE_CARD_HIDDEN_FIELD_KEYS = new Set([
+  ...CANDIDATE_LOCKED_FIELD_KEYS,
+  "name",
+]);
 type RunNotice = {
   message: string;
   runId?: string;
@@ -182,9 +210,16 @@ export function AgentWorkbenchShell() {
   const [candidateStatusFilter, setCandidateStatusFilter] =
     useState<CandidateStatusFilter>("pending");
   const [selectedCallId, setSelectedCallId] = useState("");
-  const [candidateDrafts, setCandidateDrafts] = useState<Record<string, string>>(
-    {},
-  );
+  const [knowledgeSchemas, setKnowledgeSchemas] = useState<KnowledgeTypeSchema[]>([]);
+  const [referenceOptions, setReferenceOptions] =
+    useState<KnowledgeReferenceOptions>({});
+  const [candidateDrafts, setCandidateDrafts] = useState<
+    Record<string, KnowledgeFormState>
+  >({});
+  const [candidateFormErrors, setCandidateFormErrors] = useState<
+    Record<string, KnowledgeFormErrors>
+  >({});
+  const [editingCandidateId, setEditingCandidateId] = useState("");
   const [candidateMergeModes, setCandidateMergeModes] = useState<
     Record<string, EditConfirmMergeMode>
   >({});
@@ -200,6 +235,7 @@ export function AgentWorkbenchShell() {
   const [deletingRunId, setDeletingRunId] = useState("");
   const [error, setError] = useState("");
   const [runNotice, setRunNotice] = useState<RunNotice | null>(null);
+  const modelSelection = useModelSelection();
 
   const selectedCandidate = useMemo(
     () => {
@@ -223,10 +259,24 @@ export function AgentWorkbenchShell() {
     [currentRun, selectedCallId],
   );
 
-  const selectedCandidateDraft = selectedCandidate
-    ? candidateDrafts[selectedCandidate.review_item_id] ??
-      formatJson(selectedCandidate.suggested_card)
-    : "";
+  const knowledgeSchemaByType = useMemo(
+    () => new Map(knowledgeSchemas.map(schema => [schema.type, schema])),
+    [knowledgeSchemas],
+  );
+  const selectedCandidateSchema = selectedCandidate
+    ? knowledgeSchemaByType.get(selectedCandidate.knowledge_type) ?? null
+    : null;
+  const selectedCandidateDraft =
+    selectedCandidate && selectedCandidateSchema
+      ? candidateDrafts[selectedCandidate.review_item_id] ??
+        formStateFromKnowledgeValues(
+          selectedCandidateSchema,
+          selectedCandidate.suggested_card,
+        )
+      : {};
+  const selectedCandidateFormErrors = selectedCandidate
+    ? candidateFormErrors[selectedCandidate.review_item_id] ?? {}
+    : {};
 
   const selectedCandidateMergeMode = selectedCandidate
     ? candidateMergeModes[selectedCandidate.review_item_id] ?? "append"
@@ -247,6 +297,7 @@ export function AgentWorkbenchShell() {
     setSelectedRunId(runId);
     const response = await getAgentTask(runId);
     setCurrentRun(response.run);
+    setEditingCandidateId("");
     setSelectedCandidateId(
       response.run.review_items.find(item => item.candidate_status === "pending")
         ?.review_item_id ??
@@ -321,15 +372,43 @@ export function AgentWorkbenchShell() {
       setLoading(true);
       setError("");
       try {
-        const [chapterResponse, runResponse] = await Promise.all([
+        const [chapterResponse, runResponse, schemaResponse] = await Promise.all([
           listChapters(),
           listKnowledgeExtractionRuns(),
+          listKnowledgeSchemas(),
+        ]);
+        const [characterResult, factionResult] = await Promise.allSettled([
+          listKnowledgeCards({
+            type: "character",
+            status: "active",
+            page: 1,
+            pageSize: 100,
+          }),
+          listKnowledgeCards({
+            type: "faction",
+            status: "active",
+            page: 1,
+            pageSize: 100,
+          }),
         ]);
         if (ignore) {
           return;
         }
         setChapters(chapterResponse.chapters);
         setRuns(runResponse.runs);
+        setKnowledgeSchemas(schemaResponse.schemas);
+        setReferenceOptions(
+          buildKnowledgeReferenceOptions(
+            schemaResponse.schemas,
+            chapterResponse.chapters,
+            characterResult.status === "fulfilled"
+              ? characterResult.value.cards
+              : [],
+            factionResult.status === "fulfilled"
+              ? factionResult.value.cards
+              : [],
+          ),
+        );
         setSelectedChapterIds(
           chapterResponse.chapters[0] ? [chapterResponse.chapters[0].id] : [],
         );
@@ -407,6 +486,10 @@ export function AgentWorkbenchShell() {
       setError("请先勾选至少一个章节。");
       return;
     }
+    if (!modelSelection.modelId) {
+      setError(modelSelection.error || "模型列表尚未加载完成。");
+      return;
+    }
     setRunning(true);
     setError("");
     const isBatchRun = selectedChapterIds.length > 1;
@@ -418,11 +501,13 @@ export function AgentWorkbenchShell() {
     });
     try {
       const response = isBatchRun
-        ? await startBatchKnowledgeExtractionRun({
+          ? await startBatchKnowledgeExtractionRun({
             chapter_ids: selectedChapterIds,
+            model_id: modelSelection.modelId,
           })
         : await startKnowledgeExtractionRun({
             chapter_id: selectedChapterIds[0],
+            model_id: modelSelection.modelId,
           });
       setSelectedRunId(response.run.run_id);
       setRuns(current => upsertRunSummary(current, response.run));
@@ -461,8 +546,38 @@ export function AgentWorkbenchShell() {
     mergeMode: EditConfirmMergeMode = "append",
   ) {
     setSelectedCandidateId(candidate.review_item_id);
-    setActionBusyKey(`${candidate.review_item_id}:${action}`);
     setError("");
+    let cardUpdates: Record<string, unknown> | null = null;
+    if (action === "edit-confirm") {
+      const schema = knowledgeSchemaByType.get(candidate.knowledge_type);
+      if (!schema) {
+        setError("知识字段配置尚未加载完成，请稍后重试。");
+        return;
+      }
+      const draft =
+        candidateDrafts[candidate.review_item_id] ??
+        formStateFromKnowledgeValues(schema, candidate.suggested_card);
+      const formErrors = validateKnowledgeForm(
+        schema,
+        draft,
+        CANDIDATE_LOCKED_FIELD_KEYS,
+      );
+      setCandidateFormErrors(current => ({
+        ...current,
+        [candidate.review_item_id]: formErrors,
+      }));
+      if (Object.keys(formErrors).length) {
+        setEditingCandidateId(candidate.review_item_id);
+        setError("请先补全必填字段后再确认入库。");
+        return;
+      }
+      cardUpdates = knowledgePayloadFromForm(
+        schema,
+        draft,
+        CANDIDATE_LOCKED_FIELD_KEYS,
+      );
+    }
+    setActionBusyKey(`${candidate.review_item_id}:${action}`);
     try {
       const response =
         action === "confirm"
@@ -475,11 +590,7 @@ export function AgentWorkbenchShell() {
                 candidate.run_id,
                 candidate.review_item_id,
                 {
-                  card_updates: parseCandidateDraft(
-                    candidate.review_item_id === selectedCandidateId
-                      ? selectedCandidateDraft
-                      : formatJson(candidate.suggested_card),
-                  ),
+                  card_updates: cardUpdates ?? {},
                   target_card_id: candidate.target_card_id ?? null,
                   merge_mode: candidate.target_card_id ? mergeMode : "append",
                 },
@@ -489,6 +600,11 @@ export function AgentWorkbenchShell() {
                 candidate.review_item_id,
               );
       setCurrentRun(response.run);
+      setEditingCandidateId("");
+      setCandidateFormErrors(current => ({
+        ...current,
+        [candidate.review_item_id]: {},
+      }));
       setSelectedCandidateId(
         pickVisibleCandidateId(
           response.run,
@@ -528,8 +644,8 @@ export function AgentWorkbenchShell() {
   return (
     <AppShell activePath="/agent-workbench">
       {runNotice ? <RunStartNotice notice={runNotice} /> : null}
-      <section className="mx-auto grid max-w-[1440px] gap-4 px-4 py-4 xl:grid-cols-[210px_minmax(0,1fr)]">
-        <aside className="rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2">
+      <section className="mx-auto grid max-w-[1440px] gap-4 px-4 py-4 xl:grid-cols-[188px_minmax(0,1fr)]">
+        <aside className="min-w-0 overflow-hidden rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2">
           <div className="px-2 py-2">
             <p className="text-xs text-[var(--tc-text-muted)]">智能体工作台</p>
             <h1 className="text-xl font-semibold text-[var(--tc-text-primary)]">
@@ -589,29 +705,8 @@ export function AgentWorkbenchShell() {
         </aside>
 
         <section className="flex min-h-0 min-w-0 flex-col">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="flex items-center gap-2 text-xs text-[var(--tc-text-muted)]">
-                <Bot className="size-4" />
-                正文知识沉淀
-              </p>
-              <h2 className="text-xl font-semibold text-[var(--tc-text-primary)]">
-                当前智能体条目
-              </h2>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => void reloadRuns()}
-            >
-              <RefreshCw className="size-4" />
-              刷新
-            </Button>
-          </div>
-
           {error ? (
-            <div className="mb-4 flex max-w-[980px] items-start gap-2 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 text-sm text-[var(--tc-text-primary)]">
+            <div className="mx-auto mb-4 flex w-full max-w-[960px] items-start gap-2 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 text-sm text-[var(--tc-text-primary)]">
               <AlertTriangle className="mt-0.5 size-4" />
               <span>{error}</span>
             </div>
@@ -619,7 +714,7 @@ export function AgentWorkbenchShell() {
 
           <RunSummaryStrip run={currentRun} loading={loading} />
 
-          <div className="mt-4 grid min-w-0 max-w-[1240px] gap-4 xl:grid-cols-[minmax(0,1fr)_128px]">
+          <div className="mx-auto mt-4 grid w-full min-w-0 max-w-[1180px] gap-4 xl:grid-cols-[minmax(0,1fr)_128px]">
             <section className="min-w-0 border-t border-[var(--tc-border-subtle)] pt-4">
               <div className="mb-3">
                 <h3 className="text-base font-semibold text-[var(--tc-text-primary)]">
@@ -638,6 +733,7 @@ export function AgentWorkbenchShell() {
                   selectedChapterIds={selectedChapterIds}
                   currentRun={currentRun}
                   running={running}
+                  modelSelection={modelSelection}
                   onChapterToggle={(chapterId, checked) => {
                     setSelectedChapterIds(current =>
                       checked
@@ -653,13 +749,22 @@ export function AgentWorkbenchShell() {
                 <CandidatePanel
                   run={currentRun}
                   selectedCandidate={selectedCandidate}
+                  selectedCandidateSchema={selectedCandidateSchema}
                   selectedCandidateDraft={selectedCandidateDraft}
+                  selectedCandidateFormErrors={selectedCandidateFormErrors}
+                  referenceOptions={referenceOptions}
+                  editingCandidateId={editingCandidateId}
                   selectedTargetCard={selectedTargetCard}
                   selectedTargetCardError={selectedTargetCardError}
                   selectedCandidateMergeMode={selectedCandidateMergeMode}
                   statusFilter={candidateStatusFilter}
                   actionBusyKey={actionBusyKey}
-                  onSelectCandidate={setSelectedCandidateId}
+                  onSelectCandidate={candidateId => {
+                    setSelectedCandidateId(candidateId);
+                    if (editingCandidateId && editingCandidateId !== candidateId) {
+                      setEditingCandidateId("");
+                    }
+                  }}
                   onStatusFilterChange={handleCandidateStatusFilterChange}
                   onMergeModeChange={value => {
                     if (!selectedCandidate) {
@@ -678,6 +783,49 @@ export function AgentWorkbenchShell() {
                       ...current,
                       [selectedCandidate.review_item_id]: value,
                     }));
+                    setCandidateFormErrors(current => ({
+                      ...current,
+                      [selectedCandidate.review_item_id]: {},
+                    }));
+                  }}
+                  onStartEdit={candidate => {
+                    const schema = knowledgeSchemaByType.get(candidate.knowledge_type);
+                    if (!schema) {
+                      setError("知识字段配置尚未加载完成，请稍后重试。");
+                      return;
+                    }
+                    setCandidateDrafts(current => ({
+                      ...current,
+                      [candidate.review_item_id]:
+                        current[candidate.review_item_id] ??
+                        formStateFromKnowledgeValues(
+                          schema,
+                          candidate.suggested_card,
+                        ),
+                    }));
+                    setCandidateFormErrors(current => ({
+                      ...current,
+                      [candidate.review_item_id]: {},
+                    }));
+                    setEditingCandidateId(candidate.review_item_id);
+                  }}
+                  onCancelEdit={candidate => {
+                    const schema = knowledgeSchemaByType.get(candidate.knowledge_type);
+                    if (schema) {
+                      setCandidateDrafts(current => ({
+                        ...current,
+                        [candidate.review_item_id]: formStateFromKnowledgeValues(
+                          schema,
+                          candidate.suggested_card,
+                        ),
+                      }));
+                    }
+                    setCandidateFormErrors(current => ({
+                      ...current,
+                      [candidate.review_item_id]: {},
+                    }));
+                    setEditingCandidateId("");
+                    setError("");
                   }}
                   onAction={(candidate, action, mergeMode) =>
                     void handleCandidateAction(candidate, action, mergeMode)
@@ -759,14 +907,14 @@ function RecentRunList({
     );
   }
   return (
-    <div className="grid max-h-[300px] gap-1 overflow-y-auto pr-1">
+    <div className="grid max-h-[300px] min-w-0 gap-1 overflow-x-hidden overflow-y-auto pr-1">
       {runs.map(run => {
         const title = runSummaryTitle(run);
         return (
           <div
             key={run.run_id}
             className={cn(
-              "flex items-stretch gap-1 rounded-[var(--tc-radius-control)] text-sm transition-colors",
+              "group relative min-w-0 overflow-hidden rounded-[var(--tc-radius-control)] text-sm transition-colors",
               selectedRunId === run.run_id
                 ? "bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
                 : "text-[var(--tc-text-secondary)] hover:bg-[var(--tc-surface-muted)] hover:text-[var(--tc-text-primary)]",
@@ -775,12 +923,12 @@ function RecentRunList({
             <button
               type="button"
               onClick={() => onOpenRun(run.run_id)}
-              className="min-w-0 flex-1 px-3 py-2 text-left"
+              className="block w-full min-w-0 overflow-hidden px-2 py-2 pr-8 text-left"
             >
               <span className="block truncate font-medium">{title}</span>
-              <span className="mt-1 flex items-center justify-between gap-2 text-xs text-[var(--tc-text-muted)]">
-                <span>{formatRunTimestamp(run.started_at)}</span>
-                <span>{run.candidate_count} 个候选</span>
+              <span className="mt-1 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-1 text-xs text-[var(--tc-text-muted)]">
+                <span className="truncate">{formatRunTimestamp(run.started_at)}</span>
+                <span className="whitespace-nowrap">{run.candidate_count} 个候选</span>
               </span>
               <span className="mt-1 block text-xs text-[var(--tc-text-muted)]">
                 {runStatusLabel[run.status] ?? "未知状态"}
@@ -793,7 +941,7 @@ function RecentRunList({
               disabled={deletingRunId !== ""}
               aria-label={`删除${title}运行记录`}
               onClick={() => onDeleteRun(run.run_id)}
-              className="my-1 mr-1 shrink-0 text-[var(--tc-text-muted)]"
+              className="absolute right-1 top-1 opacity-0 text-[var(--tc-text-muted)] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
             >
               <Trash2 className="size-4" />
             </Button>
@@ -837,9 +985,9 @@ function RunSummaryStrip({
       ];
 
   return (
-    <dl className="grid max-w-[1080px] gap-2 border-y border-[var(--tc-border-subtle)] py-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
+    <dl className="mx-auto grid w-full max-w-[960px] gap-2 border-y border-[var(--tc-border-subtle)] py-2 text-center text-sm sm:grid-cols-2 xl:grid-cols-4">
       {values.map(([label, value]) => (
-        <div key={label} className="min-w-0">
+        <div key={label} className="min-w-0 px-2">
           <dt className="text-xs text-[var(--tc-text-muted)]">{label}</dt>
           <dd className="mt-1 truncate text-[var(--tc-text-primary)]">{value}</dd>
         </div>
@@ -894,6 +1042,7 @@ function RunTaskPanel({
   selectedChapterIds,
   currentRun,
   running,
+  modelSelection,
   onChapterToggle,
   onCreateRun,
 }: {
@@ -901,6 +1050,7 @@ function RunTaskPanel({
   selectedChapterIds: string[];
   currentRun: AgentRun | null;
   running: boolean;
+  modelSelection: ReturnTypeOfModelSelection;
   onChapterToggle: (chapterId: string, checked: boolean) => void;
   onCreateRun: () => void;
 }) {
@@ -918,14 +1068,14 @@ function RunTaskPanel({
         ? "批量生成候选"
         : "开始抽取";
   return (
-    <div className="grid max-w-[860px] gap-2">
+    <div className="mx-auto grid w-full max-w-[960px] gap-2">
       <div className="grid gap-2 text-sm">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="font-medium text-[var(--tc-text-primary)]">
             勾选章节
           </span>
           <span className="text-xs text-[var(--tc-text-muted)]">
-            已选 {selectedCount} 章，批量并发上限 5
+            已选 {selectedCount} 章
           </span>
         </div>
         {chapters.length === 0 ? (
@@ -981,6 +1131,8 @@ function RunTaskPanel({
         )}
       </div>
 
+      <ModelSelector selection={modelSelection} />
+
       <div className="flex flex-wrap items-center gap-2">
         <Button
           type="button"
@@ -1011,7 +1163,11 @@ function RunTaskPanel({
 function CandidatePanel({
   run,
   selectedCandidate,
+  selectedCandidateSchema,
   selectedCandidateDraft,
+  selectedCandidateFormErrors,
+  referenceOptions,
+  editingCandidateId,
   selectedTargetCard,
   selectedTargetCardError,
   selectedCandidateMergeMode,
@@ -1021,11 +1177,17 @@ function CandidatePanel({
   onStatusFilterChange,
   onMergeModeChange,
   onCandidateDraftChange,
+  onStartEdit,
+  onCancelEdit,
   onAction,
 }: {
   run: AgentRun | null;
   selectedCandidate: AgentReviewItem | null;
-  selectedCandidateDraft: string;
+  selectedCandidateSchema: KnowledgeTypeSchema | null;
+  selectedCandidateDraft: KnowledgeFormState;
+  selectedCandidateFormErrors: KnowledgeFormErrors;
+  referenceOptions: KnowledgeReferenceOptions;
+  editingCandidateId: string;
   selectedTargetCard?: StructuredKnowledgeCard | null;
   selectedTargetCardError: string;
   selectedCandidateMergeMode: EditConfirmMergeMode;
@@ -1034,7 +1196,9 @@ function CandidatePanel({
   onSelectCandidate: (candidateId: string) => void;
   onStatusFilterChange: (filter: CandidateStatusFilter) => void;
   onMergeModeChange: (value: EditConfirmMergeMode) => void;
-  onCandidateDraftChange: (value: string) => void;
+  onCandidateDraftChange: (value: KnowledgeFormState) => void;
+  onStartEdit: (candidate: AgentReviewItem) => void;
+  onCancelEdit: (candidate: AgentReviewItem) => void;
   onAction: (
     candidate: AgentReviewItem,
     action: "confirm" | "edit-confirm" | "reject",
@@ -1082,6 +1246,7 @@ function CandidatePanel({
             candidate.candidate_action === "conflict" ||
             Boolean(candidate.target_card_id);
           const canConfirm = candidate.candidate_action !== "ignore";
+          const isEditing = editingCandidateId === candidate.review_item_id;
           return (
             <article
               key={candidate.review_item_id}
@@ -1119,7 +1284,7 @@ function CandidatePanel({
             </button>
 
             {isSelected ? (
-              <div className="mt-3 grid gap-3 pl-7">
+              <div className="mt-3 grid max-w-[720px] gap-3 pl-7">
                 {candidate.source_excerpt ? (
                   <p className="border-l border-[var(--tc-border-subtle)] pl-3 text-sm leading-6 text-[var(--tc-text-secondary)]">
                     {candidate.source_excerpt}
@@ -1139,7 +1304,7 @@ function CandidatePanel({
                       <span className="font-medium text-[var(--tc-text-primary)]">
                         现有知识卡
                       </span>
-                      <Tag>{candidate.target_card_id}</Tag>
+                      <Tag>{candidate.matched_card_name || "已匹配知识卡"}</Tag>
                     </div>
                     {selectedTargetCardError ? (
                       <p className="rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 text-[var(--tc-text-muted)]">
@@ -1149,8 +1314,12 @@ function CandidatePanel({
                       <p className="rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 text-[var(--tc-text-muted)]">
                         正在读取现有知识卡...
                       </p>
-                    ) : selectedTargetCard ? (
-                      <KnowledgeCardPreview card={selectedTargetCard} />
+                    ) : selectedTargetCard && selectedCandidateSchema ? (
+                      <KnowledgeCardPreview
+                        card={selectedTargetCard}
+                        schema={selectedCandidateSchema}
+                        referenceOptions={referenceOptions}
+                      />
                     ) : (
                       <p className="rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 text-[var(--tc-text-muted)]">
                         未找到现有知识卡。
@@ -1190,18 +1359,40 @@ function CandidatePanel({
                   </fieldset>
                 ) : null}
 
-                <label className="grid gap-2 text-sm">
-                  <span className="font-medium text-[var(--tc-text-primary)]">
-                    编辑后确认内容
-                  </span>
-                  <textarea
-                    className="min-h-48 resize-y rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] p-3 font-mono text-xs leading-relaxed text-[var(--tc-text-primary)] outline-none"
-                    value={selectedCandidateDraft}
-                    onChange={event => onCandidateDraftChange(event.target.value)}
-                  />
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {canConfirm ? (
+                <section className="grid gap-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm font-medium text-[var(--tc-text-primary)]">
+                      {isEditing ? "编辑候选内容" : "候选知识内容"}
+                    </span>
+                    <Tag>正文自动提取</Tag>
+                  </div>
+                  {selectedCandidateSchema ? (
+                    isEditing ? (
+                      <StructuredKnowledgeForm
+                        schema={selectedCandidateSchema}
+                        form={selectedCandidateDraft}
+                        errors={selectedCandidateFormErrors}
+                        hiddenFieldKeys={CANDIDATE_LOCKED_FIELD_KEYS}
+                        referenceOptions={referenceOptions}
+                        onChange={onCandidateDraftChange}
+                      />
+                    ) : (
+                      <StructuredKnowledgeView
+                        schema={selectedCandidateSchema}
+                        values={candidate.suggested_card}
+                        hiddenFieldKeys={CANDIDATE_CARD_HIDDEN_FIELD_KEYS}
+                        referenceOptions={referenceOptions}
+                      />
+                    )
+                  ) : (
+                    <p className="border-y border-dashed border-[var(--tc-border-subtle)] py-3 text-sm text-[var(--tc-text-muted)]">
+                      知识字段配置加载失败，请刷新后重试。
+                    </p>
+                  )}
+                </section>
+                {!isProcessed(candidate) ? (
+                  <div className="flex flex-wrap gap-2">
+                  {canConfirm && !isEditing ? (
                     <Button
                       type="button"
                       size="sm"
@@ -1218,23 +1409,45 @@ function CandidatePanel({
                       确认入库
                     </Button>
                   ) : null}
-                  {!requiresEditedConfirm ? (
+                  {canConfirm && !isEditing ? (
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      disabled={isProcessed(candidate) || actionBusyKey !== ""}
-                      onClick={() =>
-                        onAction(
-                          candidate,
-                          "edit-confirm",
-                          selectedCandidateMergeMode,
-                        )
-                      }
+                      disabled={actionBusyKey !== "" || !selectedCandidateSchema}
+                      onClick={() => onStartEdit(candidate)}
                     >
                       <PencilLine className="size-4" />
-                      编辑后确认
+                      编辑
                     </Button>
+                  ) : null}
+                  {canConfirm && isEditing ? (
+                    <>
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={actionBusyKey !== ""}
+                        onClick={() =>
+                          onAction(
+                            candidate,
+                            "edit-confirm",
+                            selectedCandidateMergeMode,
+                          )
+                        }
+                      >
+                        <Check className="size-4" />
+                        保存并确认
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={actionBusyKey !== ""}
+                        onClick={() => onCancelEdit(candidate)}
+                      >
+                        取消编辑
+                      </Button>
+                    </>
                   ) : null}
                   <Button
                     type="button"
@@ -1246,7 +1459,12 @@ function CandidatePanel({
                     <Ban className="size-4" />
                     废弃
                   </Button>
-                </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-[var(--tc-text-muted)]">
+                    该候选已处理，当前仅供阅读。
+                  </p>
+                )}
               </div>
             ) : null}
             </article>
@@ -1719,34 +1937,22 @@ function TraceBlock({
   );
 }
 
-function KnowledgeCardPreview({ card }: { card: StructuredKnowledgeCard }) {
-  const rows: Array<[string, string]> = [
-    ["名称", card.name],
-    ["摘要", card.summary],
-    ["来源说明", card.source_note],
-  ];
-  const detail = formatJson(card);
-
+function KnowledgeCardPreview({
+  card,
+  schema,
+  referenceOptions,
+}: {
+  card: StructuredKnowledgeCard;
+  schema: KnowledgeTypeSchema;
+  referenceOptions: KnowledgeReferenceOptions;
+}) {
   return (
-    <div className="rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)]">
-      <div className="grid gap-2 p-3">
-        {rows.map(([label, value]) => (
-          <div key={label} className="grid gap-1 text-sm">
-            <span className="text-xs text-[var(--tc-text-muted)]">{label}</span>
-            <span className="whitespace-pre-wrap break-words leading-6 text-[var(--tc-text-secondary)]">
-              {value || "无"}
-            </span>
-          </div>
-        ))}
-      </div>
-      <details className="border-t border-[var(--tc-border-subtle)]">
-        <summary className="cursor-pointer px-3 py-2 text-xs text-[var(--tc-text-muted)]">
-          查看完整字段
-        </summary>
-        <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words px-3 pb-3 font-mono text-xs leading-relaxed text-[var(--tc-text-secondary)]">
-          {detail}
-        </pre>
-      </details>
+    <div className="border-y border-[var(--tc-border-subtle)] py-3">
+      <StructuredKnowledgeView
+        schema={schema}
+        values={card as Record<string, unknown>}
+        referenceOptions={referenceOptions}
+      />
     </div>
   );
 }
@@ -1824,6 +2030,15 @@ function buildRunLLMTrace(run: AgentRun): string {
         `- 节点输出摘要：${node?.output_summary || "无"}`,
         `- 节点错误：${node?.error || "无"}`,
         `- 模型：${call.model_name || "未记录"}`,
+        `- 模型内部 ID：${call.model_id || "未记录"}`,
+        `- 上游模型：${call.upstream_model || "未记录"}`,
+        `- 传输协议：${call.wire_protocol || "未记录"}`,
+        `- 输入 Token：${formatNullableNumber(call.input_tokens)}`,
+        `- 缓存 Token：${formatNullableNumber(call.cached_input_tokens)}`,
+        `- 输出 Token：${formatNullableNumber(call.output_tokens)}`,
+        `- 推理 Token：${formatNullableNumber(call.reasoning_tokens)}`,
+        `- 总 Token：${formatNullableNumber(call.total_tokens)}`,
+        `- 费用：${formatCallCost(call)}`,
         `- Prompt 版本：${call.prompt_version}`,
         `- 开始时间：${formatNullable(call.started_at)}`,
         `- 结束时间：${formatNullable(call.finished_at)}`,
@@ -1942,24 +2157,24 @@ function pickVisibleCandidateId(
   return candidates[0]?.review_item_id ?? "";
 }
 
-function parseCandidateDraft(value: string): Record<string, unknown> {
-  const parsed = JSON.parse(value) as unknown;
-  if (!isRecord(parsed)) {
-    throw new Error("编辑后确认内容必须是 JSON 对象。");
-  }
-  return parsed;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function formatJson(value: unknown): string {
   return JSON.stringify(value, null, 2);
 }
 
 function formatNullable(value?: string | null): string {
   return value && value.trim() ? value : "未记录";
+}
+
+function formatNullableNumber(value?: number | null): string {
+  return value == null ? "未返回" : value.toLocaleString("zh-CN");
+}
+
+function formatCallCost(call: AgentLLMCall): string {
+  if (call.cost_kind === "unavailable" || call.cost_amount == null) {
+    return "未配置价格";
+  }
+  const kind = call.cost_kind === "actual" ? "实际" : "预估";
+  return `${kind} ${call.cost_amount} ${call.cost_currency}`;
 }
 
 function formatRunTimestamp(value: string): string {

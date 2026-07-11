@@ -6,10 +6,15 @@ import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
 
-from taichu.application.contracts.llm import LLMContract
+from taichu.application.contracts.llm import (
+    LLMGatewayContract,
+    LLMMessage,
+    LLMRequest,
+    response_text,
+)
 from taichu.application.services.ai_card_service import AICardService
 from taichu.application.workflows.selection.schemas import SelectionWorkflowInput
 from taichu.domain.models.ai_card import (
@@ -48,6 +53,7 @@ class SelectionAIRequest:
     user_prompt: str | None = None
     target_words: int | None = None
     parent_card_id: str | None = None
+    model_id: str | None = None
 
 
 class SelectionAIService:
@@ -55,11 +61,13 @@ class SelectionAIService:
 
     def __init__(
         self,
-        llm: LLMContract,
+        llm: object,
         ai_card_service: AICardService,
+        default_model_id: str = "deepseek-v4-pro",
     ) -> None:
-        self._llm = llm
+        self._llm = cast(LLMGatewayContract, llm)
         self._ai_card_service = ai_card_service
+        self._default_model_id = default_model_id
 
     async def run_selection(self, request: SelectionAIRequest) -> AIResultCard:
         """Generate and persist one AIResultCard for selected text."""
@@ -82,7 +90,26 @@ class SelectionAIService:
             await self._ai_card_service.mark_retried(request.parent_card_id)
 
         prompt = build_selection_prompt(request)
-        raw_output = await self._llm.complete(prompt)
+        model_id = request.model_id or self._default_model_id
+        _ensure_selectable(self._llm, model_id)
+        response = await self._llm.complete(
+            LLMRequest(
+                model_id=model_id,
+                messages=(
+                    LLMMessage(
+                        role="system",
+                        content="你是太初编辑器内的选区智能助手。",
+                    ),
+                    LLMMessage(role="user", content=prompt),
+                ),
+                task_type=f"selection_{request.mode.value}",
+                task_name="选区 AI",
+                chapter_ids=(request.chapter_id,),
+                response_mode="json",
+                feature="选区 AI",
+            )
+        )
+        raw_output = response_text(response)
         card = self._build_card(
             request=request,
             selection_input=selection_input,
@@ -302,3 +329,16 @@ def _text_field(value: object) -> str | None:
 
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+
+
+def _ensure_selectable(llm: LLMGatewayContract, model_id: str) -> None:
+    if not hasattr(llm, "list_models"):
+        return
+    for profile in llm.list_models():
+        if profile.id == model_id:
+            if not profile.enabled:
+                raise ValueError(
+                    f"模型“{profile.display_name}”当前已停用，请选择其他模型。"
+                )
+            return
+    raise ValueError("所选模型不存在，请刷新模型列表后重试。")

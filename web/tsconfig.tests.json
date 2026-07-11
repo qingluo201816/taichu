@@ -13,6 +13,10 @@
     "src/lib/editor/save-coordinator.ts",
     "src/lib/agent-evaluation/evaluation-view-model.ts",
     "src/lib/types/agent-evaluation.ts",
+    "src/lib/types/llm.ts",
+    "src/lib/llm/model-selection.ts",
+    "src/lib/llm/view-model.ts",
+    "src/lib/types/writing-ai.ts",
     "tests/**/*.ts"
   ]
 }

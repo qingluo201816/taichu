@@ -17,6 +17,7 @@ import {
   listWritingAIRuns,
   replayWritingAIRun,
 } from "@/lib/api/writing-ai";
+import { humanReadableStructuredContent } from "@/lib/ai/human-readable-content";
 import type { ChapterInfo } from "@/lib/types/chapters";
 import type { WritingAIButtonType, WritingAIRun } from "@/lib/types/writing-ai";
 import { cn } from "@/lib/utils";
@@ -366,11 +367,21 @@ function RunDetail({
           </details>
         ) : null}
         <TraceBlock title="结构化输出">
-          <pre className="whitespace-pre-wrap text-xs leading-5">
+          <p>
             {run.structured_output
-              ? JSON.stringify(run.structured_output.content, null, 2)
+              ? humanReadableStructuredContent(run.structured_output.content)
               : "暂无结构化输出"}
-          </pre>
+          </p>
+          {run.structured_output ? (
+            <details className="mt-2 border-t border-[var(--tc-border-subtle)] pt-2">
+              <summary className="cursor-pointer text-xs text-[var(--tc-text-muted)]">
+                原始数据（技术排查）
+              </summary>
+              <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap text-xs leading-5 text-[var(--tc-text-muted)]">
+                {JSON.stringify(run.structured_output.content, null, 2)}
+              </pre>
+            </details>
+          ) : null}
         </TraceBlock>
         <TraceBlock title="模型原始输出">
           <pre className="max-h-56 overflow-auto whitespace-pre-wrap text-xs leading-5">

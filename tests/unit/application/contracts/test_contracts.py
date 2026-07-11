@@ -5,9 +5,15 @@ import unittest
 from pydantic import ValidationError
 
 from taichu.application.contracts import (
+    LLMCost,
     IndexerContract,
-    LLMContract,
+    LLMGatewayContract,
     LLMModelIdentity,
+    LLMModelProfile,
+    LLMRequest,
+    LLMResponse,
+    LLMStreamEvent,
+    LLMUsage,
     RetrievalContract,
     RetrievalQuery,
     StorageContract,
@@ -91,8 +97,35 @@ class DummyLLM:
             known=True,
         )
 
-    async def complete(self, prompt: str) -> str:
-        return prompt
+    async def complete(self, request: LLMRequest) -> LLMResponse:
+        return LLMResponse(
+            text=str(request),
+            model_id="dummy",
+            upstream_model="dummy",
+            usage=LLMUsage(),
+            cost=LLMCost(),
+        )
+
+    async def _stream(self):
+        yield LLMStreamEvent(event_type="completed")
+
+    def stream(self, request: LLMRequest):
+        return self._stream()
+
+    def list_models(self) -> list[LLMModelProfile]:
+        return [
+            LLMModelProfile(
+                id="dummy",
+                display_name="测试模型",
+                provider="rightcode",
+                upstream_model="dummy",
+                wire_protocol="openai_responses",
+                base_url_key="RIGHTCODE_RESPONSES_BASE_URL",
+                enabled=True,
+                is_default=True,
+                supports_streaming=True,
+            )
+        ]
 
 
 class DummyIndexer:
@@ -139,7 +172,7 @@ class ApplicationContractTest(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsInstance(storage, StorageContract)
         self.assertIsInstance(retrieval, RetrievalContract)
-        self.assertIsInstance(llm, LLMContract)
+        self.assertIsInstance(llm, LLMGatewayContract)
         self.assertIsInstance(indexer, IndexerContract)
         self.assertIsInstance(run_repository, AgentRunRepository)
         self.assertEqual(

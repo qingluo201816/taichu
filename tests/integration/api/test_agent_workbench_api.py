@@ -141,7 +141,7 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
                     {
                         "error": {
                             "code": "AGENT_MODEL_SELECTION_UNSUPPORTED",
-                            "message": ("当前不支持切换到所选模型，请使用已配置模型"),
+                            "message": "所选模型不存在，请刷新模型列表后重试。",
                         }
                     },
                 )

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
+from decimal import Decimal
 from typing import Any
 
 from pydantic import Field
@@ -123,6 +124,19 @@ class WritingAIRun(DomainModel):
     button_type: WritingAIButtonType
     button_label: str = Field(min_length=1)
     model: str = ""
+    model_id: str = ""
+    model_display_name: str = ""
+    upstream_model: str = ""
+    wire_protocol: str = ""
+    llm_call_id: str | None = None
+    input_tokens: int | None = None
+    cached_input_tokens: int | None = None
+    output_tokens: int | None = None
+    reasoning_tokens: int | None = None
+    total_tokens: int | None = None
+    cost_amount: Decimal | None = None
+    cost_currency: str = "CNY"
+    cost_kind: str = "unavailable"
     chapter_id: str = Field(min_length=1)
     chapter_title: str = ""
     reference_scope: WritingAIReferenceScope

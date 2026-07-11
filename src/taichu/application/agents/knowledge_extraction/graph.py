@@ -15,7 +15,7 @@ from taichu.application.agents.knowledge_extraction.workflow import (
 )
 from taichu.application.capabilities import CapabilityContext
 from taichu.application.contracts.agent_run_repository import AgentRunRepository
-from taichu.application.contracts.llm import LLMContract
+from taichu.application.contracts.llm import LLMGatewayContract
 from taichu.application.services.chapter_service import ChapterService
 from taichu.infrastructure.knowledge.json_repository import JSONKnowledgeRepository
 
@@ -43,7 +43,7 @@ def build_graph(context: CapabilityContext) -> CompiledStateGraph:
     return build_knowledge_extraction_graph(
         KnowledgeExtractionDependencies(
             chapter_service=context.require("chapter_service", ChapterService),
-            llm=cast(LLMContract, context.capabilities["llm"]),
+            llm=cast(LLMGatewayContract, context.capabilities["llm"]),
             knowledge_repository=context.require(
                 "knowledge_repository",
                 JSONKnowledgeRepository,

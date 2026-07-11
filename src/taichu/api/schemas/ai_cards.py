@@ -41,6 +41,7 @@ class SelectionAIRequest(BaseModel):
     user_prompt: str | None = None
     target_words: int | None = Field(default=None, gt=0)
     parent_card_id: str | None = None
+    model_id: str | None = None
 
 
 class AIResultCardInfo(BaseModel):

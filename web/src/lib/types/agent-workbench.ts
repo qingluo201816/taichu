@@ -96,6 +96,10 @@ export type AgentLLMCall = {
   call_id: string;
   node_name: string;
   model_name: string;
+  model_id: string;
+  model_display_name: string;
+  upstream_model: string;
+  wire_protocol: string;
   prompt_version: string;
   input_prompt: string;
   raw_response: string;
@@ -103,6 +107,15 @@ export type AgentLLMCall = {
   started_at?: string | null;
   finished_at?: string | null;
   duration_ms: number;
+  input_tokens?: number | null;
+  cached_input_tokens?: number | null;
+  output_tokens?: number | null;
+  reasoning_tokens?: number | null;
+  total_tokens?: number | null;
+  cost_amount?: string | number | null;
+  cost_currency: string;
+  cost_kind: string;
+  provider_request_id?: string | null;
   error?: string | null;
 };
 
@@ -192,6 +205,10 @@ export type AgentRun = {
   schema_version: string;
   prompt_version: string;
   model_name: string;
+  model_id: string;
+  model_display_name: string;
+  upstream_model: string;
+  wire_protocol: string;
   status: AgentRunStatus;
   scope: AgentRunScope;
   started_at: string;
@@ -218,13 +235,13 @@ export type AgentRun = {
 
 export type CreateKnowledgeExtractionRunRequest = {
   chapter_id: string;
-  model_name?: string | null;
+  model_id?: string | null;
   force?: boolean;
 };
 
 export type CreateBatchKnowledgeExtractionRunRequest = {
   chapter_ids: string[];
-  model_name?: string | null;
+  model_id?: string | null;
   force?: boolean;
 };
 

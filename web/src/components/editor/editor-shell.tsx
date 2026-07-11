@@ -45,7 +45,9 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { ModelSelector } from "@/components/llm/model-selector";
 import { Button } from "@/components/ui/button";
+import { useModelSelection } from "@/hooks/use-model-selection";
 import {
   listChapterSummaries,
   readChapter,
@@ -63,11 +65,20 @@ import {
   renameVolume,
 } from "@/lib/api/mvp";
 import {
-  createWritingAIRun,
+  getWritingAIRun,
   listWritingAIRuns,
   replayWritingAIRun,
+  streamWritingAIRun,
 } from "@/lib/api/writing-ai";
+import {
+  humanReadableListItem,
+  humanReadableStructuredContent,
+} from "@/lib/ai/human-readable-content";
 import { formatNovelParagraphs } from "@/lib/editor/markdown";
+import {
+  appendWritingStreamText,
+  writingStreamFailure,
+} from "@/lib/llm/view-model";
 import type { ChapterInfo, ChapterSummaryInfo } from "@/lib/types/chapters";
 import type {
   EditorPreferences,
@@ -626,6 +637,7 @@ export default function EditorShell() {
   );
   const [aiInput, setAIInput] = useState("");
   const [aiBusy, setAIBusy] = useState(false);
+  const [streamingText, setStreamingText] = useState("");
   const [aiError, setAIError] = useState<string | null>(null);
   const [conversations, setConversations] = useState<
     Partial<Record<AIEntryKey, WritingAIRun>>
@@ -641,6 +653,7 @@ export default function EditorShell() {
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [showPromptSnapshot, setShowPromptSnapshot] = useState(false);
+  const modelSelection = useModelSelection();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const savedMarkdownRef = useRef("");
   const savedChapterTitleRef = useRef("");
@@ -1366,6 +1379,7 @@ export default function EditorShell() {
     }
     setAIBusy(true);
     setAIError(null);
+    setStreamingText("");
     try {
       const response = await replayWritingAIRun(activeConversation.run_id);
       setConversations(current => ({
@@ -1426,7 +1440,13 @@ export default function EditorShell() {
         setAIError("请先在正文中选择一段文字");
         return;
       }
-      const response = await createWritingAIRun({
+      if (!modelSelection.modelId) {
+        setAIError(modelSelection.error || "模型列表尚未加载完成");
+        return;
+      }
+      let completedRunId = "";
+      let streamFailure = "";
+      await streamWritingAIRun({
         button_type: activeEntry.buttonType,
         chapter_id: chapter.id,
         reference_scope: referenceScope,
@@ -1439,12 +1459,29 @@ export default function EditorShell() {
             }
           : null,
         draft_chapter_text: markdown,
+        model_id: modelSelection.modelId,
+      }, event => {
+        if (event.type === "text_delta") {
+          setStreamingText(current => appendWritingStreamText(current, event));
+        } else if (event.type === "run_completed") {
+          completedRunId = event.run_id;
+        } else if (event.type === "run_failed") {
+          streamFailure = writingStreamFailure(event);
+        }
       });
+      if (streamFailure) {
+        throw new Error(streamFailure);
+      }
+      if (!completedRunId) {
+        throw new Error("模型流式任务未返回完成记录");
+      }
+      const response = await getWritingAIRun(completedRunId);
       setConversations(current => ({
         ...current,
         [activeEntry.key]: response,
       }));
       setAIInput("");
+      setStreamingText("");
       showEditorToast(response.status === "completed" ? "模型调用完成" : "模型调用失败");
     } catch (caught) {
       setAIError(caught instanceof Error ? caught.message : "右侧入口处理失败");
@@ -2063,21 +2100,31 @@ export default function EditorShell() {
                 />
               ) : null}
               {!isSummaryEntry && !isRecordEntry ? (
-                <AIMessageList
-                  conversation={activeConversation}
-                  showPromptSnapshot={showPromptSnapshot}
-                  actionsDisabled={aiBusy}
-                  onTogglePromptSnapshot={() =>
-                    setShowPromptSnapshot(current => !current)
-                  }
-                  onRegenerate={() => void regenerateCurrentConversation()}
-                  onCopy={message => void copyAIMessage(message)}
-                  onDelete={() => void deleteCurrentConversation()}
-                />
+                <>
+                  {aiBusy && streamingText ? (
+                    <div className="mb-3 whitespace-pre-wrap rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] p-3 text-sm leading-6 text-[var(--tc-text-primary)]">
+                      {streamingText}
+                    </div>
+                  ) : null}
+                  <AIMessageList
+                    conversation={activeConversation}
+                    showPromptSnapshot={showPromptSnapshot}
+                    actionsDisabled={aiBusy}
+                    onTogglePromptSnapshot={() =>
+                      setShowPromptSnapshot(current => !current)
+                    }
+                    onRegenerate={() => void regenerateCurrentConversation()}
+                    onCopy={message => void copyAIMessage(message)}
+                    onDelete={() => void deleteCurrentConversation()}
+                  />
+                </>
               ) : null}
             </div>
 
             <div className="shrink-0 border-t border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] p-3">
+              <div className="mb-2 flex justify-end">
+                <ModelSelector selection={modelSelection} compact />
+              </div>
               {isSummaryEntry ? (
                 <Button
                   type="button"
@@ -3023,7 +3070,7 @@ function writingAIResultText(run: WritingAIRun): string {
       .filter(Boolean)
       .join("\n");
   }
-  return JSON.stringify(content, null, 2);
+  return humanReadableStructuredContent(content);
 }
 
 function runStatusLabel(status: string): string {
@@ -3043,7 +3090,7 @@ function formatArray(label: string, value: unknown): string {
     return "";
   }
   const items = value
-    .map(item => (typeof item === "string" ? item : JSON.stringify(item)))
+    .map(humanReadableListItem)
     .filter(Boolean);
   return items.length ? `${label}：${items.join("；")}` : "";
 }

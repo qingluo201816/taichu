@@ -4,6 +4,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from pydantic import SecretStr
 from typing import Any
 
 from httpx import ASGITransport, AsyncClient
@@ -330,7 +331,7 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
             app = create_app(
                 app_settings=Settings(
                     project_assets_dir=assets_root,
-                    deepseek_api_key="",
+                    rightcode_api_key=SecretStr(""),
                 ),
             )
             async with AsyncClient(

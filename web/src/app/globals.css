@@ -202,6 +202,21 @@
   --sidebar-ring: var(--tc-aurora-line);
 }
 
+.tc-monitor-control {
+  height: 2rem;
+  min-width: 8.5rem;
+  border: 1px solid var(--tc-border-subtle);
+  border-radius: var(--tc-radius-control);
+  background: var(--tc-surface-muted);
+  padding-inline: 0.5rem;
+  color: var(--tc-text-primary);
+  outline: none;
+}
+
+.tc-monitor-control:focus {
+  border-color: var(--tc-text-primary);
+}
+
 :root,
 :root[data-theme-style="langbase-midnight-console"] {
   color-scheme: dark;

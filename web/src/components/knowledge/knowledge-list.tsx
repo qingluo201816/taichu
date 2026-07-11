@@ -22,7 +22,12 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import {
+  StructuredKnowledgeForm,
+  StructuredKnowledgeView,
+} from "@/components/knowledge/structured-knowledge-fields";
 import { Button } from "@/components/ui/button";
+import { listChapters } from "@/lib/api/chapters";
 import {
   createKnowledgeCard,
   listKnowledgeCards,
@@ -32,8 +37,17 @@ import {
   markKnowledgeCardDeprecated,
   patchKnowledgeCard,
 } from "@/lib/api/mvp";
+import {
+  buildKnowledgeReferenceOptions,
+  displayKnowledgeFieldValue,
+  formStateFromKnowledgeValues,
+  knowledgePayloadFromForm,
+  validateKnowledgeForm,
+  type KnowledgeFormErrors,
+  type KnowledgeFormState,
+  type KnowledgeReferenceOptions,
+} from "@/lib/knowledge/structured-fields";
 import type {
-  KnowledgeFieldSchema,
   KnowledgeTypeInfo,
   KnowledgeTypeSchema,
   KnowledgeTypeValue,
@@ -42,12 +56,16 @@ import type {
 import { cn } from "@/lib/utils";
 
 type StatusFilter = "all" | "draft" | "active";
-type CardFormState = Record<string, string>;
 type KnowledgeToastState = {
   id: number;
   message: string;
 };
 const KNOWLEDGE_PAGE_SIZE = 10;
+const KNOWLEDGE_DETAIL_HIDDEN_FIELD_KEYS = new Set([
+  "name",
+  "status",
+  "source_origin",
+]);
 
 const statusFilters: Array<{ value: StatusFilter; label: string }> = [
   { value: "all", label: "全部" },
@@ -68,7 +86,10 @@ export function KnowledgeList() {
     useState<StructuredKnowledgeCard | null>(null);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [isCreating, setCreating] = useState(false);
-  const [form, setForm] = useState<CardFormState>({});
+  const [form, setForm] = useState<KnowledgeFormState>({});
+  const [formErrors, setFormErrors] = useState<KnowledgeFormErrors>({});
+  const [referenceOptions, setReferenceOptions] =
+    useState<KnowledgeReferenceOptions>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,6 +147,7 @@ export function KnowledgeList() {
       setCards(nextCards);
       setSelectedCard(nextSelected);
       setCreating(false);
+      setFormErrors({});
       setForm(nextSelected && schema ? formFromCard(schema, nextSelected) : {});
     },
     [],
@@ -162,13 +184,40 @@ export function KnowledgeList() {
     async function loadBootstrap() {
       setLoading(true);
       try {
-        const [typeResponse, schemaResponse] = await Promise.all([
+        const [typeResponse, schemaResponse, chapterResponse] = await Promise.all([
           listKnowledgeTypes(),
           listKnowledgeSchemas(),
+          listChapters(),
+        ]);
+        const [characterResult, factionResult] = await Promise.allSettled([
+          listKnowledgeCards({
+            type: "character",
+            status: "active",
+            page: 1,
+            pageSize: 100,
+          }),
+          listKnowledgeCards({
+            type: "faction",
+            status: "active",
+            page: 1,
+            pageSize: 100,
+          }),
         ]);
         if (!cancelled) {
           setTypes(typeResponse.types);
           setSchemas(schemaResponse.schemas);
+          setReferenceOptions(
+            buildKnowledgeReferenceOptions(
+              schemaResponse.schemas,
+              chapterResponse.chapters,
+              characterResult.status === "fulfilled"
+                ? characterResult.value.cards
+                : [],
+              factionResult.status === "fulfilled"
+                ? factionResult.value.cards
+                : [],
+            ),
+          );
           setActiveType(typeResponse.types[0]?.value ?? "character");
           setCurrentPage(1);
         }
@@ -228,6 +277,7 @@ export function KnowledgeList() {
       setSelectedCard(null);
       setCreating(false);
       setEditingCardId(null);
+      setFormErrors({});
       setForm({});
       return;
     }
@@ -235,6 +285,7 @@ export function KnowledgeList() {
     setSelectedCard(card);
     setCreating(false);
     setEditingCardId(null);
+    setFormErrors({});
     setForm(schema ? formFromCard(schema, card) : {});
   }
 
@@ -244,6 +295,7 @@ export function KnowledgeList() {
     }
     setSelectedCard(null);
     setCreating(true);
+    setFormErrors({});
     setForm(defaultForm(activeSchema));
     clearKnowledgeToast();
     setError(null);
@@ -253,9 +305,15 @@ export function KnowledgeList() {
     if (!activeSchema || (!selectedCard && !isCreating)) {
       return;
     }
-    setSaving(true);
     setError(null);
     clearKnowledgeToast();
+    const nextErrors = validateKnowledgeForm(activeSchema, form);
+    setFormErrors(nextErrors);
+    if (Object.keys(nextErrors).length) {
+      setError("请先补全必填字段后再保存。");
+      return;
+    }
+    setSaving(true);
     try {
       const payload = payloadFromForm(activeSchema, form);
       const response = selectedCard
@@ -421,8 +479,14 @@ export function KnowledgeList() {
               <NewCardPanel
                 schema={activeSchema}
                 form={form}
+                errors={formErrors}
+                referenceOptions={referenceOptions}
                 saving={saving}
-                onFormChange={setForm}
+                onFormChange={nextForm => {
+                  setForm(nextForm);
+                  setFormErrors({});
+                  setError(null);
+                }}
                 onSave={() => void saveCard()}
               />
             ) : null}
@@ -462,7 +526,7 @@ export function KnowledgeList() {
                           </span>
                         </span>
                         <span className="hidden max-w-[360px] truncate text-xs text-[var(--tc-text-muted)] md:block">
-                          {listDisplayText(schema, card)}
+                          {listDisplayText(schema, card, referenceOptions)}
                         </span>
                       </button>
                       {expanded && schema ? (
@@ -470,10 +534,22 @@ export function KnowledgeList() {
                           <KnowledgeEditor
                             schema={schema}
                             form={form}
+                            errors={formErrors}
+                            referenceOptions={referenceOptions}
                             saving={saving}
                             isCreating={false}
-                            onFormChange={setForm}
+                            onFormChange={nextForm => {
+                              setForm(nextForm);
+                              setFormErrors({});
+                              setError(null);
+                            }}
                             onSave={() => void saveCard()}
+                            onCancel={() => {
+                              setEditingCardId(null);
+                              setForm(formFromCard(schema, card));
+                              setFormErrors({});
+                              setError(null);
+                            }}
                             onMarkActive={() => void markActive()}
                             onMarkDeprecated={() => void markDeprecated()}
                           />
@@ -481,6 +557,7 @@ export function KnowledgeList() {
                           <KnowledgeCardDetail
                             schema={schema}
                             card={card}
+                            referenceOptions={referenceOptions}
                             saving={saving}
                             onEdit={() => setEditingCardId(card.id)}
                             onMarkActive={() => void markActive()}
@@ -533,14 +610,18 @@ function KnowledgeFloatingToast({ toast }: { toast: KnowledgeToastState | null }
 function NewCardPanel({
   schema,
   form,
+  errors,
+  referenceOptions,
   saving,
   onFormChange,
   onSave,
 }: {
   schema: KnowledgeTypeSchema;
-  form: CardFormState;
+  form: KnowledgeFormState;
+  errors: KnowledgeFormErrors;
+  referenceOptions: KnowledgeReferenceOptions;
   saving: boolean;
-  onFormChange: (form: CardFormState) => void;
+  onFormChange: (form: KnowledgeFormState) => void;
   onSave: () => void;
 }) {
   return (
@@ -551,6 +632,8 @@ function NewCardPanel({
       <KnowledgeEditor
         schema={schema}
         form={form}
+        errors={errors}
+        referenceOptions={referenceOptions}
         saving={saving}
         isCreating
         onFormChange={onFormChange}
@@ -563,6 +646,7 @@ function NewCardPanel({
 function KnowledgeCardDetail({
   schema,
   card,
+  referenceOptions,
   saving,
   onEdit,
   onMarkActive,
@@ -570,40 +654,26 @@ function KnowledgeCardDetail({
 }: {
   schema: KnowledgeTypeSchema;
   card: StructuredKnowledgeCard;
+  referenceOptions: KnowledgeReferenceOptions;
   saving: boolean;
   onEdit: () => void;
   onMarkActive: () => void;
   onMarkDeprecated: () => void;
 }) {
-  const fields = detailFields(schema, card);
   return (
     <div className="pb-5 pl-10 pr-2">
-      <div className="grid max-w-[860px] gap-3">
+      <div className="grid max-w-[720px] gap-2">
         <div className="flex flex-wrap gap-2 text-xs text-[var(--tc-text-muted)]">
           <span>{statusLabel(card.status)}</span>
           <span>{sourceOriginLabel(card.source_origin)}</span>
           <span>{dateLabel(card.updated_at)}</span>
         </div>
-        {card.summary ? (
-          <p className="whitespace-pre-wrap text-sm leading-7 text-[var(--tc-text-secondary)]">
-            {card.summary}
-          </p>
-        ) : null}
-        {fields.length ? (
-          <div className="grid gap-2 sm:grid-cols-2">
-            {fields.map(field => (
-              <div
-                key={field.key}
-                className="rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2"
-              >
-                <p className="text-xs text-[var(--tc-text-muted)]">{field.label}</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[var(--tc-text-primary)]">
-                  {field.value}
-                </p>
-              </div>
-            ))}
-          </div>
-        ) : null}
+        <StructuredKnowledgeView
+          schema={schema}
+          values={card as Record<string, unknown>}
+          hiddenFieldKeys={KNOWLEDGE_DETAIL_HIDDEN_FIELD_KEYS}
+          referenceOptions={referenceOptions}
+        />
         <div className="flex flex-wrap gap-2 pt-1">
           <Button type="button" size="sm" onClick={onEdit} disabled={saving}>
             <Pencil className="size-4" />
@@ -638,45 +708,38 @@ function KnowledgeCardDetail({
 function KnowledgeEditor({
   schema,
   form,
+  errors,
+  referenceOptions,
   saving,
   isCreating,
   onFormChange,
   onSave,
+  onCancel,
   onMarkActive,
   onMarkDeprecated,
 }: {
   schema: KnowledgeTypeSchema;
-  form: CardFormState;
+  form: KnowledgeFormState;
+  errors: KnowledgeFormErrors;
+  referenceOptions: KnowledgeReferenceOptions;
   saving: boolean;
   isCreating: boolean;
-  onFormChange: (form: CardFormState) => void;
+  onFormChange: (form: KnowledgeFormState) => void;
   onSave: () => void;
+  onCancel?: () => void;
   onMarkActive?: () => void;
   onMarkDeprecated?: () => void;
 }) {
-  const groupedFields = groupFields(schema.fields);
   return (
     <div className={cn("pb-5 pr-2", isCreating ? "" : "pl-10")}>
-      <div className="grid max-w-[860px] gap-5">
-        {groupedFields.map(group => (
-          <section key={group.label} className="grid gap-3">
-            <h3 className="text-sm font-medium text-[var(--tc-text-primary)]">
-              {group.label}
-            </h3>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {group.fields.map(field => (
-                <SchemaField
-                  key={field.field_key}
-                  field={field}
-                  value={form[field.field_key] ?? ""}
-                  onChange={value =>
-                    onFormChange({ ...form, [field.field_key]: value })
-                  }
-                />
-              ))}
-            </div>
-          </section>
-        ))}
+      <div className="grid max-w-[720px] gap-3">
+        <StructuredKnowledgeForm
+          schema={schema}
+          form={form}
+          errors={errors}
+          referenceOptions={referenceOptions}
+          onChange={onFormChange}
+        />
 
         <div className="flex flex-wrap gap-2 pt-1">
           <Button type="button" onClick={onSave} disabled={saving}>
@@ -687,6 +750,16 @@ function KnowledgeEditor({
             )}
             保存
           </Button>
+          {onCancel ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={saving}
+            >
+              取消编辑
+            </Button>
+          ) : null}
           {!isCreating ? (
             <>
               <Button
@@ -715,156 +788,37 @@ function KnowledgeEditor({
   );
 }
 
-function SchemaField({
-  field,
-  value,
-  onChange,
-}: {
-  field: KnowledgeFieldSchema;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  const className =
-    "mt-1 w-full rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-[var(--tc-text-primary)] outline-none placeholder:text-[var(--tc-text-muted)]";
-  const fullWidth =
-    field.field_type === "long_text" || field.field_type === "string_array";
-
-  return (
-    <label
-      className={cn(
-        "block text-sm text-[var(--tc-text-secondary)]",
-        fullWidth ? "sm:col-span-2" : "",
-      )}
-    >
-      {field.label}
-      {field.required_when_active ? (
-        <span className="ml-1 text-[var(--tc-text-muted)]">有效必填</span>
-      ) : null}
-      {field.field_type === "enum" ? (
-        <select
-          value={value}
-          onChange={event => onChange(event.target.value)}
-          className={cn(className, "h-9")}
-        >
-          {!field.required_when_active ? <option value="">未选择</option> : null}
-          {field.options.map(option => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      ) : field.field_type === "long_text" || field.field_type === "string_array" ? (
-        <textarea
-          value={value}
-          onChange={event => onChange(event.target.value)}
-          placeholder={field.placeholder}
-          className={cn(className, "min-h-20 resize-y py-2 leading-6")}
-        />
-      ) : field.field_type === "boolean" ? (
-        <select
-          value={value}
-          onChange={event => onChange(event.target.value)}
-          className={cn(className, "h-9")}
-        >
-          <option value="">未设置</option>
-          <option value="true">是</option>
-          <option value="false">否</option>
-        </select>
-      ) : (
-        <input
-          type={field.field_type === "number" ? "number" : "text"}
-          value={value}
-          onChange={event => onChange(event.target.value)}
-          placeholder={field.placeholder}
-          className={cn(className, "h-9")}
-        />
-      )}
-    </label>
-  );
-}
-
-function groupFields(fields: KnowledgeFieldSchema[]) {
-  const groups: Array<{ label: string; fields: KnowledgeFieldSchema[] }> = [];
-  for (const field of fields) {
-    const label = field.display_group || "基础信息";
-    let group = groups.find(item => item.label === label);
-    if (!group) {
-      group = { label, fields: [] };
-      groups.push(group);
-    }
-    group.fields.push(field);
-  }
-  return groups;
-}
-
-function defaultForm(schema: KnowledgeTypeSchema): CardFormState {
-  const form: CardFormState = {};
-  for (const field of schema.fields) {
-    form[field.field_key] = "";
-  }
-  form.importance = "normal";
-  form.status = "draft";
-  form.source_origin = "manual";
-  form.source_note = "作者手动添加。可写章节、原文摘录、人工说明。";
-  return form;
+function defaultForm(schema: KnowledgeTypeSchema): KnowledgeFormState {
+  return formStateFromKnowledgeValues(schema, {}, {
+    importance: "normal",
+    status: "draft",
+    source_origin: "manual",
+    source_note: "作者手动添加。可写章节、原文摘录、人工说明。",
+  });
 }
 
 function formFromCard(
   schema: KnowledgeTypeSchema,
   card: StructuredKnowledgeCard,
-): CardFormState {
-  const form = defaultForm(schema);
-  const values = card as Record<string, unknown>;
-  for (const field of schema.fields) {
-    const value = values[field.field_key];
-    if (Array.isArray(value)) {
-      form[field.field_key] = value.join("，");
-    } else if (value === null || value === undefined) {
-      form[field.field_key] = "";
-    } else {
-      form[field.field_key] = String(value);
-    }
-  }
-  return form;
+): KnowledgeFormState {
+  return formStateFromKnowledgeValues(
+    schema,
+    card as Record<string, unknown>,
+    defaultForm(schema),
+  );
 }
 
 function payloadFromForm(
   schema: KnowledgeTypeSchema,
-  form: CardFormState,
+  form: KnowledgeFormState,
 ): Record<string, unknown> {
-  const payload: Record<string, unknown> = {};
-  for (const field of schema.fields) {
-    const rawValue = form[field.field_key] ?? "";
-    if (field.field_type === "string_array") {
-      payload[field.field_key] = splitList(rawValue);
-    } else if (field.field_type === "number") {
-      payload[field.field_key] = rawValue.trim() ? Number(rawValue) : null;
-    } else if (field.field_type === "boolean") {
-      payload[field.field_key] =
-        rawValue === "" ? null : rawValue === "true";
-    } else if (field.field_type === "enum") {
-      payload[field.field_key] = rawValue || null;
-    } else if (field.field_key === "name" || field.field_key === "summary") {
-      payload[field.field_key] = rawValue;
-    } else if (field.field_key === "source_note") {
-      payload[field.field_key] = rawValue;
-    } else {
-      payload[field.field_key] = rawValue.trim() ? rawValue : null;
-    }
-  }
-  return payload;
-}
-
-function splitList(value: string): string[] {
-  return value
-    .split(/[，,\n]/)
-    .map(item => item.trim())
-    .filter(Boolean);
+  return knowledgePayloadFromForm(schema, form);
 }
 
 function listDisplayText(
   schema: KnowledgeTypeSchema | null,
   card: StructuredKnowledgeCard,
+  referenceOptions: KnowledgeReferenceOptions,
 ): string {
   if (!schema) {
     return card.summary;
@@ -872,50 +826,24 @@ function listDisplayText(
   const values = card as Record<string, unknown>;
   const parts = schema.fields
     .filter(field => field.list_display && !["name", "status"].includes(field.field_key))
-    .map(field => displayFieldValue(field, values[field.field_key]))
+    .map(field => {
+      const value = values[field.field_key];
+      if (
+        value === null ||
+        value === undefined ||
+        value === "" ||
+        (Array.isArray(value) && !value.length)
+      ) {
+        return "";
+      }
+      return `${field.label}：${displayKnowledgeFieldValue(
+        field,
+        value,
+        referenceOptions,
+      )}`;
+    })
     .filter(Boolean);
   return parts.join(" · ") || card.summary;
-}
-
-function detailFields(
-  schema: KnowledgeTypeSchema,
-  card: StructuredKnowledgeCard,
-): Array<{ key: string; label: string; value: string }> {
-  const values = card as Record<string, unknown>;
-  return schema.fields
-    .filter(
-      field =>
-        ![
-          "name",
-          "summary",
-          "status",
-          "source_origin",
-          "source_note",
-        ].includes(field.field_key),
-    )
-    .map(field => ({
-      key: field.field_key,
-      label: field.label,
-      value: displayFieldValue(field, values[field.field_key]).replace(
-        `${field.label}：`,
-        "",
-      ),
-    }))
-    .filter(field => field.value);
-}
-
-function displayFieldValue(
-  field: KnowledgeFieldSchema,
-  value: unknown,
-): string {
-  if (value === null || value === undefined || value === "") {
-    return "";
-  }
-  if (Array.isArray(value)) {
-    return `${field.label}：${value.join("、")}`;
-  }
-  const option = field.options.find(item => item.value === value);
-  return `${field.label}：${option?.label ?? String(value)}`;
 }
 
 function statusLabel(status: string): string {

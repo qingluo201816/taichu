@@ -81,6 +81,12 @@ class ChapterSummaryRunResponse(BaseModel):
     card: AIResultCardInfo
 
 
+class ChapterSummaryRunRequest(BaseModel):
+    """章节摘要任务的模型选择。"""
+
+    model_id: str | None = None
+
+
 class ChapterSummaryListResponse(BaseModel):
     """Response for listing chapter summaries."""
 

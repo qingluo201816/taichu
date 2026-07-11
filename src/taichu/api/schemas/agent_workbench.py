@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 from taichu.application.agents.models.agent_run import AgentReviewItem, AgentRun
 from taichu.application.contracts.knowledge_repository import AuthorMergeMode
@@ -12,7 +12,10 @@ class CreateKnowledgeExtractionRunRequest(BaseModel):
     """Create one synchronous knowledge extraction run."""
 
     chapter_id: str = Field(min_length=1)
-    model_name: str | None = None
+    model_id: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("model_id", "model_name"),
+    )
     force: bool = False
 
 
@@ -20,7 +23,10 @@ class CreateBatchKnowledgeExtractionRunRequest(BaseModel):
     """Create one multi-chapter knowledge extraction run."""
 
     chapter_ids: list[str] = Field(min_length=1)
-    model_name: str | None = None
+    model_id: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("model_id", "model_name"),
+    )
     force: bool = False
 
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
+from decimal import Decimal
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -112,6 +113,10 @@ class AgentLLMCall(AgentModel):
     call_id: str = Field(min_length=1)
     node_name: str = Field(min_length=1)
     model_name: str = ""
+    model_id: str = ""
+    model_display_name: str = ""
+    upstream_model: str = ""
+    wire_protocol: str = ""
     prompt_version: str = Field(min_length=1)
     input_prompt: str = ""
     raw_response: str = ""
@@ -119,6 +124,15 @@ class AgentLLMCall(AgentModel):
     started_at: str | None = None
     finished_at: str | None = None
     duration_ms: int = 0
+    input_tokens: int | None = None
+    cached_input_tokens: int | None = None
+    output_tokens: int | None = None
+    reasoning_tokens: int | None = None
+    total_tokens: int | None = None
+    cost_amount: Decimal | None = None
+    cost_currency: str = "CNY"
+    cost_kind: str = "unavailable"
+    provider_request_id: str | None = None
     error: str | None = None
 
 
@@ -227,6 +241,10 @@ class AgentRun(AgentModel):
     prompt_version: str = "knowledge_extraction_prompt_v2"
     model_name: str = ""
     requested_model_name: str | None = None
+    model_id: str = ""
+    model_display_name: str = ""
+    upstream_model: str = ""
+    wire_protocol: str = ""
     generation_model_identity: LLMModelIdentity = Field(
         default_factory=lambda: LLMModelIdentity.unknown(
             "旧运行记录未保存真实模型身份。"

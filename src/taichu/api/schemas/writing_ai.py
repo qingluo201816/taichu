@@ -21,6 +21,7 @@ class CreateWritingAIRunRequest(BaseModel):
     selection_range: WritingAISelectionRange | None = None
     target_words: int | None = Field(default=None, ge=1)
     draft_chapter_text: str | None = None
+    model_id: str | None = None
 
 
 class WritingAIRunListResponse(BaseModel):

@@ -18,6 +18,7 @@ from taichu.api.schemas.chapters import (
     ChapterSummaryListResponse,
     ChapterSummaryResponse,
     ChapterSummaryRunResponse,
+    ChapterSummaryRunRequest,
     PendingFactInfo,
     PendingFactResponse,
 )
@@ -95,11 +96,14 @@ async def api_save_chapter(
 )
 async def api_summarize_chapter(
     chapter_id: str,
+    request: ChapterSummaryRunRequest | None = None,
     service: ChapterSummaryService = Depends(provide_chapter_summary_service),
 ) -> ChapterSummaryRunResponse:
     """Run chapter summary workflow and persist a summary card."""
     try:
-        result = await service.summarize_chapter(chapter_id)
+        result = await service.summarize_chapter(
+            chapter_id, request.model_id if request is not None else None
+        )
     except ChapterNotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
     return ChapterSummaryRunResponse(

@@ -66,6 +66,7 @@ async def api_create_selection_ai_card(
                 user_prompt=request.user_prompt,
                 target_words=request.target_words,
                 parent_card_id=request.parent_card_id,
+                model_id=request.model_id,
             )
         )
     except (AICardNotFoundError, InvalidStateTransitionError) as error:

@@ -13,7 +13,10 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from taichu.api.router import register_routes
 from taichu.application.agents.registry import AgentRegistry
 from taichu.application.capabilities import CapabilityContext
-from taichu.application.contracts.llm import LLMModelIdentity
+from taichu.application.contracts.llm import (
+    LLMGatewayContract,
+    LLMModelIdentity,
+)
 from taichu.application.services.ai_card_service import AICardService
 from taichu.application.services.chapter_summary_service import (
     ChapterSummaryService,
@@ -42,7 +45,9 @@ from taichu.application.services.writing_ai_service import WritingAIService
 from taichu.application.tools.registry import ToolRegistry
 from taichu.config import Settings, settings
 from taichu.infrastructure.llm.adapter import LangChainLLMAdapter
-from taichu.infrastructure.llm.factory import LLMRuntime, create_llm
+from taichu.infrastructure.llm.catalog import LLMModelCatalog
+from taichu.infrastructure.llm.rightcode import RightCodeLLMGateway
+from taichu.infrastructure.llm_usage import JsonlLLMUsageRepository
 from taichu.infrastructure.evaluations import (
     JsonEvaluationDatasetRepository,
     JsonEvaluationResultStore,
@@ -67,6 +72,7 @@ def create_app(
     *,
     llm: BaseChatModel | None = None,
     llm_model_identity: LLMModelIdentity | None = None,
+    llm_gateway: LLMGatewayContract | None = None,
 ) -> FastAPI:
     """创建并组装 FastAPI 应用。"""
     storage = JsonStorageBackend(app_settings.project_assets_dir / "source")
@@ -76,21 +82,33 @@ def create_app(
     mvp_knowledge_service = MVPKnowledgeService(project_storage)
     mvp_inbox_service = MVPInboxService(project_storage, mvp_knowledge_service)
     settings_preference_service = SettingsPreferenceService(project_storage)
-    llm_runtime = (
-        LLMRuntime(
-            chat_model=llm,
-            model_identity=(
-                llm_model_identity or LLMModelIdentity.unknown("注入模型未提供身份。")
+    model_catalog = LLMModelCatalog(app_settings)
+    llm_usage_repository = JsonlLLMUsageRepository(app_settings.project_assets_dir)
+    if llm_gateway is not None:
+        llm_service = llm_gateway
+        llm_configured = True
+    elif llm is not None:
+        llm_service = LangChainLLMAdapter(
+            llm,
+            llm_model_identity
+            or LLMModelIdentity.unknown(
+                "注入模型未提供身份。",
+                model_id=app_settings.rightcode_default_model_id,
             ),
-            configured=True,
+            default_model_id=app_settings.rightcode_default_model_id,
         )
-        if llm is not None
-        else create_llm(app_settings)
-    )
-    chat_model = llm_runtime.chat_model
-    llm_service = LangChainLLMAdapter(
-        chat_model,
-        llm_runtime.model_identity,
+        llm_configured = True
+    else:
+        rightcode_gateway = RightCodeLLMGateway(
+            app_settings,
+            model_catalog,
+            llm_usage_repository,
+        )
+        llm_service = rightcode_gateway
+        llm_configured = rightcode_gateway.configured
+    active_default_model = next(
+        (profile.id for profile in llm_service.list_models() if profile.is_default),
+        app_settings.rightcode_default_model_id,
     )
     ai_card_service = AICardService(project_storage)
     inbox_service = InboxService(project_storage, ai_card_service)
@@ -104,6 +122,7 @@ def create_app(
         knowledge_repository=knowledge_repository,
         run_store=knowledge_run_store,
         task_events=agent_task_events,
+        default_model_id=active_default_model,
     )
     evaluation_dataset_repository = JsonEvaluationDatasetRepository(
         app_settings.evaluation_datasets_dir,
@@ -114,7 +133,8 @@ def create_app(
     )
     evaluation_judge = create_evaluation_judge(
         app_settings,
-        fallback_runtime=llm_runtime,
+        llm_service,
+        configured=llm_configured,
     )
     knowledge_extraction_evaluation_service = KnowledgeExtractionEvaluationService(
         dataset_repository=evaluation_dataset_repository,
@@ -128,14 +148,18 @@ def create_app(
         chapter_service=chapter_service,
         knowledge_repository=knowledge_repository,
         llm=llm_service,
-        default_model_name=app_settings.deepseek_model,
-        llm_configured=llm_runtime.configured,
+        default_model_id=active_default_model,
+        llm_configured=llm_configured,
     )
     pending_fact_confirmation_service = PendingFactConfirmationService(
         project_storage,
         knowledge_service,
     )
-    selection_ai_service = SelectionAIService(llm_service, ai_card_service)
+    selection_ai_service = SelectionAIService(
+        llm_service,
+        ai_card_service,
+        default_model_id=active_default_model,
+    )
     retrieval_backend = SqliteFTSRetrievalBackend(app_settings.project_assets_dir)
     projection_rebuilder = SqliteProjectionRebuilder(app_settings.project_assets_dir)
     index_service = IndexService(project_storage, projection_rebuilder)
@@ -147,10 +171,10 @@ def create_app(
         retrieval=retrieval_backend,
         llm=llm_service,
         ai_card_service=ai_card_service,
+        default_model_id=active_default_model,
     )
     capability_context = CapabilityContext(
         capabilities={
-            "chat_model": chat_model,
             "llm": llm_service,
             "chapter_service": chapter_service,
             "knowledge_repository": knowledge_repository,
@@ -208,6 +232,9 @@ def create_app(
     application.state.chapter_summary_service = chapter_summary_service
     application.state.settings_preference_service = settings_preference_service
     application.state.writing_ai_service = writing_ai_service
+    application.state.llm_gateway = llm_service
+    application.state.llm_model_catalog = model_catalog
+    application.state.llm_usage_repository = llm_usage_repository
     application.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],

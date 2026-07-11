@@ -1,10 +1,11 @@
-import { apiRequest } from "@/lib/api-client";
+import { API_BASE_URL, apiRequest } from "@/lib/api-client";
 import type {
   CreateWritingAIRunRequest,
   WritingAIButtonType,
   WritingAIRun,
   WritingAIRunListResponse,
   WritingAIRunStatus,
+  WritingAIStreamEvent,
 } from "@/lib/types/writing-ai";
 
 export async function createWritingAIRun(
@@ -14,6 +15,47 @@ export async function createWritingAIRun(
     method: "POST",
     body: JSON.stringify(request),
   });
+}
+
+export async function streamWritingAIRun(
+  request: CreateWritingAIRunRequest,
+  onEvent: (event: WritingAIStreamEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/writing-ai/runs/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+    signal,
+  });
+  if (!response.ok) {
+    throw new Error(`模型流式请求失败：${response.status}`);
+  }
+  if (!response.body) {
+    throw new Error("浏览器未返回模型流式响应正文。");
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    lines.forEach(line => dispatchLine(line, onEvent));
+  }
+  buffer += decoder.decode();
+  dispatchLine(buffer, onEvent);
+}
+
+function dispatchLine(
+  line: string,
+  onEvent: (event: WritingAIStreamEvent) => void,
+) {
+  const value = line.trim();
+  if (!value) return;
+  onEvent(JSON.parse(value) as WritingAIStreamEvent);
 }
 
 export async function listWritingAIRuns(params: {

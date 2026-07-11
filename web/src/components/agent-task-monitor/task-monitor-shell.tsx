@@ -358,6 +358,7 @@ export function TaskMonitorShell() {
                   </div>
                 </div>
                 <TaskFlowGraph run={currentTask} />
+                <TaskModelSummary run={currentTask} />
               </div>
             ) : (
               <div className="py-16 text-center text-sm text-[var(--tc-text-muted)]">
@@ -368,6 +369,34 @@ export function TaskMonitorShell() {
         </main>
       </section>
     </AppShell>
+  );
+}
+
+function TaskModelSummary({ run }: { run: AgentRun }) {
+  const tokenTotal = run.llm_calls.reduce(
+    (sum, call) => sum + (call.total_tokens ?? 0),
+    0,
+  );
+  const knownCost = run.llm_calls.reduce(
+    (sum, call) => sum + (call.cost_amount == null ? 0 : Number(call.cost_amount)),
+    0,
+  );
+  const hasUnknownCost = run.llm_calls.some(call => call.cost_kind === "unavailable");
+  return (
+    <div className="grid grid-cols-2 border-t border-[var(--tc-border-subtle)] text-xs md:grid-cols-5">
+      {[
+        ["模型", run.model_display_name || run.model_name || "未记录"],
+        ["调用次数", `${run.llm_calls.length} 次`],
+        ["总 Token", tokenTotal ? tokenTotal.toLocaleString("zh-CN") : "未返回"],
+        ["费用", knownCost ? `${knownCost.toFixed(4)} 元` : "未配置价格"],
+        ["费用说明", hasUnknownCost ? "部分调用不可计算" : "已完成统计"],
+      ].map(([label, value]) => (
+        <div key={label} className="border-r border-[var(--tc-border-subtle)] px-3 py-2 last:border-r-0">
+          <p className="text-[var(--tc-text-muted)]">{label}</p>
+          <p className="mt-1 text-[var(--tc-text-primary)]">{value}</p>
+        </div>
+      ))}
+    </div>
   );
 }
 
