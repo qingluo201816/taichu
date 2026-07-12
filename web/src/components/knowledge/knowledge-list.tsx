@@ -29,13 +29,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { listChapters } from "@/lib/api/chapters";
 import {
+  confirmKnowledgeCard,
   createKnowledgeCard,
   listKnowledgeCards,
   listKnowledgeSchemas,
   listKnowledgeTypes,
-  markKnowledgeCardActive,
-  markKnowledgeCardDeprecated,
   patchKnowledgeCard,
+  rejectKnowledgeCard,
 } from "@/lib/api/mvp";
 import {
   buildKnowledgeReferenceOptions,
@@ -55,7 +55,7 @@ import type {
 } from "@/lib/types/mvp";
 import { cn } from "@/lib/utils";
 
-type StatusFilter = "all" | "draft" | "active";
+type LifecycleFilter = "all" | "draft" | "confirmed" | "rejected";
 type KnowledgeToastState = {
   id: number;
   message: string;
@@ -63,21 +63,26 @@ type KnowledgeToastState = {
 const KNOWLEDGE_PAGE_SIZE = 10;
 const KNOWLEDGE_DETAIL_HIDDEN_FIELD_KEYS = new Set([
   "name",
-  "status",
+  "lifecycle",
   "source_origin",
 ]);
+const KNOWLEDGE_FORM_HIDDEN_FIELD_KEYS = new Set([
+  "lifecycle",
+  "appearance_chapter_count",
+]);
 
-const statusFilters: Array<{ value: StatusFilter; label: string }> = [
-  { value: "all", label: "全部" },
+const lifecycleFilters: Array<{ value: LifecycleFilter; label: string }> = [
+  { value: "confirmed", label: "已确认" },
   { value: "draft", label: "草稿" },
-  { value: "active", label: "有效" },
+  { value: "all", label: "已确认和草稿" },
+  { value: "rejected", label: "已废弃" },
 ];
 
 export function KnowledgeList() {
   const [types, setTypes] = useState<KnowledgeTypeInfo[]>([]);
   const [schemas, setSchemas] = useState<KnowledgeTypeSchema[]>([]);
   const [activeType, setActiveType] = useState<KnowledgeTypeValue>("character");
-  const [status, setStatus] = useState<StatusFilter>("all");
+  const [lifecycle, setLifecycle] = useState<LifecycleFilter>("confirmed");
   const [query, setQuery] = useState("");
   const [cards, setCards] = useState<StructuredKnowledgeCard[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -90,6 +95,7 @@ export function KnowledgeList() {
   const [formErrors, setFormErrors] = useState<KnowledgeFormErrors>({});
   const [referenceOptions, setReferenceOptions] =
     useState<KnowledgeReferenceOptions>({});
+  const [chapterCount, setChapterCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -156,6 +162,7 @@ export function KnowledgeList() {
   async function reloadCards(
     preferredCardId?: string | null,
     pageOverride = currentPage,
+    lifecycleOverride = lifecycle,
   ) {
     if (!activeSchema) {
       return;
@@ -165,7 +172,7 @@ export function KnowledgeList() {
     try {
       const response = await listKnowledgeCards({
         type: activeType,
-        status,
+        lifecycle: lifecycleOverride,
         q: query,
         page: pageOverride,
         pageSize: KNOWLEDGE_PAGE_SIZE,
@@ -192,13 +199,13 @@ export function KnowledgeList() {
         const [characterResult, factionResult] = await Promise.allSettled([
           listKnowledgeCards({
             type: "character",
-            status: "active",
+            lifecycle: "confirmed",
             page: 1,
             pageSize: 100,
           }),
           listKnowledgeCards({
             type: "faction",
-            status: "active",
+            lifecycle: "confirmed",
             page: 1,
             pageSize: 100,
           }),
@@ -218,6 +225,7 @@ export function KnowledgeList() {
                 : [],
             ),
           );
+          setChapterCount(chapterResponse.chapters.length);
           setActiveType(typeResponse.types[0]?.value ?? "character");
           setCurrentPage(1);
         }
@@ -247,7 +255,7 @@ export function KnowledgeList() {
       try {
         const response = await listKnowledgeCards({
           type: activeType,
-          status,
+          lifecycle,
           q: query,
           page: currentPage,
           pageSize: KNOWLEDGE_PAGE_SIZE,
@@ -270,7 +278,7 @@ export function KnowledgeList() {
     return () => {
       cancelled = true;
     };
-  }, [activeSchema, activeType, applyLoadedCards, currentPage, query, status]);
+  }, [activeSchema, activeType, applyLoadedCards, currentPage, lifecycle, query]);
 
   function openCard(card: StructuredKnowledgeCard) {
     if (selectedCard?.id === card.id) {
@@ -307,7 +315,12 @@ export function KnowledgeList() {
     }
     setError(null);
     clearKnowledgeToast();
-    const nextErrors = validateKnowledgeForm(activeSchema, form);
+    const nextErrors = validateKnowledgeForm(
+      activeSchema,
+      form,
+      KNOWLEDGE_FORM_HIDDEN_FIELD_KEYS,
+      selectedCard?.lifecycle === "confirmed",
+    );
     setFormErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
       setError("请先补全必填字段后再保存。");
@@ -322,8 +335,14 @@ export function KnowledgeList() {
       const nextPage = selectedCard ? currentPage : 1;
       setCurrentPage(nextPage);
       setEditingCardId(null);
-      await reloadCards(response.card.id, nextPage);
-      showKnowledgeToast(selectedCard ? "已保存知识卡" : "已创建知识卡");
+      if (selectedCard) {
+        await reloadCards(response.card.id, nextPage);
+        showKnowledgeToast("已保存知识卡");
+      } else {
+        setLifecycle("draft");
+        await reloadCards(response.card.id, nextPage, "draft");
+        showKnowledgeToast("草稿已创建，请补全后确认入库");
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "保存知识卡失败");
     } finally {
@@ -331,7 +350,7 @@ export function KnowledgeList() {
     }
   }
 
-  async function markActive() {
+  async function confirmCard() {
     if (!selectedCard) {
       return;
     }
@@ -339,17 +358,19 @@ export function KnowledgeList() {
     setError(null);
     clearKnowledgeToast();
     try {
-      const response = await markKnowledgeCardActive(selectedCard.id);
-      await reloadCards(response.card.id);
-      showKnowledgeToast("已标记为有效");
+      const response = await confirmKnowledgeCard(selectedCard.id);
+      setLifecycle("confirmed");
+      setCurrentPage(1);
+      await reloadCards(response.card.id, 1, "confirmed");
+      showKnowledgeToast("已确认入库");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "标记有效失败");
+      setError(caught instanceof Error ? caught.message : "确认入库失败");
     } finally {
       setSaving(false);
     }
   }
 
-  async function markDeprecated() {
+  async function rejectCard() {
     if (!selectedCard) {
       return;
     }
@@ -357,7 +378,7 @@ export function KnowledgeList() {
     setError(null);
     clearKnowledgeToast();
     try {
-      await markKnowledgeCardDeprecated(selectedCard.id);
+      await rejectKnowledgeCard(selectedCard.id);
       setSelectedCard(null);
       setEditingCardId(null);
       setForm({});
@@ -438,18 +459,18 @@ export function KnowledgeList() {
                 </button>
                 {isFilterOpen ? (
                   <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-36 rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2">
-                    {statusFilters.map(filter => (
+                    {lifecycleFilters.map(filter => (
                       <button
                         key={filter.value}
                         type="button"
                         onClick={() => {
-                          setStatus(filter.value);
+                          setLifecycle(filter.value);
                           setCurrentPage(1);
                           setFilterOpen(false);
                         }}
                         className={cn(
                           "block h-8 w-full rounded-[var(--tc-radius-control)] px-2 text-left text-sm",
-                          status === filter.value
+                          lifecycle === filter.value
                             ? "bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
                             : "text-[var(--tc-text-secondary)] hover:bg-[var(--tc-surface-muted)]",
                         )}
@@ -521,8 +542,7 @@ export function KnowledgeList() {
                             {card.name || "未命名知识卡"}
                           </span>
                           <span className="block truncate text-xs text-[var(--tc-text-muted)]">
-                            {statusLabel(card.status)} · {sourceOriginLabel(card.source_origin)} ·{" "}
-                            {dateLabel(card.updated_at)}
+                            {cardMetadata(card)}
                           </span>
                         </span>
                         <span className="hidden max-w-[360px] truncate text-xs text-[var(--tc-text-muted)] md:block">
@@ -550,18 +570,39 @@ export function KnowledgeList() {
                               setFormErrors({});
                               setError(null);
                             }}
-                            onMarkActive={() => void markActive()}
-                            onMarkDeprecated={() => void markDeprecated()}
+                            onConfirm={
+                              card.lifecycle === "draft"
+                                ? () => void confirmCard()
+                                : undefined
+                            }
+                            onReject={
+                              card.lifecycle === "rejected"
+                                ? undefined
+                                : () => void rejectCard()
+                            }
                           />
                         ) : (
                           <KnowledgeCardDetail
                             schema={schema}
                             card={card}
                             referenceOptions={referenceOptions}
+                            chapterCount={chapterCount}
                             saving={saving}
-                            onEdit={() => setEditingCardId(card.id)}
-                            onMarkActive={() => void markActive()}
-                            onMarkDeprecated={() => void markDeprecated()}
+                            onEdit={
+                              card.lifecycle === "rejected"
+                                ? undefined
+                                : () => setEditingCardId(card.id)
+                            }
+                            onConfirm={
+                              card.lifecycle === "draft"
+                                ? () => void confirmCard()
+                                : undefined
+                            }
+                            onReject={
+                              card.lifecycle === "rejected"
+                                ? undefined
+                                : () => void rejectCard()
+                            }
                           />
                         )
                       ) : null}
@@ -647,24 +688,28 @@ function KnowledgeCardDetail({
   schema,
   card,
   referenceOptions,
+  chapterCount,
   saving,
   onEdit,
-  onMarkActive,
-  onMarkDeprecated,
+  onConfirm,
+  onReject,
 }: {
   schema: KnowledgeTypeSchema;
   card: StructuredKnowledgeCard;
   referenceOptions: KnowledgeReferenceOptions;
+  chapterCount: number;
   saving: boolean;
-  onEdit: () => void;
-  onMarkActive: () => void;
-  onMarkDeprecated: () => void;
+  onEdit?: () => void;
+  onConfirm?: () => void;
+  onReject?: () => void;
 }) {
   return (
     <div className="pb-5 pl-10 pr-2">
       <div className="grid max-w-[720px] gap-2">
         <div className="flex flex-wrap gap-2 text-xs text-[var(--tc-text-muted)]">
-          <span>{statusLabel(card.status)}</span>
+          {card.lifecycle !== "confirmed" ? (
+            <span>{lifecycleLabel(card.lifecycle)}</span>
+          ) : null}
           <span>{sourceOriginLabel(card.source_origin)}</span>
           <span>{dateLabel(card.updated_at)}</span>
         </div>
@@ -673,32 +718,39 @@ function KnowledgeCardDetail({
           values={card as Record<string, unknown>}
           hiddenFieldKeys={KNOWLEDGE_DETAIL_HIDDEN_FIELD_KEYS}
           referenceOptions={referenceOptions}
+          chapterCount={chapterCount}
         />
         <div className="flex flex-wrap gap-2 pt-1">
-          <Button type="button" size="sm" onClick={onEdit} disabled={saving}>
-            <Pencil className="size-4" />
-            编辑
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={onMarkActive}
-            disabled={saving}
-          >
-            <ShieldCheck className="size-4" />
-            标记有效
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={onMarkDeprecated}
-            disabled={saving}
-          >
-            <Trash2 className="size-4" />
-            删除
-          </Button>
+          {onEdit ? (
+            <Button type="button" size="sm" onClick={onEdit} disabled={saving}>
+              <Pencil className="size-4" />
+              编辑
+            </Button>
+          ) : null}
+          {onConfirm ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onConfirm}
+              disabled={saving}
+            >
+              <ShieldCheck className="size-4" />
+              确认入库
+            </Button>
+          ) : null}
+          {onReject ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onReject}
+              disabled={saving}
+            >
+              <Trash2 className="size-4" />
+              删除
+            </Button>
+          ) : null}
         </div>
       </div>
     </div>
@@ -715,8 +767,8 @@ function KnowledgeEditor({
   onFormChange,
   onSave,
   onCancel,
-  onMarkActive,
-  onMarkDeprecated,
+  onConfirm,
+  onReject,
 }: {
   schema: KnowledgeTypeSchema;
   form: KnowledgeFormState;
@@ -727,8 +779,8 @@ function KnowledgeEditor({
   onFormChange: (form: KnowledgeFormState) => void;
   onSave: () => void;
   onCancel?: () => void;
-  onMarkActive?: () => void;
-  onMarkDeprecated?: () => void;
+  onConfirm?: () => void;
+  onReject?: () => void;
 }) {
   return (
     <div className={cn("pb-5 pr-2", isCreating ? "" : "pl-10")}>
@@ -737,6 +789,7 @@ function KnowledgeEditor({
           schema={schema}
           form={form}
           errors={errors}
+          hiddenFieldKeys={KNOWLEDGE_FORM_HIDDEN_FIELD_KEYS}
           referenceOptions={referenceOptions}
           onChange={onFormChange}
         />
@@ -760,27 +813,27 @@ function KnowledgeEditor({
               取消编辑
             </Button>
           ) : null}
-          {!isCreating ? (
-            <>
+          {!isCreating && onConfirm ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onConfirm}
+              disabled={saving}
+            >
+              <ShieldCheck className="size-4" />
+              确认入库
+            </Button>
+          ) : null}
+          {!isCreating && onReject ? (
               <Button
                 type="button"
                 variant="outline"
-                onClick={onMarkActive}
-                disabled={saving}
-              >
-                <ShieldCheck className="size-4" />
-                标记有效
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onMarkDeprecated}
+                onClick={onReject}
                 disabled={saving}
               >
                 <Trash2 className="size-4" />
                 删除
               </Button>
-            </>
           ) : null}
         </div>
       </div>
@@ -790,8 +843,7 @@ function KnowledgeEditor({
 
 function defaultForm(schema: KnowledgeTypeSchema): KnowledgeFormState {
   return formStateFromKnowledgeValues(schema, {}, {
-    importance: "normal",
-    status: "draft",
+    lifecycle: "draft",
     source_origin: "manual",
     source_note: "作者手动添加。可写章节、原文摘录、人工说明。",
   });
@@ -812,7 +864,11 @@ function payloadFromForm(
   schema: KnowledgeTypeSchema,
   form: KnowledgeFormState,
 ): Record<string, unknown> {
-  return knowledgePayloadFromForm(schema, form);
+  return knowledgePayloadFromForm(
+    schema,
+    form,
+    KNOWLEDGE_FORM_HIDDEN_FIELD_KEYS,
+  );
 }
 
 function listDisplayText(
@@ -825,7 +881,11 @@ function listDisplayText(
   }
   const values = card as Record<string, unknown>;
   const parts = schema.fields
-    .filter(field => field.list_display && !["name", "status"].includes(field.field_key))
+    .filter(
+      field =>
+        field.list_display &&
+        !["name", "lifecycle"].includes(field.field_key),
+    )
     .map(field => {
       const value = values[field.field_key];
       if (
@@ -846,13 +906,24 @@ function listDisplayText(
   return parts.join(" · ") || card.summary;
 }
 
-function statusLabel(status: string): string {
+function lifecycleLabel(lifecycle: string): string {
   const labels: Record<string, string> = {
     draft: "草稿",
-    active: "有效",
-    deprecated: "已废弃",
+    confirmed: "已确认",
+    rejected: "已废弃",
   };
-  return labels[status] ?? "草稿";
+  return labels[lifecycle] ?? "草稿";
+}
+
+function cardMetadata(card: StructuredKnowledgeCard): string {
+  const details = [
+    sourceOriginLabel(card.source_origin),
+    dateLabel(card.updated_at),
+  ];
+  if (card.lifecycle !== "confirmed") {
+    details.unshift(lifecycleLabel(card.lifecycle));
+  }
+  return details.join(" · ");
 }
 
 function sourceOriginLabel(sourceOrigin?: string | null): string {

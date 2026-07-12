@@ -31,10 +31,12 @@ import { Button } from "@/components/ui/button";
 import { useModelSelection } from "@/hooks/use-model-selection";
 import {
   confirmKnowledgeExtractionCandidate,
+  acceptKnowledgeExtractionRun,
   deleteKnowledgeExtractionRun,
   editConfirmKnowledgeExtractionCandidate,
   getAgentTask,
   listKnowledgeExtractionRuns,
+  getKnowledgeSedimentationProgress,
   rejectKnowledgeExtractionCandidate,
   startBatchKnowledgeExtractionRun,
   startKnowledgeExtractionRun,
@@ -55,6 +57,7 @@ import {
   type KnowledgeFormState,
   type KnowledgeReferenceOptions,
 } from "@/lib/knowledge/structured-fields";
+import { formatBatchRunTitle } from "@/lib/agent-run-display";
 import type {
   AgentEntityGroup,
   AgentIgnoredExtraction,
@@ -64,6 +67,7 @@ import type {
   AgentRun,
   AgentRunNode,
   AgentRunSummary,
+  KnowledgeSedimentationProgress,
   EditConfirmMergeMode,
   KnowledgeType,
   ReviewCandidateAction,
@@ -202,6 +206,8 @@ const nodeLabel: Record<string, string> = {
 export function AgentWorkbenchShell() {
   const [chapters, setChapters] = useState<ChapterInfo[]>([]);
   const [runs, setRuns] = useState<AgentRunSummary[]>([]);
+  const [sedimentationProgress, setSedimentationProgress] =
+    useState<KnowledgeSedimentationProgress>({});
   const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([]);
   const [selectedRunId, setSelectedRunId] = useState("");
   const [currentRun, setCurrentRun] = useState<AgentRun | null>(null);
@@ -372,21 +378,22 @@ export function AgentWorkbenchShell() {
       setLoading(true);
       setError("");
       try {
-        const [chapterResponse, runResponse, schemaResponse] = await Promise.all([
+        const [chapterResponse, runResponse, schemaResponse, progressResponse] = await Promise.all([
           listChapters(),
           listKnowledgeExtractionRuns(),
           listKnowledgeSchemas(),
+          getKnowledgeSedimentationProgress(),
         ]);
         const [characterResult, factionResult] = await Promise.allSettled([
           listKnowledgeCards({
             type: "character",
-            status: "active",
+            lifecycle: "confirmed",
             page: 1,
             pageSize: 100,
           }),
           listKnowledgeCards({
             type: "faction",
-            status: "active",
+            lifecycle: "confirmed",
             page: 1,
             pageSize: 100,
           }),
@@ -396,6 +403,7 @@ export function AgentWorkbenchShell() {
         }
         setChapters(chapterResponse.chapters);
         setRuns(runResponse.runs);
+        setSedimentationProgress(progressResponse);
         setKnowledgeSchemas(schemaResponse.schemas);
         setReferenceOptions(
           buildKnowledgeReferenceOptions(
@@ -409,9 +417,13 @@ export function AgentWorkbenchShell() {
               : [],
           ),
         );
-        setSelectedChapterIds(
-          chapterResponse.chapters[0] ? [chapterResponse.chapters[0].id] : [],
-        );
+        const acceptedIndex = progressResponse.last_accepted_chapter_id
+          ? chapterResponse.chapters.findIndex(
+              chapter => chapter.id === progressResponse.last_accepted_chapter_id,
+            )
+          : -1;
+        const nextChapter = chapterResponse.chapters[acceptedIndex + 1];
+        setSelectedChapterIds(nextChapter ? [nextChapter.id] : []);
         if (runResponse.runs[0]) {
           await openRun(runResponse.runs[0].run_id);
           setActiveSection("run");
@@ -620,6 +632,20 @@ export function AgentWorkbenchShell() {
     }
   }
 
+  async function handleAcceptRun() {
+    if (!currentRun) return;
+    setError("");
+    setActionBusyKey("accept-run");
+    try {
+      const progress = await acceptKnowledgeExtractionRun(currentRun.run_id);
+      setSedimentationProgress(progress);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "采纳本次沉淀失败");
+    } finally {
+      setActionBusyKey("");
+    }
+  }
+
   async function copyText(text: string): Promise<boolean> {
     setError("");
     try {
@@ -644,7 +670,7 @@ export function AgentWorkbenchShell() {
   return (
     <AppShell activePath="/agent-workbench">
       {runNotice ? <RunStartNotice notice={runNotice} /> : null}
-      <section className="mx-auto grid max-w-[1440px] gap-4 px-4 py-4 xl:grid-cols-[188px_minmax(0,1fr)]">
+      <section className="mx-auto grid max-w-[1440px] gap-4 px-4 py-4 xl:grid-cols-[270px_minmax(0,1fr)]">
         <aside className="min-w-0 overflow-hidden rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2">
           <div className="px-2 py-2">
             <p className="text-xs text-[var(--tc-text-muted)]">智能体工作台</p>
@@ -730,17 +756,27 @@ export function AgentWorkbenchShell() {
               ) : activeSection === "run" ? (
                 <RunTaskPanel
                   chapters={chapters}
+                  sedimentationProgress={sedimentationProgress}
                   selectedChapterIds={selectedChapterIds}
                   currentRun={currentRun}
                   running={running}
                   modelSelection={modelSelection}
                   onChapterToggle={(chapterId, checked) => {
-                    setSelectedChapterIds(current =>
+                    const acceptedIndex = sedimentationProgress.last_accepted_chapter_id
+                      ? chapters.findIndex(
+                          chapter =>
+                            chapter.id ===
+                            sedimentationProgress.last_accepted_chapter_id,
+                        )
+                      : -1;
+                    const clickedIndex = chapters.findIndex(
+                      chapter => chapter.id === chapterId,
+                    );
+                    const start = acceptedIndex + 1;
+                    setSelectedChapterIds(
                       checked
-                        ? current.includes(chapterId)
-                          ? current
-                          : [...current, chapterId]
-                        : current.filter(item => item !== chapterId),
+                        ? chapters.slice(start, clickedIndex + 1).map(chapter => chapter.id)
+                        : chapters.slice(start, clickedIndex).map(chapter => chapter.id),
                     );
                   }}
                   onCreateRun={() => void handleCreateRun()}
@@ -759,6 +795,7 @@ export function AgentWorkbenchShell() {
                   selectedCandidateMergeMode={selectedCandidateMergeMode}
                   statusFilter={candidateStatusFilter}
                   actionBusyKey={actionBusyKey}
+                  onAcceptRun={() => void handleAcceptRun()}
                   onSelectCandidate={candidateId => {
                     setSelectedCandidateId(candidateId);
                     if (editingCandidateId && editingCandidateId !== candidateId) {
@@ -907,7 +944,7 @@ function RecentRunList({
     );
   }
   return (
-    <div className="grid max-h-[300px] min-w-0 gap-1 overflow-x-hidden overflow-y-auto pr-1">
+    <div className="grid max-h-[300px] min-w-0 gap-0.5 overflow-x-hidden overflow-y-auto pr-1">
       {runs.map(run => {
         const title = runSummaryTitle(run);
         return (
@@ -923,15 +960,14 @@ function RecentRunList({
             <button
               type="button"
               onClick={() => onOpenRun(run.run_id)}
-              className="block w-full min-w-0 overflow-hidden px-2 py-2 pr-8 text-left"
+              className="block w-full min-w-0 overflow-hidden px-2 py-1.5 pr-8 text-left"
             >
-              <span className="block truncate font-medium">{title}</span>
-              <span className="mt-1 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-1 text-xs text-[var(--tc-text-muted)]">
-                <span className="truncate">{formatRunTimestamp(run.started_at)}</span>
+              <span className="block break-words font-medium leading-5">{title}</span>
+              <span className="mt-0.5 flex min-w-0 items-center justify-between gap-2 text-xs text-[var(--tc-text-muted)]">
+                <span className="whitespace-nowrap">
+                  {formatRunTimestamp(run.started_at)} · {runStatusLabel[run.status] ?? "未知状态"}
+                </span>
                 <span className="whitespace-nowrap">{run.candidate_count} 个候选</span>
-              </span>
-              <span className="mt-1 block text-xs text-[var(--tc-text-muted)]">
-                {runStatusLabel[run.status] ?? "未知状态"}
               </span>
             </button>
             <Button
@@ -954,7 +990,7 @@ function RecentRunList({
 
 function runSummaryTitle(run: AgentRunSummary): string {
   if (run.scope_type === "chapter_batch") {
-    return `批量知识沉淀 · ${run.total_chapter_count || run.chapter_ids.length} 章`;
+    return formatBatchRunTitle(run);
   }
   return run.chapter_title || "未命名章节";
 }
@@ -1039,6 +1075,7 @@ function RunStartNotice({ notice }: { notice: RunNotice }) {
 
 function RunTaskPanel({
   chapters,
+  sedimentationProgress,
   selectedChapterIds,
   currentRun,
   running,
@@ -1047,6 +1084,7 @@ function RunTaskPanel({
   onCreateRun,
 }: {
   chapters: ChapterInfo[];
+  sedimentationProgress: KnowledgeSedimentationProgress;
   selectedChapterIds: string[];
   currentRun: AgentRun | null;
   running: boolean;
@@ -1055,6 +1093,13 @@ function RunTaskPanel({
   onCreateRun: () => void;
 }) {
   const selectedChapterSet = new Set(selectedChapterIds);
+  const acceptedIndex = sedimentationProgress.last_accepted_chapter_id
+    ? chapters.findIndex(
+        chapter => chapter.id === sedimentationProgress.last_accepted_chapter_id,
+      )
+    : -1;
+  const nextChapter = chapters[acceptedIndex + 1] ?? null;
+  const acceptedChapter = acceptedIndex >= 0 ? chapters[acceptedIndex] : null;
   const selectedChapters = chapters.filter(chapter =>
     selectedChapterSet.has(chapter.id),
   );
@@ -1078,20 +1123,30 @@ function RunTaskPanel({
             已选 {selectedCount} 章
           </span>
         </div>
+        <p className="text-xs text-[var(--tc-text-muted)]">
+          {nextChapter
+            ? acceptedChapter
+              ? `知识已沉淀至《${acceptedChapter.title}》；下一次从《${nextChapter.title}》开始。`
+              : `尚未采纳知识沉淀；请从《${nextChapter.title}》开始。`
+            : "全部现有章节均已完成知识沉淀。"}
+        </p>
         {chapters.length === 0 ? (
           <div className="rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-4 text-[var(--tc-text-muted)]">
             暂无可运行章节，请先在写作页创建章节。
           </div>
         ) : (
           <div className="max-h-[292px] overflow-y-auto rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)]">
-            {chapters.map(chapter => {
+            {chapters.map((chapter, index) => {
               const checked = selectedChapterSet.has(chapter.id);
+              const unavailable = index < acceptedIndex + 1;
               return (
                 <label
                   key={chapter.id}
                   className={cn(
                     "flex cursor-pointer items-start gap-2.5 border-b border-[var(--tc-border-subtle)] px-3 py-2 text-sm last:border-b-0",
-                    checked
+                    unavailable
+                      ? "cursor-not-allowed opacity-45"
+                      : checked
                       ? "bg-[color-mix(in_srgb,var(--tc-surface-card),var(--tc-aurora-line)_8%)]"
                       : "hover:bg-[var(--tc-surface-card)]",
                   )}
@@ -1100,6 +1155,7 @@ function RunTaskPanel({
                     type="checkbox"
                     className="mt-1 size-4 accent-[var(--tc-workspace-focus)]"
                     checked={checked}
+                    disabled={unavailable}
                     onChange={event =>
                       onChapterToggle(chapter.id, event.target.checked)
                     }
@@ -1173,6 +1229,7 @@ function CandidatePanel({
   selectedCandidateMergeMode,
   statusFilter,
   actionBusyKey,
+  onAcceptRun,
   onSelectCandidate,
   onStatusFilterChange,
   onMergeModeChange,
@@ -1193,6 +1250,7 @@ function CandidatePanel({
   selectedCandidateMergeMode: EditConfirmMergeMode;
   statusFilter: CandidateStatusFilter;
   actionBusyKey: string;
+  onAcceptRun: () => void;
   onSelectCandidate: (candidateId: string) => void;
   onStatusFilterChange: (filter: CandidateStatusFilter) => void;
   onMergeModeChange: (value: EditConfirmMergeMode) => void;
@@ -1213,6 +1271,9 @@ function CandidatePanel({
   }
 
   const candidates = filterCandidates(run.review_items, statusFilter);
+  const hasPending = run.review_items.some(
+    candidate => candidate.candidate_status === "pending",
+  );
 
   return (
     <div className="grid max-w-[980px] gap-4">
@@ -1232,6 +1293,21 @@ function CandidatePanel({
             </span>
           </Button>
         ))}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 border-y border-[var(--tc-border-subtle)] py-2">
+        <p className="text-xs text-[var(--tc-text-muted)]">
+          全部候选确认或废弃后，才可采纳本次连续章节范围并推进沉淀进度。
+        </p>
+        <Button
+          type="button"
+          size="sm"
+          disabled={hasPending || actionBusyKey !== ""}
+          onClick={onAcceptRun}
+        >
+          <Check className="size-4" />
+          采纳本次沉淀
+        </Button>
       </div>
 
       {candidates.length === 0 ? (

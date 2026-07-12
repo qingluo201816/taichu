@@ -1,5 +1,5 @@
-%% 更新日期：2026-07-10
-%% 状态：临时架构快照，包含目标演进
+%% 更新日期：2026-07-11
+%% 状态：临时架构快照，MongoDB 事实源已落地，仍包含未来可选能力
 flowchart TB
     subgraph UI[产品体验层 · Next.js / React]
         Editor[沉浸式写作区<br/>卷章树 · Markdown · 9 个 AI 入口]
@@ -14,7 +14,7 @@ flowchart TB
         WritingAPI[writing-ai · ai-cards]
         KnowledgeAPI[inbox · knowledge]
         AgentAPI[agent-workbench · agent-tasks]
-        ExportAPI[export · rebuild]
+        ExportAPI[export]
         Composition[main.py<br/>依赖注入 · CapabilityContext · Registry]
     end
 
@@ -27,19 +27,18 @@ flowchart TB
     end
 
     subgraph INFRA[基础设施层]
-        LLM[LangChainLLMAdapter<br/>DeepSeek]
+        LLM[RightCodeLLMGateway<br/>多模型协议适配]
         Storage[ProjectAssetStorageBackend<br/>JsonStorageBackend]
-        Retrieval[SQLite FTS<br/>ProjectionRebuilder]
         Events[AgentTaskEventCenter<br/>JsonAgentRunStore]
-        KnowledgeRepo[JSONKnowledgeRepository<br/>当前兼容实现]
+        KnowledgeRepo[KnowledgeService<br/>MongoKnowledgeRepository]
     end
 
     subgraph DATA[数据宪法]
         Markdown[Markdown 正文<br/>唯一文本事实源]
-        Workspace[Workspace JSONL<br/>非事实工作区资产]
-        Derived[Derived JSON<br/>AgentRun / 审核项 / LLM 轨迹]
-        Mongo[(MongoDB<br/>目标结构事实源)]
-        Generated[Generated<br/>SQLite/FTS · Vector · ES · Graph · Cache]
+        Workspace[Workspace JSONL<br/>AI / Inbox 非事实中间态]
+        Derived[Derived JSON<br/>AgentRun / 评测 / LLM 轨迹]
+        Mongo[(MongoDB knowledge_cards<br/>唯一结构事实源)]
+        Generated[Generated<br/>运行日志 · 导出临时物 · 可重建缓存]
     end
 
     UI --> API
@@ -47,16 +46,17 @@ flowchart TB
     WritingLoop --> CardLoop
     CardLoop --> AuthorGate
     Extraction --> AuthorGate
+    WritingLoop --> KnowledgeRepo
+    AuthorGate --> KnowledgeRepo
     APP --> INFRA
     Storage --> Markdown
     Storage --> Workspace
     Events --> Derived
-    KnowledgeRepo -.兼容迁移.-> Mongo
-    Markdown --> Generated
-    Mongo -.目标投影.-> Generated
-    Generated --> WritingLoop
+    KnowledgeRepo --> Mongo
+    Markdown --> WritingLoop
+    Mongo --> WritingLoop
 
     classDef current fill:#effaf4,stroke:#21875a,color:#10213d;
-    classDef target fill:#f5f1ff,stroke:#7455c5,color:#10213d,stroke-dasharray:6 4;
-    class Markdown,Workspace,Derived,Generated current;
-    class Mongo target;
+    classDef intermediate fill:#fff7ec,stroke:#c56a13,color:#10213d;
+    class Markdown,Mongo,KnowledgeRepo current;
+    class Workspace,Derived,Generated intermediate;

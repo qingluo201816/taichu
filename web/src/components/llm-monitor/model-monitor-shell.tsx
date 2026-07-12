@@ -21,6 +21,7 @@ import {
 
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
+import { CompactPagination } from "@/components/ui/compact-pagination";
 import {
   getLLMCall,
   getLLMTokenTrend,
@@ -49,7 +50,8 @@ import type {
 } from "@/lib/types/llm";
 import { cn } from "@/lib/utils";
 
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 4;
+const MODEL_PAGE_SIZE = 4;
 
 const EMPTY_SUMMARY: LLMUsageSummary = {
   total_calls: 0,
@@ -130,6 +132,8 @@ export function ModelMonitorShell() {
   const [taskTypes, setTaskTypes] = useState<LLMUsageGroup[]>([]);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
+  const [summaryPage, setSummaryPage] = useState(1);
+  const [availabilityPage, setAvailabilityPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -245,9 +249,9 @@ export function ModelMonitorShell() {
   ];
 
   return (
-    <AppShell activePath="/model-monitor">
-      <section className="mx-auto w-full max-w-[1440px] px-4 py-5 md:px-6">
-        <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--tc-border-subtle)] pb-4">
+    <AppShell activePath="/model-monitor" viewportLocked>
+      <section className="mx-auto flex h-full min-h-0 w-full max-w-[1440px] flex-col px-4 py-3 md:px-6">
+        <header className="flex shrink-0 flex-wrap items-end justify-between gap-3 border-b border-[var(--tc-border-subtle)] pb-3">
           <div>
             <p className="text-xs text-[var(--tc-text-muted)]">跨任务模型调用遥测</p>
             <h1 className="mt-1 text-xl font-semibold text-[var(--tc-text-primary)]">模型监控</h1>
@@ -265,21 +269,21 @@ export function ModelMonitorShell() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-2 border-b border-[var(--tc-border-subtle)] md:grid-cols-4 xl:grid-cols-8">
+        <div className="grid shrink-0 grid-cols-2 border-b border-[var(--tc-border-subtle)] md:grid-cols-4 xl:grid-cols-8">
           {stats.map(([label, value]) => (
-            <div key={label} className="border-r border-[var(--tc-border-subtle)] px-3 py-3 last:border-r-0">
+            <div key={label} className="border-r border-[var(--tc-border-subtle)] px-3 py-2 last:border-r-0">
               <p className="text-[11px] text-[var(--tc-text-muted)]">{label}</p>
               <p className="tc-display-font mt-1 text-sm text-[var(--tc-text-primary)]">{value}</p>
             </div>
           ))}
         </div>
         {summary.unavailable_cost_calls > 0 ? (
-          <p className="border-b border-[var(--tc-border-subtle)] px-3 py-2 text-xs text-[var(--tc-text-muted)]">
+          <p className="shrink-0 border-b border-[var(--tc-border-subtle)] px-3 py-2 text-xs text-[var(--tc-text-muted)]">
             部分模型未配置价格，共 {summary.unavailable_cost_calls} 次调用无法计算费用。
           </p>
         ) : null}
 
-        <nav aria-label="模型监控功能入口" className="grid grid-cols-2 border-b border-[var(--tc-border-subtle)] md:grid-cols-4">
+        <nav aria-label="模型监控功能入口" className="grid shrink-0 grid-cols-2 border-b border-[var(--tc-border-subtle)] md:grid-cols-4">
           {VIEW_ITEMS.map(item => (
             <button
               key={item.id}
@@ -287,7 +291,7 @@ export function ModelMonitorShell() {
               aria-pressed={view === item.id}
               onClick={() => setView(item.id)}
               className={cn(
-                "flex items-center gap-3 border-r border-[var(--tc-border-subtle)] px-3 py-3 text-left transition-colors last:border-r-0",
+                "flex items-center gap-3 border-r border-[var(--tc-border-subtle)] px-3 py-2 text-left transition-colors last:border-r-0",
                 view === item.id
                   ? "bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
                   : "text-[var(--tc-text-muted)] hover:text-[var(--tc-text-primary)]",
@@ -302,50 +306,56 @@ export function ModelMonitorShell() {
           ))}
         </nav>
 
-        {view === "trend" ? (
-          <TrendPanel
-            points={trend}
-            metric={trendMetric}
-            filters={filters}
-            catalog={catalog}
-            loading={loading}
-            onMetricChange={setTrendMetric}
-            onFilterChange={updateFilters}
-          />
-        ) : null}
-        {view === "summary" ? (
-          <SummaryPanel
-            summary={summary}
-            catalog={catalog}
-            filters={filters}
-            loading={loading}
-            onFilterChange={updateFilters}
-            onInspect={inspectModel}
-          />
-        ) : null}
-        {view === "calls" ? (
-          <CallsPanel
-            calls={calls}
-            total={total}
-            page={page}
-            filters={filters}
-            catalog={catalog}
-            taskTypes={taskTypes}
-            loading={loading}
-            onFilterChange={updateFilters}
-            onPageChange={setPage}
-            onOpenCall={openCall}
-          />
-        ) : null}
-        {view === "availability" ? (
-          <AvailabilityPanel
-            catalog={catalog}
-            probingIds={probingIds}
-            onProbeOne={probeOne}
-            onProbeAll={probeAll}
-            onInspect={inspectModel}
-          />
-        ) : null}
+        <div className="min-h-0 flex-1 overflow-hidden">
+          {view === "trend" ? (
+            <TrendPanel
+              points={trend}
+              metric={trendMetric}
+              filters={filters}
+              catalog={catalog}
+              loading={loading}
+              onMetricChange={setTrendMetric}
+              onFilterChange={updateFilters}
+            />
+          ) : null}
+          {view === "summary" ? (
+            <SummaryPanel
+              summary={summary}
+              catalog={catalog}
+              filters={filters}
+              loading={loading}
+              page={summaryPage}
+              onFilterChange={updateFilters}
+              onPageChange={setSummaryPage}
+              onInspect={inspectModel}
+            />
+          ) : null}
+          {view === "calls" ? (
+            <CallsPanel
+              calls={calls}
+              total={total}
+              page={page}
+              filters={filters}
+              catalog={catalog}
+              taskTypes={taskTypes}
+              loading={loading}
+              onFilterChange={updateFilters}
+              onPageChange={setPage}
+              onOpenCall={openCall}
+            />
+          ) : null}
+          {view === "availability" ? (
+            <AvailabilityPanel
+              catalog={catalog}
+              probingIds={probingIds}
+              page={availabilityPage}
+              onProbeOne={probeOne}
+              onProbeAll={probeAll}
+              onPageChange={setAvailabilityPage}
+              onInspect={inspectModel}
+            />
+          ) : null}
+        </div>
       </section>
 
       {selectedCall ? <CallDetail call={selectedCall} onClose={() => setSelectedCall(null)} /> : null}
@@ -371,7 +381,7 @@ function TrendPanel({
   onFilterChange: (filters: FilterState) => void;
 }) {
   return (
-    <section className="pt-4" aria-labelledby="trend-title">
+    <section className="flex h-full min-h-0 flex-col pt-3" aria-labelledby="trend-title">
       <SectionHeading id="trend-title" title="Token 使用趋势" meta={`${points.length} 个时间点`} />
       <ChipRow label="时间范围">
         {RANGE_ITEMS.map(item => (
@@ -420,12 +430,12 @@ function TokenTrendChart({ points, metric, loading }: { points: LLMTokenTrendPoi
   const metricLabel = METRIC_ITEMS.find(item => item.id === metric)?.label ?? "Token";
 
   if (!points.length) {
-    return <div className="mt-3 grid h-64 place-items-center border-y border-[var(--tc-border-subtle)] text-xs text-[var(--tc-text-muted)]">{loading ? "趋势加载中" : "当前范围内暂无 Token 记录"}</div>;
+    return <div className="mt-3 grid min-h-0 flex-1 place-items-center border-y border-[var(--tc-border-subtle)] text-xs text-[var(--tc-text-muted)]">{loading ? "趋势加载中" : "当前范围内暂无 Token 记录"}</div>;
   }
 
   return (
-    <div className="mt-3 overflow-x-auto border-y border-[var(--tc-border-subtle)] py-3">
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-[280px] min-w-[760px] w-full" role="img" aria-label={`${metricLabel}使用趋势图`}>
+    <div className="mt-3 flex min-h-0 flex-1 items-center justify-center overflow-hidden border-y border-[var(--tc-border-subtle)] py-2">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-full min-h-0 w-full" role="img" aria-label={`${metricLabel}使用趋势图`}>
         {yTicks.map(tick => {
           const y = padding.top + usableHeight - tick * usableHeight;
           return (
@@ -451,20 +461,22 @@ function TokenTrendChart({ points, metric, loading }: { points: LLMTokenTrendPoi
   );
 }
 
-function SummaryPanel({ summary, catalog, filters, loading, onFilterChange, onInspect }: { summary: LLMUsageSummary; catalog: LLMModelListResponse; filters: FilterState; loading: boolean; onFilterChange: (filters: FilterState) => void; onInspect: (modelId: string) => void }) {
+function SummaryPanel({ summary, catalog, filters, loading, page, onFilterChange, onPageChange, onInspect }: { summary: LLMUsageSummary; catalog: LLMModelListResponse; filters: FilterState; loading: boolean; page: number; onFilterChange: (filters: FilterState) => void; onPageChange: (page: number) => void; onInspect: (modelId: string) => void }) {
   const groups = new Map(summary.by_model.map(group => [group.key, group]));
   const rows = catalog.models.map(model => groups.get(model.id) ?? emptyGroup(model.id, model.display_name));
+  const currentPage = Math.min(Math.max(1, page), Math.max(1, Math.ceil(rows.length / MODEL_PAGE_SIZE)));
+  const pagedRows = rows.slice((currentPage - 1) * MODEL_PAGE_SIZE, currentPage * MODEL_PAGE_SIZE);
   return (
-    <section className="pt-4" aria-labelledby="summary-title">
+    <section className="flex h-full min-h-0 flex-col pt-3" aria-labelledby="summary-title">
       <SectionHeading id="summary-title" title="模型汇总" meta={`共 ${catalog.models.length} 个模型`} />
       <ChipRow label="统计范围">
         {RANGE_ITEMS.map(item => <FilterButton key={item.id} active={filters.range === item.id} onClick={() => onFilterChange({ ...filters, range: item.id })}>{item.label}</FilterButton>)}
       </ChipRow>
-      <div className="mt-3 overflow-x-auto border-y border-[var(--tc-border-subtle)]">
+      <div className="mt-3 min-h-0 flex-1 overflow-x-auto border-y border-[var(--tc-border-subtle)]">
         <table className="w-full min-w-[920px] text-left text-xs">
           <thead className="bg-[var(--tc-surface-muted)] text-[var(--tc-text-muted)]"><tr>{["模型", "调用数", "成功率", "输入", "缓存", "输出", "推理", "总 Token", "总费用", "平均耗时", ""].map(label => <th key={label || "action"} className="px-3 py-2 font-medium">{label}</th>)}</tr></thead>
           <tbody>
-            {rows.map(row => (
+            {pagedRows.map(row => (
               <tr key={row.key} className="border-t border-[var(--tc-border-subtle)] text-[var(--tc-text-secondary)]">
                 <td className="px-3 py-2 text-[var(--tc-text-primary)]">{row.display_name}</td><td className="px-3 py-2">{row.total_calls}</td><td className="px-3 py-2">{row.total_calls ? `${Math.round((row.completed_calls / row.total_calls) * 100)}%` : "—"}</td><td className="px-3 py-2">{number(row.input_tokens)}</td><td className="px-3 py-2">{number(row.cached_input_tokens)}</td><td className="px-3 py-2">{number(row.output_tokens)}</td><td className="px-3 py-2">{number(row.reasoning_tokens)}</td><td className="px-3 py-2">{number(row.total_tokens)}</td><td className="px-3 py-2">{combinedCost(row.actual_cost, row.estimated_cost)}</td><td className="px-3 py-2">{duration(row.average_duration_ms)}</td><td className="px-3 py-2"><button type="button" onClick={() => onInspect(row.key)} className="whitespace-nowrap text-[var(--tc-text-primary)] hover:underline">看明细</button></td>
               </tr>
@@ -473,20 +485,21 @@ function SummaryPanel({ summary, catalog, filters, loading, onFilterChange, onIn
           </tbody>
         </table>
       </div>
+      <CompactPagination page={currentPage} pageSize={MODEL_PAGE_SIZE} total={rows.length} onPageChange={onPageChange} />
     </section>
   );
 }
 
 function CallsPanel({ calls, total, page, filters, catalog, taskTypes, loading, onFilterChange, onPageChange, onOpenCall }: { calls: LLMCallRecord[]; total: number; page: number; filters: FilterState; catalog: LLMModelListResponse; taskTypes: LLMUsageGroup[]; loading: boolean; onFilterChange: (filters: FilterState) => void; onPageChange: (page: number | ((value: number) => number)) => void; onOpenCall: (callId: string) => void }) {
   return (
-    <section className="pt-4" aria-labelledby="calls-title">
+    <section className="flex h-full min-h-0 flex-col pt-3" aria-labelledby="calls-title">
       <SectionHeading id="calls-title" title="调用明细" meta={`共 ${total} 条`} />
       <ChipRow label="时间范围">{RANGE_ITEMS.map(item => <FilterButton key={item.id} active={filters.range === item.id} onClick={() => onFilterChange({ ...filters, range: item.id })}>{item.label}</FilterButton>)}</ChipRow>
       <ChipRow label="调用状态"><FilterButton active={!filters.status} onClick={() => onFilterChange({ ...filters, status: "" })}>全部状态</FilterButton>{([['completed', '成功'], ['failed', '失败'], ['running', '运行中']] as const).map(([id, label]) => <FilterButton key={id} active={filters.status === id} onClick={() => onFilterChange({ ...filters, status: id })}>{label}</FilterButton>)}</ChipRow>
       <ChipRow label="模型" scroll><FilterButton active={!filters.modelId} onClick={() => onFilterChange({ ...filters, modelId: "" })}>全部模型</FilterButton>{catalog.models.map(model => <FilterButton key={model.id} active={filters.modelId === model.id} onClick={() => onFilterChange({ ...filters, modelId: model.id })}>{model.display_name}</FilterButton>)}</ChipRow>
       {taskTypes.length ? <ChipRow label="任务" scroll><FilterButton active={!filters.taskType} onClick={() => onFilterChange({ ...filters, taskType: "" })}>全部任务</FilterButton>{taskTypes.map(task => <FilterButton key={task.key} active={filters.taskType === task.key} onClick={() => onFilterChange({ ...filters, taskType: task.key })}>{task.display_name}</FilterButton>)}</ChipRow> : null}
       {(filters.modelId || filters.taskType || filters.status || filters.range !== EMPTY_FILTERS.range) ? <div className="flex justify-end border-b border-[var(--tc-border-subtle)] py-2"><Button type="button" variant="outline" size="sm" onClick={() => onFilterChange(EMPTY_FILTERS)}><X className="size-3.5" />清除筛选</Button></div> : null}
-      <div className="mt-3 overflow-x-auto border-y border-[var(--tc-border-subtle)]">
+      <div className="mt-3 min-h-0 flex-1 overflow-x-auto border-y border-[var(--tc-border-subtle)]">
         <table className="w-full min-w-[1040px] text-left text-xs">
           <thead className="bg-[var(--tc-surface-muted)] text-[var(--tc-text-muted)]"><tr>{["开始时间", "任务 / 范围", "模型", "状态", "Token 明细", "费用", "耗时", ""].map(label => <th key={label || "action"} className="px-3 py-2 font-medium">{label}</th>)}</tr></thead>
           <tbody>
@@ -506,18 +519,20 @@ function CallsPanel({ calls, total, page, filters, catalog, taskTypes, loading, 
           </tbody>
         </table>
       </div>
-      <div className="mt-2 flex items-center justify-between text-xs text-[var(--tc-text-muted)]"><span>第 {page} 页</span><div className="flex gap-2"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => onPageChange(value => Math.max(1, value - 1))}>上一页</Button><Button variant="outline" size="sm" disabled={page * PAGE_SIZE >= total} onClick={() => onPageChange(value => value + 1)}>下一页</Button></div></div>
+      <CompactPagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={nextPage => onPageChange(nextPage)} />
     </section>
   );
 }
 
-function AvailabilityPanel({ catalog, probingIds, onProbeOne, onProbeAll, onInspect }: { catalog: LLMModelListResponse; probingIds: Set<string>; onProbeOne: (modelId: string) => Promise<void>; onProbeAll: () => Promise<void>; onInspect: (modelId: string) => void }) {
+function AvailabilityPanel({ catalog, probingIds, page, onProbeOne, onProbeAll, onPageChange, onInspect }: { catalog: LLMModelListResponse; probingIds: Set<string>; page: number; onProbeOne: (modelId: string) => Promise<void>; onProbeAll: () => Promise<void>; onPageChange: (page: number) => void; onInspect: (modelId: string) => void }) {
+  const currentPage = Math.min(Math.max(1, page), Math.max(1, Math.ceil(catalog.models.length / MODEL_PAGE_SIZE)));
+  const pagedModels = catalog.models.slice((currentPage - 1) * MODEL_PAGE_SIZE, currentPage * MODEL_PAGE_SIZE);
   return (
-    <section className="pt-4" aria-labelledby="availability-title">
+    <section className="flex h-full min-h-0 flex-col pt-3" aria-labelledby="availability-title">
       <div className="flex flex-wrap items-end justify-between gap-3"><SectionHeading id="availability-title" title="模型可用性" meta="页面加载不会自动检测" /><Button type="button" size="sm" onClick={() => void onProbeAll()}><SearchCheck className="size-4" />批量检测</Button></div>
       <p className="mt-2 text-xs text-[var(--tc-text-muted)]">检测会发送真实请求并可能产生少量费用，只有主动操作才会执行。</p>
-      <div className="mt-3 divide-y divide-[var(--tc-border-subtle)] border-y border-[var(--tc-border-subtle)]">
-        {catalog.models.map(model => (
+      <div className="mt-3 min-h-0 flex-1 divide-y divide-[var(--tc-border-subtle)] overflow-y-auto border-y border-[var(--tc-border-subtle)]">
+        {pagedModels.map(model => (
           <div key={model.id} className="grid items-center gap-2 px-3 py-2 text-xs md:grid-cols-[minmax(180px,1fr)_120px_190px_auto]">
             <div><p className="text-[var(--tc-text-primary)]">{model.display_name}{model.is_default ? "（默认）" : ""}</p><p className="mt-0.5 text-[11px] text-[var(--tc-text-muted)]">{model.upstream_verified ? "上游名称已验证" : "上游名称未验证"}</p></div>
             <span className="text-[var(--tc-text-secondary)]">{availabilityLabel(model.availability)}</span>
@@ -526,6 +541,7 @@ function AvailabilityPanel({ catalog, probingIds, onProbeOne, onProbeAll, onInsp
           </div>
         ))}
       </div>
+      <CompactPagination page={currentPage} pageSize={MODEL_PAGE_SIZE} total={catalog.models.length} onPageChange={onPageChange} />
     </section>
   );
 }

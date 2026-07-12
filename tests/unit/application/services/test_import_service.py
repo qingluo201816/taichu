@@ -143,19 +143,3 @@ class ImportServiceTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("原创正文", original_text)
         self.assertIn("测试正文", fixture_text)
         self.assertNotEqual(original_text, fixture_text)
-
-    async def test_generated_rebuild_stub_preserves_source(self) -> None:
-        await self.importer.import_text(
-            "第一章 正文\n原创正文",
-            source_name="original.txt",
-        )
-        generated_file = self.assets_root / "generated" / "temp" / "cache.tmp"
-        generated_file.write_text("cache", encoding="utf-8")
-
-        await self.chapters.clear_generated_projection_stub()
-
-        self.assertFalse(generated_file.exists())
-        source_text = await self.storage.read_chapter_markdown(
-            "manuscripts/chapters/chapter_001.md"
-        )
-        self.assertIn("原创正文", source_text)

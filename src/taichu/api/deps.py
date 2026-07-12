@@ -12,7 +12,6 @@ from taichu.application.services.chapter_summary_service import (
 )
 from taichu.application.services.chapter_service import ChapterService
 from taichu.application.services.export_service import ExportService
-from taichu.application.services.index_service import IndexService
 from taichu.application.services.inbox_service import InboxService
 from taichu.application.services.knowledge_service import KnowledgeService
 from taichu.application.services.knowledge_extraction_service import (
@@ -23,11 +22,7 @@ from taichu.application.services.knowledge_extraction_evaluation_service import 
 )
 from taichu.application.services.agent_task_event_service import AgentTaskEventCenter
 from taichu.application.services.mvp_inbox_service import MVPInboxService
-from taichu.application.services.mvp_knowledge_service import MVPKnowledgeService
 from taichu.application.services.outline_service import OutlineService
-from taichu.application.services.pending_fact_confirmation_service import (
-    PendingFactConfirmationService,
-)
 from taichu.application.services.selection_ai_service import SelectionAIService
 from taichu.application.services.settings_service import SettingsPreferenceService
 from taichu.application.services.writing_ai_service import WritingAIService
@@ -83,11 +78,6 @@ def provide_export_service(request: Request) -> ExportService:
     return request.app.state.export_service
 
 
-def provide_index_service(request: Request) -> IndexService:
-    """Return the generated projection maintenance service."""
-    return request.app.state.index_service
-
-
 def provide_knowledge_service(request: Request) -> KnowledgeService:
     """Return the minimal Knowledge application service."""
     return request.app.state.knowledge_service
@@ -111,18 +101,6 @@ def provide_knowledge_extraction_evaluation_service(
 def provide_agent_task_event_center(request: Request) -> AgentTaskEventCenter:
     """Return the Agent task event center."""
     return request.app.state.agent_task_events
-
-
-def provide_mvp_knowledge_service(request: Request) -> MVPKnowledgeService:
-    """Return the MVP structured knowledge application service."""
-    return request.app.state.mvp_knowledge_service
-
-
-def provide_pending_fact_confirmation_service(
-    request: Request,
-) -> PendingFactConfirmationService:
-    """Return the PendingFact author confirmation service."""
-    return request.app.state.pending_fact_confirmation_service
 
 
 def provide_settings_preference_service(request: Request) -> SettingsPreferenceService:

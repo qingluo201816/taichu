@@ -49,6 +49,10 @@ from taichu.application.evaluations.knowledge_extraction.profiles import (
 from taichu.domain.models.structured_knowledge import StructuredKnowledgeType
 
 
+# 作者人工判断的出现频率不参与模型提取质量的对错评测。
+_NON_EVALUATED_CARD_FIELDS = frozenset({"importance", "appearance_chapter_count"})
+
+
 def _harmonic_mean(left: float, right: float) -> float:
     if left + right == 0:
         return 0.0
@@ -193,6 +197,8 @@ def compare_structured_fields(
             ) from exc
 
         for field_name in expected.exact_fields:
+            if field_name in _NON_EVALUATED_CARD_FIELDS:
+                continue
             actual_value = actual.card.get(field_name)
             expected_value = expected.card.get(field_name)
             weight = rules.field_weights.get(field_name, 1.0)
@@ -227,6 +233,8 @@ def compare_structured_fields(
                 weighted_total += weight
 
         for field_name in expected.set_fields:
+            if field_name in _NON_EVALUATED_CARD_FIELDS:
+                continue
             actual_value = actual.card.get(field_name)
             expected_value = expected.card.get(field_name)
             weight = rules.field_weights.get(field_name, 1.0)

@@ -34,6 +34,8 @@ export function AppShell({
   showNavigation = true,
   headerActions,
   workspaceStyle,
+  transparentHeader = false,
+  viewportLocked = false,
 }: {
   children: ReactNode;
   activePath?: string;
@@ -41,6 +43,8 @@ export function AppShell({
   showNavigation?: boolean;
   headerActions?: ReactNode;
   workspaceStyle?: CSSProperties;
+  transparentHeader?: boolean;
+  viewportLocked?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -63,8 +67,21 @@ export function AppShell({
   }, [router, shouldEscapeToHome]);
 
   return (
-    <main className="tc-workspace-page min-h-screen" style={workspaceStyle}>
-      <header className="sticky top-0 z-40 border-b border-[var(--tc-nav-border)] bg-[var(--tc-nav-bg)]/92 backdrop-blur">
+    <main
+      className={cn(
+        "tc-workspace-page",
+        viewportLocked ? "flex h-dvh flex-col overflow-hidden" : "min-h-screen",
+      )}
+      style={workspaceStyle}
+    >
+      <header
+        className={cn(
+          "top-0 z-40 w-full shrink-0 border-b",
+          transparentHeader
+            ? "absolute border-white/15 bg-black/15"
+            : "sticky border-[var(--tc-nav-border)] bg-[var(--tc-nav-bg)]/92 backdrop-blur",
+        )}
+      >
         <div
           className={cn(
             "mx-auto flex max-w-[1440px] flex-col gap-3 px-4 md:px-6 xl:flex-row xl:items-center xl:justify-between",
@@ -73,11 +90,17 @@ export function AppShell({
         >
           <Link
             href="/home"
-            className="flex min-w-0 items-center gap-3 text-[var(--tc-midnight-ink)]"
+            className={cn(
+              "flex min-w-0 items-center gap-3",
+              transparentHeader ? "text-white" : "text-[var(--tc-midnight-ink)]",
+            )}
           >
             <span
               className={cn(
-                "tc-display-font inline-flex items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-midnight-ink)] bg-[var(--tc-deep-forest-teal)] text-[var(--tc-action-primary-text)]",
+                "tc-display-font inline-flex items-center justify-center rounded-[var(--tc-radius-control)] border",
+                transparentHeader
+                  ? "border-white/30 bg-black/15 text-white"
+                  : "border-[var(--tc-midnight-ink)] bg-[var(--tc-deep-forest-teal)] text-[var(--tc-action-primary-text)]",
                 headerActions ? "size-8 text-base" : "size-10 text-lg",
               )}
             >
@@ -94,7 +117,8 @@ export function AppShell({
               </span>
               <span
                 className={cn(
-                  "block text-[var(--tc-smoke)]",
+                  "block",
+                  transparentHeader ? "text-white/60" : "text-[var(--tc-smoke)]",
                   headerActions ? "text-[11px]" : "text-xs",
                 )}
               >
@@ -108,7 +132,14 @@ export function AppShell({
               {headerActions}
             </div>
           ) : showNavigation ? (
-            <nav className="flex gap-2 overflow-x-auto rounded-[var(--tc-radius-control)] border border-[var(--tc-nav-border)] bg-[var(--tc-nav-bg)] p-1">
+            <nav
+              className={cn(
+                "flex gap-2 overflow-x-auto rounded-[var(--tc-radius-control)] border p-1",
+                transparentHeader
+                  ? "border-white/15 bg-black/10"
+                  : "border-[var(--tc-nav-border)] bg-[var(--tc-nav-bg)]",
+              )}
+            >
               {navigation.map(item => {
                 const Icon = item.icon;
                 const active =
@@ -122,13 +153,19 @@ export function AppShell({
                       "inline-flex h-10 shrink-0 items-center gap-2 rounded-[10px] px-3 text-sm font-medium transition-colors",
                       active
                         ? ""
-                        : "text-[var(--tc-smoke)] hover:bg-[var(--tc-cream-paper)] hover:text-[var(--tc-midnight-ink)]",
+                        : transparentHeader
+                          ? "text-white/70 hover:bg-white/10 hover:text-white"
+                          : "text-[var(--tc-smoke)] hover:bg-[var(--tc-cream-paper)] hover:text-[var(--tc-midnight-ink)]",
                     )}
                     style={
                       active
                         ? {
-                            background: "var(--tc-nav-active-bg)",
-                            color: "var(--tc-nav-active-text)",
+                            background: transparentHeader
+                              ? "rgba(255, 255, 255, 0.14)"
+                              : "var(--tc-nav-active-bg)",
+                            color: transparentHeader
+                              ? "#ffffff"
+                              : "var(--tc-nav-active-text)",
                           }
                         : undefined
                     }
@@ -142,7 +179,11 @@ export function AppShell({
           ) : null}
         </div>
       </header>
-      {children}
+      {viewportLocked ? (
+        <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+      ) : (
+        children
+      )}
     </main>
   );
 }

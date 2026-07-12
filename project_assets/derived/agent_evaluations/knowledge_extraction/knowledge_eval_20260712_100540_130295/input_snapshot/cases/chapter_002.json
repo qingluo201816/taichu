@@ -1,0 +1,1240 @@
+{
+  "checksum": "e965a1357dc699b4e8a2cbc809c46b330dc4fbe0090b24d0e5bf4b433768e714",
+  "expected_cards": [
+    {
+      "accepted_names": [
+        "陈老头"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "grade": null,
+        "identity": "陈家药铺药师",
+        "importance": "normal",
+        "item_type": null,
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "leader_id": null,
+        "level_order": null,
+        "name": "陈老头",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": "与秦浩轩有旧情，秦浩轩愿意低价把黄精卖给他。",
+        "role_type": "supporting",
+        "source_note": "第2章 山中神仙选仙苗：陈老头听闻黄精后从内院赶出，确认并购买黄精。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "陈家药铺老人，年近八十但中气十足，珍视黄精；以三十两从秦浩轩手中买下黄精。",
+        "system": null,
+        "technique_type": null,
+        "type": "character"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "character_chen_laotou",
+      "expected_claims": [
+        {
+          "claim_id": "claim_character_chen_laotou_summary",
+          "description": "陈家药铺老人，年近八十但中气十足，珍视黄精；以三十两从秦浩轩手中买下黄精。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_character_chen_laotou_01",
+            "quote_character_chen_laotou_02",
+            "quote_character_chen_laotou_03",
+            "quote_character_chen_laotou_04"
+          ]
+        }
+      ],
+      "knowledge_type": "character",
+      "semantic_fields": [
+        "summary",
+        "source_note",
+        "identity",
+        "relationship_summary"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_character_chen_laotou_01",
+        "quote_character_chen_laotou_02",
+        "quote_character_chen_laotou_03",
+        "quote_character_chen_laotou_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "秦浩轩"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "grade": null,
+        "identity": "大田镇少年；采药者；选苗报名者",
+        "importance": "core",
+        "item_type": null,
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "leader_id": null,
+        "level_order": null,
+        "name": "秦浩轩",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": "尊重陈老头过往照拂；与张狂仍有敌意。",
+        "role_type": "protagonist",
+        "source_note": "第2章 山中神仙选仙苗：秦浩轩在陈家药铺保留黄精给陈老头，并在镇长宣布选苗后报名。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "秦浩轩带黄精到陈家药铺出售，拒绝外地豪客的一百二十两高价，选择以三十两卖给陈老头；随后报名参加山中神仙选苗。",
+        "system": null,
+        "technique_type": null,
+        "type": "character"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "character_qin_haoxuan",
+      "expected_claims": [
+        {
+          "claim_id": "claim_character_qin_haoxuan_summary",
+          "description": "秦浩轩带黄精到陈家药铺出售，拒绝外地豪客的一百二十两高价，选择以三十两卖给陈老头；随后报名参加山中神仙选苗。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_character_qin_haoxuan_01",
+            "quote_character_qin_haoxuan_02",
+            "quote_character_qin_haoxuan_03",
+            "quote_character_qin_haoxuan_04"
+          ]
+        }
+      ],
+      "knowledge_type": "character",
+      "semantic_fields": [
+        "summary",
+        "source_note",
+        "identity",
+        "relationship_summary"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_character_qin_haoxuan_01",
+        "quote_character_qin_haoxuan_02",
+        "quote_character_qin_haoxuan_03",
+        "quote_character_qin_haoxuan_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "张狂"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "grade": null,
+        "identity": "大田镇少年；选苗报名者",
+        "importance": "major",
+        "item_type": null,
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "leader_id": null,
+        "level_order": null,
+        "name": "张狂",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": "视秦浩轩为宿敌，挑衅后又被秦浩轩眼神震慑。",
+        "role_type": "antagonist",
+        "source_note": "第2章 山中神仙选仙苗：张狂报名时因将被神仙选中的幻想而挑衅秦浩轩。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "张狂同样报名参加神仙选苗，并在报名处向秦浩轩放话，称被选中后要和秦浩轩算账。",
+        "system": null,
+        "technique_type": null,
+        "type": "character"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "character_zhang_kuang",
+      "expected_claims": [
+        {
+          "claim_id": "claim_character_zhang_kuang_summary",
+          "description": "张狂同样报名参加神仙选苗，并在报名处向秦浩轩放话，称被选中后要和秦浩轩算账。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_character_zhang_kuang_01",
+            "quote_character_zhang_kuang_02",
+            "quote_character_zhang_kuang_03",
+            "quote_character_zhang_kuang_04"
+          ]
+        }
+      ],
+      "knowledge_type": "character",
+      "semantic_fields": [
+        "summary",
+        "source_note",
+        "identity",
+        "relationship_summary"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_character_zhang_kuang_01",
+        "quote_character_zhang_kuang_02",
+        "quote_character_zhang_kuang_03",
+        "quote_character_zhang_kuang_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "大田镇宣布开山选苗"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": "大田镇少年报名参加神仙选苗。",
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": null,
+        "grade": null,
+        "identity": null,
+        "importance": "core",
+        "item_type": null,
+        "last_seen_chapter_id": null,
+        "leader_id": null,
+        "level_order": null,
+        "name": "大田镇宣布开山选苗",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第2章 山中神仙选仙苗：这是秦浩轩、张狂等人进入修仙线的直接触发事件。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "镇长召集镇上十六岁适龄少年，宣布次日黎明前往坡子岭参加山上神仙选徒。",
+        "system": null,
+        "technique_type": null,
+        "type": "event"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "event_da_tian_selection_announced",
+      "expected_claims": [
+        {
+          "claim_id": "claim_event_da_tian_selection_announced_summary",
+          "description": "镇长召集镇上十六岁适龄少年，宣布次日黎明前往坡子岭参加山上神仙选徒。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_event_da_tian_selection_announced_01",
+            "quote_event_da_tian_selection_announced_02",
+            "quote_event_da_tian_selection_announced_03",
+            "quote_event_da_tian_selection_announced_04"
+          ]
+        }
+      ],
+      "knowledge_type": "event",
+      "semantic_fields": [
+        "summary",
+        "source_note",
+        "description"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_event_da_tian_selection_announced_01",
+        "quote_event_da_tian_selection_announced_02",
+        "quote_event_da_tian_selection_announced_03",
+        "quote_event_da_tian_selection_announced_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "秦浩轩低价卖黄精给陈老头"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": "秦浩轩放弃高价，将黄精卖给陈老头。",
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": null,
+        "grade": null,
+        "identity": null,
+        "importance": "major",
+        "item_type": null,
+        "last_seen_chapter_id": null,
+        "leader_id": null,
+        "level_order": null,
+        "name": "秦浩轩低价卖黄精给陈老头",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第2章 山中神仙选仙苗：该事件体现秦浩轩对陈老头旧恩和长期药材渠道的重视。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "外地豪客开出高价后，秦浩轩仍将黄精留给陈老头，最终以三十两成交。",
+        "system": null,
+        "technique_type": null,
+        "type": "event"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "event_qin_sells_huangjing_to_chen",
+      "expected_claims": [
+        {
+          "claim_id": "claim_event_qin_sells_huangjing_to_chen_summary",
+          "description": "外地豪客开出高价后，秦浩轩仍将黄精留给陈老头，最终以三十两成交。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_event_qin_sells_huangjing_to_chen_01",
+            "quote_event_qin_sells_huangjing_to_chen_02",
+            "quote_event_qin_sells_huangjing_to_chen_03",
+            "quote_event_qin_sells_huangjing_to_chen_04"
+          ]
+        }
+      ],
+      "knowledge_type": "event",
+      "semantic_fields": [
+        "summary",
+        "source_note",
+        "description"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_event_qin_sells_huangjing_to_chen_01",
+        "quote_event_qin_sells_huangjing_to_chen_02",
+        "quote_event_qin_sells_huangjing_to_chen_03",
+        "quote_event_qin_sells_huangjing_to_chen_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "陈家药铺"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": "guild",
+        "first_seen_chapter_id": null,
+        "grade": null,
+        "identity": null,
+        "importance": "normal",
+        "item_type": null,
+        "last_seen_chapter_id": null,
+        "leader_id": "character_chen_laotou",
+        "level_order": null,
+        "name": "陈家药铺",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第2章 山中神仙选仙苗：药铺有学徒切药制药，陈老头处理珍贵药材收购。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "大田镇本地药材经营组织，由陈老头和学徒维持经营，收购秦浩轩等人的珍贵药材。",
+        "system": null,
+        "technique_type": null,
+        "type": "faction"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "faction_chenjia_yaopu",
+      "expected_claims": [
+        {
+          "claim_id": "claim_faction_chenjia_yaopu_summary",
+          "description": "大田镇本地药材经营组织，由陈老头和学徒维持经营，收购秦浩轩等人的珍贵药材。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_faction_chenjia_yaopu_01",
+            "quote_faction_chenjia_yaopu_02",
+            "quote_faction_chenjia_yaopu_03",
+            "quote_faction_chenjia_yaopu_04"
+          ]
+        }
+      ],
+      "knowledge_type": "faction",
+      "semantic_fields": [
+        "summary",
+        "source_note"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_faction_chenjia_yaopu_01",
+        "quote_faction_chenjia_yaopu_02",
+        "quote_faction_chenjia_yaopu_03",
+        "quote_faction_chenjia_yaopu_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "黄精"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": "character_chen_laotou",
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "grade": null,
+        "identity": null,
+        "importance": "major",
+        "item_type": "material",
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "leader_id": null,
+        "level_order": null,
+        "name": "黄精",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第2章 山中神仙选仙苗：黄精引起外地豪客与陈老头争购，是本章交易核心。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "极珍稀药材，在第2章被外地豪客开价至一百二十两，最终秦浩轩以三十两卖给陈老头。",
+        "system": null,
+        "technique_type": null,
+        "type": "item"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "item_huangjing",
+      "expected_claims": [
+        {
+          "claim_id": "claim_item_huangjing_summary",
+          "description": "极珍稀药材，在第2章被外地豪客开价至一百二十两，最终秦浩轩以三十两卖给陈老头。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_item_huangjing_01",
+            "quote_item_huangjing_02",
+            "quote_item_huangjing_03",
+            "quote_item_huangjing_04"
+          ]
+        }
+      ],
+      "knowledge_type": "item",
+      "semantic_fields": [
+        "summary",
+        "source_note"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_item_huangjing_01",
+        "quote_item_huangjing_02",
+        "quote_item_huangjing_03",
+        "quote_item_huangjing_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "陈家药铺"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "grade": null,
+        "identity": null,
+        "importance": "normal",
+        "item_type": null,
+        "last_seen_chapter_id": null,
+        "leader_id": null,
+        "level_order": null,
+        "name": "陈家药铺",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第2章 山中神仙选仙苗：正文开篇介绍陈家药铺在大田镇无人不知，并描写药铺位置与经营状态。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "大田镇知名药铺，陈老头坐镇，徒弟负责日常切药制药；第2章主要交易场景发生于此。",
+        "system": null,
+        "technique_type": null,
+        "type": "location"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "location_chenjia_yaopu",
+      "expected_claims": [
+        {
+          "claim_id": "claim_location_chenjia_yaopu_summary",
+          "description": "大田镇知名药铺，陈老头坐镇，徒弟负责日常切药制药；第2章主要交易场景发生于此。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_location_chenjia_yaopu_01",
+            "quote_location_chenjia_yaopu_02",
+            "quote_location_chenjia_yaopu_03",
+            "quote_location_chenjia_yaopu_04"
+          ]
+        }
+      ],
+      "knowledge_type": "location",
+      "semantic_fields": [
+        "summary",
+        "source_note"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_location_chenjia_yaopu_01",
+        "quote_location_chenjia_yaopu_02",
+        "quote_location_chenjia_yaopu_03",
+        "quote_location_chenjia_yaopu_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "大田镇"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "grade": null,
+        "identity": null,
+        "importance": "major",
+        "item_type": null,
+        "last_seen_chapter_id": null,
+        "leader_id": null,
+        "level_order": null,
+        "name": "大田镇",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第2章 山中神仙选仙苗：镇长在傍晚将镇上十六岁适龄少年聚集起来宣布选苗。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "山中神仙选苗覆盖的小镇，第2章中镇长召集十六岁适龄少年报名。",
+        "system": null,
+        "technique_type": null,
+        "type": "location"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "location_da_tian_zhen",
+      "expected_claims": [
+        {
+          "claim_id": "claim_location_da_tian_zhen_summary",
+          "description": "山中神仙选苗覆盖的小镇，第2章中镇长召集十六岁适龄少年报名。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_location_da_tian_zhen_01",
+            "quote_location_da_tian_zhen_02",
+            "quote_location_da_tian_zhen_03",
+            "quote_location_da_tian_zhen_04"
+          ]
+        }
+      ],
+      "knowledge_type": "location",
+      "semantic_fields": [
+        "summary",
+        "source_note"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_location_da_tian_zhen_01",
+        "quote_location_da_tian_zhen_02",
+        "quote_location_da_tian_zhen_03",
+        "quote_location_da_tian_zhen_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "坡子岭"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": null,
+        "faction_type": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "grade": null,
+        "identity": null,
+        "importance": "normal",
+        "item_type": null,
+        "last_seen_chapter_id": null,
+        "leader_id": null,
+        "level_order": null,
+        "name": "坡子岭",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第2章 山中神仙选仙苗：镇长宣布明天在坡子岭由山上神仙挑选弟子。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "山中神仙选苗的集合测试地点，第2章中由镇长宣布次日黎明前往。",
+        "system": null,
+        "technique_type": null,
+        "type": "location"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "location_pozi_ling",
+      "expected_claims": [
+        {
+          "claim_id": "claim_location_pozi_ling_summary",
+          "description": "山中神仙选苗的集合测试地点，第2章中由镇长宣布次日黎明前往。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_location_pozi_ling_01",
+            "quote_location_pozi_ling_02",
+            "quote_location_pozi_ling_03",
+            "quote_location_pozi_ling_04"
+          ]
+        }
+      ],
+      "knowledge_type": "location",
+      "semantic_fields": [
+        "summary",
+        "source_note"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_location_pozi_ling_01",
+        "quote_location_pozi_ling_02",
+        "quote_location_pozi_ling_03",
+        "quote_location_pozi_ling_04"
+      ]
+    },
+    {
+      "accepted_names": [
+        "山中神仙选苗与安家费规则"
+      ],
+      "card": {
+        "aliases": [],
+        "chapter_id": null,
+        "controlling_faction_id": null,
+        "current_holder_id": null,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "description": null,
+        "exceptions": "第2章只说明大田镇本次规则，尚未确认是否所有地区完全相同。",
+        "faction_type": null,
+        "first_seen_chapter_id": null,
+        "grade": null,
+        "identity": null,
+        "importance": "major",
+        "item_type": null,
+        "last_seen_chapter_id": null,
+        "leader_id": null,
+        "level_order": null,
+        "name": "山中神仙选苗与安家费规则",
+        "owner_faction_id": null,
+        "practice_condition": null,
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "第2章 山中神仙选仙苗：镇长宣布选苗时说明适龄、地点和被选中后的安家费。",
+        "source_origin": "agent_extract",
+        "status": "active",
+        "summary": "山上神仙会在十六岁适龄少年中挑选徒弟，被选中者可获得每年二百两白银的安家费。",
+        "system": null,
+        "technique_type": null,
+        "type": "rule"
+      },
+      "exact_fields": [
+        "type",
+        "status",
+        "importance",
+        "source_origin"
+      ],
+      "expected_card_id": "rule_xianmiao_selection_fee",
+      "expected_claims": [
+        {
+          "claim_id": "claim_rule_xianmiao_selection_fee_summary",
+          "description": "山上神仙会在十六岁适龄少年中挑选徒弟，被选中者可获得每年二百两白银的安家费。",
+          "field": "summary",
+          "importance": "major",
+          "source_quote_ids": [
+            "quote_rule_xianmiao_selection_fee_01",
+            "quote_rule_xianmiao_selection_fee_02",
+            "quote_rule_xianmiao_selection_fee_03",
+            "quote_rule_xianmiao_selection_fee_04"
+          ]
+        }
+      ],
+      "knowledge_type": "rule",
+      "semantic_fields": [
+        "summary",
+        "source_note",
+        "exceptions"
+      ],
+      "set_fields": [
+        "aliases"
+      ],
+      "source_quote_ids": [
+        "quote_rule_xianmiao_selection_fee_01",
+        "quote_rule_xianmiao_selection_fee_02",
+        "quote_rule_xianmiao_selection_fee_03",
+        "quote_rule_xianmiao_selection_fee_04"
+      ]
+    }
+  ],
+  "negative_cases": [
+    {
+      "accepted_names": [
+        "小山羊胡子",
+        "另一个生面孔",
+        "两个外地豪客"
+      ],
+      "knowledge_type": "location",
+      "negative_case_id": "negative_chapter_002_01",
+      "reason": "第2章尚未给出姓名；可作为后续徐吞虎、赵嘉龙的追溯证据，但单章不直接建角色卡。",
+      "source_quote_ids": [
+        "quote_negative_chapter_002_01"
+      ]
+    },
+    {
+      "accepted_names": [
+        "镇长"
+      ],
+      "knowledge_type": "character",
+      "negative_case_id": "negative_chapter_002_02",
+      "reason": "仅为职务称呼，无姓名；当前作为事件来源，不独立入角色卡。",
+      "source_quote_ids": [
+        "quote_negative_chapter_002_02"
+      ]
+    },
+    {
+      "accepted_names": [
+        "酒家"
+      ],
+      "knowledge_type": "character",
+      "negative_case_id": "negative_chapter_002_03",
+      "reason": "普通功能地点，无持续设定价值。",
+      "source_quote_ids": [
+        "quote_negative_chapter_002_03"
+      ]
+    }
+  ],
+  "ref": {
+    "case_id": "chapter_002",
+    "chapter_ids": [
+      "chapter-333d692f21224f15a5735317ee278132"
+    ],
+    "evaluation_rules_path": "single_chapter/chapter_002/evaluation_rules.json",
+    "expected_cards_path": "single_chapter/chapter_002/expected_cards.json",
+    "negative_cases_path": "single_chapter/chapter_002/negative_cases.json",
+    "scope_type": "chapter",
+    "source_chapter_hashes": {
+      "chapter-333d692f21224f15a5735317ee278132": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+    },
+    "source_evidence_path": "single_chapter/chapter_002/source_evidence.json"
+  },
+  "rules": {
+    "field_weights": {
+      "aliases": 1.0,
+      "importance": 1.0,
+      "source_origin": 1.0,
+      "status": 1.0,
+      "type": 2.0
+    },
+    "reference_fields": [
+      "owner_faction_id",
+      "controlling_faction_id",
+      "leader_id",
+      "current_holder_id"
+    ],
+    "reference_identity_map": {}
+  },
+  "source_evidence": [
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 1684,
+      "quote_id": "quote_character_chen_laotou_01",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 1604,
+      "text": "“黄精，你采到黄精了？”陈老头人未到声音先到，年近八十的他中气十足，一脸红润，健步如飞，一看到秦浩轩，便紧张地喊道：“听说有人高价跟我抢黄精？黄精呢？卖了吗？”"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 1838,
+      "quote_id": "quote_character_chen_laotou_02",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 1768,
+      "text": "“黄精，果然是黄精……”陈老头一大把年纪，看到黄精再也压抑不住情绪，三步并作两步跨上去，接过秦浩轩手中黄精捧在手上仔细端详，激动得老泪纵横。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 489,
+      "quote_id": "quote_character_chen_laotou_03",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 440,
+      "text": "秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出，立刻将两个生面孔的注意力拉了过来。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 56,
+      "quote_id": "quote_character_chen_laotou_04",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2,
+      "text": "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2047,
+      "quote_id": "quote_character_qin_haoxuan_01",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2009,
+      "text": "这个价格与之前的一百二十两相差太远，秦浩轩还没表态，他身后的少年们便起哄了。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 489,
+      "quote_id": "quote_character_qin_haoxuan_02",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 440,
+      "text": "秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出，立刻将两个生面孔的注意力拉了过来。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 1367,
+      "quote_id": "quote_character_qin_haoxuan_03",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 1287,
+      "text": "一百二十两，大田镇普通人家十来年的收入，即便是秦浩轩也要三四年才能赚到一百二十两，已经有少年涨得满脸通红，看着那在阳光下银光熠熠的六个银锭，感觉呼吸都不畅通了。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 1897,
+      "quote_id": "quote_character_qin_haoxuan_04",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 1842,
+      "text": "“秦娃子，这块黄精你要卖多少钱？”好一会儿，陈老头才敛去激动的神色，正色询问：“听说刚才有人开到一百二十两？”"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2954,
+      "quote_id": "quote_character_zhang_kuang_01",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2869,
+      "text": "秦浩轩随着激动的少年们一起，在镇长处登基报名，也在报名的张狂在几名小弟的吹捧中自信满满，想到马上可以被神仙看中，从此不再是凡夫俗子，以至于看到秦浩轩也不像以前那般畏惧了。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 3058,
+      "quote_id": "quote_character_zhang_kuang_02",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2995,
+      "text": "秦浩轩在报名薄上写上自己的大名，身后传来张狂近乎嚣张的声音，他转过身，一双眼睛瞪着自信满满的张狂，眼神中厉光闪烁，却默不作声。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 3254,
+      "quote_id": "quote_character_zhang_kuang_03",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 3197,
+      "text": "看着张狂离去的背影，饶是秦浩轩也忍不住心底一寒，张狂这种懂进退的阴险小人，如果真和自己一起被选中，必须得加倍小心。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2771,
+      "quote_id": "quote_character_zhang_kuang_04",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2677,
+      "text": "就算没有每年两百两白银的诱惑，被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了，秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2468,
+      "quote_id": "quote_event_da_tian_selection_announced_01",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2404,
+      "text": "回到家中，秦浩轩狠狠睡了一觉，直到傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2400,
+      "quote_id": "quote_event_da_tian_selection_announced_02",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2353,
+      "text": "在酒家中饮酒时，少年们听到一个十分振奋的消息：“有消息说，明天是山上神仙们开山选苗的大日子！”"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2673,
+      "quote_id": "quote_event_da_tian_selection_announced_03",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2640,
+      "text": "“如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭。”"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 436,
+      "quote_id": "quote_event_da_tian_selection_announced_04",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 342,
+      "text": "在大田镇上看到两个生面孔实属罕见，这两人正在陈老头那些眼高于顶的徒弟们殷勤推荐下挑选名贵药材，从陈老头徒弟们近乎谄媚的笑容来看，他们肯定已经买下了不少，想必就是那两个财大气粗的外地豪客吧。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 436,
+      "quote_id": "quote_event_qin_sells_huangjing_to_chen_01",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 342,
+      "text": "在大田镇上看到两个生面孔实属罕见，这两人正在陈老头那些眼高于顶的徒弟们殷勤推荐下挑选名贵药材，从陈老头徒弟们近乎谄媚的笑容来看，他们肯定已经买下了不少，想必就是那两个财大气粗的外地豪客吧。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 1684,
+      "quote_id": "quote_event_qin_sells_huangjing_to_chen_02",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 1604,
+      "text": "“黄精，你采到黄精了？”陈老头人未到声音先到，年近八十的他中气十足，一脸红润，健步如飞，一看到秦浩轩，便紧张地喊道：“听说有人高价跟我抢黄精？黄精呢？卖了吗？”"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 1838,
+      "quote_id": "quote_event_qin_sells_huangjing_to_chen_03",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 1768,
+      "text": "“黄精，果然是黄精……”陈老头一大把年纪，看到黄精再也压抑不住情绪，三步并作两步跨上去，接过秦浩轩手中黄精捧在手上仔细端详，激动得老泪纵横。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2255,
+      "quote_id": "quote_event_qin_sells_huangjing_to_chen_04",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2181,
+      "text": "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！反正是采来的，多卖一点少卖一点都无所谓，就当圆了您一个心愿呗！”"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 56,
+      "quote_id": "quote_faction_chenjia_yaopu_01",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2,
+      "text": "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 489,
+      "quote_id": "quote_faction_chenjia_yaopu_02",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 440,
+      "text": "秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出，立刻将两个生面孔的注意力拉了过来。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 338,
+      "quote_id": "quote_faction_chenjia_yaopu_03",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 304,
+      "text": "陈家药铺除了一些受伤的猎户，前来卖药的零散采药人，就只有两个生面孔。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 436,
+      "quote_id": "quote_faction_chenjia_yaopu_04",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 342,
+      "text": "在大田镇上看到两个生面孔实属罕见，这两人正在陈老头那些眼高于顶的徒弟们殷勤推荐下挑选名贵药材，从陈老头徒弟们近乎谄媚的笑容来看，他们肯定已经买下了不少，想必就是那两个财大气粗的外地豪客吧。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 1367,
+      "quote_id": "quote_item_huangjing_01",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 1287,
+      "text": "一百二十两，大田镇普通人家十来年的收入，即便是秦浩轩也要三四年才能赚到一百二十两，已经有少年涨得满脸通红，看着那在阳光下银光熠熠的六个银锭，感觉呼吸都不畅通了。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2047,
+      "quote_id": "quote_item_huangjing_02",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2009,
+      "text": "这个价格与之前的一百二十两相差太远，秦浩轩还没表态，他身后的少年们便起哄了。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 1897,
+      "quote_id": "quote_item_huangjing_03",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 1842,
+      "text": "“秦娃子，这块黄精你要卖多少钱？”好一会儿，陈老头才敛去激动的神色，正色询问：“听说刚才有人开到一百二十两？”"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 436,
+      "quote_id": "quote_item_huangjing_04",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 342,
+      "text": "在大田镇上看到两个生面孔实属罕见，这两人正在陈老头那些眼高于顶的徒弟们殷勤推荐下挑选名贵药材，从陈老头徒弟们近乎谄媚的笑容来看，他们肯定已经买下了不少，想必就是那两个财大气粗的外地豪客吧。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 56,
+      "quote_id": "quote_location_chenjia_yaopu_01",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2,
+      "text": "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 117,
+      "quote_id": "quote_location_chenjia_yaopu_02",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 60,
+      "text": "北街一个不甚起眼的小店铺，高高挂出一个“药”字，陈老头的学徒正在忙着切药制药等种种工序，一股草药的清香弥散在附近。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 338,
+      "quote_id": "quote_location_chenjia_yaopu_03",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 304,
+      "text": "陈家药铺除了一些受伤的猎户，前来卖药的零散采药人，就只有两个生面孔。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 489,
+      "quote_id": "quote_location_chenjia_yaopu_04",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 440,
+      "text": "秦浩轩来到陈家药铺门口，黄精淡淡清香在浓郁的药香中仍旧十分突出，立刻将两个生面孔的注意力拉了过来。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2468,
+      "quote_id": "quote_location_da_tian_zhen_01",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2404,
+      "text": "回到家中，秦浩轩狠狠睡了一觉，直到傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2771,
+      "quote_id": "quote_location_da_tian_zhen_02",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2677,
+      "text": "就算没有每年两百两白银的诱惑，被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了，秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 1367,
+      "quote_id": "quote_location_da_tian_zhen_03",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 1287,
+      "text": "一百二十两，大田镇普通人家十来年的收入，即便是秦浩轩也要三四年才能赚到一百二十两，已经有少年涨得满脸通红，看着那在阳光下银光熠熠的六个银锭，感觉呼吸都不畅通了。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 56,
+      "quote_id": "quote_location_da_tian_zhen_04",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2,
+      "text": "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除，在大田镇拥有极高的声誉。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2771,
+      "quote_id": "quote_location_pozi_ling_01",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2677,
+      "text": "就算没有每年两百两白银的诱惑，被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了，秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2673,
+      "quote_id": "quote_location_pozi_ling_02",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2640,
+      "text": "“如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭。”"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2400,
+      "quote_id": "quote_location_pozi_ling_03",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2353,
+      "text": "在酒家中饮酒时，少年们听到一个十分振奋的消息：“有消息说，明天是山上神仙们开山选苗的大日子！”"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2562,
+      "quote_id": "quote_location_pozi_ling_04",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2472,
+      "text": "“明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟，这可是难得的际遇，你们可都要打起精神认真对待了，一旦被神仙们选中，还将得到神仙们赠予的每年两百两白银的安家费！”"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 698,
+      "quote_id": "quote_negative_chapter_002_01",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 611,
+      "text": "小山羊胡子直视秦浩轩脸庞，见秦浩轩不置可否，默认了黄精的说法，小山羊胡接着说道：“小兄弟，我正在配一个药方，其中恰恰需要黄精这一味药，今天这块黄精你直接开价，我买下，如何？”"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2468,
+      "quote_id": "quote_negative_chapter_002_02",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2404,
+      "text": "回到家中，秦浩轩狠狠睡了一觉，直到傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 300,
+      "quote_id": "quote_negative_chapter_002_03",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 254,
+      "text": "镇上的人都知道，肯定是秦浩轩又来卖药材了，而且这么大阵仗，说不定又是一个价值不菲的好东西呢！"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2468,
+      "quote_id": "quote_rule_xianmiao_selection_fee_01",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2404,
+      "text": "回到家中，秦浩轩狠狠睡了一觉，直到傍晚时分，镇长便遣人将镇上十六岁的适龄少年都聚集起来，在小镇的广场上宣布了这一振奋人心的消息。"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2400,
+      "quote_id": "quote_rule_xianmiao_selection_fee_02",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2353,
+      "text": "在酒家中饮酒时，少年们听到一个十分振奋的消息：“有消息说，明天是山上神仙们开山选苗的大日子！”"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2771,
+      "quote_id": "quote_rule_xianmiao_selection_fee_03",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2677,
+      "text": "就算没有每年两百两白银的诱惑，被山中神仙看中收作徒弟也足以让这些少年趋之若鹜了，秦浩轩也很想成为神仙，但他更担心自己走后年纪渐大的父母衣食无着，怎么可能自己跑去当神仙，留下双亲孤苦无依呢？"
+    },
+    {
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "end_offset": 2562,
+      "quote_id": "quote_rule_xianmiao_selection_fee_04",
+      "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+      "start_offset": 2472,
+      "text": "“明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟，这可是难得的际遇，你们可都要打起精神认真对待了，一旦被神仙们选中，还将得到神仙们赠予的每年两百两白银的安家费！”"
+    }
+  ]
+}

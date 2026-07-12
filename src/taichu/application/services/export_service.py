@@ -6,11 +6,17 @@ import json
 from datetime import UTC, datetime
 from uuid import uuid4
 
+from taichu.application.contracts.knowledge_repository import (
+    KnowledgeCardQuery,
+    StructuredKnowledgeRepository,
+)
 from taichu.application.contracts.storage import ProjectAssetStorageContract
-from taichu.application.services.knowledge_service import knowledge_category_for_type
 from taichu.domain.models.chapter import ChapterManifest
 from taichu.domain.models.export import ExportBundle, ExportFile
-from taichu.domain.models.knowledge import KnowledgeCard
+from taichu.domain.models.structured_knowledge import (
+    StructuredKnowledgeCard,
+    StructuredKnowledgeLifecycle,
+)
 
 _WORKSPACE_JSONL_FILES = (
     "ai_cards.jsonl",
@@ -20,13 +26,20 @@ _WORKSPACE_JSONL_FILES = (
     "chapter_summaries.jsonl",
     "writing_ai_runs.jsonl",
 )
+_KNOWLEDGE_PAGE_SIZE = 200
+_ALL_KNOWLEDGE_LIFECYCLES = frozenset(StructuredKnowledgeLifecycle)
 
 
 class ExportService:
     """Build a readable export bundle from source assets."""
 
-    def __init__(self, storage: ProjectAssetStorageContract) -> None:
+    def __init__(
+        self,
+        storage: ProjectAssetStorageContract,
+        knowledge_repository: StructuredKnowledgeRepository,
+    ) -> None:
         self._storage = storage
+        self._knowledge_repository = knowledge_repository
 
     async def build_bundle(self) -> ExportBundle:
         """Return current source assets as readable export files."""
@@ -62,16 +75,22 @@ class ExportService:
                 )
             )
 
-        for record in await self._storage.list_knowledge_records():
-            card = KnowledgeCard.model_validate(record)
-            category = knowledge_category_for_type(card.type)
-            files.append(
-                ExportFile(
-                    path=f"source/knowledge/{category}/{card.id}.json",
-                    media_type="application/json",
-                    content=_json_text(card.model_dump(mode="json")),
-                )
+        knowledge_cards = await self._list_all_knowledge_cards()
+        files.append(
+            ExportFile(
+                path="knowledge/knowledge_cards.json",
+                media_type="application/json",
+                content=_json_text(
+                    {
+                        "schema_version": "taichu_export_v2",
+                        "created_at": created_at,
+                        "cards": [
+                            card.model_dump(mode="json") for card in knowledge_cards
+                        ],
+                    }
+                ),
             )
+        )
 
         for filename in _WORKSPACE_JSONL_FILES:
             records = await self._storage.list_workspace_records(filename)
@@ -85,10 +104,28 @@ class ExportService:
 
         return ExportBundle(
             id=f"export_{uuid4().hex}",
-            schema_version="mvp_v1",
+            schema_version="taichu_export_v2",
             created_at=created_at,
             files=files,
         )
+
+    async def _list_all_knowledge_cards(self) -> list[StructuredKnowledgeCard]:
+        cards: list[StructuredKnowledgeCard] = []
+        offset = 0
+        while True:
+            page = await self._knowledge_repository.list_cards(
+                KnowledgeCardQuery(
+                    lifecycles=_ALL_KNOWLEDGE_LIFECYCLES,
+                    offset=offset,
+                    limit=_KNOWLEDGE_PAGE_SIZE,
+                )
+            )
+            cards.extend(page.cards)
+            offset += len(page.cards)
+            if offset >= page.total:
+                return cards
+            if not page.cards:
+                raise RuntimeError("知识库分页返回空页，无法完成导出。")
 
 
 def _json_text(data: dict[str, object]) -> str:

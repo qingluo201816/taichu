@@ -20,8 +20,8 @@ from taichu.domain.models import (
     SourceReferenceType,
     StructuredKnowledgeCard,
     StructuredKnowledgeImportance,
+    StructuredKnowledgeLifecycle,
     StructuredKnowledgeSourceOrigin,
-    StructuredKnowledgeStatus,
     StructuredKnowledgeType,
     WritingAIButtonType,
     WritingAIInput,
@@ -105,7 +105,7 @@ class MVPContractTest(unittest.TestCase):
             aliases=["秦无咎"],
             summary="主角，早期出现疑似金鳞元神异象。",
             importance=StructuredKnowledgeImportance.CORE,
-            status=StructuredKnowledgeStatus.DRAFT,
+            lifecycle=StructuredKnowledgeLifecycle.DRAFT,
             source_origin=StructuredKnowledgeSourceOrigin.MANUAL,
             source_note="作者手动确认：第1章 大田金鳞元神出。",
             role_type="protagonist",
@@ -118,8 +118,10 @@ class MVPContractTest(unittest.TestCase):
         )
 
         self.assertFalse(card.can_be_used_as_effective_knowledge())
-        active = card.model_copy(update={"status": StructuredKnowledgeStatus.ACTIVE})
-        self.assertTrue(active.can_be_used_as_effective_knowledge())
+        confirmed = card.model_copy(
+            update={"lifecycle": StructuredKnowledgeLifecycle.CONFIRMED}
+        )
+        self.assertTrue(confirmed.can_be_used_as_effective_knowledge())
         payload = card.model_dump(mode="json")
         self.assertNotIn("body", payload)
         self.assertNotIn("tags", payload)

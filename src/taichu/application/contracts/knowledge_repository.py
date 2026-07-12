@@ -1,59 +1,127 @@
-"""Repository contracts for structured knowledge cards."""
+"""Repository boundary for MongoDB-backed structured knowledge cards."""
 
 from __future__ import annotations
 
-from typing import Any, Literal, Protocol, runtime_checkable
+from dataclasses import dataclass, field
+from typing import Protocol, runtime_checkable
 
-from taichu.domain.models.structured_knowledge import StructuredKnowledgeCard
+from taichu.domain.models.structured_knowledge import (
+    StructuredKnowledgeCard,
+    StructuredKnowledgeLifecycle,
+    StructuredKnowledgeType,
+)
 
-AuthorMergeMode = Literal["append", "overwrite"]
+
+@dataclass(frozen=True, slots=True)
+class KnowledgeCardQuery:
+    """Storage-level filters for one deterministic page of knowledge cards."""
+
+    type: StructuredKnowledgeType | None = None
+    lifecycles: frozenset[StructuredKnowledgeLifecycle] = field(
+        default_factory=lambda: frozenset(
+            {
+                StructuredKnowledgeLifecycle.DRAFT,
+                StructuredKnowledgeLifecycle.CONFIRMED,
+            }
+        )
+    )
+    q: str | None = None
+    offset: int = 0
+    limit: int = 50
+
+    def __post_init__(self) -> None:
+        if not self.lifecycles:
+            raise ValueError("知识卡查询必须至少包含一个生命周期。")
+        if self.offset < 0:
+            raise ValueError("知识卡查询偏移量不能小于零。")
+        if self.limit < 1 or self.limit > 200:
+            raise ValueError("知识卡单次查询数量必须在 1 到 200 之间。")
+
+
+@dataclass(frozen=True, slots=True)
+class KnowledgeCardPage:
+    """One page of knowledge cards and its total matching record count."""
+
+    cards: list[StructuredKnowledgeCard]
+    total: int
+    offset: int
+    limit: int
+
+
+class KnowledgeRepositoryError(RuntimeError):
+    """Base error exposed by the structured knowledge storage boundary."""
+
+
+class KnowledgeRepositoryNotFoundError(KnowledgeRepositoryError):
+    """Raised when the requested knowledge card does not exist."""
+
+
+class KnowledgeRepositoryConflictError(KnowledgeRepositoryError):
+    """Raised for duplicate identifiers or confirmed identity collisions."""
+
+
+class KnowledgeRepositoryConcurrentUpdateError(KnowledgeRepositoryConflictError):
+    """Raised when compare-and-set detects a stale knowledge card update."""
+
+
+class KnowledgeRepositoryValidationError(KnowledgeRepositoryError):
+    """Raised when MongoDB rejects a document that violates its validator."""
+
+
+class KnowledgeRepositoryUnavailableError(KnowledgeRepositoryError):
+    """Raised when MongoDB cannot serve a knowledge repository operation."""
 
 
 @runtime_checkable
 class StructuredKnowledgeRepository(Protocol):
-    """Storage boundary used by Agents and APIs, independent of JSON details."""
+    """Technology-independent persistence contract for structured knowledge."""
 
-    async def list_active_cards(
+    async def list_cards(self, query: KnowledgeCardQuery) -> KnowledgeCardPage:
+        """Return one filtered and deterministically ordered card page."""
+        ...
+
+    async def list_confirmed_cards(
         self,
-        type: str | None = None,
+        type: StructuredKnowledgeType | None = None,
     ) -> list[StructuredKnowledgeCard]:
-        """List active cards, optionally filtered by type."""
+        """Return confirmed cards that are eligible for factual context."""
         ...
 
     async def get_card(self, card_id: str) -> StructuredKnowledgeCard | None:
-        """Return one card across all structured knowledge types."""
+        """Return one card by its stable business identifier."""
         ...
 
-    async def create_active_card(
+    async def create_card(
         self,
         card: StructuredKnowledgeCard,
     ) -> StructuredKnowledgeCard:
-        """Persist one active card after author confirmation."""
+        """Create one card without changing its application-approved lifecycle."""
         ...
 
-    async def patch_active_card(
+    async def update_card(
         self,
-        card_id: str,
-        updates: dict[str, Any],
-    ) -> StructuredKnowledgeCard:
-        """Patch one active card without overwriting protected non-empty fields."""
-        ...
-
-    async def apply_author_confirmed_updates(
-        self,
-        card_id: str,
-        updates: dict[str, Any],
+        card: StructuredKnowledgeCard,
         *,
-        merge_mode: AuthorMergeMode = "append",
+        expected_updated_at: str | None = None,
     ) -> StructuredKnowledgeCard:
-        """Apply explicit author edits to one active card."""
+        """Replace one card, optionally using updated_at compare-and-set."""
         ...
 
-    async def search_active_identity(
+    async def set_lifecycle(
         self,
-        type: str,
+        card_id: str,
+        lifecycle: StructuredKnowledgeLifecycle,
+        *,
+        expected_updated_at: str | None = None,
+    ) -> StructuredKnowledgeCard:
+        """Transition one card lifecycle, optionally using compare-and-set."""
+        ...
+
+    async def search_confirmed_identity(
+        self,
+        type: StructuredKnowledgeType,
         name: str,
         aliases: list[str],
     ) -> list[StructuredKnowledgeCard]:
-        """Find active cards with matching normalized names or aliases."""
+        """Find confirmed cards sharing normalized names or aliases."""
         ...

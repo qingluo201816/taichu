@@ -18,6 +18,7 @@ from taichu.api.schemas.agent_workbench import (
     KnowledgeExtractionRunDetailResponse,
     KnowledgeExtractionRunListResponse,
     KnowledgeExtractionRunSummary,
+    KnowledgeSedimentationProgressResponse,
 )
 from taichu.application.services.knowledge_extraction_service import (
     KnowledgeExtractionError,
@@ -25,13 +26,27 @@ from taichu.application.services.knowledge_extraction_service import (
     KnowledgeExtractionNotFoundError,
     KnowledgeExtractionService,
 )
-from taichu.infrastructure.agent_runs.json_store import AgentRunStoreError
-from taichu.infrastructure.knowledge.json_repository import (
-    KnowledgeRepositoryError,
-    KnowledgeRepositoryNotFoundError,
+from taichu.application.services.knowledge_service import (
+    KnowledgeCardNotFoundError,
+    KnowledgeConcurrentUpdateError,
+    KnowledgeIdentityConflictError,
+    KnowledgeUnavailableError,
 )
+from taichu.infrastructure.agent_runs.json_store import AgentRunStoreError
 
 router = APIRouter(prefix="/api/agent-workbench/knowledge-extraction")
+
+
+@router.get("/progress", response_model=KnowledgeSedimentationProgressResponse)
+async def api_get_knowledge_sedimentation_progress(
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
+) -> KnowledgeSedimentationProgressResponse:
+    """Return the latest author-accepted chapter frontier."""
+    progress = await service.get_sedimentation_progress()
+    return KnowledgeSedimentationProgressResponse(
+        last_accepted_chapter_id=progress.last_accepted_chapter_id,
+        updated_at=progress.updated_at,
+    )
 
 
 @router.post("/runs", response_model=KnowledgeExtractionRunCreateResponse)
@@ -209,6 +224,22 @@ async def api_delete_knowledge_extraction_run(
     return KnowledgeExtractionRunDeleteResponse(run_id=run_id, deleted=True)
 
 
+@router.post("/runs/{run_id}/accept", response_model=KnowledgeSedimentationProgressResponse)
+async def api_accept_knowledge_extraction_run(
+    run_id: str,
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
+) -> KnowledgeSedimentationProgressResponse:
+    """Mark one fully reviewed continuous run as the accepted knowledge frontier."""
+    try:
+        progress = await service.accept_run(run_id)
+    except KnowledgeExtractionError as error:
+        raise _bad_request(str(error)) from error
+    return KnowledgeSedimentationProgressResponse(
+        last_accepted_chapter_id=progress.last_accepted_chapter_id,
+        updated_at=progress.updated_at,
+    )
+
+
 @router.get(
     "/runs/{run_id}/candidates",
     response_model=KnowledgeExtractionCandidateListResponse,
@@ -346,9 +377,13 @@ async def _confirm_candidate(
 ) -> KnowledgeExtractionCandidateActionResponse:
     try:
         run = await service.confirm_candidate(candidate_id, run_id=run_id)
-    except (KnowledgeExtractionNotFoundError, KnowledgeRepositoryNotFoundError) as error:
+    except (KnowledgeExtractionNotFoundError, KnowledgeCardNotFoundError) as error:
         raise _not_found(str(error)) from error
-    except (KnowledgeExtractionError, KnowledgeRepositoryError) as error:
+    except (KnowledgeIdentityConflictError, KnowledgeConcurrentUpdateError) as error:
+        raise _conflict(str(error)) from error
+    except KnowledgeUnavailableError as error:
+        raise _unavailable(str(error)) from error
+    except KnowledgeExtractionError as error:
         raise _bad_request(str(error)) from error
     return KnowledgeExtractionCandidateActionResponse(run=run)
 
@@ -368,9 +403,13 @@ async def _edit_confirm_candidate(
             merge_mode=request.merge_mode,
             run_id=run_id,
         )
-    except (KnowledgeExtractionNotFoundError, KnowledgeRepositoryNotFoundError) as error:
+    except (KnowledgeExtractionNotFoundError, KnowledgeCardNotFoundError) as error:
         raise _not_found(str(error)) from error
-    except (KnowledgeExtractionError, KnowledgeRepositoryError, ValidationError) as error:
+    except (KnowledgeIdentityConflictError, KnowledgeConcurrentUpdateError) as error:
+        raise _conflict(str(error)) from error
+    except KnowledgeUnavailableError as error:
+        raise _unavailable(str(error)) from error
+    except (KnowledgeExtractionError, ValidationError) as error:
         raise _bad_request(_validation_message(error)) from error
     return KnowledgeExtractionCandidateActionResponse(run=run)
 
@@ -423,6 +462,20 @@ def _bad_request(message: str) -> HTTPException:
     return HTTPException(
         status_code=422,
         detail={"error": {"code": "VALIDATION_ERROR", "message": message}},
+    )
+
+
+def _conflict(message: str) -> HTTPException:
+    return HTTPException(
+        status_code=409,
+        detail={"error": {"code": "KNOWLEDGE_CONFLICT", "message": message}},
+    )
+
+
+def _unavailable(message: str) -> HTTPException:
+    return HTTPException(
+        status_code=503,
+        detail={"error": {"code": "KNOWLEDGE_UNAVAILABLE", "message": message}},
     )
 
 

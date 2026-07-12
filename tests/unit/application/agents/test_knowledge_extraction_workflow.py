@@ -16,11 +16,13 @@ from taichu.application.contracts.llm import (
 )
 from taichu.application.services.knowledge_extraction_service import (
     KnowledgeExtractionService,
+    _aggregate_batch_candidates,
 )
+from taichu.application.services.knowledge_service import KnowledgeService
 from taichu.application.agents.models.agent_run import AgentRunStatus
 from taichu.infrastructure.agent_runs import JsonAgentRunStore
-from taichu.infrastructure.knowledge import JSONKnowledgeRepository
 from taichu.infrastructure.storage.markdown_backend import ProjectAssetStorageBackend
+from tests.fakes import InMemoryKnowledgeRepository
 
 
 class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
@@ -35,7 +37,8 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             source_name="workflow_fixture.txt",
         )
         self.chapter_service = ChapterService(self.storage)
-        self.repository = JSONKnowledgeRepository(self.storage)
+        self.repository = InMemoryKnowledgeRepository()
+        self.knowledge_service = KnowledgeService(self.repository)
         self.run_store = JsonAgentRunStore(self.assets_root)
 
     async def asyncTearDown(self) -> None:
@@ -48,6 +51,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             chapter_service=self.chapter_service,
             llm=_PromptAwareLLM(),
             knowledge_repository=self.repository,
+            knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
 
@@ -109,6 +113,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             chapter_service=self.chapter_service,
             llm=_SequenceLLM(["不是 JSON", "仍然不是 JSON", "还是不是 JSON"]),
             knowledge_repository=self.repository,
+            knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
 
@@ -125,6 +130,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             chapter_service=self.chapter_service,
             llm=_PromptAwareRepairLLM(),
             knowledge_repository=self.repository,
+            knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
 
@@ -146,6 +152,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             chapter_service=self.chapter_service,
             llm=_SequenceLLM([_generic_mentions_response()]),
             knowledge_repository=self.repository,
+            knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
 
@@ -171,6 +178,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             chapter_service=self.chapter_service,
             llm=llm,
             knowledge_repository=self.repository,
+            knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
 
@@ -198,6 +206,46 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
                 call["model_id"] == "alternate-model"
                 for call in run["llm_calls"]
             )
+        )
+
+    def test_batch_aggregation_keeps_one_source_block_per_chapter(self) -> None:
+        candidates = _aggregate_batch_candidates(
+            [
+                {
+                    "chapter_id": "chapter_001",
+                    "chapter_title": "第一章 山门",
+                    "typed_candidates": [
+                        {
+                            "type": "character",
+                            "name": "秦阳",
+                            "aliases": [],
+                            "summary": "进入山门。",
+                            "source_note": "旧格式来源。",
+                            "evidence_excerpts": ["秦阳进入山门。"],
+                        }
+                    ],
+                },
+                {
+                    "chapter_id": "chapter_002",
+                    "chapter_title": "第二章 入门",
+                    "typed_candidates": [
+                        {
+                            "type": "character",
+                            "name": "秦阳",
+                            "aliases": [],
+                            "summary": "确认门规。",
+                            "source_note": "旧格式来源。",
+                            "evidence_excerpts": ["秦阳确认门规。"],
+                        }
+                    ],
+                },
+            ]
+        )
+
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(
+            candidates[0]["source_note"],
+            "第一章 山门\n关键原文：“秦阳进入山门。”\n\n第二章 入门\n关键原文：“秦阳确认门规。”",
         )
 
 

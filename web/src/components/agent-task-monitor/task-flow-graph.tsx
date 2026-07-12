@@ -164,17 +164,17 @@ function SingleFlowGraph({ run, now }: { run: AgentRun; now: number }) {
     nodeFor(graphNode)?.status ?? "pending";
 
   return (
-    <section>
+    <section className="flex min-h-0 flex-1 flex-col">
       <GraphHeader
         title="节点架构状态流转图"
         meta={`${layout.nodes.length} 节点 · ${graphEdges.length} 连线`}
       />
 
-      <div className="mt-2 overflow-hidden rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[linear-gradient(180deg,rgba(250,250,250,0.025),rgba(0,0,0,0)),var(--tc-surface-muted)]">
+      <div className="mt-2 flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[linear-gradient(180deg,rgba(250,250,250,0.025),rgba(0,0,0,0)),var(--tc-surface-muted)]">
         <svg
           role="img"
           aria-label="智能体任务状态流程图"
-          className="mx-auto block h-auto w-full max-w-[980px]"
+          className="mx-auto block h-full min-h-0 w-full max-w-[980px]"
           viewBox={`0 0 ${layout.bounds.width} ${layout.bounds.height}`}
         >
           <defs>
@@ -261,17 +261,17 @@ function BatchFlowGraph({ run, now }: { run: AgentRun; now: number }) {
   const height = 560;
 
   return (
-    <section>
+    <section className="flex min-h-0 flex-1 flex-col">
       <GraphHeader
         title="节点架构状态流转图"
         meta={`${lanes.length} 条并行线 · ${branchNodeCount} 分支节点 · ${batchPostNodes.length} 后处理节点 · ${concurrentText}`}
       />
 
-      <div className="mt-2 overflow-hidden rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[linear-gradient(180deg,rgba(250,250,250,0.025),rgba(0,0,0,0)),var(--tc-surface-muted)]">
+      <div className="mt-2 flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[linear-gradient(180deg,rgba(250,250,250,0.025),rgba(0,0,0,0)),var(--tc-surface-muted)]">
         <svg
           role="img"
           aria-label="批量知识沉淀并行任务状态流程图"
-          className="mx-auto block h-auto w-full max-w-[1160px]"
+          className="mx-auto block h-full min-h-0 w-full max-w-[1160px]"
           viewBox={`0 0 ${width} ${height}`}
         >
           <defs>

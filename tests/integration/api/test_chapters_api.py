@@ -16,6 +16,7 @@ from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
 from taichu.main import create_app
+from tests.fakes import InMemoryKnowledgeRepository
 
 
 class ChapterApiTest(unittest.IsolatedAsyncioTestCase):
@@ -34,6 +35,7 @@ class ChapterApiTest(unittest.IsolatedAsyncioTestCase):
             llm=FakeMessagesListChatModel(
                 responses=[AIMessage(content="unused")]
             ),
+            knowledge_repository=InMemoryKnowledgeRepository(),
         )
         self.client = AsyncClient(
             transport=ASGITransport(app=app),

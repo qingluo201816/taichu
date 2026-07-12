@@ -1,5 +1,5 @@
-import TaichuEntry from "@/components/taichu-entry/TaichuEntry";
+import { redirect } from "next/navigation";
 
-export default function Home() {
-  return <TaichuEntry />;
+export default function RootPage() {
+  redirect("/home");
 }

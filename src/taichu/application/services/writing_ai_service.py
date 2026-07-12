@@ -188,7 +188,7 @@ class WritingAIContextBuilder:
         selected_text: str,
         chapter_excerpt: str,
     ) -> WritingAIRetrievalContext:
-        cards = await self._knowledge_repository.list_active_cards()
+        cards = await self._knowledge_repository.list_confirmed_cards()
         corpus = _retrieval_corpus(command, selected_text, chapter_excerpt, chapter_text)
         query_terms = _query_terms(command.user_input, selected_text)
         items: list[WritingAIRetrievalEvidenceItem] = []
@@ -734,7 +734,7 @@ def _knowledge_context_block(
             f"类型：{type_label}",
             f"名称：{card.name}",
             f"摘要：{card.summary}",
-            f"重要程度：{card.importance.value}",
+            f"出现章节数：{card.appearance_chapter_count if card.appearance_chapter_count is not None else '暂未统计'}",
             f"来源说明：{card.source_note}",
             f"命中原因：{item.usage}",
         ]

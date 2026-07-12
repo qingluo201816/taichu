@@ -10,6 +10,7 @@
 |---|---|
 | 查看 Codex 必须遵守的项目规则 | `AGENTS.md` |
 | 修改当前前端视觉、布局或交互 | `DESIGN.md` |
+| 查看当前入口页状态与历史点云备份位置 | `docs/前端风格/入口页状态说明.md` |
 | 查看前端主题的精确实现 | `web/src/components/theme/`、`web/src/app/globals.css` |
 | 查看全部项目级 Skills | `.agents/索引.md` |
 | 查看 Skill 编写规则 | `.agents/skills/rule.md` |
@@ -24,6 +25,7 @@
 | 查看存储与检索契约 | `src/taichu/application/contracts/` |
 | 查看当前产品需求草案 | `docs/临时产品文档/太初当前产品需求.md` |
 | 查看其他未确认产品设想 | `docs/临时产品文档/` |
+| 查看已讨论的功能、需求与决策 | `docs/已讨论功能/` |
 | 查看历史快照 | `docs/历史/` |
 | 查看测试与评测样本 | `tests/`、`tests/fixtures/evaluations/` |
 | 安全探测 Right Code 模型名称与协议 | `scripts/probe_rightcode_models.py` |
@@ -42,13 +44,13 @@ Taichu/
 ├── .python-version           # Python 版本提示
 ├── pyproject.toml            # Python 项目与 uv 依赖
 ├── uv.lock                   # Python 依赖锁文件，应提交 Git
-├── start.bat                 # Windows 一键启动
+├── start.bat                 # Windows 一键启动入口
 ├── .agents/                  # Codex Skills 与开发工作流
 ├── .kiro/                    # 按需生成的 PRD 计划和 cc-sdd 规格
 ├── docs/                     # 文档规则、临时资料、参考资料和历史快照
 ├── project_assets/           # 当前单本小说的数据态资产
 ├── src/                      # FastAPI 后端代码
-├── scripts/                  # 显式运行的开发探测与维护脚本
+├── scripts/                  # 启动编排、迁移 CLI 辅助与开发维护脚本
 ├── tests/                    # 后端测试和评测夹具
 └── web/                      # Next.js 前端代码
 ```
@@ -65,7 +67,7 @@ cd web
 npm install
 ```
 
-日常启动双击根目录 `start.bat`。脚本会启动或复用 MongoDB，并启动：
+日常启动双击根目录 `start.bat`。它调用 `scripts/start.ps1` 完成固定端口清理、MongoDB 复用和前后端就绪检查，并启动：
 
 - 前端：`http://localhost:3000`
 - 后端：`http://127.0.0.1:8000`
@@ -77,18 +79,20 @@ npm install
 
 | 内容 | 本机位置 | 说明 |
 |---|---|---|
-| MongoDB 数据 | `E:\Taichu\MongoDB\data\db` | 结构化事实目标存储位置 |
+| MongoDB 数据 | `E:\Taichu\MongoDB\data\db` | 当前唯一结构事实存储位置 |
 | MongoDB 日志 | `E:\Taichu\MongoDB\log` | MongoDB 本地运行日志 |
 | 原小说导入资料 | `E:\Taichu\导入资料\太初原小说` | PDF、EPUB、TXT 原始导入包 |
+| 旧知识 JSON 迁移备份 | `E:\Taichu\迁移备份\知识库-20260711-151915` | 88 张旧卡和迁移清单的只读备份 |
 
 原小说导入包只是外部导入材料。太初当前正文的文本事实源仍是 `project_assets/source/manuscripts/chapters/` 下的 Markdown。
 
 ## 数据边界
 
 - Markdown 是唯一文本事实源。
-- MongoDB 中 `lifecycle=confirmed` 的记录是目标结构事实源。
-- `project_assets/source/knowledge/` 当前仍是迁移前 JSON 兼容实现，不代表 MongoDB 已完成业务接入。
-- AI 结果先形成 JSON 中间态，经过校验和作者确认后才能晋升为结构事实。
-- SQLite、向量、Elasticsearch、图索引和缓存都是可重建派生层。
+- MongoDB `taichu.knowledge_cards` 是唯一结构事实源；默认事实查询只使用 `lifecycle=confirmed` 的记录。
+- 旧知识迁移已备份 88 张 JSON：58 张有效卡导入为 `confirmed`，30 张已弃用重复卡只保留在 E 盘备份中。
+- 迁移 `finalize` 已完成，`project_assets/source/knowledge/` 已删除；存储骨架和业务代码不得重新创建它。
+- AI、Agent、评测和 Inbox 保存的 JSON/JSONL 仅是候选、运行、审计或工作区中间态；只有经过校验和作者确认的结构事实才能写入 MongoDB。
+- SQLite/FTS 已废弃，不参与后续架构决策；未来若增加向量、Elasticsearch、图索引或缓存，也只能作为可重建派生层。
 
 更完整的物理目录职责以 `project_assets/readme.md` 为准。

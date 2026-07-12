@@ -17,20 +17,16 @@ from taichu.domain.models import (
     ChapterSummaryStatus,
     CharacterCard,
     CharacterImportance,
-    EmbeddingChunk,
     IdeaCard,
     IdeaCardSource,
     IdeaCardStatus,
     KnowledgeCard,
-    KnowledgeCardStatus,
+    KnowledgeCardLifecycle,
     KnowledgeCardType,
     PendingFact,
     PendingFactStatus,
     PendingFactType,
     ProposedBy,
-    RetrievalHit,
-    RetrievalReason,
-    RetrievalSourceType,
     SourceAnchorType,
     SourceRef,
     SourceRefSourceType,
@@ -108,7 +104,7 @@ class DomainModelContractTest(unittest.TestCase):
             name="主角",
             aliases=["少年"],
             summary="作者确认的角色设定",
-            status=KnowledgeCardStatus.ACTIVE,
+            lifecycle=KnowledgeCardLifecycle.CONFIRMED,
             source_origin=StructuredKnowledgeSourceOrigin.MANUAL,
             source_note="作者手动确认。",
             current_realm_text="炼气",
@@ -140,30 +136,10 @@ class DomainModelContractTest(unittest.TestCase):
             created_at="2026-06-27T00:00:00Z",
             updated_at="2026-06-27T00:00:00Z",
         )
-        retrieval_hit = RetrievalHit(
-            source_type=RetrievalSourceType.CHAPTER,
-            source_id=chapter.id,
-            excerpt="开篇第一段",
-            score=1.0,
-            reason=RetrievalReason.EXACT,
-            source_ref=source_ref,
-        )
-        embedding_chunk = EmbeddingChunk(
-            id="chunk_001",
-            source_type=RetrievalSourceType.CHAPTER,
-            source_id=chapter.id,
-            text="开篇第一段",
-            source_ref=source_ref,
-            embedding=[0.1, 0.2],
-            updated_at="2026-06-27T00:00:00Z",
-        )
-
         self.assertEqual(manifest.chapters[0].id, "chapter_001")
         self.assertEqual(character.knowledge_base.id, knowledge.id)
         self.assertEqual(idea.source_card_id, ai_card.id)
         self.assertEqual(summary.new_setting_candidates[0].id, pending_fact.id)
-        self.assertEqual(retrieval_hit.source_ref, source_ref)
-        self.assertEqual(embedding_chunk.source_ref, source_ref)
 
     def test_invalid_enum_value_fails_schema_validation(self) -> None:
         with self.assertRaises(ValidationError):

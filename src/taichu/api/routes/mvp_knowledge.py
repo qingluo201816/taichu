@@ -1,9 +1,9 @@
-"""MVP structured knowledge endpoints."""
+"""Structured knowledge endpoints backed exclusively by MongoDB."""
 
-from pydantic import ValidationError
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import ValidationError
 
-from taichu.api.deps import provide_mvp_knowledge_service
+from taichu.api.deps import provide_knowledge_service
 from taichu.api.schemas.mvp import (
     CreateKnowledgeCardRequest,
     KnowledgeCardListResponse,
@@ -14,10 +14,13 @@ from taichu.api.schemas.mvp import (
     KnowledgeTypesResponse,
     PatchKnowledgeCardRequest,
 )
-from taichu.application.services.mvp_knowledge_service import (
+from taichu.application.services.knowledge_service import (
     KnowledgeCardNotFoundError,
     KnowledgeCardValidationError,
-    MVPKnowledgeService,
+    KnowledgeConcurrentUpdateError,
+    KnowledgeIdentityConflictError,
+    KnowledgeService,
+    KnowledgeUnavailableError,
 )
 from taichu.domain.models import StructuredKnowledgeType, knowledge_type_label
 
@@ -26,7 +29,7 @@ router = APIRouter(prefix="/api")
 
 @router.get("/knowledge/types", response_model=KnowledgeTypesResponse)
 async def api_list_knowledge_types(
-    service: MVPKnowledgeService = Depends(provide_mvp_knowledge_service),
+    service: KnowledgeService = Depends(provide_knowledge_service),
 ) -> KnowledgeTypesResponse:
     """Return structured knowledge types with Chinese labels."""
     return KnowledgeTypesResponse(
@@ -39,7 +42,7 @@ async def api_list_knowledge_types(
 
 @router.get("/knowledge/schemas", response_model=KnowledgeSchemasResponse)
 async def api_list_knowledge_schemas(
-    service: MVPKnowledgeService = Depends(provide_mvp_knowledge_service),
+    service: KnowledgeService = Depends(provide_knowledge_service),
 ) -> KnowledgeSchemasResponse:
     """Return all structured knowledge schemas."""
     return KnowledgeSchemasResponse(schemas=service.list_schemas())
@@ -48,7 +51,7 @@ async def api_list_knowledge_schemas(
 @router.get("/knowledge/schemas/{type}", response_model=KnowledgeSchemaResponse)
 async def api_get_knowledge_schema(
     type: str,
-    service: MVPKnowledgeService = Depends(provide_mvp_knowledge_service),
+    service: KnowledgeService = Depends(provide_knowledge_service),
 ) -> KnowledgeSchemaResponse:
     """Return one structured knowledge schema."""
     try:
@@ -61,36 +64,43 @@ async def api_get_knowledge_schema(
 @router.get("/knowledge/cards", response_model=KnowledgeCardListResponse)
 async def api_list_knowledge_cards(
     type: str = Query(...),
-    status: str = "all",
+    lifecycle: str = "all",
     q: str | None = None,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=100),
-    service: MVPKnowledgeService = Depends(provide_mvp_knowledge_service),
+    service: KnowledgeService = Depends(provide_knowledge_service),
 ) -> KnowledgeCardListResponse:
-    """List cards for one structured knowledge type."""
+    """List one knowledge type; rejected cards require an explicit filter."""
     try:
-        cards = await service.list_cards(_knowledge_type(type), status=status, q=q)
+        result = await service.list_cards(
+            _knowledge_type(type),
+            lifecycle=lifecycle,
+            q=q,
+            page=page,
+            page_size=page_size,
+        )
+    except KnowledgeUnavailableError as error:
+        raise _unavailable(str(error)) from error
     except ValueError as error:
         raise _bad_request(str(error) or "知识库筛选条件不正确") from error
     return KnowledgeCardListResponse(
-        cards=_page_slice(cards, page, page_size),
+        cards=result.cards,
         page=page,
         page_size=page_size,
-        total=len(cards),
+        total=result.total,
     )
 
 
 @router.post("/knowledge/cards", response_model=KnowledgeCardResponse)
 async def api_create_knowledge_card(
     request: CreateKnowledgeCardRequest,
-    service: MVPKnowledgeService = Depends(provide_mvp_knowledge_service),
+    service: KnowledgeService = Depends(provide_knowledge_service),
 ) -> KnowledgeCardResponse:
-    """Create one structured knowledge card."""
+    """Create one draft knowledge card."""
     try:
-        card = await service.create_card(
-            _knowledge_type(request.type),
-            request.data,
-        )
+        card = await service.create_card(_knowledge_type(request.type), request.data)
+    except KnowledgeUnavailableError as error:
+        raise _unavailable(str(error)) from error
     except (ValidationError, ValueError) as error:
         raise _bad_request(_validation_message(error)) from error
     return KnowledgeCardResponse(card=card)
@@ -99,13 +109,15 @@ async def api_create_knowledge_card(
 @router.get("/knowledge/cards/{card_id}", response_model=KnowledgeCardResponse)
 async def api_get_knowledge_card(
     card_id: str,
-    service: MVPKnowledgeService = Depends(provide_mvp_knowledge_service),
+    service: KnowledgeService = Depends(provide_knowledge_service),
 ) -> KnowledgeCardResponse:
     """Read one structured knowledge card."""
     try:
         card = await service.get_card(card_id)
     except KnowledgeCardNotFoundError as error:
         raise _not_found(str(error)) from error
+    except KnowledgeUnavailableError as error:
+        raise _unavailable(str(error)) from error
     return KnowledgeCardResponse(card=card)
 
 
@@ -113,49 +125,61 @@ async def api_get_knowledge_card(
 async def api_patch_knowledge_card(
     card_id: str,
     request: PatchKnowledgeCardRequest,
-    service: MVPKnowledgeService = Depends(provide_mvp_knowledge_service),
+    service: KnowledgeService = Depends(provide_knowledge_service),
 ) -> KnowledgeCardResponse:
-    """Patch one structured knowledge card."""
+    """Patch author-editable fields without changing lifecycle directly."""
     try:
         card = await service.patch_card(card_id, request.updates)
     except KnowledgeCardNotFoundError as error:
         raise _not_found(str(error)) from error
+    except (KnowledgeConcurrentUpdateError, KnowledgeIdentityConflictError) as error:
+        raise _conflict(str(error)) from error
+    except KnowledgeUnavailableError as error:
+        raise _unavailable(str(error)) from error
     except (ValidationError, ValueError) as error:
         raise _bad_request(_validation_message(error)) from error
     return KnowledgeCardResponse(card=card)
 
 
 @router.post(
-    "/knowledge/cards/{card_id}/mark-active",
+    "/knowledge/cards/{card_id}/confirm",
     response_model=KnowledgeCardResponse,
 )
-async def api_mark_knowledge_card_active(
+async def api_confirm_knowledge_card(
     card_id: str,
-    service: MVPKnowledgeService = Depends(provide_mvp_knowledge_service),
+    service: KnowledgeService = Depends(provide_knowledge_service),
 ) -> KnowledgeCardResponse:
-    """Mark one complete card as effective knowledge."""
+    """Confirm one complete draft as a structured fact."""
     try:
-        card = await service.mark_active(card_id)
+        card = await service.confirm_card(card_id)
     except KnowledgeCardNotFoundError as error:
         raise _not_found(str(error)) from error
+    except (KnowledgeConcurrentUpdateError, KnowledgeIdentityConflictError) as error:
+        raise _conflict(str(error)) from error
+    except KnowledgeUnavailableError as error:
+        raise _unavailable(str(error)) from error
     except KnowledgeCardValidationError as error:
         raise _bad_request(str(error)) from error
     return KnowledgeCardResponse(card=card)
 
 
 @router.post(
-    "/knowledge/cards/{card_id}/mark-deprecated",
+    "/knowledge/cards/{card_id}/reject",
     response_model=KnowledgeCardResponse,
 )
-async def api_mark_knowledge_card_deprecated(
+async def api_reject_knowledge_card(
     card_id: str,
-    service: MVPKnowledgeService = Depends(provide_mvp_knowledge_service),
+    service: KnowledgeService = Depends(provide_knowledge_service),
 ) -> KnowledgeCardResponse:
-    """Mark one card as deprecated without physical deletion."""
+    """Soft-delete one knowledge card."""
     try:
-        card = await service.mark_deprecated(card_id)
+        card = await service.reject_card(card_id)
     except KnowledgeCardNotFoundError as error:
         raise _not_found(str(error)) from error
+    except KnowledgeConcurrentUpdateError as error:
+        raise _conflict(str(error)) from error
+    except KnowledgeUnavailableError as error:
+        raise _unavailable(str(error)) from error
     return KnowledgeCardResponse(card=card)
 
 
@@ -169,24 +193,27 @@ def _knowledge_type(value: str) -> StructuredKnowledgeType:
 def _validation_message(error: Exception) -> str:
     if isinstance(error, ValidationError):
         return "知识卡内容不完整或格式不正确，请检查后再保存。"
-    message = str(error)
-    return message if message else "知识卡内容不完整或格式不正确，请检查后再保存。"
+    return str(error) or "知识卡内容不完整或格式不正确，请检查后再保存。"
 
 
-def _page_slice[T](items: list[T], page: int, page_size: int) -> list[T]:
-    start = (page - 1) * page_size
-    return items[start : start + page_size]
+def _error(status_code: int, code: str, message: str) -> HTTPException:
+    return HTTPException(
+        status_code=status_code,
+        detail={"error": {"code": code, "message": message}},
+    )
 
 
 def _not_found(message: str) -> HTTPException:
-    return HTTPException(
-        status_code=404,
-        detail={"error": {"code": "NOT_FOUND", "message": message}},
-    )
+    return _error(404, "NOT_FOUND", message)
 
 
 def _bad_request(message: str) -> HTTPException:
-    return HTTPException(
-        status_code=422,
-        detail={"error": {"code": "VALIDATION_ERROR", "message": message}},
-    )
+    return _error(422, "VALIDATION_ERROR", message)
+
+
+def _conflict(message: str) -> HTTPException:
+    return _error(409, "KNOWLEDGE_CONFLICT", message)
+
+
+def _unavailable(message: str) -> HTTPException:
+    return _error(503, "KNOWLEDGE_UNAVAILABLE", message or "知识库暂时不可用。")

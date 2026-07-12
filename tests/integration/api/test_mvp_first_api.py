@@ -19,6 +19,7 @@ from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
 from taichu.main import create_app
+from tests.fakes import InMemoryKnowledgeRepository
 
 
 class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
@@ -35,6 +36,7 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         app = create_app(
             app_settings=Settings(project_assets_dir=self.assets_root),
             llm=_WritingAIChatModel(responses=[_writing_ai_continue_response()]),
+            knowledge_repository=InMemoryKnowledgeRepository(),
         )
         self.client = AsyncClient(
             transport=ASGITransport(app=app),
@@ -77,12 +79,13 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
             "/api/knowledge/cards",
             json={
                 "type": "character",
-                "data": {"id": "character-qin-yang"},
+                "data": {},
             },
         )
+        card_id = create_response.json()["card"]["id"]
         schema_response = await self.client.get("/api/knowledge/schemas/character")
         patch_response = await self.client.patch(
-            "/api/knowledge/cards/character-qin-yang",
+            f"/api/knowledge/cards/{card_id}",
             json={
                 "updates": {
                     "name": "秦阳",
@@ -93,17 +96,17 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
                 }
             },
         )
-        active_response = await self.client.post(
-            "/api/knowledge/cards/character-qin-yang/mark-active"
+        confirmed_response = await self.client.post(
+            f"/api/knowledge/cards/{card_id}/confirm"
         )
-        deprecated_response = await self.client.post(
-            "/api/knowledge/cards/character-qin-yang/mark-deprecated"
+        rejected_response = await self.client.post(
+            f"/api/knowledge/cards/{card_id}/reject"
         )
         all_response = await self.client.get(
-            "/api/knowledge/cards?type=character&status=all"
+            "/api/knowledge/cards?type=character&lifecycle=all"
         )
-        deprecated_list_response = await self.client.get(
-            "/api/knowledge/cards?type=character&status=deprecated"
+        rejected_list_response = await self.client.get(
+            "/api/knowledge/cards?type=character&lifecycle=rejected"
         )
         foreshadow_response = await self.client.post(
             "/api/knowledge/cards",
@@ -130,12 +133,20 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
             for field in schema_response.json()["schema"]["fields"]
         }
         self.assertIn("role_type", schema_field_keys)
+        self.assertIn("lifecycle", schema_field_keys)
+        self.assertNotIn("status", schema_field_keys)
         self.assertNotIn("fields", schema_field_keys)
         self.assertEqual(patch_response.status_code, 200)
-        self.assertEqual(active_response.json()["card"]["status"], "active")
-        self.assertEqual(deprecated_response.json()["card"]["status"], "deprecated")
+        self.assertEqual(
+            confirmed_response.json()["card"]["lifecycle"],
+            "confirmed",
+        )
+        self.assertEqual(
+            rejected_response.json()["card"]["lifecycle"],
+            "rejected",
+        )
         self.assertEqual(all_response.json()["cards"], [])
-        self.assertEqual(len(deprecated_list_response.json()["cards"]), 1)
+        self.assertEqual(len(rejected_list_response.json()["cards"]), 1)
         self.assertEqual(foreshadow_response.status_code, 422)
         self.assertEqual(forbidden_response.status_code, 422)
 
@@ -198,10 +209,8 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
                 json={
                     "type": knowledge_type,
                     "data": {
-                        "id": f"{knowledge_type}-acceptance",
                         "name": f"{knowledge_type} card",
                         "summary": f"{knowledge_type} summary",
-                        "status": "active",
                         "source_origin": "manual",
                         "source_note": "acceptance test",
                         **type_payload,
@@ -212,7 +221,8 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(response.status_code, 200)
             card = response.json()["card"]
             self.assertEqual(card["type"], knowledge_type)
-            self.assertEqual(card["status"], "active")
+            self.assertEqual(card["lifecycle"], "draft")
+            self.assertNotIn("status", card)
             self.assertTrue(forbidden_fields.isdisjoint(card))
             for field_key, expected_value in type_payload.items():
                 self.assertEqual(card[field_key], expected_value)
@@ -253,8 +263,8 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(confirm_response.status_code, 200)
         self.assertEqual(confirm_response.json()["pending_fact"]["status"], "processed")
         self.assertEqual(
-            confirm_response.json()["knowledge_card"]["status"],
-            "draft",
+            confirm_response.json()["knowledge_card"]["lifecycle"],
+            "confirmed",
         )
         self.assertEqual(
             confirm_response.json()["knowledge_card"]["source_origin"],
@@ -269,7 +279,6 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
             json={
                 "type": "character",
                 "data": {
-                    "id": "character-qin-yang",
                     "name": "秦阳",
                     "summary": "主角，掌心出现过金鳞异象。",
                     "source_origin": "manual",
@@ -278,8 +287,9 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
                 },
             },
         )
-        active_response = await self.client.post(
-            "/api/knowledge/cards/character-qin-yang/mark-active"
+        card_id = create_card_response.json()["card"]["id"]
+        confirmed_response = await self.client.post(
+            f"/api/knowledge/cards/{card_id}/confirm"
         )
         run_response = await self.client.post(
             "/api/writing-ai/runs",
@@ -302,7 +312,10 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(create_card_response.status_code, 200)
-        self.assertEqual(active_response.json()["card"]["status"], "active")
+        self.assertEqual(
+            confirmed_response.json()["card"]["lifecycle"],
+            "confirmed",
+        )
         self.assertEqual(run_response.status_code, 200)
         self.assertEqual(run["status"], "completed")
         self.assertEqual(run["button_type"], "continue")
@@ -333,6 +346,7 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
                     project_assets_dir=assets_root,
                     rightcode_api_key=SecretStr(""),
                 ),
+                knowledge_repository=InMemoryKnowledgeRepository(),
             )
             async with AsyncClient(
                 transport=ASGITransport(app=app),

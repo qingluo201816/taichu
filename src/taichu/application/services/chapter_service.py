@@ -88,10 +88,6 @@ class ChapterService:
         )
         return ChapterContent(chapter=saved_chapter, markdown=markdown)
 
-    async def clear_generated_projection_stub(self) -> None:
-        """Empty generated projections without touching source assets."""
-        await self._storage.clear_generated()
-
     async def _find_chapter(self, chapter_id: str) -> Chapter:
         for chapter in await self.list_chapters():
             if chapter.id == chapter_id:

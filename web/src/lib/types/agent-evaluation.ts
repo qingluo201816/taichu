@@ -97,6 +97,8 @@ export type EvaluationLatestRunResult = {
 export type EligibleEvaluationRun = {
   run_id: string;
   case_id: string | null;
+  display_title: string;
+  model_display_name: string;
   status?: string;
   scope_type: string;
   chapter_id?: string | null;
@@ -133,6 +135,8 @@ export type CreateKnowledgeEvaluationRequest = {
 export type EvaluationPreviewRun = {
   run_id: string;
   case_id: string | null;
+  display_title: string;
+  model_display_name: string;
   eligibility_level: EvaluationEligibilityLevel;
   reason: string | null;
   generation_model_identity: EvaluationModelIdentity;
@@ -213,6 +217,7 @@ export type EvaluationMetrics = {
 export type EvaluationRunResultSummary = {
   run_id: string;
   case_id?: string | null;
+  display_title?: string;
   chapter_title?: string | null;
   scope_type?: string;
   eligibility_level?: EvaluationEligibilityLevel;
@@ -246,6 +251,7 @@ export type KnowledgeEvaluation = {
     checksum: string;
   };
   metric_profile_id: string;
+  subject_title?: string;
   judge: EvaluationJudgeSummary;
   progress: EvaluationProgress;
   run_results: EvaluationRunResultSummary[];
@@ -306,6 +312,7 @@ export type KnowledgeEvaluationComparison = {
   comparison_id: string;
   run_id: string;
   case_id?: string | null;
+  task_title?: string;
   expected_card_id?: string | null;
   actual_review_item_id?: string | null;
   knowledge_type: EvaluationKnowledgeType;
@@ -331,22 +338,4 @@ export type KnowledgeEvaluationComparisonListResponse = {
   page: number;
   page_size: number;
   total: number;
-};
-
-export type EvaluationJudgeCall = {
-  call_id: string;
-  evaluation_id?: string;
-  status?: string;
-  judge_model_identity?: EvaluationModelIdentity | null;
-  prompt_contract_id?: string | null;
-  input_prompt?: string | null;
-  raw_response?: string | null;
-  parsed_output?: unknown;
-  error?: string | null;
-  started_at?: string | null;
-  finished_at?: string | null;
-};
-
-export type EvaluationJudgeCallResponse = {
-  judge_call: EvaluationJudgeCall;
 };

@@ -278,6 +278,8 @@ class KnowledgeExtractionEvaluationService:
                 {
                     "run_id": item.run.run_id,
                     "case_id": item.case.ref.case_id if item.case else None,
+                    "display_title": _display_run_title(item.run),
+                    "model_display_name": _display_model_title(item.run),
                     "eligibility_level": item.eligibility.level.value,
                     "reason": self._reason_text(item.eligibility) or None,
                     "generation_model_identity": item.run.generation_model_identity,
@@ -391,6 +393,7 @@ class KnowledgeExtractionEvaluationService:
             dataset_id=prepared.dataset.manifest.dataset_id,
             dataset_label=prepared.dataset.manifest.label,
             dataset_checksum=prepared.dataset.checksum,
+            subject_title=_display_run_title(prepared.runs[0].run),
             metric_profile_id=prepared.profile.metric_profile_id,
             judge=JudgeSummary(
                 enabled=judge_enabled,
@@ -435,11 +438,12 @@ class KnowledgeExtractionEvaluationService:
                 "EVALUATION_INVALID_TRANSITION",
                 "评估状态筛选条件不正确。",
             )
-        return await self._results.list_records(
+        records, total = await self._results.list_records(
             page=page,
             page_size=page_size,
             status=status,
         )
+        return [await self._with_display_titles(record) for record in records], total
 
     async def get_evaluation(self, evaluation_id: str) -> KnowledgeEvaluationRecord:
         record = await self._results.get_record(evaluation_id)
@@ -448,7 +452,7 @@ class KnowledgeExtractionEvaluationService:
                 "EVALUATION_NOT_FOUND",
                 "未找到指定评估记录。",
             )
-        return record
+        return await self._with_display_titles(record)
 
     async def list_comparisons(
         self,
@@ -476,7 +480,13 @@ class KnowledgeExtractionEvaluationService:
             comparisons = [item for item in comparisons if item.issue_type == issue_type]
         total = len(comparisons)
         start = (page - 1) * page_size
-        return comparisons[start : start + page_size], total
+        titles = await self._run_title_map(record.run_ids)
+        return [
+            item.model_copy(
+                update={"task_title": item.task_title or titles.get(item.run_id, "未命名章节")}
+            )
+            for item in comparisons[start : start + page_size]
+        ], total
 
     async def get_judge_call(
         self,
@@ -666,10 +676,10 @@ class KnowledgeExtractionEvaluationService:
         metric_profile_id: str,
     ) -> _PreparedRequest:
         unique_ids = list(dict.fromkeys(run_ids))
-        if not 1 <= len(unique_ids) <= 10:
+        if len(unique_ids) != 1:
             raise EvaluationServiceError(
                 "EVALUATION_CANDIDATE_SNAPSHOT_MISSING",
-                "每次请选择 1 到 10 个历史任务。",
+                "每次请选择一个历史任务。",
             )
         if len(unique_ids) != len(run_ids):
             raise EvaluationServiceError(
@@ -1072,7 +1082,10 @@ class KnowledgeExtractionEvaluationService:
                             warnings.append(
                                 EvaluationNotice(
                                     code="EVALUATION_JUDGE_INVALID_OUTPUT",
-                                    message="语义裁判返回内容无法校验，已保留确定性结果。",
+                                    message=(
+                                        f"语义裁判未纳入本次评分：{single_error}"
+                                        "已保留确定性结果。"
+                                    ),
                                     run_id=case.run_id,
                                 )
                             )
@@ -1080,7 +1093,10 @@ class KnowledgeExtractionEvaluationService:
                     warnings.append(
                         EvaluationNotice(
                             code="EVALUATION_JUDGE_INVALID_OUTPUT",
-                            message="语义裁判返回内容无法校验，已保留确定性结果。",
+                            message=(
+                                f"语义裁判未纳入本次评分：{error}"
+                                "已保留确定性结果。"
+                            ),
                             run_id=batch[0][1],
                         )
                     )
@@ -1142,7 +1158,7 @@ class KnowledgeExtractionEvaluationService:
         record: KnowledgeEvaluationRecord,
         cases: list[JudgeInputCase],
         independence: IndependenceLevel,
-    ) -> tuple[dict[str, JudgeItem], dict[str, list[str]], bool]:
+    ) -> tuple[dict[str, JudgeItem], dict[str, list[str]], str | None]:
         prompt = build_judge_prompt(cases)
         call_id = f"judge_call_{token_hex(6)}"
         started_at = _now_iso()
@@ -1162,8 +1178,8 @@ class KnowledgeExtractionEvaluationService:
             output = parse_judge_output(raw, cases)
             parsed = output.model_dump(mode="json")
             result = {item.case_id: item for item in output.items}
-        except Exception:
-            error_message = "语义裁判调用或输出校验失败。"
+        except Exception as error:  # noqa: BLE001
+            error_message = _judge_failure_message(error)
         finished_at = _now_iso()
         call = JudgeCallRecord(
             call_id=call_id,
@@ -1188,7 +1204,7 @@ class KnowledgeExtractionEvaluationService:
         )
         await self._results.write_judge_call(call)
         ids = {case.case_id: [call_id] for case in cases}
-        return result, ids, error_message is not None
+        return result, ids, error_message
 
     async def _heartbeat(self, evaluation_id: str, token: str) -> None:
         while True:
@@ -1294,6 +1310,8 @@ class KnowledgeExtractionEvaluationService:
         return {
             "run_id": run.run_id,
             "case_id": item.case.ref.case_id if item.case else None,
+            "display_title": _display_run_title(run),
+            "model_display_name": _display_model_title(run),
             "status": run.status.value,
             "scope_type": run.scope.scope_type,
             "chapter_id": run.scope.chapter_id or None,
@@ -1314,6 +1332,44 @@ class KnowledgeExtractionEvaluationService:
             ),
             "latest_evaluation": latest_payload,
         }
+
+    async def _run_title_map(self, run_ids: Sequence[str]) -> dict[str, str]:
+        titles: dict[str, str] = {}
+        for run_id in run_ids:
+            run = await self._runs.get_run(run_id)
+            if run is not None:
+                titles[run_id] = _display_run_title(run)
+        return titles
+
+    async def _with_display_titles(
+        self,
+        record: KnowledgeEvaluationRecord,
+    ) -> KnowledgeEvaluationRecord:
+        titles = await self._run_title_map(record.run_ids)
+        run_results = [
+            result.model_copy(
+                update={
+                    "display_title": result.display_title
+                    or titles.get(result.run_id, "未命名章节"),
+                    "comparisons": [
+                        comparison.model_copy(
+                            update={
+                                "task_title": comparison.task_title
+                                or titles.get(comparison.run_id, "未命名章节")
+                            }
+                        )
+                        for comparison in result.comparisons
+                    ],
+                }
+            )
+            for result in record.run_results
+        ]
+        subject_title = record.subject_title or titles.get(
+            record.run_ids[0], "未命名章节"
+        )
+        return record.model_copy(
+            update={"subject_title": subject_title, "run_results": run_results}
+        )
 
     @staticmethod
     def _reason_text(eligibility: EvaluationEligibility) -> str:
@@ -1416,6 +1472,7 @@ def _evaluate_deterministic_run(
     comparisons = _build_comparisons(
         run.run_id,
         case.ref.case_id,
+        _display_run_title(run),
         matches,
         actual,
         case.expected_cards,
@@ -1458,6 +1515,7 @@ def _evaluate_deterministic_run(
     result = EvaluationRunResult(
         run_id=run.run_id,
         case_id=case.ref.case_id,
+        display_title=_display_run_title(run),
         eligibility_level=eligibility.level.value,
         eligibility_reasons=[reason.value for reason in eligibility.reasons],
         generation_model_identity=run.generation_model_identity,
@@ -1482,6 +1540,7 @@ def _evaluate_deterministic_run(
 def _build_comparisons(
     run_id: str,
     case_id: str,
+    task_title: str,
     matches: Any,
     actual: list[ActualCandidate],
     expected: list[Any],
@@ -1497,6 +1556,7 @@ def _build_comparisons(
             EvaluationComparison(
                 run_id=run_id,
                 case_id=case_id,
+                task_title=task_title,
                 knowledge_type=match.knowledge_type.value,
                 issue_type="field_difference",
                 expected_card_id=match.expected_card_id,
@@ -1520,6 +1580,7 @@ def _build_comparisons(
             EvaluationComparison(
                 run_id=run_id,
                 case_id=case_id,
+                task_title=task_title,
                 knowledge_type=item.knowledge_type.value,
                 issue_type="extra_candidate",
                 actual_candidate_id=item.card_id,
@@ -1532,6 +1593,7 @@ def _build_comparisons(
             EvaluationComparison(
                 run_id=run_id,
                 case_id=case_id,
+                task_title=task_title,
                 knowledge_type=item.knowledge_type.value,
                 issue_type="missing_candidate",
                 expected_card_id=item.card_id,
@@ -1588,10 +1650,12 @@ def _build_judge_inputs(
                 expected_fields={
                     field: expected_card.card.get(field)
                     for field in expected_card.semantic_fields
+                    if field not in {"importance", "appearance_chapter_count"}
                 },
                 actual_fields={
                     field: actual_card.card.get(field)
                     for field in expected_card.semantic_fields
+                    if field not in {"importance", "appearance_chapter_count"}
                 },
                 expected_claims=[
                     item.model_dump(mode="json")
@@ -1857,6 +1921,39 @@ def _run_scope(run: AgentRun) -> tuple[EvaluationScopeType, list[str]]:
     return EvaluationScopeType.CHAPTER, chapter_ids
 
 
+def _display_run_title(run: AgentRun) -> str:
+    """Return the stable author-facing name for a frozen task run."""
+
+    scope_type, _ = _run_scope(run)
+    titles = [
+        title.strip()
+        for title in (run.scope.chapter_titles or [run.scope.chapter_title])
+        if title and title.strip()
+    ]
+    if scope_type is EvaluationScopeType.CHAPTER:
+        return titles[0] if titles else "未命名章节"
+    if not titles:
+        return "历史批量任务"
+    count = run.total_chapter_count or len(titles)
+    if len(titles) == 1:
+        return f"批量知识沉淀：{titles[0]}"
+    return f"批量知识沉淀：{titles[0]} 至 {titles[-1]}（共 {count} 章）"
+
+
+def _display_model_title(run: AgentRun) -> str:
+    model_id = (
+        run.generation_model_identity.model_id
+        if run.generation_model_identity.known
+        else None
+    )
+    labels = {
+        "deepseek-v4-pro": "DeepSeek V4 Pro",
+        "deepseek-chat": "DeepSeek Chat",
+        "deepseek-reasoner": "DeepSeek Reasoner",
+    }
+    return labels.get(model_id or "", "模型信息未记录")
+
+
 def _run_source_hashes(run: AgentRun) -> dict[str, str] | None:
     if run.scope.chapter_content_hashes:
         return run.scope.chapter_content_hashes
@@ -2028,6 +2125,18 @@ def _hash_json(value: Any) -> str:
 
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+
+
+def _judge_failure_message(error: Exception) -> str:
+    """Convert strict judge-contract failures into an author-readable diagnosis."""
+    detail = str(error)
+    if "expected_card_id" in detail or "actual_review_item_id" in detail:
+        return "语义裁判回复缺少固定卡片标识，未遵守当前评估格式。"
+    if "dimensions" in detail or "confidence" in detail:
+        return "语义裁判回复未按要求提供嵌套评分维度或置信度。"
+    if "JSON" in detail or "json" in detail:
+        return "语义裁判没有返回可解析的 JSON 结果。"
+    return "语义裁判调用失败或返回格式不符合要求。"
 
 
 def _parse_iso(value: str) -> datetime:

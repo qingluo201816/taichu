@@ -4,6 +4,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from typing import cast
 
 from taichu.application.contracts.llm import LLMModelIdentity
 from taichu.application.services.ai_card_service import AICardService
@@ -16,17 +17,13 @@ from taichu.application.services.chapter_summary_service import (
 from taichu.application.services.import_service import ImportService
 from taichu.application.services.knowledge_service import (
     KnowledgeService,
-    knowledge_category_for_type,
 )
 from taichu.domain.models.knowledge import (
     KnowledgeCard,
-    KnowledgeCardStatus,
+    KnowledgeCardLifecycle,
     KnowledgeCardType,
 )
 from taichu.domain.models import (
-    RetrievalHit,
-    RetrievalReason,
-    RetrievalSourceType,
     SourceAnchorType,
     SourceRef,
     SourceRefSourceType,
@@ -57,24 +54,17 @@ class FakeLLM:
         return self.responses.pop(0)
 
 
-class FakeRetrieval:
-    """Return canned retrieval hits."""
+class FakeKnowledgeContext:
+    """Provide only confirmed knowledge cards to chapter summarization."""
 
     def __init__(self) -> None:
-        self.queries: list[str] = []
+        self.cards: list[KnowledgeCard] = []
 
-    async def search(self, query: object) -> list[RetrievalHit]:
-        text = getattr(query, "text")
-        self.queries.append(text)
+    async def list_confirmed_cards(self) -> list[KnowledgeCard]:
         return [
-            RetrievalHit(
-                source_type=RetrievalSourceType.CHAPTER,
-                source_id="chapter_001",
-                excerpt="检索证据",
-                score=1.0,
-                reason=RetrievalReason.EXACT,
-                source_ref=_source_ref(),
-            )
+            card
+            for card in self.cards
+            if card.lifecycle is KnowledgeCardLifecycle.CONFIRMED
         ]
 
 
@@ -86,9 +76,9 @@ class ChapterSummaryServiceTest(unittest.IsolatedAsyncioTestCase):
         self.assets_root = Path(self._temporary_directory.name)
         self.storage = ProjectAssetStorageBackend(self.assets_root)
         self.chapter_service = ChapterService(self.storage)
-        self.knowledge_service = KnowledgeService(self.storage)
+        self.knowledge_context = FakeKnowledgeContext()
+        self.knowledge_service = cast(KnowledgeService, self.knowledge_context)
         self.ai_card_service = AICardService(self.storage)
-        self.retrieval = FakeRetrieval()
 
     async def asyncTearDown(self) -> None:
         self._temporary_directory.cleanup()
@@ -120,7 +110,7 @@ class ChapterSummaryServiceTest(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("分段 1/2", llm.prompts[0])
         self.assertIn("分段 2/2", llm.prompts[0])
-        self.assertIn("检索证据", llm.prompts[0])
+        self.assertNotIn("检索证据", llm.prompts[0])
 
     async def test_summary_prompt_uses_confirmed_knowledge_only(self) -> None:
         await ImportService(self.storage).import_text(
@@ -130,12 +120,12 @@ class ChapterSummaryServiceTest(unittest.IsolatedAsyncioTestCase):
         confirmed = _knowledge_card(
             knowledge_id="knowledge_confirmed",
             name="Confirmed sword intent",
-            status=KnowledgeCardStatus.ACTIVE,
+            lifecycle=KnowledgeCardLifecycle.CONFIRMED,
         )
         archived = _knowledge_card(
             knowledge_id="knowledge_archived",
             name="Archived sword intent",
-            status=KnowledgeCardStatus.DEPRECATED,
+            lifecycle=KnowledgeCardLifecycle.REJECTED,
         )
         await self._write_knowledge_card(confirmed)
         await self._write_knowledge_card(archived)
@@ -265,17 +255,12 @@ class ChapterSummaryServiceTest(unittest.IsolatedAsyncioTestCase):
             storage=self.storage,
             chapter_service=self.chapter_service,
             knowledge_service=self.knowledge_service,
-            retrieval=self.retrieval,
             llm=llm,
             ai_card_service=self.ai_card_service,
         )
 
     async def _write_knowledge_card(self, card: KnowledgeCard) -> None:
-        await self.storage.write_knowledge_record(
-            knowledge_category_for_type(card.type),
-            card.id,
-            card.model_dump(mode="json"),
-        )
+        self.knowledge_context.cards.append(card)
 
 
 def _summary_json(
@@ -300,7 +285,7 @@ def _knowledge_card(
     *,
     knowledge_id: str,
     name: str,
-    status: KnowledgeCardStatus,
+    lifecycle: KnowledgeCardLifecycle,
 ) -> KnowledgeCard:
     return KnowledgeCard(
         id=knowledge_id,
@@ -308,7 +293,7 @@ def _knowledge_card(
         name=name,
         aliases=[],
         summary=f"{name} summary",
-        status=status,
+        lifecycle=lifecycle,
         source_origin=StructuredKnowledgeSourceOrigin.MANUAL,
         source_note="作者手动确认。",
         created_at="2026-06-27T00:00:00Z",

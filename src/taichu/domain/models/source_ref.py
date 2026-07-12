@@ -59,8 +59,6 @@ class SourceRef(DomainModel):
         normalized_path = self.path.replace("\\", "/").lower()
         if "project_assets/generated/" in normalized_path:
             raise ValueError("证据来源不能指向派生数据目录")
-        if normalized_path.endswith(".db") or "/sqlite/" in normalized_path:
-            raise ValueError("证据来源不能指向 SQLite 行或数据库文件")
 
         if self.anchor_type is SourceAnchorType.PARAGRAPH:
             if self.paragraph_start is None:

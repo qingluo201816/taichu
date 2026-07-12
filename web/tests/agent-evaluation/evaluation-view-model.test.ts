@@ -3,11 +3,14 @@ import assert from "node:assert/strict";
 import {
   canRetryEvaluation,
   evaluationErrorMessage,
+  evaluationModelLabel,
   evaluationProgressText,
   evaluationStatusLabels,
+  evaluationTaskTitle,
   formatEvaluationScore,
   groupComparisonsByIssue,
   isTerminalEvaluation,
+  modelIdentityLabel,
   previewIndependenceLabel,
   qualityStateLabel,
   shouldPollEvaluation,
@@ -37,15 +40,35 @@ test("百分比分数保持零值并把空值显示为不适用", () => {
   assert.equal(formatEvaluationScore(null), "不适用");
 });
 
-test("多选支持取消并严格限制十个任务", () => {
-  const selected = Array.from({ length: 10 }, (_, index) => `run-${index}`);
+test("选择新任务时替换已有选择，取消时清空", () => {
+  const selected = ["run-1"];
   assert.deepEqual(
-    toggleEvaluationRunSelection(selected, "run-extra"),
-    selected,
+    toggleEvaluationRunSelection(selected, "run-2"),
+    ["run-2"],
   );
   assert.deepEqual(
-    toggleEvaluationRunSelection(selected, "run-3"),
-    selected.filter(item => item !== "run-3"),
+    toggleEvaluationRunSelection(selected, "run-1"),
+    [],
+  );
+});
+
+test("展示名称不回退暴露内部任务编号或模型标识", () => {
+  const unknown = {
+    ...run("full"),
+    display_title: "",
+    model_display_name: "",
+    chapter_id: "chapter-internal-id",
+    requested_model_name: "internal-model-name",
+  };
+  assert.equal(evaluationTaskTitle(unknown), "未命名章节");
+  assert.equal(evaluationModelLabel(unknown), "模型信息未记录");
+  assert.equal(
+    modelIdentityLabel({
+      ...unknown.generation_model_identity,
+      known: false,
+      model_id: "internal-model-name",
+    }),
+    "模型信息未记录",
   );
 });
 
@@ -116,6 +139,8 @@ test("模型独立性完全使用后端结论并优先暴露自评和未知状�
   const base = {
     run_id: "run-1",
     case_id: "chapter_001",
+    display_title: "第一章",
+    model_display_name: "DeepSeek V4 Pro",
     eligibility_level: "full" as const,
     reason: null,
     generation_model_identity: run("full").generation_model_identity,
@@ -163,6 +188,8 @@ function run(
   return {
     run_id: `run-${eligibilityLevel}`,
     case_id: "chapter_001",
+    display_title: "第一章",
+    model_display_name: "DeepSeek Chat",
     scope_type: "chapter",
     chapter_id: "chapter-001",
     chapter_title: "第一章",

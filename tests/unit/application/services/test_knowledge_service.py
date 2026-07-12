@@ -1,82 +1,188 @@
-"""Knowledge service fact-scope listing tests."""
+"""Knowledge application service lifecycle and validation tests."""
 
-import tempfile
 import unittest
-from pathlib import Path
 
+from taichu.application.contracts.knowledge_repository import (
+    KnowledgeRepositoryConcurrentUpdateError,
+)
 from taichu.application.services.knowledge_service import (
+    KnowledgeCardValidationError,
+    KnowledgeConcurrentUpdateError,
+    KnowledgeIdentityConflictError,
     KnowledgeService,
-    knowledge_category_for_type,
 )
-from taichu.domain.models.knowledge import (
-    KnowledgeCard,
-    KnowledgeCardStatus,
-    KnowledgeCardType,
+from taichu.domain.models.structured_knowledge import (
+    StructuredKnowledgeCard,
+    StructuredKnowledgeLifecycle,
+    StructuredKnowledgeType,
 )
-from taichu.domain.models.structured_knowledge import StructuredKnowledgeSourceOrigin
-from taichu.infrastructure.storage.markdown_backend import (
-    ProjectAssetStorageBackend,
-)
+from tests.fakes import InMemoryKnowledgeRepository
 
 
 class KnowledgeServiceTest(unittest.IsolatedAsyncioTestCase):
-    """Verify KnowledgeService keeps fact-scope defaults confirmed-only."""
+    """Verify application rules without coupling tests to MongoDB."""
 
     async def asyncSetUp(self) -> None:
-        self._temporary_directory = tempfile.TemporaryDirectory()
-        self.assets_root = Path(self._temporary_directory.name)
-        self.storage = ProjectAssetStorageBackend(self.assets_root)
-        self.service = KnowledgeService(self.storage)
+        self.repository = InMemoryKnowledgeRepository()
+        self.service = KnowledgeService(self.repository)
 
-    async def asyncTearDown(self) -> None:
-        self._temporary_directory.cleanup()
-
-    async def test_list_cards_defaults_to_active_only(self) -> None:
-        active = _knowledge_card(
-            knowledge_id="knowledge_active",
-            name="Active sword",
-            status=KnowledgeCardStatus.ACTIVE,
+    async def test_public_create_always_creates_draft(self) -> None:
+        card = await self.service.create_card(
+            StructuredKnowledgeType.CHARACTER,
+            _complete_character_data("秦阳"),
         )
-        deprecated = _knowledge_card(
-            knowledge_id="knowledge_deprecated",
-            name="Deprecated sword",
-            status=KnowledgeCardStatus.DEPRECATED,
+
+        self.assertTrue(card.id.startswith("character-"))
+        self.assertEqual(card.lifecycle, StructuredKnowledgeLifecycle.DRAFT)
+        self.assertEqual(card.name, "秦阳")
+
+    async def test_create_and_patch_reject_system_managed_fields(self) -> None:
+        with self.assertRaisesRegex(KnowledgeCardValidationError, "系统字段"):
+            await self.service.create_card(
+                StructuredKnowledgeType.CHARACTER,
+                {
+                    **_complete_character_data("秦阳"),
+                    "lifecycle": "confirmed",
+                },
+            )
+
+        card = await self.service.create_card(
+            StructuredKnowledgeType.CHARACTER,
+            _complete_character_data("秦阳"),
         )
-        await self._write_card(active)
-        await self._write_card(deprecated)
+        with self.assertRaisesRegex(KnowledgeCardValidationError, "系统字段"):
+            await self.service.patch_card(
+                card.id,
+                {"lifecycle": "confirmed"},
+            )
 
-        cards = await self.service.list_cards()
-        all_cards = await self.service.list_all_cards()
+    async def test_confirm_reject_and_default_list_excludes_rejected(self) -> None:
+        draft = await self.service.create_card(
+            StructuredKnowledgeType.CHARACTER,
+            _complete_character_data("秦阳"),
+        )
 
-        self.assertEqual([card.id for card in cards], ["knowledge_active"])
+        confirmed = await self.service.confirm_card(draft.id)
         self.assertEqual(
-            {card.id for card in all_cards},
-            {"knowledge_active", "knowledge_deprecated"},
+            confirmed.lifecycle,
+            StructuredKnowledgeLifecycle.CONFIRMED,
+        )
+        confirmed_cards = await self.service.list_confirmed_cards(
+            StructuredKnowledgeType.CHARACTER
+        )
+        self.assertEqual([card.id for card in confirmed_cards], [draft.id])
+
+        rejected = await self.service.reject_card(draft.id)
+        self.assertEqual(rejected.lifecycle, StructuredKnowledgeLifecycle.REJECTED)
+        default_page = await self.service.list_cards(
+            StructuredKnowledgeType.CHARACTER
+        )
+        rejected_page = await self.service.list_cards(
+            StructuredKnowledgeType.CHARACTER,
+            lifecycle="rejected",
+        )
+        self.assertEqual(default_page.cards, [])
+        self.assertEqual([card.id for card in rejected_page.cards], [draft.id])
+
+    async def test_incomplete_draft_cannot_be_confirmed(self) -> None:
+        draft = await self.service.create_card(
+            StructuredKnowledgeType.CHARACTER,
+            {"name": "秦阳"},
         )
 
-    async def _write_card(self, card: KnowledgeCard) -> None:
-        await self.storage.write_knowledge_record(
-            knowledge_category_for_type(card.type),
-            card.id,
-            card.model_dump(mode="json"),
+        with self.assertRaises(KnowledgeCardValidationError):
+            await self.service.confirm_card(draft.id)
+        persisted = await self.service.get_card(draft.id)
+        self.assertEqual(persisted.lifecycle, StructuredKnowledgeLifecycle.DRAFT)
+
+    async def test_confirmed_name_or_alias_conflict_is_rejected(self) -> None:
+        first = await self.service.create_card(
+            StructuredKnowledgeType.CHARACTER,
+            {
+                **_complete_character_data("秦阳"),
+                "aliases": ["秦师兄"],
+            },
+        )
+        second = await self.service.create_card(
+            StructuredKnowledgeType.CHARACTER,
+            {
+                **_complete_character_data("另一人"),
+                "aliases": ["秦阳"],
+            },
+        )
+        await self.service.confirm_card(first.id)
+
+        with self.assertRaises(KnowledgeIdentityConflictError):
+            await self.service.confirm_card(second.id)
+        persisted = await self.service.get_card(second.id)
+        self.assertEqual(persisted.lifecycle, StructuredKnowledgeLifecycle.DRAFT)
+
+    async def test_repository_cas_failure_maps_to_service_error(self) -> None:
+        repository = _ConcurrentUpdateRepository()
+        service = KnowledgeService(repository)
+        card = await service.create_card(
+            StructuredKnowledgeType.CHARACTER,
+            _complete_character_data("秦阳"),
+        )
+        repository.fail_updates = True
+
+        with self.assertRaises(KnowledgeConcurrentUpdateError):
+            await service.patch_card(card.id, {"summary": "新的摘要"})
+
+    async def test_occurrence_count_is_system_managed_and_accumulates(self) -> None:
+        draft = await self.service.create_card(
+            StructuredKnowledgeType.CHARACTER,
+            _complete_character_data("秦阳"),
+        )
+        confirmed = await self.service.confirm_card(draft.id)
+
+        with self.assertRaisesRegex(KnowledgeCardValidationError, "统计字段"):
+            await self.service.patch_card(
+                confirmed.id,
+                {"appearance_chapter_count": 1},
+            )
+
+        first = await self.service.apply_author_confirmed_updates(
+            confirmed.id,
+            {"appearance_chapter_count": 2},
+            allow_appearance_count_update=True,
+        )
+        second = await self.service.apply_author_confirmed_updates(
+            first.id,
+            {"appearance_chapter_count": 3},
+            merge_mode="overwrite",
+            allow_appearance_count_update=True,
+        )
+
+        self.assertEqual(first.appearance_chapter_count, 2)
+        self.assertEqual(second.appearance_chapter_count, 5)
+
+
+class _ConcurrentUpdateRepository(InMemoryKnowledgeRepository):
+    def __init__(self) -> None:
+        super().__init__()
+        self.fail_updates = False
+
+    async def update_card(
+        self,
+        card: StructuredKnowledgeCard,
+        *,
+        expected_updated_at: str | None = None,
+    ) -> StructuredKnowledgeCard:
+        if self.fail_updates:
+            raise KnowledgeRepositoryConcurrentUpdateError("模拟并发更新")
+        return await super().update_card(
+            card,
+            expected_updated_at=expected_updated_at,
         )
 
 
-def _knowledge_card(
-    *,
-    knowledge_id: str,
-    name: str,
-    status: KnowledgeCardStatus,
-) -> KnowledgeCard:
-    return KnowledgeCard(
-        id=knowledge_id,
-        type=KnowledgeCardType.TECHNIQUE,
-        name=name,
-        aliases=[],
-        summary=f"{name} summary",
-        status=status,
-        source_origin=StructuredKnowledgeSourceOrigin.MANUAL,
-        source_note="作者手动添加的测试知识。",
-        created_at="2026-06-27T00:00:00Z",
-        updated_at="2026-06-27T00:00:00Z",
-    )
+def _complete_character_data(name: str) -> dict[str, object]:
+    return {
+        "name": name,
+        "aliases": [],
+        "summary": f"{name}的事实摘要。",
+        "source_origin": "manual",
+        "source_note": "作者手动确认。",
+        "role_type": "protagonist",
+    }

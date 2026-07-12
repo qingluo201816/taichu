@@ -1,0 +1,371 @@
+{
+  "enabled": true,
+  "judge_model_identity": {
+    "endpoint_kind": "anthropic_messages",
+    "family": "deepseek-v4",
+    "fingerprint": null,
+    "known": true,
+    "model_id": "deepseek-v4-pro",
+    "provider": "rightcode",
+    "unknown_reason": null
+  },
+  "output_schema": {
+    "$defs": {
+      "JudgeCriticalFlag": {
+        "additionalProperties": false,
+        "description": "Hard risk that requires repeated agreement before becoming formal.",
+        "properties": {
+          "claim_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Claim Id"
+          },
+          "code": {
+            "minLength": 1,
+            "title": "Code",
+            "type": "string"
+          },
+          "field": {
+            "minLength": 1,
+            "title": "Field",
+            "type": "string"
+          },
+          "finding_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Finding Ids",
+            "type": "array"
+          },
+          "quote_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Quote Ids",
+            "type": "array"
+          },
+          "reason": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "field",
+          "reason"
+        ],
+        "title": "JudgeCriticalFlag",
+        "type": "object"
+      },
+      "JudgeDimensionResult": {
+        "additionalProperties": false,
+        "description": "One 0..4 dimension score with bounded evidence references.",
+        "properties": {
+          "quote_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Quote Ids",
+            "type": "array"
+          },
+          "reason": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "score": {
+            "maximum": 4,
+            "minimum": 0,
+            "title": "Score",
+            "type": "integer"
+          },
+          "verdict": {
+            "$ref": "#/$defs/JudgeVerdict"
+          }
+        },
+        "required": [
+          "score",
+          "verdict",
+          "reason"
+        ],
+        "title": "JudgeDimensionResult",
+        "type": "object"
+      },
+      "JudgeFinding": {
+        "additionalProperties": false,
+        "description": "Auditable semantic issue found by the judge.",
+        "properties": {
+          "candidate_excerpt": {
+            "default": "",
+            "title": "Candidate Excerpt",
+            "type": "string"
+          },
+          "claim_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Claim Id"
+          },
+          "field": {
+            "minLength": 1,
+            "title": "Field",
+            "type": "string"
+          },
+          "finding_id": {
+            "minLength": 1,
+            "title": "Finding Id",
+            "type": "string"
+          },
+          "kind": {
+            "minLength": 1,
+            "title": "Kind",
+            "type": "string"
+          },
+          "quote_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Quote Ids",
+            "type": "array"
+          },
+          "reason": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "severity": {
+            "pattern": "^(minor|major|critical)$",
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "finding_id",
+          "kind",
+          "severity",
+          "field",
+          "reason"
+        ],
+        "title": "JudgeFinding",
+        "type": "object"
+      },
+      "JudgeItem": {
+        "additionalProperties": false,
+        "description": "Strict per-card output accepted from the judge.",
+        "properties": {
+          "actual_review_item_id": {
+            "minLength": 1,
+            "title": "Actual Review Item Id",
+            "type": "string"
+          },
+          "case_id": {
+            "minLength": 1,
+            "title": "Case Id",
+            "type": "string"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "maximum": 1,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Confidence"
+          },
+          "critical_flags": {
+            "items": {
+              "$ref": "#/$defs/JudgeCriticalFlag"
+            },
+            "title": "Critical Flags",
+            "type": "array"
+          },
+          "dimensions": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/JudgeDimensionResult"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Dimensions"
+          },
+          "expected_card_id": {
+            "minLength": 1,
+            "title": "Expected Card Id",
+            "type": "string"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/$defs/JudgeFinding"
+            },
+            "title": "Findings",
+            "type": "array"
+          },
+          "missing_quote_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Quote Ids",
+            "type": "array"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Reason"
+          },
+          "reference_issues": {
+            "items": {
+              "$ref": "#/$defs/JudgeReferenceIssue"
+            },
+            "title": "Reference Issues",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/$defs/JudgeStatus"
+          }
+        },
+        "required": [
+          "case_id",
+          "expected_card_id",
+          "actual_review_item_id",
+          "status"
+        ],
+        "title": "JudgeItem",
+        "type": "object"
+      },
+      "JudgeReferenceIssue": {
+        "additionalProperties": false,
+        "description": "Potential problem in the gold reference rather than the candidate.",
+        "properties": {
+          "claim_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Claim Id"
+          },
+          "expected_excerpt": {
+            "default": "",
+            "title": "Expected Excerpt",
+            "type": "string"
+          },
+          "issue_id": {
+            "minLength": 1,
+            "title": "Issue Id",
+            "type": "string"
+          },
+          "quote_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Quote Ids",
+            "type": "array"
+          },
+          "reason": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "issue_id",
+          "reason"
+        ],
+        "title": "JudgeReferenceIssue",
+        "type": "object"
+      },
+      "JudgeStatus": {
+        "description": "Whether one case can receive semantic scores.",
+        "enum": [
+          "scored",
+          "insufficient_evidence",
+          "reference_conflict"
+        ],
+        "title": "JudgeStatus",
+        "type": "string"
+      },
+      "JudgeVerdict": {
+        "description": "Allowed semantic verdicts.",
+        "enum": [
+          "equivalent",
+          "mostly_correct",
+          "partial",
+          "unsupported",
+          "contradictory",
+          "not_applicable"
+        ],
+        "title": "JudgeVerdict",
+        "type": "string"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Top-level response contract for one batch of at most five cards.",
+    "properties": {
+      "items": {
+        "items": {
+          "$ref": "#/$defs/JudgeItem"
+        },
+        "maxItems": 5,
+        "minItems": 1,
+        "title": "Items",
+        "type": "array"
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "title": "JudgeBatchOutput",
+    "type": "object"
+  },
+  "prompt_builder": "taichu.application.evaluations.knowledge_extraction.judge.build_judge_prompt",
+  "prompt_contract_id": "knowledge_extraction_semantic_judge",
+  "prompt_hash": "d7dde4eaf7a90cc64c8309e5010d7e560fbb74435048fa289ea7b89e1f0099a6"
+}

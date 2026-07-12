@@ -26,8 +26,11 @@ from taichu.application.agents.knowledge_extraction.workflow import (
     _strip_internal_candidate_fields,
 )
 from taichu.application.contracts.knowledge_repository import (
-    AuthorMergeMode,
     StructuredKnowledgeRepository,
+)
+from taichu.application.contracts.knowledge_sedimentation_progress_repository import (
+    KnowledgeSedimentationProgress,
+    KnowledgeSedimentationProgressRepository,
 )
 from taichu.application.contracts.agent_run_repository import AgentRunRepository
 from taichu.application.contracts.llm import (
@@ -36,6 +39,10 @@ from taichu.application.contracts.llm import (
     LLMModelProfile,
 )
 from taichu.application.services.chapter_service import ChapterService
+from taichu.application.services.knowledge_service import (
+    AuthorMergeMode,
+    KnowledgeService,
+)
 from taichu.application.services.agent_task_event_service import AgentTaskEventCenter
 from taichu.application.agents.models.agent_run import (
     AgentBatchChapterProgress,
@@ -57,7 +64,7 @@ from taichu.domain.models.structured_knowledge import (
     FORBIDDEN_KNOWLEDGE_FIELD_KEYS,
     StructuredKnowledgeCard,
     StructuredKnowledgeSourceOrigin,
-    StructuredKnowledgeStatus,
+    StructuredKnowledgeLifecycle,
     StructuredKnowledgeType,
     type_specific_field_keys,
 )
@@ -75,6 +82,20 @@ _REVIEW_ONLY_FIELDS = {
 }
 
 
+class _InMemorySedimentationProgressRepository:
+    """Test fallback; the assembled application always uses MongoDB persistence."""
+
+    def __init__(self) -> None:
+        self._progress = KnowledgeSedimentationProgress()
+
+    async def get_progress(self) -> KnowledgeSedimentationProgress:
+        return self._progress
+
+    async def advance_to(self, chapter_id: str) -> KnowledgeSedimentationProgress:
+        self._progress = KnowledgeSedimentationProgress(last_accepted_chapter_id=chapter_id)
+        return self._progress
+
+
 class KnowledgeExtractionService:
     """Run the Agent and process author review actions."""
 
@@ -84,14 +105,21 @@ class KnowledgeExtractionService:
         chapter_service: ChapterService,
         llm: object,
         knowledge_repository: StructuredKnowledgeRepository,
+        knowledge_service: KnowledgeService,
         run_store: AgentRunRepository,
+        sedimentation_progress_repository: KnowledgeSedimentationProgressRepository | None = None,
         task_events: AgentTaskEventCenter | None = None,
         default_model_id: str = "deepseek-v4-pro",
     ) -> None:
         self._chapter_service = chapter_service
         self._llm = cast(LLMGatewayContract, llm)
         self._knowledge_repository = knowledge_repository
+        self._knowledge_service = knowledge_service
         self._run_store = run_store
+        self._sedimentation_progress_repository = (
+            sedimentation_progress_repository
+            or _InMemorySedimentationProgressRepository()
+        )
         self._task_events = task_events
         self._default_model_id = default_model_id
         self._background_tasks: set[asyncio.Task[None]] = set()
@@ -99,6 +127,24 @@ class KnowledgeExtractionService:
     def validate_model_selection(self, model_name: str | None) -> None:
         """Reject request-only model switching before an Agent run is created."""
         self._resolve_model_selection(model_name)
+
+    async def get_sedimentation_progress(self) -> KnowledgeSedimentationProgress:
+        """Return the single novel's accepted knowledge frontier."""
+        return await self._sedimentation_progress_repository.get_progress()
+
+    async def accept_run(self, run_id: str) -> KnowledgeSedimentationProgress:
+        """Advance the frontier after every candidate in a continuous run is reviewed."""
+        run = await self.get_run(run_id)
+        if run.status is not AgentRunStatus.COMPLETED:
+            raise KnowledgeExtractionError("只能采纳已完成的知识沉淀任务。")
+        if any(
+            item.candidate_status is AgentReviewCandidateStatus.PENDING
+            for item in run.review_items
+        ):
+            raise KnowledgeExtractionError("请先确认或废弃本次沉淀的全部候选，再采纳章节范围。")
+        chapter_ids = run.scope.chapter_ids or [run.scope.chapter_id]
+        await self._validate_sedimentation_scope(chapter_ids)
+        return await self._sedimentation_progress_repository.advance_to(chapter_ids[-1])
 
     def _resolve_model_selection(
         self,
@@ -362,6 +408,7 @@ class KnowledgeExtractionService:
         force: bool,
         event_sink,
     ) -> AgentRun:
+        await self._validate_sedimentation_scope([chapter_id])
         profile, requested_model_name = self._resolve_model_selection(
             model_name
         )
@@ -439,6 +486,7 @@ class KnowledgeExtractionService:
         unique_chapter_ids = _unique_non_empty(chapter_ids)
         if not unique_chapter_ids:
             raise KnowledgeExtractionError("请至少选择一个章节。")
+        await self._validate_sedimentation_scope(unique_chapter_ids)
         started_at = _now_iso()
         run_id = _new_run_id(started_at)
         chapter_titles = await self._chapter_titles(unique_chapter_ids)
@@ -750,6 +798,10 @@ class KnowledgeExtractionService:
             *(run_branch(chapter_id) for chapter_id in unique_chapter_ids)
         )
 
+        branch_states.sort(
+            key=lambda state: unique_chapter_ids.index(str(state.get("chapter_id") or ""))
+        )
+
         for branch_state in branch_states:
             raw_mentions.extend(branch_state.get("raw_mentions", []))
             entity_groups.extend(branch_state.get("entity_groups", []))
@@ -914,8 +966,8 @@ class KnowledgeExtractionService:
                 )
             except ValueError:
                 continue
-            matches = await self._knowledge_repository.search_active_identity(
-                knowledge_type.value,
+            matches = await self._knowledge_service.search_confirmed_identity(
+                knowledge_type,
                 str(candidate.get("name") or ""),
                 _list_strings(candidate.get("aliases")),
             )
@@ -1002,6 +1054,30 @@ class KnowledgeExtractionService:
                 titles[chapter_id] = chapter_id
         return titles
 
+    async def _validate_sedimentation_scope(self, chapter_ids: list[str]) -> None:
+        chapters = await self._chapter_service.list_chapters()
+        ordered_ids = [chapter.id for chapter in chapters]
+        progress = await self._sedimentation_progress_repository.get_progress()
+        start_index = 0
+        if progress.last_accepted_chapter_id is not None:
+            try:
+                start_index = ordered_ids.index(progress.last_accepted_chapter_id) + 1
+            except ValueError as error:
+                raise KnowledgeExtractionError(
+                    "已沉淀章节不在当前章节目录中，请先修复章节目录。"
+                ) from error
+        expected = ordered_ids[start_index : start_index + len(chapter_ids)]
+        if chapter_ids == expected:
+            return
+        expected_title = (
+            chapters[start_index].title
+            if start_index < len(chapters)
+            else "没有后续章节"
+        )
+        raise KnowledgeExtractionError(
+            f"知识沉淀必须从下一未沉淀章节连续开始；当前应从“{expected_title}”开始。"
+        )
+
     async def list_runs(
         self,
         *,
@@ -1074,8 +1150,11 @@ class KnowledgeExtractionService:
             raise KnowledgeExtractionError("建议忽略的候选不能直接确认入库。")
 
         if item.candidate_action is AgentReviewCandidateAction.CREATE_CARD:
-            card = _card_from_payload(item.knowledge_type, item.suggested_card)
-            written = await self._knowledge_repository.create_active_card(card)
+            card = _card_from_payload(
+                item.knowledge_type,
+                _with_appearance_chapter_count(item.suggested_card, item),
+            )
+            written = await self._knowledge_service.create_confirmed_card(card)
             updated = _mark_confirmed(
                 item,
                 author_action="confirm",
@@ -1084,10 +1163,14 @@ class KnowledgeExtractionService:
         else:
             if item.target_card_id is None:
                 raise KnowledgeExtractionError("候选更新缺少目标知识卡。")
-            written = await self._knowledge_repository.apply_author_confirmed_updates(
+            written = await self._knowledge_service.apply_author_confirmed_updates(
                 item.target_card_id,
-                _patch_updates_from_payload(item.knowledge_type, item.suggested_card),
+                _patch_updates_from_payload(
+                    item.knowledge_type,
+                    _with_appearance_chapter_count(item.suggested_card, item),
+                ),
                 merge_mode="append",
+                allow_appearance_count_update=True,
             )
             updated = _mark_confirmed(
                 item,
@@ -1108,13 +1191,17 @@ class KnowledgeExtractionService:
         """Confirm a candidate after explicit author edits."""
         run, index, item = await self._find_review_item(candidate_id, run_id=run_id)
         _assert_review_item_can_be_processed(item)
-        merged_payload = {**item.suggested_card, **card_updates}
+        _reject_author_statistic_updates(card_updates)
+        merged_payload = _with_appearance_chapter_count(
+            {**item.suggested_card, **card_updates}, item
+        )
         target_id = target_card_id or item.target_card_id
         if target_id:
-            written = await self._knowledge_repository.apply_author_confirmed_updates(
+            written = await self._knowledge_service.apply_author_confirmed_updates(
                 target_id,
                 _patch_updates_from_payload(item.knowledge_type, merged_payload),
                 merge_mode=merge_mode,
+                allow_appearance_count_update=True,
             )
             updated = _mark_confirmed(
                 item,
@@ -1123,7 +1210,7 @@ class KnowledgeExtractionService:
             )
         else:
             card = _card_from_payload(item.knowledge_type, merged_payload)
-            written = await self._knowledge_repository.create_active_card(card)
+            written = await self._knowledge_service.create_confirmed_card(card)
             updated = _mark_confirmed(
                 item,
                 author_action="edit_confirm",
@@ -1231,6 +1318,7 @@ def _card_from_payload(
     knowledge_type: StructuredKnowledgeType,
     payload: dict[str, Any],
 ) -> StructuredKnowledgeCard:
+    payload = {key: value for key, value in payload.items() if key != "importance"}
     if knowledge_type not in ALLOWED_KNOWLEDGE_TYPES:
         raise KnowledgeExtractionError(
             "正文知识沉淀只允许角色、境界、功法、地点、势力、物品、规则、事件入库。"
@@ -1253,7 +1341,7 @@ def _card_from_payload(
         knowledge_type,
     )
     card_payload["type"] = knowledge_type.value
-    card_payload["status"] = StructuredKnowledgeStatus.ACTIVE.value
+    card_payload["lifecycle"] = StructuredKnowledgeLifecycle.CONFIRMED.value
     card_payload["source_origin"] = StructuredKnowledgeSourceOrigin.AGENT_EXTRACT.value
     card_payload["created_at"] = str(card_payload.get("created_at") or now)
     card_payload["updated_at"] = now
@@ -1264,12 +1352,18 @@ def _patch_updates_from_payload(
     knowledge_type: StructuredKnowledgeType,
     payload: dict[str, Any],
 ) -> dict[str, Any]:
+    payload = {key: value for key, value in payload.items() if key != "importance"}
     if knowledge_type not in ALLOWED_KNOWLEDGE_TYPES:
         raise KnowledgeExtractionError(
             "正文知识沉淀只允许角色、境界、功法、地点、势力、物品、规则、事件入库。"
         )
     _reject_forbidden(payload)
-    allowed = _editable_card_keys(knowledge_type) | _REVIEW_ONLY_FIELDS | {"id", "type"}
+    allowed = (
+        _editable_card_keys(knowledge_type)
+        | {"appearance_chapter_count"}
+        | _REVIEW_ONLY_FIELDS
+        | {"id", "type"}
+    )
     unknown = set(payload) - allowed
     if unknown:
         raise KnowledgeExtractionError(
@@ -1278,9 +1372,22 @@ def _patch_updates_from_payload(
     return {
         key: value
         for key, value in payload.items()
-        if key in _editable_card_keys(knowledge_type)
-        and key not in {"status", "source_origin"}
+        if key in _editable_card_keys(knowledge_type) | {"appearance_chapter_count"}
+        and key not in {"lifecycle", "source_origin"}
     }
+
+
+def _with_appearance_chapter_count(
+    payload: dict[str, Any], item: AgentReviewItem
+) -> dict[str, Any]:
+    """Attach the system-calculated occurrence count to a reviewed candidate."""
+    next_payload = dict(payload)
+    next_payload.pop("importance", None)
+    chapter_count = len(_unique_non_empty(item.appearance_chapter_ids))
+    next_payload["appearance_chapter_count"] = chapter_count or next_payload.get(
+        "appearance_chapter_count"
+    )
+    return next_payload
 
 
 def _allowed_card_keys(knowledge_type: StructuredKnowledgeType) -> set[str]:
@@ -1290,8 +1397,8 @@ def _allowed_card_keys(knowledge_type: StructuredKnowledgeType) -> set[str]:
         "name",
         "aliases",
         "summary",
-        "importance",
-        "status",
+        "appearance_chapter_count",
+        "lifecycle",
         "source_origin",
         "source_note",
         "created_at",
@@ -1305,12 +1412,16 @@ def _editable_card_keys(knowledge_type: StructuredKnowledgeType) -> set[str]:
         "name",
         "aliases",
         "summary",
-        "importance",
-        "status",
+        "lifecycle",
         "source_origin",
         "source_note",
         *type_specific_field_keys(knowledge_type),
     }
+
+
+def _reject_author_statistic_updates(card_updates: dict[str, Any]) -> None:
+    if "appearance_chapter_count" in card_updates:
+        raise KnowledgeExtractionError("出现章节数由正文知识沉淀自动累计，不能手动修改。")
 
 
 def _reject_forbidden(payload: dict[str, Any]) -> None:
@@ -1498,6 +1609,7 @@ def _aggregate_batch_candidates(
             if not isinstance(candidate, dict):
                 continue
             payload = dict(candidate)
+            source_entry = _source_entry(chapter_title, payload)
             knowledge_type = str(payload.get("type") or "")
             identity = _normalize_identity(payload.get("name"))
             if not knowledge_type or not identity:
@@ -1506,6 +1618,7 @@ def _aggregate_batch_candidates(
             if key not in grouped:
                 payload["chapter_ids"] = [chapter_id] if chapter_id else []
                 payload["chapter_titles"] = [chapter_title] if chapter_title else []
+                payload["source_entries"] = [source_entry] if source_entry else []
                 payload["evidence_excerpts"] = _dedupe_strings(
                     _list_strings(payload.get("evidence_excerpts"))
                 )[:20]
@@ -1531,6 +1644,12 @@ def _aggregate_batch_candidates(
                     *_list_strings(payload.get("evidence_excerpts")),
                 ]
             )[:20]
+            current["source_entries"] = _dedupe_strings(
+                [
+                    *_list_strings(current.get("source_entries")),
+                    *([source_entry] if source_entry else []),
+                ]
+            )
             if not str(current.get("summary") or "").strip():
                 current["summary"] = payload.get("summary", "")
             if not str(current.get("source_note") or "").strip():
@@ -1541,21 +1660,31 @@ def _aggregate_batch_candidates(
         evidence = _list_strings(candidate.get("evidence_excerpts"))
         if evidence:
             candidate["evidence_excerpt"] = evidence[0][:300]
-        chapter_titles = _list_strings(candidate.get("chapter_titles"))
-        if chapter_titles:
-            note = str(candidate.get("source_note") or "").strip()
-            suffix = f"批量聚合章节：{'、'.join(chapter_titles)}。"
-            candidate["source_note"] = f"{note} {suffix}".strip()
+        source_entries = _list_strings(candidate.get("source_entries"))
+        if source_entries:
+            candidate["source_note"] = "\n\n".join(source_entries)
+        candidate["appearance_chapter_count"] = len(
+            _dedupe_strings(_list_strings(candidate.get("chapter_ids")))
+        ) or None
         candidate.pop("chapter_ids", None)
         candidate.pop("chapter_titles", None)
+        candidate.pop("source_entries", None)
         candidate["source_origin"] = "agent_extract"
-        candidate.setdefault("status", "active")
+        candidate.setdefault("lifecycle", "confirmed")
         validation_errors = _candidate_validation_errors(candidate)
         candidate["schema_validation"] = {
             "passed": not validation_errors,
             "errors": validation_errors,
         }
     return aggregated
+
+
+def _source_entry(chapter_title: str, candidate: dict[str, Any]) -> str:
+    excerpts = _list_strings(candidate.get("evidence_excerpts"))[:3]
+    if not excerpts:
+        return str(candidate.get("source_note") or "").strip()
+    quoted = "；".join(f"“{excerpt}”" for excerpt in excerpts)
+    return f"{chapter_title}\n关键原文：{quoted}"
 
 
 def _batch_internal_conflict_check(

@@ -33,12 +33,13 @@ from taichu.application.agents.models.agent_run import (
 from taichu.domain.models.structured_knowledge import (
     StructuredKnowledgeCard,
     StructuredKnowledgeImportance,
+    StructuredKnowledgeLifecycle,
     StructuredKnowledgeSourceOrigin,
-    StructuredKnowledgeStatus,
     StructuredKnowledgeType,
 )
 from taichu.infrastructure.storage.markdown_backend import ProjectAssetStorageBackend
 from taichu.main import create_app
+from tests.fakes import InMemoryKnowledgeRepository
 
 
 class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
@@ -62,6 +63,7 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
                 endpoint_kind="test",
                 known=True,
             ),
+            knowledge_repository=InMemoryKnowledgeRepository(),
         )
         self.client = AsyncClient(
             transport=ASGITransport(app=self.app),
@@ -89,7 +91,7 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
             f"/api/agent-workbench/knowledge-extraction/candidates/{candidate_id}/confirm"
         )
         knowledge_response = await self.client.get(
-            "/api/knowledge/cards?type=character&status=active"
+            "/api/knowledge/cards?type=character&lifecycle=confirmed"
         )
 
         self.assertEqual(create_response.status_code, 200)
@@ -263,7 +265,7 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
             f"{run_id}/candidates/{candidate_id}/confirm"
         )
         knowledge_response = await self.client.get(
-            "/api/knowledge/cards?type=character&status=active"
+            "/api/knowledge/cards?type=character&lifecycle=confirmed"
         )
 
         self.assertEqual(response.status_code, 200)
@@ -374,7 +376,7 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
             persisted_response.json()["run"]["batch_chapter_progress"][0]["nodes"]
         )
 
-    async def test_confirm_extended_types_create_active_cards(self) -> None:
+    async def test_confirm_extended_types_create_confirmed_cards(self) -> None:
         run = _extended_type_review_run()
         await self.app.state.knowledge_run_store.write_run(run)
 
@@ -393,7 +395,7 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         }
         for knowledge_type, expected_name in expected_names.items():
             cards_response = await self.client.get(
-                f"/api/knowledge/cards?type={knowledge_type}&status=active"
+                f"/api/knowledge/cards?type={knowledge_type}&lifecycle=confirmed"
             )
             self.assertEqual(cards_response.status_code, 200)
             self.assertTrue(
@@ -554,8 +556,8 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_direct_confirm_update_card_appends_to_existing_card(self) -> None:
-        await self.app.state.knowledge_repository.create_active_card(
-            _active_character_card(
+        await self.app.state.knowledge_service.create_confirmed_card(
+            _confirmed_character_card(
                 "character-qin-direct",
                 summary="秦阳原本是太初教弟子。",
                 source_note="第1章旧来源。",
@@ -590,8 +592,8 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(card.last_seen_chapter_id, "chapter_002")
 
     async def test_scoped_confirm_uses_run_id_when_candidate_ids_repeat(self) -> None:
-        await self.app.state.knowledge_repository.create_active_card(
-            _active_character_card(
+        await self.app.state.knowledge_service.create_confirmed_card(
+            _confirmed_character_card(
                 "character-qin-scoped",
                 summary="秦阳原本是太初教弟子。",
                 source_note="第1章旧来源。",
@@ -639,8 +641,8 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_edit_confirm_can_append_to_existing_card(self) -> None:
-        await self.app.state.knowledge_repository.create_active_card(
-            _active_character_card(
+        await self.app.state.knowledge_service.create_confirmed_card(
+            _confirmed_character_card(
                 "character-qin",
                 summary="秦阳原本是太初教弟子。",
                 source_note="第1章旧来源。",
@@ -686,8 +688,8 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(card.last_seen_chapter_id, "chapter_002")
 
     async def test_edit_confirm_can_overwrite_existing_card(self) -> None:
-        await self.app.state.knowledge_repository.create_active_card(
-            _active_character_card(
+        await self.app.state.knowledge_service.create_confirmed_card(
+            _confirmed_character_card(
                 "character-qin-overwrite",
                 summary="旧摘要。",
                 source_note="旧来源。",
@@ -1062,7 +1064,7 @@ def _processed_review_run(
     )
 
 
-def _active_character_card(
+def _confirmed_character_card(
     card_id: str,
     *,
     summary: str,
@@ -1077,7 +1079,7 @@ def _active_character_card(
         aliases=aliases,
         summary=summary,
         importance=StructuredKnowledgeImportance.CORE,
-        status=StructuredKnowledgeStatus.ACTIVE,
+        lifecycle=StructuredKnowledgeLifecycle.CONFIRMED,
         source_origin=StructuredKnowledgeSourceOrigin.AGENT_EXTRACT,
         source_note=source_note,
         role_type="protagonist",

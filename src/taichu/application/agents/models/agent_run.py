@@ -188,6 +188,7 @@ class AgentReviewItem(AgentModel):
     )
     display_title: str = ""
     suggested_card: dict[str, Any] = Field(default_factory=dict)
+    appearance_chapter_ids: list[str] = Field(default_factory=list)
     target_card_id: str | None = None
     matched_card_name: str | None = None
     match_reason: str = ""

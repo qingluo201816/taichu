@@ -17,6 +17,7 @@ from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
 from taichu.main import create_app
+from tests.fakes import InMemoryKnowledgeRepository
 
 
 class InboxApiTest(unittest.IsolatedAsyncioTestCase):
@@ -38,6 +39,7 @@ class InboxApiTest(unittest.IsolatedAsyncioTestCase):
                     AIMessage(content=_pending_fact_response()),
                 ]
             ),
+            knowledge_repository=InMemoryKnowledgeRepository(),
         )
         self.client = AsyncClient(
             transport=ASGITransport(app=app),

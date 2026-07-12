@@ -14,7 +14,7 @@
 <rect x="1945" y="30" width="170" height="34" rx="17" fill="#EFFAF4" fill-opacity="1.0" stroke="#21875A" stroke-width="1.6"/>
 <text x="2030.0" y="53" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="16" font-weight="600" fill="#21875A" text-anchor="middle" opacity="1.0"><tspan x="2030.0" dy="0">实线：当前实现</tspan></text>
 <rect x="2130" y="30" width="220" height="34" rx="17" fill="#F5F1FF" fill-opacity="1.0" stroke="#7455C5" stroke-width="1.6" stroke-dasharray="10 8"/>
-<text x="2240.0" y="53" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="16" font-weight="600" fill="#7455C5" text-anchor="middle" opacity="1.0"><tspan x="2240.0" dy="0">虚线：目标架构</tspan></text>
+<text x="2240.0" y="53" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="16" font-weight="600" fill="#7455C5" text-anchor="middle" opacity="1.0"><tspan x="2240.0" dy="0">虚线：未来可选能力</tspan></text>
 <rect x="40" y="112" width="2320" height="218" rx="22" fill="#EEF5FF" fill-opacity="1.0" stroke="#2F70D0" stroke-width="2.2" filter="url(#shadow)"/>
 <circle cx="74" cy="143" r="20" fill="#2F70D0" stroke="none" stroke-width="0"/>
 <text x="74" y="150" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="16" font-weight="700" fill="#FFFFFF" text-anchor="middle" opacity="1.0"><tspan x="74" dy="0">01</tspan></text>
@@ -68,7 +68,7 @@
 <circle cx="1922" cy="265.98" r="3.2" fill="#2F70D0" stroke="none" stroke-width="0"/>
 <text x="1934" y="270.98" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="15.5" font-weight="400" fill="#52647D" text-anchor="start" opacity="1.0"><tspan x="1934" dy="0">模型配置与偏好</tspan></text>
 <circle cx="1922" cy="290.47" r="3.2" fill="#2F70D0" stroke="none" stroke-width="0"/>
-<text x="1934" y="295.47" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="15.5" font-weight="400" fill="#52647D" text-anchor="start" opacity="1.0"><tspan x="1934" dy="0">索引清理 / 重建</tspan></text>
+<text x="1934" y="295.47" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="15.5" font-weight="400" fill="#52647D" text-anchor="start" opacity="1.0"><tspan x="1934" dy="0">导出与运行日志</tspan></text>
 <rect x="40" y="354" width="2320" height="168" rx="22" fill="#F5F1FF" fill-opacity="1.0" stroke="#7455C5" stroke-width="2.2" filter="url(#shadow)"/>
 <circle cx="74" cy="385" r="20" fill="#7455C5" stroke="none" stroke-width="0"/>
 <text x="74" y="392" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="16" font-weight="700" fill="#FFFFFF" text-anchor="middle" opacity="1.0"><tspan x="74" dy="0">02</tspan></text>
@@ -225,11 +225,11 @@
 <circle cx="1002" cy="1092.33" r="3.2" fill="#5E708A" stroke="none" stroke-width="0"/>
 <text x="1014" y="1097.33" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="13.5" font-weight="400" fill="#52647D" text-anchor="start" opacity="1.0"><tspan x="1014" dy="0">JsonStorageBackend / 路径防护</tspan></text>
 <rect x="1442" y="1016" width="440" height="94" rx="14" fill="#FFFFFF" fill-opacity="1.0" stroke="#5E708A" stroke-width="1.7"/>
-<text x="1460" y="1047" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="18" font-weight="700" fill="#5E708A" text-anchor="start" opacity="1.0"><tspan x="1460" dy="0">检索与投影</tspan></text>
+<text x="1460" y="1047" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="18" font-weight="700" fill="#5E708A" text-anchor="start" opacity="1.0"><tspan x="1460" dy="0">结构事实查询</tspan></text>
 <circle cx="1462" cy="1071" r="3.2" fill="#5E708A" stroke="none" stroke-width="0"/>
-<text x="1474" y="1076" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="13.5" font-weight="400" fill="#52647D" text-anchor="start" opacity="1.0"><tspan x="1474" dy="0">SQLite FTS 精确 + 全文检索</tspan></text>
+<text x="1474" y="1076" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="13.5" font-weight="400" fill="#52647D" text-anchor="start" opacity="1.0"><tspan x="1474" dy="0">StructuredKnowledgeRepository</tspan></text>
 <circle cx="1462" cy="1092.33" r="3.2" fill="#5E708A" stroke="none" stroke-width="0"/>
-<text x="1474" y="1097.33" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="13.5" font-weight="400" fill="#52647D" text-anchor="start" opacity="1.0"><tspan x="1474" dy="0">ProjectionRebuilder 可清空重建</tspan></text>
+<text x="1474" y="1097.33" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="13.5" font-weight="400" fill="#52647D" text-anchor="start" opacity="1.0"><tspan x="1474" dy="0">confirmed 查询 · 排除 rejected</tspan></text>
 <rect x="1902" y="1016" width="440" height="94" rx="14" fill="#FFFFFF" fill-opacity="1.0" stroke="#5E708A" stroke-width="1.7"/>
 <text x="1920" y="1047" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="18" font-weight="700" fill="#5E708A" text-anchor="start" opacity="1.0"><tspan x="1920" dy="0">可观测性</tspan></text>
 <circle cx="1922" cy="1071" r="3.2" fill="#5E708A" stroke="none" stroke-width="0"/>
@@ -246,19 +246,19 @@
 <text x="967.0" y="1180.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="17" font-weight="700" fill="#C56A13" text-anchor="middle" opacity="1.0"><tspan x="967.0" dy="0">Derived JSON</tspan></text>
 <text x="967.0" y="1205.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="12.5" font-weight="400" fill="#52647D" text-anchor="middle" opacity="1.0"><tspan x="967.0" dy="0">AgentRun / 审核项 / LLM 调用轨迹</tspan></text>
 <rect x="1166" y="1142" width="338" height="84" rx="13" fill="#FFF7EC" fill-opacity="1.0" stroke="#C56A13" stroke-width="1.7"/>
-<text x="1335.0" y="1180.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="17" font-weight="700" fill="#C56A13" text-anchor="middle" opacity="1.0"><tspan x="1335.0" dy="0">JSONKnowledgeRepository</tspan></text>
-<text x="1335.0" y="1205.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="12.5" font-weight="400" fill="#52647D" text-anchor="middle" opacity="1.0"><tspan x="1335.0" dy="0">当前兼容实现 · 非目标事实源</tspan></text>
-<rect x="1534" y="1142" width="338" height="84" rx="13" fill="#F5F1FF" fill-opacity="1.0" stroke="#7455C5" stroke-width="1.7" stroke-dasharray="10 8"/>
-<text x="1703.0" y="1180.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="17" font-weight="700" fill="#7455C5" text-anchor="middle" opacity="1.0"><tspan x="1703.0" dy="0">MongoDB</tspan></text>
-<text x="1703.0" y="1205.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="12.5" font-weight="400" fill="#52647D" text-anchor="middle" opacity="1.0"><tspan x="1703.0" dy="0">目标结构事实源 · lifecycle=confirmed</tspan></text>
+<text x="1335.0" y="1180.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="17" font-weight="700" fill="#C56A13" text-anchor="middle" opacity="1.0"><tspan x="1335.0" dy="0">KnowledgeService</tspan></text>
+<text x="1335.0" y="1205.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="12.5" font-weight="400" fill="#52647D" text-anchor="middle" opacity="1.0"><tspan x="1335.0" dy="0">校验 · 冲突 · 生命周期 · 作者闸门</tspan></text>
+<rect x="1534" y="1142" width="338" height="84" rx="13" fill="#EFFAF4" fill-opacity="1.0" stroke="#21875A" stroke-width="1.7"/>
+<text x="1703.0" y="1180.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="17" font-weight="700" fill="#21875A" text-anchor="middle" opacity="1.0"><tspan x="1703.0" dy="0">MongoDB knowledge_cards</tspan></text>
+<text x="1703.0" y="1205.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="12.5" font-weight="400" fill="#52647D" text-anchor="middle" opacity="1.0"><tspan x="1703.0" dy="0">唯一结构事实源 · lifecycle=confirmed</tspan></text>
 <rect x="1902" y="1142" width="428" height="84" rx="13" fill="#FFFFFF" fill-opacity="1.0" stroke="#5E708A" stroke-width="1.7"/>
 <text x="2116.0" y="1180.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="17" font-weight="700" fill="#5E708A" text-anchor="middle" opacity="1.0"><tspan x="2116.0" dy="0">Generated</tspan></text>
-<text x="2116.0" y="1205.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="12.5" font-weight="400" fill="#52647D" text-anchor="middle" opacity="1.0"><tspan x="2116.0" dy="0">SQLite/FTS · Vector · ES · Graph · Cache</tspan></text>
+<text x="2116.0" y="1205.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="12.5" font-weight="400" fill="#52647D" text-anchor="middle" opacity="1.0"><tspan x="2116.0" dy="0">运行日志 · 导出临时物 · 可重建缓存</tspan></text>
 <path d="M400 1184 L422 1184" fill="none" stroke="#5E708A" stroke-width="2.5" stroke-linecap="round" opacity="1.0" marker-end="url(#arrow)"/>
 <path d="M768 1184 L790 1184" fill="none" stroke="#5E708A" stroke-width="2.5" stroke-linecap="round" opacity="1.0" marker-end="url(#arrow)"/>
 <path d="M1136 1184 L1158 1184" fill="none" stroke="#5E708A" stroke-width="2.5" stroke-linecap="round" opacity="1.0" marker-end="url(#arrow)"/>
-<path d="M1504 1184 L1526 1184" fill="none" stroke="#7455C5" stroke-width="2.5" stroke-linecap="round" opacity="1.0" stroke-dasharray="9 7" marker-end="url(#arrow)"/>
+<path d="M1504 1184 L1526 1184" fill="none" stroke="#21875A" stroke-width="2.5" stroke-linecap="round" opacity="1.0" marker-end="url(#arrow)"/>
 <path d="M1872 1184 L1894 1184" fill="none" stroke="#5E708A" stroke-width="2.5" stroke-linecap="round" opacity="1.0" marker-end="url(#arrow)"/>
-<text x="1200" y="1260" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="17" font-weight="700" fill="#10213D" text-anchor="middle" opacity="1.0"><tspan x="1200" dy="0">核心原则：Agent 不直写事实 · 作者把关 · JSON 先行 · 索引可重建 · 单本小说上下文 · 领域层技术无关</tspan></text>
-<text x="2350" y="1327" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="13" font-weight="400" fill="#52647D" text-anchor="end" opacity="1.0"><tspan x="2350" dy="0">基于 master@7d6d049 · 更新日期 2026-07-10</tspan></text>
+<text x="1200" y="1260" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="17" font-weight="700" fill="#10213D" text-anchor="middle" opacity="1.0"><tspan x="1200" dy="0">核心原则：Markdown 文本事实 · MongoDB 结构事实 · JSON 仅中间态 · 作者把关 · 单本小说上下文</tspan></text>
+<text x="2350" y="1327" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="13" font-weight="400" fill="#52647D" text-anchor="end" opacity="1.0"><tspan x="2350" dy="0">知识库 MongoDB 迁移后架构 · 更新日期 2026-07-11</tspan></text>
 </svg>

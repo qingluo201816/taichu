@@ -11,7 +11,6 @@ from taichu.api.routes import (
     chapters,
     export,
     inbox,
-    knowledge,
     llm,
     mvp_knowledge,
     outline,
@@ -30,7 +29,6 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(chapters.router)
     app.include_router(export.router)
     app.include_router(inbox.router)
-    app.include_router(knowledge.router)
     app.include_router(llm.router)
     app.include_router(mvp_knowledge.router)
     app.include_router(outline.router)

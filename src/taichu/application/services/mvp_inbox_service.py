@@ -9,7 +9,7 @@ from typing import Any, TypeAlias
 from uuid import uuid4
 
 from taichu.application.contracts.storage import ProjectAssetStorageContract
-from taichu.application.services.mvp_knowledge_service import MVPKnowledgeService
+from taichu.application.services.knowledge_service import KnowledgeService
 from taichu.domain.models import (
     MVPInboxIdea,
     MVPInboxIssue,
@@ -40,7 +40,7 @@ class MVPInboxService:
     def __init__(
         self,
         storage: ProjectAssetStorageContract,
-        knowledge_service: MVPKnowledgeService,
+        knowledge_service: KnowledgeService,
     ) -> None:
         self._storage = storage
         self._knowledge_service = knowledge_service
@@ -172,8 +172,10 @@ class MVPInboxService:
             "source_note",
             _source_note_for_pending_fact(pending_fact),
         )
-        payload.setdefault("status", "draft")
-        card = await self._knowledge_service.create_card(knowledge_type, payload)
+        card = await self._knowledge_service.create_confirmed_from_data(
+            knowledge_type,
+            payload,
+        )
         processed = await self.patch_pending_fact(
             pending_fact.id,
             {

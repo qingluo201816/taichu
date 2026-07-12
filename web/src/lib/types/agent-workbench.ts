@@ -274,6 +274,11 @@ export type KnowledgeExtractionCandidateActionResponse = {
   run: AgentRun;
 };
 
+export type KnowledgeSedimentationProgress = {
+  last_accepted_chapter_id?: string | null;
+  updated_at?: string | null;
+};
+
 export type KnowledgeExtractionStreamEventType =
   | "run_started"
   | "node_started"

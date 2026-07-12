@@ -35,7 +35,7 @@ const taskOptions: Array<{ value: "" | WritingAIButtonType; label: string }> = [
   { value: "fact", label: "事实" },
 ];
 
-const HISTORY_PAGE_SIZE = 10;
+const HISTORY_PAGE_SIZE = 6;
 
 export default function AIHistoryPage() {
   const [chapters, setChapters] = useState<ChapterInfo[]>([]);
@@ -141,9 +141,9 @@ export default function AIHistoryPage() {
   }
 
   return (
-    <AppShell activePath="/ai-history">
-      <section className="mx-auto grid max-w-[1440px] gap-5 px-5 py-6 xl:grid-cols-[176px_minmax(0,1fr)]">
-        <aside className="rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2">
+    <AppShell activePath="/ai-history" viewportLocked>
+      <section className="mx-auto grid h-full min-h-0 max-w-[1440px] gap-5 px-5 py-6 xl:grid-cols-[176px_minmax(0,1fr)]">
+        <aside className="h-full min-h-0 overflow-hidden rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2">
           <div className="px-2 py-2">
             <p className="text-xs text-[var(--tc-text-muted)]">AI 历史</p>
             <h1 className="text-xl font-semibold text-[var(--tc-text-primary)]">
@@ -175,7 +175,7 @@ export default function AIHistoryPage() {
           </div>
         </aside>
 
-        <section className="flex min-h-[calc(100vh-7rem)] min-w-0 flex-col">
+        <section className="flex h-full min-h-0 min-w-0 flex-col">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="flex items-center gap-2 text-xs text-[var(--tc-text-muted)]">
@@ -212,8 +212,8 @@ export default function AIHistoryPage() {
             </p>
           ) : null}
 
-          <div className="flex min-h-0 max-w-[980px] flex-1 flex-col">
-            <div className="min-h-0 flex-1">
+          <div className="flex min-h-0 max-w-[980px] flex-1 flex-col overflow-hidden">
+            <div className="min-h-0 flex-1 overflow-y-auto">
               {loading ? (
                 <div className="flex h-28 items-center justify-center text-sm text-[var(--tc-text-muted)]">
                   <Loader2 className="mr-2 size-4 animate-spin" />
@@ -272,7 +272,7 @@ export default function AIHistoryPage() {
                   })}
                 </div>
               ) : (
-                <div className="border-y border-dashed border-[var(--tc-border-subtle)] px-3 py-16 text-center text-sm text-[var(--tc-text-muted)]">
+                <div className="grid h-full min-h-28 place-items-center border-y border-dashed border-[var(--tc-border-subtle)] px-3 text-center text-sm text-[var(--tc-text-muted)]">
                   暂无 AI 历史
                 </div>
               )}

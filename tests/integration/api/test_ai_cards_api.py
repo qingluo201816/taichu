@@ -17,6 +17,7 @@ from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
 from taichu.main import create_app
+from tests.fakes import InMemoryKnowledgeRepository
 
 
 class AICardsApiTest(unittest.IsolatedAsyncioTestCase):
@@ -47,6 +48,7 @@ class AICardsApiTest(unittest.IsolatedAsyncioTestCase):
                     )
                 ]
             ),
+            knowledge_repository=InMemoryKnowledgeRepository(),
         )
         self.client = AsyncClient(
             transport=ASGITransport(app=app),
@@ -103,7 +105,7 @@ class AICardsApiTest(unittest.IsolatedAsyncioTestCase):
         assert isinstance(selection_context, dict)
         source_ref = selection_context["source_ref"]
         assert isinstance(source_ref, dict)
-        source_ref["path"] = "project_assets/generated/sqlite/taichu.db"
+        source_ref["path"] = "project_assets/generated/search_index/chunk.json"
 
         response = await self.client.post(
             "/api/ai-cards/selection",

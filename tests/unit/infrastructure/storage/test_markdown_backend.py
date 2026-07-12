@@ -12,7 +12,7 @@ from taichu.infrastructure.storage.markdown_backend import (
 
 
 class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
-    """Verify source/generated storage boundaries."""
+    """Verify project source asset storage boundaries."""
 
     async def asyncSetUp(self) -> None:
         self._temporary_directory = tempfile.TemporaryDirectory()
@@ -22,7 +22,9 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         self._temporary_directory.cleanup()
 
-    async def test_ensure_skeleton_creates_source_and_generated(self) -> None:
+    async def test_ensure_skeleton_creates_source_without_generated_placeholders(
+        self,
+    ) -> None:
         self.assertIsInstance(self.storage, ProjectAssetStorageContract)
 
         await self.storage.ensure_skeleton()
@@ -58,10 +60,8 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
                 self.assets_root / "source" / "workspace" / "settings_preferences.json"
             ).exists()
         )
-        self.assertTrue(
-            (self.assets_root / "source" / "knowledge" / "character").exists()
-        )
-        self.assertTrue((self.assets_root / "generated" / "sqlite").exists())
+        self.assertFalse((self.assets_root / "source" / "knowledge").exists())
+        self.assertFalse((self.assets_root / "generated").exists())
 
     async def test_ensure_skeleton_does_not_overwrite_source_assets(
         self,
@@ -70,7 +70,6 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
         metadata_path = source_root / "metadata.yaml"
         manifest_path = source_root / "manuscripts" / "manifest.json"
         chapter_path = source_root / "manuscripts" / "chapters" / "chapter_999.md"
-        knowledge_path = source_root / "knowledge" / "character" / "character_001.json"
         ideas_path = source_root / "workspace" / "ideas.jsonl"
         editor_state_path = source_root / "workspace" / "editor_state.json"
 
@@ -78,7 +77,6 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
             metadata_path,
             manifest_path,
             chapter_path,
-            knowledge_path,
             ideas_path,
             editor_state_path,
         ]:
@@ -88,7 +86,6 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
             metadata_path: "schema_version: 9\ntitle: 用户小说\n",
             manifest_path: '{"schema_version": "9", "chapters": ["keep"]}\n',
             chapter_path: "# 用户章节\n\n正文不能被覆盖\n",
-            knowledge_path: '{"id": "character_001"}\n',
             ideas_path: '{"content": "保留灵感"}\n',
             editor_state_path: '{"active": "chapter_999"}\n',
         }
@@ -116,26 +113,6 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
             with self.subTest(path=path):
                 with self.assertRaises(ValueError):
                     await self.storage.write_chapter_markdown(path, "text")
-
-    async def test_clear_generated_does_not_delete_source(self) -> None:
-        await self.storage.ensure_skeleton()
-        await self.storage.write_chapter_markdown(
-            "manuscripts/chapters/chapter_001.md",
-            "# 第一章\n\n正文\n",
-        )
-        generated_file = self.assets_root / "generated" / "temp" / "cache.tmp"
-        generated_file.write_text("cache", encoding="utf-8")
-
-        await self.storage.clear_generated()
-
-        self.assertFalse(generated_file.exists())
-        self.assertEqual(
-            await self.storage.read_chapter_markdown(
-                "manuscripts/chapters/chapter_001.md"
-            ),
-            "# 第一章\n\n正文\n",
-        )
-        self.assertTrue((self.assets_root / "generated" / "temp").exists())
 
     async def test_chapter_markdown_preserves_author_whitespace(self) -> None:
         await self.storage.ensure_skeleton()
@@ -186,7 +163,7 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
             "被删除正文",
         )
 
-    async def test_chapter_markdown_allows_generated_chinese_volume_paths(
+    async def test_chapter_markdown_allows_chinese_volume_paths(
         self,
     ) -> None:
         await self.storage.ensure_skeleton()
@@ -305,78 +282,6 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(cards_path.read_text(encoding="utf-8"), original_text)
 
-    async def test_knowledge_json_write_read_and_list(self) -> None:
-        await self.storage.write_knowledge_record(
-            "technique",
-            "knowledge_001",
-            {"id": "knowledge_001", "status": "active"},
-        )
-
-        self.assertEqual(
-            await self.storage.read_knowledge_record(
-                "technique",
-                "knowledge_001",
-            ),
-            {"id": "knowledge_001", "status": "active"},
-        )
-        self.assertEqual(
-            await self.storage.list_knowledge_records("technique"),
-            [{"id": "knowledge_001", "status": "active"}],
-        )
-        self.assertTrue(
-            (
-                self.assets_root
-                / "source"
-                / "knowledge"
-                / "technique"
-                / "knowledge_001.json"
-            ).exists()
-        )
-
-    async def test_structured_knowledge_uses_type_directories(self) -> None:
-        card: dict[str, object] = {
-            "id": "character-qin-yang",
-            "type": "character",
-            "name": "秦阳",
-            "summary": "主角。",
-            "status": "draft",
-        }
-
-        await self.storage.write_structured_knowledge_record(
-            "character",
-            "character-qin-yang",
-            card,
-        )
-
-        self.assertEqual(
-            await self.storage.read_structured_knowledge_record(
-                "character",
-                "character-qin-yang",
-            ),
-            card,
-        )
-        self.assertEqual(
-            await self.storage.list_structured_knowledge_records("character"),
-            [card],
-        )
-        self.assertTrue(
-            (
-                self.assets_root
-                / "source"
-                / "knowledge"
-                / "character"
-                / "character-qin-yang.json"
-            ).exists()
-        )
-
-    async def test_structured_knowledge_rejects_unknown_type(self) -> None:
-        with self.assertRaises(ValueError):
-            await self.storage.write_structured_knowledge_record(
-                "characters",
-                "character-qin-yang",
-                {"id": "character-qin-yang"},
-            )
-
     async def test_preferences_json_write_read(self) -> None:
         preferences = {
             "font_size": 19,
@@ -388,18 +293,3 @@ class ProjectAssetStorageBackendTest(unittest.IsolatedAsyncioTestCase):
         await self.storage.write_preferences(preferences)
 
         self.assertEqual(await self.storage.read_preferences(), preferences)
-
-    async def test_knowledge_json_rejects_unsafe_paths(self) -> None:
-        unsafe_inputs = [
-            ("../escape", "knowledge_001"),
-            ("technique", "../escape"),
-            ("technique", "Knowledge 001"),
-        ]
-        for category, knowledge_id in unsafe_inputs:
-            with self.subTest(category=category, knowledge_id=knowledge_id):
-                with self.assertRaises(ValueError):
-                    await self.storage.write_knowledge_record(
-                        category,
-                        knowledge_id,
-                        {"id": knowledge_id},
-                    )

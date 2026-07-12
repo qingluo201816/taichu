@@ -18,7 +18,6 @@ from taichu.application.contracts.llm import (
     LLMRequest,
     response_text,
 )
-from taichu.application.contracts.retrieval import RetrievalContract, RetrievalQuery
 from taichu.application.contracts.storage import ProjectAssetStorageContract
 from taichu.application.services.ai_card_service import (
     PENDING_FACTS_FILE,
@@ -82,7 +81,6 @@ class ChapterSummaryService:
         storage: ProjectAssetStorageContract,
         chapter_service: ChapterService,
         knowledge_service: KnowledgeService,
-        retrieval: RetrievalContract,
         llm: object,
         ai_card_service: AICardService,
         default_model_id: str = "deepseek-v4-pro",
@@ -90,7 +88,6 @@ class ChapterSummaryService:
         self._storage = storage
         self._chapter_service = chapter_service
         self._knowledge_service = knowledge_service
-        self._retrieval = retrieval
         self._llm = cast(LLMGatewayContract, llm)
         self._ai_card_service = ai_card_service
         self._default_model_id = default_model_id
@@ -113,19 +110,12 @@ class ChapterSummaryService:
                 summary=f"{chapter_content.chapter.title} 暂无可整理正文。",
             )
         else:
-            knowledge_cards = await self._knowledge_service.list_cards()
-            retrieval_hits = await self._retrieval.search(
-                RetrievalQuery(
-                    text=_retrieval_query_text(chapter_content.markdown),
-                    limit=8,
-                )
-            )
+            knowledge_cards = await self._knowledge_service.list_confirmed_cards()
             prompt = build_summary_prompt(
                 chapter_id=chapter_id,
                 chapter_title=chapter_content.chapter.title,
                 segments=body_segments,
                 confirmed_knowledge=knowledge_cards,
-                retrieval_hits=retrieval_hits,
             )
             selected_model_id = model_id or self._default_model_id
             _ensure_selectable_model(self._llm, selected_model_id)
@@ -489,10 +479,6 @@ def _plain_excerpt(markdown: str, limit: int = 240) -> str:
     if len(compact) <= limit:
         return compact
     return compact[:limit].rstrip()
-
-
-def _retrieval_query_text(markdown: str) -> str:
-    return _plain_excerpt(markdown, 80)
 
 
 def _clean_strings(values: list[str]) -> list[str]:

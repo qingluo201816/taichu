@@ -17,15 +17,24 @@ from taichu.application.contracts.llm import (
     LLMGatewayContract,
     LLMModelIdentity,
 )
+from taichu.application.contracts.knowledge_repository import (
+    KnowledgeRepositoryUnavailableError,
+    StructuredKnowledgeRepository,
+)
+from taichu.application.contracts.knowledge_sedimentation_progress_repository import (
+    InMemoryKnowledgeSedimentationProgressRepository,
+)
 from taichu.application.services.ai_card_service import AICardService
 from taichu.application.services.chapter_summary_service import (
     ChapterSummaryService,
 )
 from taichu.application.services.chapter_service import ChapterService
 from taichu.application.services.export_service import ExportService
-from taichu.application.services.index_service import IndexService
 from taichu.application.services.inbox_service import InboxService
-from taichu.application.services.knowledge_service import KnowledgeService
+from taichu.application.services.knowledge_service import (
+    KnowledgeService,
+    KnowledgeUnavailableError,
+)
 from taichu.application.services.knowledge_extraction_service import (
     KnowledgeExtractionService,
 )
@@ -34,11 +43,7 @@ from taichu.application.services.knowledge_extraction_evaluation_service import 
 )
 from taichu.application.services.agent_task_event_service import AgentTaskEventCenter
 from taichu.application.services.mvp_inbox_service import MVPInboxService
-from taichu.application.services.mvp_knowledge_service import MVPKnowledgeService
 from taichu.application.services.outline_service import OutlineService
-from taichu.application.services.pending_fact_confirmation_service import (
-    PendingFactConfirmationService,
-)
 from taichu.application.services.selection_ai_service import SelectionAIService
 from taichu.application.services.settings_service import SettingsPreferenceService
 from taichu.application.services.writing_ai_service import WritingAIService
@@ -57,10 +62,11 @@ from taichu.infrastructure.plugin_discovery import (
     discover_agents,
     discover_tools,
 )
-from taichu.infrastructure.indexing import SqliteProjectionRebuilder
 from taichu.infrastructure.agent_runs import JsonAgentRunStore
-from taichu.infrastructure.knowledge import JSONKnowledgeRepository
-from taichu.infrastructure.retrieval import SqliteFTSRetrievalBackend
+from taichu.infrastructure.knowledge import (
+    MongoKnowledgeRepository,
+    MongoKnowledgeSedimentationProgressRepository,
+)
 from taichu.infrastructure.storage.json_backend import JsonStorageBackend
 from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
@@ -73,14 +79,13 @@ def create_app(
     llm: BaseChatModel | None = None,
     llm_model_identity: LLMModelIdentity | None = None,
     llm_gateway: LLMGatewayContract | None = None,
+    knowledge_repository: StructuredKnowledgeRepository | None = None,
 ) -> FastAPI:
     """创建并组装 FastAPI 应用。"""
     storage = JsonStorageBackend(app_settings.project_assets_dir / "source")
     project_storage = ProjectAssetStorageBackend(app_settings.project_assets_dir)
     chapter_service = ChapterService(project_storage)
     outline_service = OutlineService(project_storage)
-    mvp_knowledge_service = MVPKnowledgeService(project_storage)
-    mvp_inbox_service = MVPInboxService(project_storage, mvp_knowledge_service)
     settings_preference_service = SettingsPreferenceService(project_storage)
     model_catalog = LLMModelCatalog(app_settings)
     llm_usage_repository = JsonlLLMUsageRepository(app_settings.project_assets_dir)
@@ -112,15 +117,31 @@ def create_app(
     )
     ai_card_service = AICardService(project_storage)
     inbox_service = InboxService(project_storage, ai_card_service)
-    knowledge_service = KnowledgeService(project_storage)
-    knowledge_repository = JSONKnowledgeRepository(project_storage)
+    managed_knowledge_repository = knowledge_repository is None
+    if knowledge_repository is None:
+        knowledge_repository = MongoKnowledgeRepository(
+            app_settings.mongodb_uri,
+            app_settings.mongodb_database,
+        )
+    knowledge_service = KnowledgeService(knowledge_repository)
+    sedimentation_progress_repository = (
+        MongoKnowledgeSedimentationProgressRepository(
+            app_settings.mongodb_uri,
+            app_settings.mongodb_database,
+        )
+        if managed_knowledge_repository
+        else InMemoryKnowledgeSedimentationProgressRepository()
+    )
+    mvp_inbox_service = MVPInboxService(project_storage, knowledge_service)
     knowledge_run_store = JsonAgentRunStore(app_settings.project_assets_dir)
     agent_task_events = AgentTaskEventCenter()
     knowledge_extraction_service = KnowledgeExtractionService(
         chapter_service=chapter_service,
         llm=llm_service,
         knowledge_repository=knowledge_repository,
+        knowledge_service=knowledge_service,
         run_store=knowledge_run_store,
+        sedimentation_progress_repository=sedimentation_progress_repository,
         task_events=agent_task_events,
         default_model_id=active_default_model,
     )
@@ -151,24 +172,16 @@ def create_app(
         default_model_id=active_default_model,
         llm_configured=llm_configured,
     )
-    pending_fact_confirmation_service = PendingFactConfirmationService(
-        project_storage,
-        knowledge_service,
-    )
     selection_ai_service = SelectionAIService(
         llm_service,
         ai_card_service,
         default_model_id=active_default_model,
     )
-    retrieval_backend = SqliteFTSRetrievalBackend(app_settings.project_assets_dir)
-    projection_rebuilder = SqliteProjectionRebuilder(app_settings.project_assets_dir)
-    index_service = IndexService(project_storage, projection_rebuilder)
-    export_service = ExportService(project_storage)
+    export_service = ExportService(project_storage, knowledge_repository)
     chapter_summary_service = ChapterSummaryService(
         storage=project_storage,
         chapter_service=chapter_service,
         knowledge_service=knowledge_service,
-        retrieval=retrieval_backend,
         llm=llm_service,
         ai_card_service=ai_card_service,
         default_model_id=active_default_model,
@@ -179,7 +192,6 @@ def create_app(
             "chapter_service": chapter_service,
             "knowledge_repository": knowledge_repository,
             "knowledge_run_store": knowledge_run_store,
-            "retrieval": retrieval_backend,
             "storage": storage,
         }
     )
@@ -190,12 +202,34 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        if managed_knowledge_repository:
+            try:
+                await cast(MongoKnowledgeRepository, knowledge_repository).initialize()
+                await cast(
+                    MongoKnowledgeSedimentationProgressRepository,
+                    sedimentation_progress_repository,
+                ).initialize()
+            except Exception as error:
+                await cast(MongoKnowledgeRepository, knowledge_repository).close()
+                await cast(
+                    MongoKnowledgeSedimentationProgressRepository,
+                    sedimentation_progress_repository,
+                ).close()
+                raise RuntimeError(
+                    f"MongoDB 知识库初始化失败，后端已停止启动：{error}"
+                ) from error
         await knowledge_extraction_evaluation_service.recover_interrupted()
         knowledge_extraction_evaluation_service.start_watchdog()
         try:
             yield
         finally:
             await knowledge_extraction_evaluation_service.shutdown()
+            if managed_knowledge_repository:
+                await cast(MongoKnowledgeRepository, knowledge_repository).close()
+                await cast(
+                    MongoKnowledgeSedimentationProgressRepository,
+                    sedimentation_progress_repository,
+                ).close()
 
     application = FastAPI(
         title="Taichu",
@@ -212,9 +246,9 @@ def create_app(
     application.state.inbox_service = inbox_service
     application.state.mvp_inbox_service = mvp_inbox_service
     application.state.export_service = export_service
-    application.state.index_service = index_service
     application.state.knowledge_service = knowledge_service
     application.state.knowledge_repository = knowledge_repository
+    application.state.sedimentation_progress_repository = sedimentation_progress_repository
     application.state.knowledge_run_store = knowledge_run_store
     application.state.agent_task_events = agent_task_events
     application.state.knowledge_extraction_service = knowledge_extraction_service
@@ -224,10 +258,6 @@ def create_app(
     application.state.evaluation_dataset_repository = evaluation_dataset_repository
     application.state.evaluation_result_repository = evaluation_result_repository
     application.state.evaluation_judge = evaluation_judge
-    application.state.mvp_knowledge_service = mvp_knowledge_service
-    application.state.pending_fact_confirmation_service = (
-        pending_fact_confirmation_service
-    )
     application.state.selection_ai_service = selection_ai_service
     application.state.chapter_summary_service = chapter_summary_service
     application.state.settings_preference_service = settings_preference_service
@@ -247,6 +277,14 @@ def create_app(
     application.add_exception_handler(
         RequestValidationError,
         _validation_exception_handler,
+    )
+    application.add_exception_handler(
+        KnowledgeUnavailableError,
+        _knowledge_unavailable_exception_handler,
+    )
+    application.add_exception_handler(
+        KnowledgeRepositoryUnavailableError,
+        _knowledge_unavailable_exception_handler,
     )
     return application
 
@@ -278,6 +316,22 @@ async def _validation_exception_handler(
             "error": {
                 "code": "VALIDATION_ERROR",
                 "message": "请求内容不完整或格式不正确，请检查后再试。",
+            }
+        },
+    )
+
+
+async def _knowledge_unavailable_exception_handler(
+    request: Request,
+    exc: Exception,
+) -> JSONResponse:
+    message = str(exc).strip() or "MongoDB 知识库暂时不可用，请稍后重试。"
+    return JSONResponse(
+        status_code=503,
+        content={
+            "error": {
+                "code": "KNOWLEDGE_UNAVAILABLE",
+                "message": message,
             }
         },
     )

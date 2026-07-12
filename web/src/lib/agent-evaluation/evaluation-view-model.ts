@@ -8,6 +8,7 @@ import type {
   EvaluationQualityState,
   EvaluationStatus,
   EvaluationPreviewRun,
+  EvaluationModelIdentity,
   KnowledgeEvaluation,
   KnowledgeEvaluationComparison,
 } from "../types/agent-evaluation";
@@ -67,7 +68,7 @@ export const errorCodeMessages: Record<string, string> = {
   EVALUATION_PROCESS_INTERRUPTED: "评估进程已中断，已保留冻结输入",
   EVALUATION_ALREADY_RUNNING: "相同评估正在执行，请勿重复提交",
   EVALUATION_INVALID_TRANSITION: "当前状态不允许执行此操作",
-  EVALUATION_ID_INVALID: "评估标识格式不正确",
+  EVALUATION_ID_INVALID: "请求参数格式不正确",
   EVALUATION_SNAPSHOT_CORRUPTED: "评估快照损坏，无法继续执行",
   EVALUATION_NOT_FOUND: "未找到指定评估记录",
 };
@@ -133,23 +134,23 @@ export function metricValue(
 }
 
 export function evaluationTaskTitle(run: EligibleEvaluationRun): string {
-  if (run.scope_type === "chapter_batch") {
-    const count =
-      run.total_chapter_count ??
-      run.chapter_ids?.length ??
-      run.chapter_titles?.length ??
-      0;
-    return `批量知识沉淀 · ${count} 章`;
-  }
-  return run.chapter_title || run.chapter_id || "未命名任务";
+  return run.display_title || "未命名章节";
 }
 
 export function evaluationModelLabel(run: EligibleEvaluationRun): string {
-  const identity = run.generation_model_identity;
-  if (identity?.known && identity.model_id) {
-    return identity.model_id;
-  }
-  return run.requested_model_name || run.model_name || "模型身份未知";
+  return run.model_display_name || "模型信息未记录";
+}
+
+export function modelIdentityLabel(
+  identity: EvaluationModelIdentity | null | undefined,
+): string {
+  if (!identity?.known || !identity.model_id) return "模型信息未记录";
+  const labels: Record<string, string> = {
+    "deepseek-v4-pro": "DeepSeek V4 Pro",
+    "deepseek-chat": "DeepSeek Chat",
+    "deepseek-reasoner": "DeepSeek Reasoner",
+  };
+  return labels[identity.model_id] ?? "已配置模型";
 }
 
 export function visibleEvaluationRuns(
@@ -168,12 +169,20 @@ export function selectableEvaluationRun(run: EligibleEvaluationRun): boolean {
 export function toggleEvaluationRunSelection(
   selected: string[],
   runId: string,
-  maxCount = 10,
 ): string[] {
   if (selected.includes(runId)) {
     return selected.filter(item => item !== runId);
   }
-  return selected.length >= maxCount ? selected : [...selected, runId];
+  return [runId];
+}
+
+export function evaluationIndependenceLabel(evaluation: KnowledgeEvaluation): string {
+  const levels = Object.values(evaluation.judge?.independence_by_run ?? {});
+  if (levels.includes("same_model")) return "同模型自评";
+  if (levels.includes("unknown")) return "模型独立性未知";
+  if (levels.includes("same_provider_family")) return "同供应商模型";
+  if (levels.includes("different_model")) return "不同模型";
+  return "未启用语义裁判";
 }
 
 export function comparisonMatchesIssue(
@@ -214,11 +223,6 @@ export function noticeMessage(
 ): string {
   if (typeof notice === "string") return notice;
   return notice?.message ?? "";
-}
-
-export function shortChecksum(checksum: string | null | undefined): string {
-  if (!checksum) return "无校验摘要";
-  return checksum.length > 12 ? checksum.slice(0, 12) : checksum;
 }
 
 export function previewIndependenceLabel(runs: EvaluationPreviewRun[]): string {

@@ -7,7 +7,7 @@ from taichu.domain.exceptions import FactScopeViolationError
 from taichu.domain.models.ai_card import AIResultCard
 from taichu.domain.models.chapter import Chapter
 from taichu.domain.models.inbox import ChapterIssue, IdeaCard
-from taichu.domain.models.knowledge import KnowledgeCard, KnowledgeCardStatus
+from taichu.domain.models.knowledge import KnowledgeCard, KnowledgeCardLifecycle
 from taichu.domain.models.pending_fact import PendingFact
 from taichu.domain.models.summary import ChapterSummary
 
@@ -65,7 +65,7 @@ def is_allowed_in_fact_scope(item: Any) -> bool:
     if isinstance(item, Chapter):
         return True
     if isinstance(item, KnowledgeCard):
-        return item.status is KnowledgeCardStatus.ACTIVE
+        return item.lifecycle is KnowledgeCardLifecycle.CONFIRMED
     if isinstance(
         item,
         (PendingFact, IdeaCard, ChapterIssue, AIResultCard, ChapterSummary),

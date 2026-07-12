@@ -1,75 +1,83 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, History, Inbox, Library } from "lucide-react";
+import {
+  ArrowUpRight,
+  BookOpen,
+  Bot,
+  GitBranch,
+  Library,
+} from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 
-const quickEntries = [
+const primaryEntries = [
   {
     title: "写作",
-    detail: "正文、分卷章节大纲、右侧 AI 入口",
+    detail: "继续正文创作、章节整理与 AI 协作",
     href: "/editor",
     icon: BookOpen,
   },
   {
+    title: "智能体工作台",
+    detail: "运行正文知识沉淀并审核候选内容",
+    href: "/agent-workbench",
+    icon: Bot,
+  },
+  {
+    title: "任务监控",
+    detail: "查看执行进度、节点状态与评测结果",
+    href: "/task-monitor",
+    icon: GitBranch,
+  },
+  {
     title: "知识库",
-    detail: "结构化知识卡片查看与编辑",
+    detail: "浏览和维护已确认的结构化知识",
     href: "/knowledge",
     icon: Library,
-  },
-  {
-    title: "收件箱",
-    detail: "灵感、待确认事实、待处理问题",
-    href: "/inbox",
-    icon: Inbox,
-  },
-  {
-    title: "AI 历史",
-    detail: "写作区多轮记录与提示词快照",
-    href: "/ai-history",
-    icon: History,
   },
 ];
 
 export default function HomePage() {
   return (
-    <AppShell activePath="/home">
-      <section className="mx-auto grid min-h-[calc(100vh-73px)] max-w-6xl content-center gap-10 px-5 py-12">
-        <div className="max-w-3xl">
-          <p className="mb-3 text-sm font-medium text-[var(--tc-deep-forest-teal)]">
-            主创作入口
-          </p>
-          <h1 className="font-serif text-5xl leading-tight text-[var(--tc-midnight-ink)] md:text-7xl">
-            太初
-          </h1>
-          <p className="mt-5 text-lg leading-8 text-[var(--tc-smoke)]">
-            面向单本玄幻小说的个人写作工作台。正文、大纲、知识、灵感和真实 AI 运行链路在同一个作者上下文中推进。
-          </p>
-        </div>
+    <AppShell activePath="/home" transparentHeader>
+      <section className="relative isolate min-h-screen overflow-x-hidden bg-black">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -z-30 size-full bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/home/tree-background-static.png')" }}
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -z-20 bg-black/25"
+        />
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {quickEntries.map(entry => {
-            const Icon = entry.icon;
-            return (
-              <Link
-                key={entry.href}
-                href={entry.href}
-                className="group rounded-[var(--tc-radius-card)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-6 transition-colors hover:border-[var(--tc-midnight-ink)]"
-              >
-                <div className="mb-5 flex items-center justify-between gap-3">
-                  <span className="inline-flex size-11 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-midnight-ink)] bg-[var(--tc-cream-paper)]">
-                    <Icon className="size-5" />
-                  </span>
-                  <ArrowRight className="size-5 text-[var(--tc-smoke)] transition-transform group-hover:translate-x-1 group-hover:text-[var(--tc-midnight-ink)]" />
-                </div>
-                <h2 className="text-xl font-semibold text-[var(--tc-midnight-ink)]">
-                  {entry.title}
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-[var(--tc-smoke)]">
-                  {entry.detail}
-                </p>
-              </Link>
-            );
-          })}
+        <div className="flex min-h-screen w-full items-center px-5 pb-8 pt-32 md:px-0 xl:pt-24">
+          <div className="mx-auto grid w-full max-w-[320px] gap-3 md:mx-0 md:ml-[8vw] md:w-[28vw] md:max-w-none">
+            {primaryEntries.map(entry => {
+              const Icon = entry.icon;
+              return (
+                <Link
+                  key={entry.href}
+                  href={entry.href}
+                  className="group flex min-h-28 flex-col justify-between rounded-[var(--tc-radius-card)] border border-white/25 bg-black/20 p-4 transition-colors hover:border-white/45 hover:bg-black/35 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <span className="inline-flex size-8 items-center justify-center rounded-[var(--tc-radius-control)] border border-white/25 text-white">
+                      <Icon className="size-4" />
+                    </span>
+                    <ArrowUpRight className="size-4 text-white/45 transition-colors group-hover:text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-semibold text-white">
+                      {entry.title}
+                    </h2>
+                    <p className="mt-1 text-sm leading-5 text-white/70">
+                      {entry.detail}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </section>
     </AppShell>

@@ -370,6 +370,7 @@ async def _judge_failure_and_retry_scenario(tmp_path: Path) -> None:
     assert parent_terminal.run_results[0].metrics["candidate_f1_micro"] == 1
     assert parent_terminal.run_results[0].overall_quality_score is None
     assert parent_terminal.warnings[0].code == "EVALUATION_JUDGE_INVALID_OUTPUT"
+    assert "语义裁判未纳入本次评分" in parent_terminal.warnings[0].message
     assert retry_terminal.status is EvaluationStatus.COMPLETED_WITH_WARNINGS
     assert retry_terminal.parent_evaluation_id == parent.evaluation_id
     assert retry_terminal.snapshot_root_hash == parent_terminal.snapshot_root_hash

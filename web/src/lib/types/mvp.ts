@@ -42,8 +42,7 @@ export type KnowledgeTypeValue =
   | "rule"
   | "event";
 
-export type StructuredKnowledgeStatus = "draft" | "active" | "deprecated";
-export type StructuredKnowledgeImportance = "core" | "major" | "normal" | "minor";
+export type StructuredKnowledgeLifecycle = "draft" | "confirmed" | "rejected";
 export type StructuredKnowledgeSourceOrigin =
   | "inbox_fact"
   | "agent_extract"
@@ -73,11 +72,12 @@ export type KnowledgeFieldSchema = {
   field_key: string;
   label: string;
   field_type: KnowledgeSchemaFieldType;
-  required_when_active: boolean;
+  required_when_confirmed: boolean;
   options: KnowledgeFieldOption[];
   placeholder: string;
   display_group: string;
   list_display: boolean;
+  author_editable?: boolean;
   ai_usage: string;
 };
 
@@ -117,8 +117,8 @@ export type StructuredKnowledgeCard = Partial<
   name: string;
   aliases: string[];
   summary: string;
-  importance: StructuredKnowledgeImportance;
-  status: StructuredKnowledgeStatus;
+  appearance_chapter_count?: number | null;
+  lifecycle: StructuredKnowledgeLifecycle;
   source_origin?: StructuredKnowledgeSourceOrigin | null;
   source_note: string;
   level_order?: number | null;

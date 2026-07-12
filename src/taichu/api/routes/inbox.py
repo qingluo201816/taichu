@@ -32,6 +32,10 @@ from taichu.application.services.inbox_service import (
     InboxService,
     PendingFactNotFoundError,
 )
+from taichu.application.services.knowledge_service import (
+    KnowledgeIdentityConflictError,
+    KnowledgeUnavailableError,
+)
 from taichu.application.services.mvp_inbox_service import (
     InboxItemNotFoundError,
     InboxValidationError,
@@ -177,7 +181,7 @@ async def api_confirm_mvp_pending_fact(
     request: ConfirmPendingFactRequest,
     service: MVPInboxService = Depends(provide_mvp_inbox_service),
 ) -> ConfirmPendingFactResponse:
-    """Confirm a manual pending fact into a draft knowledge card."""
+    """Confirm a manual pending fact into the author-confirmed knowledge base."""
     try:
         result = await service.confirm_pending_fact(
             item_id,
@@ -186,6 +190,10 @@ async def api_confirm_mvp_pending_fact(
         )
     except InboxItemNotFoundError as error:
         raise _not_found(str(error)) from error
+    except KnowledgeIdentityConflictError as error:
+        raise _conflict(str(error)) from error
+    except KnowledgeUnavailableError as error:
+        raise _unavailable(str(error)) from error
     except (ValidationError, ValueError) as error:
         raise _bad_request(_validation_message(error)) from error
     return ConfirmPendingFactResponse(
@@ -355,6 +363,20 @@ def _bad_request(message: str) -> HTTPException:
     return HTTPException(
         status_code=422,
         detail={"error": {"code": "VALIDATION_ERROR", "message": message}},
+    )
+
+
+def _conflict(message: str) -> HTTPException:
+    return HTTPException(
+        status_code=409,
+        detail={"error": {"code": "KNOWLEDGE_CONFLICT", "message": message}},
+    )
+
+
+def _unavailable(message: str) -> HTTPException:
+    return HTTPException(
+        status_code=503,
+        detail={"error": {"code": "KNOWLEDGE_UNAVAILABLE", "message": message}},
     )
 
 

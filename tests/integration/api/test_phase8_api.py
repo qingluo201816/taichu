@@ -1,4 +1,4 @@
-"""Phase 8 Agent Chat, export, and rebuild API integration tests."""
+"""Agent Chat and export API integration tests."""
 
 import json
 import tempfile
@@ -12,19 +12,13 @@ from langchain_core.language_models.fake_chat_models import (
 from langchain_core.messages import AIMessage
 
 from taichu.application.services.import_service import ImportService
-from taichu.application.services.knowledge_service import knowledge_category_for_type
 from taichu.config import Settings
 from taichu.domain.models.knowledge import (
     KnowledgeCard,
-    KnowledgeCardStatus,
+    KnowledgeCardLifecycle,
     KnowledgeCardType,
 )
 from taichu.domain.models.structured_knowledge import StructuredKnowledgeSourceOrigin
-from taichu.domain.models.indexing import (
-    IndexBuildJob,
-    IndexBuildJobAction,
-    IndexBuildJobStatus,
-)
 from taichu.domain.models.source_ref import (
     SourceAnchorType,
     SourceRef,
@@ -34,10 +28,11 @@ from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
 from taichu.main import create_app
+from tests.fakes import InMemoryKnowledgeRepository
 
 
 class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
-    """Verify Phase 8 export and rebuild endpoints compose without source pollution."""
+    """Verify export and the writing loop compose without source pollution."""
 
     async def asyncSetUp(self) -> None:
         self._temporary_directory = tempfile.TemporaryDirectory()
@@ -47,16 +42,13 @@ class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
             "第一章 集成\n秦浩轩携太初古卷入山。",
             source_name="phase8.txt",
         )
-        await self.storage.write_knowledge_record(
-            knowledge_category_for_type(KnowledgeCardType.ITEM),
-            "knowledge_phase8_item",
-            _knowledge_card().model_dump(mode="json"),
-        )
+        self.knowledge_repository = InMemoryKnowledgeRepository([_knowledge_card()])
         app = create_app(
             app_settings=Settings(project_assets_dir=self.assets_root),
             llm=FakeMessagesListChatModel(
                 responses=[AIMessage(content="可以从古卷代价推进。[S1]")]
             ),
+            knowledge_repository=self.knowledge_repository,
         )
         self.client = AsyncClient(
             transport=ASGITransport(app=app),
@@ -74,43 +66,17 @@ class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
         files = {file["path"]: file for file in response.json()["files"]}
         self.assertIn("source/metadata.yaml", files)
         self.assertIn("source/manuscripts/chapters/chapter_001.md", files)
-        self.assertIn("source/knowledge/item/knowledge_phase8_item.json", files)
+        self.assertIn("knowledge/knowledge_cards.json", files)
         self.assertIn("source/workspace/ai_cards.jsonl", files)
+        snapshot = json.loads(files["knowledge/knowledge_cards.json"]["content"])
+        self.assertEqual(snapshot["schema_version"], "taichu_export_v2")
+        self.assertEqual(snapshot["cards"][0]["lifecycle"], "confirmed")
 
-    async def test_generated_rebuild_endpoint_preserves_source(self) -> None:
-        chapter_path = (
-            self.assets_root / "source" / "manuscripts" / "chapters" / "chapter_001.md"
-        )
-        chapter_before = chapter_path.read_text(encoding="utf-8")
-        junk_path = self.assets_root / "generated" / "temp" / "junk.tmp"
-        junk_path.parent.mkdir(parents=True, exist_ok=True)
-        junk_path.write_text("junk", encoding="utf-8")
-
-        response = await self.client.post("/api/generated/rebuild")
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["job"]["status"], "completed")
-        self.assertFalse(junk_path.exists())
-        self.assertTrue(
-            (self.assets_root / "generated" / "sqlite" / "taichu.db").exists()
-        )
-        self.assertEqual(chapter_path.read_text(encoding="utf-8"), chapter_before)
-
-    async def test_generated_rebuild_endpoint_can_return_failed_job(self) -> None:
-        app = create_app(
-            app_settings=Settings(project_assets_dir=self.assets_root),
-            llm=FakeMessagesListChatModel(responses=[AIMessage(content="unused")]),
-        )
-        app.state.index_service = FailingIndexService()
-        async with AsyncClient(
-            transport=ASGITransport(app=app),
-            base_url="http://test",
-        ) as client:
-            response = await client.post("/api/generated/rebuild")
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["job"]["status"], "failed")
-        self.assertIn("forced failure", response.json()["job"]["message"])
+    async def test_generated_projection_endpoints_are_removed(self) -> None:
+        for path in ("/api/generated/rebuild", "/api/generated/clear"):
+            with self.subTest(path=path):
+                response = await self.client.post(path)
+                self.assertEqual(response.status_code, 404)
 
     async def test_mvp_writing_loop_smoke(self) -> None:
         app = create_app(
@@ -151,6 +117,7 @@ class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
                     AIMessage(content=_summary_json()),
                 ]
             ),
+            knowledge_repository=self.knowledge_repository,
         )
         async with AsyncClient(
             transport=ASGITransport(app=app),
@@ -200,57 +167,47 @@ class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
             converted = await client.post(
                 f"/api/inbox/cards/{pending_card['id']}/convert-pending-fact"
             )
-            pending_fact_id = converted.json()["pending_fact"]["id"]
+            pending_fact = await client.post(
+                "/api/inbox/pending-facts",
+                json={
+                    "data": {
+                        "title": "灵犀玉",
+                        "content": "灵犀玉会回应心念。",
+                        "origin": "AI 候选经作者预览",
+                    }
+                },
+            )
+            pending_fact_id = pending_fact.json()["item"]["id"]
             confirmed = await client.post(
-                f"/api/pending-facts/{pending_fact_id}/confirm"
+                f"/api/inbox/pending-facts/{pending_fact_id}/confirm",
+                json={
+                    "knowledge_type": "item",
+                    "card_preview": {
+                        "name": "灵犀玉",
+                        "summary": "灵犀玉会回应持有者心念。",
+                        "source_origin": "inbox_fact",
+                        "source_note": "作者在收件箱预览后确认。",
+                    },
+                },
             )
 
             summary = await client.post("/api/chapters/chapter_001/summary")
-            rebuild = await client.post("/api/generated/rebuild")
             export_bundle = await client.get("/api/export/bundle")
 
         self.assertEqual(save_idea.status_code, 200)
         self.assertEqual(converted.status_code, 200)
         self.assertEqual(confirmed.status_code, 200)
-        self.assertEqual(confirmed.json()["knowledge_card"]["status"], "active")
+        self.assertEqual(confirmed.json()["knowledge_card"]["lifecycle"], "confirmed")
         self.assertEqual(
             confirmed.json()["knowledge_card"]["source_origin"],
             "inbox_fact",
         )
         self.assertEqual(summary.status_code, 200)
-        self.assertEqual(rebuild.json()["job"]["status"], "completed")
         export_paths = {file["path"] for file in export_bundle.json()["files"]}
         self.assertIn("source/workspace/ideas.jsonl", export_paths)
         self.assertIn("source/workspace/pending_facts.jsonl", export_paths)
-        self.assertIn("source/knowledge/item/knowledge_phase8_item.json", export_paths)
+        self.assertIn("knowledge/knowledge_cards.json", export_paths)
         self.assertFalse(any(path.startswith("generated/") for path in export_paths))
-        self.assertTrue(
-            (self.assets_root / "generated" / "sqlite" / "taichu.db").exists()
-        )
-
-
-class FailingIndexService:
-    """Return a failed job from the API dependency seam."""
-
-    async def rebuild_generated_projection(self) -> IndexBuildJob:
-        return IndexBuildJob(
-            id="index_job_failed",
-            action=IndexBuildJobAction.REBUILD,
-            status=IndexBuildJobStatus.FAILED,
-            created_at="2026-06-27T00:00:00Z",
-            completed_at="2026-06-27T00:00:01Z",
-            message="forced failure",
-        )
-
-    async def clear_generated(self) -> IndexBuildJob:
-        return IndexBuildJob(
-            id="index_job_clear_failed",
-            action=IndexBuildJobAction.CLEAR,
-            status=IndexBuildJobStatus.FAILED,
-            created_at="2026-06-27T00:00:00Z",
-            completed_at="2026-06-27T00:00:01Z",
-            message="forced failure",
-        )
 
 
 def _knowledge_card() -> KnowledgeCard:
@@ -260,7 +217,7 @@ def _knowledge_card() -> KnowledgeCard:
         name="太初古卷",
         aliases=[],
         summary="太初古卷会映照持有者的选择。",
-        status=KnowledgeCardStatus.ACTIVE,
+        lifecycle=KnowledgeCardLifecycle.CONFIRMED,
         source_origin=StructuredKnowledgeSourceOrigin.MANUAL,
         source_note="作者手动确认。",
         created_at="2026-06-27T00:00:00Z",

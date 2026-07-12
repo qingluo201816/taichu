@@ -1,5 +1,10 @@
-"""Structured knowledge infrastructure implementations."""
+"""MongoDB-backed structured knowledge infrastructure."""
 
-from taichu.infrastructure.knowledge.json_repository import JSONKnowledgeRepository
+from taichu.infrastructure.knowledge.mongo_repository import (
+    MongoKnowledgeRepository,
+)
+from taichu.infrastructure.knowledge.sedimentation_progress_repository import (
+    MongoKnowledgeSedimentationProgressRepository,
+)
 
-__all__ = ["JSONKnowledgeRepository"]
+__all__ = ["MongoKnowledgeRepository", "MongoKnowledgeSedimentationProgressRepository"]

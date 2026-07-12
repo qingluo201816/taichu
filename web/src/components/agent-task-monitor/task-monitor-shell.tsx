@@ -8,12 +8,14 @@ import { AppShell } from "@/components/app-shell";
 import { KnowledgeExtractionMonitorNav } from "@/components/agent-task-monitor/knowledge-extraction-monitor-nav";
 import { TaskFlowGraph } from "@/components/agent-task-monitor/task-flow-graph";
 import { Button } from "@/components/ui/button";
+import { CompactPagination } from "@/components/ui/compact-pagination";
 import {
   deleteAgentTask,
   getAgentTask,
   listAgentTasks,
   streamAgentTaskEvents,
 } from "@/lib/api/agent-workbench";
+import { formatBatchRunTitle } from "@/lib/agent-run-display";
 import type {
   AgentBatchChapterProgress,
   AgentLLMCall,
@@ -41,12 +43,14 @@ const statusFilters: Array<{ value: TaskStatusFilter; label: string }> = [
   { value: "chapter", label: "单章任务" },
   { value: "chapter_batch", label: "批量任务" },
 ];
+const TASK_PAGE_SIZE = 6;
 
 export function TaskMonitorShell() {
   const [tasks, setTasks] = useState<AgentRunSummary[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState("");
   const [currentTask, setCurrentTask] = useState<AgentRun | null>(null);
   const [statusFilter, setStatusFilter] = useState<TaskStatusFilter>("all");
+  const [taskPage, setTaskPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deletingTaskId, setDeletingTaskId] = useState("");
@@ -66,6 +70,16 @@ export function TaskMonitorShell() {
       return tasks.filter(task => task.status === statusFilter);
     },
     [statusFilter, tasks],
+  );
+  const taskPageCount = Math.max(1, Math.ceil(visibleTasks.length / TASK_PAGE_SIZE));
+  const currentTaskPage = Math.min(taskPage, taskPageCount);
+  const pagedTasks = useMemo(
+    () =>
+      visibleTasks.slice(
+        (currentTaskPage - 1) * TASK_PAGE_SIZE,
+        currentTaskPage * TASK_PAGE_SIZE,
+      ),
+    [currentTaskPage, visibleTasks],
   );
 
   const openTask = useCallback(async (taskId: string) => {
@@ -220,12 +234,12 @@ export function TaskMonitorShell() {
   }, []);
 
   return (
-    <AppShell activePath="/task-monitor">
-      <section className="mx-auto grid max-w-[1440px] gap-4 px-4 py-4 xl:grid-cols-[270px_minmax(0,1fr)]">
+    <AppShell activePath="/task-monitor" viewportLocked>
+      <section className="mx-auto grid h-full min-h-0 max-w-[1440px] grid-rows-[auto_minmax(0,1fr)] gap-4 px-4 py-4 xl:grid-cols-[270px_minmax(0,1fr)]">
         <div className="xl:col-span-2">
           <KnowledgeExtractionMonitorNav />
         </div>
-        <aside className="rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2.5">
+        <aside className="flex min-h-0 flex-col overflow-hidden rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2.5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs text-[var(--tc-text-muted)]">任务监控</p>
@@ -263,20 +277,24 @@ export function TaskMonitorShell() {
                     ? "border-[var(--tc-border-strong)] bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
                     : "border-[var(--tc-border-subtle)] text-[var(--tc-text-muted)]",
                 )}
-                onClick={() => setStatusFilter(filter.value)}
+                onClick={() => {
+                  setStatusFilter(filter.value);
+                  setTaskPage(1);
+                }}
               >
                 {filter.label}
               </button>
             ))}
           </div>
 
-          <div className="mt-3 grid gap-1 border-t border-[var(--tc-border-subtle)] pt-3">
+          <div className="mt-3 min-h-0 flex-1 overflow-hidden border-t border-[var(--tc-border-subtle)] pt-3">
             {loading ? (
               <p className="py-4 text-sm text-[var(--tc-text-muted)]">正在加载任务</p>
             ) : visibleTasks.length === 0 ? (
               <p className="py-4 text-sm text-[var(--tc-text-muted)]">暂无任务记录</p>
             ) : (
-              visibleTasks.map(task => (
+              <div className="grid gap-1">
+                {pagedTasks.map(task => (
                 <div
                   key={task.run_id}
                   className={cn(
@@ -310,22 +328,32 @@ export function TaskMonitorShell() {
                     <Trash2 className="size-4" />
                   </Button>
                 </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
+          {!loading && visibleTasks.length > 0 ? (
+            <CompactPagination
+              className="mt-2"
+              page={currentTaskPage}
+              pageSize={TASK_PAGE_SIZE}
+              total={visibleTasks.length}
+              onPageChange={setTaskPage}
+            />
+          ) : null}
         </aside>
 
-        <main className="grid gap-4">
+        <main className="flex min-h-0 flex-col gap-4">
           {error ? (
             <div className="rounded-[var(--tc-radius-card)] border border-red-700/70 bg-red-950/20 px-4 py-3 text-sm text-[var(--tc-text-primary)]">
               {error}
             </div>
           ) : null}
 
-          <section className="rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-3">
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-3">
             {currentTask ? (
-              <div className="grid gap-3">
-                <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex min-h-0 flex-1 flex-col gap-3">
+                <div className="shrink-0 flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-xs text-[var(--tc-text-muted)]">
                       {scopeLabel(summaryFromRun(currentTask))}
@@ -383,26 +411,31 @@ function TaskModelSummary({ run }: { run: AgentRun }) {
   );
   const hasUnknownCost = run.llm_calls.some(call => call.cost_kind === "unavailable");
   return (
-    <div className="grid grid-cols-2 border-t border-[var(--tc-border-subtle)] text-xs md:grid-cols-5">
-      {[
-        ["模型", run.model_display_name || run.model_name || "未记录"],
-        ["调用次数", `${run.llm_calls.length} 次`],
-        ["总 Token", tokenTotal ? tokenTotal.toLocaleString("zh-CN") : "未返回"],
-        ["费用", knownCost ? `${knownCost.toFixed(4)} 元` : "未配置价格"],
-        ["费用说明", hasUnknownCost ? "部分调用不可计算" : "已完成统计"],
-      ].map(([label, value]) => (
-        <div key={label} className="border-r border-[var(--tc-border-subtle)] px-3 py-2 last:border-r-0">
-          <p className="text-[var(--tc-text-muted)]">{label}</p>
-          <p className="mt-1 text-[var(--tc-text-primary)]">{value}</p>
-        </div>
-      ))}
-    </div>
+    <details className="shrink-0 border-t border-[var(--tc-border-subtle)] text-xs">
+      <summary className="cursor-pointer px-1 py-2 text-[var(--tc-text-muted)] hover:text-[var(--tc-text-primary)]">
+        模型调用统计
+      </summary>
+      <div className="grid grid-cols-2 border-t border-[var(--tc-border-subtle)] md:grid-cols-5">
+        {[
+          ["模型", run.model_display_name || run.model_name || "未记录"],
+          ["调用次数", `${run.llm_calls.length} 次`],
+          ["总 Token", tokenTotal ? tokenTotal.toLocaleString("zh-CN") : "未返回"],
+          ["费用", knownCost ? `${knownCost.toFixed(4)} 元` : "未配置价格"],
+          ["费用说明", hasUnknownCost ? "部分调用不可计算" : "已完成统计"],
+        ].map(([label, value]) => (
+          <div key={label} className="border-r border-[var(--tc-border-subtle)] px-3 py-2 last:border-r-0">
+            <p className="text-[var(--tc-text-muted)]">{label}</p>
+            <p className="mt-1 text-[var(--tc-text-primary)]">{value}</p>
+          </div>
+        ))}
+      </div>
+    </details>
   );
 }
 
 function taskTitle(task: AgentRunSummary): string {
   if (task.scope_type === "chapter_batch") {
-    return `批量知识沉淀 · ${task.total_chapter_count || task.chapter_ids.length} 章`;
+    return formatBatchRunTitle(task);
   }
   return task.chapter_title || task.chapter_id || "未命名任务";
 }

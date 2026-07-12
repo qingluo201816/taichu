@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-import shutil
 from threading import Lock
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
@@ -18,35 +17,10 @@ _MANUSCRIPT_PATH_SEGMENT = re.compile(
     r"^[\w\u3400-\u4dbf\u4e00-\u9fff][\w\u3400-\u4dbf\u4e00-\u9fff.-]*$",
     re.UNICODE,
 )
-_KNOWLEDGE_ID = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
-
-_STRUCTURED_KNOWLEDGE_TYPES = (
-    "character",
-    "realm",
-    "technique",
-    "location",
-    "faction",
-    "item",
-    "rule",
-    "event",
-)
-
-_KNOWLEDGE_CATEGORIES = _STRUCTURED_KNOWLEDGE_TYPES
-
 _SOURCE_DIRS = (
     "manuscripts/chapters",
     "manuscripts/deleted_chapters",
-    *(f"knowledge/{knowledge_type}" for knowledge_type in _STRUCTURED_KNOWLEDGE_TYPES),
     "workspace",
-)
-
-_GENERATED_DIRS = (
-    "sqlite",
-    "search_index",
-    "vector_store",
-    "embedding_cache",
-    "exports",
-    "temp",
 )
 
 _WORKSPACE_FILES = (
@@ -68,12 +42,10 @@ class ProjectAssetStorageBackend:
     def __init__(self, assets_root: Path) -> None:
         self._assets_root = assets_root
         self._source_root = assets_root / "source"
-        self._generated_root = assets_root / "generated"
         self._workspace_locks = {filename: Lock() for filename in _WORKSPACE_FILES}
-        self._knowledge_lock = Lock()
 
     async def ensure_skeleton(self) -> None:
-        """Create source/generated directories and empty main records."""
+        """Create source directories and empty main records."""
         await asyncio.to_thread(self._ensure_skeleton_sync)
 
     async def read_metadata(self) -> StorageData:
@@ -165,78 +137,6 @@ class ProjectAssetStorageBackend:
             records,
         )
 
-    async def write_knowledge_record(
-        self,
-        category: str,
-        knowledge_id: str,
-        data: StorageData,
-    ) -> None:
-        """Write one confirmed knowledge JSON source record atomically."""
-        await asyncio.to_thread(
-            self._write_knowledge_record_sync,
-            category,
-            knowledge_id,
-            data,
-        )
-
-    async def read_knowledge_record(
-        self,
-        category: str,
-        knowledge_id: str,
-    ) -> StorageData | None:
-        """Read one confirmed knowledge JSON source record."""
-        return await asyncio.to_thread(
-            self._read_knowledge_record_sync,
-            category,
-            knowledge_id,
-        )
-
-    async def list_knowledge_records(
-        self,
-        category: str | None = None,
-    ) -> list[StorageData]:
-        """List confirmed knowledge JSON source records."""
-        return await asyncio.to_thread(
-            self._list_knowledge_records_sync,
-            category,
-        )
-
-    async def write_structured_knowledge_record(
-        self,
-        knowledge_type: str,
-        knowledge_id: str,
-        data: StorageData,
-    ) -> None:
-        """Write one MVP structured knowledge card JSON atomically."""
-        await asyncio.to_thread(
-            self._write_structured_knowledge_record_sync,
-            knowledge_type,
-            knowledge_id,
-            data,
-        )
-
-    async def read_structured_knowledge_record(
-        self,
-        knowledge_type: str,
-        knowledge_id: str,
-    ) -> StorageData | None:
-        """Read one MVP structured knowledge card JSON."""
-        return await asyncio.to_thread(
-            self._read_structured_knowledge_record_sync,
-            knowledge_type,
-            knowledge_id,
-        )
-
-    async def list_structured_knowledge_records(
-        self,
-        knowledge_type: str | None = None,
-    ) -> list[StorageData]:
-        """List MVP structured knowledge card JSON records."""
-        return await asyncio.to_thread(
-            self._list_structured_knowledge_records_sync,
-            knowledge_type,
-        )
-
     async def read_preferences(self) -> StorageData:
         """Read workspace/settings_preferences.json."""
         return await asyncio.to_thread(self._read_preferences_sync)
@@ -245,14 +145,9 @@ class ProjectAssetStorageBackend:
         """Write workspace/settings_preferences.json atomically."""
         await asyncio.to_thread(self._write_preferences_sync, data)
 
-    async def clear_generated(self) -> None:
-        """Delete generated contents and recreate empty generated dirs."""
-        await asyncio.to_thread(self._clear_generated_sync)
-
     def _ensure_skeleton_sync(self) -> None:
         for directory in _SOURCE_DIRS:
             (self._source_root / directory).mkdir(parents=True, exist_ok=True)
-        self._ensure_generated_dirs()
 
         metadata_path = self._source_root / "metadata.yaml"
         if not metadata_path.exists():
@@ -413,107 +308,6 @@ class ProjectAssetStorageBackend:
         with self._workspace_locks[filename]:
             self._replace_workspace_text(path, text)
 
-    def _write_knowledge_record_sync(
-        self,
-        category: str,
-        knowledge_id: str,
-        data: StorageData,
-    ) -> None:
-        self._ensure_skeleton_sync()
-        path = self._resolve_safe_knowledge_json(category, knowledge_id)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
-        with self._knowledge_lock:
-            self._replace_file_text(path, text)
-
-    def _read_knowledge_record_sync(
-        self,
-        category: str,
-        knowledge_id: str,
-    ) -> StorageData | None:
-        self._ensure_skeleton_sync()
-        path = self._resolve_safe_knowledge_json(category, knowledge_id)
-        if not path.exists():
-            return None
-        data = json.loads(path.read_text(encoding="utf-8"))
-        if not isinstance(data, dict):
-            raise ValueError("Knowledge JSON record must be an object")
-        return data
-
-    def _list_knowledge_records_sync(
-        self,
-        category: str | None = None,
-    ) -> list[StorageData]:
-        self._ensure_skeleton_sync()
-        categories = (category,) if category is not None else _KNOWLEDGE_CATEGORIES
-        records: list[StorageData] = []
-        for current_category in categories:
-            category_root = self._resolve_safe_knowledge_category(current_category)
-            for path in sorted(category_root.glob("*.json")):
-                data = json.loads(path.read_text(encoding="utf-8"))
-                if not isinstance(data, dict):
-                    raise ValueError(
-                        f"Knowledge JSON record must be an object: {path.name}"
-                    )
-                records.append(data)
-        return records
-
-    def _write_structured_knowledge_record_sync(
-        self,
-        knowledge_type: str,
-        knowledge_id: str,
-        data: StorageData,
-    ) -> None:
-        self._ensure_skeleton_sync()
-        path = self._resolve_safe_structured_knowledge_json(
-            knowledge_type,
-            knowledge_id,
-        )
-        path.parent.mkdir(parents=True, exist_ok=True)
-        text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
-        with self._knowledge_lock:
-            self._replace_file_text(path, text)
-
-    def _read_structured_knowledge_record_sync(
-        self,
-        knowledge_type: str,
-        knowledge_id: str,
-    ) -> StorageData | None:
-        self._ensure_skeleton_sync()
-        path = self._resolve_safe_structured_knowledge_json(
-            knowledge_type,
-            knowledge_id,
-        )
-        if not path.exists():
-            return None
-        data = json.loads(path.read_text(encoding="utf-8"))
-        if not isinstance(data, dict):
-            raise ValueError("Structured knowledge JSON record must be an object")
-        return data
-
-    def _list_structured_knowledge_records_sync(
-        self,
-        knowledge_type: str | None = None,
-    ) -> list[StorageData]:
-        self._ensure_skeleton_sync()
-        knowledge_types = (
-            (knowledge_type,)
-            if knowledge_type is not None
-            else _STRUCTURED_KNOWLEDGE_TYPES
-        )
-        records: list[StorageData] = []
-        for current_type in knowledge_types:
-            type_root = self._resolve_safe_structured_knowledge_type(current_type)
-            for path in sorted(type_root.glob("*.json")):
-                data = json.loads(path.read_text(encoding="utf-8"))
-                if not isinstance(data, dict):
-                    raise ValueError(
-                        f"Structured knowledge JSON record must be an object: "
-                        f"{path.name}"
-                    )
-                records.append(data)
-        return records
-
     def _read_preferences_sync(self) -> StorageData:
         self._ensure_skeleton_sync()
         path = self._preferences_path
@@ -526,19 +320,6 @@ class ProjectAssetStorageBackend:
         self._ensure_skeleton_sync()
         text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
         self._replace_file_text(self._preferences_path, text)
-
-    def _clear_generated_sync(self) -> None:
-        if self._generated_root.exists():
-            shutil.rmtree(self._generated_root)
-        self._ensure_generated_dirs()
-
-    def _ensure_generated_dirs(self) -> None:
-        self._generated_root.mkdir(parents=True, exist_ok=True)
-        for directory in _GENERATED_DIRS:
-            (self._generated_root / directory).mkdir(
-                parents=True,
-                exist_ok=True,
-            )
 
     def _resolve_safe_chapter_path(self, relative_path: str) -> Path:
         if "\\" in relative_path:
@@ -624,36 +405,6 @@ class ProjectAssetStorageBackend:
         if not filename.endswith(".jsonl"):
             raise ValueError("workspace record file must be JSONL")
         return self._source_root / "workspace" / filename
-
-    def _resolve_safe_knowledge_json(
-        self,
-        category: str,
-        knowledge_id: str,
-    ) -> Path:
-        category_root = self._resolve_safe_knowledge_category(category)
-        if not _KNOWLEDGE_ID.fullmatch(knowledge_id):
-            raise ValueError("knowledge id contains unsafe characters")
-        return category_root / f"{knowledge_id}.json"
-
-    def _resolve_safe_knowledge_category(self, category: str) -> Path:
-        if category not in _KNOWLEDGE_CATEGORIES:
-            raise ValueError("knowledge category is not part of the contract")
-        return self._source_root / "knowledge" / category
-
-    def _resolve_safe_structured_knowledge_json(
-        self,
-        knowledge_type: str,
-        knowledge_id: str,
-    ) -> Path:
-        type_root = self._resolve_safe_structured_knowledge_type(knowledge_type)
-        if not _KNOWLEDGE_ID.fullmatch(knowledge_id):
-            raise ValueError("knowledge id contains unsafe characters")
-        return type_root / f"{knowledge_id}.json"
-
-    def _resolve_safe_structured_knowledge_type(self, knowledge_type: str) -> Path:
-        if knowledge_type not in _STRUCTURED_KNOWLEDGE_TYPES:
-            raise ValueError("knowledge type is not part of the MVP contract")
-        return self._source_root / "knowledge" / knowledge_type
 
     @staticmethod
     def _replace_workspace_text(path: Path, text: str) -> None:

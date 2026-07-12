@@ -28,7 +28,7 @@ const fields: KnowledgeFieldSchema[] = [
       { value: "core", label: "核心" },
     ],
   },
-  field("status", "状态", "enum", true),
+  field("lifecycle", "状态", "enum", true),
   field("source_origin", "来源方式", "enum", true),
   field("source_note", "来源说明", "long_text", true),
   field("level_order", "境界排序值", "number"),
@@ -50,7 +50,7 @@ const form = formStateFromKnowledgeValues(schema, {
   aliases: ["炼气初阶", "第一层"],
   summary: "修行的第一个层次。",
   importance: "normal",
-  status: "active",
+  lifecycle: "confirmed",
   source_origin: "agent_extract",
   source_note: "来自第一章。",
   level_order: 1,
@@ -69,7 +69,7 @@ const payload = knowledgePayloadFromForm(
 );
 assert.deepEqual(payload.aliases, ["炼气初阶", "第一层"]);
 assert.equal(payload.level_order, 1);
-assert.equal(payload.status, undefined);
+assert.equal(payload.lifecycle, undefined);
 assert.equal(payload.source_origin, undefined);
 assert.equal(payload.entity_group_id, undefined);
 
@@ -94,7 +94,16 @@ const errors = validateKnowledgeForm(
 );
 assert.equal(errors.name, "请填写名称");
 assert.equal(errors.source_note, "请填写来源说明");
-assert.equal(errors.status, undefined);
+assert.equal(errors.lifecycle, undefined);
+
+const draftErrors = validateKnowledgeForm(
+  schema,
+  { ...form, name: "", source_note: "" },
+  CANDIDATE_LOCKED_FIELD_KEYS,
+  false,
+);
+assert.equal(draftErrors.name, undefined);
+assert.equal(draftErrors.source_note, undefined);
 
 assert.equal(
   humanReadableListItem({ title: "血脉觉醒", body: "力量增强" }),
@@ -114,13 +123,13 @@ function field(
   fieldKey: string,
   label: string,
   fieldType: KnowledgeFieldSchema["field_type"],
-  requiredWhenActive = false,
+  requiredWhenConfirmed = false,
 ): KnowledgeFieldSchema {
   return {
     field_key: fieldKey,
     label,
     field_type: fieldType,
-    required_when_active: requiredWhenActive,
+    required_when_confirmed: requiredWhenConfirmed,
     options: [],
     placeholder: "",
     display_group: "基础信息",

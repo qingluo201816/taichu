@@ -4,8 +4,6 @@ import type {
   EligibleEvaluationRun,
   EligibleEvaluationRunListResponse,
   EvaluationDatasetListResponse,
-  EvaluationJudgeCall,
-  EvaluationJudgeCallResponse,
   KnowledgeEvaluation,
   KnowledgeEvaluationComparison,
   KnowledgeEvaluationComparisonListResponse,
@@ -130,18 +128,6 @@ export async function listKnowledgeEvaluationComparisons(
   };
 }
 
-export async function getKnowledgeEvaluationJudgeCall(
-  evaluationId: string,
-  callId: string,
-): Promise<EvaluationJudgeCallResponse> {
-  const payload = await apiRequest<unknown>(
-    `${PREFIX}/evaluations/${encodeURIComponent(evaluationId)}/judge-calls/${encodeURIComponent(callId)}`,
-  );
-  return {
-    judge_call: nestedObject<EvaluationJudgeCall>(payload, "judge_call"),
-  };
-}
-
 export async function retryKnowledgeEvaluation(
   evaluationId: string,
 ): Promise<KnowledgeEvaluation> {
@@ -220,6 +206,10 @@ function evaluationFrom(payload: unknown): KnowledgeEvaluation {
       typeof value.metric_profile_id === "string"
         ? value.metric_profile_id
         : "knowledge_extraction_balanced",
+    subject_title:
+      typeof value.subject_title === "string" && value.subject_title
+        ? value.subject_title
+        : "未命名章节",
     judge: {
       ...(judge as KnowledgeEvaluation["judge"]),
       model_identity:
@@ -282,12 +272,13 @@ function normalizeComparison(
     stringValue(value.actual_candidate_id);
   const comparisonId =
     stringValue(value.comparison_id) ||
-    `${runId}:${expectedId || "none"}:${actualId || "none"}:${index}`;
+    `差异-${index + 1}`;
   return {
     ...(value as Partial<KnowledgeEvaluationComparison>),
     comparison_id: comparisonId,
     run_id: runId,
     case_id: stringValue(value.case_id) || null,
+    task_title: stringValue(value.task_title) || "未命名章节",
     expected_card_id: expectedId || null,
     actual_review_item_id: actualId || null,
     knowledge_type:
@@ -298,8 +289,6 @@ function normalizeComparison(
       stringValue(value.display_title) ||
       stringValue(expectedCard?.name) ||
       stringValue(actualCard?.name) ||
-      expectedId ||
-      actualId ||
       "未命名知识卡",
     match_basis:
       stringValue(value.match_basis) || stringValue(value.match_kind) || null,

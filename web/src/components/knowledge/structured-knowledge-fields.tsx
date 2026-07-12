@@ -22,6 +22,7 @@ type CommonProps = {
   schema: KnowledgeTypeSchema;
   hiddenFieldKeys?: ReadonlySet<string>;
   referenceOptions?: KnowledgeReferenceOptions;
+  chapterCount?: number;
 };
 
 export function StructuredKnowledgeView({
@@ -29,6 +30,7 @@ export function StructuredKnowledgeView({
   values,
   hiddenFieldKeys = new Set(),
   referenceOptions = {},
+  chapterCount = 0,
 }: CommonProps & { values: Record<string, unknown> }) {
   const groups = groupKnowledgeFields(schema, hiddenFieldKeys);
 
@@ -41,7 +43,7 @@ export function StructuredKnowledgeView({
       {groups.map(group => {
         const visibleFields = group.fields.filter(field => {
           const value = values[field.field_key];
-          return field.required_when_active || !isEmptyKnowledgeValue(value);
+          return field.required_when_confirmed || !isEmptyKnowledgeValue(value);
         });
         if (!visibleFields.length) {
           return null;
@@ -83,7 +85,9 @@ export function StructuredKnowledgeView({
                         ))}
                       </span>
                     ) : (
-                      displayKnowledgeFieldValue(field, value, referenceOptions)
+                      field.field_key === "appearance_chapter_count"
+                        ? appearanceImportanceLabel(value, chapterCount)
+                        : displayKnowledgeFieldValue(field, value, referenceOptions)
                     )}
                   </dd>
                 </div>
@@ -96,6 +100,16 @@ export function StructuredKnowledgeView({
       </div>
     </div>
   );
+}
+
+function appearanceImportanceLabel(value: unknown, chapterCount: number): string {
+  const count = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(count) || count < 0) return "暂未统计";
+  if (chapterCount <= 0) return `已出现 ${count} 章`;
+  const ratio = count / chapterCount;
+  const label =
+    ratio >= 0.5 ? "核心" : ratio >= 0.2 ? "重要" : ratio >= 0.05 ? "普通" : "次要";
+  return `${label}（已出现 ${count}/${chapterCount} 章）`;
 }
 
 export function StructuredKnowledgeForm({
@@ -118,27 +132,33 @@ export function StructuredKnowledgeForm({
       className="max-h-[640px] max-w-[680px] overflow-y-auto rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-3"
     >
       <div className="grid gap-3">
-      {groups.map(group => (
-        <section key={group.label} className="grid gap-2">
-          <h4 className="text-xs font-medium text-[var(--tc-text-muted)]">
-            {group.label}
-          </h4>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {group.fields.map(field => (
-              <KnowledgeFieldControl
-                key={field.field_key}
-                field={field}
-                value={form[field.field_key] ?? ""}
-                options={referenceOptions[field.field_key] ?? []}
-                error={errors[field.field_key]}
-                onChange={value =>
-                  onChange({ ...form, [field.field_key]: value })
-                }
-              />
-            ))}
-          </div>
-        </section>
-      ))}
+      {groups.map(group => {
+        const editableFields = group.fields.filter(
+          field => field.author_editable !== false,
+        );
+        if (!editableFields.length) return null;
+        return (
+          <section key={group.label} className="grid gap-2">
+            <h4 className="text-xs font-medium text-[var(--tc-text-muted)]">
+              {group.label}
+            </h4>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {editableFields.map(field => (
+                <KnowledgeFieldControl
+                  key={field.field_key}
+                  field={field}
+                  value={form[field.field_key] ?? ""}
+                  options={referenceOptions[field.field_key] ?? []}
+                  error={errors[field.field_key]}
+                  onChange={value =>
+                    onChange({ ...form, [field.field_key]: value })
+                  }
+                />
+              ))}
+            </div>
+          </section>
+        );
+      })}
       </div>
     </div>
   );
@@ -175,7 +195,7 @@ function KnowledgeFieldControl({
       )}
     >
       <span className="text-xs">{field.label}</span>
-      {field.required_when_active ? (
+      {field.required_when_confirmed ? (
         <span className="ml-1 text-xs text-[var(--tc-text-muted)]">必填</span>
       ) : null}
       {field.field_type === "enum" ? (
@@ -184,7 +204,7 @@ function KnowledgeFieldControl({
           onChange={event => onChange(event.target.value)}
           className={cn(controlClassName, "h-8")}
         >
-          {!field.required_when_active ? <option value="">未选择</option> : null}
+          {!field.required_when_confirmed ? <option value="">未选择</option> : null}
           {field.options.map(option => (
             <option key={option.value} value={option.value}>
               {option.label}

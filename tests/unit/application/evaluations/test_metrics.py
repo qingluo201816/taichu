@@ -242,6 +242,31 @@ def test_no_comparable_structured_fields_returns_null_not_zero() -> None:
     assert metrics.weighted_total == 0
 
 
+def test_occurrence_count_and_legacy_importance_do_not_affect_evaluation() -> None:
+    actual = _actual(
+        "a",
+        "秦浩轩",
+        card_fields={"importance": "minor", "appearance_chapter_count": 1},
+    )
+    expected = _expected(
+        "e",
+        "秦浩轩",
+        card_fields={"importance": "core", "appearance_chapter_count": 100},
+        exact_fields=["importance", "appearance_chapter_count"],
+    )
+
+    metrics = compare_structured_fields(
+        match_candidates([actual], [expected]),
+        [actual],
+        [expected],
+        EvaluationRules(),
+    )
+
+    assert metrics.score is None
+    assert metrics.weighted_total == 0
+    assert metrics.diffs == []
+
+
 def test_exact_boolean_field_does_not_equal_numeric_one() -> None:
     actual = _actual("a", "规则", card_fields={"enabled": 1})
     expected = _expected(

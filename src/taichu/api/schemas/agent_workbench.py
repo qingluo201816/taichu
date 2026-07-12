@@ -5,7 +5,7 @@ from typing import Any
 from pydantic import AliasChoices, BaseModel, Field
 
 from taichu.application.agents.models.agent_run import AgentReviewItem, AgentRun
-from taichu.application.contracts.knowledge_repository import AuthorMergeMode
+from taichu.application.services.knowledge_service import AuthorMergeMode
 
 
 class CreateKnowledgeExtractionRunRequest(BaseModel):
@@ -98,3 +98,10 @@ class KnowledgeExtractionCandidateActionResponse(BaseModel):
     """Response after changing one candidate status."""
 
     run: AgentRun
+
+
+class KnowledgeSedimentationProgressResponse(BaseModel):
+    """Current continuous knowledge-sedimentation frontier."""
+
+    last_accepted_chapter_id: str | None = None
+    updated_at: str | None = None

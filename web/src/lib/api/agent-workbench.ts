@@ -9,6 +9,7 @@ import type {
   KnowledgeExtractionRunDetailResponse,
   KnowledgeExtractionRunListResponse,
   KnowledgeExtractionStreamEvent,
+  KnowledgeSedimentationProgress,
 } from "@/lib/types/agent-workbench";
 
 const PREFIX = "/api/agent-workbench/knowledge-extraction";
@@ -122,6 +123,19 @@ export async function startBatchKnowledgeExtractionRun(
       method: "POST",
       body: JSON.stringify(request),
     },
+  );
+}
+
+export async function getKnowledgeSedimentationProgress(): Promise<KnowledgeSedimentationProgress> {
+  return apiRequest<KnowledgeSedimentationProgress>(`${PREFIX}/progress`);
+}
+
+export async function acceptKnowledgeExtractionRun(
+  runId: string,
+): Promise<KnowledgeSedimentationProgress> {
+  return apiRequest<KnowledgeSedimentationProgress>(
+    `${PREFIX}/runs/${encodeURIComponent(runId)}/accept`,
+    { method: "POST" },
   );
 }
 

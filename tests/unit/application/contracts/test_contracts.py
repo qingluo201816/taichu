@@ -6,7 +6,6 @@ from pydantic import ValidationError
 
 from taichu.application.contracts import (
     LLMCost,
-    IndexerContract,
     LLMGatewayContract,
     LLMModelIdentity,
     LLMModelProfile,
@@ -14,42 +13,9 @@ from taichu.application.contracts import (
     LLMResponse,
     LLMStreamEvent,
     LLMUsage,
-    RetrievalContract,
-    RetrievalQuery,
     StorageContract,
 )
 from taichu.application.contracts.agent_run_repository import AgentRunRepository
-from taichu.domain.models import (
-    RetrievalHit,
-    RetrievalReason,
-    RetrievalSourceType,
-    SourceAnchorType,
-    SourceRef,
-    SourceRefSourceType,
-)
-
-
-def create_hit() -> RetrievalHit:
-    """Create a retrieval hit with required SourceRef evidence."""
-    ref = SourceRef(
-        source_type=SourceRefSourceType.CHAPTER,
-        source_id="chapter_001",
-        path="project_assets/source/manuscripts/chapters/chapter_001.md",
-        anchor_type=SourceAnchorType.PARAGRAPH,
-        paragraph_start=0,
-        excerpt="正文证据",
-        excerpt_hash="hash_excerpt",
-        source_hash="hash_source",
-        created_at="2026-06-27T00:00:00Z",
-    )
-    return RetrievalHit(
-        source_type=RetrievalSourceType.CHAPTER,
-        source_id="chapter_001",
-        excerpt="正文证据",
-        score=1.0,
-        reason=RetrievalReason.EXACT,
-        source_ref=ref,
-    )
 
 
 class DummyStorage:
@@ -75,13 +41,6 @@ class DummyStorage:
 
     async def delete(self, collection: str, key: str) -> bool:
         return True
-
-
-class DummyRetrieval:
-    """Retrieval contract stub."""
-
-    async def search(self, query: RetrievalQuery) -> list[RetrievalHit]:
-        return [create_hit()]
 
 
 class DummyLLM:
@@ -128,13 +87,6 @@ class DummyLLM:
         ]
 
 
-class DummyIndexer:
-    """Indexer contract stub."""
-
-    async def rebuild(self) -> None:
-        return None
-
-
 class DummyAgentRunRepository:
     """Agent run repository contract stub."""
 
@@ -165,21 +117,12 @@ class ApplicationContractTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_protocols_accept_minimal_stubs(self) -> None:
         storage = DummyStorage()
-        retrieval = DummyRetrieval()
         llm = DummyLLM()
-        indexer = DummyIndexer()
         run_repository = DummyAgentRunRepository()
 
         self.assertIsInstance(storage, StorageContract)
-        self.assertIsInstance(retrieval, RetrievalContract)
         self.assertIsInstance(llm, LLMGatewayContract)
-        self.assertIsInstance(indexer, IndexerContract)
         self.assertIsInstance(run_repository, AgentRunRepository)
-        self.assertEqual(
-            (await retrieval.search(RetrievalQuery(text="主角")))[0]
-            .source_ref.source_id,
-            "chapter_001",
-        )
 
     async def test_model_identity_requires_explicit_known_or_unknown_state(
         self,

@@ -22,11 +22,11 @@ import { AppShell } from "@/components/app-shell";
 import { KnowledgeExtractionMonitorNav } from "@/components/agent-task-monitor/knowledge-extraction-monitor-nav";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CompactPagination } from "@/components/ui/compact-pagination";
 import {
   confirmKnowledgeEvaluation,
   createKnowledgeEvaluation,
   getKnowledgeEvaluation,
-  getKnowledgeEvaluationJudgeCall,
   listEligibleEvaluationRuns,
   listEvaluationDatasets,
   listKnowledgeEvaluationComparisons,
@@ -39,6 +39,7 @@ import {
   canRetryEvaluation,
   comparisonMatchesIssue,
   evaluationErrorMessage,
+  evaluationIndependenceLabel,
   evaluationModelLabel,
   evaluationProgressText,
   evaluationStatusLabels,
@@ -48,11 +49,11 @@ import {
   issueTypeLabels,
   knowledgeTypeLabels,
   metricValue,
+  modelIdentityLabel,
   noticeMessage,
   previewIndependenceLabel,
   qualityStateLabel,
   selectableEvaluationRun,
-  shortChecksum,
   shouldPollEvaluation,
   toggleEvaluationRunSelection,
   visibleEvaluationRuns,
@@ -62,7 +63,6 @@ import type {
   EligibleEvaluationRun,
   EvaluationDatasetSummary,
   EvaluationIssueType,
-  EvaluationJudgeCall,
   EvaluationQualityState,
   KnowledgeEvaluation,
   KnowledgeEvaluationComparison,
@@ -71,6 +71,10 @@ import type {
 import { cn } from "@/lib/utils";
 
 const METRIC_PROFILE_ID = "knowledge_extraction_balanced";
+const EVALUATION_HISTORY_PAGE_SIZE = 6;
+const COMPARISON_PAGE_SIZE = 12;
+
+type EvaluationSection = "runs" | "report" | "comparisons";
 
 const issueFilters: Array<{
   value: EvaluationIssueType | "all";
@@ -86,6 +90,9 @@ const issueFilters: Array<{
 ];
 
 export function KnowledgeEvaluationShell() {
+  const [activeSection, setActiveSection] =
+    useState<EvaluationSection>("runs");
+  const [historyPage, setHistoryPage] = useState(1);
   const [datasets, setDatasets] = useState<EvaluationDatasetSummary[]>([]);
   const [selectedDatasetId, setSelectedDatasetId] = useState("");
   const [eligibleRuns, setEligibleRuns] = useState<EligibleEvaluationRun[]>([]);
@@ -104,9 +111,6 @@ export function KnowledgeEvaluationShell() {
   const [issueFilter, setIssueFilter] = useState<EvaluationIssueType | "all">(
     "all",
   );
-  const [judgeCalls, setJudgeCalls] = useState<
-    Record<string, EvaluationJudgeCall>
-  >({});
 
   const [initialLoading, setInitialLoading] = useState(true);
   const [runsLoading, setRunsLoading] = useState(false);
@@ -115,7 +119,6 @@ export function KnowledgeEvaluationShell() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [comparisonLoading, setComparisonLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [judgeCallLoadingId, setJudgeCallLoadingId] = useState("");
 
   const [loadError, setLoadError] = useState("");
   const [runsError, setRunsError] = useState("");
@@ -125,17 +128,15 @@ export function KnowledgeEvaluationShell() {
   const [pollError, setPollError] = useState("");
 
   const loadComparisons = useCallback(
-    async (evaluationId: string, page = 1, append = false) => {
+    async (evaluationId: string, page = 1) => {
       setComparisonLoading(true);
       setComparisonError("");
       try {
         const response = await listKnowledgeEvaluationComparisons(evaluationId, {
           page,
-          pageSize: 50,
+          pageSize: COMPARISON_PAGE_SIZE,
         });
-        setComparisons(current =>
-          append ? [...current, ...response.comparisons] : response.comparisons,
-        );
+        setComparisons(response.comparisons);
         setComparisonTotal(response.total);
         setComparisonPage(response.page);
       } catch (caught) {
@@ -166,6 +167,7 @@ export function KnowledgeEvaluationShell() {
           : datasetResponse.datasets[0]?.dataset_id ?? "",
       );
       setEvaluations(historyResponse.evaluations);
+      setHistoryPage(1);
       const latest = historyResponse.evaluations[0];
       if (latest) {
         const detail = await getKnowledgeEvaluation(latest.evaluation_id);
@@ -285,6 +287,15 @@ export function KnowledgeEvaluationShell() {
   const selectedDataset = datasets.find(
     item => item.dataset_id === selectedDatasetId,
   );
+  const historyTotalPages = Math.max(
+    1,
+    Math.ceil(evaluations.length / EVALUATION_HISTORY_PAGE_SIZE),
+  );
+  const visibleHistoryPage = Math.min(historyPage, historyTotalPages);
+  const visibleEvaluations = evaluations.slice(
+    (visibleHistoryPage - 1) * EVALUATION_HISTORY_PAGE_SIZE,
+    visibleHistoryPage * EVALUATION_HISTORY_PAGE_SIZE,
+  );
 
   function resetPreview() {
     setPreview(null);
@@ -307,6 +318,7 @@ export function KnowledgeEvaluationShell() {
     setActionError("");
     try {
       setPreview(await previewKnowledgeEvaluation(requestPayload()));
+      setActiveSection("report");
     } catch (caught) {
       setPreview(null);
       setPreviewError(
@@ -324,6 +336,8 @@ export function KnowledgeEvaluationShell() {
     try {
       const evaluation = await createKnowledgeEvaluation(requestPayload());
       setCurrentEvaluation(evaluation);
+      setActiveSection("report");
+      setHistoryPage(1);
       setEvaluations(current => [
         evaluation,
         ...current.filter(
@@ -352,6 +366,7 @@ export function KnowledgeEvaluationShell() {
     try {
       const response = await getKnowledgeEvaluation(evaluationId);
       setCurrentEvaluation(response.evaluation);
+      setActiveSection("report");
       if (isTerminalEvaluation(response.evaluation.status)) {
         await loadComparisons(evaluationId);
       }
@@ -373,6 +388,8 @@ export function KnowledgeEvaluationShell() {
         currentEvaluation.evaluation_id,
       );
       setCurrentEvaluation(evaluation);
+      setActiveSection("report");
+      setHistoryPage(1);
       setEvaluations(current => [evaluation, ...current]);
       setComparisons([]);
       setComparisonTotal(0);
@@ -436,31 +453,9 @@ export function KnowledgeEvaluationShell() {
     }
   }
 
-  async function handleLoadJudgeCall(callId: string) {
-    if (!currentEvaluation || judgeCalls[callId]) return;
-    setJudgeCallLoadingId(callId);
-    setActionError("");
-    try {
-      const response = await getKnowledgeEvaluationJudgeCall(
-        currentEvaluation.evaluation_id,
-        callId,
-      );
-      setJudgeCalls(current => ({
-        ...current,
-        [callId]: response.judge_call,
-      }));
-    } catch (caught) {
-      setActionError(
-        caught instanceof Error ? caught.message : "裁判审计记录加载失败",
-      );
-    } finally {
-      setJudgeCallLoadingId("");
-    }
-  }
-
   if (initialLoading) {
     return (
-      <AppShell activePath="/task-monitor">
+      <AppShell activePath="/task-monitor" viewportLocked>
         <div className="mx-auto flex min-h-[52vh] max-w-[1200px] items-center justify-center px-5 text-sm text-[var(--tc-text-muted)]">
           <LoaderCircle className="mr-2 size-4 animate-spin motion-reduce:animate-none" />
           正在加载评测集与历史任务
@@ -471,7 +466,7 @@ export function KnowledgeEvaluationShell() {
 
   if (loadError) {
     return (
-      <AppShell activePath="/task-monitor">
+      <AppShell activePath="/task-monitor" viewportLocked>
         <div className="mx-auto max-w-[760px] px-5 py-8">
           <StatePanel
             icon={AlertCircle}
@@ -486,9 +481,9 @@ export function KnowledgeEvaluationShell() {
   }
 
   return (
-    <AppShell activePath="/task-monitor">
-      <section className="mx-auto grid max-w-[1440px] gap-4 px-4 py-4 xl:grid-cols-[300px_minmax(0,1fr)]">
-        <div className="flex flex-wrap items-center justify-between gap-3 xl:col-span-2">
+    <AppShell activePath="/task-monitor" viewportLocked>
+      <section className="mx-auto grid h-full min-h-0 w-full max-w-[1440px] grid-rows-[auto_minmax(0,1fr)] gap-4 overflow-hidden px-4 py-4 xl:grid-cols-[270px_minmax(0,1fr)_148px]">
+        <div className="flex flex-wrap items-center justify-between gap-3 xl:col-span-3">
           <div className="flex flex-wrap items-center gap-3">
             <KnowledgeExtractionMonitorNav />
             <Link
@@ -513,12 +508,82 @@ export function KnowledgeEvaluationShell() {
           </Button>
         </div>
 
-        <aside className="self-start rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-3 xl:sticky xl:top-24">
+        <aside className="flex min-h-0 flex-col rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-3 xl:col-start-1 xl:row-start-2">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs text-[var(--tc-text-muted)]">效果评估</p>
               <h1 className="text-base font-semibold text-[var(--tc-text-primary)]">
-                选择历史任务
+                最近运行
+              </h1>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label="刷新评测记录"
+              onClick={() => void loadWorkspace()}
+            >
+              <RefreshCw className="size-4" />
+            </Button>
+          </div>
+
+          {evaluations.length === 0 ? (
+            <p className="mt-6 text-sm text-[var(--tc-text-muted)]">
+              暂无评测记录
+            </p>
+          ) : (
+            <>
+              <div className="mt-3 min-h-0 flex-1 overflow-y-auto border-y border-[var(--tc-border-subtle)] py-1">
+                {visibleEvaluations.map(evaluation => {
+                  const selected =
+                    evaluation.evaluation_id === currentEvaluation?.evaluation_id;
+                  return (
+                    <button
+                      key={evaluation.evaluation_id}
+                      type="button"
+                      onClick={() => void handleOpenEvaluation(evaluation.evaluation_id)}
+                      className={cn(
+                        "block w-full rounded-[var(--tc-radius-control)] px-2 py-2 text-left transition-colors",
+                        selected
+                          ? "bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
+                          : "text-[var(--tc-text-secondary)] hover:bg-[var(--tc-surface-muted)] hover:text-[var(--tc-text-primary)]",
+                      )}
+                    >
+                      <span className="block truncate text-sm font-medium">
+                        {evaluation.subject_title || "未命名章节"}
+                      </span>
+                      <span className="mt-1 flex items-center justify-between gap-2 text-xs text-[var(--tc-text-muted)]">
+                        <span className="truncate">{formatDateTime(evaluation.created_at)}</span>
+                        <span className="shrink-0">
+                          {evaluationStatusLabels[evaluation.status]}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <CompactPagination
+                page={visibleHistoryPage}
+                pageSize={EVALUATION_HISTORY_PAGE_SIZE}
+                total={evaluations.length}
+                onPageChange={setHistoryPage}
+                className="mt-2"
+              />
+            </>
+          )}
+        </aside>
+
+        <aside
+          className={cn(
+            "min-h-0 rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-3 xl:col-start-2 xl:row-start-2 xl:overflow-y-auto",
+            activeSection === "runs" ? "" : "hidden",
+          )}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs text-[var(--tc-text-muted)]">效果评估</p>
+              <h1 className="text-base font-semibold text-[var(--tc-text-primary)]">
+                待评估任务
               </h1>
             </div>
             <Button
@@ -540,7 +605,7 @@ export function KnowledgeEvaluationShell() {
               <details className="mt-2 text-xs text-[var(--tc-text-muted)]">
                 <summary className="cursor-pointer">查看校验说明</summary>
                 <p className="mt-2 leading-5">
-                  评测集需通过结构、来源证据与校验摘要检查，并由维护者确认为可用状态。
+                  评测集需通过结构、来源证据与一致性检查，并由维护者确认为可用状态。
                 </p>
               </details>
             </div>
@@ -568,48 +633,18 @@ export function KnowledgeEvaluationShell() {
                 </select>
               </label>
 
-              <div className="mt-2 flex items-center justify-between gap-2 text-xs text-[var(--tc-text-muted)]">
+              <div className="mt-2 text-xs text-[var(--tc-text-muted)]">
                 <span>
                   {selectedDataset?.case_count != null
-                    ? `${selectedDataset.case_count} 个评测样例`
+                    ? `${selectedDataset.case_count} 个已标注样本`
                     : "已确认评测集"}
-                </span>
-                <span className="font-mono">
-                  {shortChecksum(selectedDataset?.checksum)}
                 </span>
               </div>
 
-              <div className="mt-3 flex items-center justify-between border-t border-[var(--tc-border-subtle)] pt-3">
+              <div className="mt-3 border-t border-[var(--tc-border-subtle)] pt-3">
                 <span className="text-xs text-[var(--tc-text-muted)]">
-                  已选 {selectedRunIds.length}/10
+                  选择一个历史任务进行评估
                 </span>
-                <div className="flex gap-2 text-xs">
-                  <button
-                    type="button"
-                    className="text-[var(--tc-text-muted)] hover:text-[var(--tc-text-primary)]"
-                    onClick={() => {
-                      setSelectedRunIds(
-                        visibleRuns
-                          .filter(selectableEvaluationRun)
-                          .slice(0, 10)
-                          .map(run => run.run_id),
-                      );
-                      resetPreview();
-                    }}
-                  >
-                    全选可评估
-                  </button>
-                  <button
-                    type="button"
-                    className="text-[var(--tc-text-muted)] hover:text-[var(--tc-text-primary)]"
-                    onClick={() => {
-                      setSelectedRunIds([]);
-                      resetPreview();
-                    }}
-                  >
-                    清空
-                  </button>
-                </div>
               </div>
 
               <div className="mt-2 flex max-h-[42vh] min-h-24 flex-col overflow-y-auto border-y border-[var(--tc-border-subtle)]">
@@ -641,7 +676,6 @@ export function KnowledgeEvaluationShell() {
                   visibleRuns.map(run => {
                     const selectable = selectableEvaluationRun(run);
                     const checked = selectedRunIds.includes(run.run_id);
-                    const maxReached = selectedRunIds.length >= 10 && !checked;
                     return (
                       <label
                         key={run.run_id}
@@ -654,7 +688,7 @@ export function KnowledgeEvaluationShell() {
                       >
                         <Checkbox
                           checked={checked}
-                          disabled={!selectable || maxReached}
+                          disabled={!selectable}
                           aria-label={`选择${evaluationTaskTitle(run)}`}
                           onCheckedChange={() => {
                             setSelectedRunIds(current =>
@@ -675,7 +709,6 @@ export function KnowledgeEvaluationShell() {
                             {formatDateTime(run.started_at)} · {evaluationModelLabel(run)}
                           </span>
                           <span className="mt-0.5 block truncate text-xs text-[var(--tc-text-muted)]">
-                            提示词 {run.prompt_version || "未知"}
                             {run.latest_evaluation
                               ? ` · 最近 ${formatEvaluationScore(run.latest_evaluation.overall_quality_score)}`
                               : " · 尚未评估"}
@@ -739,7 +772,14 @@ export function KnowledgeEvaluationShell() {
           )}
         </aside>
 
-        <main className="min-w-0 space-y-4">
+        <main
+          className={cn(
+            "min-h-0 min-w-0 space-y-4 overflow-y-auto pr-1 xl:col-start-2 xl:row-start-2",
+            activeSection === "report" || activeSection === "comparisons"
+              ? ""
+              : "hidden",
+          )}
+        >
           {actionError ? <ErrorBanner message={actionError} /> : null}
           {previewError ? <ErrorBanner message={previewError} /> : null}
           {pollError && currentEvaluation ? (
@@ -759,7 +799,8 @@ export function KnowledgeEvaluationShell() {
             </div>
           ) : null}
 
-          <section className="rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)]">
+          {activeSection === "report" ? (
+            <section className="rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)]">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--tc-border-subtle)] px-3 py-2.5">
               <div>
                 <p className="text-xs text-[var(--tc-text-muted)]">知识沉淀智能体</p>
@@ -788,7 +829,7 @@ export function KnowledgeEvaluationShell() {
                       key={evaluation.evaluation_id}
                       value={evaluation.evaluation_id}
                     >
-                      {formatDateTime(evaluation.created_at)} · {evaluationStatusLabels[evaluation.status]}
+                      {evaluation.subject_title || "未命名章节"} · {formatDateTime(evaluation.created_at)} · {evaluationStatusLabels[evaluation.status]}
                     </option>
                   ))}
                 </select>
@@ -847,11 +888,16 @@ export function KnowledgeEvaluationShell() {
                 选择历史任务并完成预检后，可开始效果评估。
               </div>
             )}
-          </section>
+            </section>
+          ) : null}
 
-          {preview && currentEvaluation ? <PreviewPanel preview={preview} /> : null}
+          {activeSection === "report" && preview && currentEvaluation ? (
+            <PreviewPanel preview={preview} />
+          ) : null}
 
-          {currentEvaluation && isTerminalEvaluation(currentEvaluation.status) ? (
+          {activeSection === "comparisons" &&
+          currentEvaluation &&
+          isTerminalEvaluation(currentEvaluation.status) ? (
             <section className="rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)]">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--tc-border-subtle)] px-3 py-2.5">
                 <div>
@@ -859,7 +905,7 @@ export function KnowledgeEvaluationShell() {
                     卡片差异
                   </h2>
                   <p className="mt-0.5 text-xs text-[var(--tc-text-muted)]">
-                    共 {comparisonTotal} 条，完整卡片与裁判原文按需展开
+                    共 {comparisonTotal} 条，点击查看可读差异说明
                   </p>
                 </div>
                 <div className="flex max-w-full gap-1 overflow-x-auto">
@@ -901,49 +947,96 @@ export function KnowledgeEvaluationShell() {
                     <ComparisonRow
                       key={comparison.comparison_id}
                       comparison={comparison}
-                      judgeCalls={judgeCalls}
-                      judgeCallLoadingId={judgeCallLoadingId}
-                      onLoadJudgeCall={callId =>
-                        void handleLoadJudgeCall(callId)
-                      }
                     />
                   ))}
                 </div>
               )}
 
-              {comparisons.length < comparisonTotal ? (
-                <div className="border-t border-[var(--tc-border-subtle)] p-2 text-center">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={comparisonLoading}
-                    onClick={() =>
-                      currentEvaluation &&
-                      void loadComparisons(
-                        currentEvaluation.evaluation_id,
-                        comparisonPage + 1,
-                        true,
-                      )
-                    }
-                  >
-                    {comparisonLoading ? (
-                      <LoaderCircle className="size-3.5 animate-spin motion-reduce:animate-none" />
-                    ) : null}
-                    加载更多差异
-                  </Button>
-                </div>
+              {comparisonTotal > 0 ? (
+                <CompactPagination
+                  page={comparisonPage}
+                  pageSize={COMPARISON_PAGE_SIZE}
+                  total={comparisonTotal}
+                  onPageChange={page =>
+                    currentEvaluation &&
+                    void loadComparisons(currentEvaluation.evaluation_id, page)
+                  }
+                  className="m-3"
+                />
               ) : null}
             </section>
+          ) : activeSection === "comparisons" ? (
+            <StatePanel
+              icon={FileDiff}
+              title="暂无可查看的卡片差异"
+              description="请先从左侧打开一份已完成的评测报告。"
+              actionLabel="查看评估报告"
+              onAction={() => setActiveSection("report")}
+            />
           ) : null}
         </main>
+        <EvaluationSectionRail
+          activeSection={activeSection}
+          pendingCount={selectedRunIds.length}
+          onSectionChange={setActiveSection}
+        />
       </section>
     </AppShell>
   );
 }
 
+function EvaluationSectionRail({
+  activeSection,
+  pendingCount,
+  onSectionChange,
+}: {
+  activeSection: EvaluationSection;
+  pendingCount: number;
+  onSectionChange: (section: EvaluationSection) => void;
+}) {
+  const sections: Array<{
+    key: EvaluationSection;
+    label: string;
+    icon: typeof Scale;
+  }> = [
+    {
+      key: "runs",
+      label: pendingCount > 0 ? `待评估任务 ${pendingCount}` : "待评估任务",
+      icon: CircleDashed,
+    },
+    { key: "report", label: "评估报告", icon: CheckCircle2 },
+    { key: "comparisons", label: "评估详情", icon: FileDiff },
+  ];
+
+  return (
+    <nav
+      aria-label="效果评估功能"
+      className="grid h-max gap-2 self-start xl:col-start-3 xl:row-start-2"
+    >
+      {sections.map(section => {
+        const Icon = section.icon;
+        const selected = activeSection === section.key;
+        return (
+          <Button
+            key={section.key}
+            type="button"
+            variant={selected ? "default" : "outline"}
+            size="sm"
+            aria-pressed={selected}
+            onClick={() => onSectionChange(section.key)}
+            className="h-9 w-full justify-start px-3"
+          >
+            <Icon className="size-4" />
+            {section.label}
+          </Button>
+        );
+      })}
+    </nav>
+  );
+}
+
 function PreviewPanel({ preview }: { preview: KnowledgeEvaluationPreview }) {
-  const model = preview.judge.model_identity;
+  const selectedRun = preview.runs[0];
   return (
     <section className="border-b border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-3 last:border-b-0">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -961,8 +1054,12 @@ function PreviewPanel({ preview }: { preview: KnowledgeEvaluationPreview }) {
             : "确定性比对与语义裁判"}
         </span>
       </div>
+      {selectedRun ? (
+        <p className="mt-3 text-sm text-[var(--tc-text-primary)]">
+          评估对象：{selectedRun.display_title}
+        </p>
+      ) : null}
       <div className="mt-3 grid grid-cols-2 divide-x divide-y divide-[var(--tc-border-subtle)] border-y border-[var(--tc-border-subtle)] text-xs sm:grid-cols-3 xl:grid-cols-6 xl:divide-y-0">
-        <PreviewReadout label="任务" value={`${preview.estimate.run_count}`} />
         <PreviewReadout
           label="期望卡"
           value={`${preview.estimate.expected_card_count}`}
@@ -989,11 +1086,9 @@ function PreviewPanel({ preview }: { preview: KnowledgeEvaluationPreview }) {
         />
       </div>
       <p className="mt-2 text-xs text-[var(--tc-text-muted)]">
-        真实裁判模型：
+        裁判模型：
         {preview.judge.requested
-          ? model?.known
-            ? `${model.provider ?? "未知提供方"} / ${model.model_id ?? "未登记模型"}`
-            : preview.judge.unavailable_reason || "裁判模型身份未知"
+          ? modelIdentityLabel(preview.judge.model_identity)
           : "未启用"}
       </p>
       {preview.judge.requested && preview.judge.available === false ? (
@@ -1041,6 +1136,12 @@ function EvaluationResult({
     typeof metrics.final_quality_state === "string"
       ? (metrics.final_quality_state as EvaluationQualityState)
       : null;
+  const diagnosticMessages = Array.from(
+    new Set((evaluation.warnings ?? []).map(noticeMessage).filter(Boolean)),
+  );
+  const hasLegacyJudgeWarning = diagnosticMessages.some(message =>
+    message.includes("语义裁判返回内容无法校验"),
+  );
 
   return (
     <div>
@@ -1060,8 +1161,8 @@ function EvaluationResult({
             <p className="mt-2 text-sm font-medium text-[var(--tc-text-primary)]">
               {evaluationProgressText(evaluation)}
             </p>
-            <p className="mt-1 truncate font-mono text-xs text-[var(--tc-text-muted)]">
-              评估标识 {evaluation.evaluation_id}
+            <p className="mt-1 text-xs text-[var(--tc-text-muted)]">
+              评估对象：{evaluation.subject_title || "未命名章节"}
             </p>
           </div>
           {canRetryEvaluation(evaluation) ? (
@@ -1083,14 +1184,6 @@ function EvaluationResult({
         ) : evaluation.status === "failed" ? (
           <div className="mt-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-strong)] bg-[var(--tc-surface-muted)] px-3 py-2 text-sm text-[var(--tc-text-primary)]">
             <p>{evaluationErrorMessage(evaluation)}</p>
-            {evaluation.error_code ? (
-              <details className="mt-1 text-xs text-[var(--tc-text-muted)]">
-                <summary className="cursor-pointer">查看内部错误码</summary>
-                <code className="mt-1 block font-mono">
-                  {evaluation.error_code}
-                </code>
-              </details>
-            ) : null}
           </div>
         ) : null}
       </div>
@@ -1128,11 +1221,7 @@ function EvaluationResult({
           <div className="flex flex-wrap gap-x-4 gap-y-1 px-3 py-2 text-xs text-[var(--tc-text-muted)]">
             <span>质量结论：{qualityStateLabel(qualityState)}</span>
             <span>
-              {evaluation.judge?.self_judge == null
-                ? "模型独立性未确认"
-                : evaluation.judge.self_judge
-                  ? "同模型自评"
-                  : "非同模型自评"}
+              {evaluationIndependenceLabel(evaluation)}
             </span>
             <span>
               {metricValue(metrics, "execution_coverage") === 1
@@ -1145,20 +1234,25 @@ function EvaluationResult({
                 evaluation.dataset.name ||
                 evaluation.dataset.dataset_id}
             </span>
-            <span className="font-mono">
-              校验摘要 {shortChecksum(evaluation.dataset.checksum)}
-            </span>
             <span>关键风险 {criticalRiskCount} 项</span>
           </div>
 
-          {evaluation.warnings?.length ? (
-            <ul className="border-t border-[var(--tc-border-subtle)] px-3 py-2 text-xs text-[var(--tc-text-secondary)]">
-              {evaluation.warnings.map((warning, index) => (
-                <li key={`${noticeMessage(warning)}-${index}`}>
-                  · {noticeMessage(warning)}
-                </li>
-              ))}
-            </ul>
+          {diagnosticMessages.length ? (
+            <section className="border-t border-[var(--tc-border-subtle)] px-3 py-2">
+              <h3 className="text-xs font-medium text-[var(--tc-text-primary)]">
+                评估诊断
+              </h3>
+              <ul className="mt-1 space-y-1 text-xs text-[var(--tc-text-secondary)]">
+                {diagnosticMessages.map(message => (
+                  <li key={message}>· {message}</li>
+                ))}
+                {hasLegacyJudgeWarning ? (
+                  <li>
+                    · 此历史报告仅保存了泛化错误；基于原快照重试后会展示具体协议诊断。
+                  </li>
+                ) : null}
+              </ul>
+            </section>
           ) : null}
 
           <details className="border-t border-[var(--tc-border-subtle)]">
@@ -1209,8 +1303,7 @@ function RunResultRow({
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_repeat(4,minmax(64px,0.35fr))] gap-2 border-t border-[var(--tc-border-subtle)] px-3 py-2 text-xs text-[var(--tc-text-secondary)]">
       <span className="truncate text-[var(--tc-text-primary)]">
-        {run.chapter_title ||
-          (run.case_id ? `评测样例 ${run.case_id}` : `任务 ${run.run_id}`)}
+        {run.display_title || "未命名章节"}
       </span>
       <span>{formatEvaluationScore(metricValue(metrics, "candidate_f1_micro"))}</span>
       <span>
@@ -1275,18 +1368,9 @@ function MetricReadout({
   );
 }
 
-function ComparisonRow({
-  comparison,
-  judgeCalls,
-  judgeCallLoadingId,
-  onLoadJudgeCall,
-}: {
+function ComparisonRow({ comparison }: {
   comparison: KnowledgeEvaluationComparison;
-  judgeCalls: Record<string, EvaluationJudgeCall>;
-  judgeCallLoadingId: string;
-  onLoadJudgeCall: (callId: string) => void;
 }) {
-  const callIds = comparison.judge_call_ids ?? [];
   return (
     <details className="group">
       <summary className="flex cursor-pointer list-none items-start justify-between gap-3 px-3 py-2.5 hover:bg-[var(--tc-surface-muted)]">
@@ -1297,7 +1381,7 @@ function ComparisonRow({
           <span className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-[var(--tc-text-muted)]">
             <span>{knowledgeTypeLabels[comparison.knowledge_type]}</span>
             <span>{issueTypeLabels[comparison.issue_type]}</span>
-            <span className="font-mono">任务标识 {comparison.run_id}</span>
+            <span>{comparison.task_title || "未命名章节"}</span>
           </span>
         </span>
         <FileDiff className="mt-0.5 size-4 shrink-0 text-[var(--tc-text-muted)]" />
@@ -1305,7 +1389,7 @@ function ComparisonRow({
       <div className="border-t border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-3 text-sm">
         <p className="text-xs text-[var(--tc-text-muted)]">匹配依据</p>
         <p className="mt-1 text-[var(--tc-text-secondary)]">
-          {comparison.match_basis || "未形成一对一匹配"}
+          {matchBasisLabel(comparison.match_basis)}
         </p>
 
         {comparison.field_diffs?.length ? (
@@ -1318,7 +1402,7 @@ function ComparisonRow({
                   className="grid gap-1 py-2 text-xs sm:grid-cols-[120px_1fr_1fr] sm:gap-3"
                 >
                   <span className="font-medium text-[var(--tc-text-primary)]">
-                    {diff.label || diff.field}
+                    {fieldLabel(diff.label, diff.field)}
                   </span>
                   <span>
                     <span className="text-[var(--tc-text-muted)]">期望：</span>
@@ -1348,7 +1432,7 @@ function ComparisonRow({
                   className="border-l border-[var(--tc-border-strong)] pl-2 text-xs leading-5 text-[var(--tc-text-secondary)]"
                 >
                   <p>
-                    {evidence.chapter_title || evidence.chapter_id || "章节未知"}
+                    {evidence.chapter_title || "章节未知"}
                     {evidence.located === false ? " · 无法定位" : ""}
                   </p>
                   {evidence.expected_quote ? (
@@ -1376,89 +1460,8 @@ function ComparisonRow({
           </div>
         ) : null}
 
-        <div className="mt-3 grid gap-2 lg:grid-cols-2">
-          <JsonDisclosure
-            label="期望卡完整数据（JSON）"
-            value={comparison.expected_card}
-          />
-          <JsonDisclosure
-            label="实际卡完整数据（JSON）"
-            value={comparison.actual_card}
-          />
-        </div>
-
-        {callIds.length ? (
-          <details className="mt-3 border-t border-[var(--tc-border-subtle)] pt-2">
-            <summary className="cursor-pointer text-xs text-[var(--tc-text-muted)]">
-              裁判提示词与原始响应
-            </summary>
-            <div className="mt-2 space-y-2">
-              {callIds.map(callId => {
-                const call = judgeCalls[callId];
-                return (
-                  <div key={callId} className="text-xs">
-                    {call ? (
-                      <JudgeCallDisclosure call={call} />
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        disabled={judgeCallLoadingId !== ""}
-                        onClick={() => onLoadJudgeCall(callId)}
-                      >
-                        {judgeCallLoadingId === callId ? (
-                          <LoaderCircle className="size-3 animate-spin motion-reduce:animate-none" />
-                        ) : null}
-                        加载裁判审计 {callId}
-                      </Button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </details>
-        ) : null}
       </div>
     </details>
-  );
-}
-
-function JudgeCallDisclosure({ call }: { call: EvaluationJudgeCall }) {
-  return (
-    <details className="rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)]">
-      <summary className="cursor-pointer px-2 py-1.5 font-mono text-[var(--tc-text-muted)]">
-        {call.call_id}
-      </summary>
-      <div className="grid gap-2 border-t border-[var(--tc-border-subtle)] p-2 lg:grid-cols-2">
-        <JsonText label="裁判提示词" value={call.input_prompt || "无"} />
-        <JsonText label="原始响应" value={call.raw_response || "无"} />
-      </div>
-    </details>
-  );
-}
-
-function JsonDisclosure({ label, value }: { label: string; value: unknown }) {
-  return (
-    <details className="rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)]">
-      <summary className="cursor-pointer px-2 py-1.5 text-xs text-[var(--tc-text-muted)]">
-        {label}
-      </summary>
-      <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words border-t border-[var(--tc-border-subtle)] p-2 font-mono text-xs leading-5 text-[var(--tc-text-secondary)]">
-        {formatJson(value)}
-      </pre>
-    </details>
-  );
-}
-
-function JsonText({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="mb-1 text-[var(--tc-text-muted)]">{label}</p>
-      <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words font-mono leading-5 text-[var(--tc-text-secondary)]">
-        {value}
-      </pre>
-    </div>
   );
 }
 
@@ -1549,16 +1552,33 @@ function StatePanel({
 function displayValue(value: unknown): string {
   if (value == null) return "无";
   if (typeof value === "string") return value || "空字符串";
-  return formatJson(value);
+  if (Array.isArray(value)) {
+    return value
+      .filter(item => typeof item === "string" || typeof item === "number")
+      .join("、") || "无";
+  }
+  return "内容不同";
 }
 
-function formatJson(value: unknown): string {
-  if (value == null) return "无";
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return String(value);
-  }
+function fieldLabel(label: string | null | undefined, field: string): string {
+  if (label) return label;
+  const labels: Record<string, string> = {
+    name: "名称",
+    summary: "摘要",
+    source_note: "来源说明",
+    source_origin: "来源方式",
+    evidence_excerpt: "原文证据",
+  };
+  return labels[field] ?? "字段内容";
+}
+
+function matchBasisLabel(value: string | null | undefined): string {
+  const labels: Record<string, string> = {
+    exact_name: "名称一致",
+    normalized_name: "名称规范化后一致",
+    type_and_name: "类型与名称一致",
+  };
+  return labels[value ?? ""] ?? "未形成一对一匹配";
 }
 
 function formatDateTime(value: string | null | undefined): string {

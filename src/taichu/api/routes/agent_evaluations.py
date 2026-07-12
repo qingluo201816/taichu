@@ -400,6 +400,7 @@ def _comparison_response(
         ),
         "run_id": comparison.run_id,
         "case_id": comparison.case_id,
+        "task_title": comparison.task_title or "未命名章节",
         "knowledge_type": comparison.knowledge_type,
         "issue_type": comparison.issue_type,
         "display_title": display_title,

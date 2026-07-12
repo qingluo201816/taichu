@@ -37,7 +37,7 @@ class CreateKnowledgeEvaluationRequest(EvaluationApiModel):
     """Shared request for previewing or creating one evaluation."""
 
     dataset_id: str = Field(min_length=1)
-    run_ids: list[str] = Field(min_length=1, max_length=10)
+    run_ids: list[str] = Field(min_length=1, max_length=1)
     judge_enabled: bool = True
     metric_profile_id: str = "knowledge_extraction_balanced"
 
@@ -65,6 +65,8 @@ class LatestEvaluationSummary(EvaluationApiModel):
 class EligibleEvaluationRun(EvaluationApiModel):
     run_id: str
     case_id: str | None = None
+    display_title: str
+    model_display_name: str
     status: str
     scope_type: str
     chapter_id: str | None = None
@@ -99,6 +101,8 @@ class EvaluationDatasetReference(EvaluationApiModel):
 class EvaluationPreviewRun(EvaluationApiModel):
     run_id: str
     case_id: str | None = None
+    display_title: str
+    model_display_name: str
     eligibility_level: str
     reason: str | None = None
     generation_model_identity: LLMModelIdentity
@@ -154,6 +158,7 @@ class KnowledgeEvaluationResponse(EvaluationApiModel):
     phase: EvaluationPhase
     dataset: EvaluationRecordDataset
     metric_profile_id: str
+    subject_title: str
     judge: JudgeSummary
     progress: EvaluationProgress
     run_ids: list[str] = Field(default_factory=list)
@@ -186,6 +191,7 @@ class KnowledgeEvaluationComparison(EvaluationApiModel):
     comparison_id: str
     run_id: str
     case_id: str | None = None
+    task_title: str
     knowledge_type: str
     issue_type: str
     display_title: str

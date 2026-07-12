@@ -34,6 +34,7 @@ from taichu.application.services.knowledge_extraction_evaluation_service import 
 from taichu.config import Settings
 from taichu.infrastructure.llm.unavailable import UnavailableLLMChatModel
 from taichu.main import create_app
+from tests.fakes import InMemoryKnowledgeRepository
 
 
 _PREFIX = "/api/agent-evaluations/knowledge-extraction"
@@ -63,6 +64,7 @@ class AgentEvaluationsApiTest(unittest.IsolatedAsyncioTestCase):
             ),
             llm=UnavailableLLMChatModel(),
             llm_model_identity=_IDENTITY,
+            knowledge_repository=InMemoryKnowledgeRepository(),
         )
         self.app.dependency_overrides[
             provide_knowledge_extraction_evaluation_service
@@ -93,6 +95,10 @@ class AgentEvaluationsApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(validation.json()["validation"]["valid"])
         self.assertEqual(eligible.status_code, 200)
         self.assertEqual(eligible.json()["runs"][0]["run_id"], _RUN_ID)
+        self.assertEqual(eligible.json()["runs"][0]["display_title"], "第一章")
+        self.assertEqual(
+            eligible.json()["runs"][0]["model_display_name"], "测试裁判模型"
+        )
         self.assertEqual(
             eligible.json()["runs"][0]["generation_model_identity"]["model_id"],
             "judge-model",
@@ -132,19 +138,21 @@ class AgentEvaluationsApiTest(unittest.IsolatedAsyncioTestCase):
             f"{_PREFIX}/evaluations/{_EVALUATION_ID}",
         )
         self.assertEqual(payload["dataset"]["dataset_id"], _DATASET_ID)
+        self.assertEqual(payload["subject_title"], "第一章")
 
-    async def test_request_cannot_inject_json_path_or_more_than_ten_runs(self) -> None:
+    async def test_request_cannot_inject_json_path_or_select_multiple_runs(self) -> None:
         injected = {**_request_payload(), "expected_json_path": "../secret.json"}
         injection_response = await self.client.post(
             f"{_PREFIX}/evaluations",
             json=injected,
         )
-        too_many_response = await self.client.post(
+        multiple_runs_response = await self.client.post(
             f"{_PREFIX}/evaluations",
             json={
                 **_request_payload(),
                 "run_ids": [
-                    f"extract_run_20260711_12{index:04d}_a1b2c3" for index in range(11)
+                    _RUN_ID,
+                    "extract_run_20260711_120001_a1b2c3",
                 ],
             },
         )
@@ -154,8 +162,8 @@ class AgentEvaluationsApiTest(unittest.IsolatedAsyncioTestCase):
             injection_response.json()["error"]["code"],
             "VALIDATION_ERROR",
         )
-        self.assertEqual(too_many_response.status_code, 422)
-        self.assertIn("请求内容", too_many_response.json()["error"]["message"])
+        self.assertEqual(multiple_runs_response.status_code, 422)
+        self.assertIn("请求内容", multiple_runs_response.json()["error"]["message"])
 
     async def test_history_detail_comparisons_and_judge_call(self) -> None:
         history = await self.client.get(f"{_PREFIX}/evaluations")
@@ -173,6 +181,7 @@ class AgentEvaluationsApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("execution_token", detail.json()["evaluation"])
         comparison = comparisons.json()["comparisons"][0]
         self.assertEqual(comparison["display_title"], "秦浩轩")
+        self.assertEqual(comparison["task_title"], "第一章")
         self.assertEqual(comparison["actual_review_item_id"], "review-1")
         self.assertEqual(comparison["judge_result"]["confidence"], 0.9877)
         self.assertEqual(judge_call.status_code, 200)
@@ -299,6 +308,8 @@ class _FakeEvaluationService:
             {
                 "run_id": _RUN_ID,
                 "case_id": "chapter_001",
+                "display_title": "第一章",
+                "model_display_name": "测试裁判模型",
                 "status": "completed",
                 "scope_type": "chapter",
                 "chapter_id": "chapter-demo001",
@@ -332,6 +343,8 @@ class _FakeEvaluationService:
                 {
                     "run_id": _RUN_ID,
                     "case_id": "chapter_001",
+                    "display_title": "第一章",
+                    "model_display_name": "测试裁判模型",
                     "eligibility_level": "full",
                     "reason": None,
                     "generation_model_identity": _IDENTITY,
@@ -395,6 +408,7 @@ class _FakeEvaluationService:
             EvaluationComparison(
                 run_id=_RUN_ID,
                 case_id="chapter_001",
+                task_title="第一章",
                 knowledge_type="character",
                 issue_type="field_difference",
                 expected_card_id="character_qin",
@@ -471,6 +485,7 @@ def _record() -> KnowledgeEvaluationRecord:
         dataset_id=_DATASET_ID,
         dataset_label="演示评测集",
         dataset_checksum="a" * 64,
+        subject_title="第一章",
         judge=JudgeSummary(
             enabled=True,
             model_identity=_IDENTITY,

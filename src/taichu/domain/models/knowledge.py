@@ -8,13 +8,13 @@ from taichu.domain.models.base import DomainModel
 from taichu.domain.models.structured_knowledge import (
     StructuredKnowledgeCard,
     StructuredKnowledgeImportance,
-    StructuredKnowledgeStatus,
+    StructuredKnowledgeLifecycle,
     StructuredKnowledgeType,
 )
 
 KnowledgeCard = StructuredKnowledgeCard
 KnowledgeCardType = StructuredKnowledgeType
-KnowledgeCardStatus = StructuredKnowledgeStatus
+KnowledgeCardLifecycle = StructuredKnowledgeLifecycle
 
 
 class CharacterImportance(StrEnum):

@@ -42,16 +42,11 @@ from taichu.domain.models.inbox import (
     IdeaCardStatus,
 )
 from taichu.domain.models.import_batch import ImportBatch
-from taichu.domain.models.indexing import (
-    IndexBuildJob,
-    IndexBuildJobAction,
-    IndexBuildJobStatus,
-)
 from taichu.domain.models.knowledge import (
     CharacterCard,
     CharacterImportance,
     KnowledgeCard,
-    KnowledgeCardStatus,
+    KnowledgeCardLifecycle,
     KnowledgeCardType,
 )
 from taichu.domain.models.structured_knowledge import (
@@ -61,8 +56,8 @@ from taichu.domain.models.structured_knowledge import (
     KnowledgeTypeSchema,
     StructuredKnowledgeCard,
     StructuredKnowledgeImportance,
+    StructuredKnowledgeLifecycle,
     StructuredKnowledgeSourceOrigin,
-    StructuredKnowledgeStatus,
     StructuredKnowledgeType,
     all_knowledge_card_field_keys,
     all_knowledge_type_schemas,
@@ -76,12 +71,6 @@ from taichu.domain.models.pending_fact import (
     PendingFactStatus,
     PendingFactType,
     ProposedBy,
-)
-from taichu.domain.models.retrieval import (
-    EmbeddingChunk,
-    RetrievalHit,
-    RetrievalReason,
-    RetrievalSourceType,
 )
 from taichu.domain.models.source_ref import (
     SourceAnchorType,
@@ -133,13 +122,10 @@ __all__ = [
     "ChapterIssueSource",
     "ChapterIssueStatus",
     "ImportBatch",
-    "IndexBuildJob",
-    "IndexBuildJobAction",
-    "IndexBuildJobStatus",
     "CharacterCard",
     "CharacterImportance",
     "KnowledgeCard",
-    "KnowledgeCardStatus",
+    "KnowledgeCardLifecycle",
     "KnowledgeCardType",
     "KnowledgeFieldOption",
     "KnowledgeFieldSchema",
@@ -147,8 +133,8 @@ __all__ = [
     "KnowledgeTypeSchema",
     "StructuredKnowledgeCard",
     "StructuredKnowledgeImportance",
+    "StructuredKnowledgeLifecycle",
     "StructuredKnowledgeSourceOrigin",
-    "StructuredKnowledgeStatus",
     "StructuredKnowledgeType",
     "all_knowledge_card_field_keys",
     "all_knowledge_type_schemas",
@@ -160,10 +146,6 @@ __all__ = [
     "PendingFactStatus",
     "PendingFactType",
     "ProposedBy",
-    "EmbeddingChunk",
-    "RetrievalHit",
-    "RetrievalReason",
-    "RetrievalSourceType",
     "SourceAnchorType",
     "SourceRef",
     "SourceRefSourceType",

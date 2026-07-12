@@ -84,6 +84,7 @@ class EvaluationComparison(EvaluationModel):
 
     run_id: str = Field(min_length=1)
     case_id: str = Field(min_length=1)
+    task_title: str = ""
     knowledge_type: str = Field(min_length=1)
     issue_type: str = Field(min_length=1)
     expected_card_id: str | None = None
@@ -100,6 +101,7 @@ class EvaluationRunResult(EvaluationModel):
 
     run_id: str = Field(min_length=1)
     case_id: str | None = None
+    display_title: str = ""
     eligibility_level: str = Field(min_length=1)
     eligibility_reasons: list[str] = Field(default_factory=list)
     generation_model_identity: LLMModelIdentity
@@ -128,6 +130,7 @@ class KnowledgeEvaluationRecord(EvaluationModel):
     dataset_id: str = Field(min_length=1)
     dataset_label: str = Field(min_length=1)
     dataset_checksum: str = Field(min_length=1)
+    subject_title: str = ""
     metric_profile_id: str = "knowledge_extraction_balanced"
     judge: JudgeSummary
     progress: EvaluationProgress

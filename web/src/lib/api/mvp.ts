@@ -9,6 +9,7 @@ import type {
   KnowledgeCardResponse,
   KnowledgeSchemaResponse,
   KnowledgeSchemasResponse,
+  StructuredKnowledgeLifecycle,
   KnowledgeTypeValue,
   KnowledgeTypesResponse,
   MVPInboxIdea,
@@ -119,14 +120,14 @@ export async function readKnowledgeSchema(
 
 export async function listKnowledgeCards(params: {
   type: KnowledgeTypeValue;
-  status: "all" | "draft" | "active";
+  lifecycle: "all" | StructuredKnowledgeLifecycle;
   q?: string;
   page?: number;
   pageSize?: number;
 }): Promise<KnowledgeCardListResponse> {
   const search = new URLSearchParams({
     type: params.type,
-    status: params.status,
+    lifecycle: params.lifecycle,
     page: String(params.page ?? 1),
     page_size: String(params.pageSize ?? 10),
   });
@@ -169,20 +170,20 @@ export async function patchKnowledgeCard(
   );
 }
 
-export async function markKnowledgeCardActive(
+export async function confirmKnowledgeCard(
   cardId: string,
 ): Promise<KnowledgeCardResponse> {
   return apiRequest<KnowledgeCardResponse>(
-    `/api/knowledge/cards/${encodeURIComponent(cardId)}/mark-active`,
+    `/api/knowledge/cards/${encodeURIComponent(cardId)}/confirm`,
     { method: "POST" },
   );
 }
 
-export async function markKnowledgeCardDeprecated(
+export async function rejectKnowledgeCard(
   cardId: string,
 ): Promise<KnowledgeCardResponse> {
   return apiRequest<KnowledgeCardResponse>(
-    `/api/knowledge/cards/${encodeURIComponent(cardId)}/mark-deprecated`,
+    `/api/knowledge/cards/${encodeURIComponent(cardId)}/reject`,
     { method: "POST" },
   );
 }

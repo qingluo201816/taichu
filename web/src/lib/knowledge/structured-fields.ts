@@ -20,8 +20,9 @@ export type KnowledgeReferenceOptions = Record<
 export type KnowledgeFormErrors = Record<string, string>;
 
 export const CANDIDATE_LOCKED_FIELD_KEYS = new Set([
-  "status",
+  "lifecycle",
   "source_origin",
+  "appearance_chapter_count",
 ]);
 
 export function knowledgeGroupLabel(
@@ -93,6 +94,7 @@ export function knowledgePayloadFromForm(
   for (const field of schema.fields) {
     if (
       excludedFieldKeys.has(field.field_key) ||
+      field.author_editable === false ||
       field.field_type === "record_array"
     ) {
       continue;
@@ -124,14 +126,22 @@ export function validateKnowledgeForm(
   schema: KnowledgeTypeSchema,
   form: KnowledgeFormState,
   excludedFieldKeys: ReadonlySet<string> = new Set(),
+  validateConfirmedFields = true,
 ): KnowledgeFormErrors {
   const errors: KnowledgeFormErrors = {};
   for (const field of schema.fields) {
-    if (excludedFieldKeys.has(field.field_key)) {
+    if (
+      excludedFieldKeys.has(field.field_key) ||
+      field.author_editable === false
+    ) {
       continue;
     }
     const value = form[field.field_key] ?? "";
-    if (field.required_when_active && !value.trim()) {
+    if (
+      validateConfirmedFields &&
+      field.required_when_confirmed &&
+      !value.trim()
+    ) {
       errors[field.field_key] = `请填写${field.label}`;
     } else if (
       field.field_type === "number" &&
@@ -166,6 +176,9 @@ export function displayKnowledgeFieldValue(
   }
   if (field.field_type === "boolean") {
     return value ? "是" : "否";
+  }
+  if (field.field_key === "appearance_chapter_count") {
+    return `已出现 ${String(value)} 章`;
   }
   if (
     field.field_type === "chapter_ref" ||

@@ -14,7 +14,7 @@
 <rect x="1945" y="30" width="170" height="34" rx="17" fill="#EFFAF4" fill-opacity="1.0" stroke="#21875A" stroke-width="1.6"/>
 <text x="2030.0" y="53" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="16" font-weight="600" fill="#21875A" text-anchor="middle" opacity="1.0"><tspan x="2030.0" dy="0">实线：当前实现</tspan></text>
 <rect x="2130" y="30" width="220" height="34" rx="17" fill="#F5F1FF" fill-opacity="1.0" stroke="#7455C5" stroke-width="1.6" stroke-dasharray="10 8"/>
-<text x="2240.0" y="53" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="16" font-weight="600" fill="#7455C5" text-anchor="middle" opacity="1.0"><tspan x="2240.0" dy="0">虚线：目标演进</tspan></text>
+<text x="2240.0" y="53" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="16" font-weight="600" fill="#7455C5" text-anchor="middle" opacity="1.0"><tspan x="2240.0" dy="0">虚线：未来可选能力</tspan></text>
 <rect x="40" y="112" width="700" height="505" rx="22" fill="#EEF5FF" fill-opacity="1.0" stroke="#2F70D0" stroke-width="2.2" filter="url(#shadow)"/>
 <circle cx="74" cy="143" r="20" fill="#2F70D0" stroke="none" stroke-width="0"/>
 <text x="74" y="150" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="16" font-weight="700" fill="#FFFFFF" text-anchor="middle" opacity="1.0"><tspan x="74" dy="0">L1</tspan></text>
@@ -160,15 +160,15 @@
 <rect x="1100" y="750" width="280" height="96" rx="13" fill="#F5F1FF" fill-opacity="1.0" stroke="#7455C5" stroke-width="1.7"/>
 <text x="1240.0" y="794.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="17" font-weight="700" fill="#7455C5" text-anchor="middle" opacity="1.0"><tspan x="1240.0" dy="0">作者确认</tspan></text>
 <text x="1240.0" y="819.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="12.5" font-weight="400" fill="#52647D" text-anchor="middle" opacity="1.0"><tspan x="1240.0" dy="0">确认 / 编辑确认 / 拒绝</tspan></text>
-<path d="M1380 798 L1422 798" fill="none" stroke="#7455C5" stroke-width="2.5" stroke-linecap="round" opacity="1.0" stroke-dasharray="9 7" marker-end="url(#arrow)"/>
-<rect x="1430" y="750" width="330" height="96" rx="13" fill="#F5F1FF" fill-opacity="1.0" stroke="#7455C5" stroke-width="1.7" stroke-dasharray="10 8"/>
-<text x="1595.0" y="794.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="17" font-weight="700" fill="#7455C5" text-anchor="middle" opacity="1.0"><tspan x="1595.0" dy="0">结构事实</tspan></text>
-<text x="1595.0" y="819.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="12.5" font-weight="400" fill="#52647D" text-anchor="middle" opacity="1.0"><tspan x="1595.0" dy="0">MongoDB confirmed（目标）</tspan></text>
-<path d="M1760 798 L1802 798" fill="none" stroke="#5E708A" stroke-width="2.5" stroke-linecap="round" opacity="1.0" marker-end="url(#arrow)"/>
-<rect x="1810" y="750" width="260" height="96" rx="13" fill="#FFFFFF" fill-opacity="1.0" stroke="#5E708A" stroke-width="1.7"/>
-<text x="1940.0" y="794.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="17" font-weight="700" fill="#5E708A" text-anchor="middle" opacity="1.0"><tspan x="1940.0" dy="0">重建派生索引</tspan></text>
-<text x="1940.0" y="819.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="12.5" font-weight="400" fill="#52647D" text-anchor="middle" opacity="1.0"><tspan x="1940.0" dy="0">SQLite/FTS · 向量 · ES · 图</tspan></text>
-<path d="M2070 798 L2112 798" fill="none" stroke="#5E708A" stroke-width="2.5" stroke-linecap="round" opacity="1.0" marker-end="url(#arrow)"/>
+<path d="M1380 798 L1422 798" fill="none" stroke="#21875A" stroke-width="2.5" stroke-linecap="round" opacity="1.0" marker-end="url(#arrow)"/>
+<rect x="1430" y="750" width="330" height="96" rx="13" fill="#EFFAF4" fill-opacity="1.0" stroke="#21875A" stroke-width="1.7"/>
+<text x="1595.0" y="794.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="17" font-weight="700" fill="#21875A" text-anchor="middle" opacity="1.0"><tspan x="1595.0" dy="0">结构事实</tspan></text>
+<text x="1595.0" y="819.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="12.5" font-weight="400" fill="#52647D" text-anchor="middle" opacity="1.0"><tspan x="1595.0" dy="0">MongoDB knowledge_cards（唯一）</tspan></text>
+<path d="M1760 798 L1802 798" fill="none" stroke="#7455C5" stroke-width="2.5" stroke-linecap="round" opacity="1.0" stroke-dasharray="9 7" marker-end="url(#arrow)"/>
+<rect x="1810" y="750" width="260" height="96" rx="13" fill="#F5F1FF" fill-opacity="1.0" stroke="#7455C5" stroke-width="1.7" stroke-dasharray="10 8"/>
+<text x="1940.0" y="794.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="17" font-weight="700" fill="#7455C5" text-anchor="middle" opacity="1.0"><tspan x="1940.0" dy="0">未来可选派生能力</tspan></text>
+<text x="1940.0" y="819.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="12.5" font-weight="400" fill="#52647D" text-anchor="middle" opacity="1.0"><tspan x="1940.0" dy="0">向量 · ES · 图 · 缓存（未启用）</tspan></text>
+<path d="M2070 798 L2112 798" fill="none" stroke="#7455C5" stroke-width="2.5" stroke-linecap="round" opacity="1.0" stroke-dasharray="9 7" marker-end="url(#arrow)"/>
 <rect x="2120" y="750" width="200" height="96" rx="13" fill="#EFFAF4" fill-opacity="1.0" stroke="#21875A" stroke-width="1.7"/>
 <text x="2220.0" y="794.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="17" font-weight="700" fill="#21875A" text-anchor="middle" opacity="1.0"><tspan x="2220.0" dy="0">反哺写作</tspan></text>
 <text x="2220.0" y="819.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="12.5" font-weight="400" fill="#52647D" text-anchor="middle" opacity="1.0"><tspan x="2220.0" dy="0">检索证据 / 一致性</tspan></text>
@@ -199,7 +199,7 @@
 <circle cx="1645" cy="1067.6599999999999" r="3.2" fill="#5E708A" stroke="none" stroke-width="0"/>
 <text x="1657" y="1072.6599999999999" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="13.5" font-weight="400" fill="#52647D" text-anchor="start" opacity="1.0"><tspan x="1657" dy="0">事实层：Markdown 文本事实 + confirmed 结构事实</tspan></text>
 <circle cx="1645" cy="1088.9899999999998" r="3.2" fill="#5E708A" stroke="none" stroke-width="0"/>
-<text x="1657" y="1093.9899999999998" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="13.5" font-weight="400" fill="#52647D" text-anchor="start" opacity="1.0"><tspan x="1657" dy="0">派生层：运行记录、投影索引、缓存，全部可重建或回放</tspan></text>
+<text x="1657" y="1093.9899999999998" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="13.5" font-weight="400" fill="#52647D" text-anchor="start" opacity="1.0"><tspan x="1657" dy="0">中间态：AI / Agent / 评测 / Inbox JSON，仅审计与回放</tspan></text>
 <rect x="80" y="1145" width="1500" height="70" rx="14" fill="#FFFFFF" fill-opacity="1.0" stroke="#21875A" stroke-width="1.7"/>
 <text x="98" y="1176" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="18" font-weight="700" fill="#21875A" text-anchor="start" opacity="1.0"><tspan x="98" dy="0">正反馈目标</tspan></text>
 <circle cx="100" cy="1200" r="3.2" fill="#21875A" stroke="none" stroke-width="0"/>
@@ -210,5 +210,5 @@
 <text x="1952.0" y="1178" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="16" font-weight="600" fill="#21875A" text-anchor="middle" opacity="1.0"><tspan x="1952.0" dy="0">可回放</tspan></text>
 <rect x="2071" y="1155" width="208" height="34" rx="17" fill="#FFFFFF" fill-opacity="1.0" stroke="#21875A" stroke-width="1.6"/>
 <text x="2175.0" y="1178" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="16" font-weight="600" fill="#21875A" text-anchor="middle" opacity="1.0"><tspan x="2175.0" dy="0">可重建</tspan></text>
-<text x="2350" y="1327" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="13" font-weight="400" fill="#52647D" text-anchor="end" opacity="1.0"><tspan x="2350" dy="0">基于 master@7d6d049 · 更新日期 2026-07-10</tspan></text>
+<text x="2350" y="1327" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="13" font-weight="400" fill="#52647D" text-anchor="end" opacity="1.0"><tspan x="2350" dy="0">知识库 MongoDB 迁移后架构 · 更新日期 2026-07-11</tspan></text>
 </svg>

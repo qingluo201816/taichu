@@ -53,20 +53,7 @@ class SourceRefContractTest(unittest.TestCase):
 
         self.assertEqual(validate_source_ref_contract(ref), ref)
 
-    def test_rejects_generated_sqlite_source(self) -> None:
-        with self.assertRaises(ValidationError):
-            SourceRef(
-                source_type=SourceRefSourceType.CHAPTER,
-                source_id="chapter_001",
-                path="project_assets/generated/sqlite/taichu.db",
-                anchor_type=SourceAnchorType.DOCUMENT,
-                excerpt="不允许",
-                excerpt_hash="hash_excerpt",
-                source_hash="hash_source",
-                created_at="2026-06-27T00:00:00Z",
-            )
-
-    def test_rejects_generated_non_sqlite_source(self) -> None:
+    def test_rejects_generated_derived_source(self) -> None:
         with self.assertRaises(ValidationError):
             SourceRef(
                 source_type=SourceRefSourceType.CHAPTER,

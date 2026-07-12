@@ -9,6 +9,7 @@ from taichu.application.contracts.llm import LLMModelIdentity
 from taichu.config import Settings
 from taichu.infrastructure.llm.mock import MVPNoRealLLMChatModel
 from taichu.main import create_app
+from tests.fakes import InMemoryKnowledgeRepository
 
 
 class MainLLMAssemblyTest(unittest.TestCase):
@@ -18,7 +19,8 @@ class MainLLMAssemblyTest(unittest.TestCase):
                 Settings(
                     project_assets_dir=Path(temporary_directory),
                     rightcode_api_key=SecretStr(""),
-                )
+                ),
+                knowledge_repository=InMemoryKnowledgeRepository(),
             )
 
         self.assertEqual(len(app.state.llm_gateway.list_models()), 10)
@@ -31,6 +33,7 @@ class MainLLMAssemblyTest(unittest.TestCase):
                     project_assets_dir=Path(temporary_directory),
                 ),
                 llm=MVPNoRealLLMChatModel(),
+                knowledge_repository=InMemoryKnowledgeRepository(),
             )
 
         identity = app.state.knowledge_extraction_service._llm.model_identity
@@ -52,6 +55,7 @@ class MainLLMAssemblyTest(unittest.TestCase):
                 ),
                 llm=MVPNoRealLLMChatModel(),
                 llm_model_identity=identity,
+                knowledge_repository=InMemoryKnowledgeRepository(),
             )
 
         self.assertEqual(

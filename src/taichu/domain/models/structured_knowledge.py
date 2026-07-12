@@ -22,16 +22,16 @@ class StructuredKnowledgeType(StrEnum):
     EVENT = "event"
 
 
-class StructuredKnowledgeStatus(StrEnum):
-    """Lifecycle states for knowledge cards."""
+class StructuredKnowledgeLifecycle(StrEnum):
+    """Lifecycle states shared by all structured knowledge cards."""
 
     DRAFT = "draft"
-    ACTIVE = "active"
-    DEPRECATED = "deprecated"
+    CONFIRMED = "confirmed"
+    REJECTED = "rejected"
 
 
 class StructuredKnowledgeImportance(StrEnum):
-    """Author-facing importance buckets for knowledge cards."""
+    """Legacy import-only labels kept for one-time migration parsing."""
 
     CORE = "core"
     MAJOR = "major"
@@ -74,11 +74,12 @@ class KnowledgeFieldSchema(DomainModel):
     field_key: str = Field(min_length=1)
     label: str = Field(min_length=1)
     field_type: KnowledgeSchemaFieldType
-    required_when_active: bool = False
+    required_when_confirmed: bool = False
     options: list[KnowledgeFieldOption] = Field(default_factory=list)
     placeholder: str = ""
     display_group: str = Field(min_length=1)
     list_display: bool = False
+    author_editable: bool = True
     ai_usage: str = ""
 
 
@@ -91,15 +92,19 @@ class KnowledgeTypeSchema(DomainModel):
 
 
 class StructuredKnowledgeCard(DomainModel):
-    """One JSON-file knowledge card using first-version top-level fields."""
+    """One structured knowledge card using first-version top-level fields."""
 
     id: str = Field(min_length=1)
     type: StructuredKnowledgeType
     name: str = ""
     aliases: list[str] = Field(default_factory=list)
     summary: str = ""
-    importance: StructuredKnowledgeImportance = StructuredKnowledgeImportance.NORMAL
-    status: StructuredKnowledgeStatus = StructuredKnowledgeStatus.DRAFT
+    importance: StructuredKnowledgeImportance | None = Field(
+        default=None,
+        exclude=True,
+    )
+    appearance_chapter_count: int | None = Field(default=None, ge=0)
+    lifecycle: StructuredKnowledgeLifecycle
     source_origin: StructuredKnowledgeSourceOrigin | None = None
     source_note: str = ""
     role_type: str | None = None
@@ -128,7 +133,7 @@ class StructuredKnowledgeCard(DomainModel):
 
     def can_be_used_as_effective_knowledge(self) -> bool:
         """Return whether this card can participate in future AI reference."""
-        return self.status is StructuredKnowledgeStatus.ACTIVE
+        return self.lifecycle is StructuredKnowledgeLifecycle.CONFIRMED
 
 
 KNOWLEDGE_TYPE_LABELS: dict[StructuredKnowledgeType, str] = {
@@ -162,8 +167,8 @@ COMMON_KNOWLEDGE_FIELD_KEYS = frozenset(
         "name",
         "aliases",
         "summary",
-        "importance",
-        "status",
+        "appearance_chapter_count",
+        "lifecycle",
         "source_origin",
         "source_note",
     }
@@ -227,37 +232,32 @@ def _field(
     label: str,
     field_type: KnowledgeSchemaFieldType,
     *,
-    required_when_active: bool = False,
+    required_when_confirmed: bool = False,
     options: list[KnowledgeFieldOption] | None = None,
     placeholder: str = "",
     display_group: str = "基础信息",
     list_display: bool = False,
+    author_editable: bool = True,
     ai_usage: str = "",
 ) -> KnowledgeFieldSchema:
     return KnowledgeFieldSchema(
         field_key=field_key,
         label=label,
         field_type=field_type,
-        required_when_active=required_when_active,
+        required_when_confirmed=required_when_confirmed,
         options=options or [],
         placeholder=placeholder,
         display_group=display_group,
         list_display=list_display,
+        author_editable=author_editable,
         ai_usage=ai_usage,
     )
 
 
-_IMPORTANCE_OPTIONS = [
-    _option("core", "核心"),
-    _option("major", "重要"),
-    _option("normal", "普通"),
-    _option("minor", "次要"),
-]
-
-_STATUS_OPTIONS = [
+_LIFECYCLE_OPTIONS = [
     _option("draft", "草稿"),
-    _option("active", "有效"),
-    _option("deprecated", "已废弃"),
+    _option("confirmed", "已确认"),
+    _option("rejected", "已拒绝"),
 ]
 
 _SOURCE_ORIGIN_OPTIONS = [
@@ -271,7 +271,7 @@ _COMMON_FIELD_SCHEMAS = [
         "name",
         "名称",
         KnowledgeSchemaFieldType.SHORT_TEXT,
-        required_when_active=True,
+        required_when_confirmed=True,
         placeholder="输入知识卡名称",
         list_display=True,
         ai_usage="知识卡主名称，用于检索和引用。",
@@ -288,32 +288,32 @@ _COMMON_FIELD_SCHEMAS = [
         "summary",
         "摘要",
         KnowledgeSchemaFieldType.LONG_TEXT,
-        required_when_active=True,
+        required_when_confirmed=True,
         placeholder="一句话或一段摘要",
         list_display=True,
         ai_usage="面向写作和 AI 引用的核心事实摘要。",
     ),
     _field(
-        "importance",
+        "appearance_chapter_count",
         "重要程度",
-        KnowledgeSchemaFieldType.ENUM,
-        options=_IMPORTANCE_OPTIONS,
+        KnowledgeSchemaFieldType.NUMBER,
         list_display=True,
-        ai_usage="决定知识卡在列表和检索中的优先级。",
+        author_editable=False,
+        ai_usage="由正文知识沉淀按实际出现章节累计，前端按全书章节占比显示重要程度。",
     ),
     _field(
-        "status",
-        "状态",
+        "lifecycle",
+        "生命周期",
         KnowledgeSchemaFieldType.ENUM,
-        options=_STATUS_OPTIONS,
+        options=_LIFECYCLE_OPTIONS,
         list_display=True,
-        ai_usage="草稿不参与 AI 检索，有效卡可用于后续引用。",
+        ai_usage="草稿不参与 AI 检索，已确认卡可用于后续引用。",
     ),
     _field(
         "source_origin",
         "来源方式",
         KnowledgeSchemaFieldType.ENUM,
-        required_when_active=True,
+        required_when_confirmed=True,
         options=_SOURCE_ORIGIN_OPTIONS,
         placeholder="选择来源方式",
         display_group="来源",
@@ -324,7 +324,7 @@ _COMMON_FIELD_SCHEMAS = [
         "source_note",
         "来源说明",
         KnowledgeSchemaFieldType.LONG_TEXT,
-        required_when_active=True,
+        required_when_confirmed=True,
         placeholder="作者手动添加。可写章节、原文摘录、人工说明。",
         display_group="来源",
         list_display=True,

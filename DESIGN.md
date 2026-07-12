@@ -1,6 +1,6 @@
 # 太初前端设计说明
 
-> 更新日期：2026-07-10
+> 更新日期：2026-07-12
 > 强制适用范围：太初前端视觉系统、页面布局、组件设计、交互动效、Tailwind token、shadcn/ui 二次封装和所有用户可见前端文案。
 
 本文档是太初前端设计的强制规则源。涉及 `web/` 下页面、组件、样式、交互、动效、前端文案或视觉方案的创建、修改、评审和讨论时，必须先读取并遵循本文档。不得把本文档仅作为可选参考。
@@ -13,7 +13,7 @@
 
 界面应像一个午夜开发者控制台，但服务对象仍是中文玄幻小说作者。视觉重点是安静、结构清楚、线框精确、长期可读，而不是营销页、赛博霓虹或游戏化 HUD。
 
-除“入口页正式例外”外，核心判断如下：
+核心判断如下：
 
 - 页面默认背景使用 `#232324` 炭灰控制台画布，不使用纯黑作为页面背景。
 - 顶部导航使用更深的 `#0e0e10`，作为稳定的横向锚点。
@@ -38,64 +38,17 @@
 - 页面不能为功能说明占用大面积空间。禁止在应用内功能页使用营销式介绍、说明卡、巨型空状态和大段“如何使用”；必要提示必须短、靠近上下文，并可关闭或折叠。
 - 默认视图不要展开全文。长摘要、Prompt、模型原文、知识卡 JSON、运行日志、候选详情等必须按需查看，列表中最多保留一到两行摘要。
 - 工具栏和筛选区必须克制。筛选、排序、批量操作、视图切换等控件只在当前任务需要时出现；可收起的筛选条件不得长期占据主内容宽度。
-- 移动端和窄屏必须进一步压缩附属信息，优先保留主内容、当前状态和唯一主操作。
+- 交付范围仅包含桌面浏览器中的网页应用。页面以 1280px 及以上的桌面可视宽度为设计与验收基准，不为手机、平板、原生 App 或窄屏重排维护专门交互。
 
-### 1.2 入口页正式例外
+### 1.2 当前入口策略
 
-根路径 `/` 的点云入口是太初品牌进入场景，不属于应用工作台主题。该例外只适用于 `web/src/components/taichu-entry/`：
+根路径 `/` 当前不承载独立品牌场景，访问后直接跳转到 `/home`。`/home` 使用本文定义的控制台工作台页面模式，不设置入口页视觉例外。
 
-- 允许使用纯黑背景、暖白文字、点云地景和克制的空间动效。
-- 允许品牌短标签使用少量正字距；中文正文、按钮和工作台文字仍使用正常字距。
-- 入口只承担品牌识别和进入太初的主操作，不增加营销区块、客户标志、功能堆叠或游戏 HUD。
-- 入口可以固定使用独立视觉，不要求随工作台主题切换。
-- 入口例外不得扩散到 `/home`、编辑器、知识库、收件箱、设置、智能体工作台或任务监控页面。
-- 入口组件仍须遵守中文文案、可访问性、加载降级、移动端适配和 `prefers-reduced-motion`。
-
-除本节明确允许的内容外，入口页仍受本文其他禁止项约束。
+已停用的点云入口只作为历史快照保存，不参与前端源码检查、构建或静态资源发布，也不得作为后续页面的视觉参考或组件依赖。若未来重新启用独立入口，必须先按当时的设计目标重新评审，并同步更新本文、路由实现和前端风格说明。
 
 ## 2. 颜色 Token
 
-当前主风格使用以下颜色。新页面和新组件必须优先使用语义 token，不直接写死外部参考色。
-
-```css
-:root {
-  --tc-langbase-console-charcoal: #232324;
-  --tc-langbase-bone-white: #fafafa;
-  --tc-langbase-true-black: #000000;
-  --tc-langbase-off-white: #ebeced;
-  --tc-langbase-mute-gray: #a1a1aa;
-  --tc-langbase-wire-gray: #5c5c61;
-  --tc-langbase-recess-black: #181818;
-  --tc-langbase-nav-ink: #0e0e10;
-  --tc-langbase-smoke: #454546;
-  --tc-langbase-ash: #696970;
-  --tc-langbase-aurora-gradient: linear-gradient(to right, #f6d1ac, #f3b5d2, #c7b8f5, #a7eadc, #afcdf6);
-}
-```
-
-语义映射必须通过以下类型的 token 完成：
-
-```css
---tc-surface-page
---tc-surface-card
---tc-surface-panel
---tc-surface-muted
---tc-text-primary
---tc-text-secondary
---tc-text-muted
---tc-border-subtle
---tc-border-strong
---tc-action-primary-bg
---tc-action-primary-text
---tc-accent-brand
---tc-accent-highlight
---tc-radius-control
---tc-radius-card
---tc-radius-pill
---tc-font-display
---tc-font-ui
---tc-font-mono
-```
+当前主风格使用炭灰、近白、灰色线框和少量极光色。新页面和新组件必须使用 `web/src/app/globals.css` 中已有的语义 token，不直接写死外部参考色，也不在本文复制维护 token 清单或精确赋值。
 
 使用规则：
 
@@ -105,17 +58,10 @@
 - `--tc-text-primary` 对应主要文字，必须满足长时间阅读对比度。
 - `--tc-action-primary-bg` 对应白色胶囊主按钮。
 - `--tc-aurora-gradient` 只能用于装饰，不得用于功能状态。
-- 保留旧 token 只用于迁移兼容，不得继续扩展已废弃视觉方向。
 
 ## 3. 字体与排版
 
 当前主风格使用 Geist Sans 作为主要 UI 字体，Geist Mono 作为展示标题、技术读数和代码感标签。
-
-```css
---tc-font-ui: var(--font-geist-sans), "Inter", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
---tc-font-display: var(--font-geist-mono), "JetBrains Mono", "IBM Plex Mono", "Fira Code", "SFMono-Regular", Consolas, monospace;
---tc-font-mono: var(--font-geist-mono), "JetBrains Mono", "IBM Plex Mono", "Fira Code", "SFMono-Regular", Consolas, monospace;
-```
 
 排版规则：
 
@@ -123,31 +69,12 @@
 - 大号展示读数、代码片段、来源编号和技术标签使用等宽字体。
 - 字重以 400、500、600 为主，700 只用于少量强提示。
 - 常用字号为 12px、14px、16px、18px、20px、32px、48px。
-- `letter-spacing` 默认必须为 `0` 或浏览器 normal，不得使用负字距；仅入口页品牌短标签允许少量正字距。
+- `letter-spacing` 默认必须为 `0` 或浏览器 normal，不得使用负字距。
 - 中文长文必须优先保证可读性，不能为了控制台感牺牲换行、行高和对比度。
 
 ## 4. 空间、圆角与边框
 
 基础单位为 4px。
-
-```css
-:root {
-  --tc-space-4: 4px;
-  --tc-space-8: 8px;
-  --tc-space-12: 12px;
-  --tc-space-16: 16px;
-  --tc-space-24: 24px;
-  --tc-space-32: 32px;
-  --tc-space-40: 40px;
-  --tc-space-48: 48px;
-  --tc-space-64: 64px;
-  --tc-page-max-width: 1200px;
-  --tc-radius-control: 4px;
-  --tc-radius-card: 12px;
-  --tc-radius-badge: 4px;
-  --tc-radius-pill: 9999px;
-}
-```
 
 规则：
 
@@ -224,7 +151,7 @@
 - 底部使用 1px 深色分割线。
 - 当前项使用内凹深色表面和白色文字。
 - 导航文字必须为中文。
-- 移动端必须可横向滚动或折叠，不得遮挡主要内容。
+- 导航以桌面浏览器的可视宽度为准，不为手机端横向滚动、折叠菜单或触控交互维护额外方案。
 
 ### 6.3 卡片
 
@@ -260,7 +187,7 @@
 - 风格切换只改变视觉 token，不改变布局结构。
 - 尊重 `prefers-reduced-motion`。
 - 极光效果只能弱动效或静态，不得持续强闪烁。
-- 除入口页正式例外外，禁止粒子、霓虹、旋转装饰和大面积渐变动画。
+- 禁止粒子、霓虹、旋转装饰和大面积渐变动画。
 
 ## 8. 多风格切换边界
 

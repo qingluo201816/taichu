@@ -1132,7 +1132,7 @@ def _entity_expert(
                 "aliases": card.aliases,
                 "summary": card.summary,
             }
-            for card in await dependencies.knowledge_repository.list_active_cards()
+            for card in await dependencies.knowledge_repository.list_confirmed_cards()
         ]
         entity_schemas = [
             knowledge_type_schema(knowledge_type).model_dump(mode="json")
@@ -1250,7 +1250,7 @@ def _normalize_and_validate() -> Callable[
                 "passed": not validation_errors,
                 "errors": validation_errors,
             }
-            card.setdefault("status", "active")
+            card.setdefault("lifecycle", "confirmed")
             card.setdefault("source_origin", "agent_extract")
             normalized.append(card)
         state["typed_candidates"] = normalized
@@ -1289,8 +1289,13 @@ def _match_existing(
 ) -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
         for candidate in state.get("typed_candidates", []):
-            knowledge_type = str(candidate.get("type") or "")
-            matches = await dependencies.knowledge_repository.search_active_identity(
+            try:
+                knowledge_type = StructuredKnowledgeType(
+                    str(candidate.get("type") or "")
+                )
+            except ValueError:
+                continue
+            matches = await dependencies.knowledge_repository.search_confirmed_identity(
                 knowledge_type,
                 str(candidate.get("name") or ""),
                 _list_strings(candidate.get("aliases")),
@@ -1329,7 +1334,13 @@ def _build_review_items() -> Callable[
                     "knowledge_type": str(candidate.get("type") or ""),
                     "candidate_status": "pending",
                     "display_title": str(candidate.get("name") or "未命名候选"),
-                    "suggested_card": _strip_internal_candidate_fields(candidate),
+                    "suggested_card": _candidate_card_with_occurrence_count(
+                        candidate, state.get("chapter_id")
+                    ),
+                    "appearance_chapter_ids": _list_strings(
+                        candidate.get("chapter_ids")
+                    )
+                    or _list_strings([state.get("chapter_id")]),
                     "target_card_id": candidate.get("target_card_id"),
                     "matched_card_name": candidate.get("matched_card_name"),
                     "match_reason": str(candidate.get("match_reason") or ""),
@@ -1700,8 +1711,8 @@ async def _quality_decision(
         return "rejected", "缺少稳定名称。"
     if not evidence_excerpts:
         return "rejected", "缺少可回放的原文证据。"
-    active_matches = await dependencies.knowledge_repository.search_active_identity(
-        knowledge_type,
+    active_matches = await dependencies.knowledge_repository.search_confirmed_identity(
+        StructuredKnowledgeType(knowledge_type),
         name,
         _list_strings(group.get("raw_names")),
     )
@@ -1832,7 +1843,7 @@ def _cards_with_type(cards: list[Any], knowledge_type: str) -> list[dict[str, An
         if isinstance(card, dict):
             payload = dict(card)
             payload["type"] = knowledge_type
-            payload.setdefault("status", "active")
+            payload.setdefault("lifecycle", "confirmed")
             payload.setdefault("source_origin", "agent_extract")
             typed.append(payload)
     return typed
@@ -1866,7 +1877,8 @@ def _candidate_validation_errors(card: dict[str, Any]) -> list[str]:
         "aliases",
         "summary",
         "importance",
-        "status",
+        "appearance_chapter_count",
+        "lifecycle",
         "source_origin",
         "source_note",
         "entity_group_id",
@@ -1907,7 +1919,7 @@ def _external_conflicts(
             "entity_group_id",
             "evidence_excerpt",
             "evidence_excerpts",
-            "status",
+            "lifecycle",
             "source_origin",
             "last_seen_chapter_id",
         }:
@@ -1959,8 +1971,19 @@ def _strip_internal_candidate_fields(candidate: dict[str, Any]) -> dict[str, Any
         "matched_card_name",
         "match_reason",
         "source_excerpt",
+        "chapter_ids",
+        "chapter_titles",
     }
     return {key: value for key, value in candidate.items() if key not in excluded}
+
+
+def _candidate_card_with_occurrence_count(
+    candidate: dict[str, Any], chapter_id: object
+) -> dict[str, Any]:
+    card = _strip_internal_candidate_fields(candidate)
+    if card.get("appearance_chapter_count") is None and str(chapter_id or "").strip():
+        card["appearance_chapter_count"] = 1
+    return card
 
 
 def _metrics(

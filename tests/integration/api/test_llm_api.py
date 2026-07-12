@@ -14,6 +14,7 @@ from taichu.config import Settings
 from taichu.infrastructure.llm.mock import MVPNoRealLLMChatModel
 from taichu.infrastructure.storage.markdown_backend import ProjectAssetStorageBackend
 from taichu.main import create_app
+from tests.fakes import InMemoryKnowledgeRepository
 
 
 class LLMApiTest(unittest.IsolatedAsyncioTestCase):
@@ -23,7 +24,8 @@ class LLMApiTest(unittest.IsolatedAsyncioTestCase):
                 Settings(
                     project_assets_dir=Path(temporary_directory),
                     rightcode_api_key=SecretStr(""),
-                )
+                ),
+                knowledge_repository=InMemoryKnowledgeRepository(),
             )
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
@@ -54,7 +56,8 @@ class LLMApiTest(unittest.IsolatedAsyncioTestCase):
     async def test_usage_calls_detail_and_summary_do_not_return_prompts(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             app = create_app(
-                Settings(project_assets_dir=Path(temporary_directory))
+                Settings(project_assets_dir=Path(temporary_directory)),
+                knowledge_repository=InMemoryKnowledgeRepository(),
             )
             await app.state.llm_usage_repository.append(_record())
             async with AsyncClient(
@@ -93,6 +96,7 @@ class LLMApiTest(unittest.IsolatedAsyncioTestCase):
             app = create_app(
                 Settings(project_assets_dir=assets_root),
                 llm=MVPNoRealLLMChatModel(response_text=output),
+                knowledge_repository=InMemoryKnowledgeRepository(),
             )
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
