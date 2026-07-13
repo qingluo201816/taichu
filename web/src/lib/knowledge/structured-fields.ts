@@ -193,6 +193,22 @@ export function displayKnowledgeFieldValue(
   return option?.label ?? String(value);
 }
 
+export function appearanceImportanceLabel(
+  value: unknown,
+  chapterCount: number,
+): string {
+  if (value === null || value === undefined || value === "") {
+    return "暂未统计";
+  }
+  const count = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(count) || count < 0) return "暂未统计";
+  if (chapterCount <= 0) return `已出现 ${count} 章`;
+  const ratio = count / chapterCount;
+  const label =
+    ratio >= 0.5 ? "核心" : ratio >= 0.2 ? "重要" : ratio >= 0.05 ? "普通" : "次要";
+  return `${label}（已出现 ${count}/${chapterCount} 章）`;
+}
+
 export function splitKnowledgeList(value: string): string[] {
   return value
     .split(/[，,\n]/)

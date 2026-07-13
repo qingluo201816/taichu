@@ -19,7 +19,6 @@ def _card() -> StructuredKnowledgeCard:
             "name": " 秦 阳 ",
             "aliases": ["ＱＩＮ", "秦阳"],
             "summary": "测试摘要",
-            "importance": "normal",
             "lifecycle": "confirmed",
             "source_origin": "manual",
             "source_note": "作者确认",
@@ -56,4 +55,5 @@ def test_validator_requires_lifecycle_and_has_no_legacy_status() -> None:
 
     assert "lifecycle" in schema["required"]
     assert "status" not in schema["properties"]
+    assert "importance" not in schema["properties"]
     assert schema["additionalProperties"] is False

@@ -25,6 +25,9 @@ from taichu.application.evaluations.knowledge_extraction.dataset import (
     LoadedEvaluationDataset,
 )
 from taichu.application.evaluations.knowledge_extraction.models import (
+    AmbiguousMatch,
+    CandidateMatchResult,
+    CandidateRef,
     DatasetManifest,
     EvaluationCaseRef,
     EvaluationLifecycle,
@@ -34,12 +37,16 @@ from taichu.application.evaluations.knowledge_extraction.models import (
     SourceEvidence,
 )
 from taichu.application.evaluations.knowledge_extraction.records import (
+    EvaluationComparison,
     EvaluationStatus,
     KnowledgeEvaluationRecord,
 )
 from taichu.application.services.knowledge_extraction_evaluation_service import (
     EvaluationServiceError,
     KnowledgeExtractionEvaluationService,
+    _build_comparisons,
+    _comparison_issue_type,
+    _display_model_title,
     derive_independence,
 )
 from taichu.domain.models.structured_knowledge import StructuredKnowledgeType
@@ -205,6 +212,37 @@ def test_preview_and_deterministic_background_use_frozen_inputs(
     tmp_path: Path,
 ) -> None:
     asyncio.run(_preview_and_background_scenario(tmp_path))
+
+
+def test_update_candidate_is_fully_evaluable(tmp_path: Path) -> None:
+    asyncio.run(_update_candidate_preview_scenario(tmp_path))
+
+
+async def _update_candidate_preview_scenario(tmp_path: Path) -> None:
+    markdown = "秦阳握着青铜令牌走入山门。"
+    dataset = _dataset(markdown)
+    run = _run(markdown, action=AgentReviewCandidateAction.UPDATE_CARD)
+    service = KnowledgeExtractionEvaluationService(
+        dataset_repository=_DatasetRepository(dataset),
+        result_repository=JsonEvaluationResultStore(tmp_path),
+        run_store=_RunStore([run]),
+        chapter_service=_ChapterService(markdown),  # type: ignore[arg-type]
+        judge=_SuccessfulJudge(available=True),
+    )
+
+    preview = await service.preview(
+        dataset_id=dataset.manifest.dataset_id,
+        run_ids=[run.run_id],
+        judge_enabled=True,
+        metric_profile_id="knowledge_extraction_balanced",
+    )
+
+    assert preview["can_create"] is True
+    assert preview["has_diagnostic_runs"] is False
+    assert preview["warnings"] == []
+    assert preview["runs"][0]["eligibility_level"] == "full"
+    assert preview["estimate"]["matched_card_count"] == 1
+    assert preview["estimate"]["judge_card_count"] == 1
 
 
 async def _preview_and_background_scenario(tmp_path: Path) -> None:
@@ -407,6 +445,139 @@ def test_model_independence_uses_real_provider_model_and_family() -> None:
     )
 
 
+def test_display_model_title_uses_frozen_author_facing_name() -> None:
+    run = _run("秦阳握着青铜令牌走入山门。").model_copy(
+        update={
+            "model_name": "Claude Sonnet 5",
+            "requested_model_name": "claude-sonnet-5",
+            "model_id": "claude-sonnet-5",
+            "model_display_name": "Claude Sonnet 5",
+            "upstream_model": "claude-sonnet-5",
+            "generation_model_identity": LLMModelIdentity(
+                provider="rightcode",
+                model_id="claude-sonnet-5",
+                family="claude-sonnet",
+                endpoint_kind="anthropic_messages",
+                known=True,
+            ),
+        }
+    )
+
+    assert _display_model_title(run) == "Claude Sonnet 5"
+    assert (
+        _display_model_title(
+            run.model_copy(
+                update={
+                    "model_name": "claude-sonnet-5",
+                    "model_display_name": "claude-sonnet-5",
+                }
+            )
+        )
+        == "模型信息未记录"
+    )
+
+
+def test_comparison_issue_type_only_reports_real_differences() -> None:
+    exact_match = EvaluationComparison(
+        run_id="extract_run_20260711_120000_a1b2c3",
+        case_id="chapter-001",
+        knowledge_type="character",
+        issue_type="field_difference",
+        expected_card_id="expected-001",
+        actual_candidate_id="actual-001",
+    )
+    field_difference = exact_match.model_copy(
+        update={
+            "field_diffs": [
+                {
+                    "field_name": "aliases",
+                    "expected_value": ["阿阳"],
+                    "actual_value": [],
+                }
+            ]
+        }
+    )
+    semantic_issue = exact_match.model_copy(
+        update={
+            "judge_result": {
+                "status": "scored",
+                "dimensions": {
+                    "key_fact_coverage": {"score": 2},
+                    "evidence_grounding": {"score": 4},
+                },
+            }
+        }
+    )
+    evidence_issue = exact_match.model_copy(
+        update={
+            "judge_result": {
+                "status": "scored",
+                "dimensions": {"evidence_grounding": {"score": 3}},
+            }
+        }
+    )
+    judge_disagreement = exact_match.model_copy(
+        update={"judge_result": {"status": "reference_conflict"}}
+    )
+    ambiguous_match = exact_match.model_copy(
+        update={"issue_type": "ambiguous_match"}
+    )
+
+    assert _comparison_issue_type(exact_match) is None
+    assert _comparison_issue_type(field_difference) == "field_difference"
+    assert _comparison_issue_type(semantic_issue) == "semantic_issue"
+    assert _comparison_issue_type(evidence_issue) == "evidence_issue"
+    assert _comparison_issue_type(judge_disagreement) == "judge_disagreement"
+    assert _comparison_issue_type(ambiguous_match) == "ambiguous_match"
+
+
+def test_ambiguous_match_is_one_review_item_without_missing_or_extra_rows() -> None:
+    matches = CandidateMatchResult(
+        ambiguities=[
+            AmbiguousMatch(
+                knowledge_type=StructuredKnowledgeType.EVENT,
+                weight=80,
+                actual_candidates=[
+                    CandidateRef(
+                        card_id="actual-001",
+                        knowledge_type=StructuredKnowledgeType.EVENT,
+                        name="秦浩轩制止张狂殴打少年",
+                    )
+                ],
+                expected_cards=[
+                    CandidateRef(
+                        card_id="expected-001",
+                        knowledge_type=StructuredKnowledgeType.EVENT,
+                        name="秦浩轩喝止张狂欺凌少年",
+                    ),
+                    CandidateRef(
+                        card_id="expected-002",
+                        knowledge_type=StructuredKnowledgeType.EVENT,
+                        name="秦浩轩再次阻止张狂",
+                    ),
+                ],
+                normalized_keys=["event-semantic:test"],
+            )
+        ]
+    )
+
+    comparisons = _build_comparisons(
+        "extract_run_20260711_120000_a1b2c3",
+        "chapter-001",
+        "第一章",
+        matches,
+        [],
+        [],
+        [],
+    )
+
+    assert len(comparisons) == 1
+    assert comparisons[0].issue_type == "ambiguous_match"
+    assert comparisons[0].match_kind == "ambiguous_match"
+    assert comparisons[0].judge_result is not None
+    assert "漏提取和多提取计数中排除" in comparisons[0].judge_result["reason"]
+
+
 def test_successful_judge_persists_auditable_call_and_semantic_result(
     tmp_path: Path,
 ) -> None:
@@ -545,11 +716,11 @@ def _dataset(markdown: str) -> LoadedEvaluationDataset:
             "type": "character",
             "name": "秦阳",
             "aliases": [],
-            "importance": "core",
+            "appearance_chapter_count": 1,
             "summary": "秦阳走入山门。",
         },
         accepted_names=[],
-        exact_fields=["importance"],
+        exact_fields=["appearance_chapter_count"],
         set_fields=["aliases"],
         semantic_fields=["summary"],
         expected_claims=[],
@@ -587,7 +758,11 @@ def _dataset(markdown: str) -> LoadedEvaluationDataset:
     )
 
 
-def _run(markdown: str) -> AgentRun:
+def _run(
+    markdown: str,
+    *,
+    action: AgentReviewCandidateAction = AgentReviewCandidateAction.CREATE_CARD,
+) -> AgentRun:
     run_id = "extract_run_20260711_120000_a1b2c3"
     source_hash = sha256(markdown.encode()).hexdigest()
     now = "2026-07-11T12:00:00Z"
@@ -613,14 +788,14 @@ def _run(markdown: str) -> AgentRun:
             AgentReviewItem(
                 review_item_id="review-qinyang",
                 run_id=run_id,
-                candidate_action=AgentReviewCandidateAction.CREATE_CARD,
+                candidate_action=action,
                 knowledge_type=StructuredKnowledgeType.CHARACTER,
                 display_title="秦阳",
                 suggested_card={
                     "type": "character",
                     "name": "秦阳",
                     "aliases": [],
-                    "importance": "core",
+                    "appearance_chapter_count": 1,
                     "summary": "秦阳走入山门。",
                     "evidence_excerpt": markdown,
                 },

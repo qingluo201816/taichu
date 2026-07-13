@@ -15,7 +15,7 @@ GENERAL_EXTRACTION_PROMPT = """你是长篇玄幻小说的知识抽取助手。
 1. 只根据给定正文抽取，不要补写正文没有的信息。
 2. 本轮只抽取 character、location、faction、item、realm、technique、event、rule。
 3. 不抽取 foreshadow。
-4. 不生成最终知识卡，不输出 summary、importance、source_note 或任何类型专属字段。
+4. 不生成最终知识卡，不输出 summary、source_note 或任何类型专属字段。
 5. 每个 mention 必须提供至少一条原文摘录；同一候选在正文中有多个相关片段时，尽量保留多条代表性 evidence_excerpts。
 6. 原文摘录必须来自正文，不能改写，单条长度不超过 300 字；每个 mention 最多输出 5 条 evidence_excerpts。
 7. 如果信息太碎、不确定、属于第一版不抽取类型，或明显只是泛称、临时称呼、普通空间、普通消耗品，放入 ignored 并写明原因。
@@ -121,7 +121,6 @@ chapter_title={{chapter_title}}
       "name": "",
       "aliases": [],
       "summary": "",
-      "importance": "normal",
       "source_origin": "agent_extract",
       "source_note": "",
       "evidence_excerpt": "",
@@ -183,7 +182,6 @@ chapter_title={{chapter_title}}
       "name": "",
       "aliases": [],
       "summary": "",
-      "importance": "normal",
       "source_origin": "agent_extract",
       "source_note": "",
       "evidence_excerpt": "",
@@ -198,7 +196,6 @@ chapter_title={{chapter_title}}
       "name": "",
       "aliases": [],
       "summary": "",
-      "importance": "normal",
       "source_origin": "agent_extract",
       "source_note": "",
       "evidence_excerpt": "",
@@ -215,7 +212,6 @@ chapter_title={{chapter_title}}
       "name": "",
       "aliases": [],
       "summary": "",
-      "importance": "normal",
       "source_origin": "agent_extract",
       "source_note": "",
       "evidence_excerpt": "",
@@ -230,7 +226,6 @@ chapter_title={{chapter_title}}
       "name": "",
       "aliases": [],
       "summary": "",
-      "importance": "normal",
       "source_origin": "agent_extract",
       "source_note": "",
       "evidence_excerpt": "",
@@ -245,7 +240,6 @@ chapter_title={{chapter_title}}
       "name": "",
       "aliases": [],
       "summary": "",
-      "importance": "normal",
       "source_origin": "agent_extract",
       "source_note": "",
       "evidence_excerpt": "",
@@ -300,7 +294,6 @@ chapter_title={{chapter_title}}
       "name": "",
       "aliases": [],
       "summary": "",
-      "importance": "normal",
       "source_origin": "agent_extract",
       "source_note": "",
       "evidence_excerpt": "",
@@ -315,7 +308,6 @@ chapter_title={{chapter_title}}
       "name": "",
       "aliases": [],
       "summary": "",
-      "importance": "normal",
       "source_origin": "agent_extract",
       "source_note": "",
       "evidence_excerpt": "",

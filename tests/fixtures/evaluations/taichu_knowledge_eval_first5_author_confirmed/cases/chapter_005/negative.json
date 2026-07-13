@@ -1,0 +1,112 @@
+[
+  {
+    "negative_case_id": "negative_chapter_005_001",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "抢徐羽被子的少年"
+    ],
+    "reason": "无姓名，只承担触发冲突的临时作用。",
+    "source_quote_ids": [
+      "quote_negative_chapter_005_001"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_005_002",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "权贵子弟们"
+    ],
+    "reason": "李靖身边的群体泛称，没有完整成员名单和正式组织名。",
+    "source_quote_ids": [
+      "quote_negative_chapter_005_002"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_005_003",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "匕首"
+    ],
+    "reason": "没有专名、品阶或持续持有关系，虽然锋利但主要是冲突道具。",
+    "source_quote_ids": [
+      "quote_negative_chapter_005_003"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_005_004",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "被子、大通铺"
+    ],
+    "reason": "普通生活用品和宿舍设施，价值在于触发事件而非独立知识。",
+    "source_quote_ids": [
+      "quote_negative_chapter_005_004"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_005_005",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "引路道人"
+    ],
+    "reason": "只有职务式称呼，没有姓名或持续人物事实。",
+    "source_quote_ids": [
+      "quote_negative_chapter_005_005"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_005_006",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "白玉瓶"
+    ],
+    "reason": "仅在章节末出现并散发仙气，名称、内容物、功能和归属都不足。",
+    "source_quote_ids": [
+      "quote_negative_chapter_005_006"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_005_007",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "赤明"
+    ],
+    "reason": "只有姓名和五年前饱满仙种的单一转述，缺乏当前身份和持续事实。",
+    "source_quote_ids": [
+      "quote_negative_chapter_005_007"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_005_008",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "无色弱种的新弟子们"
+    ],
+    "reason": "测试结果相同的群体，不是可独立追踪实体。",
+    "source_quote_ids": [
+      "quote_negative_chapter_005_008"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_005_009",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "仙灵之气"
+    ],
+    "reason": "属于测试时使用的能量，不是具体物品或功法。",
+    "source_quote_ids": [
+      "quote_negative_chapter_005_009"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_005_010",
+    "knowledge_type": "event",
+    "accepted_names": [
+      "钟声、焚香、仙乐"
+    ],
+    "reason": "测试仪式氛围和普通动作，不构成独立事件、物品或规则。",
+    "source_quote_ids": [
+      "quote_negative_chapter_005_010"
+    ]
+  }
+]

@@ -26,9 +26,6 @@ from taichu.application.agents.knowledge_extraction.prompts import (
     GENERAL_EXTRACTION_PROMPT_VERSION,
     KNOWLEDGE_EXTRACTION_PROMPT_VERSION,
 )
-from taichu.application.contracts.knowledge_repository import (
-    StructuredKnowledgeRepository,
-)
 from taichu.application.contracts.agent_run_repository import AgentRunRepository
 from taichu.application.contracts.llm import (
     LLMGatewayContract,
@@ -39,6 +36,13 @@ from taichu.application.contracts.llm import (
     response_text,
 )
 from taichu.application.services.chapter_service import ChapterService
+from taichu.application.services.retrieval_service import RetrievalService
+from taichu.application.retrieval.models import (
+    RetrievalConsumerContext,
+    RetrievalIdentityQuery,
+    RetrievalMode,
+    RetrievalRequest,
+)
 from taichu.application.agents.models.agent_run import (
     AgentBatchChapterProgress,
     AgentEntityGroup,
@@ -96,6 +100,7 @@ _EVENT_RULE_EXPERT_TYPES = {"event", "rule"}
 _MAX_MENTION_EVIDENCE_COUNT = 5
 _MAX_GROUP_EVIDENCE_COUNT = 12
 _JSON_REPAIR_MAX_RETRIES = 2
+_KNOWLEDGE_EXTRACTION_MAX_OUTPUT_TOKENS = 100_000
 _REJECT_CHARACTER_NAMES = frozenset(
     {
         "另一生面孔",
@@ -282,7 +287,7 @@ class KnowledgeExtractionDependencies:
 
     chapter_service: ChapterService
     llm: LLMGatewayContract
-    knowledge_repository: StructuredKnowledgeRepository
+    retrieval_service: RetrievalService
     run_store: AgentRunRepository
     event_sink: KnowledgeExtractionEventSink | None = None
 
@@ -621,6 +626,7 @@ def build_knowledge_extraction_branch_graph(
 def initial_knowledge_extraction_state(
     *,
     chapter_id: str,
+    chapter_title: str = "",
     model_name: str | None = None,
     requested_model_name: str | None = None,
     model_id: str | None = None,
@@ -648,7 +654,7 @@ def initial_knowledge_extraction_state(
         "force": force,
         "started_at": now,
         "finished_at": None,
-        "chapter_title": "",
+        "chapter_title": chapter_title,
         "markdown_text": "",
         "content_hash": "",
         "word_count": 0,
@@ -1036,7 +1042,11 @@ def _candidate_quality_gate(
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
         gated: list[dict[str, Any]] = []
         for group in state.get("entity_groups", []):
-            decision, reason = await _quality_decision(group, dependencies)
+            decision, reason = await _quality_decision(
+                group,
+                dependencies,
+                run_id=state.get("run_id"),
+            )
             gated_group = {
                 **group,
                 "quality_decision": decision,
@@ -1124,6 +1134,17 @@ def _entity_expert(
         entity_groups = state.get("entity_entity_groups", [])
         if not entity_groups:
             return state
+        retrieval = await dependencies.retrieval_service.retrieve(
+            RetrievalRequest(
+                mode=RetrievalMode.CATALOG,
+                top_k=200,
+                consumer=RetrievalConsumerContext(
+                    consumer_type="knowledge_workflow",
+                    run_id=state.get("run_id"),
+                    stage="EntityExpertNode",
+                ),
+            )
+        )
         active_index = [
             {
                 "id": card.id,
@@ -1132,7 +1153,7 @@ def _entity_expert(
                 "aliases": card.aliases,
                 "summary": card.summary,
             }
-            for card in await dependencies.knowledge_repository.list_confirmed_cards()
+            for card in (item.knowledge_card for item in retrieval.items)
         ]
         entity_schemas = [
             knowledge_type_schema(knowledge_type).model_dump(mode="json")
@@ -1295,11 +1316,25 @@ def _match_existing(
                 )
             except ValueError:
                 continue
-            matches = await dependencies.knowledge_repository.search_confirmed_identity(
-                knowledge_type,
-                str(candidate.get("name") or ""),
-                _list_strings(candidate.get("aliases")),
+            candidate_name = str(candidate.get("name") or "").strip()
+            if not candidate_name:
+                continue
+            retrieval = await dependencies.retrieval_service.retrieve(
+                RetrievalRequest(
+                    mode=RetrievalMode.IDENTITY,
+                    identity=RetrievalIdentityQuery(
+                        knowledge_type=knowledge_type,
+                        name=candidate_name,
+                        aliases=_list_strings(candidate.get("aliases")),
+                    ),
+                    consumer=RetrievalConsumerContext(
+                        consumer_type="knowledge_workflow",
+                        run_id=state.get("run_id"),
+                        stage="MatchExistingKnowledgeNode",
+                    ),
+                )
             )
+            matches = [item.knowledge_card for item in retrieval.items]
             if not matches:
                 continue
             match = matches[0]
@@ -1431,6 +1466,7 @@ async def _complete_json(
                     run_id=state.get("run_id"),
                     chapter_ids=(state.get("chapter_id", ""),),
                     response_mode="json",
+                    max_output_tokens=_KNOWLEDGE_EXTRACTION_MAX_OUTPUT_TOKENS,
                     feature="知识沉淀",
                 )
             )
@@ -1700,6 +1736,8 @@ def _ignored_from_general_output(
 async def _quality_decision(
     group: dict[str, Any],
     dependencies: KnowledgeExtractionDependencies,
+    *,
+    run_id: str | None,
 ) -> tuple[str, str]:
     knowledge_type = str(group.get("knowledge_type") or "")
     name = _first_non_empty(group.get("canonical_name"))
@@ -1711,11 +1749,22 @@ async def _quality_decision(
         return "rejected", "缺少稳定名称。"
     if not evidence_excerpts:
         return "rejected", "缺少可回放的原文证据。"
-    active_matches = await dependencies.knowledge_repository.search_confirmed_identity(
-        StructuredKnowledgeType(knowledge_type),
-        name,
-        _list_strings(group.get("raw_names")),
+    retrieval = await dependencies.retrieval_service.retrieve(
+        RetrievalRequest(
+            mode=RetrievalMode.IDENTITY,
+            identity=RetrievalIdentityQuery(
+                knowledge_type=StructuredKnowledgeType(knowledge_type),
+                name=name,
+                aliases=_list_strings(group.get("raw_names")),
+            ),
+            consumer=RetrievalConsumerContext(
+                consumer_type="knowledge_workflow",
+                run_id=run_id,
+                stage="CandidateQualityGateNode",
+            ),
+        )
     )
+    active_matches = [item.knowledge_card for item in retrieval.items]
     if active_matches:
         return "accepted", "命中已有有效知识卡，可作为更新候选。"
     if knowledge_type == "character":
@@ -1876,7 +1925,6 @@ def _candidate_validation_errors(card: dict[str, Any]) -> list[str]:
         "name",
         "aliases",
         "summary",
-        "importance",
         "appearance_chapter_count",
         "lifecycle",
         "source_origin",

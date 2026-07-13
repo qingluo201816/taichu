@@ -1,0 +1,563 @@
+[
+  {
+    "negative_case_id": "negative_batch_001_005_001",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "少年们"
+    ],
+    "reason": "大田镇少年群体泛称，不是可稳定追踪的单一角色。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_001"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_002",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "被殴打的两个少年"
+    ],
+    "reason": "两人均无姓名、无稳定称号，也没有可区分的持续身份。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_002"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_003",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "张狂的小弟"
+    ],
+    "reason": "只是依附张狂的临时群体称呼，没有个人姓名或正式组织名。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_003"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_004",
+    "knowledge_type": "faction",
+    "accepted_names": [
+      "小屿山上的神仙们"
+    ],
+    "reason": "群体泛称，没有稳定组织名、领导者和明确边界。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_004"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_005",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "妖魔鬼怪"
+    ],
+    "reason": "泛称且仅来自传说，没有具体对象，也不是已确认事实。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_005"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_006",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "小山谷"
+    ],
+    "reason": "没有稳定专名，当前只是秦浩轩迷路后进入的一次场景。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_006"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_007",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "秦浩轩的房间、西头院落"
+    ],
+    "reason": "普通居住空间，没有专名、特殊规则或独立世界观价值。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_007"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_008",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "獐子、豹子、饿狼"
+    ],
+    "reason": "普通动物或动物类别，没有独立姓名和稳定身份。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_008"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_009",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "银钱、衣衫"
+    ],
+    "reason": "普通货币和日用品，没有特殊功能、专名或持续设定价值。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_009"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_010",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "珍稀药材、灵药异草"
+    ],
+    "reason": "药材类别泛称，未指向单一种类或唯一物件；黄精已有明确名称，应单独抽取。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_010"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_011",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "黄色物体"
+    ],
+    "reason": "只是黄精身份揭示前的临时外观描述，与黄精明确同指，不能另建卡。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_011"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_012",
+    "knowledge_type": "event",
+    "accepted_names": [
+      "山中神仙挑选徒弟"
+    ],
+    "reason": "本章只说明该日子即将到来，事件尚未实际发生。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_012"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_013",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "两个生面孔"
+    ],
+    "reason": "临时群体称呼，本章尚未给出姓名，不能倒灌第3章身份。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_013"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_014",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "小山羊胡子、穿青衫的男子"
+    ],
+    "reason": "外貌式临时称呼，本章未给出正式姓名。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_014"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_015",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "另一个生面孔"
+    ],
+    "reason": "相对指代，没有姓名和可独立追踪身份。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_015"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_016",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "陈老头的徒弟们"
+    ],
+    "reason": "群体泛称，个体没有姓名或独立行为链。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_016"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_017",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "受伤的猎户、零散采药人"
+    ],
+    "reason": "普通顾客群体泛称，不是稳定角色实体。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_017"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_018",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "北街"
+    ],
+    "reason": "只作为陈家药铺的位置说明，当前没有独立剧情和世界观价值。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_018"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_019",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "陈家药铺门口、药店内院"
+    ],
+    "reason": "属于陈家药铺内部或相邻普通空间，应并入药铺来源，不另建卡。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_019"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_020",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "镇上的酒家"
+    ],
+    "reason": "普通消费场所，没有专名和持续设定价值。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_020"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_021",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "小镇广场"
+    ],
+    "reason": "普通集会空间，没有专名；其功能可写入报名事件。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_021"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_022",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "银锭、一百两白银"
+    ],
+    "reason": "普通货币，仅是交易价格，不应形成物品卡。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_022"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_023",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "第一个少年"
+    ],
+    "reason": "顺序性临时称呼，无姓名和持续身份。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_023"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_024",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "通过摸骨测试的少年"
+    ],
+    "reason": "功能性临时称呼，没有稳定身份。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_024"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_025",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "四十一名少年"
+    ],
+    "reason": "参选者群体，不是单一角色。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_025"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_026",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "二十个猎户"
+    ],
+    "reason": "护送者群体泛称，没有独立身份。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_026"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_027",
+    "knowledge_type": "realm",
+    "accepted_names": [
+      "凡骨"
+    ],
+    "reason": "这是摸道骨测试结果标签，不是正文明确的修炼境界。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_027"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_028",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "仙灵之气"
+    ],
+    "reason": "属于修仙能量表达，不是具体物品或可学习功法；当前 Schema 没有能量类型。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_028"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_029",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "黄色符纸"
+    ],
+    "reason": "未给正式名称，只在催马时一次性使用，信息不足。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_029"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_030",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "五匹好马"
+    ],
+    "reason": "普通坐骑群体，没有专名和超凡身份。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_030"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_031",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "仙剑、飞剑"
+    ],
+    "reason": "本章主要用于徐吞虎、赵嘉龙的登场和能力展示；作者确认不将玄幻开头的通用飞剑介绍建为物品卡。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_031"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_033",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "黄长老"
+    ],
+    "reason": "只有姓氏和职务称呼，未直接出场，信息不足以形成稳定角色卡。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_033"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_034",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "黄长老的儿子"
+    ],
+    "reason": "没有姓名，且“废柴”是徐吞虎评价，不能据此建立确定角色摘要。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_034"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_035",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "寿元将尽的老祖宗"
+    ],
+    "reason": "宗门群体或不明确个体的泛称，没有姓名和可核验身份。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_035"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_036",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "引路师兄、引路道人"
+    ],
+    "reason": "只有职务式临时称呼，未给姓名，主要承担引路功能。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_036"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_037",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "权贵子弟"
+    ],
+    "reason": "群体泛称，既不是单一角色，也没有正式组织名。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_037"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_038",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "新弟子平房"
+    ],
+    "reason": "普通临时住宿空间，无正式名称；其处境和功能已进入事件卡。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_038"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_039",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "食堂"
+    ],
+    "reason": "普通功能空间，只是一笔带过的用膳地点。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_039"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_040",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "山门下登记处"
+    ],
+    "reason": "普通登记节点，无专名；应并入抵达太初教事件。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_040"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_041",
+    "knowledge_type": "technique",
+    "accepted_names": [
+      "上古灵法、魔术、法宝"
+    ],
+    "reason": "宝物与传承类别泛称，没有具体名称、功能或唯一对象。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_041"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_042",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "变异灵药"
+    ],
+    "reason": "类别泛称，目前只推断绝仙毒谷可能孕育，未给具体种类。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_042"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_043",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "抢徐羽被子的少年"
+    ],
+    "reason": "无姓名，只承担触发冲突的临时作用。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_043"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_044",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "权贵子弟们"
+    ],
+    "reason": "李靖身边的群体泛称，没有完整成员名单和正式组织名。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_044"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_045",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "匕首"
+    ],
+    "reason": "没有专名、品阶或持续持有关系，虽然锋利但主要是冲突道具。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_045"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_046",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "被子、大通铺"
+    ],
+    "reason": "普通生活用品和宿舍设施，价值在于触发事件而非独立知识。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_046"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_047",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "引路道人"
+    ],
+    "reason": "只有职务式称呼，没有姓名或持续人物事实。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_047"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_048",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "白玉瓶"
+    ],
+    "reason": "仅在章节末出现并散发仙气，名称、内容物、功能和归属都不足。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_048"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_049",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "赤明"
+    ],
+    "reason": "只有姓名和五年前饱满仙种的单一转述，缺乏当前身份和持续事实。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_049"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_050",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "无色弱种的新弟子们"
+    ],
+    "reason": "测试结果相同的群体，不是可独立追踪实体。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_050"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_051",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "仙灵之气"
+    ],
+    "reason": "属于测试时使用的能量，不是具体物品或功法。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_051"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_001_005_052",
+    "knowledge_type": "event",
+    "accepted_names": [
+      "钟声、焚香、仙乐"
+    ],
+    "reason": "测试仪式氛围和普通动作，不构成独立事件、物品或规则。",
+    "source_quote_ids": [
+      "quote_negative_batch_001_005_052"
+    ]
+  }
+]

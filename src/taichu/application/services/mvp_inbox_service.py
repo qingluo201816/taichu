@@ -35,7 +35,7 @@ class PendingFactConfirmResult:
 
 
 class MVPInboxService:
-    """Manage the three MVP Inbox tabs."""
+    """Manage the Inbox categories and their combined view."""
 
     def __init__(
         self,
@@ -52,7 +52,17 @@ class MVPInboxService:
         status: str = "todo",
         priority: str | None = None,
     ) -> list[MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue]:
-        """List items for one Inbox tab with optional lifecycle filters."""
+        """List one Inbox category or the combined view with lifecycle filters."""
+        if tab == "all":
+            return _filter_items(
+                [
+                    *await self._list_ideas(),
+                    *await self._list_pending_facts(),
+                    *await self._list_issues(),
+                ],
+                status,
+                priority,
+            )
         if tab == "ideas":
             return _filter_items(await self._list_ideas(), status, priority)
         if tab == "pending-facts":

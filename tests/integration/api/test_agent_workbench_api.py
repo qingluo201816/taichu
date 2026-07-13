@@ -32,7 +32,6 @@ from taichu.application.agents.models.agent_run import (
 )
 from taichu.domain.models.structured_knowledge import (
     StructuredKnowledgeCard,
-    StructuredKnowledgeImportance,
     StructuredKnowledgeLifecycle,
     StructuredKnowledgeSourceOrigin,
     StructuredKnowledgeType,
@@ -179,6 +178,7 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
             json.loads(line) for line in response.text.splitlines() if line.strip()
         ]
         event_types = [event["type"] for event in events]
+        started = next(event for event in events if event["type"] == "run_started")
         completed = next(event for event in events if event["type"] == "run_completed")
         detail_response = await self.client.get(
             "/api/agent-workbench/knowledge-extraction/runs/"
@@ -192,6 +192,7 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("node_finished", event_types)
         self.assertIn("llm_call_finished", event_types)
         self.assertIn("run_completed", event_types)
+        self.assertEqual(started["run"]["scope"]["chapter_title"], "第一章 山门")
         self.assertEqual(completed["run"]["status"], "completed")
         self.assertGreaterEqual(len(completed["run"]["graph_nodes"]), 1)
         self.assertEqual(detail_response.status_code, 200)
@@ -215,8 +216,16 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["run"]["status"], "running")
+        self.assertEqual(
+            response.json()["run"]["chapter_title"],
+            "第一章 山门",
+        )
         self.assertEqual(monitor_response.status_code, 200)
         self.assertEqual(monitor_response.json()["run"]["run_id"], run_id)
+        self.assertEqual(
+            monitor_response.json()["run"]["scope"]["chapter_title"],
+            "第一章 山门",
+        )
         self.assertIsNotNone(completed_detail)
         assert completed_detail is not None
         self.assertEqual(completed_detail["status"], "completed")
@@ -590,6 +599,7 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(card.aliases, ["阿阳", "小秦"])
         self.assertEqual(card.identity, "太初教弟子")
         self.assertEqual(card.last_seen_chapter_id, "chapter_002")
+        self.assertEqual(card.appearance_chapter_count, 1)
 
     async def test_scoped_confirm_uses_run_id_when_candidate_ids_repeat(self) -> None:
         await self.app.state.knowledge_service.create_confirmed_card(
@@ -782,7 +792,6 @@ def _success_responses() -> list[str]:
                         "name": "秦阳",
                         "aliases": [],
                         "summary": "本章走入太初教山门的人物。",
-                        "importance": "core",
                         "source_origin": "agent_extract",
                         "source_note": f"来自章节《第一章 山门》。原文摘录：{excerpt}",
                         "evidence_excerpt": excerpt,
@@ -821,7 +830,6 @@ def _extended_type_review_run() -> AgentRun:
     run_id = "extract_run_20260704_153026_extend"
     base_fields = {
         "aliases": [],
-        "importance": "normal",
         "source_note": "来自正文知识沉淀测试。",
     }
     return AgentRun(
@@ -1020,6 +1028,7 @@ def _targeted_update_run(
                     "identity": "新身份不应覆盖",
                     "last_seen_chapter_id": "chapter_002",
                 },
+                appearance_chapter_ids=["chapter_002"],
                 target_card_id=target_card_id,
                 matched_card_name="秦阳",
                 match_reason="名称相同",
@@ -1078,7 +1087,6 @@ def _confirmed_character_card(
         name="秦阳",
         aliases=aliases,
         summary=summary,
-        importance=StructuredKnowledgeImportance.CORE,
         lifecycle=StructuredKnowledgeLifecycle.CONFIRMED,
         source_origin=StructuredKnowledgeSourceOrigin.AGENT_EXTRACT,
         source_note=source_note,

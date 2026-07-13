@@ -50,7 +50,7 @@ from taichu.domain.models.structured_knowledge import StructuredKnowledgeType
 
 
 # 作者人工判断的出现频率不参与模型提取质量的对错评测。
-_NON_EVALUATED_CARD_FIELDS = frozenset({"importance", "appearance_chapter_count"})
+_NON_EVALUATED_CARD_FIELDS = frozenset({"appearance_chapter_count"})
 
 
 def _harmonic_mean(left: float, right: float) -> float:
@@ -505,9 +505,10 @@ def classify_eligibility(facts: EligibilityFacts) -> EvaluationEligibility:
     if facts.execution_coverage < 1:
         diagnostic_reasons.append(EligibilityReason.INCOMPLETE_EXECUTION)
     if any(
-        action is not CandidateAction.CREATE_CARD for action in facts.candidate_actions
+        action in {CandidateAction.CONFLICT, CandidateAction.IGNORE}
+        for action in facts.candidate_actions
     ):
-        diagnostic_reasons.append(EligibilityReason.NON_CREATE_ACTION)
+        diagnostic_reasons.append(EligibilityReason.UNRESOLVED_ACTION)
     return EvaluationEligibility(
         level=(
             EligibilityLevel.DIAGNOSTIC if diagnostic_reasons else EligibilityLevel.FULL

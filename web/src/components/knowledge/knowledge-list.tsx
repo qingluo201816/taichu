@@ -38,6 +38,7 @@ import {
   rejectKnowledgeCard,
 } from "@/lib/api/mvp";
 import {
+  appearanceImportanceLabel,
   buildKnowledgeReferenceOptions,
   displayKnowledgeFieldValue,
   formStateFromKnowledgeValues,
@@ -546,7 +547,12 @@ export function KnowledgeList() {
                           </span>
                         </span>
                         <span className="hidden max-w-[360px] truncate text-xs text-[var(--tc-text-muted)] md:block">
-                          {listDisplayText(schema, card, referenceOptions)}
+                          {listDisplayText(
+                            schema,
+                            card,
+                            referenceOptions,
+                            chapterCount,
+                          )}
                         </span>
                       </button>
                       {expanded && schema ? (
@@ -875,6 +881,7 @@ function listDisplayText(
   schema: KnowledgeTypeSchema | null,
   card: StructuredKnowledgeCard,
   referenceOptions: KnowledgeReferenceOptions,
+  chapterCount: number,
 ): string {
   if (!schema) {
     return card.summary;
@@ -896,11 +903,11 @@ function listDisplayText(
       ) {
         return "";
       }
-      return `${field.label}：${displayKnowledgeFieldValue(
-        field,
-        value,
-        referenceOptions,
-      )}`;
+      const readable =
+        field.field_key === "appearance_chapter_count"
+          ? appearanceImportanceLabel(value, chapterCount)
+          : displayKnowledgeFieldValue(field, value, referenceOptions);
+      return `${field.label}：${readable}`;
     })
     .filter(Boolean);
   return parts.join(" · ") || card.summary;

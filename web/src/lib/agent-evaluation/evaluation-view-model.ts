@@ -40,11 +40,44 @@ export const qualityStateLabels: Record<EvaluationQualityState, string> = {
 export const issueTypeLabels: Record<EvaluationIssueType, string> = {
   missing_candidate: "漏提取",
   extra_candidate: "多提取",
+  ambiguous_match: "匹配待复核",
   field_difference: "字段不同",
   semantic_issue: "语义问题",
   evidence_issue: "证据问题",
   judge_disagreement: "裁判意见不一致",
 };
+
+export function evaluationFieldLabel(
+  label: string | null | undefined,
+  field: string,
+): string {
+  if (label) return label;
+  const labels: Record<string, string> = {
+    name: "名称",
+    aliases: "别名",
+    summary: "摘要",
+    description: "事件说明",
+    source_note: "来源说明",
+    source_origin: "来源方式",
+    evidence_excerpt: "原文证据",
+    chapter_id: "所属章节",
+  };
+  return labels[field] ?? "字段内容";
+}
+
+export function evaluationMatchBasisLabel(
+  value: string | null | undefined,
+): string {
+  const labels: Record<string, string> = {
+    exact_name: "名称一致",
+    accepted_name: "评测集认可名称一致",
+    alias_cross: "名称与别名对应",
+    evidence_anchor: "同章原文证据一致",
+    event_semantic: "事件名称与内容语义一致",
+    ambiguous_match: "存在多个可能对应，等待复核",
+  };
+  return labels[value ?? ""] ?? "匹配依据未知";
+}
 
 export const knowledgeTypeLabels: Record<EvaluationKnowledgeType, string> = {
   character: "角色",

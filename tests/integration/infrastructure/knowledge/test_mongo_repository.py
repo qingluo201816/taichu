@@ -116,7 +116,6 @@ class MongoKnowledgeRepositoryIntegrationTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(rejected.lifecycle.value, "rejected")
         self.assertEqual((await self.repository.list_cards(KnowledgeCardQuery())).total, 0)
 
-
 def _card(
     card_id: str,
     name: str,
@@ -132,7 +131,6 @@ def _card(
             "name": name,
             "aliases": aliases or [],
             "summary": "测试摘要",
-            "importance": "normal",
             "lifecycle": lifecycle,
             "source_origin": "manual",
             "source_note": "作者确认",

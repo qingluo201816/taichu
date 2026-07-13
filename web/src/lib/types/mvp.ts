@@ -186,7 +186,7 @@ export type MVPInboxIssue = {
   updated_at: string;
 };
 
-export type InboxTab = "ideas" | "pending-facts" | "issues";
+export type InboxTab = "all" | "ideas" | "pending-facts" | "issues";
 
 export type MVPInboxListResponse<T> = {
   items: T[];

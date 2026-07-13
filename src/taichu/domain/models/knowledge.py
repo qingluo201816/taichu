@@ -1,13 +1,8 @@
 """Knowledge card compatibility exports for the first-version schema."""
 
-from enum import StrEnum
-
-from pydantic import Field
-
 from taichu.domain.models.base import DomainModel
 from taichu.domain.models.structured_knowledge import (
     StructuredKnowledgeCard,
-    StructuredKnowledgeImportance,
     StructuredKnowledgeLifecycle,
     StructuredKnowledgeType,
 )
@@ -15,15 +10,6 @@ from taichu.domain.models.structured_knowledge import (
 KnowledgeCard = StructuredKnowledgeCard
 KnowledgeCardType = StructuredKnowledgeType
 KnowledgeCardLifecycle = StructuredKnowledgeLifecycle
-
-
-class CharacterImportance(StrEnum):
-    """Minimal character importance buckets for legacy character views."""
-
-    CORE = "core"
-    MAJOR = "major"
-    MINOR = "minor"
-    CAMEO = "cameo"
 
 
 class CharacterCard(DomainModel):
@@ -34,6 +20,3 @@ class CharacterCard(DomainModel):
     current_location: str | None = None
     faction: str | None = None
     relationship_summary: str | None = None
-    importance: CharacterImportance | StructuredKnowledgeImportance = Field(
-        default=CharacterImportance.MINOR
-    )

@@ -10,9 +10,6 @@ from uuid import uuid4
 
 from pydantic import ValidationError
 
-from taichu.application.contracts.knowledge_repository import (
-    StructuredKnowledgeRepository,
-)
 from taichu.application.contracts.llm import (
     LLMGatewayContract,
     LLMMessage,
@@ -23,6 +20,12 @@ from taichu.application.contracts.llm import (
 )
 from taichu.application.contracts.storage import ProjectAssetStorageContract
 from taichu.application.services.chapter_service import ChapterService
+from taichu.application.services.retrieval_service import RetrievalService
+from taichu.application.retrieval.models import (
+    RetrievalConsumerContext,
+    RetrievalItem,
+    RetrievalRequest,
+)
 from taichu.application.services.writing_ai_prompts import (
     PROMPT_VERSION,
     TAICHU_COMMON_SYSTEM_V1,
@@ -144,12 +147,17 @@ class WritingAIContextBuilder:
     def __init__(
         self,
         chapter_service: ChapterService,
-        knowledge_repository: StructuredKnowledgeRepository,
+        retrieval_service: RetrievalService,
     ) -> None:
         self._chapter_service = chapter_service
-        self._knowledge_repository = knowledge_repository
+        self._retrieval_service = retrieval_service
 
-    async def build(self, command: WritingAICreateRunCommand) -> WritingAIContext:
+    async def build(
+        self,
+        command: WritingAICreateRunCommand,
+        *,
+        run_id: str | None = None,
+    ) -> WritingAIContext:
         """Read chapter and active knowledge before an LLM call."""
         chapter_content = await self._chapter_service.read_chapter(command.chapter_id)
         chapter_text = command.draft_chapter_text
@@ -167,6 +175,7 @@ class WritingAIContextBuilder:
             chapter_text=chapter_text,
             selected_text=selected_text,
             chapter_excerpt=chapter_excerpt,
+            run_id=run_id,
         )
         return WritingAIContext(
             chapter_id=chapter_content.chapter.id,
@@ -187,26 +196,47 @@ class WritingAIContextBuilder:
         chapter_text: str,
         selected_text: str,
         chapter_excerpt: str,
+        run_id: str | None,
     ) -> WritingAIRetrievalContext:
-        cards = await self._knowledge_repository.list_confirmed_cards()
-        corpus = _retrieval_corpus(command, selected_text, chapter_excerpt, chapter_text)
-        query_terms = _query_terms(command.user_input, selected_text)
+        query_text = "\n".join(
+            part for part in (command.user_input, selected_text) if part.strip()
+        )
+        context_text = (
+            chapter_excerpt or chapter_text[:3000]
+            if command.reference_scope is not WritingAIReferenceScope.NONE
+            else ""
+        )
+        result = await self._retrieval_service.retrieve(
+            RetrievalRequest(
+                query_text=query_text or _BUTTON_LABELS[command.button_type],
+                context_text=context_text,
+                top_k=12,
+                consumer=RetrievalConsumerContext(
+                    consumer_type="writing_task",
+                    run_id=run_id,
+                    stage="retrieving",
+                ),
+            )
+        )
         items: list[WritingAIRetrievalEvidenceItem] = []
         if chapter_excerpt.strip():
             items.append(_chapter_evidence_item(command, chapter_excerpt))
-        knowledge_items: list[WritingAIRetrievalEvidenceItem] = []
-        for card in cards:
-            reason = _match_reason(card, corpus, query_terms)
-            if not reason:
-                continue
-            knowledge_items.append(_evidence_item(card, reason))
-            if len(knowledge_items) >= 12:
-                break
-        items.extend(knowledge_items)
-        if not knowledge_items:
-            empty_reason = "当前没有检索到可用有效知识卡"
+        knowledge_evidence = [
+            _evidence_item(
+                item.knowledge_card,
+                "；".join(item.match_reasons),
+            )
+            for item in result.items
+        ]
+        items.extend(knowledge_evidence)
+        if not result.items:
+            empty_reason = result.empty_reason or "当前没有检索到可用有效知识卡"
             return WritingAIRetrievalContext(
                 used=True,
+                retrieval_id=result.retrieval_id,
+                strategy=result.strategy,
+                candidate_count=result.candidate_count,
+                truncated=result.truncated,
                 empty_reason=empty_reason,
                 items=items,
                 knowledge_context=(
@@ -216,11 +246,15 @@ class WritingAIContextBuilder:
             )
         return WritingAIRetrievalContext(
             used=True,
+            retrieval_id=result.retrieval_id,
+            strategy=result.strategy,
+            candidate_count=result.candidate_count,
+            truncated=result.truncated,
             empty_reason=None,
             items=items,
             knowledge_context="\n\n".join(
-                _knowledge_context_block(index, item, cards)
-                for index, item in enumerate(knowledge_items, start=1)
+                _knowledge_context_block(index, item)
+                for index, item in enumerate(result.items, start=1)
             ),
             evidence_context=_evidence_context(chapter_excerpt, items),
         )
@@ -234,7 +268,7 @@ class WritingAIService:
         *,
         storage: ProjectAssetStorageContract,
         chapter_service: ChapterService,
-        knowledge_repository: StructuredKnowledgeRepository,
+        retrieval_service: RetrievalService,
         llm: LLMGatewayContract,
         default_model_id: str,
         llm_configured: bool,
@@ -242,7 +276,7 @@ class WritingAIService:
         self._storage = storage
         self._context_builder = WritingAIContextBuilder(
             chapter_service,
-            knowledge_repository,
+            retrieval_service,
         )
         self._llm = llm
         self._default_model_id = default_model_id
@@ -283,7 +317,7 @@ class WritingAIService:
         await self._append(run)
         run = await self._set_status(run, WritingAIRunStatus.RETRIEVING)
         try:
-            context = await self._context_builder.build(command)
+            context = await self._context_builder.build(command, run_id=run.run_id)
             run = run.model_copy(
                 update={
                     "chapter_title": context.chapter_title,
@@ -369,7 +403,7 @@ class WritingAIService:
         yield {"type": "run_started", "run_id": run.run_id, "model_id": profile.id}
         try:
             run = await self._set_status(run, WritingAIRunStatus.RETRIEVING)
-            context = await self._context_builder.build(command)
+            context = await self._context_builder.build(command, run_id=run.run_id)
             prompt_snapshot = self._render_prompt(command, context)
             run = run.model_copy(
                 update={
@@ -645,49 +679,6 @@ def _chapter_excerpt(
     return f"{chapter_text[:3000]}\n\n……\n\n{chapter_text[-3000:]}"
 
 
-def _retrieval_corpus(
-    command: WritingAICreateRunCommand,
-    selected_text: str,
-    chapter_excerpt: str,
-    chapter_text: str,
-) -> str:
-    parts = [command.user_input, selected_text]
-    if command.reference_scope is not WritingAIReferenceScope.NONE:
-        parts.append(chapter_excerpt or chapter_text[:3000])
-    return "\n".join(part for part in parts if part)
-
-
-def _query_terms(user_input: str, selected_text: str) -> set[str]:
-    text = f"{user_input}\n{selected_text}"
-    terms = {
-        item.casefold()
-        for item in re.findall(r"[A-Za-z0-9_\u4e00-\u9fff]{2,24}", text)
-    }
-    return {term for term in terms if len(term.strip()) >= 2}
-
-
-def _match_reason(
-    card: StructuredKnowledgeCard,
-    corpus: str,
-    query_terms: set[str],
-) -> str | None:
-    compact_corpus = "".join(corpus.split()).casefold()
-    for value in [card.name, *card.aliases]:
-        normalized = "".join(value.split()).casefold()
-        if normalized and normalized in compact_corpus:
-            return f"正文或输入命中名称“{value}”"
-    card_text = _card_search_text(card)
-    for term in query_terms:
-        if term in card_text:
-            return f"用户输入或选区命中知识卡内容“{term}”"
-    return None
-
-
-def _card_search_text(card: StructuredKnowledgeCard) -> str:
-    payload = card.model_dump(mode="json", exclude_none=True)
-    return " ".join(str(value) for value in payload.values()).casefold()
-
-
 def _evidence_item(
     card: StructuredKnowledgeCard,
     reason: str,
@@ -721,12 +712,9 @@ def _chapter_evidence_item(
 
 def _knowledge_context_block(
     index: int,
-    item: WritingAIRetrievalEvidenceItem,
-    cards: list[StructuredKnowledgeCard],
+    item: RetrievalItem,
 ) -> str:
-    card = next((candidate for candidate in cards if candidate.id == item.source_id), None)
-    if card is None:
-        return ""
+    card = item.knowledge_card
     type_label = knowledge_type_label(card.type)
     return "\n".join(
         [
@@ -736,7 +724,7 @@ def _knowledge_context_block(
             f"摘要：{card.summary}",
             f"出现章节数：{card.appearance_chapter_count if card.appearance_chapter_count is not None else '暂未统计'}",
             f"来源说明：{card.source_note}",
-            f"命中原因：{item.usage}",
+            f"命中原因：{'；'.join(item.match_reasons)}",
         ]
     )
 

@@ -17,6 +17,10 @@ from taichu.application.contracts.storage import (
     StorageContract,
     StorageData,
 )
+from taichu.application.contracts.retrieval import (
+    RetrievalBackend,
+    RetrievalTraceRepository,
+)
 
 __all__ = [
     "LLMGatewayContract",
@@ -29,6 +33,8 @@ __all__ = [
     "LLMStreamEvent",
     "LLMUsage",
     "ProjectAssetStorageContract",
+    "RetrievalBackend",
+    "RetrievalTraceRepository",
     "StorageBackend",
     "StorageContract",
     "StorageData",

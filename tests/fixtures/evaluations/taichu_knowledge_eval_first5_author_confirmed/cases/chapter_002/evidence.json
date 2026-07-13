@@ -1,0 +1,218 @@
+[
+  {
+    "quote_id": "quote_character_qin_haoxuan_01",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "三十两就三十两，若没有您哪有我的今天",
+    "start_offset": 2204,
+    "end_offset": 2222,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_character_qin_haoxuan_02",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "秦浩轩在报名薄上写上自己的大名",
+    "start_offset": 2995,
+    "end_offset": 3010,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_character_zhang_kuang_01",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算",
+    "start_offset": 2959,
+    "end_offset": 2989,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_character_chen_laotou_01",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "陈老头每次都能药到病除，在大田镇拥有极高的声誉",
+    "start_offset": 32,
+    "end_offset": 55,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_character_chen_laotou_02",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "年近八十的他中气十足，一脸红润，健步如飞",
+    "start_offset": 1627,
+    "end_offset": 1647,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_character_chen_laotou_03",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "三十两就三十两，若没有您哪有我的今天",
+    "start_offset": 2204,
+    "end_offset": 2222,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_location_da_tian_zhen_01",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "镇长便遣人将镇上十六岁的适龄少年都聚集起来",
+    "start_offset": 2426,
+    "end_offset": 2447,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_location_chenjia_yaopu_01",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "陈家药铺在大田镇无人不知无人不晓",
+    "start_offset": 2,
+    "end_offset": 18,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_location_chenjia_yaopu_02",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "北街一个不甚起眼的小店铺，高高挂出一个“药”字",
+    "start_offset": 60,
+    "end_offset": 83,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_location_pozi_ling_01",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟",
+    "start_offset": 2473,
+    "end_offset": 2505,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_item_huangjing_01",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "这里是一百两银子，只要小兄弟愿意将这块黄精卖给我",
+    "start_offset": 936,
+    "end_offset": 960,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_item_huangjing_02",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "三十两就三十两",
+    "start_offset": 2204,
+    "end_offset": 2211,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_rule_da_tian_selection_fee_01",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "镇上十六岁的适龄少年都聚集起来",
+    "start_offset": 2432,
+    "end_offset": 2447,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_rule_da_tian_selection_fee_02",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "一旦被神仙们选中，还将得到神仙们赠予的每年两百两白银的安家费",
+    "start_offset": 2530,
+    "end_offset": 2560,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_event_huangjing_trade_chain_01",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "三十两就三十两，若没有您哪有我的今天",
+    "start_offset": 2204,
+    "end_offset": 2222,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_event_da_tian_selection_announced_01",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟",
+    "start_offset": 2473,
+    "end_offset": 2505,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_event_da_tian_selection_announced_02",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭",
+    "start_offset": 2641,
+    "end_offset": 2671,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_negative_chapter_002_001",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "就只有两个生面孔",
+    "start_offset": 329,
+    "end_offset": 337,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_negative_chapter_002_002",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "一个穿着青衫，留着小山羊胡的男子",
+    "start_offset": 507,
+    "end_offset": 523,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_negative_chapter_002_003",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "一直没有做声的另一个生面孔",
+    "start_offset": 1240,
+    "end_offset": 1253,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_negative_chapter_002_004",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "陈老头的学徒正在忙着切药制药",
+    "start_offset": 84,
+    "end_offset": 98,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_negative_chapter_002_005",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "一些受伤的猎户，前来卖药的零散采药人",
+    "start_offset": 310,
+    "end_offset": 328,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_negative_chapter_002_006",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "北街一个不甚起眼的小店铺",
+    "start_offset": 60,
+    "end_offset": 72,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_negative_chapter_002_007",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "秦浩轩来到陈家药铺门口",
+    "start_offset": 440,
+    "end_offset": 451,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_negative_chapter_002_008",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "领着一群少年来到镇上的酒家痛饮一顿",
+    "start_offset": 2322,
+    "end_offset": 2339,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_negative_chapter_002_009",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "在小镇的广场上宣布了这一振奋人心的消息",
+    "start_offset": 2448,
+    "end_offset": 2467,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  },
+  {
+    "quote_id": "quote_negative_chapter_002_010",
+    "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+    "text": "从包裹里取出五锭白灿灿的银子",
+    "start_offset": 918,
+    "end_offset": 932,
+    "source_hash": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+  }
+]

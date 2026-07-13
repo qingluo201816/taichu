@@ -39,6 +39,7 @@ export type EvaluationQualityState =
 export type EvaluationIssueType =
   | "missing_candidate"
   | "extra_candidate"
+  | "ambiguous_match"
   | "field_difference"
   | "semantic_issue"
   | "evidence_issue"

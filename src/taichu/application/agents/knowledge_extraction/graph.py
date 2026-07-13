@@ -15,11 +15,9 @@ from taichu.application.agents.knowledge_extraction.workflow import (
 )
 from taichu.application.capabilities import CapabilityContext
 from taichu.application.contracts.agent_run_repository import AgentRunRepository
-from taichu.application.contracts.knowledge_repository import (
-    StructuredKnowledgeRepository,
-)
 from taichu.application.contracts.llm import LLMGatewayContract
 from taichu.application.services.chapter_service import ChapterService
+from taichu.application.services.retrieval_service import RetrievalService
 
 manifest = AgentManifest(
     name="knowledge_extraction",
@@ -31,7 +29,7 @@ manifest = AgentManifest(
         {
             "chapter_service",
             "llm",
-            "knowledge_repository",
+            "retrieval_service",
             "knowledge_run_store",
         }
     ),
@@ -46,12 +44,9 @@ def build_graph(context: CapabilityContext) -> CompiledStateGraph:
         KnowledgeExtractionDependencies(
             chapter_service=context.require("chapter_service", ChapterService),
             llm=cast(LLMGatewayContract, context.capabilities["llm"]),
-            knowledge_repository=context.require(
-                "knowledge_repository",
-                cast(
-                    type[StructuredKnowledgeRepository],
-                    StructuredKnowledgeRepository,
-                ),
+            retrieval_service=context.require(
+                "retrieval_service",
+                RetrievalService,
             ),
             run_store=context.require(
                 "knowledge_run_store",

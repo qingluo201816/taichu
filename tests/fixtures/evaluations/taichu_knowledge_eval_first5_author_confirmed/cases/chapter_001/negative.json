@@ -1,0 +1,134 @@
+[
+  {
+    "negative_case_id": "negative_chapter_001_001",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "少年们"
+    ],
+    "reason": "大田镇少年群体泛称，不是可稳定追踪的单一角色。",
+    "source_quote_ids": [
+      "quote_negative_chapter_001_001"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_001_002",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "被殴打的两个少年"
+    ],
+    "reason": "两人均无姓名、无稳定称号，也没有可区分的持续身份。",
+    "source_quote_ids": [
+      "quote_negative_chapter_001_002"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_001_003",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "张狂的小弟"
+    ],
+    "reason": "只是依附张狂的临时群体称呼，没有个人姓名或正式组织名。",
+    "source_quote_ids": [
+      "quote_negative_chapter_001_003"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_001_004",
+    "knowledge_type": "faction",
+    "accepted_names": [
+      "小屿山上的神仙们"
+    ],
+    "reason": "群体泛称，没有稳定组织名、领导者和明确边界。",
+    "source_quote_ids": [
+      "quote_negative_chapter_001_004"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_001_005",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "妖魔鬼怪"
+    ],
+    "reason": "泛称且仅来自传说，没有具体对象，也不是已确认事实。",
+    "source_quote_ids": [
+      "quote_negative_chapter_001_005"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_001_006",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "小山谷"
+    ],
+    "reason": "没有稳定专名，当前只是秦浩轩迷路后进入的一次场景。",
+    "source_quote_ids": [
+      "quote_negative_chapter_001_006"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_001_007",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "秦浩轩的房间、西头院落"
+    ],
+    "reason": "普通居住空间，没有专名、特殊规则或独立世界观价值。",
+    "source_quote_ids": [
+      "quote_negative_chapter_001_007"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_001_008",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "獐子、豹子、饿狼"
+    ],
+    "reason": "普通动物或动物类别，没有独立姓名和稳定身份。",
+    "source_quote_ids": [
+      "quote_negative_chapter_001_008"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_001_009",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "银钱、衣衫"
+    ],
+    "reason": "普通货币和日用品，没有特殊功能、专名或持续设定价值。",
+    "source_quote_ids": [
+      "quote_negative_chapter_001_009"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_001_010",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "珍稀药材、灵药异草"
+    ],
+    "reason": "药材类别泛称，未指向单一种类或唯一物件；黄精已有明确名称，应单独抽取。",
+    "source_quote_ids": [
+      "quote_negative_chapter_001_010"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_001_011",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "黄色物体"
+    ],
+    "reason": "只是黄精身份揭示前的临时外观描述，与黄精明确同指，不能另建卡。",
+    "source_quote_ids": [
+      "quote_negative_chapter_001_011"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_001_012",
+    "knowledge_type": "event",
+    "accepted_names": [
+      "山中神仙挑选徒弟"
+    ],
+    "reason": "本章只说明该日子即将到来，事件尚未实际发生。",
+    "source_quote_ids": [
+      "quote_negative_chapter_001_012"
+    ]
+  }
+]

@@ -242,17 +242,17 @@ def test_no_comparable_structured_fields_returns_null_not_zero() -> None:
     assert metrics.weighted_total == 0
 
 
-def test_occurrence_count_and_legacy_importance_do_not_affect_evaluation() -> None:
+def test_occurrence_count_does_not_affect_evaluation() -> None:
     actual = _actual(
         "a",
         "秦浩轩",
-        card_fields={"importance": "minor", "appearance_chapter_count": 1},
+        card_fields={"appearance_chapter_count": 1},
     )
     expected = _expected(
         "e",
         "秦浩轩",
-        card_fields={"importance": "core", "appearance_chapter_count": 100},
-        exact_fields=["importance", "appearance_chapter_count"],
+        card_fields={"appearance_chapter_count": 100},
+        exact_fields=["appearance_chapter_count"],
     )
 
     metrics = compare_structured_fields(
@@ -467,17 +467,20 @@ def test_source_hash_comparison_distinguishes_mismatch_and_unverified() -> None:
 
 
 def test_eligibility_distinguishes_full_diagnostic_and_ineligible() -> None:
-    full = classify_eligibility(
-        EligibilityFacts(
-            has_matching_case=True,
-            dataset_valid=True,
-            candidates_readable=True,
-            snapshot_available=True,
-            source_hash_matches=True,
-            execution_coverage=1,
-            candidate_actions=[CandidateAction.CREATE_CARD],
+    full_results = [
+        classify_eligibility(
+            EligibilityFacts(
+                has_matching_case=True,
+                dataset_valid=True,
+                candidates_readable=True,
+                snapshot_available=True,
+                source_hash_matches=True,
+                execution_coverage=1,
+                candidate_actions=[action],
+            )
         )
-    )
+        for action in (CandidateAction.CREATE_CARD, CandidateAction.UPDATE_CARD)
+    ]
     diagnostic = classify_eligibility(
         EligibilityFacts(
             has_matching_case=True,
@@ -486,7 +489,7 @@ def test_eligibility_distinguishes_full_diagnostic_and_ineligible() -> None:
             snapshot_available=True,
             source_hash_matches=None,
             execution_coverage=0.5,
-            candidate_actions=[CandidateAction.UPDATE_CARD],
+            candidate_actions=[CandidateAction.CONFLICT, CandidateAction.IGNORE],
         )
     )
     ineligible = classify_eligibility(
@@ -501,12 +504,12 @@ def test_eligibility_distinguishes_full_diagnostic_and_ineligible() -> None:
         )
     )
 
-    assert full.level is EligibilityLevel.FULL
+    assert all(result.level is EligibilityLevel.FULL for result in full_results)
     assert diagnostic.level is EligibilityLevel.DIAGNOSTIC
     assert diagnostic.reasons == [
         EligibilityReason.SOURCE_HASH_UNVERIFIED,
         EligibilityReason.INCOMPLETE_EXECUTION,
-        EligibilityReason.NON_CREATE_ACTION,
+        EligibilityReason.UNRESOLVED_ACTION,
     ]
     assert diagnostic.can_create is True
     assert ineligible.level is EligibilityLevel.INELIGIBLE

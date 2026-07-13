@@ -147,6 +147,8 @@ _REASON_MESSAGES = {
     "source_hash_mismatch": "任务使用的正文与评测来源不一致。",
     "source_hash_unverified": "旧任务未保存完整正文哈希，仅提供降级诊断。",
     "incomplete_execution": "任务未完整执行，仅提供降级诊断。",
+    "unresolved_action": "任务含冲突或建议忽略的候选，仅提供降级诊断。",
+    # 兼容已冻结的历史评估快照；新任务中的更新候选可参与完整评估。
     "non_create_action": "任务含非新建候选，仅提供降级诊断。",
 }
 
@@ -470,6 +472,17 @@ class KnowledgeExtractionEvaluationService:
             result = await self._results.get_run_result(evaluation_id, summary.run_id)
             source = result or summary
             comparisons.extend(source.comparisons)
+        visible_comparisons: list[EvaluationComparison] = []
+        for comparison in comparisons:
+            normalized_issue_type = _comparison_issue_type(comparison)
+            if normalized_issue_type is None:
+                continue
+            visible_comparisons.append(
+                comparison.model_copy(
+                    update={"issue_type": normalized_issue_type}
+                )
+            )
+        comparisons = visible_comparisons
         if run_id:
             comparisons = [item for item in comparisons if item.run_id == run_id]
         if knowledge_type:
@@ -799,7 +812,13 @@ class KnowledgeExtractionEvaluationService:
         )
         try:
             match_count = (
-                len(match_candidates(actual, case.expected_cards).matches)
+                len(
+                    match_candidates(
+                        actual,
+                        case.expected_cards,
+                        case.source_evidence,
+                    ).matches
+                )
                 if case and candidates_readable
                 else 0
             )
@@ -1417,7 +1436,7 @@ def _evaluate_deterministic_run(
     profile: MetricProfile,
 ) -> tuple[EvaluationRunResult, list[JudgeInputCase]]:
     actual = _actual_candidates(run)
-    matches = match_candidates(actual, case.expected_cards)
+    matches = match_candidates(actual, case.expected_cards, case.source_evidence)
     candidate_metrics = compute_candidate_identification_metrics(matches)
     structured = compare_structured_fields(
         matches,
@@ -1552,26 +1571,27 @@ def _build_comparisons(
     for match in matches.matches:
         actual_card = actual_by_id[match.actual_candidate_id]
         expected_card = expected_by_id[match.expected_card_id]
+        field_diffs = [
+            item.model_dump(mode="json")
+            for item in diffs
+            if item.actual_candidate_id == match.actual_candidate_id
+            and item.comparable
+            and item.score is not None
+            and item.score < 1
+        ]
         result.append(
             EvaluationComparison(
                 run_id=run_id,
                 case_id=case_id,
                 task_title=task_title,
                 knowledge_type=match.knowledge_type.value,
-                issue_type="field_difference",
+                issue_type="field_difference" if field_diffs else "matched",
                 expected_card_id=match.expected_card_id,
                 actual_candidate_id=match.actual_candidate_id,
                 expected_card=expected_card.card,
                 actual_card=actual_card.card,
                 match_kind=match.kind.value,
-                field_diffs=[
-                    item.model_dump(mode="json")
-                    for item in diffs
-                    if item.actual_candidate_id == match.actual_candidate_id
-                    and item.comparable
-                    and item.score is not None
-                    and item.score < 1
-                ],
+                field_diffs=field_diffs,
             )
         )
     for item in matches.false_positives:
@@ -1598,6 +1618,46 @@ def _build_comparisons(
                 issue_type="missing_candidate",
                 expected_card_id=item.card_id,
                 expected_card=card.card,
+            )
+        )
+    for ambiguity in matches.ambiguities:
+        expected_candidates = [
+            {
+                "card_id": item.card_id,
+                "name": item.name,
+            }
+            for item in ambiguity.expected_cards
+        ]
+        actual_candidates = [
+            {
+                "card_id": item.card_id,
+                "name": item.name,
+            }
+            for item in ambiguity.actual_candidates
+        ]
+        result.append(
+            EvaluationComparison(
+                run_id=run_id,
+                case_id=case_id,
+                task_title=task_title,
+                knowledge_type=ambiguity.knowledge_type.value,
+                issue_type="ambiguous_match",
+                expected_card={
+                    "name": "、".join(item["name"] for item in expected_candidates),
+                    "candidates": expected_candidates,
+                },
+                actual_card={
+                    "name": "、".join(item["name"] for item in actual_candidates),
+                    "candidates": actual_candidates,
+                },
+                match_kind="ambiguous_match",
+                judge_result={
+                    "status": "ambiguous_match",
+                    "reason": (
+                        "存在多个可能的一对一对应，已从漏提取和多提取计数中"
+                        "排除，需要人工复核。"
+                    ),
+                },
             )
         )
     return result
@@ -1650,12 +1710,12 @@ def _build_judge_inputs(
                 expected_fields={
                     field: expected_card.card.get(field)
                     for field in expected_card.semantic_fields
-                    if field not in {"importance", "appearance_chapter_count"}
+                    if field != "appearance_chapter_count"
                 },
                 actual_fields={
                     field: actual_card.card.get(field)
                     for field in expected_card.semantic_fields
-                    if field not in {"importance", "appearance_chapter_count"}
+                    if field != "appearance_chapter_count"
                 },
                 expected_claims=[
                     item.model_dump(mode="json")
@@ -1710,8 +1770,28 @@ def _apply_judge_results(
             )
             item = judged.items.get(key)
             if item is None:
-                disagreement = bool(judged.call_ids.get(key))
-                comparisons.append(comparison)
+                call_ids = judged.call_ids.get(key, [])
+                disagreement = bool(call_ids)
+                comparisons.append(
+                    comparison.model_copy(
+                        update={
+                            "issue_type": (
+                                "judge_disagreement"
+                                if call_ids
+                                else comparison.issue_type
+                            ),
+                            "judge_result": (
+                                {
+                                    "status": "disagreement",
+                                    "reason": "多次裁判意见未达成一致。",
+                                    "judge_call_ids": call_ids,
+                                }
+                                if call_ids
+                                else comparison.judge_result
+                            ),
+                        }
+                    )
+                )
                 continue
             score = semantic_score(item)
             if score is not None:
@@ -1727,14 +1807,21 @@ def _apply_judge_results(
             reference_conflict = (
                 reference_conflict or item.status is JudgeStatus.REFERENCE_CONFLICT
             )
+            updated_comparison = comparison.model_copy(
+                update={
+                    "judge_result": {
+                        **item.model_dump(mode="json"),
+                        "judge_call_ids": judged.call_ids.get(key, []),
+                        "semantic_score": score,
+                    }
+                }
+            )
             comparisons.append(
-                comparison.model_copy(
+                updated_comparison.model_copy(
                     update={
-                        "judge_result": {
-                            **item.model_dump(mode="json"),
-                            "judge_call_ids": judged.call_ids.get(key, []),
-                            "semantic_score": score,
-                        }
+                        "issue_type": (
+                            _comparison_issue_type(updated_comparison) or "matched"
+                        )
                     }
                 )
             )
@@ -1821,6 +1908,78 @@ def _apply_judge_results(
             )
         )
     return output
+
+
+def _comparison_issue_type(comparison: EvaluationComparison) -> str | None:
+    """Classify one comparison for the author-facing difference list."""
+    if comparison.issue_type in {
+        "missing_candidate",
+        "extra_candidate",
+        "ambiguous_match",
+    }:
+        return comparison.issue_type
+
+    judge_result = comparison.judge_result or {}
+    judge_status = str(judge_result.get("status") or "")
+    if judge_status in {"reference_conflict", "disagreement"}:
+        return "judge_disagreement"
+    if judge_status == "insufficient_evidence":
+        return "evidence_issue"
+
+    dimensions = judge_result.get("dimensions")
+    if isinstance(dimensions, dict):
+        evidence_dimension = dimensions.get("evidence_grounding")
+        if _judge_dimension_has_issue(evidence_dimension):
+            return "evidence_issue"
+
+    missing_quote_ids = judge_result.get("missing_quote_ids")
+    if isinstance(missing_quote_ids, list) and missing_quote_ids:
+        return "evidence_issue"
+
+    findings = judge_result.get("findings")
+    if isinstance(findings, list):
+        if any(_is_evidence_finding(finding) for finding in findings):
+            return "evidence_issue"
+        if findings:
+            return "semantic_issue"
+
+    critical_flags = judge_result.get("critical_flags")
+    if isinstance(critical_flags, list) and critical_flags:
+        return "semantic_issue"
+    if isinstance(dimensions, dict) and any(
+        _judge_dimension_has_issue(dimension)
+        for dimension in dimensions.values()
+    ):
+        return "semantic_issue"
+
+    if comparison.field_diffs:
+        return "field_difference"
+    if comparison.issue_type in {
+        "semantic_issue",
+        "evidence_issue",
+        "judge_disagreement",
+    }:
+        return comparison.issue_type
+    return None
+
+
+def _judge_dimension_has_issue(value: Any) -> bool:
+    if not isinstance(value, dict):
+        return False
+    score = value.get("score")
+    return isinstance(score, (int, float)) and not isinstance(score, bool) and score < 4
+
+
+def _is_evidence_finding(value: Any) -> bool:
+    if not isinstance(value, dict):
+        return False
+    marker = " ".join(
+        str(value.get(key) or "").casefold() for key in ("kind", "field")
+    )
+    return any(
+        keyword in marker
+        for keyword in ("evidence", "grounding", "quote", "citation", "source")
+    )
 
 
 def _aggregate_metrics(run_results: list[EvaluationRunResult]) -> dict[str, Any]:
@@ -1941,17 +2100,33 @@ def _display_run_title(run: AgentRun) -> str:
 
 
 def _display_model_title(run: AgentRun) -> str:
-    model_id = (
-        run.generation_model_identity.model_id
-        if run.generation_model_identity.known
-        else None
-    )
+    if not run.generation_model_identity.known:
+        return "模型信息未记录"
+    model_id = run.generation_model_identity.model_id
     labels = {
         "deepseek-v4-pro": "DeepSeek V4 Pro",
         "deepseek-chat": "DeepSeek Chat",
         "deepseek-reasoner": "DeepSeek Reasoner",
     }
-    return labels.get(model_id or "", "模型信息未记录")
+    known_label = labels.get(model_id or "")
+    if known_label:
+        return known_label
+
+    internal_names = {
+        value.strip().casefold()
+        for value in (
+            model_id,
+            run.model_id,
+            run.requested_model_name,
+            run.upstream_model,
+        )
+        if value and value.strip()
+    }
+    for value in (run.model_display_name, run.model_name):
+        display_name = value.strip()
+        if display_name and display_name.casefold() not in internal_names:
+            return display_name
+    return "模型信息未记录"
 
 
 def _run_source_hashes(run: AgentRun) -> dict[str, str] | None:
@@ -1984,7 +2159,11 @@ def _judge_batch_count(runs: Sequence[_PreparedRun]) -> int:
     for item in runs:
         if item.eligibility.level is not EligibilityLevel.FULL or not item.case:
             continue
-        matches = match_candidates(item.actual_candidates, item.case.expected_cards)
+        matches = match_candidates(
+            item.actual_candidates,
+            item.case.expected_cards,
+            item.case.source_evidence,
+        )
         for match in matches.matches:
             identity = _hash_json(
                 item.run.generation_model_identity.model_dump(mode="json")

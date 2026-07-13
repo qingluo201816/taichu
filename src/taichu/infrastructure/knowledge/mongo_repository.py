@@ -77,13 +77,6 @@ class MongoKnowledgeRepository:
                     validationAction="error",
                 )
             else:
-                await self._collection.update_many(
-                    {"importance": {"$exists": True}},
-                    {
-                        "$unset": {"importance": ""},
-                        "$set": {"appearance_chapter_count": None},
-                    },
-                )
                 await self._database.command(
                     {
                         "collMod": self._collection_name,

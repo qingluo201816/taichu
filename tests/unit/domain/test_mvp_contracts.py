@@ -19,7 +19,6 @@ from taichu.domain.models import (
     SourceReference,
     SourceReferenceType,
     StructuredKnowledgeCard,
-    StructuredKnowledgeImportance,
     StructuredKnowledgeLifecycle,
     StructuredKnowledgeSourceOrigin,
     StructuredKnowledgeType,
@@ -104,7 +103,6 @@ class MVPContractTest(unittest.TestCase):
             name="秦阳",
             aliases=["秦无咎"],
             summary="主角，早期出现疑似金鳞元神异象。",
-            importance=StructuredKnowledgeImportance.CORE,
             lifecycle=StructuredKnowledgeLifecycle.DRAFT,
             source_origin=StructuredKnowledgeSourceOrigin.MANUAL,
             source_note="作者手动确认：第1章 大田金鳞元神出。",
@@ -127,6 +125,7 @@ class MVPContractTest(unittest.TestCase):
         self.assertNotIn("tags", payload)
         self.assertNotIn("fields", payload)
         self.assertNotIn("source_refs", payload)
+        self.assertNotIn("importance", payload)
         self.assertEqual(card.role_type, "protagonist")
 
     def test_knowledge_schema_does_not_register_forbidden_fields(self) -> None:
@@ -139,6 +138,7 @@ class MVPContractTest(unittest.TestCase):
         self.assertNotIn("tags", field_keys)
         self.assertNotIn("fields", field_keys)
         self.assertNotIn("source_refs", field_keys)
+        self.assertNotIn("importance", field_keys)
 
     def test_inbox_records_use_three_common_statuses(self) -> None:
         idea = MVPInboxIdea(

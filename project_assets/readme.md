@@ -1,6 +1,6 @@
 # project_assets 目录说明
 
-> 更新日期：2026-07-11
+> 更新日期：2026-07-13
 
 `project_assets/` 是太初单本小说的本地资产根目录，用于保存正文 Markdown、工作区中间态、AI/Agent 运行记录、评测审计和临时生成文件。MongoDB `taichu.knowledge_cards` 是唯一结构事实源，`project_assets/` 下的 JSON/JSONL 不承担兼容事实源职责。
 
@@ -62,6 +62,7 @@ project_assets/
 │   ├── agent_runs/                              # Agent 运行快照根目录
 │   │   └── knowledge_extraction/                # 正文知识沉淀 Agent 的运行记录和候选审核项
 │   ├── llm_usage/                               # 跨任务模型调用遥测，按需创建 calls.jsonl
+│   ├── retrieval/                               # 统一知识召回技术观测，按需创建 calls.jsonl
 │   └── agent_evaluations/                       # Agent 效果评估输入快照、结果与审计记录
 │       └── knowledge_extraction/                # 知识沉淀评估报告及裁判校准报告
 └── generated/                                   # 按需创建的临时生成物根目录
@@ -99,6 +100,8 @@ MongoDB 知识卡统一使用 `lifecycle=draft|confirmed|rejected`；默认列�
 `derived/` 是派生数据层。这里保存 Agent 运行快照、LLM 调用记录、评测 JSON 中间态和候选审核项，用于审计与回放；`source/workspace/` 中的 Inbox 与 AI JSONL 也只属于工作区中间态。
 
 跨任务模型调用遥测追加保存在 `derived/llm_usage/calls.jsonl`。每行只包含模型快照、任务来源、Token、费用、耗时、状态、上游请求 ID 和脱敏错误，不保存密钥、鉴权头、完整 Prompt 或模型原文；该目录属于可重建运行遥测，不是正文或结构化知识事实源。
+
+统一知识召回技术观测追加保存在 `derived/retrieval/calls.jsonl`。每行保存召回关联 ID、调用方、模式、策略、过滤范围、候选数、命中数、排名、耗时和脱敏错误；查询与辅助上下文只保存长度和 SHA-256，不重复保存正文或用户完整输入。该记录用于跨消费者排查召回链路，但不替代写作区、知识沉淀 Workflow 或通用 Agent Runtime 各自的业务日志、状态机与评测记录。
 
 知识沉淀效果评估保存在 `derived/agent_evaluations/knowledge_extraction/`。每次评估独立冻结评测集、实际候选、正文、评分参数和模型身份，并保存确定性结果与裁判调用审计；裁判校准报告位于其 `calibration_reports/` 子目录。评估报告和校准报告都是非事实派生数据，通过 `lifecycle` 区分草稿、已确认和已废弃状态，不得反向成为正文或结构化知识事实源。
 

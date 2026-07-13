@@ -30,15 +30,6 @@ class StructuredKnowledgeLifecycle(StrEnum):
     REJECTED = "rejected"
 
 
-class StructuredKnowledgeImportance(StrEnum):
-    """Legacy import-only labels kept for one-time migration parsing."""
-
-    CORE = "core"
-    MAJOR = "major"
-    NORMAL = "normal"
-    MINOR = "minor"
-
-
 class StructuredKnowledgeSourceOrigin(StrEnum):
     """First-version source origin buckets."""
 
@@ -99,10 +90,6 @@ class StructuredKnowledgeCard(DomainModel):
     name: str = ""
     aliases: list[str] = Field(default_factory=list)
     summary: str = ""
-    importance: StructuredKnowledgeImportance | None = Field(
-        default=None,
-        exclude=True,
-    )
     appearance_chapter_count: int | None = Field(default=None, ge=0)
     lifecycle: StructuredKnowledgeLifecycle
     source_origin: StructuredKnowledgeSourceOrigin | None = None
@@ -159,6 +146,7 @@ FORBIDDEN_KNOWLEDGE_FIELD_KEYS = frozenset(
         "personality",
         "motivation",
         "appearance",
+        "importance",
     }
 )
 

@@ -1,0 +1,1613 @@
+[
+  {
+    "expected_card_id": "character_qin_haoxuan",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "秦浩轩",
+      "aliases": [],
+      "summary": "秦浩轩在宿舍冲突中一拳击倒慕容超；秦浩轩为避免影响最终测试，暂时压下进入绝仙毒谷的冲动。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“一拳打在慕容超的脸上”；第5章 显灵台上鉴仙眼：“考虑到明天是最终测试，秦浩轩强行按捺住前去绝仙毒谷寻宝的冲动”",
+      "role_type": "protagonist",
+      "identity": "太初教新弟子",
+      "relationship_summary": "保护徐羽；与李靖及其身边的慕容超发生冲突",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "秦浩轩"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_qin_haoxuan_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "秦浩轩在宿舍抢被冲突中击败慕容超。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_02",
+        "field": "summary",
+        "importance": "normal",
+        "description": "秦浩轩把最终测试置于立即寻宝之前。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_qin_haoxuan_01",
+      "quote_character_qin_haoxuan_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_zhang_kuang",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "张狂",
+      "aliases": [
+        "张老大"
+      ],
+      "summary": "张狂对秦浩轩与李靖一方发生冲突感到幸灾乐祸。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“对秦浩轩一来就得罪了三皇子李靖，张狂有些幸灾乐祸”",
+      "role_type": "antagonist",
+      "identity": "太初教新弟子",
+      "relationship_summary": "与秦浩轩长期敌对；张扬是其族弟",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "张狂",
+      "张老大"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_zhang_kuang_01",
+        "field": "relationship_summary",
+        "importance": "normal",
+        "description": "张狂继续敌视秦浩轩，并乐见其得罪李靖。",
+        "source_quote_ids": [
+          "quote_character_zhang_kuang_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_zhang_kuang_01"
+    ]
+  },
+  {
+    "expected_card_id": "character_zhang_yang",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "张扬",
+      "aliases": [],
+      "summary": "张扬在最终测试中被测出灰色仙种。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“明鉴仙眼顿时闪起灰色光芒”",
+      "role_type": "supporting",
+      "identity": "太初教新弟子；灰色仙种",
+      "relationship_summary": "张狂的族弟兼小弟；受到太初教多堂争抢",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "张扬"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_zhang_yang_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "张扬拥有灰色仙种。",
+        "source_quote_ids": [
+          "quote_character_zhang_yang_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_zhang_yang_01"
+    ]
+  },
+  {
+    "expected_card_id": "character_li_jing",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "李靖",
+      "aliases": [],
+      "summary": "李靖以眼神示意身边权贵子弟参与抢被；秦浩轩击败慕容超后，李靖出面制止并向秦浩轩示好。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“在他的眼神示意下，他身边那几名权贵子弟也大摇大摆出去抢被子”；第5章 显灵台上鉴仙眼：“放肆，谁让你们打扰秦兄弟休息的？”",
+      "role_type": "supporting",
+      "identity": "翔龙国三皇子；太初教新弟子",
+      "relationship_summary": "试图拉拢秦浩轩；慕容超等权贵子弟听命于他",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "李靖"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_li_jing_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "李靖暗示身边权贵子弟参与抢被。",
+        "source_quote_ids": [
+          "quote_character_li_jing_01",
+          "quote_character_li_jing_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_02",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "李靖在秦浩轩显示实力后转而出面收场并示好。",
+        "source_quote_ids": [
+          "quote_character_li_jing_01",
+          "quote_character_li_jing_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_li_jing_01",
+      "quote_character_li_jing_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_xu_yu",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "徐羽",
+      "aliases": [],
+      "summary": "徐羽被抢走被子后，秦浩轩与其共用被子并予以保护。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“秦浩轩拉着在寒冷中蜷缩成一团的徐羽，将自己的被子分一半给他盖着”",
+      "role_type": "supporting",
+      "identity": "太初教新弟子",
+      "relationship_summary": "受到秦浩轩帮助和保护",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "徐羽"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_xu_yu_01",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "秦浩轩在宿舍冲突中保护徐羽。",
+        "source_quote_ids": [
+          "quote_character_xu_yu_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_xu_yu_01"
+    ]
+  },
+  {
+    "expected_card_id": "character_murong_chao",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "慕容超",
+      "aliases": [],
+      "summary": "慕容超是李靖身边的权贵少年，参与抢夺秦浩轩的被子；慕容超自幼习武并学习军中搏杀术；慕容超被击倒后仍拔匕首攻击秦浩轩。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“那个叫慕容超的权贵少年，抓住秦浩轩的被子一抽”；第5章 显灵台上鉴仙眼：“慕容超出身将门，自幼习武，学的都是军中搏杀术”；第5章 显灵台上鉴仙眼：“从腰间拔出一柄匕首刺向秦浩轩”",
+      "role_type": "antagonist",
+      "identity": "李靖身边的权贵少年；将门出身",
+      "relationship_summary": "听从李靖一方行动；与秦浩轩发生直接冲突",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "慕容超"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_murong_chao_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "慕容超是李靖身边的权贵少年，出身将门。",
+        "source_quote_ids": [
+          "quote_character_murong_chao_01",
+          "quote_character_murong_chao_02",
+          "quote_character_murong_chao_03"
+        ]
+      },
+      {
+        "claim_id": "claim_character_murong_chao_02",
+        "field": "summary",
+        "importance": "normal",
+        "description": "慕容超自幼学习军中搏杀术。",
+        "source_quote_ids": [
+          "quote_character_murong_chao_01",
+          "quote_character_murong_chao_02",
+          "quote_character_murong_chao_03"
+        ]
+      },
+      {
+        "claim_id": "claim_character_murong_chao_03",
+        "field": "summary",
+        "importance": "major",
+        "description": "慕容超在被击倒后持匕首再次攻击秦浩轩。",
+        "source_quote_ids": [
+          "quote_character_murong_chao_01",
+          "quote_character_murong_chao_02",
+          "quote_character_murong_chao_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_murong_chao_01",
+      "quote_character_murong_chao_02",
+      "quote_character_murong_chao_03"
+    ]
+  },
+  {
+    "expected_card_id": "character_huanglong_zhenren",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "黄龙真人",
+      "aliases": [],
+      "summary": "黄龙真人是太初教掌教；黄龙真人当年测试仙种时也是灰色仙种。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“他就是太初教掌教黄龙真人”；第5章 显灵台上鉴仙眼：“当今掌教，曾经测试仙种时，也是灰种”",
+      "role_type": "faction_representative",
+      "identity": "太初教掌教",
+      "relationship_summary": "落叶真人的师侄；主持太初教最终测试",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "黄龙真人"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_huanglong_zhenren_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "黄龙真人是太初教掌教。",
+        "source_quote_ids": [
+          "quote_character_huanglong_zhenren_01",
+          "quote_character_huanglong_zhenren_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_huanglong_zhenren_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "黄龙真人当年也是灰色仙种。",
+        "source_quote_ids": [
+          "quote_character_huanglong_zhenren_01",
+          "quote_character_huanglong_zhenren_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_huanglong_zhenren_01",
+      "quote_character_huanglong_zhenren_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_luoye_zhenren",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "落叶真人",
+      "aliases": [],
+      "summary": "落叶真人是黄龙真人的师叔，在太初教辈分极高；落叶真人向新弟子说明仙种等级体系。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“落叶真人还是掌教黄龙真人的师叔，在太初教辈分极高”；第5章 显灵台上鉴仙眼：“仙种依据强弱分为有色仙种和无色仙种”",
+      "role_type": "faction_representative",
+      "identity": "太初教高辈分长老；黄龙真人的师叔",
+      "relationship_summary": "主持新弟子最终测试",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "落叶真人"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_luoye_zhenren_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "落叶真人是太初教高辈分长老、黄龙真人的师叔。",
+        "source_quote_ids": [
+          "quote_character_luoye_zhenren_01",
+          "quote_character_luoye_zhenren_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_luoye_zhenren_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "落叶真人主持并讲解最终测试和仙种等级。",
+        "source_quote_ids": [
+          "quote_character_luoye_zhenren_01",
+          "quote_character_luoye_zhenren_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_luoye_zhenren_01",
+      "quote_character_luoye_zhenren_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_guyunzi",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "古云子",
+      "aliases": [],
+      "summary": "胖仙师自称古云子；古云子代表古云堂争取张扬。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“那古云子在这里感谢了”；第5章 显灵台上鉴仙眼：“我们古云堂这一脉一直没有收徒”",
+      "role_type": "faction_representative",
+      "identity": "太初教古云堂一方仙师",
+      "relationship_summary": "参与争取张扬",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "古云子"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_guyunzi_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "古云子是太初教古云堂一方仙师。",
+        "source_quote_ids": [
+          "quote_character_guyunzi_01",
+          "quote_character_guyunzi_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_guyunzi_02",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "古云子主张张扬进入古云堂。",
+        "source_quote_ids": [
+          "quote_character_guyunzi_01",
+          "quote_character_guyunzi_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_guyunzi_01",
+      "quote_character_guyunzi_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_xiayunzi",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "夏云子",
+      "aliases": [],
+      "summary": "夏云子是太初教夏云堂一方仙师，过去多次争取优秀新弟子；夏云子以夏云堂六爻卦和师徒缘为由争取张扬。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“夏云子师兄，你们夏云堂这十年来，每次有人入门都被你抢”；第5章 显灵台上鉴仙眼：“我们夏云堂的六爻卦，那可是无人能及的”",
+      "role_type": "faction_representative",
+      "identity": "太初教夏云堂一方仙师",
+      "relationship_summary": "参与争取张扬",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "夏云子"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_xiayunzi_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "夏云子是太初教夏云堂一方仙师。",
+        "source_quote_ids": [
+          "quote_character_xiayunzi_01",
+          "quote_character_xiayunzi_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xiayunzi_02",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "夏云子主张张扬进入夏云堂。",
+        "source_quote_ids": [
+          "quote_character_xiayunzi_01",
+          "quote_character_xiayunzi_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_xiayunzi_01",
+      "quote_character_xiayunzi_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_bizhuzi",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "碧竹子",
+      "aliases": [],
+      "summary": "碧竹子是书生打扮的太初教仙师；碧竹子主张张扬进入碧竹堂。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“一身书生打扮，颇有几分超凡脱俗味道的碧竹子”；第5章 显灵台上鉴仙眼：“若能进我碧竹堂，势必能爆发出璀璨光彩”",
+      "role_type": "faction_representative",
+      "identity": "太初教碧竹堂一方仙师",
+      "relationship_summary": "参与争取张扬",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "碧竹子"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_bizhuzi_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "碧竹子是太初教碧竹堂一方仙师。",
+        "source_quote_ids": [
+          "quote_character_bizhuzi_01",
+          "quote_character_bizhuzi_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_bizhuzi_02",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "碧竹子争取张扬进入碧竹堂。",
+        "source_quote_ids": [
+          "quote_character_bizhuzi_01",
+          "quote_character_bizhuzi_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_bizhuzi_01",
+      "quote_character_bizhuzi_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_su_baihua",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "苏百花",
+      "aliases": [],
+      "summary": "苏百花是太初教百花堂一方仙师；苏百花为争取张扬提出打破百花堂通常只收女弟子的惯例。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“苏百花的百花堂在太初教独树一帜”；第5章 显灵台上鉴仙眼：“收女不收男乃是百花堂不成文的规矩，没想到苏百花竟然想破例”",
+      "role_type": "faction_representative",
+      "identity": "太初教百花堂一方仙师",
+      "relationship_summary": "参与争取张扬",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "苏百花"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_su_baihua_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "苏百花是太初教百花堂一方仙师。",
+        "source_quote_ids": [
+          "quote_character_su_baihua_01",
+          "quote_character_su_baihua_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_su_baihua_02",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "苏百花为张扬提出破例收徒。",
+        "source_quote_ids": [
+          "quote_character_su_baihua_01",
+          "quote_character_su_baihua_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_su_baihua_01",
+      "quote_character_su_baihua_02"
+    ]
+  },
+  {
+    "expected_card_id": "location_xianling_tai",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "显灵台",
+      "aliases": [],
+      "summary": "章节标题明确给出测试地点名称为显灵台；显灵台在正文中表现为露天广场，是最终测试场地。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“# 第5章 显灵台上鉴仙眼”；第5章 显灵台上鉴仙眼：“引路道人将他们带到一个露天的广场”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "显灵台"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_xianling_tai_01",
+        "field": "name",
+        "importance": "critical",
+        "description": "最终测试地点的正式名称为显灵台。",
+        "source_quote_ids": [
+          "quote_location_xianling_tai_01",
+          "quote_location_xianling_tai_02"
+        ]
+      },
+      {
+        "claim_id": "claim_location_xianling_tai_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "显灵台是太初教举行新弟子最终测试的露天广场。",
+        "source_quote_ids": [
+          "quote_location_xianling_tai_01",
+          "quote_location_xianling_tai_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_xianling_tai_01",
+      "quote_location_xianling_tai_02"
+    ]
+  },
+  {
+    "expected_card_id": "faction_taichu_jiao",
+    "knowledge_type": "faction",
+    "card": {
+      "type": "faction",
+      "name": "太初教",
+      "aliases": [
+        "至上仙尊真乙太初教"
+      ],
+      "summary": "太初教高层亲临新弟子最终测试；太初教内部存在古云堂等堂口。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“太初教负责最终测试的前辈高人已经恭候多时了”；第5章 显灵台上鉴仙眼：“古云堂”",
+      "faction_type": "sect",
+      "leader_id": null
+    },
+    "accepted_names": [
+      "太初教",
+      "至上仙尊真乙太初教"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "faction_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_taichu_jiao_01",
+        "field": "summary",
+        "importance": "normal",
+        "description": "太初教把新弟子最终测试视为重要宗门事务。",
+        "source_quote_ids": [
+          "quote_faction_taichu_jiao_01",
+          "quote_faction_taichu_jiao_02"
+        ]
+      },
+      {
+        "claim_id": "claim_faction_taichu_jiao_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "太初教内部存在古云堂、夏云堂、碧竹堂、百花堂等堂口。",
+        "source_quote_ids": [
+          "quote_faction_taichu_jiao_01",
+          "quote_faction_taichu_jiao_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_faction_taichu_jiao_01",
+      "quote_faction_taichu_jiao_02"
+    ]
+  },
+  {
+    "expected_card_id": "faction_guyun_tang",
+    "knowledge_type": "faction",
+    "card": {
+      "type": "faction",
+      "name": "古云堂",
+      "aliases": [],
+      "summary": "太初教堂口之一，古云子代表该堂争取张扬。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“我们古云堂这一脉一直没有收徒”",
+      "faction_type": "other",
+      "leader_id": null
+    },
+    "accepted_names": [
+      "古云堂"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "faction_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_guyun_tang_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初教堂口之一，古云子代表该堂争取张扬。",
+        "source_quote_ids": [
+          "quote_faction_guyun_tang_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_faction_guyun_tang_01"
+    ]
+  },
+  {
+    "expected_card_id": "faction_xiayun_tang",
+    "knowledge_type": "faction",
+    "card": {
+      "type": "faction",
+      "name": "夏云堂",
+      "aliases": [],
+      "summary": "太初教堂口之一，以六爻卦见长，夏云子代表该堂争取张扬。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“我们夏云堂的六爻卦，那可是无人能及的”",
+      "faction_type": "other",
+      "leader_id": null
+    },
+    "accepted_names": [
+      "夏云堂"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "faction_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_xiayun_tang_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初教堂口之一，以六爻卦见长，夏云子代表该堂争取张扬。",
+        "source_quote_ids": [
+          "quote_faction_xiayun_tang_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_faction_xiayun_tang_01"
+    ]
+  },
+  {
+    "expected_card_id": "faction_bizhu_tang",
+    "knowledge_type": "faction",
+    "card": {
+      "type": "faction",
+      "name": "碧竹堂",
+      "aliases": [],
+      "summary": "太初教堂口之一，碧竹子代表该堂争取张扬。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“若能进我碧竹堂，势必能爆发出璀璨光彩”",
+      "faction_type": "other",
+      "leader_id": null
+    },
+    "accepted_names": [
+      "碧竹堂"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "faction_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_bizhu_tang_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初教堂口之一，碧竹子代表该堂争取张扬。",
+        "source_quote_ids": [
+          "quote_faction_bizhu_tang_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_faction_bizhu_tang_01"
+    ]
+  },
+  {
+    "expected_card_id": "faction_baihua_tang",
+    "knowledge_type": "faction",
+    "card": {
+      "type": "faction",
+      "name": "百花堂",
+      "aliases": [],
+      "summary": "太初教堂口之一，门下通常只收女弟子，苏百花为争取张扬提出破例。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“苏百花的百花堂在太初教独树一帜”",
+      "faction_type": "other",
+      "leader_id": null
+    },
+    "accepted_names": [
+      "百花堂"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "faction_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_baihua_tang_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初教堂口之一，门下通常只收女弟子，苏百花为争取张扬提出破例。",
+        "source_quote_ids": [
+          "quote_faction_baihua_tang_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_faction_baihua_tang_01"
+    ]
+  },
+  {
+    "expected_card_id": "item_mingjian_xianyan",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "明鉴仙眼",
+      "aliases": [],
+      "summary": "明鉴仙眼用于太初教最终测试；明鉴仙眼以光芒颜色显示仙种结果。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“张扬走上测试台，将手放在【明鉴仙眼】上”；第5章 显灵台上鉴仙眼：“随着落叶真人打入一道仙灵之气，【明鉴仙眼】顿时闪起灰色光芒”",
+      "item_type": "magic_treasure",
+      "grade": null,
+      "current_holder_id": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "明鉴仙眼"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "item_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_mingjian_xianyan_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "明鉴仙眼是太初教检测仙种天赋的器物。",
+        "source_quote_ids": [
+          "quote_item_mingjian_xianyan_01",
+          "quote_item_mingjian_xianyan_02"
+        ]
+      },
+      {
+        "claim_id": "claim_item_mingjian_xianyan_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "明鉴仙眼发出灰光，判定张扬为灰色仙种。",
+        "source_quote_ids": [
+          "quote_item_mingjian_xianyan_01",
+          "quote_item_mingjian_xianyan_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_item_mingjian_xianyan_01",
+      "quote_item_mingjian_xianyan_02"
+    ]
+  },
+  {
+    "expected_card_id": "realm_xianmiao",
+    "knowledge_type": "realm",
+    "card": {
+      "type": "realm",
+      "name": "仙苗境",
+      "aliases": [],
+      "summary": "第5章再次确认仙苗境是新弟子后续会进入的修炼阶段。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“等到仙苗期之后，令他投入到我们古云堂一脉如何”",
+      "system": "修仙体系",
+      "level_order": 2
+    },
+    "accepted_names": [
+      "仙苗境"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "system",
+      "level_order"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_realm_xianmiao_01",
+        "field": "summary",
+        "importance": "normal",
+        "description": "仙苗境是太初教弟子后续修炼阶段。",
+        "source_quote_ids": [
+          "quote_realm_xianmiao_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_realm_xianmiao_01"
+    ]
+  },
+  {
+    "expected_card_id": "technique_liuyua_gua",
+    "knowledge_type": "technique",
+    "card": {
+      "type": "technique",
+      "name": "六爻卦",
+      "aliases": [],
+      "summary": "六爻卦是夏云堂所长的推卦术法。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“在咱们太初教，我们夏云堂的六爻卦，那可是无人能及的”",
+      "technique_type": "spell",
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null
+    },
+    "accepted_names": [
+      "六爻卦"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "technique_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_liuyua_gua_01",
+        "field": "technique_type",
+        "importance": "critical",
+        "description": "六爻卦按术法标注。",
+        "source_quote_ids": [
+          "quote_technique_liuyua_gua_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_technique_liuyua_gua_01"
+    ]
+  },
+  {
+    "expected_card_id": "rule_xianzhong_grade_system",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "仙种等级体系",
+      "aliases": [],
+      "summary": "仙种分为有色和无色两大类；有色仙种分为七种颜色；仙种资质不能完全决定最终成就。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“仙种依据强弱分为有色仙种和无色仙种”；第5章 显灵台上鉴仙眼：“有色仙种则分为灰、褐、青、橙、赤、金、紫七种颜色”；第5章 显灵台上鉴仙眼：“修仙者的最终成就并不能以资质好坏盖棺论定，后天努力也能弥补先天不足”",
+      "exceptions": "修仙者最终成就不能只凭仙种资质判定，后天努力可弥补先天不足。"
+    },
+    "accepted_names": [
+      "仙种等级体系"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "exceptions"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_xianzhong_grade_system_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "仙种按强弱分为有色仙种和无色仙种。",
+        "source_quote_ids": [
+          "quote_rule_xianzhong_grade_system_01",
+          "quote_rule_xianzhong_grade_system_02",
+          "quote_rule_xianzhong_grade_system_03"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_xianzhong_grade_system_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "有色仙种分为灰、褐、青、橙、赤、金、紫七种。",
+        "source_quote_ids": [
+          "quote_rule_xianzhong_grade_system_01",
+          "quote_rule_xianzhong_grade_system_02",
+          "quote_rule_xianzhong_grade_system_03"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_xianzhong_grade_system_03",
+        "field": "exceptions",
+        "importance": "major",
+        "description": "后天努力可弥补先天资质不足。",
+        "source_quote_ids": [
+          "quote_rule_xianzhong_grade_system_01",
+          "quote_rule_xianzhong_grade_system_02",
+          "quote_rule_xianzhong_grade_system_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_xianzhong_grade_system_01",
+      "quote_rule_xianzhong_grade_system_02",
+      "quote_rule_xianzhong_grade_system_03"
+    ]
+  },
+  {
+    "expected_card_id": "rule_baihua_tang_recruitment",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "百花堂收徒规则",
+      "aliases": [],
+      "summary": "百花堂通常只收女弟子；苏百花为张扬提出破例，表明规则存在例外可能。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“收女不收男乃是百花堂不成文的规矩”；第5章 显灵台上鉴仙眼：“没想到苏百花竟然想破例”",
+      "exceptions": "苏百花为灰色仙种张扬提出破例。"
+    },
+    "accepted_names": [
+      "百花堂收徒规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "exceptions"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_baihua_tang_recruitment_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "百花堂通常只收女弟子。",
+        "source_quote_ids": [
+          "quote_rule_baihua_tang_recruitment_01",
+          "quote_rule_baihua_tang_recruitment_02"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_baihua_tang_recruitment_02",
+        "field": "exceptions",
+        "importance": "major",
+        "description": "苏百花为张扬提出破例。",
+        "source_quote_ids": [
+          "quote_rule_baihua_tang_recruitment_01",
+          "quote_rule_baihua_tang_recruitment_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_baihua_tang_recruitment_01",
+      "quote_rule_baihua_tang_recruitment_02"
+    ]
+  },
+  {
+    "expected_card_id": "event_dormitory_blanket_conflict",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "新弟子宿舍抢被冲突",
+      "aliases": [],
+      "summary": "抢被行为在宿舍中扩散并引发打斗；秦浩轩一拳击倒慕容超；慕容超持匕首再次攻击秦浩轩；李靖在冲突后归还被子并示好。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“抢被子的先例一开，冻得瑟瑟发抖的少年们豁然开朗”；第5章 显灵台上鉴仙眼：“一拳打在慕容超的脸上”；第5章 显灵台上鉴仙眼：“从腰间拔出一柄匕首刺向秦浩轩”；第5章 显灵台上鉴仙眼：“然后捡起秦浩轩掉落在地上的被子，塞给秦浩轩”",
+      "chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "description": "宿舍抢被扩散；慕容超抢秦浩轩被子并持匕首攻击，被秦浩轩击败，李靖出面收场。"
+    },
+    "accepted_names": [
+      "新弟子宿舍抢被冲突"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_dormitory_blanket_conflict_01",
+        "field": "description",
+        "importance": "major",
+        "description": "新弟子宿舍因抢夺被子发生多处冲突。",
+        "source_quote_ids": [
+          "quote_event_dormitory_blanket_conflict_01",
+          "quote_event_dormitory_blanket_conflict_02",
+          "quote_event_dormitory_blanket_conflict_03",
+          "quote_event_dormitory_blanket_conflict_04"
+        ]
+      },
+      {
+        "claim_id": "claim_event_dormitory_blanket_conflict_02",
+        "field": "description",
+        "importance": "critical",
+        "description": "秦浩轩在冲突中一拳击倒慕容超。",
+        "source_quote_ids": [
+          "quote_event_dormitory_blanket_conflict_01",
+          "quote_event_dormitory_blanket_conflict_02",
+          "quote_event_dormitory_blanket_conflict_03",
+          "quote_event_dormitory_blanket_conflict_04"
+        ]
+      },
+      {
+        "claim_id": "claim_event_dormitory_blanket_conflict_03",
+        "field": "description",
+        "importance": "major",
+        "description": "慕容超被击倒后持匕首再次攻击。",
+        "source_quote_ids": [
+          "quote_event_dormitory_blanket_conflict_01",
+          "quote_event_dormitory_blanket_conflict_02",
+          "quote_event_dormitory_blanket_conflict_03",
+          "quote_event_dormitory_blanket_conflict_04"
+        ]
+      },
+      {
+        "claim_id": "claim_event_dormitory_blanket_conflict_04",
+        "field": "description",
+        "importance": "major",
+        "description": "李靖见秦浩轩实力强大后出面收场并示好。",
+        "source_quote_ids": [
+          "quote_event_dormitory_blanket_conflict_01",
+          "quote_event_dormitory_blanket_conflict_02",
+          "quote_event_dormitory_blanket_conflict_03",
+          "quote_event_dormitory_blanket_conflict_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_dormitory_blanket_conflict_01",
+      "quote_event_dormitory_blanket_conflict_02",
+      "quote_event_dormitory_blanket_conflict_03",
+      "quote_event_dormitory_blanket_conflict_04"
+    ]
+  },
+  {
+    "expected_card_id": "event_zhang_yang_gray_seed",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "张扬被测出灰色仙种",
+      "aliases": [],
+      "summary": "明鉴仙眼判定张扬为灰色仙种；太初教高层认为张扬具备成为未来宗门栋梁甚至掌教的潜力。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“【明鉴仙眼】顿时闪起灰色光芒”；第5章 显灵台上鉴仙眼：“甚至可以成为太初教的新一任掌教”",
+      "chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "description": "张扬在明鉴仙眼测试中显现灰色仙种，引发黄龙真人和众长老震惊与争抢。"
+    },
+    "accepted_names": [
+      "张扬被测出灰色仙种"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_zhang_yang_gray_seed_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "张扬在最终测试中被测出灰色仙种。",
+        "source_quote_ids": [
+          "quote_event_zhang_yang_gray_seed_01",
+          "quote_event_zhang_yang_gray_seed_02"
+        ]
+      },
+      {
+        "claim_id": "claim_event_zhang_yang_gray_seed_02",
+        "field": "description",
+        "importance": "major",
+        "description": "太初教高层把灰色仙种张扬视为掌教级潜力弟子。",
+        "source_quote_ids": [
+          "quote_event_zhang_yang_gray_seed_01",
+          "quote_event_zhang_yang_gray_seed_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_zhang_yang_gray_seed_01",
+      "quote_event_zhang_yang_gray_seed_02"
+    ]
+  },
+  {
+    "expected_card_id": "event_four_halls_compete_zhang_yang",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "太初教四堂争抢张扬",
+      "aliases": [],
+      "summary": "古云子首先提出张扬进入古云堂；夏云子代表夏云堂争取张扬；碧竹子代表碧竹堂争取张扬；苏百花代表百花堂争取张扬并提出破例。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“不如黄龙师叔做主，等到仙苗期之后，令他投入到我们古云堂一脉如何”；第5章 显灵台上鉴仙眼：“此子同我夏云堂倒是有些师徒缘分”；第5章 显灵台上鉴仙眼：“若能进我碧竹堂，势必能爆发出璀璨光彩”；第5章 显灵台上鉴仙眼：“一定会将这张扬让给我百花堂吧”",
+      "chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "description": "张扬显现灰种后，古云堂、夏云堂、碧竹堂、百花堂先后争取，事件尚未结束。"
+    },
+    "accepted_names": [
+      "太初教四堂争抢张扬"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_four_halls_compete_zhang_yang_01",
+        "field": "description",
+        "importance": "major",
+        "description": "古云堂首先提出收张扬。",
+        "source_quote_ids": [
+          "quote_event_four_halls_compete_zhang_yang_01",
+          "quote_event_four_halls_compete_zhang_yang_02",
+          "quote_event_four_halls_compete_zhang_yang_03",
+          "quote_event_four_halls_compete_zhang_yang_04"
+        ]
+      },
+      {
+        "claim_id": "claim_event_four_halls_compete_zhang_yang_02",
+        "field": "description",
+        "importance": "major",
+        "description": "夏云堂提出张扬与本堂有师徒缘。",
+        "source_quote_ids": [
+          "quote_event_four_halls_compete_zhang_yang_01",
+          "quote_event_four_halls_compete_zhang_yang_02",
+          "quote_event_four_halls_compete_zhang_yang_03",
+          "quote_event_four_halls_compete_zhang_yang_04"
+        ]
+      },
+      {
+        "claim_id": "claim_event_four_halls_compete_zhang_yang_03",
+        "field": "description",
+        "importance": "major",
+        "description": "碧竹堂提出收张扬。",
+        "source_quote_ids": [
+          "quote_event_four_halls_compete_zhang_yang_01",
+          "quote_event_four_halls_compete_zhang_yang_02",
+          "quote_event_four_halls_compete_zhang_yang_03",
+          "quote_event_four_halls_compete_zhang_yang_04"
+        ]
+      },
+      {
+        "claim_id": "claim_event_four_halls_compete_zhang_yang_04",
+        "field": "description",
+        "importance": "major",
+        "description": "百花堂也加入争抢，并愿为张扬破例。",
+        "source_quote_ids": [
+          "quote_event_four_halls_compete_zhang_yang_01",
+          "quote_event_four_halls_compete_zhang_yang_02",
+          "quote_event_four_halls_compete_zhang_yang_03",
+          "quote_event_four_halls_compete_zhang_yang_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_four_halls_compete_zhang_yang_01",
+      "quote_event_four_halls_compete_zhang_yang_02",
+      "quote_event_four_halls_compete_zhang_yang_03",
+      "quote_event_four_halls_compete_zhang_yang_04"
+    ]
+  }
+]

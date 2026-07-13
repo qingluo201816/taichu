@@ -18,10 +18,18 @@ from taichu.application.services.knowledge_extraction_service import (
     KnowledgeExtractionService,
     _aggregate_batch_candidates,
 )
+from taichu.application.agents.knowledge_extraction.workflow import (
+    _candidate_validation_errors,
+)
 from taichu.application.services.knowledge_service import KnowledgeService
+from taichu.application.services.retrieval_service import RetrievalService
 from taichu.application.agents.models.agent_run import AgentRunStatus
 from taichu.infrastructure.agent_runs import JsonAgentRunStore
 from taichu.infrastructure.storage.markdown_backend import ProjectAssetStorageBackend
+from taichu.infrastructure.retrieval import (
+    JsonlRetrievalTraceRepository,
+    MongoLexicalRetrievalBackend,
+)
 from tests.fakes import InMemoryKnowledgeRepository
 
 
@@ -39,6 +47,10 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.chapter_service = ChapterService(self.storage)
         self.repository = InMemoryKnowledgeRepository()
         self.knowledge_service = KnowledgeService(self.repository)
+        self.retrieval_service = RetrievalService(
+            MongoLexicalRetrievalBackend(self.repository),
+            JsonlRetrievalTraceRepository(self.assets_root),
+        )
         self.run_store = JsonAgentRunStore(self.assets_root)
 
     async def asyncTearDown(self) -> None:
@@ -50,7 +62,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         service = KnowledgeExtractionService(
             chapter_service=self.chapter_service,
             llm=_PromptAwareLLM(),
-            knowledge_repository=self.repository,
+            retrieval_service=self.retrieval_service,
             knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
@@ -91,6 +103,9 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(
             all(call.input_prompt and call.raw_response for call in run.llm_calls)
         )
+        self.assertTrue(
+            all("importance" not in call.input_prompt for call in run.llm_calls)
+        )
         self.assertCountEqual(
             [call.prompt_version for call in run.llm_calls],
             [
@@ -112,7 +127,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         service = KnowledgeExtractionService(
             chapter_service=self.chapter_service,
             llm=_SequenceLLM(["不是 JSON", "仍然不是 JSON", "还是不是 JSON"]),
-            knowledge_repository=self.repository,
+            retrieval_service=self.retrieval_service,
             knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
@@ -125,11 +140,27 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(run.llm_calls), 3)
         self.assertEqual(run.llm_calls[0].error is not None, True)
 
+    def test_retired_importance_field_fails_candidate_validation(self) -> None:
+        errors = _candidate_validation_errors(
+            {
+                "type": "character",
+                "name": "秦阳",
+                "aliases": [],
+                "summary": "本章出现的角色。",
+                "importance": "normal",
+                "source_origin": "agent_extract",
+                "source_note": "来自第一章。",
+                "evidence_excerpt": "秦阳走入山门。",
+            }
+        )
+
+        self.assertTrue(any("importance" in error for error in errors))
+
     async def test_invalid_expert_json_retries_and_recovers(self) -> None:
         service = KnowledgeExtractionService(
             chapter_service=self.chapter_service,
             llm=_PromptAwareRepairLLM(),
-            knowledge_repository=self.repository,
+            retrieval_service=self.retrieval_service,
             knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
@@ -151,7 +182,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         service = KnowledgeExtractionService(
             chapter_service=self.chapter_service,
             llm=_SequenceLLM([_generic_mentions_response()]),
-            knowledge_repository=self.repository,
+            retrieval_service=self.retrieval_service,
             knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
@@ -177,7 +208,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         service = KnowledgeExtractionService(
             chapter_service=self.chapter_service,
             llm=llm,
-            knowledge_repository=self.repository,
+            retrieval_service=self.retrieval_service,
             knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
@@ -198,6 +229,9 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(llm.requests)
         self.assertTrue(
             all(request.model_id == "alternate-model" for request in llm.requests)
+        )
+        self.assertTrue(
+            all(request.max_output_tokens == 100_000 for request in llm.requests)
         )
         self.assertEqual(run["model_id"], "alternate-model")
         self.assertEqual(run["upstream_model"], "upstream-alternate")
@@ -416,7 +450,6 @@ def _character_response() -> str:
                     "name": "秦阳",
                     "aliases": [],
                     "summary": "本章走入太初教山门的人物。",
-                    "importance": "core",
                     "source_origin": "agent_extract",
                     "source_note": f"来自章节《第一章 山门》。原文摘录：{excerpt}",
                     "evidence_excerpt": excerpt,
@@ -445,7 +478,6 @@ def _entity_response() -> str:
                     "name": "炼气一层",
                     "aliases": [],
                     "summary": "秦阳当前所在的早期修炼层次。",
-                    "importance": "normal",
                     "source_origin": "agent_extract",
                     "source_note": "来自章节《第一章 山门》。原文摘录：秦阳仍在炼气一层。",
                     "evidence_excerpt": "秦阳仍在炼气一层。",
@@ -460,7 +492,6 @@ def _entity_response() -> str:
                     "name": "太初引气诀",
                     "aliases": [],
                     "summary": "太初教入门引气功法。",
-                    "importance": "normal",
                     "source_origin": "agent_extract",
                     "source_note": "来自章节《第一章 山门》。原文摘录：秦阳默诵太初引气诀。",
                     "evidence_excerpt": "秦阳默诵太初引气诀。",
@@ -477,7 +508,6 @@ def _entity_response() -> str:
                     "name": "太初教山门",
                     "aliases": ["山门"],
                     "summary": "秦阳入山时出现的太初教入口。",
-                    "importance": "normal",
                     "source_origin": "agent_extract",
                     "source_note": f"来自章节《第一章 山门》。原文摘录：{excerpt}",
                     "evidence_excerpt": excerpt,
@@ -492,7 +522,6 @@ def _entity_response() -> str:
                     "name": "太初教",
                     "aliases": [],
                     "summary": "本章出现的修行势力。",
-                    "importance": "major",
                     "source_origin": "agent_extract",
                     "source_note": f"来自章节《第一章 山门》。原文摘录：{excerpt}",
                     "evidence_excerpt": excerpt,
@@ -507,7 +536,6 @@ def _entity_response() -> str:
                     "name": "青铜令牌",
                     "aliases": ["令牌"],
                     "summary": "秦阳入山时持有的令牌。",
-                    "importance": "normal",
                     "source_origin": "agent_extract",
                     "source_note": f"来自章节《第一章 山门》。原文摘录：{excerpt}",
                     "evidence_excerpt": excerpt,
@@ -533,7 +561,6 @@ def _event_rule_response() -> str:
                     "name": "秦阳入山门",
                     "aliases": [],
                     "summary": "秦阳持青铜令牌进入太初教山门。",
-                    "importance": "normal",
                     "source_origin": "agent_extract",
                     "source_note": "来自章节《第一章 山门》。原文摘录：秦阳握着青铜令牌走入太初教山门。",
                     "evidence_excerpt": "秦阳握着青铜令牌走入太初教山门。",
@@ -548,7 +575,6 @@ def _event_rule_response() -> str:
                     "name": "持令牌方可入山",
                     "aliases": [],
                     "summary": "太初教山门通行需要青铜令牌。",
-                    "importance": "normal",
                     "source_origin": "agent_extract",
                     "source_note": "来自章节《第一章 山门》。原文摘录：太初教规矩，持青铜令牌方可入山。",
                     "evidence_excerpt": "太初教规矩，持青铜令牌方可入山。",

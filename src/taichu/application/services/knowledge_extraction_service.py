@@ -25,9 +25,6 @@ from taichu.application.agents.knowledge_extraction.workflow import (
     _normalize_identity,
     _strip_internal_candidate_fields,
 )
-from taichu.application.contracts.knowledge_repository import (
-    StructuredKnowledgeRepository,
-)
 from taichu.application.contracts.knowledge_sedimentation_progress_repository import (
     KnowledgeSedimentationProgress,
     KnowledgeSedimentationProgressRepository,
@@ -39,6 +36,13 @@ from taichu.application.contracts.llm import (
     LLMModelProfile,
 )
 from taichu.application.services.chapter_service import ChapterService
+from taichu.application.services.retrieval_service import RetrievalService
+from taichu.application.retrieval.models import (
+    RetrievalConsumerContext,
+    RetrievalIdentityQuery,
+    RetrievalMode,
+    RetrievalRequest,
+)
 from taichu.application.services.knowledge_service import (
     AuthorMergeMode,
     KnowledgeService,
@@ -104,7 +108,7 @@ class KnowledgeExtractionService:
         *,
         chapter_service: ChapterService,
         llm: object,
-        knowledge_repository: StructuredKnowledgeRepository,
+        retrieval_service: RetrievalService,
         knowledge_service: KnowledgeService,
         run_store: AgentRunRepository,
         sedimentation_progress_repository: KnowledgeSedimentationProgressRepository | None = None,
@@ -113,7 +117,7 @@ class KnowledgeExtractionService:
     ) -> None:
         self._chapter_service = chapter_service
         self._llm = cast(LLMGatewayContract, llm)
-        self._knowledge_repository = knowledge_repository
+        self._retrieval_service = retrieval_service
         self._knowledge_service = knowledge_service
         self._run_store = run_store
         self._sedimentation_progress_repository = (
@@ -408,12 +412,13 @@ class KnowledgeExtractionService:
         force: bool,
         event_sink,
     ) -> AgentRun:
-        await self._validate_sedimentation_scope([chapter_id])
+        chapter_titles = await self._validate_sedimentation_scope([chapter_id])
         profile, requested_model_name = self._resolve_model_selection(
             model_name
         )
         initial_state = initial_knowledge_extraction_state(
             chapter_id=chapter_id,
+            chapter_title=chapter_titles[chapter_id],
             model_name=profile.display_name,
             requested_model_name=requested_model_name,
             model_id=profile.id,
@@ -440,7 +445,7 @@ class KnowledgeExtractionService:
             KnowledgeExtractionDependencies(
                 chapter_service=self._chapter_service,
                 llm=self._llm,
-                knowledge_repository=self._knowledge_repository,
+                retrieval_service=self._retrieval_service,
                 run_store=self._run_store,
                 event_sink=event_sink,
             )
@@ -486,10 +491,9 @@ class KnowledgeExtractionService:
         unique_chapter_ids = _unique_non_empty(chapter_ids)
         if not unique_chapter_ids:
             raise KnowledgeExtractionError("请至少选择一个章节。")
-        await self._validate_sedimentation_scope(unique_chapter_ids)
+        chapter_titles = await self._validate_sedimentation_scope(unique_chapter_ids)
         started_at = _now_iso()
         run_id = _new_run_id(started_at)
-        chapter_titles = await self._chapter_titles(unique_chapter_ids)
         chapter_content_hashes: dict[str, str] = {}
         progress_items = [
             AgentBatchChapterProgress(
@@ -937,7 +941,7 @@ class KnowledgeExtractionService:
         dependencies = KnowledgeExtractionDependencies(
             chapter_service=self._chapter_service,
             llm=self._llm,
-            knowledge_repository=self._knowledge_repository,
+            retrieval_service=self._retrieval_service,
             run_store=self._run_store,
             event_sink=event_sink,
         )
@@ -966,11 +970,24 @@ class KnowledgeExtractionService:
                 )
             except ValueError:
                 continue
-            matches = await self._knowledge_service.search_confirmed_identity(
-                knowledge_type,
-                str(candidate.get("name") or ""),
-                _list_strings(candidate.get("aliases")),
+            candidate_name = str(candidate.get("name") or "").strip()
+            if not candidate_name:
+                continue
+            retrieval = await self._retrieval_service.retrieve(
+                RetrievalRequest(
+                    mode=RetrievalMode.IDENTITY,
+                    identity=RetrievalIdentityQuery(
+                        knowledge_type=knowledge_type,
+                        name=candidate_name,
+                        aliases=_list_strings(candidate.get("aliases")),
+                    ),
+                    consumer=RetrievalConsumerContext(
+                        consumer_type="knowledge_workflow",
+                        stage="BatchMatchExistingKnowledgeNode",
+                    ),
+                )
             )
+            matches = [item.knowledge_card for item in retrieval.items]
             if not matches:
                 continue
             match = matches[0]
@@ -1044,19 +1061,13 @@ class KnowledgeExtractionService:
             raise KnowledgeExtractionError(error)
         return result
 
-    async def _chapter_titles(self, chapter_ids: list[str]) -> dict[str, str]:
-        titles: dict[str, str] = {}
-        for chapter_id in chapter_ids:
-            try:
-                chapter = await self._chapter_service.read_chapter(chapter_id)
-                titles[chapter_id] = chapter.chapter.title
-            except Exception:  # noqa: BLE001
-                titles[chapter_id] = chapter_id
-        return titles
-
-    async def _validate_sedimentation_scope(self, chapter_ids: list[str]) -> None:
+    async def _validate_sedimentation_scope(
+        self,
+        chapter_ids: list[str],
+    ) -> dict[str, str]:
         chapters = await self._chapter_service.list_chapters()
         ordered_ids = [chapter.id for chapter in chapters]
+        chapter_titles = {chapter.id: chapter.title for chapter in chapters}
         progress = await self._sedimentation_progress_repository.get_progress()
         start_index = 0
         if progress.last_accepted_chapter_id is not None:
@@ -1068,7 +1079,9 @@ class KnowledgeExtractionService:
                 ) from error
         expected = ordered_ids[start_index : start_index + len(chapter_ids)]
         if chapter_ids == expected:
-            return
+            return {
+                chapter_id: chapter_titles[chapter_id] for chapter_id in chapter_ids
+            }
         expected_title = (
             chapters[start_index].title
             if start_index < len(chapters)
@@ -1318,7 +1331,6 @@ def _card_from_payload(
     knowledge_type: StructuredKnowledgeType,
     payload: dict[str, Any],
 ) -> StructuredKnowledgeCard:
-    payload = {key: value for key, value in payload.items() if key != "importance"}
     if knowledge_type not in ALLOWED_KNOWLEDGE_TYPES:
         raise KnowledgeExtractionError(
             "正文知识沉淀只允许角色、境界、功法、地点、势力、物品、规则、事件入库。"
@@ -1352,7 +1364,6 @@ def _patch_updates_from_payload(
     knowledge_type: StructuredKnowledgeType,
     payload: dict[str, Any],
 ) -> dict[str, Any]:
-    payload = {key: value for key, value in payload.items() if key != "importance"}
     if knowledge_type not in ALLOWED_KNOWLEDGE_TYPES:
         raise KnowledgeExtractionError(
             "正文知识沉淀只允许角色、境界、功法、地点、势力、物品、规则、事件入库。"
@@ -1382,7 +1393,6 @@ def _with_appearance_chapter_count(
 ) -> dict[str, Any]:
     """Attach the system-calculated occurrence count to a reviewed candidate."""
     next_payload = dict(payload)
-    next_payload.pop("importance", None)
     chapter_count = len(_unique_non_empty(item.appearance_chapter_ids))
     next_payload["appearance_chapter_count"] = chapter_count or next_payload.get(
         "appearance_chapter_count"

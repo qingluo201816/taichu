@@ -1,0 +1,112 @@
+[
+  {
+    "negative_case_id": "negative_chapter_002_001",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "两个生面孔"
+    ],
+    "reason": "临时群体称呼，本章尚未给出姓名，不能倒灌第3章身份。",
+    "source_quote_ids": [
+      "quote_negative_chapter_002_001"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_002_002",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "小山羊胡子、穿青衫的男子"
+    ],
+    "reason": "外貌式临时称呼，本章未给出正式姓名。",
+    "source_quote_ids": [
+      "quote_negative_chapter_002_002"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_002_003",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "另一个生面孔"
+    ],
+    "reason": "相对指代，没有姓名和可独立追踪身份。",
+    "source_quote_ids": [
+      "quote_negative_chapter_002_003"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_002_004",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "陈老头的徒弟们"
+    ],
+    "reason": "群体泛称，个体没有姓名或独立行为链。",
+    "source_quote_ids": [
+      "quote_negative_chapter_002_004"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_002_005",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "受伤的猎户、零散采药人"
+    ],
+    "reason": "普通顾客群体泛称，不是稳定角色实体。",
+    "source_quote_ids": [
+      "quote_negative_chapter_002_005"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_002_006",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "北街"
+    ],
+    "reason": "只作为陈家药铺的位置说明，当前没有独立剧情和世界观价值。",
+    "source_quote_ids": [
+      "quote_negative_chapter_002_006"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_002_007",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "陈家药铺门口、药店内院"
+    ],
+    "reason": "属于陈家药铺内部或相邻普通空间，应并入药铺来源，不另建卡。",
+    "source_quote_ids": [
+      "quote_negative_chapter_002_007"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_002_008",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "镇上的酒家"
+    ],
+    "reason": "普通消费场所，没有专名和持续设定价值。",
+    "source_quote_ids": [
+      "quote_negative_chapter_002_008"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_002_009",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "小镇广场"
+    ],
+    "reason": "普通集会空间，没有专名；其功能可写入报名事件。",
+    "source_quote_ids": [
+      "quote_negative_chapter_002_009"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_002_010",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "银锭、一百两白银"
+    ],
+    "reason": "普通货币，仅是交易价格，不应形成物品卡。",
+    "source_quote_ids": [
+      "quote_negative_chapter_002_010"
+    ]
+  }
+]

@@ -44,7 +44,6 @@ from taichu.domain.models.inbox import (
 from taichu.domain.models.import_batch import ImportBatch
 from taichu.domain.models.knowledge import (
     CharacterCard,
-    CharacterImportance,
     KnowledgeCard,
     KnowledgeCardLifecycle,
     KnowledgeCardType,
@@ -55,7 +54,6 @@ from taichu.domain.models.structured_knowledge import (
     KnowledgeSchemaFieldType,
     KnowledgeTypeSchema,
     StructuredKnowledgeCard,
-    StructuredKnowledgeImportance,
     StructuredKnowledgeLifecycle,
     StructuredKnowledgeSourceOrigin,
     StructuredKnowledgeType,
@@ -123,7 +121,6 @@ __all__ = [
     "ChapterIssueStatus",
     "ImportBatch",
     "CharacterCard",
-    "CharacterImportance",
     "KnowledgeCard",
     "KnowledgeCardLifecycle",
     "KnowledgeCardType",
@@ -132,7 +129,6 @@ __all__ = [
     "KnowledgeSchemaFieldType",
     "KnowledgeTypeSchema",
     "StructuredKnowledgeCard",
-    "StructuredKnowledgeImportance",
     "StructuredKnowledgeLifecycle",
     "StructuredKnowledgeSourceOrigin",
     "StructuredKnowledgeType",

@@ -12,6 +12,7 @@ from taichu.application.evaluations.knowledge_extraction.models import (
     ActualCandidate,
     ExpectedCard,
     MatchKind,
+    SourceEvidence,
 )
 from taichu.application.evaluations.knowledge_extraction.normalization import (
     normalize_identity,
@@ -25,15 +26,20 @@ def _actual(
     *,
     knowledge_type: StructuredKnowledgeType = StructuredKnowledgeType.CHARACTER,
     aliases: list[str] | None = None,
+    card_fields: dict[str, object] | None = None,
+    evidence_excerpts: list[str] | None = None,
 ) -> ActualCandidate:
+    card = {
+        "type": knowledge_type.value,
+        "name": name,
+        "aliases": aliases or [],
+    }
+    card.update(card_fields or {})
     return ActualCandidate(
         actual_candidate_id=candidate_id,
         knowledge_type=knowledge_type,
-        card={
-            "type": knowledge_type.value,
-            "name": name,
-            "aliases": aliases or [],
-        },
+        card=card,
+        evidence_excerpts=evidence_excerpts or [],
     )
 
 
@@ -44,21 +50,25 @@ def _expected(
     knowledge_type: StructuredKnowledgeType = StructuredKnowledgeType.CHARACTER,
     aliases: list[str] | None = None,
     accepted_names: list[str] | None = None,
+    card_fields: dict[str, object] | None = None,
+    source_quote_ids: list[str] | None = None,
 ) -> ExpectedCard:
+    card = {
+        "type": knowledge_type.value,
+        "name": name,
+        "aliases": aliases or [],
+    }
+    card.update(card_fields or {})
     return ExpectedCard(
         expected_card_id=card_id,
         knowledge_type=knowledge_type,
-        card={
-            "type": knowledge_type.value,
-            "name": name,
-            "aliases": aliases or [],
-        },
+        card=card,
         accepted_names=accepted_names or [],
         exact_fields=[],
         set_fields=[],
         semantic_fields=[],
         expected_claims=[],
-        source_quote_ids=[f"quote_{card_id}"],
+        source_quote_ids=source_quote_ids or [f"quote_{card_id}"],
     )
 
 
@@ -122,15 +132,15 @@ def test_higher_weight_unique_match_wins_over_lower_alias_edge() -> None:
     assert [item.card_id for item in result.false_negatives] == ["alias"]
 
 
-def test_equal_weight_duplicate_actuals_are_ambiguous_and_penalized() -> None:
+def test_equal_weight_duplicate_actuals_are_ambiguous_and_deferred() -> None:
     actual = [_actual("a1", "秦浩轩"), _actual("a2", "秦浩轩")]
     expected = [_expected("e1", "秦浩轩")]
 
     result = match_candidates(actual, expected)
 
     assert result.true_positive_count == 0
-    assert result.false_positive_count == 2
-    assert result.false_negative_count == 1
+    assert result.false_positive_count == 0
+    assert result.false_negative_count == 0
     assert result.ambiguous_count == 1
     ambiguity = result.ambiguities[0]
     assert [item.card_id for item in ambiguity.actual_candidates] == ["a1", "a2"]
@@ -147,8 +157,8 @@ def test_one_identity_pointing_to_two_gold_cards_is_ambiguous() -> None:
     result = match_candidates(actual, expected)
 
     assert result.true_positive_count == 0
-    assert result.false_positive_count == 1
-    assert result.false_negative_count == 2
+    assert result.false_positive_count == 0
+    assert result.false_negative_count == 0
     assert result.ambiguities[0].weight == 95
 
 
@@ -183,6 +193,8 @@ def test_shared_alias_key_blocks_otherwise_unique_maximum() -> None:
     result = match_candidates(actual, expected)
 
     assert result.true_positive_count == 0
+    assert result.false_positive_count == 0
+    assert result.false_negative_count == 0
     assert result.ambiguous_count == 1
     assert result.ambiguities[0].normalized_keys == ["共享键", "独有一", "独有二"]
 
@@ -193,3 +205,107 @@ def test_duplicate_input_ids_fail_closed() -> None:
             [_actual("same", "甲"), _actual("same", "乙")],
             [_expected("e", "甲")],
         )
+
+
+def test_event_evidence_anchor_matches_different_titles_one_to_one() -> None:
+    chapter_id = "chapter-001"
+    quote_id = "quote-stop-bullying"
+    actual = _actual(
+        "actual-event",
+        "秦浩轩制止张狂殴打少年",
+        knowledge_type=StructuredKnowledgeType.EVENT,
+        card_fields={
+            "chapter_id": chapter_id,
+            "summary": "秦浩轩警告张狂，迫使其停止继续殴打少年。",
+            "description": "张狂收回了要踢出去的脚。",
+        },
+        evidence_excerpts=[
+            "秦浩轩的声音就像一把无形的枷锁，逼得张狂硬生生收回要踢出去的脚"
+        ],
+    )
+    expected = _expected(
+        "expected-event",
+        "秦浩轩喝止张狂欺凌少年",
+        knowledge_type=StructuredKnowledgeType.EVENT,
+        card_fields={
+            "chapter_id": chapter_id,
+            "summary": "秦浩轩出面制止张狂欺压少年。",
+            "description": "张狂最终退让。",
+        },
+        source_quote_ids=[quote_id],
+    )
+    evidence = SourceEvidence(
+        quote_id=quote_id,
+        chapter_id=chapter_id,
+        text="逼得张狂硬生生收回要踢出去的脚",
+        start_offset=10,
+        end_offset=27,
+        source_hash="0" * 64,
+    )
+
+    result = match_candidates([actual], [expected], [evidence])
+
+    assert result.true_positive_count == 1
+    assert result.false_positive_count == 0
+    assert result.false_negative_count == 0
+    assert result.matches[0].kind is MatchKind.EVIDENCE_ANCHOR
+
+
+def test_event_semantic_content_matches_unique_paraphrase_without_evidence() -> None:
+    chapter_id = "chapter-001"
+    actual = _actual(
+        "actual-event",
+        "秦浩轩制止张狂殴打少年",
+        knowledge_type=StructuredKnowledgeType.EVENT,
+        card_fields={
+            "chapter_id": chapter_id,
+            "summary": (
+                "张狂因保险费殴打少年，秦浩轩出言警告后，张狂收回了脚。"
+            ),
+            "description": "秦浩轩以威胁迫使张狂停止踢打少年。",
+        },
+    )
+    expected = _expected(
+        "expected-event",
+        "秦浩轩喝止张狂欺凌少年",
+        knowledge_type=StructuredKnowledgeType.EVENT,
+        card_fields={
+            "chapter_id": chapter_id,
+            "summary": "张狂以保险费为由殴打少年，秦浩轩制止后张狂退让。",
+            "description": "秦浩轩出面威胁制止张狂欺凌少年。",
+        },
+    )
+
+    result = match_candidates([actual], [expected])
+
+    assert result.true_positive_count == 1
+    assert result.matches[0].kind is MatchKind.EVENT_SEMANTIC
+
+
+def test_event_content_does_not_match_across_chapters() -> None:
+    actual = _actual(
+        "actual-event",
+        "秦浩轩制止张狂殴打少年",
+        knowledge_type=StructuredKnowledgeType.EVENT,
+        card_fields={
+            "chapter_id": "chapter-002",
+            "summary": "秦浩轩出面制止张狂殴打少年。",
+            "description": "张狂退让。",
+        },
+    )
+    expected = _expected(
+        "expected-event",
+        "秦浩轩喝止张狂欺凌少年",
+        knowledge_type=StructuredKnowledgeType.EVENT,
+        card_fields={
+            "chapter_id": "chapter-001",
+            "summary": "秦浩轩出面制止张狂殴打少年。",
+            "description": "张狂退让。",
+        },
+    )
+
+    result = match_candidates([actual], [expected])
+
+    assert result.true_positive_count == 0
+    assert result.false_positive_count == 1
+    assert result.false_negative_count == 1

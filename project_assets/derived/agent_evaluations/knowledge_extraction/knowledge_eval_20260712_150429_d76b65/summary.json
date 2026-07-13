@@ -1,0 +1,117 @@
+{
+  "evaluation_id": "knowledge_eval_20260712_150429_d76b65",
+  "parent_evaluation_id": null,
+  "request_fingerprint": "9c516ef23adef38e402cf530f89b3b34b0c3b8c674ba08807f8200412e07bea6",
+  "snapshot_root_hash": "13b9e6e0f0fe99af492ae779847317c08aa0236250903e2cfe899ae7df2c9135",
+  "lifecycle": "draft",
+  "status": "completed",
+  "phase": "finished",
+  "evaluation_mode": "deterministic_and_judge",
+  "dataset_id": "taichu_knowledge_eval_first5_author_confirmed",
+  "dataset_label": "太初前五章知识沉淀评测集（作者确认标注）",
+  "dataset_checksum": "95e94429a717695fc2af9773850743ada4ffcb10d90db11212ce9365d4f79abb",
+  "subject_title": "第1章 大田金鳞元神出",
+  "metric_profile_id": "knowledge_extraction_balanced",
+  "judge": {
+    "enabled": true,
+    "model_identity": {
+      "provider": "rightcode",
+      "model_id": "deepseek-v4-pro",
+      "family": "deepseek-v4",
+      "endpoint_kind": "anthropic_messages",
+      "fingerprint": null,
+      "known": true,
+      "unknown_reason": null
+    },
+    "self_judge": false,
+    "independence_by_run": {
+      "extract_run_20260712_144842_8ef3cc": "different_model"
+    }
+  },
+  "progress": {
+    "run_total": 1,
+    "run_completed": 1,
+    "judge_card_total": 9,
+    "judge_card_completed": 9,
+    "judge_batch_total": 4,
+    "judge_batch_completed": 4
+  },
+  "run_ids": [
+    "extract_run_20260712_144842_8ef3cc"
+  ],
+  "run_results": [
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "display_title": "第1章 大田金鳞元神出",
+      "eligibility_level": "full",
+      "eligibility_reasons": [],
+      "generation_model_identity": {
+        "provider": "rightcode",
+        "model_id": "gpt-5-6-sol",
+        "family": "gpt-5-6",
+        "endpoint_kind": "openai_responses",
+        "fingerprint": null,
+        "known": true,
+        "unknown_reason": null
+      },
+      "expected_card_count": 12,
+      "actual_card_count": 15,
+      "metrics": {
+        "schema_compliance_rate": 1.0,
+        "execution_coverage": 1.0,
+        "candidate_precision_micro": 0.6,
+        "candidate_recall_micro": 0.75,
+        "candidate_f1_micro": 0.6666666666666665,
+        "candidate_f1_macro": 0.6666666666666667,
+        "structured_field_score": 0.96875,
+        "evidence_score": 1.0,
+        "evidence_grounded_precision": 1.0,
+        "expected_evidence_recall": 1.0,
+        "negative_suppression_score": 1.0,
+        "ambiguous_count": 0,
+        "candidate_true_positive_count": 9,
+        "candidate_false_positive_count": 6,
+        "candidate_false_negative_count": 3,
+        "semantic_score": 0.9763888888888889,
+        "judge_coverage": 1.0,
+        "overall_quality_score": 0.8711805555555555,
+        "critical_flag_count": 0,
+        "final_quality_state": "needs_review"
+      },
+      "semantic_score": 0.9763888888888889,
+      "judge_coverage": 1.0,
+      "overall_quality_score": 0.8711805555555555,
+      "final_quality_state": "needs_review",
+      "comparisons": [],
+      "warnings": []
+    }
+  ],
+  "aggregate_metrics": {
+    "candidate_precision_micro": 0.6,
+    "candidate_recall_micro": 0.75,
+    "candidate_f1_micro": 0.6666666666666665,
+    "candidate_f1_macro": 0.6666666666666667,
+    "structured_field_score": 0.96875,
+    "evidence_score": 1.0,
+    "evidence_grounded_precision": 1.0,
+    "expected_evidence_recall": 1.0,
+    "negative_suppression_score": 1.0,
+    "schema_compliance_rate": 1.0,
+    "execution_coverage": 1.0,
+    "overall_quality_score": 0.8711805555555555,
+    "semantic_score": 0.9763888888888889,
+    "judge_coverage": 1.0,
+    "final_quality_state": "needs_review"
+  },
+  "warnings": [],
+  "errors": [],
+  "error_code": null,
+  "error_message": null,
+  "created_at": "2026-07-12T15:04:29.251150Z",
+  "started_at": "2026-07-12T15:04:29.266861Z",
+  "updated_at": "2026-07-12T15:15:12.444762Z",
+  "heartbeat_at": "2026-07-12T15:15:12.444762Z",
+  "finished_at": "2026-07-12T15:15:12.444762Z",
+  "execution_token": null
+}

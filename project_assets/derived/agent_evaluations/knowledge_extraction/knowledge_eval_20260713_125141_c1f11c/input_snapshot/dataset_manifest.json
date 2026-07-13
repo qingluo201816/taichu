@@ -1,0 +1,102 @@
+{
+  "agent_name": "knowledge_extraction",
+  "cases": [
+    {
+      "case_id": "chapter_001",
+      "chapter_ids": [
+        "chapter-f2a0007303a74f769e1609124c30da6b"
+      ],
+      "evaluation_rules_path": "cases/chapter_001/rules.json",
+      "expected_cards_path": "cases/chapter_001/expected.json",
+      "negative_cases_path": "cases/chapter_001/negative.json",
+      "scope_type": "chapter",
+      "source_chapter_hashes": {
+        "chapter-f2a0007303a74f769e1609124c30da6b": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952"
+      },
+      "source_evidence_path": "cases/chapter_001/evidence.json"
+    },
+    {
+      "case_id": "chapter_002",
+      "chapter_ids": [
+        "chapter-333d692f21224f15a5735317ee278132"
+      ],
+      "evaluation_rules_path": "cases/chapter_002/rules.json",
+      "expected_cards_path": "cases/chapter_002/expected.json",
+      "negative_cases_path": "cases/chapter_002/negative.json",
+      "scope_type": "chapter",
+      "source_chapter_hashes": {
+        "chapter-333d692f21224f15a5735317ee278132": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404"
+      },
+      "source_evidence_path": "cases/chapter_002/evidence.json"
+    },
+    {
+      "case_id": "chapter_003",
+      "chapter_ids": [
+        "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+      ],
+      "evaluation_rules_path": "cases/chapter_003/rules.json",
+      "expected_cards_path": "cases/chapter_003/expected.json",
+      "negative_cases_path": "cases/chapter_003/negative.json",
+      "scope_type": "chapter",
+      "source_chapter_hashes": {
+        "chapter-f3a712cf4fdf404b935942fe3ff297a0": "f2f707c4f29a5319851b440da26076ca6659244f2f9b705a582ec708bc527dba"
+      },
+      "source_evidence_path": "cases/chapter_003/evidence.json"
+    },
+    {
+      "case_id": "chapter_004",
+      "chapter_ids": [
+        "chapter-cecd924ed73c43a1880b24584ed49537"
+      ],
+      "evaluation_rules_path": "cases/chapter_004/rules.json",
+      "expected_cards_path": "cases/chapter_004/expected.json",
+      "negative_cases_path": "cases/chapter_004/negative.json",
+      "scope_type": "chapter",
+      "source_chapter_hashes": {
+        "chapter-cecd924ed73c43a1880b24584ed49537": "73b892b0cfc9f87dfe3d18dcc19fbcc63ab60cd650769ae0e557936a30633b9a"
+      },
+      "source_evidence_path": "cases/chapter_004/evidence.json"
+    },
+    {
+      "case_id": "chapter_005",
+      "chapter_ids": [
+        "chapter-6790213f5de24a21a00623ee7b467f80"
+      ],
+      "evaluation_rules_path": "cases/chapter_005/rules.json",
+      "expected_cards_path": "cases/chapter_005/expected.json",
+      "negative_cases_path": "cases/chapter_005/negative.json",
+      "scope_type": "chapter",
+      "source_chapter_hashes": {
+        "chapter-6790213f5de24a21a00623ee7b467f80": "c9113f8033d06608dc77c2f1d2737123c25726453c9dba05769415f8dfb52feb"
+      },
+      "source_evidence_path": "cases/chapter_005/evidence.json"
+    },
+    {
+      "case_id": "batch_001_005",
+      "chapter_ids": [
+        "chapter-f2a0007303a74f769e1609124c30da6b",
+        "chapter-333d692f21224f15a5735317ee278132",
+        "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+        "chapter-cecd924ed73c43a1880b24584ed49537",
+        "chapter-6790213f5de24a21a00623ee7b467f80"
+      ],
+      "evaluation_rules_path": "cases/batch_001_005/rules.json",
+      "expected_cards_path": "cases/batch_001_005/expected.json",
+      "negative_cases_path": "cases/batch_001_005/negative.json",
+      "scope_type": "chapter_batch",
+      "source_chapter_hashes": {
+        "chapter-333d692f21224f15a5735317ee278132": "763fa70cc698f82ea6528b5e2bc7c21dffd5f576a104f5c7edb456a73d4f6404",
+        "chapter-6790213f5de24a21a00623ee7b467f80": "c9113f8033d06608dc77c2f1d2737123c25726453c9dba05769415f8dfb52feb",
+        "chapter-cecd924ed73c43a1880b24584ed49537": "73b892b0cfc9f87dfe3d18dcc19fbcc63ab60cd650769ae0e557936a30633b9a",
+        "chapter-f2a0007303a74f769e1609124c30da6b": "6143c83e953af7a3405dde6cbbab7ea7b958e2f21fc975c23ceddd561baa6952",
+        "chapter-f3a712cf4fdf404b935942fe3ff297a0": "f2f707c4f29a5319851b440da26076ca6659244f2f9b705a582ec708bc527dba"
+      },
+      "source_evidence_path": "cases/batch_001_005/evidence.json"
+    }
+  ],
+  "checksum_manifest_path": "_metadata/checksums.sha256.json",
+  "dataset_id": "taichu_knowledge_eval_first5_author_confirmed",
+  "label": "太初前五章知识沉淀评测集（作者确认标注）",
+  "lifecycle": "confirmed",
+  "schema_snapshot_path": "_metadata/schema.json"
+}

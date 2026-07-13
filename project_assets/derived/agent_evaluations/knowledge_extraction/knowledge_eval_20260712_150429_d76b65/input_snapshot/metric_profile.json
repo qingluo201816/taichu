@@ -1,0 +1,29 @@
+{
+  "deterministic_thresholds": {
+    "needs_review_candidate_f1": 0.6,
+    "stable_candidate_f1": 0.9,
+    "stable_evidence_score": 0.95,
+    "stable_negative_score": 0.9,
+    "stable_structured_score": 0.95,
+    "usable_candidate_f1": 0.8,
+    "usable_evidence_score": 0.9,
+    "usable_negative_score": 0.8,
+    "usable_structured_score": 0.9
+  },
+  "metric_profile_id": "knowledge_extraction_balanced",
+  "minimum_overall_judge_coverage": 0.9,
+  "overall_weights": {
+    "candidate_f1_micro": 0.35,
+    "evidence_score": 0.15,
+    "negative_suppression_score": 0.05,
+    "semantic_score": 0.25,
+    "structured_field_score": 0.2
+  },
+  "semantic_thresholds": {
+    "needs_review_score": 0.6,
+    "stable_coverage": 1.0,
+    "stable_score": 0.9,
+    "usable_coverage": 0.95,
+    "usable_score": 0.8
+  }
+}

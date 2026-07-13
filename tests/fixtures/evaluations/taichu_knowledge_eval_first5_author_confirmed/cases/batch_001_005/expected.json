@@ -1,0 +1,4862 @@
+[
+  {
+    "expected_card_id": "character_qin_haoxuan",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "秦浩轩",
+      "aliases": [],
+      "summary": "大田镇少年，自幼读书并承担家庭生计，狩猎和辨识药草能力出众。十二岁时被五彩小蛇咬伤后获得在本体与蛇身之间往返附身的能力。前五章中，他拒绝外地客高价、将黄精卖给陈老头，参加并通过太初教选苗，进入太初教后结识徐羽与李靖，并在宿舍冲突中击败慕容超。",
+      "appearance_chapter_count": 5,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：“在大田镇这群孩子们中，秦浩轩身手最为优秀”；第1章 大田金鳞元神出：“秦浩轩终于确定自己的灵魂能在小蛇的躯体和自己本体来回穿梭附体”；第2章 山中神仙选仙苗：“三十两就三十两，若没有您哪有我的今天”；第2章 山中神仙选仙苗：“秦浩轩在报名薄上写上自己的大名”；第3章 至上仙尊真乙太初教：“你虽然能算过关，但资质实在一般”；第3章 至上仙尊真乙太初教：“秦浩轩的仙种虽然没死，但干涸得相当严重了”；第3章 至上仙尊真乙太初教：“片刻后，赵嘉龙宣布秦浩轩也被收录”；第4章 太初山中绝毒谷：“自己资质虽然不如张狂，但胜在有百毒不侵的小蛇，或许可以附身进那绝仙毒谷”；第4章 太初山中绝毒谷：“秦浩轩恻隐之心大动，主动和他打着招呼”；第5章 显灵台上鉴仙眼：“一拳打在慕容超的脸上”；第5章 显灵台上鉴仙眼：“考虑到明天是最终测试，秦浩轩强行按捺住前去绝仙毒谷寻宝的冲动”",
+      "role_type": "protagonist",
+      "identity": "大田镇少年；太初教新弟子；擅长狩猎、辨识药草并可附身五彩小蛇",
+      "relationship_summary": "与张狂长期敌对；受陈老头照拂；与徐羽互相亲近；李靖试图拉拢他",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "秦浩轩"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_qin_haoxuan_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "秦浩轩是大田镇少年，狩猎和辨识药草能力出众。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02",
+          "quote_character_qin_haoxuan_03",
+          "quote_character_qin_haoxuan_04",
+          "quote_character_qin_haoxuan_05",
+          "quote_character_qin_haoxuan_06",
+          "quote_character_qin_haoxuan_07",
+          "quote_character_qin_haoxuan_08",
+          "quote_character_qin_haoxuan_09",
+          "quote_character_qin_haoxuan_10",
+          "quote_character_qin_haoxuan_11"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦浩轩能在本体与五彩小蛇之间往返附身。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02",
+          "quote_character_qin_haoxuan_03",
+          "quote_character_qin_haoxuan_04",
+          "quote_character_qin_haoxuan_05",
+          "quote_character_qin_haoxuan_06",
+          "quote_character_qin_haoxuan_07",
+          "quote_character_qin_haoxuan_08",
+          "quote_character_qin_haoxuan_09",
+          "quote_character_qin_haoxuan_10",
+          "quote_character_qin_haoxuan_11"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_03",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "秦浩轩念及陈老头过往照拂，选择低价把黄精卖给他。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02",
+          "quote_character_qin_haoxuan_03",
+          "quote_character_qin_haoxuan_04",
+          "quote_character_qin_haoxuan_05",
+          "quote_character_qin_haoxuan_06",
+          "quote_character_qin_haoxuan_07",
+          "quote_character_qin_haoxuan_08",
+          "quote_character_qin_haoxuan_09",
+          "quote_character_qin_haoxuan_10",
+          "quote_character_qin_haoxuan_11"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_04",
+        "field": "summary",
+        "importance": "major",
+        "description": "秦浩轩报名参加开山选苗。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02",
+          "quote_character_qin_haoxuan_03",
+          "quote_character_qin_haoxuan_04",
+          "quote_character_qin_haoxuan_05",
+          "quote_character_qin_haoxuan_06",
+          "quote_character_qin_haoxuan_07",
+          "quote_character_qin_haoxuan_08",
+          "quote_character_qin_haoxuan_09",
+          "quote_character_qin_haoxuan_10",
+          "quote_character_qin_haoxuan_11"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_05",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "秦浩轩尚未正式修炼；选苗测试显示道骨资质一般。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02",
+          "quote_character_qin_haoxuan_03",
+          "quote_character_qin_haoxuan_04",
+          "quote_character_qin_haoxuan_05",
+          "quote_character_qin_haoxuan_06",
+          "quote_character_qin_haoxuan_07",
+          "quote_character_qin_haoxuan_08",
+          "quote_character_qin_haoxuan_09",
+          "quote_character_qin_haoxuan_10",
+          "quote_character_qin_haoxuan_11"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_06",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦浩轩的仙种存活但严重干涸。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02",
+          "quote_character_qin_haoxuan_03",
+          "quote_character_qin_haoxuan_04",
+          "quote_character_qin_haoxuan_05",
+          "quote_character_qin_haoxuan_06",
+          "quote_character_qin_haoxuan_07",
+          "quote_character_qin_haoxuan_08",
+          "quote_character_qin_haoxuan_09",
+          "quote_character_qin_haoxuan_10",
+          "quote_character_qin_haoxuan_11"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_07",
+        "field": "identity",
+        "importance": "critical",
+        "description": "秦浩轩通过选苗并成为太初教新录弟子。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02",
+          "quote_character_qin_haoxuan_03",
+          "quote_character_qin_haoxuan_04",
+          "quote_character_qin_haoxuan_05",
+          "quote_character_qin_haoxuan_06",
+          "quote_character_qin_haoxuan_07",
+          "quote_character_qin_haoxuan_08",
+          "quote_character_qin_haoxuan_09",
+          "quote_character_qin_haoxuan_10",
+          "quote_character_qin_haoxuan_11"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_08",
+        "field": "summary",
+        "importance": "major",
+        "description": "秦浩轩计划依靠五彩小蛇的抗毒能力探索绝仙毒谷。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02",
+          "quote_character_qin_haoxuan_03",
+          "quote_character_qin_haoxuan_04",
+          "quote_character_qin_haoxuan_05",
+          "quote_character_qin_haoxuan_06",
+          "quote_character_qin_haoxuan_07",
+          "quote_character_qin_haoxuan_08",
+          "quote_character_qin_haoxuan_09",
+          "quote_character_qin_haoxuan_10",
+          "quote_character_qin_haoxuan_11"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_09",
+        "field": "relationship_summary",
+        "importance": "normal",
+        "description": "秦浩轩主动帮助并结识徐羽。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02",
+          "quote_character_qin_haoxuan_03",
+          "quote_character_qin_haoxuan_04",
+          "quote_character_qin_haoxuan_05",
+          "quote_character_qin_haoxuan_06",
+          "quote_character_qin_haoxuan_07",
+          "quote_character_qin_haoxuan_08",
+          "quote_character_qin_haoxuan_09",
+          "quote_character_qin_haoxuan_10",
+          "quote_character_qin_haoxuan_11"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_10",
+        "field": "summary",
+        "importance": "major",
+        "description": "秦浩轩在宿舍抢被冲突中击败慕容超。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02",
+          "quote_character_qin_haoxuan_03",
+          "quote_character_qin_haoxuan_04",
+          "quote_character_qin_haoxuan_05",
+          "quote_character_qin_haoxuan_06",
+          "quote_character_qin_haoxuan_07",
+          "quote_character_qin_haoxuan_08",
+          "quote_character_qin_haoxuan_09",
+          "quote_character_qin_haoxuan_10",
+          "quote_character_qin_haoxuan_11"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_11",
+        "field": "summary",
+        "importance": "normal",
+        "description": "秦浩轩把最终测试置于立即寻宝之前。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02",
+          "quote_character_qin_haoxuan_03",
+          "quote_character_qin_haoxuan_04",
+          "quote_character_qin_haoxuan_05",
+          "quote_character_qin_haoxuan_06",
+          "quote_character_qin_haoxuan_07",
+          "quote_character_qin_haoxuan_08",
+          "quote_character_qin_haoxuan_09",
+          "quote_character_qin_haoxuan_10",
+          "quote_character_qin_haoxuan_11"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_qin_haoxuan_01",
+      "quote_character_qin_haoxuan_02",
+      "quote_character_qin_haoxuan_03",
+      "quote_character_qin_haoxuan_04",
+      "quote_character_qin_haoxuan_05",
+      "quote_character_qin_haoxuan_06",
+      "quote_character_qin_haoxuan_07",
+      "quote_character_qin_haoxuan_08",
+      "quote_character_qin_haoxuan_09",
+      "quote_character_qin_haoxuan_10",
+      "quote_character_qin_haoxuan_11"
+    ]
+  },
+  {
+    "expected_card_id": "character_zhang_kuang",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "张狂",
+      "aliases": [
+        "张老大"
+      ],
+      "summary": "大田镇少年中的首领人物，与秦浩轩齐名并长期敌对，曾带小弟向其他少年索取所谓保险费。其父是大田镇优秀猎手，他十二岁时曾徒手杀死两头饿狼。张狂通过太初教选苗且仙种饱满，进入太初教后仍对秦浩轩怀有敌意。",
+      "appearance_chapter_count": 5,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：“他就是和秦浩轩齐名的张狂”；第1章 大田金鳞元神出：“张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼”；第2章 山中神仙选仙苗：“秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算”；第3章 至上仙尊真乙太初教：“张狂顺利通过第一关摸道骨”；第3章 至上仙尊真乙太初教：“仙灵花以怒放的姿态，展示了张狂仙种的饱满和活力”；第4章 太初山中绝毒谷：“如果我混到掌教位置，岂不是翔龙国护国仙师”；第5章 显灵台上鉴仙眼：“对秦浩轩一来就得罪了三皇子李靖，张狂有些幸灾乐祸”",
+      "role_type": "antagonist",
+      "identity": "大田镇少年首领；太初教新弟子",
+      "relationship_summary": "与秦浩轩长期敌对；张扬是其族弟兼小弟",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "张狂",
+      "张老大"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_zhang_kuang_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "张狂是大田镇少年中的首领人物，与秦浩轩齐名。",
+        "source_quote_ids": [
+          "quote_character_zhang_kuang_01",
+          "quote_character_zhang_kuang_02",
+          "quote_character_zhang_kuang_03",
+          "quote_character_zhang_kuang_04",
+          "quote_character_zhang_kuang_05",
+          "quote_character_zhang_kuang_06",
+          "quote_character_zhang_kuang_07"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_02",
+        "field": "summary",
+        "importance": "normal",
+        "description": "张狂十二岁时曾徒手杀死两头饿狼。",
+        "source_quote_ids": [
+          "quote_character_zhang_kuang_01",
+          "quote_character_zhang_kuang_02",
+          "quote_character_zhang_kuang_03",
+          "quote_character_zhang_kuang_04",
+          "quote_character_zhang_kuang_05",
+          "quote_character_zhang_kuang_06",
+          "quote_character_zhang_kuang_07"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_03",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "张狂把秦浩轩视为宿敌并公开威胁他。",
+        "source_quote_ids": [
+          "quote_character_zhang_kuang_01",
+          "quote_character_zhang_kuang_02",
+          "quote_character_zhang_kuang_03",
+          "quote_character_zhang_kuang_04",
+          "quote_character_zhang_kuang_05",
+          "quote_character_zhang_kuang_06",
+          "quote_character_zhang_kuang_07"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_04",
+        "field": "summary",
+        "importance": "major",
+        "description": "张狂顺利通过摸道骨。",
+        "source_quote_ids": [
+          "quote_character_zhang_kuang_01",
+          "quote_character_zhang_kuang_02",
+          "quote_character_zhang_kuang_03",
+          "quote_character_zhang_kuang_04",
+          "quote_character_zhang_kuang_05",
+          "quote_character_zhang_kuang_06",
+          "quote_character_zhang_kuang_07"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_05",
+        "field": "summary",
+        "importance": "critical",
+        "description": "张狂的仙种饱满且活力强。",
+        "source_quote_ids": [
+          "quote_character_zhang_kuang_01",
+          "quote_character_zhang_kuang_02",
+          "quote_character_zhang_kuang_03",
+          "quote_character_zhang_kuang_04",
+          "quote_character_zhang_kuang_05",
+          "quote_character_zhang_kuang_06",
+          "quote_character_zhang_kuang_07"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_06",
+        "field": "summary",
+        "importance": "normal",
+        "description": "张狂向往成为太初教掌教和翔龙国护国仙师。",
+        "source_quote_ids": [
+          "quote_character_zhang_kuang_01",
+          "quote_character_zhang_kuang_02",
+          "quote_character_zhang_kuang_03",
+          "quote_character_zhang_kuang_04",
+          "quote_character_zhang_kuang_05",
+          "quote_character_zhang_kuang_06",
+          "quote_character_zhang_kuang_07"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_07",
+        "field": "relationship_summary",
+        "importance": "normal",
+        "description": "张狂继续敌视秦浩轩，并乐见其得罪李靖。",
+        "source_quote_ids": [
+          "quote_character_zhang_kuang_01",
+          "quote_character_zhang_kuang_02",
+          "quote_character_zhang_kuang_03",
+          "quote_character_zhang_kuang_04",
+          "quote_character_zhang_kuang_05",
+          "quote_character_zhang_kuang_06",
+          "quote_character_zhang_kuang_07"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_zhang_kuang_01",
+      "quote_character_zhang_kuang_02",
+      "quote_character_zhang_kuang_03",
+      "quote_character_zhang_kuang_04",
+      "quote_character_zhang_kuang_05",
+      "quote_character_zhang_kuang_06",
+      "quote_character_zhang_kuang_07"
+    ]
+  },
+  {
+    "expected_card_id": "character_chen_laotou",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "陈老头",
+      "aliases": [],
+      "summary": "陈家药铺中负责疑难病症和珍贵药材交易的老人，在大田镇药术声誉极高。秦浩轩曾向他学习辨识草药，并长期把珍稀药材卖给他。前五章中，陈老头以三十两买下秦浩轩的黄精，之后又以五百两卖给徐吞虎和赵嘉龙。",
+      "appearance_chapter_count": 3,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：“秦浩轩狩猎之余专门向药铺的陈老头学过辨识草药”；第2章 山中神仙选仙苗：“陈老头每次都能药到病除，在大田镇拥有极高的声誉”；第2章 山中神仙选仙苗：“年近八十的他中气十足，一脸红润，健步如飞”；第2章 山中神仙选仙苗：“三十两就三十两，若没有您哪有我的今天”；第3章 至上仙尊真乙太初教：“后来在陈老头手上以五百两天价买下那枚黄精”",
+      "role_type": "supporting",
+      "identity": "陈家药铺老人；擅长治伤解毒、辨识药材和处理珍贵药材交易",
+      "relationship_summary": "曾教秦浩轩辨识草药并长期收购其药材",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "陈老头"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_chen_laotou_01",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "陈老头曾教秦浩轩辨识草药。",
+        "source_quote_ids": [
+          "quote_character_chen_laotou_01",
+          "quote_character_chen_laotou_02",
+          "quote_character_chen_laotou_03",
+          "quote_character_chen_laotou_04",
+          "quote_character_chen_laotou_05"
+        ]
+      },
+      {
+        "claim_id": "claim_character_chen_laotou_02",
+        "field": "identity",
+        "importance": "major",
+        "description": "陈老头在陈家药铺处理疑难病症和珍贵药材交易。",
+        "source_quote_ids": [
+          "quote_character_chen_laotou_01",
+          "quote_character_chen_laotou_02",
+          "quote_character_chen_laotou_03",
+          "quote_character_chen_laotou_04",
+          "quote_character_chen_laotou_05"
+        ]
+      },
+      {
+        "claim_id": "claim_character_chen_laotou_03",
+        "field": "summary",
+        "importance": "normal",
+        "description": "陈老头年近八十但中气十足、健步如飞。",
+        "source_quote_ids": [
+          "quote_character_chen_laotou_01",
+          "quote_character_chen_laotou_02",
+          "quote_character_chen_laotou_03",
+          "quote_character_chen_laotou_04",
+          "quote_character_chen_laotou_05"
+        ]
+      },
+      {
+        "claim_id": "claim_character_chen_laotou_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "秦浩轩念及陈老头的照拂，以三十两把黄精卖给他。",
+        "source_quote_ids": [
+          "quote_character_chen_laotou_01",
+          "quote_character_chen_laotou_02",
+          "quote_character_chen_laotou_03",
+          "quote_character_chen_laotou_04",
+          "quote_character_chen_laotou_05"
+        ]
+      },
+      {
+        "claim_id": "claim_character_chen_laotou_05",
+        "field": "summary",
+        "importance": "major",
+        "description": "陈老头后来以五百两把黄精卖给徐吞虎和赵嘉龙。",
+        "source_quote_ids": [
+          "quote_character_chen_laotou_01",
+          "quote_character_chen_laotou_02",
+          "quote_character_chen_laotou_03",
+          "quote_character_chen_laotou_04",
+          "quote_character_chen_laotou_05"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_chen_laotou_01",
+      "quote_character_chen_laotou_02",
+      "quote_character_chen_laotou_03",
+      "quote_character_chen_laotou_04",
+      "quote_character_chen_laotou_05"
+    ]
+  },
+  {
+    "expected_card_id": "character_wucai_xiaoshe",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "五彩小蛇",
+      "aliases": [
+        "奇异小蛇",
+        "花色斑斓的小蛇",
+        "五彩斑斓的小蛇"
+      ],
+      "summary": "生活在小屿山深处的一条奇异小蛇，体长约半尺，蛇皮五彩斑斓且表面有密集凸起，头部呈四方形。它曾咬伤十二岁的秦浩轩，此后成为秦浩轩灵魂附身的蛇身载体；蛇身不受毒瘴危害，能循气味寻路、感知灵药异草，并令豹子饿狼避让。",
+      "appearance_chapter_count": 2,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：“这条小蛇约摸半尺长，一身五彩斑斓的蛇皮”；第1章 大田金鳞元神出：“比如百毒不侵，比如对一些灵药异草格外敏感”；第4章 太初山中绝毒谷：“自己资质虽然不如张狂，但胜在有百毒不侵的小蛇”",
+      "role_type": null,
+      "identity": "生活在小屿山深处的奇异小蛇；秦浩轩灵魂附身的蛇身载体",
+      "relationship_summary": "曾咬伤秦浩轩；秦浩轩可借其蛇身抗毒、寻路和寻找灵药",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "last_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537"
+    },
+    "accepted_names": [
+      "五彩小蛇",
+      "奇异小蛇",
+      "花色斑斓的小蛇",
+      "五彩斑斓的小蛇"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_wucai_xiaoshe_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "五彩小蛇是生活在小屿山深处的奇异活体，也是秦浩轩附身的蛇身载体。",
+        "source_quote_ids": [
+          "quote_character_wucai_xiaoshe_01",
+          "quote_character_wucai_xiaoshe_02",
+          "quote_character_wucai_xiaoshe_03"
+        ]
+      },
+      {
+        "claim_id": "claim_character_wucai_xiaoshe_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "蛇身不受毒瘴危害，能感知灵药异草并通过特殊气味寻路。",
+        "source_quote_ids": [
+          "quote_character_wucai_xiaoshe_01",
+          "quote_character_wucai_xiaoshe_02",
+          "quote_character_wucai_xiaoshe_03"
+        ]
+      },
+      {
+        "claim_id": "claim_character_wucai_xiaoshe_03",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "秦浩轩计划借助五彩小蛇探索绝仙毒谷。",
+        "source_quote_ids": [
+          "quote_character_wucai_xiaoshe_01",
+          "quote_character_wucai_xiaoshe_02",
+          "quote_character_wucai_xiaoshe_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_wucai_xiaoshe_01",
+      "quote_character_wucai_xiaoshe_02",
+      "quote_character_wucai_xiaoshe_03"
+    ]
+  },
+  {
+    "expected_card_id": "character_xu_tunhu",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "徐吞虎",
+      "aliases": [],
+      "summary": "太初教弟子，赵嘉龙的师弟。第3章负责为大田镇少年摸道骨，并与赵嘉龙御剑抵达坡子岭；第4章自述入门三十年、处于仙苗境十一叶，向三名新弟子讲解绝仙毒谷、修炼境界和资源作用。",
+      "appearance_chapter_count": 2,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“本仙徐吞虎，这位乃我师兄赵嘉龙”；第3章 至上仙尊真乙太初教：“两道白光从东方天际破雾腾云，御剑而来”；第4章 太初山中绝毒谷：“我入门三十年，只突破仙苗境，长出十一片仙叶”",
+      "role_type": "faction_representative",
+      "identity": "太初教弟子；大田镇选苗执行者",
+      "relationship_summary": "赵嘉龙的师弟；曾负责摸道骨并讲解宗门信息",
+      "death_chapter_id": null,
+      "current_realm_text": "仙苗境十一叶",
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537"
+    },
+    "accepted_names": [
+      "徐吞虎"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_xu_tunhu_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "徐吞虎是太初教弟子，负责摸道骨。",
+        "source_quote_ids": [
+          "quote_character_xu_tunhu_01",
+          "quote_character_xu_tunhu_02",
+          "quote_character_xu_tunhu_03"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xu_tunhu_02",
+        "field": "summary",
+        "importance": "normal",
+        "description": "徐吞虎与赵嘉龙能够御剑飞行。",
+        "source_quote_ids": [
+          "quote_character_xu_tunhu_01",
+          "quote_character_xu_tunhu_02",
+          "quote_character_xu_tunhu_03"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xu_tunhu_03",
+        "field": "current_realm_text",
+        "importance": "critical",
+        "description": "徐吞虎为仙苗境十一叶。",
+        "source_quote_ids": [
+          "quote_character_xu_tunhu_01",
+          "quote_character_xu_tunhu_02",
+          "quote_character_xu_tunhu_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_xu_tunhu_01",
+      "quote_character_xu_tunhu_02",
+      "quote_character_xu_tunhu_03"
+    ]
+  },
+  {
+    "expected_card_id": "character_zhao_jialong",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "赵嘉龙",
+      "aliases": [],
+      "summary": "太初教弟子，徐吞虎的师兄。第3章负责测仙种并最终宣布收录秦浩轩，与徐吞虎御剑抵达坡子岭；第4章被徐吞虎称为同辈翘楚，修为为仙苗境二十二叶。",
+      "appearance_chapter_count": 2,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“本仙徐吞虎，这位乃我师兄赵嘉龙”；第3章 至上仙尊真乙太初教：“片刻后，赵嘉龙宣布秦浩轩也被收录”；第4章 太初山中绝毒谷：“赵师兄是我们这一辈中翘楚，花了三十多年时间开了二十二片仙叶”",
+      "role_type": "faction_representative",
+      "identity": "太初教弟子；大田镇选苗执行者",
+      "relationship_summary": "徐吞虎的师兄；负责测仙种并决定收录秦浩轩",
+      "death_chapter_id": null,
+      "current_realm_text": "仙苗境二十二叶",
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537"
+    },
+    "accepted_names": [
+      "赵嘉龙"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_zhao_jialong_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "赵嘉龙是太初教弟子，负责测仙种。",
+        "source_quote_ids": [
+          "quote_character_zhao_jialong_01",
+          "quote_character_zhao_jialong_02",
+          "quote_character_zhao_jialong_03"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhao_jialong_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "赵嘉龙宣布秦浩轩通过选苗并被收录。",
+        "source_quote_ids": [
+          "quote_character_zhao_jialong_01",
+          "quote_character_zhao_jialong_02",
+          "quote_character_zhao_jialong_03"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhao_jialong_03",
+        "field": "current_realm_text",
+        "importance": "critical",
+        "description": "赵嘉龙为仙苗境二十二叶。",
+        "source_quote_ids": [
+          "quote_character_zhao_jialong_01",
+          "quote_character_zhao_jialong_02",
+          "quote_character_zhao_jialong_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_zhao_jialong_01",
+      "quote_character_zhao_jialong_02",
+      "quote_character_zhao_jialong_03"
+    ]
+  },
+  {
+    "expected_card_id": "character_zhang_yang",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "张扬",
+      "aliases": [],
+      "summary": "张狂的族弟兼小弟，与秦浩轩、张狂同批通过大田镇选苗并进入太初教。第3章的仙种活力略高于秦浩轩；第5章最终测试中被明鉴仙眼测出灰色仙种，引发太初教多个堂口争抢。",
+      "appearance_chapter_count": 3,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“张狂的族弟兼小弟张扬，竟然也通过考核”；第3章 至上仙尊真乙太初教：“证明张扬的仙种比秦浩轩更有活力”；第4章 太初山中绝毒谷：“张狂和张扬二人洋溢着热情的笑容，已经笼络了好几个少年”；第5章 显灵台上鉴仙眼：“明鉴仙眼顿时闪起灰色光芒”",
+      "role_type": "supporting",
+      "identity": "张狂的族弟兼小弟；太初教新弟子；灰色仙种",
+      "relationship_summary": "与张狂关系亲近；因灰色仙种受到多个堂口争抢",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "张扬"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_zhang_yang_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "张扬是张狂的族弟兼小弟，也是太初教新录弟子。",
+        "source_quote_ids": [
+          "quote_character_zhang_yang_01",
+          "quote_character_zhang_yang_02",
+          "quote_character_zhang_yang_03",
+          "quote_character_zhang_yang_04"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_yang_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "张扬的仙种活力高于秦浩轩。",
+        "source_quote_ids": [
+          "quote_character_zhang_yang_01",
+          "quote_character_zhang_yang_02",
+          "quote_character_zhang_yang_03",
+          "quote_character_zhang_yang_04"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_yang_03",
+        "field": "summary",
+        "importance": "normal",
+        "description": "张扬与张狂在新弟子中主动结交并笼络他人。",
+        "source_quote_ids": [
+          "quote_character_zhang_yang_01",
+          "quote_character_zhang_yang_02",
+          "quote_character_zhang_yang_03",
+          "quote_character_zhang_yang_04"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_yang_04",
+        "field": "summary",
+        "importance": "critical",
+        "description": "张扬拥有灰色仙种。",
+        "source_quote_ids": [
+          "quote_character_zhang_yang_01",
+          "quote_character_zhang_yang_02",
+          "quote_character_zhang_yang_03",
+          "quote_character_zhang_yang_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_zhang_yang_01",
+      "quote_character_zhang_yang_02",
+      "quote_character_zhang_yang_03",
+      "quote_character_zhang_yang_04"
+    ]
+  },
+  {
+    "expected_card_id": "character_wandu_mozun",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "万毒魔尊",
+      "aliases": [],
+      "summary": "魔道老祖之一、绝顶强者。数十万年前仙魔大战中，万毒魔尊在魔道败势时自爆，毒死大量仙魔强者，遗留毒气覆盖大半个原大屿山并形成绝仙毒谷。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“魔道老祖之一的万毒魔尊一怒之下自爆”；第4章 太初山中绝毒谷：“万毒魔尊自爆后，毒气蔓延了大半个大屿山，形成绝仙毒谷”",
+      "role_type": "antagonist",
+      "identity": "魔道老祖之一；绝顶强者",
+      "relationship_summary": "其自爆毒死大量仙魔强者并形成绝仙毒谷",
+      "death_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537",
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537",
+      "last_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537"
+    },
+    "accepted_names": [
+      "万毒魔尊"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "death_chapter_id",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_wandu_mozun_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "万毒魔尊是魔道老祖之一、绝顶强者。",
+        "source_quote_ids": [
+          "quote_character_wandu_mozun_01",
+          "quote_character_wandu_mozun_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_wandu_mozun_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "万毒魔尊自爆后遗毒形成绝仙毒谷。",
+        "source_quote_ids": [
+          "quote_character_wandu_mozun_01",
+          "quote_character_wandu_mozun_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_wandu_mozun_01",
+      "quote_character_wandu_mozun_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_li_jing",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "李靖",
+      "aliases": [],
+      "summary": "翔龙国当今皇帝最疼爱的三皇子，也是太初教新弟子。初到太初教时因住宿条件质问引路道人，随后用体面说辞化解尴尬；他主动结交秦浩轩，并在宿舍抢被冲突中先纵容权贵子弟，见秦浩轩实力强大后转而出面收场和示好。",
+      "appearance_chapter_count": 2,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“他是翔龙国当今皇帝最疼爱的三皇子李靖”；第4章 太初山中绝毒谷：“李靖，请教兄台尊姓大名”；第5章 显灵台上鉴仙眼：“在他的眼神示意下，他身边那几名权贵子弟也大摇大摆出去抢被子”；第5章 显灵台上鉴仙眼：“放肆，谁让你们打扰秦兄弟休息的？”",
+      "role_type": "supporting",
+      "identity": "翔龙国三皇子；太初教新弟子",
+      "relationship_summary": "身边有多名权贵子弟；主动拉拢秦浩轩并在冲突后示好",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "李靖"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_li_jing_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "李靖是翔龙国当今皇帝最疼爱的三皇子。",
+        "source_quote_ids": [
+          "quote_character_li_jing_01",
+          "quote_character_li_jing_02",
+          "quote_character_li_jing_03",
+          "quote_character_li_jing_04"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_02",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "李靖主动与秦浩轩结交并提出互相提携。",
+        "source_quote_ids": [
+          "quote_character_li_jing_01",
+          "quote_character_li_jing_02",
+          "quote_character_li_jing_03",
+          "quote_character_li_jing_04"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_03",
+        "field": "summary",
+        "importance": "major",
+        "description": "李靖暗示身边权贵子弟参与抢被。",
+        "source_quote_ids": [
+          "quote_character_li_jing_01",
+          "quote_character_li_jing_02",
+          "quote_character_li_jing_03",
+          "quote_character_li_jing_04"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "李靖在秦浩轩显示实力后转而出面收场并示好。",
+        "source_quote_ids": [
+          "quote_character_li_jing_01",
+          "quote_character_li_jing_02",
+          "quote_character_li_jing_03",
+          "quote_character_li_jing_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_li_jing_01",
+      "quote_character_li_jing_02",
+      "quote_character_li_jing_03",
+      "quote_character_li_jing_04"
+    ]
+  },
+  {
+    "expected_card_id": "character_xu_yu",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "徐羽",
+      "aliases": [],
+      "summary": "太初教新弟子，身形瘦小、初次远行时拘谨无措。秦浩轩在新弟子住处主动帮助并结识徐羽；第5章徐羽被其他少年抢走被子，秦浩轩将自己的被子分给徐羽并保护其免受后续抢夺。正文在第4、5章使用了不一致的性别指代，知识卡不对此下结论。",
+      "appearance_chapter_count": 2,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“怯生生地说道：‘徐……徐羽……’”；第5章 显灵台上鉴仙眼：“秦浩轩拉着在寒冷中蜷缩成一团的徐羽，将自己的被子分一半给他盖着”",
+      "role_type": "supporting",
+      "identity": "太初教新弟子",
+      "relationship_summary": "初到太初教后得到秦浩轩帮助和保护",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "徐羽"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_xu_yu_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "徐羽是太初教新弟子，身形瘦小，初次远行时较为拘谨。",
+        "source_quote_ids": [
+          "quote_character_xu_yu_01",
+          "quote_character_xu_yu_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xu_yu_02",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "秦浩轩在宿舍冲突中保护徐羽。",
+        "source_quote_ids": [
+          "quote_character_xu_yu_01",
+          "quote_character_xu_yu_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_xu_yu_01",
+      "quote_character_xu_yu_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_murong_chao",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "慕容超",
+      "aliases": [],
+      "summary": "李靖身边的权贵少年，出身将门，自幼学习军中搏杀术。宿舍抢被冲突中，他抢夺秦浩轩的被子，被秦浩轩一拳击倒；随后拔出锋利匕首再次攻击，仍被秦浩轩制服。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“那个叫慕容超的权贵少年，抓住秦浩轩的被子一抽”；第5章 显灵台上鉴仙眼：“慕容超出身将门，自幼习武，学的都是军中搏杀术”；第5章 显灵台上鉴仙眼：“从腰间拔出一柄匕首刺向秦浩轩”",
+      "role_type": "antagonist",
+      "identity": "李靖身边的权贵少年；将门出身；学习军中搏杀术",
+      "relationship_summary": "参与李靖一方的抢被行动并攻击秦浩轩",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "慕容超"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_murong_chao_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "慕容超是李靖身边的权贵少年，出身将门。",
+        "source_quote_ids": [
+          "quote_character_murong_chao_01",
+          "quote_character_murong_chao_02",
+          "quote_character_murong_chao_03"
+        ]
+      },
+      {
+        "claim_id": "claim_character_murong_chao_02",
+        "field": "summary",
+        "importance": "normal",
+        "description": "慕容超自幼学习军中搏杀术。",
+        "source_quote_ids": [
+          "quote_character_murong_chao_01",
+          "quote_character_murong_chao_02",
+          "quote_character_murong_chao_03"
+        ]
+      },
+      {
+        "claim_id": "claim_character_murong_chao_03",
+        "field": "summary",
+        "importance": "major",
+        "description": "慕容超在被击倒后持匕首再次攻击秦浩轩。",
+        "source_quote_ids": [
+          "quote_character_murong_chao_01",
+          "quote_character_murong_chao_02",
+          "quote_character_murong_chao_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_murong_chao_01",
+      "quote_character_murong_chao_02",
+      "quote_character_murong_chao_03"
+    ]
+  },
+  {
+    "expected_card_id": "character_huanglong_zhenren",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "黄龙真人",
+      "aliases": [],
+      "summary": "太初教掌教，亲临新弟子最终测试。张扬被测出灰色仙种时，黄龙真人表现出强烈惊喜；正文说明黄龙真人当年测试仙种时同样是灰种。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“他就是太初教掌教黄龙真人”；第5章 显灵台上鉴仙眼：“当今掌教，曾经测试仙种时，也是灰种”",
+      "role_type": "faction_representative",
+      "identity": "太初教掌教；曾为灰色仙种",
+      "relationship_summary": "落叶真人的师侄；主持新弟子最终测试",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "黄龙真人"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_huanglong_zhenren_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "黄龙真人是太初教掌教。",
+        "source_quote_ids": [
+          "quote_character_huanglong_zhenren_01",
+          "quote_character_huanglong_zhenren_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_huanglong_zhenren_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "黄龙真人当年也是灰色仙种。",
+        "source_quote_ids": [
+          "quote_character_huanglong_zhenren_01",
+          "quote_character_huanglong_zhenren_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_huanglong_zhenren_01",
+      "quote_character_huanglong_zhenren_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_luoye_zhenren",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "落叶真人",
+      "aliases": [],
+      "summary": "太初教高辈分长老，是掌教黄龙真人的师叔，常年闭关、很少露面。第5章亲临并主持新弟子最终测试，说明仙种等级及先天资质不能完全决定最终成就。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“落叶真人还是掌教黄龙真人的师叔，在太初教辈分极高”；第5章 显灵台上鉴仙眼：“仙种依据强弱分为有色仙种和无色仙种”",
+      "role_type": "faction_representative",
+      "identity": "太初教高辈分长老；黄龙真人的师叔",
+      "relationship_summary": "亲临并主持新弟子最终测试",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "落叶真人"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_luoye_zhenren_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "落叶真人是太初教高辈分长老、黄龙真人的师叔。",
+        "source_quote_ids": [
+          "quote_character_luoye_zhenren_01",
+          "quote_character_luoye_zhenren_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_luoye_zhenren_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "落叶真人主持并讲解最终测试和仙种等级。",
+        "source_quote_ids": [
+          "quote_character_luoye_zhenren_01",
+          "quote_character_luoye_zhenren_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_luoye_zhenren_01",
+      "quote_character_luoye_zhenren_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_guyunzi",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "古云子",
+      "aliases": [],
+      "summary": "太初教古云堂一方仙师。张扬被测出灰色仙种后，古云子首先提出张扬与古云堂有师徒缘，并试图争取其日后进入古云堂。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“那古云子在这里感谢了”；第5章 显灵台上鉴仙眼：“我们古云堂这一脉一直没有收徒”",
+      "role_type": "faction_representative",
+      "identity": "太初教古云堂一方仙师",
+      "relationship_summary": "参与争取灰色仙种张扬",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "古云子"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_guyunzi_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "古云子是太初教古云堂一方仙师。",
+        "source_quote_ids": [
+          "quote_character_guyunzi_01",
+          "quote_character_guyunzi_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_guyunzi_02",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "古云子主张张扬进入古云堂。",
+        "source_quote_ids": [
+          "quote_character_guyunzi_01",
+          "quote_character_guyunzi_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_guyunzi_01",
+      "quote_character_guyunzi_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_xiayunzi",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "夏云子",
+      "aliases": [],
+      "summary": "太初教夏云堂一方仙师。张扬被测出灰色仙种后，夏云子以夏云堂的六爻卦和所谓师徒缘为由争取张扬。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“夏云子师兄，你们夏云堂这十年来，每次有人入门都被你抢”；第5章 显灵台上鉴仙眼：“我们夏云堂的六爻卦，那可是无人能及的”",
+      "role_type": "faction_representative",
+      "identity": "太初教夏云堂一方仙师",
+      "relationship_summary": "参与争取灰色仙种张扬",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "夏云子"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_xiayunzi_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "夏云子是太初教夏云堂一方仙师。",
+        "source_quote_ids": [
+          "quote_character_xiayunzi_01",
+          "quote_character_xiayunzi_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xiayunzi_02",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "夏云子主张张扬进入夏云堂。",
+        "source_quote_ids": [
+          "quote_character_xiayunzi_01",
+          "quote_character_xiayunzi_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_xiayunzi_01",
+      "quote_character_xiayunzi_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_bizhuzi",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "碧竹子",
+      "aliases": [],
+      "summary": "太初教碧竹堂一方仙师，外表为书生打扮。张扬被测出灰色仙种后，碧竹子以碧竹堂专心培养宗门弟子为由，争取张扬进入碧竹堂。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“一身书生打扮，颇有几分超凡脱俗味道的碧竹子”；第5章 显灵台上鉴仙眼：“若能进我碧竹堂，势必能爆发出璀璨光彩”",
+      "role_type": "faction_representative",
+      "identity": "太初教碧竹堂一方仙师",
+      "relationship_summary": "参与争取灰色仙种张扬",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "碧竹子"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_bizhuzi_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "碧竹子是太初教碧竹堂一方仙师。",
+        "source_quote_ids": [
+          "quote_character_bizhuzi_01",
+          "quote_character_bizhuzi_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_bizhuzi_02",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "碧竹子争取张扬进入碧竹堂。",
+        "source_quote_ids": [
+          "quote_character_bizhuzi_01",
+          "quote_character_bizhuzi_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_bizhuzi_01",
+      "quote_character_bizhuzi_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_su_baihua",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "苏百花",
+      "aliases": [],
+      "summary": "太初教百花堂一方仙师。百花堂通常只收女弟子，但张扬被测出灰色仙种后，苏百花提出为其破例，加入争抢。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“苏百花的百花堂在太初教独树一帜”；第5章 显灵台上鉴仙眼：“收女不收男乃是百花堂不成文的规矩，没想到苏百花竟然想破例”",
+      "role_type": "faction_representative",
+      "identity": "太初教百花堂一方仙师",
+      "relationship_summary": "参与争取灰色仙种张扬，并提出为其破例",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "苏百花"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_su_baihua_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "苏百花是太初教百花堂一方仙师。",
+        "source_quote_ids": [
+          "quote_character_su_baihua_01",
+          "quote_character_su_baihua_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_su_baihua_02",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "苏百花为张扬提出破例收徒。",
+        "source_quote_ids": [
+          "quote_character_su_baihua_01",
+          "quote_character_su_baihua_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_su_baihua_01",
+      "quote_character_su_baihua_02"
+    ]
+  },
+  {
+    "expected_card_id": "location_da_tian_zhen",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "大田镇",
+      "aliases": [],
+      "summary": "背靠小屿山的贫瘠城镇，居民因田地稀少而世代依靠狩猎。前五章中，大田镇组织十六岁少年参加太初教选苗，四十一名少年赴坡子岭测试，最终秦浩轩、张狂、张扬三人入选。",
+      "appearance_chapter_count": 4,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：“背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎”；第2章 山中神仙选仙苗：“镇长便遣人将镇上十六岁的适龄少年都聚集起来”；第3章 至上仙尊真乙太初教：“大田镇今年有四十一名适龄少年”；第5章 显灵台上鉴仙眼：“下一个，大田镇张扬”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b"
+    },
+    "accepted_names": [
+      "大田镇"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_da_tian_zhen_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "大田镇背靠小屿山，居民因田地稀少贫瘠而世代狩猎。",
+        "source_quote_ids": [
+          "quote_location_da_tian_zhen_01",
+          "quote_location_da_tian_zhen_02",
+          "quote_location_da_tian_zhen_03",
+          "quote_location_da_tian_zhen_04"
+        ]
+      },
+      {
+        "claim_id": "claim_location_da_tian_zhen_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "大田镇组织十六岁适龄少年参加山中神仙选苗。",
+        "source_quote_ids": [
+          "quote_location_da_tian_zhen_01",
+          "quote_location_da_tian_zhen_02",
+          "quote_location_da_tian_zhen_03",
+          "quote_location_da_tian_zhen_04"
+        ]
+      },
+      {
+        "claim_id": "claim_location_da_tian_zhen_03",
+        "field": "summary",
+        "importance": "normal",
+        "description": "本次大田镇有四十一名少年参加选苗。",
+        "source_quote_ids": [
+          "quote_location_da_tian_zhen_01",
+          "quote_location_da_tian_zhen_02",
+          "quote_location_da_tian_zhen_03",
+          "quote_location_da_tian_zhen_04"
+        ]
+      },
+      {
+        "claim_id": "claim_location_da_tian_zhen_04",
+        "field": "summary",
+        "importance": "minor",
+        "description": "张扬在太初教最终测试中仍被标识为来自大田镇。",
+        "source_quote_ids": [
+          "quote_location_da_tian_zhen_01",
+          "quote_location_da_tian_zhen_02",
+          "quote_location_da_tian_zhen_03",
+          "quote_location_da_tian_zhen_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_da_tian_zhen_01",
+      "quote_location_da_tian_zhen_02",
+      "quote_location_da_tian_zhen_03",
+      "quote_location_da_tian_zhen_04"
+    ]
+  },
+  {
+    "expected_card_id": "location_xiao_yu_shan",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "小屿山",
+      "aliases": [],
+      "summary": "位于大田镇背后的山地。镇民通常只在外围狩猎，曾有深入者失踪；深处存在凶禽猛兽、珍稀药材和夜间蔓延的致命毒瘴。秦浩轩借五彩小蛇的蛇身进入深处采药，并把该山的危险与绝仙毒谷相比较。",
+      "appearance_chapter_count": 3,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：“大田镇世代狩猎，但都在外围转悠”；第1章 大田金鳞元神出：“人体若吸入毒瘴必死无疑”；第3章 至上仙尊真乙太初教：“坡子岭是小屿山内山与外围的分界点”；第4章 太初山中绝毒谷：“他附在小蛇身上，也曾探索过小屿山深处，那里都危险无比，极易迷路”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b"
+    },
+    "accepted_names": [
+      "小屿山"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_xiao_yu_shan_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "镇民通常只在小屿山外围狩猎，深入者可能失踪。",
+        "source_quote_ids": [
+          "quote_location_xiao_yu_shan_01",
+          "quote_location_xiao_yu_shan_02",
+          "quote_location_xiao_yu_shan_03",
+          "quote_location_xiao_yu_shan_04"
+        ]
+      },
+      {
+        "claim_id": "claim_location_xiao_yu_shan_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "小屿山夜间会蔓延致命毒瘴。",
+        "source_quote_ids": [
+          "quote_location_xiao_yu_shan_01",
+          "quote_location_xiao_yu_shan_02",
+          "quote_location_xiao_yu_shan_03",
+          "quote_location_xiao_yu_shan_04"
+        ]
+      },
+      {
+        "claim_id": "claim_location_xiao_yu_shan_03",
+        "field": "summary",
+        "importance": "normal",
+        "description": "小屿山存在内山与外围之分，坡子岭是分界点。",
+        "source_quote_ids": [
+          "quote_location_xiao_yu_shan_01",
+          "quote_location_xiao_yu_shan_02",
+          "quote_location_xiao_yu_shan_03",
+          "quote_location_xiao_yu_shan_04"
+        ]
+      },
+      {
+        "claim_id": "claim_location_xiao_yu_shan_04",
+        "field": "summary",
+        "importance": "normal",
+        "description": "小屿山深处危险且容易迷路。",
+        "source_quote_ids": [
+          "quote_location_xiao_yu_shan_01",
+          "quote_location_xiao_yu_shan_02",
+          "quote_location_xiao_yu_shan_03",
+          "quote_location_xiao_yu_shan_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_xiao_yu_shan_01",
+      "quote_location_xiao_yu_shan_02",
+      "quote_location_xiao_yu_shan_03",
+      "quote_location_xiao_yu_shan_04"
+    ]
+  },
+  {
+    "expected_card_id": "location_chenjia_yaopu",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "陈家药铺",
+      "aliases": [],
+      "summary": "位于大田镇北街的药铺，在镇中无人不知，主要处理猎户伤毒、疑难病症和药材收购。秦浩轩长期在此出售药材，前五章中的黄精交易也以此为主要场所。",
+      "appearance_chapter_count": 3,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：“这是赶去陈家药铺卖么？”；第2章 山中神仙选仙苗：“陈家药铺在大田镇无人不知无人不晓”；第2章 山中神仙选仙苗：“北街一个不甚起眼的小店铺，高高挂出一个‘药’字”；第3章 至上仙尊真乙太初教：“这不是昨天在陈家药铺卖黄精的那少年么？”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b"
+    },
+    "accepted_names": [
+      "陈家药铺"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_chenjia_yaopu_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "陈家药铺是秦浩轩出售药材的重要地点。",
+        "source_quote_ids": [
+          "quote_location_chenjia_yaopu_01",
+          "quote_location_chenjia_yaopu_02",
+          "quote_location_chenjia_yaopu_03",
+          "quote_location_chenjia_yaopu_04"
+        ]
+      },
+      {
+        "claim_id": "claim_location_chenjia_yaopu_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "陈家药铺在大田镇广为人知。",
+        "source_quote_ids": [
+          "quote_location_chenjia_yaopu_01",
+          "quote_location_chenjia_yaopu_02",
+          "quote_location_chenjia_yaopu_03",
+          "quote_location_chenjia_yaopu_04"
+        ]
+      },
+      {
+        "claim_id": "claim_location_chenjia_yaopu_03",
+        "field": "summary",
+        "importance": "normal",
+        "description": "陈家药铺位于北街。",
+        "source_quote_ids": [
+          "quote_location_chenjia_yaopu_01",
+          "quote_location_chenjia_yaopu_02",
+          "quote_location_chenjia_yaopu_03",
+          "quote_location_chenjia_yaopu_04"
+        ]
+      },
+      {
+        "claim_id": "claim_location_chenjia_yaopu_04",
+        "field": "summary",
+        "importance": "normal",
+        "description": "陈家药铺是秦浩轩与徐吞虎、赵嘉龙首次发生黄精交易接触的场所。",
+        "source_quote_ids": [
+          "quote_location_chenjia_yaopu_01",
+          "quote_location_chenjia_yaopu_02",
+          "quote_location_chenjia_yaopu_03",
+          "quote_location_chenjia_yaopu_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_chenjia_yaopu_01",
+      "quote_location_chenjia_yaopu_02",
+      "quote_location_chenjia_yaopu_03",
+      "quote_location_chenjia_yaopu_04"
+    ]
+  },
+  {
+    "expected_card_id": "location_pozi_ling",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "坡子岭",
+      "aliases": [],
+      "summary": "小屿山内山与外围的分界点，是一块平坦草地。大田镇的太初教初选在此举行，徐吞虎、赵嘉龙御剑抵达后为四十一名少年进行摸道骨和测仙种。",
+      "appearance_chapter_count": 2,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第2章 山中神仙选仙苗：“明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟”；第3章 至上仙尊真乙太初教：“坡子岭是小屿山内山与外围的分界点，是一块平坦的草地”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132"
+    },
+    "accepted_names": [
+      "坡子岭"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_pozi_ling_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "坡子岭是大田镇少年参加山中神仙选苗的地点。",
+        "source_quote_ids": [
+          "quote_location_pozi_ling_01",
+          "quote_location_pozi_ling_02"
+        ]
+      },
+      {
+        "claim_id": "claim_location_pozi_ling_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "坡子岭是小屿山内山与外围分界的一块平坦草地。",
+        "source_quote_ids": [
+          "quote_location_pozi_ling_01",
+          "quote_location_pozi_ling_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_pozi_ling_01",
+      "quote_location_pozi_ling_02"
+    ]
+  },
+  {
+    "expected_card_id": "location_da_yu_shan",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "大屿山",
+      "aliases": [],
+      "summary": "翔龙国第一宗门太初教所在地，山势巍峨、灵气充盈。万毒魔尊自爆后，毒气曾蔓延大半个原大屿山，正文称现今大屿山范围仅为当初的三分之一。",
+      "appearance_chapter_count": 2,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“宗门位于大屿山黄帝峰”；第4章 太初山中绝毒谷：“现在的大屿山只是当初大屿山的三分之一”；第4章 太初山中绝毒谷：“大屿山，翔龙国第一宗门所在地，山势巍峨，连绵起伏”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "大屿山"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_da_yu_shan_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "大屿山是太初教宗门所在山脉。",
+        "source_quote_ids": [
+          "quote_location_da_yu_shan_01",
+          "quote_location_da_yu_shan_02",
+          "quote_location_da_yu_shan_03"
+        ]
+      },
+      {
+        "claim_id": "claim_location_da_yu_shan_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "现今大屿山仅为万毒魔尊自爆前大屿山的三分之一。",
+        "source_quote_ids": [
+          "quote_location_da_yu_shan_01",
+          "quote_location_da_yu_shan_02",
+          "quote_location_da_yu_shan_03"
+        ]
+      },
+      {
+        "claim_id": "claim_location_da_yu_shan_03",
+        "field": "summary",
+        "importance": "normal",
+        "description": "大屿山山势巍峨、连绵起伏，是翔龙国第一宗门所在地。",
+        "source_quote_ids": [
+          "quote_location_da_yu_shan_01",
+          "quote_location_da_yu_shan_02",
+          "quote_location_da_yu_shan_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_da_yu_shan_01",
+      "quote_location_da_yu_shan_02",
+      "quote_location_da_yu_shan_03"
+    ]
+  },
+  {
+    "expected_card_id": "location_huangdi_feng",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "黄帝峰",
+      "aliases": [],
+      "summary": "大屿山主峰，太初教宗门核心区域所在。黄帝峰直插云霄，通天梯从峰顶通往山脚，峰顶方向设有太初宝殿；太初教规定未完成最终测试的新弟子不得进入半山腰以上宗门重地。",
+      "appearance_chapter_count": 2,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“宗门位于大屿山黄帝峰”；第4章 太初山中绝毒谷：“主峰黄帝峰直插云霄”；第4章 太初山中绝毒谷：“黄帝峰禁止骑马上山”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "黄帝峰"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_huangdi_feng_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "黄帝峰是太初教宗门所在地。",
+        "source_quote_ids": [
+          "quote_location_huangdi_feng_01",
+          "quote_location_huangdi_feng_02",
+          "quote_location_huangdi_feng_03"
+        ]
+      },
+      {
+        "claim_id": "claim_location_huangdi_feng_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "黄帝峰是大屿山主峰，直插云霄。",
+        "source_quote_ids": [
+          "quote_location_huangdi_feng_01",
+          "quote_location_huangdi_feng_02",
+          "quote_location_huangdi_feng_03"
+        ]
+      },
+      {
+        "claim_id": "claim_location_huangdi_feng_03",
+        "field": "summary",
+        "importance": "normal",
+        "description": "黄帝峰禁止骑马上山。",
+        "source_quote_ids": [
+          "quote_location_huangdi_feng_01",
+          "quote_location_huangdi_feng_02",
+          "quote_location_huangdi_feng_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_huangdi_feng_01",
+      "quote_location_huangdi_feng_02",
+      "quote_location_huangdi_feng_03"
+    ]
+  },
+  {
+    "expected_card_id": "location_juexian_dugu",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "绝仙毒谷",
+      "aliases": [],
+      "summary": "数十万年前仙魔大战战场，位于太初教附近和其势力范围内。万毒魔尊自爆后，毒气覆盖大半个原大屿山并形成此谷；谷中遗落上古灵法、魔术、法宝并可能孕育变异灵药，但修仙者进入仍会被毒死，正文称历来只有进没有出。",
+      "appearance_chapter_count": 2,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“最接近数十万年前仙魔大战之一的战场——绝仙毒谷”；第4章 太初山中绝毒谷：“万毒魔尊自爆后，毒气蔓延了大半个大屿山，形成绝仙毒谷”；第4章 太初山中绝毒谷：“偌大的绝仙毒谷从来只有进没有出”；第5章 显灵台上鉴仙眼：“秦浩轩强行按捺住前去绝仙毒谷寻宝的冲动”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537"
+    },
+    "accepted_names": [
+      "绝仙毒谷"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_juexian_dugu_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "绝仙毒谷是太初教附近的古代仙魔大战战场。",
+        "source_quote_ids": [
+          "quote_location_juexian_dugu_01",
+          "quote_location_juexian_dugu_02",
+          "quote_location_juexian_dugu_03",
+          "quote_location_juexian_dugu_04"
+        ]
+      },
+      {
+        "claim_id": "claim_location_juexian_dugu_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "绝仙毒谷由万毒魔尊自爆后的毒气形成。",
+        "source_quote_ids": [
+          "quote_location_juexian_dugu_01",
+          "quote_location_juexian_dugu_02",
+          "quote_location_juexian_dugu_03",
+          "quote_location_juexian_dugu_04"
+        ]
+      },
+      {
+        "claim_id": "claim_location_juexian_dugu_03",
+        "field": "summary",
+        "importance": "major",
+        "description": "绝仙毒谷危险至极，正文称历来只有进没有出。",
+        "source_quote_ids": [
+          "quote_location_juexian_dugu_01",
+          "quote_location_juexian_dugu_02",
+          "quote_location_juexian_dugu_03",
+          "quote_location_juexian_dugu_04"
+        ]
+      },
+      {
+        "claim_id": "claim_location_juexian_dugu_04",
+        "field": "summary",
+        "importance": "normal",
+        "description": "秦浩轩持续把绝仙毒谷视为未来寻宝目标。",
+        "source_quote_ids": [
+          "quote_location_juexian_dugu_01",
+          "quote_location_juexian_dugu_02",
+          "quote_location_juexian_dugu_03",
+          "quote_location_juexian_dugu_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_juexian_dugu_01",
+      "quote_location_juexian_dugu_02",
+      "quote_location_juexian_dugu_03",
+      "quote_location_juexian_dugu_04"
+    ]
+  },
+  {
+    "expected_card_id": "location_tongtian_ti",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "通天梯",
+      "aliases": [],
+      "summary": "黄帝峰上一条从峰顶直通山脚的蜿蜒长梯，起点位于巨大青石山门处，尽头通往太初宝殿。新弟子由山脚登记后沿通天梯前往半山亭。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“一条蜿蜒崎岖却气势磅礴的通天梯从峰顶直通山脚”；第4章 太初山中绝毒谷：“通天梯的尽头是太初宝殿”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537"
+    },
+    "accepted_names": [
+      "通天梯"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_tongtian_ti_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "通天梯从黄帝峰峰顶直通山脚。",
+        "source_quote_ids": [
+          "quote_location_tongtian_ti_01",
+          "quote_location_tongtian_ti_02"
+        ]
+      },
+      {
+        "claim_id": "claim_location_tongtian_ti_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "通天梯尽头通往太初宝殿。",
+        "source_quote_ids": [
+          "quote_location_tongtian_ti_01",
+          "quote_location_tongtian_ti_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_tongtian_ti_01",
+      "quote_location_tongtian_ti_02"
+    ]
+  },
+  {
+    "expected_card_id": "location_taichu_baodian",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "太初宝殿",
+      "aliases": [],
+      "summary": "位于通天梯尽头的太初教仙家重地。非太初教弟子的凡人，即使是皇帝，通常也只有在受册封时才有机会进入一次。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“通天梯的尽头是太初宝殿，整个翔龙国人心驰神往的仙家重地”；第4章 太初山中绝毒谷：“如果不是太初教弟子，凡夫俗子即便是人中之龙的皇帝，一辈子中也只有在受册封时能进一次”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537"
+    },
+    "accepted_names": [
+      "太初宝殿"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_taichu_baodian_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初宝殿位于通天梯尽头，是太初教仙家重地。",
+        "source_quote_ids": [
+          "quote_location_taichu_baodian_01",
+          "quote_location_taichu_baodian_02"
+        ]
+      },
+      {
+        "claim_id": "claim_location_taichu_baodian_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "非太初教弟子的凡人通常只能在受册封时进入太初宝殿。",
+        "source_quote_ids": [
+          "quote_location_taichu_baodian_01",
+          "quote_location_taichu_baodian_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_taichu_baodian_01",
+      "quote_location_taichu_baodian_02"
+    ]
+  },
+  {
+    "expected_card_id": "location_banshan_ting",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "半山亭",
+      "aliases": [],
+      "summary": "黄帝峰半山处的一条长廊，是太初教接引和安置新弟子的节点，也承担宗门对外宣传栏功能。长廊墙面雕刻奇珍异兽、名山大川、神仙形象及太初教部分历史。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“半山亭其实是一条长长的走廊，更是太初教的对外宣传栏”；第4章 太初山中绝毒谷：“在半山亭有人接待”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537"
+    },
+    "accepted_names": [
+      "半山亭"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_banshan_ting_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "半山亭是黄帝峰半山长廊，也是太初教对外宣传栏。",
+        "source_quote_ids": [
+          "quote_location_banshan_ting_01",
+          "quote_location_banshan_ting_02"
+        ]
+      },
+      {
+        "claim_id": "claim_location_banshan_ting_02",
+        "field": "summary",
+        "importance": "normal",
+        "description": "新弟子到达太初教后在半山亭接受接引。",
+        "source_quote_ids": [
+          "quote_location_banshan_ting_01",
+          "quote_location_banshan_ting_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_banshan_ting_01",
+      "quote_location_banshan_ting_02"
+    ]
+  },
+  {
+    "expected_card_id": "location_xianling_tai",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "显灵台",
+      "aliases": [],
+      "summary": "太初教举行新弟子最终测试的露天广场。第5章标题提供正式名称“显灵台”，正文描述黄龙真人、落叶真人及众多长老在此主持测试，明鉴仙眼也在此使用。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“# 第5章 显灵台上鉴仙眼”；第5章 显灵台上鉴仙眼：“引路道人将他们带到一个露天的广场”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "显灵台"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_xianling_tai_01",
+        "field": "name",
+        "importance": "critical",
+        "description": "最终测试地点的正式名称为显灵台。",
+        "source_quote_ids": [
+          "quote_location_xianling_tai_01",
+          "quote_location_xianling_tai_02"
+        ]
+      },
+      {
+        "claim_id": "claim_location_xianling_tai_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "显灵台是太初教举行新弟子最终测试的露天广场。",
+        "source_quote_ids": [
+          "quote_location_xianling_tai_01",
+          "quote_location_xianling_tai_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_xianling_tai_01",
+      "quote_location_xianling_tai_02"
+    ]
+  },
+  {
+    "expected_card_id": "faction_taichu_jiao",
+    "knowledge_type": "faction",
+    "card": {
+      "type": "faction",
+      "name": "太初教",
+      "aliases": [
+        "至上仙尊真乙太初教"
+      ],
+      "summary": "正式全称“至上仙尊真乙太初教”，是翔龙国护国神教和唯一仙门，传承数千年、门人上万，宗门位于大屿山黄帝峰。掌教兼任翔龙国护国仙师，皇帝登基须报备掌教批准。前五章还显示太初教控制严格的宗门空间，并设有古云堂、夏云堂、碧竹堂、百花堂等内部堂口。",
+      "appearance_chapter_count": 3,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“上天曾降下仙班仙谱，赐名‘至上仙尊真乙太初教’，一般称为太初教”；第3章 至上仙尊真乙太初教：“弟子门人上万，乃是翔龙国唯一仙门”；第4章 太初山中绝毒谷：“若我太初能走入绝仙毒谷”；第4章 太初山中绝毒谷：“半山腰之上乃宗门重地，你们现在没有资格进入”；第5章 显灵台上鉴仙眼：“太初教负责最终测试的前辈高人已经恭候多时了”；第5章 显灵台上鉴仙眼：“古云堂”",
+      "faction_type": "sect",
+      "leader_id": null
+    },
+    "accepted_names": [
+      "太初教",
+      "至上仙尊真乙太初教"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "faction_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_taichu_jiao_01",
+        "field": "aliases",
+        "importance": "critical",
+        "description": "太初教的正式全称是“至上仙尊真乙太初教”。",
+        "source_quote_ids": [
+          "quote_faction_taichu_jiao_01",
+          "quote_faction_taichu_jiao_02",
+          "quote_faction_taichu_jiao_03",
+          "quote_faction_taichu_jiao_04",
+          "quote_faction_taichu_jiao_05",
+          "quote_faction_taichu_jiao_06"
+        ]
+      },
+      {
+        "claim_id": "claim_faction_taichu_jiao_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初教传承数千年、门人上万，是翔龙国唯一仙门。",
+        "source_quote_ids": [
+          "quote_faction_taichu_jiao_01",
+          "quote_faction_taichu_jiao_02",
+          "quote_faction_taichu_jiao_03",
+          "quote_faction_taichu_jiao_04",
+          "quote_faction_taichu_jiao_05",
+          "quote_faction_taichu_jiao_06"
+        ]
+      },
+      {
+        "claim_id": "claim_faction_taichu_jiao_03",
+        "field": "summary",
+        "importance": "major",
+        "description": "太初教邻近绝仙毒谷，并将谷中资源视为宗门发展机会。",
+        "source_quote_ids": [
+          "quote_faction_taichu_jiao_01",
+          "quote_faction_taichu_jiao_02",
+          "quote_faction_taichu_jiao_03",
+          "quote_faction_taichu_jiao_04",
+          "quote_faction_taichu_jiao_05",
+          "quote_faction_taichu_jiao_06"
+        ]
+      },
+      {
+        "claim_id": "claim_faction_taichu_jiao_04",
+        "field": "summary",
+        "importance": "major",
+        "description": "太初教对新弟子进入半山腰以上区域实行严格准入。",
+        "source_quote_ids": [
+          "quote_faction_taichu_jiao_01",
+          "quote_faction_taichu_jiao_02",
+          "quote_faction_taichu_jiao_03",
+          "quote_faction_taichu_jiao_04",
+          "quote_faction_taichu_jiao_05",
+          "quote_faction_taichu_jiao_06"
+        ]
+      },
+      {
+        "claim_id": "claim_faction_taichu_jiao_05",
+        "field": "summary",
+        "importance": "normal",
+        "description": "太初教把新弟子最终测试视为重要宗门事务。",
+        "source_quote_ids": [
+          "quote_faction_taichu_jiao_01",
+          "quote_faction_taichu_jiao_02",
+          "quote_faction_taichu_jiao_03",
+          "quote_faction_taichu_jiao_04",
+          "quote_faction_taichu_jiao_05",
+          "quote_faction_taichu_jiao_06"
+        ]
+      },
+      {
+        "claim_id": "claim_faction_taichu_jiao_06",
+        "field": "summary",
+        "importance": "major",
+        "description": "太初教内部存在古云堂、夏云堂、碧竹堂、百花堂等堂口。",
+        "source_quote_ids": [
+          "quote_faction_taichu_jiao_01",
+          "quote_faction_taichu_jiao_02",
+          "quote_faction_taichu_jiao_03",
+          "quote_faction_taichu_jiao_04",
+          "quote_faction_taichu_jiao_05",
+          "quote_faction_taichu_jiao_06"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_faction_taichu_jiao_01",
+      "quote_faction_taichu_jiao_02",
+      "quote_faction_taichu_jiao_03",
+      "quote_faction_taichu_jiao_04",
+      "quote_faction_taichu_jiao_05",
+      "quote_faction_taichu_jiao_06"
+    ]
+  },
+  {
+    "expected_card_id": "faction_xianglong_guo",
+    "knowledge_type": "faction",
+    "card": {
+      "type": "faction",
+      "name": "翔龙国",
+      "aliases": [],
+      "summary": "太初教所在的王朝。太初教是翔龙国唯一仙门和护国神教，掌教兼任护国仙师，历代皇帝登基须报备掌教批准；李靖是翔龙国当今皇帝最疼爱的三皇子。",
+      "appearance_chapter_count": 2,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“乃是翔龙国唯一仙门”；第3章 至上仙尊真乙太初教：“历代皇帝登基，都必须报备掌教批准同意”；第4章 太初山中绝毒谷：“他是翔龙国当今皇帝最疼爱的三皇子李靖”",
+      "faction_type": "dynasty",
+      "leader_id": null
+    },
+    "accepted_names": [
+      "翔龙国"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "faction_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_xianglong_guo_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "翔龙国境内唯一仙门是太初教。",
+        "source_quote_ids": [
+          "quote_faction_xianglong_guo_01",
+          "quote_faction_xianglong_guo_02",
+          "quote_faction_xianglong_guo_03"
+        ]
+      },
+      {
+        "claim_id": "claim_faction_xianglong_guo_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "翔龙国皇帝登基须报备太初教掌教批准。",
+        "source_quote_ids": [
+          "quote_faction_xianglong_guo_01",
+          "quote_faction_xianglong_guo_02",
+          "quote_faction_xianglong_guo_03"
+        ]
+      },
+      {
+        "claim_id": "claim_faction_xianglong_guo_03",
+        "field": "summary",
+        "importance": "normal",
+        "description": "李靖是翔龙国当今皇帝最疼爱的三皇子。",
+        "source_quote_ids": [
+          "quote_faction_xianglong_guo_01",
+          "quote_faction_xianglong_guo_02",
+          "quote_faction_xianglong_guo_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_faction_xianglong_guo_01",
+      "quote_faction_xianglong_guo_02",
+      "quote_faction_xianglong_guo_03"
+    ]
+  },
+  {
+    "expected_card_id": "faction_guyun_tang",
+    "knowledge_type": "faction",
+    "card": {
+      "type": "faction",
+      "name": "古云堂",
+      "aliases": [],
+      "summary": "太初教堂口之一，古云子代表该堂争取张扬。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“我们古云堂这一脉一直没有收徒”",
+      "faction_type": "other",
+      "leader_id": null
+    },
+    "accepted_names": [
+      "古云堂"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "faction_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_guyun_tang_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初教堂口之一，古云子代表该堂争取张扬。",
+        "source_quote_ids": [
+          "quote_faction_guyun_tang_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_faction_guyun_tang_01"
+    ]
+  },
+  {
+    "expected_card_id": "faction_xiayun_tang",
+    "knowledge_type": "faction",
+    "card": {
+      "type": "faction",
+      "name": "夏云堂",
+      "aliases": [],
+      "summary": "太初教堂口之一，以六爻卦见长，夏云子代表该堂争取张扬。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“我们夏云堂的六爻卦，那可是无人能及的”",
+      "faction_type": "other",
+      "leader_id": null
+    },
+    "accepted_names": [
+      "夏云堂"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "faction_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_xiayun_tang_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初教堂口之一，以六爻卦见长，夏云子代表该堂争取张扬。",
+        "source_quote_ids": [
+          "quote_faction_xiayun_tang_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_faction_xiayun_tang_01"
+    ]
+  },
+  {
+    "expected_card_id": "faction_bizhu_tang",
+    "knowledge_type": "faction",
+    "card": {
+      "type": "faction",
+      "name": "碧竹堂",
+      "aliases": [],
+      "summary": "太初教堂口之一，碧竹子代表该堂争取张扬。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“若能进我碧竹堂，势必能爆发出璀璨光彩”",
+      "faction_type": "other",
+      "leader_id": null
+    },
+    "accepted_names": [
+      "碧竹堂"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "faction_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_bizhu_tang_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初教堂口之一，碧竹子代表该堂争取张扬。",
+        "source_quote_ids": [
+          "quote_faction_bizhu_tang_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_faction_bizhu_tang_01"
+    ]
+  },
+  {
+    "expected_card_id": "faction_baihua_tang",
+    "knowledge_type": "faction",
+    "card": {
+      "type": "faction",
+      "name": "百花堂",
+      "aliases": [],
+      "summary": "太初教堂口之一，门下通常只收女弟子，苏百花为争取张扬提出破例。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“苏百花的百花堂在太初教独树一帜”",
+      "faction_type": "other",
+      "leader_id": null
+    },
+    "accepted_names": [
+      "百花堂"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "faction_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_baihua_tang_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初教堂口之一，门下通常只收女弟子，苏百花为争取张扬提出破例。",
+        "source_quote_ids": [
+          "quote_faction_baihua_tang_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_faction_baihua_tang_01"
+    ]
+  },
+  {
+    "expected_card_id": "item_huangjing",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "黄精",
+      "aliases": [],
+      "summary": "一种珍贵药材，外似黄色石子、触感细腻并散发浓郁幽香。秦浩轩从五彩小蛇口中取得后带往陈家药铺，拒绝两名外地客一百二十两报价，以三十两卖给陈老头；之后徐吞虎、赵嘉龙又以五百两从陈老头手中购走。",
+      "appearance_chapter_count": 3,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：“这小块黄色物体是一枚珍贵的黄精”；第1章 大田金鳞元神出：“换了衣衫，秦浩轩带着黄精走出家门”；第2章 山中神仙选仙苗：“这里是一百两银子，只要小兄弟愿意将这块黄精卖给我”；第2章 山中神仙选仙苗：“三十两就三十两”；第3章 至上仙尊真乙太初教：“后来在陈老头手上以五百两天价买下那枚黄精”",
+      "item_type": "material",
+      "grade": null,
+      "current_holder_id": null,
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "黄精"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "item_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_huangjing_01",
+        "field": "item_type",
+        "importance": "critical",
+        "description": "黄精属于珍贵药材材料。",
+        "source_quote_ids": [
+          "quote_item_huangjing_01",
+          "quote_item_huangjing_02",
+          "quote_item_huangjing_03",
+          "quote_item_huangjing_04",
+          "quote_item_huangjing_05"
+        ]
+      },
+      {
+        "claim_id": "claim_item_huangjing_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "秦浩轩取得并携带黄精前往出售。",
+        "source_quote_ids": [
+          "quote_item_huangjing_01",
+          "quote_item_huangjing_02",
+          "quote_item_huangjing_03",
+          "quote_item_huangjing_04",
+          "quote_item_huangjing_05"
+        ]
+      },
+      {
+        "claim_id": "claim_item_huangjing_03",
+        "field": "summary",
+        "importance": "major",
+        "description": "两名外地客曾为黄精报价至一百二十两。",
+        "source_quote_ids": [
+          "quote_item_huangjing_01",
+          "quote_item_huangjing_02",
+          "quote_item_huangjing_03",
+          "quote_item_huangjing_04",
+          "quote_item_huangjing_05"
+        ]
+      },
+      {
+        "claim_id": "claim_item_huangjing_04",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦浩轩以三十两把黄精卖给陈老头。",
+        "source_quote_ids": [
+          "quote_item_huangjing_01",
+          "quote_item_huangjing_02",
+          "quote_item_huangjing_03",
+          "quote_item_huangjing_04",
+          "quote_item_huangjing_05"
+        ]
+      },
+      {
+        "claim_id": "claim_item_huangjing_05",
+        "field": "summary",
+        "importance": "critical",
+        "description": "黄精后来以五百两转卖给徐吞虎和赵嘉龙。",
+        "source_quote_ids": [
+          "quote_item_huangjing_01",
+          "quote_item_huangjing_02",
+          "quote_item_huangjing_03",
+          "quote_item_huangjing_04",
+          "quote_item_huangjing_05"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_item_huangjing_01",
+      "quote_item_huangjing_02",
+      "quote_item_huangjing_03",
+      "quote_item_huangjing_04",
+      "quote_item_huangjing_05"
+    ]
+  },
+  {
+    "expected_card_id": "item_xianling_hua",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "仙灵花",
+      "aliases": [],
+      "summary": "用于太初教初选测仙种的花朵。测试者含仙灵之气的鲜血滴入后，花朵是否变化反映仙种是否存活，盛开程度越高表示仙种越饱满、活力越强。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“如果仙灵花毫无动静则说明仙种已死，仙灵花开得越茂密则证明仙种越饱满”；第3章 至上仙尊真乙太初教：“仙灵花以怒放的姿态，展示了张狂仙种的饱满和活力”",
+      "item_type": "other",
+      "grade": null,
+      "current_holder_id": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "仙灵花"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "item_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_xianling_hua_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "仙灵花是测仙种的工具，花朵反应表示仙种存活和饱满程度。",
+        "source_quote_ids": [
+          "quote_item_xianling_hua_01",
+          "quote_item_xianling_hua_02"
+        ]
+      },
+      {
+        "claim_id": "claim_item_xianling_hua_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "张狂的鲜血使仙灵花怒放，显示其仙种饱满。",
+        "source_quote_ids": [
+          "quote_item_xianling_hua_01",
+          "quote_item_xianling_hua_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_item_xianling_hua_01",
+      "quote_item_xianling_hua_02"
+    ]
+  },
+  {
+    "expected_card_id": "item_mingjian_xianyan",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "明鉴仙眼",
+      "aliases": [],
+      "summary": "太初教用于新弟子最终测试仙种天赋的器物。张扬把手放在明鉴仙眼上，落叶真人打入仙灵之气后，明鉴仙眼发出灰色光芒，显示张扬为灰色仙种。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“张扬走上测试台，将手放在【明鉴仙眼】上”；第5章 显灵台上鉴仙眼：“随着落叶真人打入一道仙灵之气，【明鉴仙眼】顿时闪起灰色光芒”",
+      "item_type": "magic_treasure",
+      "grade": null,
+      "current_holder_id": null,
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80"
+    },
+    "accepted_names": [
+      "明鉴仙眼"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "item_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_mingjian_xianyan_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "明鉴仙眼是太初教检测仙种天赋的器物。",
+        "source_quote_ids": [
+          "quote_item_mingjian_xianyan_01",
+          "quote_item_mingjian_xianyan_02"
+        ]
+      },
+      {
+        "claim_id": "claim_item_mingjian_xianyan_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "明鉴仙眼发出灰光，判定张扬为灰色仙种。",
+        "source_quote_ids": [
+          "quote_item_mingjian_xianyan_01",
+          "quote_item_mingjian_xianyan_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_item_mingjian_xianyan_01",
+      "quote_item_mingjian_xianyan_02"
+    ]
+  },
+  {
+    "expected_card_id": "realm_zhongzhi_xiangen",
+    "knowledge_type": "realm",
+    "card": {
+      "type": "realm",
+      "name": "种植仙根境",
+      "aliases": [],
+      "summary": "修仙第一层。修炼者引导天地灵气进入体内、浇灌仙种，使仙种发芽长叶，方可突破到仙苗境。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“修仙第一层种植仙根境”",
+      "system": "修仙体系",
+      "level_order": 1
+    },
+    "accepted_names": [
+      "种植仙根境"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "system",
+      "level_order"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_realm_zhongzhi_xiangen_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "修仙第一层。修炼者引导天地灵气进入体内、浇灌仙种，使仙种发芽长叶，方可突破到仙苗境。",
+        "source_quote_ids": [
+          "quote_realm_zhongzhi_xiangen_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_realm_zhongzhi_xiangen_01"
+    ]
+  },
+  {
+    "expected_card_id": "realm_xianmiao",
+    "knowledge_type": "realm",
+    "card": {
+      "type": "realm",
+      "name": "仙苗境",
+      "aliases": [],
+      "summary": "修仙第二层。仙苗可生长出四十九片仙叶，仙叶越多实力越强；生齐四十九叶后才有机会突破仙树境。徐吞虎为十一叶，赵嘉龙为二十二叶。",
+      "appearance_chapter_count": 2,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“突破到第二层仙苗境”；第5章 显灵台上鉴仙眼：“等到仙苗期之后，令他投入到我们古云堂一脉如何”",
+      "system": "修仙体系",
+      "level_order": 2
+    },
+    "accepted_names": [
+      "仙苗境"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "system",
+      "level_order"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_realm_xianmiao_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "修仙第二层。仙苗可生长出四十九片仙叶，仙叶越多实力越强；生齐四十九叶后才有机会突破仙树境。徐吞虎为十一叶，赵嘉龙为二十二叶。",
+        "source_quote_ids": [
+          "quote_realm_xianmiao_01",
+          "quote_realm_xianmiao_02"
+        ]
+      },
+      {
+        "claim_id": "claim_realm_xianmiao_02",
+        "field": "summary",
+        "importance": "normal",
+        "description": "仙苗境是太初教弟子后续修炼阶段。",
+        "source_quote_ids": [
+          "quote_realm_xianmiao_01",
+          "quote_realm_xianmiao_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_realm_xianmiao_01",
+      "quote_realm_xianmiao_02"
+    ]
+  },
+  {
+    "expected_card_id": "realm_xianshu",
+    "knowledge_type": "realm",
+    "card": {
+      "type": "realm",
+      "name": "仙树境",
+      "aliases": [],
+      "summary": "修仙第三层。仙苗生齐四十九片仙叶后，才有机会拔苗成树并突破到仙树境。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“突破第三层仙树境”",
+      "system": "修仙体系",
+      "level_order": 3
+    },
+    "accepted_names": [
+      "仙树境"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "system",
+      "level_order"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_realm_xianshu_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "修仙第三层。仙苗生齐四十九片仙叶后，才有机会拔苗成树并突破到仙树境。",
+        "source_quote_ids": [
+          "quote_realm_xianshu_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_realm_xianshu_01"
+    ]
+  },
+  {
+    "expected_card_id": "realm_xianying_daoguo",
+    "knowledge_type": "realm",
+    "card": {
+      "type": "realm",
+      "name": "仙婴道果境",
+      "aliases": [],
+      "summary": "修仙第五层。正文称太初教寿元将尽的老祖若突破到仙婴道果境，可再获得数百年寿元。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“第五层仙婴道果境”",
+      "system": "修仙体系",
+      "level_order": 5
+    },
+    "accepted_names": [
+      "仙婴道果境"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "system",
+      "level_order"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_realm_xianying_daoguo_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "修仙第五层。正文称太初教寿元将尽的老祖若突破到仙婴道果境，可再获得数百年寿元。",
+        "source_quote_ids": [
+          "quote_realm_xianying_daoguo_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_realm_xianying_daoguo_01"
+    ]
+  },
+  {
+    "expected_card_id": "technique_liuyua_gua",
+    "knowledge_type": "technique",
+    "card": {
+      "type": "technique",
+      "name": "六爻卦",
+      "aliases": [],
+      "summary": "夏云堂所长的推卦之术。夏云子在争取张扬时称，夏云堂的六爻卦在太初教无人能及。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“在咱们太初教，我们夏云堂的六爻卦，那可是无人能及的”",
+      "technique_type": "spell",
+      "grade": null,
+      "practice_condition": null,
+      "owner_faction_id": null
+    },
+    "accepted_names": [
+      "六爻卦"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "technique_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_liuyua_gua_01",
+        "field": "technique_type",
+        "importance": "critical",
+        "description": "六爻卦按术法标注。",
+        "source_quote_ids": [
+          "quote_technique_liuyua_gua_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_technique_liuyua_gua_01"
+    ]
+  },
+  {
+    "expected_card_id": "rule_qin_family_instruction",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "秦家祖训",
+      "aliases": [],
+      "summary": "秦浩轩祖上迁居大田镇后，为后人立下必须读书但不能做官的规矩。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：“便给后人立了规矩，必须读书却不能做官”",
+      "exceptions": null
+    },
+    "accepted_names": [
+      "秦家祖训"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_qin_family_instruction_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "秦家后人必须读书。",
+        "source_quote_ids": [
+          "quote_rule_qin_family_instruction_01"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_qin_family_instruction_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "秦家后人不得做官。",
+        "source_quote_ids": [
+          "quote_rule_qin_family_instruction_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_qin_family_instruction_01"
+    ]
+  },
+  {
+    "expected_card_id": "rule_qin_soul_swap_snake",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "秦浩轩的灵魂附身规则",
+      "aliases": [],
+      "summary": "秦浩轩可通过心念使灵魂在自身本体与五彩小蛇躯体之间反复往返；灵魂进入一方时，另一具身体停止活动。附身会导致次日筋疲力尽、精神不振和嗜睡。",
+      "appearance_chapter_count": 2,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：“灵魂能在小蛇的躯体和自己本体来回穿梭附体”；第1章 大田金鳞元神出：“每次附身后都会留下后遗症——第二天筋疲力尽，打不起精神，只想睡觉”；第4章 太初山中绝毒谷：“胜在有百毒不侵的小蛇，或许可以附身进那绝仙毒谷”",
+      "exceptions": null
+    },
+    "accepted_names": [
+      "秦浩轩的灵魂附身规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_qin_soul_swap_snake_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦浩轩能通过心念在本体与五彩小蛇之间往返附身。",
+        "source_quote_ids": [
+          "quote_rule_qin_soul_swap_snake_01",
+          "quote_rule_qin_soul_swap_snake_02",
+          "quote_rule_qin_soul_swap_snake_03"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_qin_soul_swap_snake_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "每次附身后，秦浩轩次日会筋疲力尽、精神不振并嗜睡。",
+        "source_quote_ids": [
+          "quote_rule_qin_soul_swap_snake_01",
+          "quote_rule_qin_soul_swap_snake_02",
+          "quote_rule_qin_soul_swap_snake_03"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_qin_soul_swap_snake_03",
+        "field": "summary",
+        "importance": "normal",
+        "description": "秦浩轩计划把附身能力用于探索绝仙毒谷。",
+        "source_quote_ids": [
+          "quote_rule_qin_soul_swap_snake_01",
+          "quote_rule_qin_soul_swap_snake_02",
+          "quote_rule_qin_soul_swap_snake_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_qin_soul_swap_snake_01",
+      "quote_rule_qin_soul_swap_snake_02",
+      "quote_rule_qin_soul_swap_snake_03"
+    ]
+  },
+  {
+    "expected_card_id": "rule_da_tian_selection_fee",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "大田镇开山选苗与安家费规则",
+      "aliases": [],
+      "summary": "大田镇组织十六岁适龄少年报名参加山中神仙选苗；报名者于黎明前往坡子岭。被选中的弟子可获得每年二百两白银安家费，前五章中秦浩轩、张狂、张扬入选后实际收到安家费。",
+      "appearance_chapter_count": 2,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第2章 山中神仙选仙苗：“镇上十六岁的适龄少年都聚集起来”；第2章 山中神仙选仙苗：“一旦被神仙们选中，还将得到神仙们赠予的每年两百两白银的安家费”；第3章 至上仙尊真乙太初教：“这是你们的安家费，妥善安置后，明天清晨镇口见”",
+      "exceptions": null
+    },
+    "accepted_names": [
+      "大田镇开山选苗与安家费规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_da_tian_selection_fee_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "大田镇开山选苗面向十六岁适龄少年。",
+        "source_quote_ids": [
+          "quote_rule_da_tian_selection_fee_01",
+          "quote_rule_da_tian_selection_fee_02",
+          "quote_rule_da_tian_selection_fee_03"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_da_tian_selection_fee_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "被选中者可获每年二百两白银安家费。",
+        "source_quote_ids": [
+          "quote_rule_da_tian_selection_fee_01",
+          "quote_rule_da_tian_selection_fee_02",
+          "quote_rule_da_tian_selection_fee_03"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_da_tian_selection_fee_03",
+        "field": "summary",
+        "importance": "major",
+        "description": "入选三人在离镇前实际领取安家费。",
+        "source_quote_ids": [
+          "quote_rule_da_tian_selection_fee_01",
+          "quote_rule_da_tian_selection_fee_02",
+          "quote_rule_da_tian_selection_fee_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_da_tian_selection_fee_01",
+      "quote_rule_da_tian_selection_fee_02",
+      "quote_rule_da_tian_selection_fee_03"
+    ]
+  },
+  {
+    "expected_card_id": "rule_taichu_selection_two_tests",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "太初教选苗两阶段规则",
+      "aliases": [],
+      "summary": "太初教初选分为摸道骨和测仙种两项。摸道骨用于初步试探骨骼经脉，未通过者不进入下一项；两项都通过者方可入选。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选”；第3章 至上仙尊真乙太初教：“所谓摸道骨就是对骨骼经脉进行初步的试探”",
+      "exceptions": null
+    },
+    "accepted_names": [
+      "太初教选苗两阶段规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_taichu_selection_two_tests_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初教选苗先摸道骨，再测仙种，两项均通过方可入选。",
+        "source_quote_ids": [
+          "quote_rule_taichu_selection_two_tests_01",
+          "quote_rule_taichu_selection_two_tests_02"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_taichu_selection_two_tests_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "摸道骨用于初步检查骨骼经脉，未过者无需测仙种。",
+        "source_quote_ids": [
+          "quote_rule_taichu_selection_two_tests_01",
+          "quote_rule_taichu_selection_two_tests_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_taichu_selection_two_tests_01",
+      "quote_rule_taichu_selection_two_tests_02"
+    ]
+  },
+  {
+    "expected_card_id": "rule_xianzhong_age_life_check",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "仙种存活与十六岁修仙规则",
+      "aliases": [],
+      "summary": "几乎每个人都有仙种，但许多仙种会在出生后或成长过程中干涸死亡。修炼者必须满十六岁才能灌输、吸收天地灵气并开始修仙，因此选苗时需要确认仙种到十六岁时仍然存活。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“几乎每个人都有仙种，但很多人的仙种在他出生后就死了”；第3章 至上仙尊真乙太初教：“因为要满十六岁才能灌输吸收天地灵气，所以必须满十六岁才能修仙”",
+      "exceptions": null
+    },
+    "accepted_names": [
+      "仙种存活与十六岁修仙规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_xianzhong_age_life_check_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "几乎人人有仙种，但仙种可能干涸死亡。",
+        "source_quote_ids": [
+          "quote_rule_xianzhong_age_life_check_01",
+          "quote_rule_xianzhong_age_life_check_02"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_xianzhong_age_life_check_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "修炼者必须满十六岁才能吸收天地灵气并开始修仙。",
+        "source_quote_ids": [
+          "quote_rule_xianzhong_age_life_check_01",
+          "quote_rule_xianzhong_age_life_check_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_xianzhong_age_life_check_01",
+      "quote_rule_xianzhong_age_life_check_02"
+    ]
+  },
+  {
+    "expected_card_id": "rule_juexian_dugu_poison",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "绝仙毒谷毒气禁入规则",
+      "aliases": [],
+      "summary": "万毒魔尊自爆遗留的毒气至今仍能毒死进入绝仙毒谷的修仙者；即使境界极高者也不敢轻入，正文称绝仙毒谷历来只有进没有出。接近万毒魔尊境界的极少数强者在自爆当时曾侥幸逃脱，构成历史例外。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“至今修仙者进入绝仙毒谷还会被毒死”；第4章 太初山中绝毒谷：“即便是境界极高的修仙者也不敢轻易闯入”；第4章 太初山中绝毒谷：“偌大的绝仙毒谷从来只有进没有出”",
+      "exceptions": "仙魔大战自爆当时，极少数与万毒魔尊境界修为相近的强者侥幸逃脱。"
+    },
+    "accepted_names": [
+      "绝仙毒谷毒气禁入规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "exceptions"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_juexian_dugu_poison_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "修仙者进入绝仙毒谷仍会被遗毒毒死。",
+        "source_quote_ids": [
+          "quote_rule_juexian_dugu_poison_01",
+          "quote_rule_juexian_dugu_poison_02",
+          "quote_rule_juexian_dugu_poison_03"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_juexian_dugu_poison_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "境界极高的修仙者也不敢轻入绝仙毒谷。",
+        "source_quote_ids": [
+          "quote_rule_juexian_dugu_poison_01",
+          "quote_rule_juexian_dugu_poison_02",
+          "quote_rule_juexian_dugu_poison_03"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_juexian_dugu_poison_03",
+        "field": "summary",
+        "importance": "major",
+        "description": "绝仙毒谷被描述为只有进没有出。",
+        "source_quote_ids": [
+          "quote_rule_juexian_dugu_poison_01",
+          "quote_rule_juexian_dugu_poison_02",
+          "quote_rule_juexian_dugu_poison_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_juexian_dugu_poison_01",
+      "quote_rule_juexian_dugu_poison_02",
+      "quote_rule_juexian_dugu_poison_03"
+    ]
+  },
+  {
+    "expected_card_id": "rule_extreme_places_mutated_herbs",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "极性险地孕生变异灵药规则",
+      "aliases": [],
+      "summary": "天地间至阴、至毒或至阳的地方很容易生出变异灵药。徐吞虎据此判断，绝仙毒谷经过多年孕育应存在许多变异灵药。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“天地间至阴、至毒或至阳的地方，都很容易生出变异灵药”",
+      "exceptions": null
+    },
+    "accepted_names": [
+      "极性险地孕生变异灵药规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_extreme_places_mutated_herbs_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "至阴、至毒或至阳之地容易孕生变异灵药。",
+        "source_quote_ids": [
+          "quote_rule_extreme_places_mutated_herbs_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_extreme_places_mutated_herbs_01"
+    ]
+  },
+  {
+    "expected_card_id": "rule_xianmiao_forty_nine_leaves",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "仙苗四十九叶与突破仙树境规则",
+      "aliases": [],
+      "summary": "进入仙苗境后，仙苗最多生长四十九片仙叶，仙叶越多实力越强；只有生齐四十九片仙叶，才有机会拔苗成树并突破到仙树境。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“仙苗能生长出四十九叶，仙叶越多实力越强”；第4章 太初山中绝毒谷：“生齐四十九叶后方有机会拔苗成树”",
+      "exceptions": "生齐四十九叶只意味着获得突破机会，不等于必然突破。"
+    },
+    "accepted_names": [
+      "仙苗四十九叶与突破仙树境规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "exceptions"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_xianmiao_forty_nine_leaves_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "仙苗能生长四十九叶，仙叶越多实力越强。",
+        "source_quote_ids": [
+          "quote_rule_xianmiao_forty_nine_leaves_01",
+          "quote_rule_xianmiao_forty_nine_leaves_02"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_xianmiao_forty_nine_leaves_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "生齐四十九叶后才有机会突破仙树境。",
+        "source_quote_ids": [
+          "quote_rule_xianmiao_forty_nine_leaves_01",
+          "quote_rule_xianmiao_forty_nine_leaves_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_xianmiao_forty_nine_leaves_01",
+      "quote_rule_xianmiao_forty_nine_leaves_02"
+    ]
+  },
+  {
+    "expected_card_id": "rule_cultivation_lifespan_breakthrough",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "修仙寿元与突破、丹药延寿规则",
+      "aliases": [],
+      "summary": "徐吞虎所述仙苗境修炼者寿元约一百五十年；若寿元耗尽前不能突破仙树境，又没有灵丹妙药延长寿元，就会死亡。更高境界突破能够增加寿元，太初教寿元将尽的老祖若突破仙婴道果境可再获数百年寿元。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“一百五十年寿元耗尽后，又没有灵丹妙药延长寿元，就只有死之一途”；第4章 太初山中绝毒谷：“突破到第五层仙婴道果境，再获得几百年寿元”",
+      "exceptions": "灵丹妙药可延寿；突破更高境界可增加寿元。"
+    },
+    "accepted_names": [
+      "修仙寿元与突破、丹药延寿规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "exceptions"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_cultivation_lifespan_breakthrough_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "徐吞虎所述仙苗境寿元约一百五十年，无法突破且无丹药延寿时会死亡。",
+        "source_quote_ids": [
+          "quote_rule_cultivation_lifespan_breakthrough_01",
+          "quote_rule_cultivation_lifespan_breakthrough_02"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_cultivation_lifespan_breakthrough_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "突破仙婴道果境可再获得数百年寿元。",
+        "source_quote_ids": [
+          "quote_rule_cultivation_lifespan_breakthrough_01",
+          "quote_rule_cultivation_lifespan_breakthrough_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_cultivation_lifespan_breakthrough_01",
+      "quote_rule_cultivation_lifespan_breakthrough_02"
+    ]
+  },
+  {
+    "expected_card_id": "rule_taichu_inner_area_restriction",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "太初教宗门重地准入规则",
+      "aliases": [],
+      "summary": "未完成最终测试的新入门弟子没有资格进入太初教半山腰以上的宗门重地；擅自乱跑进入禁区者将被逐出门墙并永不收录。黄帝峰还禁止骑马上山。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“半山腰之上乃宗门重地，你们现在没有资格进入”；第4章 太初山中绝毒谷：“否则将逐出门墙永不收录”；第4章 太初山中绝毒谷：“黄帝峰禁止骑马上山”",
+      "exceptions": null
+    },
+    "accepted_names": [
+      "太初教宗门重地准入规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_taichu_inner_area_restriction_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "新弟子在最终测试前不得进入太初教半山腰以上宗门重地。",
+        "source_quote_ids": [
+          "quote_rule_taichu_inner_area_restriction_01",
+          "quote_rule_taichu_inner_area_restriction_02",
+          "quote_rule_taichu_inner_area_restriction_03"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_taichu_inner_area_restriction_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "擅闯宗门重地者将被逐出门墙并永不收录。",
+        "source_quote_ids": [
+          "quote_rule_taichu_inner_area_restriction_01",
+          "quote_rule_taichu_inner_area_restriction_02",
+          "quote_rule_taichu_inner_area_restriction_03"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_taichu_inner_area_restriction_03",
+        "field": "summary",
+        "importance": "normal",
+        "description": "黄帝峰禁止骑马上山。",
+        "source_quote_ids": [
+          "quote_rule_taichu_inner_area_restriction_01",
+          "quote_rule_taichu_inner_area_restriction_02",
+          "quote_rule_taichu_inner_area_restriction_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_taichu_inner_area_restriction_01",
+      "quote_rule_taichu_inner_area_restriction_02",
+      "quote_rule_taichu_inner_area_restriction_03"
+    ]
+  },
+  {
+    "expected_card_id": "rule_xianzhong_grade_system",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "仙种等级体系",
+      "aliases": [],
+      "summary": "仙种按强弱分为无色仙种和有色仙种。无色仙种又分饱满与不饱满；有色仙种分为灰、褐、青、橙、赤、金、紫七种颜色。仙种等级反映先天资质，但落叶真人明确说明最终成就不能仅以资质盖棺论定，后天努力可以弥补先天不足。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“仙种依据强弱分为有色仙种和无色仙种”；第5章 显灵台上鉴仙眼：“有色仙种则分为灰、褐、青、橙、赤、金、紫七种颜色”；第5章 显灵台上鉴仙眼：“修仙者的最终成就并不能以资质好坏盖棺论定，后天努力也能弥补先天不足”",
+      "exceptions": "仙种等级反映先天资质，但不能完全决定最终成就；后天努力可以弥补先天不足。"
+    },
+    "accepted_names": [
+      "仙种等级体系"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "exceptions"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_xianzhong_grade_system_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "仙种按强弱分为有色仙种和无色仙种。",
+        "source_quote_ids": [
+          "quote_rule_xianzhong_grade_system_01",
+          "quote_rule_xianzhong_grade_system_02",
+          "quote_rule_xianzhong_grade_system_03"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_xianzhong_grade_system_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "有色仙种分为灰、褐、青、橙、赤、金、紫七种。",
+        "source_quote_ids": [
+          "quote_rule_xianzhong_grade_system_01",
+          "quote_rule_xianzhong_grade_system_02",
+          "quote_rule_xianzhong_grade_system_03"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_xianzhong_grade_system_03",
+        "field": "exceptions",
+        "importance": "major",
+        "description": "后天努力可弥补先天资质不足。",
+        "source_quote_ids": [
+          "quote_rule_xianzhong_grade_system_01",
+          "quote_rule_xianzhong_grade_system_02",
+          "quote_rule_xianzhong_grade_system_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_xianzhong_grade_system_01",
+      "quote_rule_xianzhong_grade_system_02",
+      "quote_rule_xianzhong_grade_system_03"
+    ]
+  },
+  {
+    "expected_card_id": "rule_baihua_tang_recruitment",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "百花堂收徒规则",
+      "aliases": [],
+      "summary": "百花堂通常只收女弟子，这是堂内不成文的规矩。张扬被测出灰色仙种后，苏百花提出为其破例，证明该规则并非绝对不可改变。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“收女不收男乃是百花堂不成文的规矩”；第5章 显灵台上鉴仙眼：“没想到苏百花竟然想破例”",
+      "exceptions": "苏百花为灰色仙种张扬提出破例。"
+    },
+    "accepted_names": [
+      "百花堂收徒规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "exceptions"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_baihua_tang_recruitment_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "百花堂通常只收女弟子。",
+        "source_quote_ids": [
+          "quote_rule_baihua_tang_recruitment_01",
+          "quote_rule_baihua_tang_recruitment_02"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_baihua_tang_recruitment_02",
+        "field": "exceptions",
+        "importance": "major",
+        "description": "苏百花为张扬提出破例。",
+        "source_quote_ids": [
+          "quote_rule_baihua_tang_recruitment_01",
+          "quote_rule_baihua_tang_recruitment_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_baihua_tang_recruitment_01",
+      "quote_rule_baihua_tang_recruitment_02"
+    ]
+  },
+  {
+    "expected_card_id": "event_qin_gains_snake_soul_ability",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "秦浩轩被奇蛇咬后获得附身能力",
+      "aliases": [],
+      "summary": "秦浩轩十二岁时深入小屿山采药，被五彩小蛇咬中右手虎口后昏迷。醒来时灵魂进入蛇身，随后又返回本体；经过多次尝试，他确认获得在本体与五彩小蛇之间往返附身的能力。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：“一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处”；第1章 大田金鳞元神出：“秦浩轩终于确定自己的灵魂能在小蛇的躯体和自己本体来回穿梭附体”",
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "description": "秦浩轩十二岁时在小屿山采药，被五彩小蛇咬伤后昏迷，醒来发现灵魂进入蛇身，最终确认能在本体与蛇身间往返附身。"
+    },
+    "accepted_names": [
+      "秦浩轩被奇蛇咬后获得附身能力"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_qin_gains_snake_soul_ability_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "秦浩轩十二岁时在小屿山采药，被五彩小蛇咬中右手虎口。",
+        "source_quote_ids": [
+          "quote_event_qin_gains_snake_soul_ability_01",
+          "quote_event_qin_gains_snake_soul_ability_02"
+        ]
+      },
+      {
+        "claim_id": "claim_event_qin_gains_snake_soul_ability_02",
+        "field": "description",
+        "importance": "critical",
+        "description": "事件结果是秦浩轩获得并确认往返附身能力。",
+        "source_quote_ids": [
+          "quote_event_qin_gains_snake_soul_ability_01",
+          "quote_event_qin_gains_snake_soul_ability_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_qin_gains_snake_soul_ability_01",
+      "quote_event_qin_gains_snake_soul_ability_02"
+    ]
+  },
+  {
+    "expected_card_id": "event_qin_stops_zhang_kuang_bullying",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "秦浩轩喝止张狂欺凌少年",
+      "aliases": [],
+      "summary": "张狂和小弟因两名少年没有缴纳所谓保险费而实施殴打，并准备进一步踢伤其中一人。秦浩轩经过时出言威胁制止，张狂因畏惧秦浩轩而收回动作并退让。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：“这就是不按时缴纳保险费的下场”；第1章 大田金鳞元神出：“逼得张狂硬生生收回要踢出去的脚”",
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "description": "张狂和小弟殴打两名少年并准备继续施暴，秦浩轩出言威胁制止，张狂因畏惧而退让。"
+    },
+    "accepted_names": [
+      "秦浩轩喝止张狂欺凌少年"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_qin_stops_zhang_kuang_bullying_01",
+        "field": "description",
+        "importance": "major",
+        "description": "张狂和小弟因所谓保险费殴打两名少年。",
+        "source_quote_ids": [
+          "quote_event_qin_stops_zhang_kuang_bullying_01",
+          "quote_event_qin_stops_zhang_kuang_bullying_02"
+        ]
+      },
+      {
+        "claim_id": "claim_event_qin_stops_zhang_kuang_bullying_02",
+        "field": "description",
+        "importance": "critical",
+        "description": "张狂因畏惧秦浩轩而收回攻击动作。",
+        "source_quote_ids": [
+          "quote_event_qin_stops_zhang_kuang_bullying_01",
+          "quote_event_qin_stops_zhang_kuang_bullying_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_qin_stops_zhang_kuang_bullying_01",
+      "quote_event_qin_stops_zhang_kuang_bullying_02"
+    ]
+  },
+  {
+    "expected_card_id": "event_huangjing_trade_chain",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "黄精交易链",
+      "aliases": [],
+      "summary": "秦浩轩从五彩小蛇口中取得黄精并带往陈家药铺出售。第2章中，他拒绝两名外地客一百二十两报价，念及陈老头过往照拂，以三十两卖给陈老头；第3章确认徐吞虎、赵嘉龙后来又以五百两从陈老头手中买走同一枚黄精。",
+      "appearance_chapter_count": 3,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第1章 大田金鳞元神出：“换了衣衫，秦浩轩带着黄精走出家门”；第2章 山中神仙选仙苗：“三十两就三十两，若没有您哪有我的今天”；第3章 至上仙尊真乙太初教：“后来在陈老头手上以五百两天价买下那枚黄精”",
+      "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "description": "秦浩轩取得黄精后拒绝外地客高价，以三十两卖给陈老头；徐吞虎、赵嘉龙随后又以五百两从陈老头手中购走。"
+    },
+    "accepted_names": [
+      "黄精交易链"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_huangjing_trade_chain_01",
+        "field": "description",
+        "importance": "normal",
+        "description": "黄精交易链起于秦浩轩取得并带出黄精。",
+        "source_quote_ids": [
+          "quote_event_huangjing_trade_chain_01",
+          "quote_event_huangjing_trade_chain_02",
+          "quote_event_huangjing_trade_chain_03"
+        ]
+      },
+      {
+        "claim_id": "claim_event_huangjing_trade_chain_02",
+        "field": "description",
+        "importance": "critical",
+        "description": "秦浩轩以三十两把黄精卖给陈老头。",
+        "source_quote_ids": [
+          "quote_event_huangjing_trade_chain_01",
+          "quote_event_huangjing_trade_chain_02",
+          "quote_event_huangjing_trade_chain_03"
+        ]
+      },
+      {
+        "claim_id": "claim_event_huangjing_trade_chain_03",
+        "field": "description",
+        "importance": "critical",
+        "description": "徐吞虎、赵嘉龙以五百两从陈老头手中购得同一枚黄精。",
+        "source_quote_ids": [
+          "quote_event_huangjing_trade_chain_01",
+          "quote_event_huangjing_trade_chain_02",
+          "quote_event_huangjing_trade_chain_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_huangjing_trade_chain_01",
+      "quote_event_huangjing_trade_chain_02",
+      "quote_event_huangjing_trade_chain_03"
+    ]
+  },
+  {
+    "expected_card_id": "event_da_tian_selection_announced",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "大田镇公布并组织开山选苗报名",
+      "aliases": [],
+      "summary": "大田镇镇长召集镇中十六岁适龄少年，宣布太初教将在坡子岭选苗、入选者每年获二百两安家费，并组织报名和次日黎明出发。秦浩轩、张狂等少年完成报名。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第2章 山中神仙选仙苗：“明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟”；第2章 山中神仙选仙苗：“如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭”",
+      "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+      "description": "大田镇镇长召集十六岁适龄少年，宣布坡子岭选苗和安家费待遇，组织报名并安排次日黎明出发。"
+    },
+    "accepted_names": [
+      "大田镇公布并组织开山选苗报名"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_da_tian_selection_announced_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "大田镇宣布次日在坡子岭进行选苗。",
+        "source_quote_ids": [
+          "quote_event_da_tian_selection_announced_01",
+          "quote_event_da_tian_selection_announced_02"
+        ]
+      },
+      {
+        "claim_id": "claim_event_da_tian_selection_announced_02",
+        "field": "description",
+        "importance": "major",
+        "description": "报名者于次日黎明前往坡子岭。",
+        "source_quote_ids": [
+          "quote_event_da_tian_selection_announced_01",
+          "quote_event_da_tian_selection_announced_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_da_tian_selection_announced_01",
+      "quote_event_da_tian_selection_announced_02"
+    ]
+  },
+  {
+    "expected_card_id": "event_pozi_selection",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "坡子岭选苗考核",
+      "aliases": [],
+      "summary": "太初教弟子徐吞虎、赵嘉龙在坡子岭为大田镇四十一名适龄少年进行摸道骨和测仙种。张狂、秦浩轩、张扬通过考核成为太初教新录弟子，其余少年落选。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“大田镇今年有四十一名适龄少年，请两位仙长挑选”；第3章 至上仙尊真乙太初教：“今年的大田镇一举出了三名仙人弟子”",
+      "chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "description": "徐吞虎、赵嘉龙在坡子岭对四十一名大田镇少年进行摸道骨和测仙种，张狂、秦浩轩、张扬通过考核。"
+    },
+    "accepted_names": [
+      "坡子岭选苗考核"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_pozi_selection_01",
+        "field": "description",
+        "importance": "major",
+        "description": "大田镇四十一名少年参加本次坡子岭选苗。",
+        "source_quote_ids": [
+          "quote_event_pozi_selection_01",
+          "quote_event_pozi_selection_02"
+        ]
+      },
+      {
+        "claim_id": "claim_event_pozi_selection_02",
+        "field": "description",
+        "importance": "critical",
+        "description": "张狂、秦浩轩、张扬成为本次大田镇三名入选弟子。",
+        "source_quote_ids": [
+          "quote_event_pozi_selection_01",
+          "quote_event_pozi_selection_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_pozi_selection_01",
+      "quote_event_pozi_selection_02"
+    ]
+  },
+  {
+    "expected_card_id": "event_da_tian_three_selected_leave",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "秦浩轩、张狂、张扬被收入太初教并离开大田镇",
+      "aliases": [],
+      "summary": "坡子岭考核结束后，秦浩轩、张狂、张扬成为太初教新录弟子，领取安家费并告别亲人。次日三人随徐吞虎、赵嘉龙骑马离开大田镇，前往太初教。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“这是你们的安家费，妥善安置后，明天清晨镇口见”；第3章 至上仙尊真乙太初教：“三名少年在无数家乡父老的簇拥下来到镇口”",
+      "chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "description": "秦浩轩、张狂、张扬通过选苗，领取安家费并告别亲人，次日随徐吞虎、赵嘉龙离开大田镇前往太初教。"
+    },
+    "accepted_names": [
+      "秦浩轩、张狂、张扬被收入太初教并离开大田镇"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_da_tian_three_selected_leave_01",
+        "field": "description",
+        "importance": "major",
+        "description": "秦浩轩、张狂、张扬领取安家费并准备次日离镇。",
+        "source_quote_ids": [
+          "quote_event_da_tian_three_selected_leave_01",
+          "quote_event_da_tian_three_selected_leave_02"
+        ]
+      },
+      {
+        "claim_id": "claim_event_da_tian_three_selected_leave_02",
+        "field": "description",
+        "importance": "critical",
+        "description": "三名新弟子在乡亲送别下离开大田镇。",
+        "source_quote_ids": [
+          "quote_event_da_tian_three_selected_leave_01",
+          "quote_event_da_tian_three_selected_leave_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_da_tian_three_selected_leave_01",
+      "quote_event_da_tian_three_selected_leave_02"
+    ]
+  },
+  {
+    "expected_card_id": "event_xu_zhao_sword_arrival",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "徐吞虎、赵嘉龙御剑抵达坡子岭并驱雾",
+      "aliases": [],
+      "summary": "徐吞虎、赵嘉龙化作两道白光御剑抵达坡子岭。落地后，飞剑绕场一周驱散周围雾气，形成小块真空区域，随后自动飞回二人背后剑鞘。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“两道白光从东方天际破雾腾云，御剑而来”；第3章 至上仙尊真乙太初教：“他们脚下的飞剑绕场一周，驱散四周雾气，形成一小块真空界”；第3章 至上仙尊真乙太初教：“飞剑随后自动飞回他们背后剑鞘”",
+      "chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "description": "徐吞虎、赵嘉龙御剑抵达坡子岭；落地后飞剑绕场驱散雾气、形成真空区域并自动归鞘。"
+    },
+    "accepted_names": [
+      "徐吞虎、赵嘉龙御剑抵达坡子岭并驱雾"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_xu_zhao_sword_arrival_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "徐吞虎、赵嘉龙能够御剑飞行，并御剑抵达坡子岭。",
+        "source_quote_ids": [
+          "quote_event_xu_zhao_sword_arrival_01",
+          "quote_event_xu_zhao_sword_arrival_02",
+          "quote_event_xu_zhao_sword_arrival_03"
+        ]
+      },
+      {
+        "claim_id": "claim_event_xu_zhao_sword_arrival_02",
+        "field": "description",
+        "importance": "major",
+        "description": "二人的飞剑绕场驱雾并形成真空区域。",
+        "source_quote_ids": [
+          "quote_event_xu_zhao_sword_arrival_01",
+          "quote_event_xu_zhao_sword_arrival_02",
+          "quote_event_xu_zhao_sword_arrival_03"
+        ]
+      },
+      {
+        "claim_id": "claim_event_xu_zhao_sword_arrival_03",
+        "field": "description",
+        "importance": "normal",
+        "description": "飞剑完成驱雾后自动返回剑鞘。",
+        "source_quote_ids": [
+          "quote_event_xu_zhao_sword_arrival_01",
+          "quote_event_xu_zhao_sword_arrival_02",
+          "quote_event_xu_zhao_sword_arrival_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_xu_zhao_sword_arrival_01",
+      "quote_event_xu_zhao_sword_arrival_02",
+      "quote_event_xu_zhao_sword_arrival_03"
+    ]
+  },
+  {
+    "expected_card_id": "event_wandu_self_detonation",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "万毒魔尊自爆形成绝仙毒谷",
+      "aliases": [],
+      "summary": "数十万年前仙魔大战进入紧要关头、魔道显露败象时，万毒魔尊自爆，毒死大量仙魔两道强者。自爆毒气蔓延大半个原大屿山，最终形成绝仙毒谷。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“魔道老祖之一的万毒魔尊一怒之下自爆，毒死仙魔两道强者无数”；第4章 太初山中绝毒谷：“万毒魔尊自爆后，毒气蔓延了大半个大屿山，形成绝仙毒谷”",
+      "chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537",
+      "description": "数十万年前仙魔大战中，万毒魔尊自爆毒死大量强者，毒气蔓延大半个原大屿山并形成绝仙毒谷。"
+    },
+    "accepted_names": [
+      "万毒魔尊自爆形成绝仙毒谷"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_wandu_self_detonation_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "万毒魔尊在魔道败势时自爆，毒死大量仙魔强者。",
+        "source_quote_ids": [
+          "quote_event_wandu_self_detonation_01",
+          "quote_event_wandu_self_detonation_02"
+        ]
+      },
+      {
+        "claim_id": "claim_event_wandu_self_detonation_02",
+        "field": "description",
+        "importance": "critical",
+        "description": "万毒魔尊自爆后的毒气形成绝仙毒谷。",
+        "source_quote_ids": [
+          "quote_event_wandu_self_detonation_01",
+          "quote_event_wandu_self_detonation_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_wandu_self_detonation_01",
+      "quote_event_wandu_self_detonation_02"
+    ]
+  },
+  {
+    "expected_card_id": "event_new_disciples_arrive_taichu",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "秦浩轩等五人抵达太初教",
+      "aliases": [],
+      "summary": "秦浩轩、张狂、张扬随徐吞虎、赵嘉龙连续赶路三天三夜后抵达大屿山。三名新弟子在山门登记，沿通天梯步行前往半山亭，准备参加次日最终测试。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“不眠不休的驱马狂奔了三天三夜后，他们终于来到大屿山山脚”；第4章 太初山中绝毒谷：“指引秦浩轩三人在山门下登记处登记后，他与徐吞虎上山”",
+      "chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537",
+      "description": "秦浩轩、张狂、张扬随徐吞虎、赵嘉龙抵达大屿山，三名新弟子完成登记并沿通天梯前往半山亭。"
+    },
+    "accepted_names": [
+      "秦浩轩等五人抵达太初教"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_new_disciples_arrive_taichu_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "秦浩轩等五人连续赶路三天三夜抵达太初教所在的大屿山。",
+        "source_quote_ids": [
+          "quote_event_new_disciples_arrive_taichu_01",
+          "quote_event_new_disciples_arrive_taichu_02"
+        ]
+      },
+      {
+        "claim_id": "claim_event_new_disciples_arrive_taichu_02",
+        "field": "description",
+        "importance": "major",
+        "description": "三名新弟子完成山门登记并进入太初教接引区域。",
+        "source_quote_ids": [
+          "quote_event_new_disciples_arrive_taichu_01",
+          "quote_event_new_disciples_arrive_taichu_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_new_disciples_arrive_taichu_01",
+      "quote_event_new_disciples_arrive_taichu_02"
+    ]
+  },
+  {
+    "expected_card_id": "event_qin_meets_xu_yu_li_jing",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "新弟子入住平房，秦浩轩结识徐羽与李靖",
+      "aliases": [],
+      "summary": "两百多名太初教新弟子被安排入住半山附近低矮、阴暗潮湿的平房。秦浩轩主动帮助孤立无措的徐羽整理床铺并结识对方；李靖注意到秦浩轩后主动上前结交，提出同届弟子互相提携。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第4章 太初山中绝毒谷：“那就是你们今晚的住处”；第4章 太初山中绝毒谷：“怯生生地说道：‘徐……徐羽……’”；第4章 太初山中绝毒谷：“李靖，请教兄台尊姓大名”",
+      "chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537",
+      "description": "两百多名新弟子入住破旧平房；秦浩轩主动帮助并结识徐羽，随后李靖主动上前结交秦浩轩。"
+    },
+    "accepted_names": [
+      "新弟子入住平房，秦浩轩结识徐羽与李靖"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_qin_meets_xu_yu_li_jing_01",
+        "field": "description",
+        "importance": "major",
+        "description": "太初教将两百多名新弟子安排进低矮潮湿的平房。",
+        "source_quote_ids": [
+          "quote_event_qin_meets_xu_yu_li_jing_01",
+          "quote_event_qin_meets_xu_yu_li_jing_02",
+          "quote_event_qin_meets_xu_yu_li_jing_03"
+        ]
+      },
+      {
+        "claim_id": "claim_event_qin_meets_xu_yu_li_jing_02",
+        "field": "description",
+        "importance": "critical",
+        "description": "秦浩轩主动帮助并结识徐羽。",
+        "source_quote_ids": [
+          "quote_event_qin_meets_xu_yu_li_jing_01",
+          "quote_event_qin_meets_xu_yu_li_jing_02",
+          "quote_event_qin_meets_xu_yu_li_jing_03"
+        ]
+      },
+      {
+        "claim_id": "claim_event_qin_meets_xu_yu_li_jing_03",
+        "field": "description",
+        "importance": "major",
+        "description": "李靖主动上前结交秦浩轩。",
+        "source_quote_ids": [
+          "quote_event_qin_meets_xu_yu_li_jing_01",
+          "quote_event_qin_meets_xu_yu_li_jing_02",
+          "quote_event_qin_meets_xu_yu_li_jing_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_qin_meets_xu_yu_li_jing_01",
+      "quote_event_qin_meets_xu_yu_li_jing_02",
+      "quote_event_qin_meets_xu_yu_li_jing_03"
+    ]
+  },
+  {
+    "expected_card_id": "event_dormitory_blanket_conflict",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "新弟子宿舍抢被冲突",
+      "aliases": [],
+      "summary": "新弟子宿舍中，有人抢走徐羽的被子，引发多处抢被和打斗。李靖以眼神示意权贵子弟参与，慕容超抢夺秦浩轩的被子并持匕首攻击；秦浩轩将其击败，李靖随后出面制止同伴、归还被子并向秦浩轩示好。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“抢被子的先例一开，冻得瑟瑟发抖的少年们豁然开朗”；第5章 显灵台上鉴仙眼：“一拳打在慕容超的脸上”；第5章 显灵台上鉴仙眼：“从腰间拔出一柄匕首刺向秦浩轩”；第5章 显灵台上鉴仙眼：“然后捡起秦浩轩掉落在地上的被子，塞给秦浩轩”",
+      "chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "description": "新弟子宿舍抢被引发冲突；慕容超抢夺秦浩轩被子并持匕首攻击，被秦浩轩击败，李靖随后出面收场。"
+    },
+    "accepted_names": [
+      "新弟子宿舍抢被冲突"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_dormitory_blanket_conflict_01",
+        "field": "description",
+        "importance": "major",
+        "description": "新弟子宿舍因抢夺被子发生多处冲突。",
+        "source_quote_ids": [
+          "quote_event_dormitory_blanket_conflict_01",
+          "quote_event_dormitory_blanket_conflict_02",
+          "quote_event_dormitory_blanket_conflict_03",
+          "quote_event_dormitory_blanket_conflict_04"
+        ]
+      },
+      {
+        "claim_id": "claim_event_dormitory_blanket_conflict_02",
+        "field": "description",
+        "importance": "critical",
+        "description": "秦浩轩在冲突中一拳击倒慕容超。",
+        "source_quote_ids": [
+          "quote_event_dormitory_blanket_conflict_01",
+          "quote_event_dormitory_blanket_conflict_02",
+          "quote_event_dormitory_blanket_conflict_03",
+          "quote_event_dormitory_blanket_conflict_04"
+        ]
+      },
+      {
+        "claim_id": "claim_event_dormitory_blanket_conflict_03",
+        "field": "description",
+        "importance": "major",
+        "description": "慕容超被击倒后持匕首再次攻击。",
+        "source_quote_ids": [
+          "quote_event_dormitory_blanket_conflict_01",
+          "quote_event_dormitory_blanket_conflict_02",
+          "quote_event_dormitory_blanket_conflict_03",
+          "quote_event_dormitory_blanket_conflict_04"
+        ]
+      },
+      {
+        "claim_id": "claim_event_dormitory_blanket_conflict_04",
+        "field": "description",
+        "importance": "major",
+        "description": "李靖见秦浩轩实力强大后出面收场并示好。",
+        "source_quote_ids": [
+          "quote_event_dormitory_blanket_conflict_01",
+          "quote_event_dormitory_blanket_conflict_02",
+          "quote_event_dormitory_blanket_conflict_03",
+          "quote_event_dormitory_blanket_conflict_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_dormitory_blanket_conflict_01",
+      "quote_event_dormitory_blanket_conflict_02",
+      "quote_event_dormitory_blanket_conflict_03",
+      "quote_event_dormitory_blanket_conflict_04"
+    ]
+  },
+  {
+    "expected_card_id": "event_zhang_yang_gray_seed",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "张扬被测出灰色仙种",
+      "aliases": [],
+      "summary": "太初教最终测试中，张扬把手放在明鉴仙眼上，落叶真人打入仙灵之气后，明鉴仙眼发出灰色光芒。黄龙真人和众长老震惊欣喜，认为张扬若能成长起来，可成为太初教未来栋梁甚至新一任掌教。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“【明鉴仙眼】顿时闪起灰色光芒”；第5章 显灵台上鉴仙眼：“甚至可以成为太初教的新一任掌教”",
+      "chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "description": "张扬经明鉴仙眼测试显现灰色仙种，黄龙真人和众长老认定其潜力极高。"
+    },
+    "accepted_names": [
+      "张扬被测出灰色仙种"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_zhang_yang_gray_seed_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "张扬在最终测试中被测出灰色仙种。",
+        "source_quote_ids": [
+          "quote_event_zhang_yang_gray_seed_01",
+          "quote_event_zhang_yang_gray_seed_02"
+        ]
+      },
+      {
+        "claim_id": "claim_event_zhang_yang_gray_seed_02",
+        "field": "description",
+        "importance": "major",
+        "description": "太初教高层把灰色仙种张扬视为掌教级潜力弟子。",
+        "source_quote_ids": [
+          "quote_event_zhang_yang_gray_seed_01",
+          "quote_event_zhang_yang_gray_seed_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_zhang_yang_gray_seed_01",
+      "quote_event_zhang_yang_gray_seed_02"
+    ]
+  },
+  {
+    "expected_card_id": "event_four_halls_compete_zhang_yang",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "太初教四堂争抢张扬",
+      "aliases": [],
+      "summary": "张扬被测出灰色仙种后，古云子代表古云堂、夏云子代表夏云堂、碧竹子代表碧竹堂、苏百花代表百花堂先后提出收徒主张。百花堂通常只收女弟子，苏百花也为张扬提出破例；截至第5章事件尚未结束，最终归属未定。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第5章 显灵台上鉴仙眼：“不如黄龙师叔做主，等到仙苗期之后，令他投入到我们古云堂一脉如何”；第5章 显灵台上鉴仙眼：“此子同我夏云堂倒是有些师徒缘分”；第5章 显灵台上鉴仙眼：“若能进我碧竹堂，势必能爆发出璀璨光彩”；第5章 显灵台上鉴仙眼：“一定会将这张扬让给我百花堂吧”",
+      "chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "description": "张扬显现灰色仙种后，古云堂、夏云堂、碧竹堂、百花堂先后提出收徒主张；截至第5章最终归属未定。"
+    },
+    "accepted_names": [
+      "太初教四堂争抢张扬"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_four_halls_compete_zhang_yang_01",
+        "field": "description",
+        "importance": "major",
+        "description": "古云堂首先提出收张扬。",
+        "source_quote_ids": [
+          "quote_event_four_halls_compete_zhang_yang_01",
+          "quote_event_four_halls_compete_zhang_yang_02",
+          "quote_event_four_halls_compete_zhang_yang_03",
+          "quote_event_four_halls_compete_zhang_yang_04"
+        ]
+      },
+      {
+        "claim_id": "claim_event_four_halls_compete_zhang_yang_02",
+        "field": "description",
+        "importance": "major",
+        "description": "夏云堂提出张扬与本堂有师徒缘。",
+        "source_quote_ids": [
+          "quote_event_four_halls_compete_zhang_yang_01",
+          "quote_event_four_halls_compete_zhang_yang_02",
+          "quote_event_four_halls_compete_zhang_yang_03",
+          "quote_event_four_halls_compete_zhang_yang_04"
+        ]
+      },
+      {
+        "claim_id": "claim_event_four_halls_compete_zhang_yang_03",
+        "field": "description",
+        "importance": "major",
+        "description": "碧竹堂提出收张扬。",
+        "source_quote_ids": [
+          "quote_event_four_halls_compete_zhang_yang_01",
+          "quote_event_four_halls_compete_zhang_yang_02",
+          "quote_event_four_halls_compete_zhang_yang_03",
+          "quote_event_four_halls_compete_zhang_yang_04"
+        ]
+      },
+      {
+        "claim_id": "claim_event_four_halls_compete_zhang_yang_04",
+        "field": "description",
+        "importance": "major",
+        "description": "百花堂也加入争抢，并愿为张扬破例。",
+        "source_quote_ids": [
+          "quote_event_four_halls_compete_zhang_yang_01",
+          "quote_event_four_halls_compete_zhang_yang_02",
+          "quote_event_four_halls_compete_zhang_yang_03",
+          "quote_event_four_halls_compete_zhang_yang_04"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_four_halls_compete_zhang_yang_01",
+      "quote_event_four_halls_compete_zhang_yang_02",
+      "quote_event_four_halls_compete_zhang_yang_03",
+      "quote_event_four_halls_compete_zhang_yang_04"
+    ]
+  }
+]

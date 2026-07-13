@@ -5,6 +5,7 @@ import {
   humanReadableStructuredContent,
 } from "../../src/lib/ai/human-readable-content";
 import {
+  appearanceImportanceLabel,
   CANDIDATE_LOCKED_FIELD_KEYS,
   displayKnowledgeFieldValue,
   formStateFromKnowledgeValues,
@@ -21,13 +22,7 @@ const fields: KnowledgeFieldSchema[] = [
   field("name", "名称", "short_text", true),
   field("aliases", "别名", "string_array"),
   field("summary", "摘要", "long_text", true),
-  {
-    ...field("importance", "重要程度", "enum"),
-    options: [
-      { value: "normal", label: "普通" },
-      { value: "core", label: "核心" },
-    ],
-  },
+  { ...field("appearance_chapter_count", "重要程度", "number"), author_editable: false },
   field("lifecycle", "状态", "enum", true),
   field("source_origin", "来源方式", "enum", true),
   field("source_note", "来源说明", "long_text", true),
@@ -49,7 +44,7 @@ const form = formStateFromKnowledgeValues(schema, {
   name: "炼气一层",
   aliases: ["炼气初阶", "第一层"],
   summary: "修行的第一个层次。",
-  importance: "normal",
+  appearance_chapter_count: 5,
   lifecycle: "confirmed",
   source_origin: "agent_extract",
   source_note: "来自第一章。",
@@ -69,14 +64,17 @@ const payload = knowledgePayloadFromForm(
 );
 assert.deepEqual(payload.aliases, ["炼气初阶", "第一层"]);
 assert.equal(payload.level_order, 1);
+assert.equal(payload.appearance_chapter_count, undefined);
 assert.equal(payload.lifecycle, undefined);
 assert.equal(payload.source_origin, undefined);
 assert.equal(payload.entity_group_id, undefined);
 
 assert.equal(
-  displayKnowledgeFieldValue(fields[3], "normal", references),
-  "普通",
+  appearanceImportanceLabel(5, 100),
+  "普通（已出现 5/100 章）",
 );
+assert.equal(appearanceImportanceLabel(null, 100), "暂未统计");
+assert.equal(appearanceImportanceLabel(1, 100), "次要（已出现 1/100 章）");
 assert.equal(
   displayKnowledgeFieldValue(fields[8], "chapter-1", references),
   "第一章 山门",

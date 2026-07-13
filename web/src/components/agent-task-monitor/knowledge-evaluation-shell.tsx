@@ -15,8 +15,10 @@ import {
   RotateCcw,
   Scale,
   ShieldAlert,
+  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Dialog } from "@base-ui/react/dialog";
 
 import { AppShell } from "@/components/app-shell";
 import { KnowledgeExtractionMonitorNav } from "@/components/agent-task-monitor/knowledge-extraction-monitor-nav";
@@ -37,9 +39,10 @@ import {
 } from "@/lib/api/agent-evaluation";
 import {
   canRetryEvaluation,
-  comparisonMatchesIssue,
   evaluationErrorMessage,
+  evaluationFieldLabel,
   evaluationIndependenceLabel,
+  evaluationMatchBasisLabel,
   evaluationModelLabel,
   evaluationProgressText,
   evaluationStatusLabels,
@@ -83,6 +86,7 @@ const issueFilters: Array<{
   { value: "all", label: "全部" },
   { value: "missing_candidate", label: "漏提取" },
   { value: "extra_candidate", label: "多提取" },
+  { value: "ambiguous_match", label: "匹配待复核" },
   { value: "field_difference", label: "字段不同" },
   { value: "semantic_issue", label: "语义问题" },
   { value: "evidence_issue", label: "证据问题" },
@@ -100,6 +104,7 @@ export function KnowledgeEvaluationShell() {
   const [showDiagnostic, setShowDiagnostic] = useState(false);
   const [judgeEnabled, setJudgeEnabled] = useState(true);
   const [preview, setPreview] = useState<KnowledgeEvaluationPreview | null>(null);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [evaluations, setEvaluations] = useState<KnowledgeEvaluation[]>([]);
   const [currentEvaluation, setCurrentEvaluation] =
     useState<KnowledgeEvaluation | null>(null);
@@ -128,13 +133,18 @@ export function KnowledgeEvaluationShell() {
   const [pollError, setPollError] = useState("");
 
   const loadComparisons = useCallback(
-    async (evaluationId: string, page = 1) => {
+    async (
+      evaluationId: string,
+      page = 1,
+      filter: EvaluationIssueType | "all" = "all",
+    ) => {
       setComparisonLoading(true);
       setComparisonError("");
       try {
         const response = await listKnowledgeEvaluationComparisons(evaluationId, {
           page,
           pageSize: COMPARISON_PAGE_SIZE,
+          issueType: filter,
         });
         setComparisons(response.comparisons);
         setComparisonTotal(response.total);
@@ -278,12 +288,6 @@ export function KnowledgeEvaluationShell() {
     [eligibleRuns, showDiagnostic],
   );
 
-  const filteredComparisons = useMemo(
-    () =>
-      comparisons.filter(item => comparisonMatchesIssue(item, issueFilter)),
-    [comparisons, issueFilter],
-  );
-
   const selectedDataset = datasets.find(
     item => item.dataset_id === selectedDatasetId,
   );
@@ -299,6 +303,7 @@ export function KnowledgeEvaluationShell() {
 
   function resetPreview() {
     setPreview(null);
+    setPreviewDialogOpen(false);
     setPreviewError("");
   }
 
@@ -318,7 +323,7 @@ export function KnowledgeEvaluationShell() {
     setActionError("");
     try {
       setPreview(await previewKnowledgeEvaluation(requestPayload()));
-      setActiveSection("report");
+      setPreviewDialogOpen(true);
     } catch (caught) {
       setPreview(null);
       setPreviewError(
@@ -336,6 +341,8 @@ export function KnowledgeEvaluationShell() {
     try {
       const evaluation = await createKnowledgeEvaluation(requestPayload());
       setCurrentEvaluation(evaluation);
+      setPreview(null);
+      setPreviewDialogOpen(false);
       setActiveSection("report");
       setHistoryPage(1);
       setEvaluations(current => [
@@ -361,6 +368,7 @@ export function KnowledgeEvaluationShell() {
     setDetailLoading(true);
     setActionError("");
     setPollError("");
+    setIssueFilter("all");
     setComparisons([]);
     setComparisonTotal(0);
     try {
@@ -494,18 +502,6 @@ export function KnowledgeEvaluationShell() {
               返回任务入口
             </Link>
           </div>
-          <Button
-            type="button"
-            disabled={!preview?.can_create || creating}
-            onClick={() => void handleCreate()}
-          >
-            {creating ? (
-              <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" />
-            ) : (
-              <Scale className="size-4" />
-            )}
-            开始效果评估
-          </Button>
         </div>
 
         <aside className="flex min-h-0 flex-col rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-3 xl:col-start-1 xl:row-start-2">
@@ -881,18 +877,12 @@ export function KnowledgeEvaluationShell() {
                 actionLoading={actionLoading}
                 onRetry={() => void handleRetry()}
               />
-            ) : preview ? (
-              <PreviewPanel preview={preview} />
             ) : (
               <div className="px-4 py-14 text-center text-sm text-[var(--tc-text-muted)]">
                 选择历史任务并完成预检后，可开始效果评估。
               </div>
             )}
             </section>
-          ) : null}
-
-          {activeSection === "report" && preview && currentEvaluation ? (
-            <PreviewPanel preview={preview} />
           ) : null}
 
           {activeSection === "comparisons" &&
@@ -905,7 +895,7 @@ export function KnowledgeEvaluationShell() {
                     卡片差异
                   </h2>
                   <p className="mt-0.5 text-xs text-[var(--tc-text-muted)]">
-                    共 {comparisonTotal} 条，点击查看可读差异说明
+                    当前筛选共 {comparisonTotal} 条，点击查看可读差异说明
                   </p>
                 </div>
                 <div className="flex max-w-full gap-1 overflow-x-auto">
@@ -919,7 +909,16 @@ export function KnowledgeEvaluationShell() {
                           ? "border-[var(--tc-border-strong)] bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
                           : "border-[var(--tc-border-subtle)] text-[var(--tc-text-muted)]",
                       )}
-                      onClick={() => setIssueFilter(filter.value)}
+                      onClick={() => {
+                        setIssueFilter(filter.value);
+                        if (currentEvaluation) {
+                          void loadComparisons(
+                            currentEvaluation.evaluation_id,
+                            1,
+                            filter.value,
+                          );
+                        }
+                      }}
                     >
                       {filter.label}
                     </button>
@@ -935,15 +934,15 @@ export function KnowledgeEvaluationShell() {
                 <p className="px-3 py-8 text-center text-sm text-[var(--tc-text-muted)]">
                   正在加载差异明细
                 </p>
-              ) : filteredComparisons.length === 0 ? (
+              ) : comparisons.length === 0 ? (
                 <p className="px-3 py-8 text-center text-sm text-[var(--tc-text-muted)]">
-                  {comparisons.length === 0
+                  {issueFilter === "all"
                     ? "本次评估未发现可展示的卡片差异"
                     : "当前筛选下没有差异"}
                 </p>
               ) : (
                 <div className="divide-y divide-[var(--tc-border-subtle)]">
-                  {filteredComparisons.map(comparison => (
+                  {comparisons.map(comparison => (
                     <ComparisonRow
                       key={comparison.comparison_id}
                       comparison={comparison}
@@ -959,7 +958,11 @@ export function KnowledgeEvaluationShell() {
                   total={comparisonTotal}
                   onPageChange={page =>
                     currentEvaluation &&
-                    void loadComparisons(currentEvaluation.evaluation_id, page)
+                    void loadComparisons(
+                      currentEvaluation.evaluation_id,
+                      page,
+                      issueFilter,
+                    )
                   }
                   className="m-3"
                 />
@@ -981,6 +984,18 @@ export function KnowledgeEvaluationShell() {
           onSectionChange={setActiveSection}
         />
       </section>
+      <PreviewDialog
+        preview={preview}
+        open={previewDialogOpen}
+        creating={creating}
+        onOpenChange={open => {
+          setPreviewDialogOpen(open);
+          if (!open) {
+            setPreview(null);
+          }
+        }}
+        onCreate={() => void handleCreate()}
+      />
     </AppShell>
   );
 }
@@ -1035,76 +1050,106 @@ function EvaluationSectionRail({
   );
 }
 
-function PreviewPanel({ preview }: { preview: KnowledgeEvaluationPreview }) {
+function PreviewDialog({
+  preview,
+  open,
+  creating,
+  onOpenChange,
+  onCreate,
+}: {
+  preview: KnowledgeEvaluationPreview | null;
+  open: boolean;
+  creating: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCreate: () => void;
+}) {
+  if (!preview) return null;
   const selectedRun = preview.runs[0];
   return (
-    <section className="border-b border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-3 last:border-b-0">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold text-[var(--tc-text-primary)]">
-            预检结果
-          </h3>
-          <p className="mt-0.5 text-xs text-[var(--tc-text-muted)]">
-            {preview.can_create ? "输入可以冻结并开始评估" : "当前选择暂不能创建评估"}
-          </p>
-        </div>
-        <span className="rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] px-2 py-1 text-xs text-[var(--tc-text-secondary)]">
-          {preview.evaluation_mode === "deterministic_only"
-            ? "仅确定性比对"
-            : "确定性比对与语义裁判"}
-        </span>
-      </div>
-      {selectedRun ? (
-        <p className="mt-3 text-sm text-[var(--tc-text-primary)]">
-          评估对象：{selectedRun.display_title}
-        </p>
-      ) : null}
-      <div className="mt-3 grid grid-cols-2 divide-x divide-y divide-[var(--tc-border-subtle)] border-y border-[var(--tc-border-subtle)] text-xs sm:grid-cols-3 xl:grid-cols-6 xl:divide-y-0">
-        <PreviewReadout
-          label="期望卡"
-          value={`${preview.estimate.expected_card_count}`}
-        />
-        <PreviewReadout
-          label="预计匹配"
-          value={`${preview.estimate.matched_card_count}`}
-        />
-        <PreviewReadout
-          label="预计裁判"
-          value={`${preview.estimate.judge_card_count}`}
-        />
-        <PreviewReadout
-          label="裁判批次"
-          value={`${preview.estimate.judge_batch_count}`}
-        />
-        <PreviewReadout
-          label="模型独立性"
-          value={
-            preview.judge.requested
-              ? previewIndependenceLabel(preview.runs)
-              : "未启用裁判"
-          }
-        />
-      </div>
-      <p className="mt-2 text-xs text-[var(--tc-text-muted)]">
-        裁判模型：
-        {preview.judge.requested
-          ? modelIdentityLabel(preview.judge.model_identity)
-          : "未启用"}
-      </p>
-      {preview.judge.requested && preview.judge.available === false ? (
-        <p className="mt-2 flex items-start gap-2 text-sm text-[var(--tc-text-primary)]">
-          <ShieldAlert className="mt-0.5 size-4 shrink-0" />
-          {preview.judge.unavailable_reason || "语义裁判当前不可用"}
-        </p>
-      ) : null}
-      {[...preview.blocking_errors, ...preview.warnings].length > 0 ? (
-        <ul className="mt-2 space-y-1 text-xs text-[var(--tc-text-secondary)]">
-          {[...preview.blocking_errors, ...preview.warnings].map((message, index) => (
-            <li key={`${message}-${index}`}>· {message}</li>
-          ))}
-        </ul>
-      ) : null}
-    </section>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className="fixed inset-0 z-40 bg-black/60 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0 motion-reduce:transition-none" />
+        <Dialog.Viewport className="fixed inset-0 z-50 grid place-items-center overflow-y-auto p-4">
+          <Dialog.Popup className="w-full max-w-[720px] rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] text-[var(--tc-text-primary)] outline-none data-[starting-style]:scale-[0.98] data-[starting-style]:opacity-0 data-[ending-style]:scale-[0.98] data-[ending-style]:opacity-0 motion-safe:transition-[opacity,transform] motion-safe:duration-150">
+            <div className="flex items-start justify-between gap-3 border-b border-[var(--tc-border-subtle)] px-4 py-3">
+              <div>
+                <Dialog.Title className="text-base font-semibold">预检结果</Dialog.Title>
+                <Dialog.Description className="mt-0.5 text-xs text-[var(--tc-text-muted)]">
+                  {preview.can_create
+                    ? "确认后将冻结当前输入并开始效果评估。"
+                    : "当前选择暂不能创建效果评估。"}
+                </Dialog.Description>
+              </div>
+              <Dialog.Close
+                type="button"
+                aria-label="关闭预检结果"
+                className="flex size-7 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] text-[var(--tc-text-muted)] hover:text-[var(--tc-text-primary)] disabled:opacity-50"
+                disabled={creating}
+              >
+                <X className="size-4" />
+              </Dialog.Close>
+            </div>
+            <div className="px-4 py-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                {selectedRun ? (
+                  <p className="text-sm text-[var(--tc-text-primary)]">
+                    评估对象：{selectedRun.display_title}
+                  </p>
+                ) : null}
+                <span className="rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] px-2 py-1 text-xs text-[var(--tc-text-secondary)]">
+                  {preview.evaluation_mode === "deterministic_only"
+                    ? "仅确定性比对"
+                    : "确定性比对与语义裁判"}
+                </span>
+              </div>
+              <div className="mt-3 grid grid-cols-2 divide-x divide-y divide-[var(--tc-border-subtle)] border-y border-[var(--tc-border-subtle)] text-xs sm:grid-cols-3 xl:grid-cols-5 xl:divide-y-0">
+                <PreviewReadout label="期望卡" value={`${preview.estimate.expected_card_count}`} />
+                <PreviewReadout label="预计匹配" value={`${preview.estimate.matched_card_count}`} />
+                <PreviewReadout label="预计裁判" value={`${preview.estimate.judge_card_count}`} />
+                <PreviewReadout label="裁判批次" value={`${preview.estimate.judge_batch_count}`} />
+                <PreviewReadout
+                  label="模型独立性"
+                  value={preview.judge.requested ? previewIndependenceLabel(preview.runs) : "未启用裁判"}
+                />
+              </div>
+              <p className="mt-2 text-xs text-[var(--tc-text-muted)]">
+                裁判模型：{preview.judge.requested ? modelIdentityLabel(preview.judge.model_identity) : "未启用"}
+              </p>
+              {preview.judge.requested && preview.judge.available === false ? (
+                <p className="mt-2 flex items-start gap-2 text-sm text-[var(--tc-text-primary)]">
+                  <ShieldAlert className="mt-0.5 size-4 shrink-0" />
+                  {preview.judge.unavailable_reason || "语义裁判当前不可用"}
+                </p>
+              ) : null}
+              {[...preview.blocking_errors, ...preview.warnings].length > 0 ? (
+                <ul className="mt-3 space-y-1 text-xs text-[var(--tc-text-secondary)]">
+                  {[...preview.blocking_errors, ...preview.warnings].map((message, index) => (
+                    <li key={`${message}-${index}`}>· {message}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+            <div className="flex justify-end gap-2 border-t border-[var(--tc-border-subtle)] px-4 py-3">
+              <Dialog.Close render={<Button type="button" variant="outline" disabled={creating} />}>
+                取消
+              </Dialog.Close>
+              <Button
+                type="button"
+                disabled={!preview.can_create || creating}
+                onClick={onCreate}
+              >
+                {creating ? (
+                  <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" />
+                ) : (
+                  <Scale className="size-4" />
+                )}
+                开始效果评估
+              </Button>
+            </div>
+          </Dialog.Popup>
+        </Dialog.Viewport>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
@@ -1389,7 +1434,7 @@ function ComparisonRow({ comparison }: {
       <div className="border-t border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-3 text-sm">
         <p className="text-xs text-[var(--tc-text-muted)]">匹配依据</p>
         <p className="mt-1 text-[var(--tc-text-secondary)]">
-          {matchBasisLabel(comparison.match_basis)}
+          {evaluationMatchBasisLabel(comparison.match_basis)}
         </p>
 
         {comparison.field_diffs?.length ? (
@@ -1402,14 +1447,14 @@ function ComparisonRow({ comparison }: {
                   className="grid gap-1 py-2 text-xs sm:grid-cols-[120px_1fr_1fr] sm:gap-3"
                 >
                   <span className="font-medium text-[var(--tc-text-primary)]">
-                    {fieldLabel(diff.label, diff.field)}
+                    {evaluationFieldLabel(diff.label, diff.field)}
                   </span>
                   <span>
-                    <span className="text-[var(--tc-text-muted)]">期望：</span>
+                    <span className="text-[var(--tc-text-muted)]">评测标准：</span>
                     {displayValue(diff.expected)}
                   </span>
                   <span>
-                    <span className="text-[var(--tc-text-muted)]">实际：</span>
+                    <span className="text-[var(--tc-text-muted)]">本次提取：</span>
                     {displayValue(diff.actual)}
                   </span>
                 </div>
@@ -1558,27 +1603,6 @@ function displayValue(value: unknown): string {
       .join("、") || "无";
   }
   return "内容不同";
-}
-
-function fieldLabel(label: string | null | undefined, field: string): string {
-  if (label) return label;
-  const labels: Record<string, string> = {
-    name: "名称",
-    summary: "摘要",
-    source_note: "来源说明",
-    source_origin: "来源方式",
-    evidence_excerpt: "原文证据",
-  };
-  return labels[field] ?? "字段内容";
-}
-
-function matchBasisLabel(value: string | null | undefined): string {
-  const labels: Record<string, string> = {
-    exact_name: "名称一致",
-    normalized_name: "名称规范化后一致",
-    type_and_name: "类型与名称一致",
-  };
-  return labels[value ?? ""] ?? "未形成一对一匹配";
 }
 
 function formatDateTime(value: string | null | undefined): string {

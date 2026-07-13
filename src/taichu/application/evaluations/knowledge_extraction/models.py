@@ -49,11 +49,13 @@ class EligibilityReason(StrEnum):
     SOURCE_HASH_MISMATCH = "source_hash_mismatch"
     SOURCE_HASH_UNVERIFIED = "source_hash_unverified"
     INCOMPLETE_EXECUTION = "incomplete_execution"
+    UNRESOLVED_ACTION = "unresolved_action"
+    # 兼容已冻结的历史评估快照；新资格判断不再使用该原因。
     NON_CREATE_ACTION = "non_create_action"
 
 
 class CandidateAction(StrEnum):
-    """Candidate actions relevant to first-release evaluation eligibility."""
+    """Frozen candidate actions retained for evaluation and audit."""
 
     CREATE_CARD = "create_card"
     UPDATE_CARD = "update_card"
@@ -67,6 +69,8 @@ class MatchKind(StrEnum):
     EXACT_NAME = "exact_name"
     ACCEPTED_NAME = "accepted_name"
     ALIAS_CROSS = "alias_cross"
+    EVIDENCE_ANCHOR = "evidence_anchor"
+    EVENT_SEMANTIC = "event_semantic"
 
 
 class FieldComparisonKind(StrEnum):
@@ -299,7 +303,7 @@ class AmbiguousMatch(EvaluationModel):
 
 
 class CandidateMatchResult(EvaluationModel):
-    """Complete deterministic matching result including penalty sets."""
+    """Complete deterministic matching result and unresolved identity sets."""
 
     matches: list[CandidateMatch] = Field(default_factory=list)
     false_positives: list[CandidateRef] = Field(default_factory=list)

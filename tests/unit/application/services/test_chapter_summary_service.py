@@ -4,7 +4,6 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from typing import cast
 
 from taichu.application.contracts.llm import LLMModelIdentity
 from taichu.application.services.ai_card_service import AICardService
@@ -15,9 +14,7 @@ from taichu.application.services.chapter_summary_service import (
     ChapterSummaryService,
 )
 from taichu.application.services.import_service import ImportService
-from taichu.application.services.knowledge_service import (
-    KnowledgeService,
-)
+from taichu.application.services.retrieval_service import RetrievalService
 from taichu.domain.models.knowledge import (
     KnowledgeCard,
     KnowledgeCardLifecycle,
@@ -36,6 +33,11 @@ from taichu.domain.rules.fact_scope import is_allowed_in_fact_scope
 from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
+from taichu.infrastructure.retrieval import (
+    JsonlRetrievalTraceRepository,
+    MongoLexicalRetrievalBackend,
+)
+from tests.fakes import InMemoryKnowledgeRepository
 
 
 class FakeLLM:
@@ -54,20 +56,6 @@ class FakeLLM:
         return self.responses.pop(0)
 
 
-class FakeKnowledgeContext:
-    """Provide only confirmed knowledge cards to chapter summarization."""
-
-    def __init__(self) -> None:
-        self.cards: list[KnowledgeCard] = []
-
-    async def list_confirmed_cards(self) -> list[KnowledgeCard]:
-        return [
-            card
-            for card in self.cards
-            if card.lifecycle is KnowledgeCardLifecycle.CONFIRMED
-        ]
-
-
 class ChapterSummaryServiceTest(unittest.IsolatedAsyncioTestCase):
     """Verify Phase 7 summary draft and candidate behavior."""
 
@@ -76,8 +64,11 @@ class ChapterSummaryServiceTest(unittest.IsolatedAsyncioTestCase):
         self.assets_root = Path(self._temporary_directory.name)
         self.storage = ProjectAssetStorageBackend(self.assets_root)
         self.chapter_service = ChapterService(self.storage)
-        self.knowledge_context = FakeKnowledgeContext()
-        self.knowledge_service = cast(KnowledgeService, self.knowledge_context)
+        self.knowledge_repository = InMemoryKnowledgeRepository()
+        self.retrieval_service = RetrievalService(
+            MongoLexicalRetrievalBackend(self.knowledge_repository),
+            JsonlRetrievalTraceRepository(self.assets_root),
+        )
         self.ai_card_service = AICardService(self.storage)
 
     async def asyncTearDown(self) -> None:
@@ -254,13 +245,13 @@ class ChapterSummaryServiceTest(unittest.IsolatedAsyncioTestCase):
         return ChapterSummaryService(
             storage=self.storage,
             chapter_service=self.chapter_service,
-            knowledge_service=self.knowledge_service,
+            retrieval_service=self.retrieval_service,
             llm=llm,
             ai_card_service=self.ai_card_service,
         )
 
     async def _write_knowledge_card(self, card: KnowledgeCard) -> None:
-        self.knowledge_context.cards.append(card)
+        await self.knowledge_repository.create_card(card)
 
 
 def _summary_json(

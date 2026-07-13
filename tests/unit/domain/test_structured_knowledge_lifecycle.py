@@ -1,6 +1,7 @@
 """Lifecycle contract tests for structured knowledge cards."""
 
 from pydantic import ValidationError
+import pytest
 
 from taichu.domain.models.structured_knowledge import (
     StructuredKnowledgeCard,
@@ -17,7 +18,6 @@ def _payload() -> dict[str, object]:
         "name": "秦阳",
         "aliases": ["秦师兄"],
         "summary": "太初教弟子。",
-        "importance": "major",
         "lifecycle": "confirmed",
         "source_origin": "manual",
         "source_note": "作者确认。",
@@ -32,7 +32,10 @@ def test_confirmed_card_is_effective_knowledge() -> None:
     assert card.lifecycle is StructuredKnowledgeLifecycle.CONFIRMED
     assert card.can_be_used_as_effective_knowledge() is True
     assert card.appearance_chapter_count is None
-    assert "importance" not in card.model_dump(mode="json")
+    payload = _payload()
+    payload["importance"] = "major"
+    with pytest.raises(ValidationError):
+        StructuredKnowledgeCard.model_validate(payload)
 
 
 def test_legacy_status_is_not_accepted() -> None:

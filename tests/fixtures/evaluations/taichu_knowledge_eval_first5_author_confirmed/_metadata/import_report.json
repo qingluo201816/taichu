@@ -1,0 +1,114 @@
+{
+  "source_package": "太初前五章知识沉淀评测集标注包.zip",
+  "source_package_sha256": "bc5eba56c641b58be7da2ce01a613fb38cfbcdc14cb018662836ea1a90684586",
+  "source_dataset_id": "taichu_knowledge_eval_first5_author_annotation_draft",
+  "transformations": [
+    "作者审核结构映射为当前运行时评测契约。",
+    "知识卡 lifecycle 从标注草稿态调整为运行候选使用的 confirmed。",
+    "按当前 Markdown 精确解析证据偏移与来源哈希。",
+    "移除仅供作者审核和开发映射使用的辅助字段。",
+    "使用当前知识卡 schema 重新生成快照。"
+  ],
+  "case_counts": {
+    "chapter_001": {
+      "expected_cards": 12,
+      "source_evidence": 31,
+      "negative_cases": 12
+    },
+    "chapter_002": {
+      "expected_cards": 10,
+      "source_evidence": 27,
+      "negative_cases": 10
+    },
+    "chapter_003": {
+      "expected_cards": 20,
+      "source_evidence": 44,
+      "negative_cases": 9
+    },
+    "chapter_004": {
+      "expected_cards": 30,
+      "source_evidence": 61,
+      "negative_cases": 10
+    },
+    "chapter_005": {
+      "expected_cards": 26,
+      "source_evidence": 59,
+      "negative_cases": 10
+    },
+    "batch_001_005": {
+      "expected_cards": 67,
+      "source_evidence": 230,
+      "negative_cases": 51
+    }
+  },
+  "ambiguous_exact_matches": [
+    {
+      "case_id": "chapter_005",
+      "quote_id": "quote_faction_taichu_jiao_02",
+      "chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "candidate_offsets": [
+        2674,
+        2706,
+        2740
+      ],
+      "selected_offset": 2674
+    },
+    {
+      "case_id": "batch_001_005",
+      "quote_id": "quote_faction_taichu_jiao_06",
+      "chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "candidate_offsets": [
+        2674,
+        2706,
+        2740
+      ],
+      "selected_offset": 2674
+    }
+  ],
+  "corrected_evidence_texts": [
+    {
+      "case_id": "chapter_004",
+      "quote_id": "quote_negative_chapter_004_009",
+      "original_text": "有失传已久的上古灵法、魔术、还有许多法宝",
+      "resolved_text": "有失传已久的上古灵法、魔术、还有许多能令整个修真界掀起血雨腥风的法宝",
+      "reason": "标注摘录省略了原句中间文字，已按当前 Markdown 补全。"
+    },
+    {
+      "case_id": "batch_001_005",
+      "quote_id": "quote_negative_batch_001_005_041",
+      "original_text": "有失传已久的上古灵法、魔术、还有许多法宝",
+      "resolved_text": "有失传已久的上古灵法、魔术、还有许多能令整个修真界掀起血雨腥风的法宝",
+      "reason": "标注摘录省略了原句中间文字，已按当前 Markdown 补全。"
+    }
+  ],
+  "dropped_unsupported_annotations": [
+    {
+      "case_id": "chapter_003",
+      "kind": "source_evidence",
+      "id": "quote_negative_chapter_003_010",
+      "chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "text": "在山门下登记处登记",
+      "reason": "原文无法在当前 Markdown 中精确定位，且仅供负样本使用。"
+    },
+    {
+      "case_id": "chapter_003",
+      "kind": "negative_case",
+      "id": "negative_chapter_003_010",
+      "reason": "全部原文依据均无法在当前 Markdown 中定位。"
+    },
+    {
+      "case_id": "batch_001_005",
+      "kind": "source_evidence",
+      "id": "quote_negative_batch_001_005_032",
+      "chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "text": "在山门下登记处登记",
+      "reason": "原文无法在当前 Markdown 中精确定位，且仅供负样本使用。"
+    },
+    {
+      "case_id": "batch_001_005",
+      "kind": "negative_case",
+      "id": "negative_batch_001_005_032",
+      "reason": "全部原文依据均无法在当前 Markdown 中定位。"
+    }
+  ]
+}

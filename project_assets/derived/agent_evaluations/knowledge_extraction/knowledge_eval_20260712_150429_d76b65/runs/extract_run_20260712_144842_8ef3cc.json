@@ -1,0 +1,1985 @@
+{
+  "run_id": "extract_run_20260712_144842_8ef3cc",
+  "case_id": "chapter_001",
+  "display_title": "第1章 大田金鳞元神出",
+  "eligibility_level": "full",
+  "eligibility_reasons": [],
+  "generation_model_identity": {
+    "provider": "rightcode",
+    "model_id": "gpt-5-6-sol",
+    "family": "gpt-5-6",
+    "endpoint_kind": "openai_responses",
+    "fingerprint": null,
+    "known": true,
+    "unknown_reason": null
+  },
+  "expected_card_count": 12,
+  "actual_card_count": 15,
+  "metrics": {
+    "candidates": {
+      "micro": {
+        "true_positive_count": 9,
+        "false_positive_count": 6,
+        "false_negative_count": 3,
+        "precision": 0.6,
+        "recall": 0.75,
+        "f1": 0.6666666666666665
+      },
+      "by_type": {
+        "character": {
+          "true_positive_count": 4,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "realm": {
+          "true_positive_count": 0,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        "technique": {
+          "true_positive_count": 0,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        "location": {
+          "true_positive_count": 3,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "faction": {
+          "true_positive_count": 0,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        "item": {
+          "true_positive_count": 1,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "rule": {
+          "true_positive_count": 1,
+          "false_positive_count": 3,
+          "false_negative_count": 1,
+          "precision": 0.25,
+          "recall": 0.5,
+          "f1": 0.3333333333333333
+        },
+        "event": {
+          "true_positive_count": 0,
+          "false_positive_count": 3,
+          "false_negative_count": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        }
+      },
+      "macro_f1": 0.6666666666666667,
+      "ambiguous_count": 0
+    },
+    "structured_fields": {
+      "score": 0.96875,
+      "weighted_correct": 62.0,
+      "weighted_total": 64.0,
+      "diffs": [
+        {
+          "actual_candidate_id": "review_item_001",
+          "expected_card_id": "character_qin_haoxuan",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "character",
+          "actual_value": "character",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_001",
+          "expected_card_id": "character_qin_haoxuan",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_001",
+          "expected_card_id": "character_qin_haoxuan",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_001",
+          "expected_card_id": "character_qin_haoxuan",
+          "field_name": "role_type",
+          "kind": "exact",
+          "expected_value": "protagonist",
+          "actual_value": "protagonist",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_001",
+          "expected_card_id": "character_qin_haoxuan",
+          "field_name": "first_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "actual_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_001",
+          "expected_card_id": "character_qin_haoxuan",
+          "field_name": "last_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "actual_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_001",
+          "expected_card_id": "character_qin_haoxuan",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [],
+          "actual_value": [],
+          "score": null,
+          "weight": 1.0,
+          "comparable": false,
+          "reason": "empty_set_not_applicable"
+        },
+        {
+          "actual_candidate_id": "review_item_002",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "character",
+          "actual_value": "character",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_002",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_002",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_002",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "role_type",
+          "kind": "exact",
+          "expected_value": "antagonist",
+          "actual_value": "antagonist",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_002",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "first_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "actual_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_002",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "last_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "actual_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_002",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [
+            "张老大"
+          ],
+          "actual_value": [],
+          "score": 0.0,
+          "weight": 1.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_003",
+          "expected_card_id": "character_chen_laotou",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "character",
+          "actual_value": "character",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_003",
+          "expected_card_id": "character_chen_laotou",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_003",
+          "expected_card_id": "character_chen_laotou",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_003",
+          "expected_card_id": "character_chen_laotou",
+          "field_name": "role_type",
+          "kind": "exact",
+          "expected_value": "supporting",
+          "actual_value": "supporting",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_003",
+          "expected_card_id": "character_chen_laotou",
+          "field_name": "first_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "actual_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_003",
+          "expected_card_id": "character_chen_laotou",
+          "field_name": "last_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "actual_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_003",
+          "expected_card_id": "character_chen_laotou",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [],
+          "actual_value": [],
+          "score": null,
+          "weight": 1.0,
+          "comparable": false,
+          "reason": "empty_set_not_applicable"
+        },
+        {
+          "actual_candidate_id": "review_item_004",
+          "expected_card_id": "character_wucai_xiaoshe",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "character",
+          "actual_value": "character",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_004",
+          "expected_card_id": "character_wucai_xiaoshe",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_004",
+          "expected_card_id": "character_wucai_xiaoshe",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_004",
+          "expected_card_id": "character_wucai_xiaoshe",
+          "field_name": "first_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "actual_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_004",
+          "expected_card_id": "character_wucai_xiaoshe",
+          "field_name": "last_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "actual_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_004",
+          "expected_card_id": "character_wucai_xiaoshe",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [
+            "奇异小蛇",
+            "花色斑斓的小蛇",
+            "五彩斑斓的小蛇"
+          ],
+          "actual_value": [],
+          "score": 0.0,
+          "weight": 1.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_005",
+          "expected_card_id": "location_da_tian_zhen",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "location",
+          "actual_value": "location",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_005",
+          "expected_card_id": "location_da_tian_zhen",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_005",
+          "expected_card_id": "location_da_tian_zhen",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_005",
+          "expected_card_id": "location_da_tian_zhen",
+          "field_name": "first_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "actual_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_005",
+          "expected_card_id": "location_da_tian_zhen",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [],
+          "actual_value": [],
+          "score": null,
+          "weight": 1.0,
+          "comparable": false,
+          "reason": "empty_set_not_applicable"
+        },
+        {
+          "actual_candidate_id": "review_item_006",
+          "expected_card_id": "location_xiao_yu_shan",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "location",
+          "actual_value": "location",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_006",
+          "expected_card_id": "location_xiao_yu_shan",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_006",
+          "expected_card_id": "location_xiao_yu_shan",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_006",
+          "expected_card_id": "location_xiao_yu_shan",
+          "field_name": "first_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "actual_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_006",
+          "expected_card_id": "location_xiao_yu_shan",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [],
+          "actual_value": [],
+          "score": null,
+          "weight": 1.0,
+          "comparable": false,
+          "reason": "empty_set_not_applicable"
+        },
+        {
+          "actual_candidate_id": "review_item_007",
+          "expected_card_id": "location_chenjia_yaopu",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "location",
+          "actual_value": "location",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_007",
+          "expected_card_id": "location_chenjia_yaopu",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_007",
+          "expected_card_id": "location_chenjia_yaopu",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_007",
+          "expected_card_id": "location_chenjia_yaopu",
+          "field_name": "first_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "actual_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_007",
+          "expected_card_id": "location_chenjia_yaopu",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [],
+          "actual_value": [],
+          "score": null,
+          "weight": 1.0,
+          "comparable": false,
+          "reason": "empty_set_not_applicable"
+        },
+        {
+          "actual_candidate_id": "review_item_008",
+          "expected_card_id": "item_huangjing",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "item",
+          "actual_value": "item",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_008",
+          "expected_card_id": "item_huangjing",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_008",
+          "expected_card_id": "item_huangjing",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_008",
+          "expected_card_id": "item_huangjing",
+          "field_name": "item_type",
+          "kind": "exact",
+          "expected_value": "material",
+          "actual_value": "material",
+          "score": 1.0,
+          "weight": 2.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_008",
+          "expected_card_id": "item_huangjing",
+          "field_name": "first_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "actual_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_008",
+          "expected_card_id": "item_huangjing",
+          "field_name": "last_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "actual_value": "chapter-f2a0007303a74f769e1609124c30da6b",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_008",
+          "expected_card_id": "item_huangjing",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [],
+          "actual_value": [],
+          "score": null,
+          "weight": 1.0,
+          "comparable": false,
+          "reason": "empty_set_not_applicable"
+        },
+        {
+          "actual_candidate_id": "review_item_012",
+          "expected_card_id": "rule_qin_family_instruction",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "rule",
+          "actual_value": "rule",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_012",
+          "expected_card_id": "rule_qin_family_instruction",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_012",
+          "expected_card_id": "rule_qin_family_instruction",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_012",
+          "expected_card_id": "rule_qin_family_instruction",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [],
+          "actual_value": [],
+          "score": null,
+          "weight": 1.0,
+          "comparable": false,
+          "reason": "empty_set_not_applicable"
+        }
+      ]
+    },
+    "evidence": {
+      "actual_evidence_count": 28,
+      "grounded_evidence_count": 28,
+      "expected_evidence_group_count": 9,
+      "covered_evidence_group_count": 9,
+      "grounded_precision": 1.0,
+      "expected_recall": 1.0,
+      "score": 1.0
+    },
+    "negative_suppression": {
+      "negative_case_count": 12,
+      "suppressed_count": 12,
+      "violated_case_ids": [],
+      "score": 1.0
+    },
+    "schema_compliance_rate": 1.0,
+    "execution_coverage": 1.0,
+    "deterministic_quality_state": "needs_review",
+    "candidate_precision_micro": 0.6,
+    "candidate_recall_micro": 0.75,
+    "candidate_f1_micro": 0.6666666666666665,
+    "candidate_f1_macro": 0.6666666666666667,
+    "structured_field_score": 0.96875,
+    "evidence_score": 1.0,
+    "evidence_grounded_precision": 1.0,
+    "expected_evidence_recall": 1.0,
+    "negative_suppression_score": 1.0,
+    "ambiguous_count": 0,
+    "candidate_true_positive_count": 9,
+    "candidate_false_positive_count": 6,
+    "candidate_false_negative_count": 3,
+    "semantic_score": 0.9763888888888889,
+    "judge_coverage": 1.0,
+    "overall_quality_score": 0.8711805555555555,
+    "critical_flag_count": 0,
+    "final_quality_state": "needs_review"
+  },
+  "semantic_score": 0.9763888888888889,
+  "judge_coverage": 1.0,
+  "overall_quality_score": 0.8711805555555555,
+  "final_quality_state": "needs_review",
+  "comparisons": [
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "character",
+      "issue_type": "field_difference",
+      "expected_card_id": "character_qin_haoxuan",
+      "actual_candidate_id": "review_item_001",
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "identity": "大田镇少年；擅长狩猎和辨识药草",
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "lifecycle": "confirmed",
+        "name": "秦浩轩",
+        "relationship_summary": "与张狂长期对立；曾向陈老头学习辨识草药",
+        "role_type": "protagonist",
+        "source_note": "第1章 大田金鳞元神出：“在大田镇这群孩子们中，秦浩轩身手最为优秀”；第1章 大田金鳞元神出：“秦浩轩终于确定自己的灵魂能在小蛇的躯体和自己本体来回穿梭附体”",
+        "source_origin": "agent_extract",
+        "summary": "秦浩轩是大田镇少年中的突出人物，擅长狩猎并能采得稀罕药草；秦浩轩确认自己的灵魂可以在本体与五彩小蛇之间往返附身。",
+        "type": "character"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "entity_group_id": "entity_group_001",
+        "evidence_excerpt": "如是几个轮回，秦浩轩终于确定自己的灵魂能在小蛇的躯体和自己本体来回穿梭附体，当下如获至宝，喜笑颜开。",
+        "evidence_excerpts": [
+          "在大田镇这群孩子们中，秦浩轩身手最为优秀，每天都要睡到太阳高照的他在同龄人中所向披靡，除了一身精湛的狩猎技巧和手段，时不时还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用",
+          "如是几个轮回，秦浩轩终于确定自己的灵魂能在小蛇的躯体和自己本体来回穿梭附体，当下如获至宝，喜笑颜开。",
+          "自此以后，秦浩轩常在晚上附身在小蛇上，进入小屿山深处寻找珍稀的药材，然后卖给药铺陈老头赚取远比打猎多得多的银钱",
+          "“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”"
+        ],
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "identity": "大田镇少年",
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "lifecycle": "confirmed",
+        "name": "秦浩轩",
+        "relationship_summary": "与张狂齐名，曾将张狂打断四根肋骨，使其此后不敢得罪；曾向药铺陈老头学习辨识草药，并将从小屿山找到的珍稀药材卖给陈老头。",
+        "role_type": "protagonist",
+        "source_note": "来源章节《第1章 大田金鳞元神出》。关键原文包括：“在大田镇这群孩子们中，秦浩轩身手最为优秀……还能拿出一些稀罕的药草卖给镇上的药铺，赚得不菲的银钱补贴家用”；“秦浩轩终于确定自己的灵魂能在小蛇的躯体和自己本体来回穿梭附体”；“秦浩轩常在晚上附身在小蛇上，进入小屿山深处寻找珍稀的药材，然后卖给药铺陈老头”。",
+        "source_origin": "agent_extract",
+        "summary": "大田镇少年，身手、狩猎技巧出众，能够让灵魂在自身与一条五彩斑斓的小蛇之间来回穿梭附体；他借助蛇身深入小屿山寻找珍稀药材，并将药材卖给药铺陈老头以补贴家用。",
+        "type": "character"
+      },
+      "match_kind": "exact_name",
+      "field_diffs": [],
+      "judge_result": {
+        "case_id": "extract_run_20260712_144842_8ef3cc::review_item_001::character_qin_haoxuan",
+        "expected_card_id": "character_qin_haoxuan",
+        "actual_review_item_id": "review_item_001",
+        "status": "scored",
+        "dimensions": {
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_character_qin_haoxuan_01",
+              "quote_character_qin_haoxuan_02"
+            ],
+            "reason": "所有关键声明（大田镇少年、狩猎与辨药能力、灵魂穿梭）均与原文严格一致，无扭曲或虚假信息。"
+          },
+          "key_fact_coverage": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_character_qin_haoxuan_01",
+              "quote_character_qin_haoxuan_02"
+            ],
+            "reason": "预期关键主张（身份与能力、灵魂穿梭）在摘要字段中完全覆盖；身份字段虽略简，但关键信息未遗漏。"
+          },
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_character_qin_haoxuan_01",
+              "quote_character_qin_haoxuan_02"
+            ],
+            "reason": "摘要中每个陈述均可直接追溯到提供的引文片段，支撑充分。"
+          },
+          "scope_discipline": {
+            "score": 3,
+            "verdict": "partial",
+            "quote_ids": [],
+            "reason": "关系摘要加入‘曾将张狂打断四根肋骨’，该细节在当前提供的所有原文中均无支撑，超出证据范围；其余内容范围恰当。"
+          },
+          "knowledge_usability": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "抽取的整体知识结构清晰，事实完整，可直接用于后续剧情推理与问答。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.9,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_27ebc5e1659e",
+          "judge_call_1f0ae6b01051"
+        ],
+        "semantic_score": 0.975
+      }
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "character",
+      "issue_type": "field_difference",
+      "expected_card_id": "character_zhang_kuang",
+      "actual_candidate_id": "review_item_002",
+      "expected_card": {
+        "aliases": [
+          "张老大"
+        ],
+        "appearance_chapter_count": 1,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "identity": "大田镇少年中的首领人物",
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "lifecycle": "confirmed",
+        "name": "张狂",
+        "relationship_summary": "与秦浩轩齐名并长期对立",
+        "role_type": "antagonist",
+        "source_note": "第1章 大田金鳞元神出：“他就是和秦浩轩齐名的张狂”；第1章 大田金鳞元神出：“张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼”",
+        "source_origin": "agent_extract",
+        "summary": "张狂是与秦浩轩齐名的大田镇少年；张狂十二岁时曾徒手杀死两头饿狼。",
+        "type": "character"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "entity_group_id": "entity_group_002",
+        "evidence_excerpt": "去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。",
+        "evidence_excerpts": [
+          "一个锦衣少年气定神闲似乎极为享受别人的惨叫，不时发出冷笑，他就是和秦浩轩齐名的张狂。",
+          "张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼，也算是少年有成。",
+          "去年他曾被秦浩轩狠揍了一顿，断了四根肋骨，在床上躺了三个月才痊愈，自此再不敢得罪秦浩轩。",
+          "“不久后就是山中神仙来挑选徒弟的日子，我一定要被神仙选上，出这一口恶气！”"
+        ],
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "identity": "大田镇猎手之子",
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "lifecycle": "confirmed",
+        "name": "张狂",
+        "relationship_summary": "与秦浩轩齐名，曾被秦浩轩打断四根肋骨并卧床三个月，此后不敢再得罪秦浩轩，但仍想借被神仙选为徒弟的机会出气。",
+        "role_type": "antagonist",
+        "source_note": "来源章节《第1章 大田金鳞元神出》。关键原文包括：“他就是和秦浩轩齐名的张狂”；“张狂的父亲是大田镇最优秀的猎手，而张狂本人也天赋异禀，十二岁时曾徒手杀了两头饿狼”；“去年他曾被秦浩轩狠揍了一顿，断了四根肋骨……自此再不敢得罪秦浩轩”；以及张狂所言：“我一定要被神仙选上，出这一口恶气！”",
+        "source_origin": "agent_extract",
+        "summary": "与秦浩轩齐名的大田镇锦衣少年，其父是镇上最优秀的猎手；张狂天赋异禀，十二岁时曾徒手杀死两头饿狼，但曾被秦浩轩打断四根肋骨，此后不敢得罪秦浩轩，并想通过被山中神仙选为徒弟来一雪前耻。",
+        "type": "character"
+      },
+      "match_kind": "exact_name",
+      "field_diffs": [
+        {
+          "actual_candidate_id": "review_item_002",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [
+            "张老大"
+          ],
+          "actual_value": [],
+          "score": 0.0,
+          "weight": 1.0,
+          "comparable": true,
+          "reason": null
+        }
+      ],
+      "judge_result": {
+        "case_id": "extract_run_20260712_144842_8ef3cc::review_item_002::character_zhang_kuang",
+        "expected_card_id": "character_zhang_kuang",
+        "actual_review_item_id": "review_item_002",
+        "status": "scored",
+        "dimensions": {
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "实际卡片中的所有信息（与秦浩轩齐名、父亲是优秀猎手、十二岁杀狼、被秦浩轩打断肋骨并卧床三月、不敢得罪、希冀被神仙选中）均可在原文中找到明确依据，无任何扭曲或虚构。"
+          },
+          "key_fact_coverage": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "关键事实“与秦浩轩齐名”和“十二岁徒手杀狼”均已完全覆盖；预期中关于“首领人物”的说法缺乏原文支持，因此不视为遗漏。"
+          },
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "所有陈述均有对应的原文证据，包括锦衣少年描述、父亲身份、杀狼、斗殴、心理活动等，证据链完整。"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "未发现超出原文的无根据推断，所有扩展信息均忠实于源文。"
+          },
+          "knowledge_usability": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "总结清晰，身份明确，关系描述完整，可直接用于知识检索和故事理解。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.95,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_27ebc5e1659e",
+          "judge_call_900303b581dd"
+        ],
+        "semantic_score": 1.0
+      }
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "character",
+      "issue_type": "field_difference",
+      "expected_card_id": "character_chen_laotou",
+      "actual_candidate_id": "review_item_003",
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "identity": "大田镇药铺中熟悉药材的人",
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "lifecycle": "confirmed",
+        "name": "陈老头",
+        "relationship_summary": "曾教秦浩轩辨识草药并收购其药材",
+        "role_type": "supporting",
+        "source_note": "第1章 大田金鳞元神出：“秦浩轩狩猎之余专门向药铺的陈老头学过辨识草药”",
+        "source_origin": "agent_extract",
+        "summary": "陈老头曾教秦浩轩辨识草药。",
+        "type": "character"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "entity_group_id": "entity_group_003",
+        "evidence_excerpt": "秦浩轩狩猎之余专门向药铺的陈老头学过辨识草药，一眼就认出这里生长了许多价值不菲的草药",
+        "evidence_excerpts": [
+          "也难怪药铺陈老头念叨了好几年，一定能卖个好价钱。",
+          "秦浩轩狩猎之余专门向药铺的陈老头学过辨识草药，一眼就认出这里生长了许多价值不菲的草药",
+          "自此以后，秦浩轩常在晚上附身在小蛇上，进入小屿山深处寻找珍稀的药材，然后卖给药铺陈老头赚取远比打猎多得多的银钱"
+        ],
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "identity": "药铺中懂得辨识草药的老人",
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "lifecycle": "confirmed",
+        "name": "陈老头",
+        "relationship_summary": "曾教秦浩轩辨识草药，并收购秦浩轩从小屿山深处找到的珍稀药材。",
+        "role_type": "supporting",
+        "source_note": "来源章节《第1章 大田金鳞元神出》。关键原文包括：“药铺陈老头念叨了好几年，一定能卖个好价钱”；“秦浩轩狩猎之余专门向药铺的陈老头学过辨识草药”；“然后卖给药铺陈老头赚取远比打猎多得多的银钱”。多处原文共同表明陈老头与药铺、草药辨识及秦浩轩出售药材有关。",
+        "source_origin": "agent_extract",
+        "summary": "大田镇药铺相关人物，懂得辨识草药，曾向秦浩轩传授相关知识；秦浩轩后来将从小屿山深处找到的珍稀药材卖给他。",
+        "type": "character"
+      },
+      "match_kind": "exact_name",
+      "field_diffs": [],
+      "judge_result": {
+        "case_id": "extract_run_20260712_144842_8ef3cc::review_item_003::character_chen_laotou",
+        "expected_card_id": "character_chen_laotou",
+        "actual_review_item_id": "review_item_003",
+        "status": "scored",
+        "dimensions": {
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_character_chen_laotou_01"
+            ],
+            "reason": "卡片所述陈老头教秦浩轩辨识草药及秦浩轩日后将珍稀药材卖给他，均与原文‘秦浩轩狩猎之余专门向药铺的陈老头学过辨识草药’及‘然后卖给药铺陈老头赚取…银钱’完全一致，无虚构或偏差。"
+          },
+          "key_fact_coverage": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "涵盖预期关键关系：教授辨识草药及收购药材，与expected claim要求的‘曾教秦浩轩辨识草药’和实际关系摘要完全匹配，未遗漏核心事实。"
+          },
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_character_chen_laotou_01"
+            ],
+            "reason": "卡片内容有明确的三处原文支撑：辨识草药的教学证据、药铺陈老头念叨的线索、出售小屿山药材的叙述，引证位置与claimed事实严格对应，无需再补充证据。"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "卡片仅提炼原文已提供的信息（陈老头为药铺人物、教授草药、后续收购药材），未添加超出既有章节的推测或编造，严格遵守证据范围。"
+          },
+          "knowledge_usability": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "人物身份、技能传授及经济往来关系归纳清晰，可直接用于故事背景查询或后续剧情衍生分析，知识表示精炼准确。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.95,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_27ebc5e1659e",
+          "judge_call_53a7e0b887e7"
+        ],
+        "semantic_score": 1.0
+      }
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "character",
+      "issue_type": "field_difference",
+      "expected_card_id": "character_wucai_xiaoshe",
+      "actual_candidate_id": "review_item_004",
+      "expected_card": {
+        "aliases": [
+          "奇异小蛇",
+          "花色斑斓的小蛇",
+          "五彩斑斓的小蛇"
+        ],
+        "appearance_chapter_count": 1,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "identity": "生活在小屿山深处的奇异五彩小蛇；秦浩轩附身载体",
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "lifecycle": "confirmed",
+        "name": "五彩小蛇",
+        "relationship_summary": "曾咬伤秦浩轩；其蛇身可被秦浩轩灵魂附入",
+        "role_type": null,
+        "source_note": "第1章 大田金鳞元神出：“这条小蛇约摸半尺长，一身五彩斑斓的蛇皮”；第1章 大田金鳞元神出：“比如百毒不侵，比如对一些灵药异草格外敏感”",
+        "source_origin": "agent_extract",
+        "summary": "五彩小蛇体长约半尺，外形明显区别于普通蛇类；五彩小蛇的蛇身不惧毒瘴，并对灵药异草敏感。",
+        "type": "character"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "entity_group_id": "entity_group_004",
+        "evidence_excerpt": "如是几个轮回，秦浩轩终于确定自己的灵魂能在小蛇的躯体和自己本体来回穿梭附体，当下如获至宝，喜笑颜开。",
+        "evidence_excerpts": [
+          "这条小蛇约摸半尺长，一身五彩斑斓的蛇皮，皮上有许多密密麻麻的凸起，摸起来疙疙瘩瘩，似鳞非麟。它的脑袋不像一般蛇类的锥形，反而有些四正四方，看起来极为怪异。",
+          "秦浩轩采摘得正欢时，忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。",
+          "如是几个轮回，秦浩轩终于确定自己的灵魂能在小蛇的躯体和自己本体来回穿梭附体，当下如获至宝，喜笑颜开。",
+          "在寻找回家的路时，秦浩轩还发现了蛇身的多种妙处，比如百毒不侵，比如对一些灵药异草格外敏感，一些豹子饿狼一看到小蛇吓得掉头就跑。"
+        ],
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "identity": "可被秦浩轩灵魂附体的怪异小蛇",
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "lifecycle": "confirmed",
+        "name": "五彩斑斓的小蛇",
+        "relationship_summary": "曾咬中秦浩轩的右手虎口；此后秦浩轩能够让灵魂在自身与小蛇躯体之间来回穿梭，并借助蛇身进入小屿山深处寻找珍稀药材。",
+        "role_type": "supporting",
+        "source_note": "来源章节《第1章 大田金鳞元神出》。关键原文包括：“这条小蛇约摸半尺长，一身五彩斑斓的蛇皮……它的脑袋不像一般蛇类的锥形，反而有些四正四方”；“一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处”；“秦浩轩终于确定自己的灵魂能在小蛇的躯体和自己本体来回穿梭附体”；蛇身另有“百毒不侵”“对一些灵药异草格外敏感”等妙处。",
+        "source_origin": "agent_extract",
+        "summary": "一条约半尺长、蛇皮五彩斑斓且头部四正四方的怪异小蛇，曾咬中秦浩轩右手虎口；秦浩轩的灵魂可以在自身与其躯体之间来回穿梭附体，而蛇身具有百毒不侵、能敏锐感知灵药异草以及令豹子饿狼退避等妙处。",
+        "type": "character"
+      },
+      "match_kind": "accepted_name",
+      "field_diffs": [
+        {
+          "actual_candidate_id": "review_item_004",
+          "expected_card_id": "character_wucai_xiaoshe",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [
+            "奇异小蛇",
+            "花色斑斓的小蛇",
+            "五彩斑斓的小蛇"
+          ],
+          "actual_value": [],
+          "score": 0.0,
+          "weight": 1.0,
+          "comparable": true,
+          "reason": null
+        }
+      ],
+      "judge_result": {
+        "case_id": "extract_run_20260712_144842_8ef3cc::review_item_004::character_wucai_xiaoshe",
+        "expected_card_id": "character_wucai_xiaoshe",
+        "actual_review_item_id": "review_item_004",
+        "status": "scored",
+        "dimensions": {
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "所有陈述均与原文完全一致，无捏造或错误"
+          },
+          "key_fact_coverage": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "准确覆盖了期望的关键事实：蛇身特征、附身关系、百毒不侵与灵药敏感等，略微未明确提及'小屿山'栖息地但上下文足以推断"
+          },
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "每一条事实都有明确的原文出处，引用准确"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "严格限定在原文范围，未添加推断或遗漏限定条件"
+          },
+          "knowledge_usability": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "知识表述清晰、结构化，身份与关系明确，可直接用于下游任务"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.95,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_27ebc5e1659e",
+          "judge_call_84193d78b2c0"
+        ],
+        "semantic_score": 1.0
+      }
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "location",
+      "issue_type": "field_difference",
+      "expected_card_id": "location_da_tian_zhen",
+      "actual_candidate_id": "review_item_005",
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "controlling_faction_id": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "lifecycle": "confirmed",
+        "name": "大田镇",
+        "source_note": "第1章 大田金鳞元神出：“背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎”",
+        "source_origin": "agent_extract",
+        "summary": "大田镇背靠小屿山，土地稀少贫瘠，居民世代狩猎。",
+        "type": "location"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "controlling_faction_id": null,
+        "entity_group_id": "entity_group_005",
+        "evidence_excerpt": "依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。",
+        "evidence_excerpts": [
+          "依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。",
+          "在大田镇少年们心中，除了赶超秦浩轩和张狂，还存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟",
+          "大田镇世代狩猎，但都在外围转悠，哪怕猎物越来越稀少的今天也没人敢深入小屿山"
+        ],
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "lifecycle": "confirmed",
+        "name": "大田镇",
+        "source_note": "来源于第1章《大田金鳞元神出》。关键原文包括：“依山吃山，靠水吃水，背靠着小屿山的大田镇名字中带着耕田的美好愿望，却因田地稀少和贫瘠而不得不世代狩猎。”“在大田镇少年们心中……存在着一个如梦似幻的梦想，那就是被小屿山上的神仙们收为徒弟。”“大田镇世代狩猎，但都在外围转悠……也没人敢深入小屿山。”",
+        "source_origin": "agent_extract",
+        "summary": "大田镇背靠小屿山，名字寄托着耕田的愿望，但因田地稀少贫瘠，居民世代以狩猎为生，通常只在小屿山外围活动；镇中少年还向往被山上的神仙收为徒弟。",
+        "type": "location"
+      },
+      "match_kind": "exact_name",
+      "field_diffs": [],
+      "judge_result": {
+        "case_id": "extract_run_20260712_144842_8ef3cc::review_item_005::location_da_tian_zhen",
+        "expected_card_id": "location_da_tian_zhen",
+        "actual_review_item_id": "review_item_005",
+        "status": "scored",
+        "dimensions": {
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_da_tian_zhen_01"
+            ],
+            "reason": "实际摘要中所有事实（背靠小屿山、田地稀少贫瘠、世代狩猎、在外围活动、少年梦想）均与原文证据一致，无任何扭曲或矛盾。"
+          },
+          "key_fact_coverage": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_da_tian_zhen_01"
+            ],
+            "reason": "完全覆盖了预期声明中的关键事实（大田镇背靠小屿山，居民因田地稀少贫瘠而世代狩猎），且没有遗漏核心信息。"
+          },
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_da_tian_zhen_01"
+            ],
+            "reason": "所有摘要内容均在原文中有明确对应表述，核心事实由指定引文支持，外围活动与少年梦想也由提供的证据片段充分支撑。"
+          },
+          "scope_discipline": {
+            "score": 3,
+            "verdict": "mostly_correct",
+            "quote_ids": [],
+            "reason": "摘要额外包含了居民狩猎限于外围和少年向往被神仙收徒的细节，虽然源于原文且不矛盾，但略微超出了预期卡片对地理位置和生计的核心范围，属于可精简的补充信息。"
+          },
+          "knowledge_usability": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "知识表示清晰、结构化，易于理解和使用，额外细节未影响核心信息的可用性。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.9,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_4a1f33d58a18",
+          "judge_call_553cfa5e1538"
+        ],
+        "semantic_score": 0.975
+      }
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "location",
+      "issue_type": "field_difference",
+      "expected_card_id": "location_xiao_yu_shan",
+      "actual_candidate_id": "review_item_006",
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "controlling_faction_id": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "lifecycle": "confirmed",
+        "name": "小屿山",
+        "source_note": "第1章 大田金鳞元神出：“大田镇世代狩猎，但都在外围转悠”；第1章 大田金鳞元神出：“人体若吸入毒瘴必死无疑”",
+        "source_origin": "agent_extract",
+        "summary": "大田镇猎户通常只在小屿山外围活动；小屿山夜间毒瘴对人体致命，五彩小蛇蛇身不受影响。",
+        "type": "location"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "controlling_faction_id": null,
+        "entity_group_id": "entity_group_006",
+        "evidence_excerpt": "大田镇世代狩猎，但都在外围转悠，哪怕猎物越来越稀少的今天也没人敢深入小屿山，也曾有胆大的猎户深入小屿山，却再也不见出来。",
+        "evidence_excerpts": [
+          "大田镇世代狩猎，但都在外围转悠，哪怕猎物越来越稀少的今天也没人敢深入小屿山，也曾有胆大的猎户深入小屿山，却再也不见出来。",
+          "传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。",
+          "对深山中有妖魔鬼怪的传说秦浩轩将信将疑，但深山中必定是瘴气横行，有无数凶禽猛兽",
+          "自此以后，秦浩轩常在晚上附身在小蛇上，进入小屿山深处寻找珍稀的药材"
+        ],
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "lifecycle": "confirmed",
+        "name": "小屿山",
+        "source_note": "来源于第1章《大田金鳞元神出》。关键原文包括：“大田镇世代狩猎，但都在外围转悠……也没人敢深入小屿山，也曾有胆大的猎户深入小屿山，却再也不见出来。”“传说小屿山中不但居住着神仙，还有许多凶神恶煞的妖魔鬼怪。”“深山中必定是瘴气横行，有无数凶禽猛兽。”“秦浩轩常在晚上附身在小蛇上，进入小屿山深处寻找珍稀的药材。”",
+        "source_origin": "agent_extract",
+        "summary": "小屿山位于大田镇附近，外围是镇民世代狩猎之地，深处则鲜有人敢进入；山中流传着神仙及妖魔鬼怪的传说，并有瘴气、凶禽猛兽与珍稀药材，秦浩轩曾借附身小蛇深入其中寻找药材。",
+        "type": "location"
+      },
+      "match_kind": "exact_name",
+      "field_diffs": [],
+      "judge_result": {
+        "case_id": "extract_run_20260712_144842_8ef3cc::review_item_006::location_xiao_yu_shan",
+        "expected_card_id": "location_xiao_yu_shan",
+        "actual_review_item_id": "review_item_006",
+        "status": "scored",
+        "dimensions": {
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "摘要中每一项陈述均可找到对应的直接证据，无凭空捏造或脱离原文的内容，证据支撑充分。"
+          },
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_xiao_yu_shan_01"
+            ],
+            "reason": "实际摘要中的所有陈述均可从原文证据中获得支持：外围狩猎、深处危险、传说、瘴气凶兽、附身小蛇寻药等均与located_actual_evidence匹配，没有不实或扭曲之处。"
+          },
+          "key_fact_coverage": {
+            "score": 2,
+            "verdict": "partial",
+            "quote_ids": [],
+            "reason": "预期关键主张包括毒瘴致命且发生于夜间、小蛇不受影响，但实际摘要仅泛提瘴气，缺失致命性和夜间要素，也未说明小蛇免疫，覆盖不完整。"
+          },
+          "knowledge_usability": {
+            "score": 3,
+            "verdict": "mostly_correct",
+            "quote_ids": [],
+            "reason": "摘要提供了小屿山的基本定位和传说性质，但缺少毒瘴致命、夜间限制和小蛇免疫等关键约束，在需要精确判断危险性的问答或情节推理中可能效用受限。"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "摘要范围控制在小说中关于小屿山的描述，未引入外部知识或无关信息，严格遵守设定边界。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.75,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_4a1f33d58a18",
+          "judge_call_4ef641b774c2",
+          "judge_call_4e95f4a8afe6",
+          "judge_call_c8bfdf337b94"
+        ],
+        "semantic_score": 0.8375
+      }
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "location",
+      "issue_type": "field_difference",
+      "expected_card_id": "location_chenjia_yaopu",
+      "actual_candidate_id": "review_item_007",
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "controlling_faction_id": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "lifecycle": "confirmed",
+        "name": "陈家药铺",
+        "source_note": "第1章 大田金鳞元神出：“这是赶去陈家药铺卖么？”",
+        "source_origin": "agent_extract",
+        "summary": "陈家药铺是秦浩轩出售药材的固定去处。",
+        "type": "location"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "controlling_faction_id": null,
+        "entity_group_id": "entity_group_007",
+        "evidence_excerpt": "“秦哥，据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！”",
+        "evidence_excerpts": [
+          "“唔……好香啊！秦哥，今天又得了什么好东西？这是赶去陈家药铺卖么？”",
+          "“秦哥，据说今天有两个外地客把陈家药铺的名贵药材全部买光了，还放出话来，其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！”",
+          "在一片欢呼声中，秦浩轩被众多少年簇拥着走向陈家药铺。"
+        ],
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "lifecycle": "confirmed",
+        "name": "陈家药铺",
+        "source_note": "来源于第1章《大田金鳞元神出》。关键原文包括：“秦哥，今天又得了什么好东西？这是赶去陈家药铺卖么？”“今天有两个外地客把陈家药铺的名贵药材全部买光了……其他人只要珍贵药材，他们可以拿出比陈家药铺高出很多的价格收购！”以及“秦浩轩被众多少年簇拥着走向陈家药铺。”",
+        "source_origin": "agent_extract",
+        "summary": "陈家药铺是收售药材的地点，秦浩轩曾带着所得之物前往售卖；两名外地客买光了铺中的名贵药材，并提出以高于药铺的价格收购其他人的珍贵药材。",
+        "type": "location"
+      },
+      "match_kind": "exact_name",
+      "field_diffs": [],
+      "judge_result": {
+        "case_id": "extract_run_20260712_144842_8ef3cc::review_item_007::location_chenjia_yaopu",
+        "expected_card_id": "location_chenjia_yaopu",
+        "actual_review_item_id": "review_item_007",
+        "status": "scored",
+        "dimensions": {
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_chenjia_yaopu_01"
+            ],
+            "reason": "实际摘要中所有陈述均可在原文中印证：秦浩轩前往陈家药铺售卖所得之物、外地客买光名贵药材并高价求购等细节，与原文片段完全吻合，无虚构或曲解。"
+          },
+          "key_fact_coverage": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_chenjia_yaopu_01"
+            ],
+            "reason": "预期关键事实“陈家药铺是秦浩轩出售药材的固定去处”被完整包含，实际摘要还补充了相关交易事件，未遗漏核心信息。"
+          },
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_chenjia_yaopu_01"
+            ],
+            "reason": "实际摘要的每一项描述均有对应的原文片段支撑（如“赶去陈家药铺卖么”“簇拥着走向陈家药铺”及外地客对话），证据充分且直接相关。"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "摘要紧扣地点类卡片的属性，描述了陈家药铺的功能（收售药材）及发生的典型事件，延伸描述不脱离章节上下文，未引入无关信息。"
+          },
+          "knowledge_usability": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "摘要清晰交代了地点作用及关联人物（秦浩轩）和事件（外地客收购），对后续情节理解具有良好指导性，可直接作为知识卡片使用。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.95,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_4a1f33d58a18",
+          "judge_call_fe8a0137c4dd"
+        ],
+        "semantic_score": 1.0
+      }
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "item",
+      "issue_type": "field_difference",
+      "expected_card_id": "item_huangjing",
+      "actual_candidate_id": "review_item_008",
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "current_holder_id": null,
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "grade": null,
+        "item_type": "material",
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "lifecycle": "confirmed",
+        "name": "黄精",
+        "source_note": "第1章 大田金鳞元神出：“这小块黄色物体是一枚珍贵的黄精”",
+        "source_origin": "agent_extract",
+        "summary": "黄精是一种珍贵药材，外观像黄色石子并带幽香。",
+        "type": "item"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "current_holder_id": null,
+        "entity_group_id": "entity_group_008",
+        "evidence_excerpt": "这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常",
+        "evidence_excerpts": [
+          "这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常",
+          "换了衣衫，秦浩轩带着黄精走出家门，顶着两个黑眼圈的他一脸疲惫"
+        ],
+        "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "grade": null,
+        "item_type": "material",
+        "last_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "lifecycle": "confirmed",
+        "name": "黄精",
+        "source_note": "来源于第1章《大田金鳞元神出》。关键原文包括：“这小块黄色物体是一枚珍贵的黄精，看外表就是一颗黄色石子，卖相虽然不好看，但从它细腻的触感，以及散发出令人心旷神怡的幽香，都昭示着它的不寻常。”以及“换了衣衫，秦浩轩带着黄精走出家门。”",
+        "source_origin": "agent_extract",
+        "summary": "黄精是一种珍贵物品，外表如黄色石子，卖相不佳，但触感细腻并散发令人心旷神怡的幽香；秦浩轩得到后将其随身带出家门。",
+        "type": "item"
+      },
+      "match_kind": "exact_name",
+      "field_diffs": [],
+      "judge_result": {
+        "case_id": "extract_run_20260712_144842_8ef3cc::review_item_008::item_huangjing",
+        "expected_card_id": "item_huangjing",
+        "actual_review_item_id": "review_item_008",
+        "status": "scored",
+        "dimensions": {
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_item_huangjing_01"
+            ],
+            "reason": "actual 中每个陈述均能在 evidence 中找到直接对应原文，无凭空推断。"
+          },
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_item_huangjing_01"
+            ],
+            "reason": "actual summary 中的外观、触感、香气及携带描述均与原文证据完全一致，未出现编造或歪曲，细节忠实。"
+          },
+          "key_fact_coverage": null,
+          "knowledge_usability": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "卡片清晰地总结了物品的外观、触感、气味和获取动作，可为后续情节引用提供有用信息。"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "actual 卡片严格限定在原文已提供信息范围内，未擅自添加类型或属性，范围恰当。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.9,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_19c2e6382c9f",
+          "judge_call_083d6e87a471",
+          "judge_call_ad267ce33413"
+        ],
+        "semantic_score": 1.0
+      }
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "rule",
+      "issue_type": "field_difference",
+      "expected_card_id": "rule_qin_family_instruction",
+      "actual_candidate_id": "review_item_012",
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "exceptions": null,
+        "lifecycle": "confirmed",
+        "name": "秦家祖训",
+        "source_note": "第1章 大田金鳞元神出：“便给后人立了规矩，必须读书却不能做官”",
+        "source_origin": "agent_extract",
+        "summary": "秦家后人必须读书但不得做官。",
+        "type": "rule"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "entity_group_id": "entity_group_014",
+        "evidence_excerpt": "他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官",
+        "evidence_excerpts": [
+          "他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官"
+        ],
+        "exceptions": null,
+        "lifecycle": "confirmed",
+        "name": "秦家祖训",
+        "source_note": "来源章节：《第1章 大田金鳞元神出》。关键原文：“他家祖上曾经也出过做官的，后来祖上将家迁到大田镇后，便给后人立了规矩，必须读书却不能做官。”原文同时交代了祖上曾有人做官、迁居大田镇以及祖训的两项约束。",
+        "source_origin": "agent_extract",
+        "summary": "秦家祖上迁居大田镇后为后人立下规矩：秦家后人必须读书，但不能做官。",
+        "type": "rule"
+      },
+      "match_kind": "exact_name",
+      "field_diffs": [],
+      "judge_result": {
+        "case_id": "extract_run_20260712_144842_8ef3cc::review_item_012::rule_qin_family_instruction",
+        "expected_card_id": "rule_qin_family_instruction",
+        "actual_review_item_id": "review_item_012",
+        "status": "scored",
+        "dimensions": {
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_rule_qin_family_instruction_01"
+            ],
+            "reason": "actual summary 增加的“秦家祖上迁居大田镇后”为原文已有事实，核心规矩“必须读书却不能做官”完全一致，无歪曲。"
+          },
+          "key_fact_coverage": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_rule_qin_family_instruction_01"
+            ],
+            "reason": "覆盖了 expected claims 的“必须读书”和“不得做官”两个关键点，并补充了成立背景，无遗漏。"
+          },
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_rule_qin_family_instruction_01"
+            ],
+            "reason": "source_note 可直接追溯到同一条原文引用，支撑充分。"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "summary 陈述核心约束的表述符合规则卡片简明性要求，添加的祖上迁居背景未超出必要阐释范围。"
+          },
+          "knowledge_usability": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "格式规范、语义清晰，可直接纳入知识库使用。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.95,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_12e84d57ca3a"
+        ],
+        "semantic_score": 1.0
+      }
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "event",
+      "issue_type": "extra_candidate",
+      "expected_card_id": null,
+      "actual_candidate_id": "review_item_009",
+      "expected_card": null,
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "description": "秦浩轩被五彩斑斓的小蛇咬伤后昏死，随后发现并确认自己可以将灵魂附入小蛇，也可以返回本体。",
+        "entity_group_id": "entity_group_011",
+        "evidence_excerpt": "如是几个轮回，秦浩轩终于确定自己的灵魂能在小蛇的躯体和自己本体来回穿梭附体，当下如获至宝，喜笑颜开。",
+        "evidence_excerpts": [
+          "唯一受过的伤害就是十二岁时被一条奇怪的小蛇咬了一口，就这一口，他的人生彻底改变了。",
+          "秦浩轩采摘得正欢时，忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。",
+          "秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。",
+          "如是几个轮回，秦浩轩终于确定自己的灵魂能在小蛇的躯体和自己本体来回穿梭附体，当下如获至宝，喜笑颜开。"
+        ],
+        "lifecycle": "confirmed",
+        "name": "秦浩轩被蛇咬后获得附体能力",
+        "source_note": "来源章节：《第1章 大田金鳞元神出》。关键原文：“唯一受过的伤害就是十二岁时被一条奇怪的小蛇咬了一口，就这一口，他的人生彻底改变了。”“忽然一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处。”“秦浩轩但觉一阵天旋地转，噗通一声摔倒在地上，昏死过去。”“如是几个轮回，秦浩轩终于确定自己的灵魂能在小蛇的躯体和自己本体来回穿梭附体。”",
+        "source_origin": "agent_extract",
+        "summary": "秦浩轩十二岁时被一条五彩斑斓的小蛇咬中右手虎口并昏死，醒来后经过反复尝试，确认自己的灵魂能够在小蛇躯体与本体之间来回穿梭附体，其人生也因此改变。",
+        "type": "event"
+      },
+      "match_kind": null,
+      "field_diffs": [],
+      "judge_result": null
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "event",
+      "issue_type": "extra_candidate",
+      "expected_card_id": null,
+      "actual_candidate_id": "review_item_010",
+      "expected_card": null,
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "description": "秦浩轩利用附身小蛇的能力深入小屿山采集珍稀药材，并通过售药获得收入，令家中日子越过越好。",
+        "entity_group_id": "entity_group_012",
+        "evidence_excerpt": "自此以后，秦浩轩常在晚上附身在小蛇上，进入小屿山深处寻找珍稀的药材，然后卖给药铺陈老头赚取远比打猎多得多的银钱，他家的日子也越过越好",
+        "evidence_excerpts": [
+          "自此以后，秦浩轩常在晚上附身在小蛇上，进入小屿山深处寻找珍稀的药材，然后卖给药铺陈老头赚取远比打猎多得多的银钱，他家的日子也越过越好"
+        ],
+        "lifecycle": "confirmed",
+        "name": "秦浩轩借小蛇采药谋生",
+        "source_note": "来源章节：《第1章 大田金鳞元神出》。关键原文：“自此以后，秦浩轩常在晚上附身在小蛇上，进入小屿山深处寻找珍稀的药材，然后卖给药铺陈老头赚取远比打猎多得多的银钱，他家的日子也越过越好。”该段同时说明了秦浩轩夜间附身采药、向陈老头售药以及改善家境的结果。",
+        "source_origin": "agent_extract",
+        "summary": "获得附体能力后，秦浩轩经常在夜间附身小蛇，深入小屿山寻找珍稀药材，再将药材卖给药铺陈老头，由此赚取远多于打猎的银钱，使家中生活逐渐好转。",
+        "type": "event"
+      },
+      "match_kind": null,
+      "field_diffs": [],
+      "judge_result": null
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "event",
+      "issue_type": "extra_candidate",
+      "expected_card_id": null,
+      "actual_candidate_id": "review_item_011",
+      "expected_card": null,
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "description": "秦浩轩以强硬警告迫使张狂停止踢打少年，张狂因判断翻脸只会吃亏而没有继续动手。",
+        "entity_group_id": "entity_group_013",
+        "evidence_excerpt": "秦浩轩的声音就像一把无形的枷锁，逼得张狂硬生生收回要踢出去的脚",
+        "evidence_excerpts": [
+          "“都给老子看好了，这就是不按时缴纳保险费的下场！”张狂身边的小弟踩着地上一名少年的脸，得意的宣称。",
+          "“姓张的，你是不是没看见我？”经过此处的秦浩轩眼皮都没抬一下地说道：“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”",
+          "秦浩轩的声音就像一把无形的枷锁，逼得张狂硬生生收回要踢出去的脚",
+          "张狂听的面色难看，却也知道翻脸只能吃亏"
+        ],
+        "lifecycle": "confirmed",
+        "name": "秦浩轩制止张狂殴打少年",
+        "source_note": "来源章节：《第1章 大田金鳞元神出》。关键原文：“这就是不按时缴纳保险费的下场！”“你若敢踢下去，我就把你绑了丢小屿山喂狼去！”随后“秦浩轩的声音就像一把无形的枷锁，逼得张狂硬生生收回要踢出去的脚”，且“张狂听的面色难看，却也知道翻脸只能吃亏”，明确表明秦浩轩成功制止了张狂继续殴打少年。",
+        "source_origin": "agent_extract",
+        "summary": "张狂一方以未按时缴纳保险费为由殴打一名少年时，路过的秦浩轩出言警告，扬言若张狂继续动手便将其绑去小屿山喂狼；张狂知道翻脸只会吃亏，最终收回了要踢向少年的脚。",
+        "type": "event"
+      },
+      "match_kind": null,
+      "field_diffs": [],
+      "judge_result": null
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "rule",
+      "issue_type": "extra_candidate",
+      "expected_card_id": null,
+      "actual_candidate_id": "review_item_013",
+      "expected_card": null,
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "entity_group_id": "entity_group_015",
+        "evidence_excerpt": "秦浩轩念头一动，将灵魂附在小蛇上，果然山谷中升起的瘴气完全无法危害到他。",
+        "evidence_excerpts": [
+          "这一折腾已经是夜幕降临，小屿山中的毒瘴开始蔓延，人体若吸入毒瘴必死无疑，这小蛇以前长居于小屿山，毒瘴想必无法威胁到它。",
+          "秦浩轩念头一动，将灵魂附在小蛇上，果然山谷中升起的瘴气完全无法危害到他。"
+        ],
+        "exceptions": "小蛇的躯体不受小屿山毒瘴危害；秦浩轩附身小蛇时同样不会被瘴气伤害。",
+        "lifecycle": "confirmed",
+        "name": "小屿山毒瘴致死规则",
+        "source_note": "来源章节：《第1章 大田金鳞元神出》。关键原文：“小屿山中的毒瘴开始蔓延，人体若吸入毒瘴必死无疑”，同时原文指出小蛇以前长居小屿山，并以实际结果确认：“秦浩轩念头一动，将灵魂附在小蛇上，果然山谷中升起的瘴气完全无法危害到他。”",
+        "source_origin": "agent_extract",
+        "summary": "夜幕降临后，小屿山中的毒瘴开始蔓延，人体吸入毒瘴必死；小蛇的躯体不受这种瘴气危害，秦浩轩将灵魂附在小蛇上时也能免受毒瘴伤害。",
+        "type": "rule"
+      },
+      "match_kind": null,
+      "field_diffs": [],
+      "judge_result": null
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "rule",
+      "issue_type": "extra_candidate",
+      "expected_card_id": null,
+      "actual_candidate_id": "review_item_014",
+      "expected_card": null,
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "entity_group_id": "entity_group_016",
+        "evidence_excerpt": "附身小蛇四处寻宝虽然神奇，但每次附身后都会留下后遗症——第二天筋疲力尽，打不起精神，只想睡觉。",
+        "evidence_excerpts": [
+          "附身小蛇四处寻宝虽然神奇，但每次附身后都会留下后遗症——第二天筋疲力尽，打不起精神，只想睡觉。",
+          "换了衣衫，秦浩轩带着黄精走出家门，顶着两个黑眼圈的他一脸疲惫"
+        ],
+        "exceptions": null,
+        "lifecycle": "confirmed",
+        "name": "附身小蛇的后遗症",
+        "source_note": "来源章节：《第1章 大田金鳞元神出》。关键原文明确说明：“每次附身后都会留下后遗症——第二天筋疲力尽，打不起精神，只想睡觉。”后续状态描写“顶着两个黑眼圈的他一脸疲惫”进一步印证了这种后遗症。",
+        "source_origin": "agent_extract",
+        "summary": "秦浩轩每次附身小蛇后，第二天都会筋疲力尽、精神不振并只想睡觉，外在表现包括面容疲惫和出现黑眼圈。",
+        "type": "rule"
+      },
+      "match_kind": null,
+      "field_diffs": [],
+      "judge_result": null
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "rule",
+      "issue_type": "extra_candidate",
+      "expected_card_id": null,
+      "actual_candidate_id": "review_item_015",
+      "expected_card": null,
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "entity_group_id": "entity_group_017",
+        "evidence_excerpt": "在寻找回家的路时，秦浩轩还发现了蛇身的多种妙处，比如百毒不侵，比如对一些灵药异草格外敏感，一些豹子饿狼一看到小蛇吓得掉头就跑。",
+        "evidence_excerpts": [
+          "在寻找回家的路时，秦浩轩还发现了蛇身的多种妙处，比如百毒不侵，比如对一些灵药异草格外敏感，一些豹子饿狼一看到小蛇吓得掉头就跑。"
+        ],
+        "exceptions": null,
+        "lifecycle": "confirmed",
+        "name": "小蛇躯体的特殊性质",
+        "source_note": "来源章节：《第1章 大田金鳞元神出》。关键原文：“秦浩轩还发现了蛇身的多种妙处，比如百毒不侵，比如对一些灵药异草格外敏感，一些豹子饿狼一看到小蛇吓得掉头就跑。”该段明确列出蛇身的抗毒、感知灵药异草及震慑野兽三种性质。",
+        "source_origin": "agent_extract",
+        "summary": "小蛇的躯体具有多种特殊性质：百毒不侵，对部分灵药异草格外敏感，并能令豹子、饿狼等野兽见到后掉头逃跑。",
+        "type": "rule"
+      },
+      "match_kind": null,
+      "field_diffs": [],
+      "judge_result": null
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "event",
+      "issue_type": "missing_candidate",
+      "expected_card_id": "event_qin_gains_snake_soul_ability",
+      "actual_candidate_id": null,
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "description": "秦浩轩十二岁时被五彩小蛇咬伤，昏迷后灵魂进入蛇身，并最终确认可以在本体和蛇身间往返附身。",
+        "lifecycle": "confirmed",
+        "name": "秦浩轩被奇蛇咬后获得附身能力",
+        "source_note": "第1章 大田金鳞元神出：“一条五彩斑斓的小蛇从草丛里窜出来，一口咬在秦浩轩的右手虎口处”；第1章 大田金鳞元神出：“秦浩轩终于确定自己的灵魂能在小蛇的躯体和自己本体来回穿梭附体”",
+        "source_origin": "agent_extract",
+        "summary": "五彩小蛇咬伤秦浩轩，是能力事件的起因；秦浩轩通过多次尝试确认能力。",
+        "type": "event"
+      },
+      "actual_card": null,
+      "match_kind": null,
+      "field_diffs": [],
+      "judge_result": null
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "event",
+      "issue_type": "missing_candidate",
+      "expected_card_id": "event_qin_stops_zhang_kuang_bullying",
+      "actual_candidate_id": null,
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+        "description": "张狂和小弟殴打两名少年，秦浩轩出面威胁制止，张狂最终退让。",
+        "lifecycle": "confirmed",
+        "name": "秦浩轩喝止张狂欺凌少年",
+        "source_note": "第1章 大田金鳞元神出：“这就是不按时缴纳保险费的下场”；第1章 大田金鳞元神出：“逼得张狂硬生生收回要踢出去的脚”",
+        "source_origin": "agent_extract",
+        "summary": "张狂一方以未缴纳所谓保险费为由殴打两名少年；秦浩轩的制止产生实际结果。",
+        "type": "event"
+      },
+      "actual_card": null,
+      "match_kind": null,
+      "field_diffs": [],
+      "judge_result": null
+    },
+    {
+      "run_id": "extract_run_20260712_144842_8ef3cc",
+      "case_id": "chapter_001",
+      "task_title": "第1章 大田金鳞元神出",
+      "knowledge_type": "rule",
+      "issue_type": "missing_candidate",
+      "expected_card_id": "rule_qin_soul_swap_snake",
+      "actual_candidate_id": null,
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "exceptions": null,
+        "lifecycle": "confirmed",
+        "name": "秦浩轩的灵魂附身规则",
+        "source_note": "第1章 大田金鳞元神出：“灵魂能在小蛇的躯体和自己本体来回穿梭附体”；第1章 大田金鳞元神出：“每次附身后都会留下后遗症——第二天筋疲力尽，打不起精神，只想睡觉”",
+        "source_origin": "agent_extract",
+        "summary": "秦浩轩可在本体与五彩小蛇之间反复往返附身；附身能力具有明确的次日疲惫代价。",
+        "type": "rule"
+      },
+      "actual_card": null,
+      "match_kind": null,
+      "field_diffs": [],
+      "judge_result": null
+    }
+  ],
+  "warnings": []
+}

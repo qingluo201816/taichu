@@ -24,7 +24,12 @@ from taichu.application.services.ai_card_service import (
     AICardService,
 )
 from taichu.application.services.chapter_service import ChapterService
-from taichu.application.services.knowledge_service import KnowledgeService
+from taichu.application.services.retrieval_service import RetrievalService
+from taichu.application.retrieval.models import (
+    RetrievalConsumerContext,
+    RetrievalMode,
+    RetrievalRequest,
+)
 from taichu.application.workflows.summary import (
     SummaryWorkflowOutput,
     build_summary_prompt,
@@ -80,14 +85,14 @@ class ChapterSummaryService:
         *,
         storage: ProjectAssetStorageContract,
         chapter_service: ChapterService,
-        knowledge_service: KnowledgeService,
+        retrieval_service: RetrievalService,
         llm: object,
         ai_card_service: AICardService,
         default_model_id: str = "deepseek-v4-pro",
     ) -> None:
         self._storage = storage
         self._chapter_service = chapter_service
-        self._knowledge_service = knowledge_service
+        self._retrieval_service = retrieval_service
         self._llm = cast(LLMGatewayContract, llm)
         self._ai_card_service = ai_card_service
         self._default_model_id = default_model_id
@@ -110,7 +115,20 @@ class ChapterSummaryService:
                 summary=f"{chapter_content.chapter.title} 暂无可整理正文。",
             )
         else:
-            knowledge_cards = await self._knowledge_service.list_confirmed_cards()
+            retrieval = await self._retrieval_service.retrieve(
+                RetrievalRequest(
+                    mode=RetrievalMode.CATALOG,
+                    top_k=20,
+                    consumer=RetrievalConsumerContext(
+                        consumer_type="writing_task",
+                        run_id=chapter_id,
+                        stage="chapter_summary",
+                    ),
+                )
+            )
+            knowledge_cards = [
+                item.knowledge_card for item in retrieval.items
+            ]
             prompt = build_summary_prompt(
                 chapter_id=chapter_id,
                 chapter_title=chapter_content.chapter.title,

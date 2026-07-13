@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   canRetryEvaluation,
   evaluationErrorMessage,
+  evaluationFieldLabel,
+  evaluationMatchBasisLabel,
   evaluationModelLabel,
   evaluationProgressText,
   evaluationStatusLabels,
@@ -32,6 +34,26 @@ function test(name: string, run: () => void): void {
 test("内部评估状态映射为中文文案", () => {
   assert.equal(evaluationStatusLabels.completed_with_warnings, "已完成但有警告");
   assert.equal(qualityStateLabel("not_comparable"), "不可比较");
+});
+
+test("字段与匹配依据使用准确中文说明", () => {
+  assert.equal(evaluationFieldLabel(null, "aliases"), "别名");
+  assert.equal(
+    evaluationMatchBasisLabel("accepted_name"),
+    "评测集认可名称一致",
+  );
+  assert.equal(
+    evaluationMatchBasisLabel("evidence_anchor"),
+    "同章原文证据一致",
+  );
+  assert.equal(
+    evaluationMatchBasisLabel("event_semantic"),
+    "事件名称与内容语义一致",
+  );
+  assert.equal(
+    evaluationMatchBasisLabel("unexpected_internal_value"),
+    "匹配依据未知",
+  );
 });
 
 test("百分比分数保持零值并把空值显示为不适用", () => {
@@ -169,12 +191,14 @@ test("差异按问题类型稳定分组", () => {
     comparison("missing_candidate", "a"),
     comparison("field_difference", "b"),
     comparison("missing_candidate", "c"),
+    comparison("ambiguous_match", "d"),
   ]);
   assert.deepEqual(
     groups.missing_candidate?.map(item => item.comparison_id),
     ["a", "c"],
   );
   assert.equal(groups.field_difference?.length, 1);
+  assert.equal(groups.ambiguous_match?.length, 1);
 });
 
 for (const [name, runTest] of tests) {

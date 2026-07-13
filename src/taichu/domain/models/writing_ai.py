@@ -103,6 +103,10 @@ class WritingAIRetrievalContext(DomainModel):
     """Knowledge and evidence context injected into the prompt."""
 
     used: bool = True
+    retrieval_id: str | None = None
+    strategy: str = ""
+    candidate_count: int = 0
+    truncated: bool = False
     empty_reason: str | None = None
     items: list[WritingAIRetrievalEvidenceItem] = Field(default_factory=list)
     knowledge_context: str = ""

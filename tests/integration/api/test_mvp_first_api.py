@@ -245,6 +245,16 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
             },
         )
         pending_id = pending_response.json()["item"]["id"]
+        issue_response = await self.client.post(
+            "/api/inbox/issues",
+            json={
+                "data": {
+                    "title": "抽取输出截断",
+                    "content": "通用抽取输出达到上限后未覆盖全部类型。",
+                }
+            },
+        )
+        all_response = await self.client.get("/api/inbox?tab=all")
         confirm_response = await self.client.post(
             f"/api/inbox/pending-facts/{pending_id}/confirm",
             json={
@@ -260,6 +270,17 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(idea_response.status_code, 200)
         self.assertEqual(ideas_response.json()["items"][0]["content"], "这里可以埋一个山门伏笔。")
         self.assertEqual(pending_response.status_code, 200)
+        self.assertEqual(issue_response.status_code, 200)
+        self.assertEqual(all_response.status_code, 200)
+        self.assertEqual(all_response.json()["total"], 3)
+        self.assertCountEqual(
+            [item["id"] for item in all_response.json()["items"]],
+            [
+                idea_response.json()["item"]["id"],
+                pending_id,
+                issue_response.json()["item"]["id"],
+            ],
+        )
         self.assertEqual(confirm_response.status_code, 200)
         self.assertEqual(confirm_response.json()["pending_fact"]["status"], "processed")
         self.assertEqual(
@@ -327,6 +348,9 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         }
         self.assertIn("chapter", source_types)
         self.assertIn("knowledge", source_types)
+        self.assertTrue(run["retrieval_context"]["retrieval_id"].startswith("retrieval_"))
+        self.assertEqual(run["retrieval_context"]["strategy"], "mongo_lexical")
+        self.assertGreaterEqual(run["retrieval_context"]["candidate_count"], 1)
         self.assertIn("真实续写正文", run["raw_llm_output"])
         self.assertEqual(list_response.json()["runs"][0]["run_id"], run_id)
         self.assertEqual(read_response.json()["run_id"], run_id)

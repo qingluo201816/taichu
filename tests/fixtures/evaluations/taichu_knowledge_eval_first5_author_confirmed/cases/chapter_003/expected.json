@@ -1,0 +1,1167 @@
+[
+  {
+    "expected_card_id": "character_qin_haoxuan",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "秦浩轩",
+      "aliases": [],
+      "summary": "秦浩轩摸道骨勉强过关，资质一般；秦浩轩的仙种存活但严重干涸；秦浩轩最终被收入太初教。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“你虽然能算过关，但资质实在一般”；第3章 至上仙尊真乙太初教：“秦浩轩的仙种虽然没死，但干涸得相当严重了”；第3章 至上仙尊真乙太初教：“片刻后，赵嘉龙宣布秦浩轩也被收录”",
+      "role_type": "protagonist",
+      "identity": "大田镇少年；太初教新录弟子",
+      "relationship_summary": "与张狂、张扬同批入选；受到徐吞虎、赵嘉龙测试",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "秦浩轩"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_qin_haoxuan_01",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "秦浩轩尚未正式修炼；选苗测试显示道骨资质一般。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02",
+          "quote_character_qin_haoxuan_03"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦浩轩的仙种存活但严重干涸。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02",
+          "quote_character_qin_haoxuan_03"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "秦浩轩通过选苗并成为太初教新录弟子。",
+        "source_quote_ids": [
+          "quote_character_qin_haoxuan_01",
+          "quote_character_qin_haoxuan_02",
+          "quote_character_qin_haoxuan_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_qin_haoxuan_01",
+      "quote_character_qin_haoxuan_02",
+      "quote_character_qin_haoxuan_03"
+    ]
+  },
+  {
+    "expected_card_id": "character_zhang_kuang",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "张狂",
+      "aliases": [
+        "张老大"
+      ],
+      "summary": "张狂顺利通过摸道骨；张狂的仙种饱满且有活力。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“张狂顺利通过第一关摸道骨”；第3章 至上仙尊真乙太初教：“仙灵花以怒放的姿态，展示了张狂仙种的饱满和活力”",
+      "role_type": "antagonist",
+      "identity": "大田镇少年；太初教新录弟子",
+      "relationship_summary": "与秦浩轩长期敌对；张扬是其族弟兼小弟",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "张狂",
+      "张老大"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_zhang_kuang_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "张狂顺利通过摸道骨。",
+        "source_quote_ids": [
+          "quote_character_zhang_kuang_01",
+          "quote_character_zhang_kuang_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "张狂的仙种饱满且活力强。",
+        "source_quote_ids": [
+          "quote_character_zhang_kuang_01",
+          "quote_character_zhang_kuang_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_zhang_kuang_01",
+      "quote_character_zhang_kuang_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_xu_tunhu",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "徐吞虎",
+      "aliases": [],
+      "summary": "徐吞虎是太初教弟子，赵嘉龙是其师兄；徐吞虎与赵嘉龙御剑抵达坡子岭。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“本仙徐吞虎，这位乃我师兄赵嘉龙”；第3章 至上仙尊真乙太初教：“两道白光从东方天际破雾腾云，御剑而来”",
+      "role_type": "faction_representative",
+      "identity": "太初教弟子；负责摸道骨",
+      "relationship_summary": "赵嘉龙的师弟",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "徐吞虎"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_xu_tunhu_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "徐吞虎是太初教弟子，负责摸道骨。",
+        "source_quote_ids": [
+          "quote_character_xu_tunhu_01",
+          "quote_character_xu_tunhu_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xu_tunhu_02",
+        "field": "summary",
+        "importance": "normal",
+        "description": "徐吞虎与赵嘉龙能够御剑飞行。",
+        "source_quote_ids": [
+          "quote_character_xu_tunhu_01",
+          "quote_character_xu_tunhu_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_xu_tunhu_01",
+      "quote_character_xu_tunhu_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_zhao_jialong",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "赵嘉龙",
+      "aliases": [],
+      "summary": "赵嘉龙是太初教弟子，是徐吞虎的师兄；赵嘉龙最终决定并宣布收录秦浩轩。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“本仙徐吞虎，这位乃我师兄赵嘉龙”；第3章 至上仙尊真乙太初教：“片刻后，赵嘉龙宣布秦浩轩也被收录”",
+      "role_type": "faction_representative",
+      "identity": "太初教弟子；负责测仙种",
+      "relationship_summary": "徐吞虎的师兄",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "赵嘉龙"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_zhao_jialong_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "赵嘉龙是太初教弟子，负责测仙种。",
+        "source_quote_ids": [
+          "quote_character_zhao_jialong_01",
+          "quote_character_zhao_jialong_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhao_jialong_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "赵嘉龙宣布秦浩轩通过选苗并被收录。",
+        "source_quote_ids": [
+          "quote_character_zhao_jialong_01",
+          "quote_character_zhao_jialong_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_zhao_jialong_01",
+      "quote_character_zhao_jialong_02"
+    ]
+  },
+  {
+    "expected_card_id": "character_zhang_yang",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "张扬",
+      "aliases": [],
+      "summary": "张扬是张狂的族弟兼小弟，并通过大田镇选苗；张扬在初选中的仙种活力高于秦浩轩。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“张狂的族弟兼小弟张扬，竟然也通过考核”；第3章 至上仙尊真乙太初教：“证明张扬的仙种比秦浩轩更有活力”",
+      "role_type": "supporting",
+      "identity": "张狂的族弟兼小弟；太初教新录弟子",
+      "relationship_summary": "张狂的族弟兼小弟",
+      "death_chapter_id": null,
+      "current_realm_text": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "张扬"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_zhang_yang_01",
+        "field": "identity",
+        "importance": "critical",
+        "description": "张扬是张狂的族弟兼小弟，也是太初教新录弟子。",
+        "source_quote_ids": [
+          "quote_character_zhang_yang_01",
+          "quote_character_zhang_yang_02"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_yang_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "张扬的仙种活力高于秦浩轩。",
+        "source_quote_ids": [
+          "quote_character_zhang_yang_01",
+          "quote_character_zhang_yang_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_character_zhang_yang_01",
+      "quote_character_zhang_yang_02"
+    ]
+  },
+  {
+    "expected_card_id": "location_da_tian_zhen",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "大田镇",
+      "aliases": [],
+      "summary": "大田镇有四十一名适龄少年参加本次选苗。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“大田镇今年有四十一名适龄少年”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "大田镇"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_da_tian_zhen_01",
+        "field": "summary",
+        "importance": "normal",
+        "description": "本次大田镇有四十一名少年参加选苗。",
+        "source_quote_ids": [
+          "quote_location_da_tian_zhen_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_da_tian_zhen_01"
+    ]
+  },
+  {
+    "expected_card_id": "location_chenjia_yaopu",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "陈家药铺",
+      "aliases": [],
+      "summary": "徐吞虎、赵嘉龙记得秦浩轩前一日在陈家药铺出售黄精。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“这不是昨天在陈家药铺卖黄精的那少年么？”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "陈家药铺"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_chenjia_yaopu_01",
+        "field": "summary",
+        "importance": "normal",
+        "description": "陈家药铺是秦浩轩与徐吞虎、赵嘉龙首次发生黄精交易接触的场所。",
+        "source_quote_ids": [
+          "quote_location_chenjia_yaopu_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_chenjia_yaopu_01"
+    ]
+  },
+  {
+    "expected_card_id": "location_pozi_ling",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "坡子岭",
+      "aliases": [],
+      "summary": "坡子岭是小屿山内外分界的一块平坦草地。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“坡子岭是小屿山内山与外围的分界点，是一块平坦的草地”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "坡子岭"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_pozi_ling_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "坡子岭是小屿山内山与外围分界的一块平坦草地。",
+        "source_quote_ids": [
+          "quote_location_pozi_ling_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_pozi_ling_01"
+    ]
+  },
+  {
+    "expected_card_id": "location_da_yu_shan",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "大屿山",
+      "aliases": [],
+      "summary": "太初教宗门位于大屿山黄帝峰。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“宗门位于大屿山黄帝峰”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "大屿山"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_da_yu_shan_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "大屿山是太初教宗门所在山脉。",
+        "source_quote_ids": [
+          "quote_location_da_yu_shan_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_da_yu_shan_01"
+    ]
+  },
+  {
+    "expected_card_id": "location_huangdi_feng",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "黄帝峰",
+      "aliases": [],
+      "summary": "太初教宗门位于黄帝峰。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“宗门位于大屿山黄帝峰”",
+      "controlling_faction_id": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "黄帝峰"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_huangdi_feng_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "黄帝峰是太初教宗门所在地。",
+        "source_quote_ids": [
+          "quote_location_huangdi_feng_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_location_huangdi_feng_01"
+    ]
+  },
+  {
+    "expected_card_id": "faction_taichu_jiao",
+    "knowledge_type": "faction",
+    "card": {
+      "type": "faction",
+      "name": "太初教",
+      "aliases": [
+        "至上仙尊真乙太初教"
+      ],
+      "summary": "太初教正式全称为至上仙尊真乙太初教；太初教门人上万，是翔龙国唯一仙门。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“上天曾降下仙班仙谱，赐名‘至上仙尊真乙太初教’，一般称为太初教”；第3章 至上仙尊真乙太初教：“弟子门人上万，乃是翔龙国唯一仙门”",
+      "faction_type": "sect",
+      "leader_id": null
+    },
+    "accepted_names": [
+      "太初教",
+      "至上仙尊真乙太初教"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "faction_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_taichu_jiao_01",
+        "field": "aliases",
+        "importance": "critical",
+        "description": "太初教的正式全称是“至上仙尊真乙太初教”。",
+        "source_quote_ids": [
+          "quote_faction_taichu_jiao_01",
+          "quote_faction_taichu_jiao_02"
+        ]
+      },
+      {
+        "claim_id": "claim_faction_taichu_jiao_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初教传承数千年、门人上万，是翔龙国唯一仙门。",
+        "source_quote_ids": [
+          "quote_faction_taichu_jiao_01",
+          "quote_faction_taichu_jiao_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_faction_taichu_jiao_01",
+      "quote_faction_taichu_jiao_02"
+    ]
+  },
+  {
+    "expected_card_id": "faction_xianglong_guo",
+    "knowledge_type": "faction",
+    "card": {
+      "type": "faction",
+      "name": "翔龙国",
+      "aliases": [],
+      "summary": "太初教是翔龙国唯一仙门；翔龙国皇帝登基需报备太初教掌教批准。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“乃是翔龙国唯一仙门”；第3章 至上仙尊真乙太初教：“历代皇帝登基，都必须报备掌教批准同意”",
+      "faction_type": "dynasty",
+      "leader_id": null
+    },
+    "accepted_names": [
+      "翔龙国"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "faction_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_xianglong_guo_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "翔龙国境内唯一仙门是太初教。",
+        "source_quote_ids": [
+          "quote_faction_xianglong_guo_01",
+          "quote_faction_xianglong_guo_02"
+        ]
+      },
+      {
+        "claim_id": "claim_faction_xianglong_guo_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "翔龙国皇帝登基须报备太初教掌教批准。",
+        "source_quote_ids": [
+          "quote_faction_xianglong_guo_01",
+          "quote_faction_xianglong_guo_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_faction_xianglong_guo_01",
+      "quote_faction_xianglong_guo_02"
+    ]
+  },
+  {
+    "expected_card_id": "item_huangjing",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "黄精",
+      "aliases": [],
+      "summary": "徐吞虎、赵嘉龙后来以五百两从陈老头手中购得黄精。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“后来在陈老头手上以五百两天价买下那枚黄精”",
+      "item_type": "material",
+      "grade": null,
+      "current_holder_id": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "黄精"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "item_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_huangjing_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "黄精后来以五百两转卖给徐吞虎和赵嘉龙。",
+        "source_quote_ids": [
+          "quote_item_huangjing_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_item_huangjing_01"
+    ]
+  },
+  {
+    "expected_card_id": "item_xianling_hua",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "仙灵花",
+      "aliases": [],
+      "summary": "仙灵花用于判断仙种存活和饱满程度；张狂测试时仙灵花怒放。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“如果仙灵花毫无动静则说明仙种已死，仙灵花开得越茂密则证明仙种越饱满”；第3章 至上仙尊真乙太初教：“仙灵花以怒放的姿态，展示了张狂仙种的饱满和活力”",
+      "item_type": "other",
+      "grade": null,
+      "current_holder_id": null,
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0"
+    },
+    "accepted_names": [
+      "仙灵花"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "item_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_xianling_hua_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "仙灵花是测仙种的工具，花朵反应表示仙种存活和饱满程度。",
+        "source_quote_ids": [
+          "quote_item_xianling_hua_01",
+          "quote_item_xianling_hua_02"
+        ]
+      },
+      {
+        "claim_id": "claim_item_xianling_hua_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "张狂的鲜血使仙灵花怒放，显示其仙种饱满。",
+        "source_quote_ids": [
+          "quote_item_xianling_hua_01",
+          "quote_item_xianling_hua_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_item_xianling_hua_01",
+      "quote_item_xianling_hua_02"
+    ]
+  },
+  {
+    "expected_card_id": "rule_taichu_selection_two_tests",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "太初教选苗两阶段规则",
+      "aliases": [],
+      "summary": "太初教初选由摸道骨、测仙种两项构成，均通过才入选；摸道骨用于初步试探骨骼经脉。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“选苗分根骨两项！第一项摸道骨，第二项测仙种，两项都过关则入选”；第3章 至上仙尊真乙太初教：“所谓摸道骨就是对骨骼经脉进行初步的试探”",
+      "exceptions": null
+    },
+    "accepted_names": [
+      "太初教选苗两阶段规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_taichu_selection_two_tests_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初教选苗先摸道骨，再测仙种，两项均通过方可入选。",
+        "source_quote_ids": [
+          "quote_rule_taichu_selection_two_tests_01",
+          "quote_rule_taichu_selection_two_tests_02"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_taichu_selection_two_tests_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "摸道骨用于初步检查骨骼经脉，未过者无需测仙种。",
+        "source_quote_ids": [
+          "quote_rule_taichu_selection_two_tests_01",
+          "quote_rule_taichu_selection_two_tests_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_taichu_selection_two_tests_01",
+      "quote_rule_taichu_selection_two_tests_02"
+    ]
+  },
+  {
+    "expected_card_id": "rule_xianzhong_age_life_check",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "仙种存活与十六岁修仙规则",
+      "aliases": [],
+      "summary": "仙种普遍存在，但可能在成长过程中死亡；必须满十六岁才能吸收天地灵气并开始修仙。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“几乎每个人都有仙种，但很多人的仙种在他出生后就死了”；第3章 至上仙尊真乙太初教：“因为要满十六岁才能灌输吸收天地灵气，所以必须满十六岁才能修仙”",
+      "exceptions": null
+    },
+    "accepted_names": [
+      "仙种存活与十六岁修仙规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_xianzhong_age_life_check_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "几乎人人有仙种，但仙种可能干涸死亡。",
+        "source_quote_ids": [
+          "quote_rule_xianzhong_age_life_check_01",
+          "quote_rule_xianzhong_age_life_check_02"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_xianzhong_age_life_check_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "修炼者必须满十六岁才能吸收天地灵气并开始修仙。",
+        "source_quote_ids": [
+          "quote_rule_xianzhong_age_life_check_01",
+          "quote_rule_xianzhong_age_life_check_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_rule_xianzhong_age_life_check_01",
+      "quote_rule_xianzhong_age_life_check_02"
+    ]
+  },
+  {
+    "expected_card_id": "event_huangjing_trade_chain",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "黄精交易链",
+      "aliases": [],
+      "summary": "徐吞虎、赵嘉龙后来从陈老头手中买走黄精。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“后来在陈老头手上以五百两天价买下那枚黄精”",
+      "chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "description": "第3章确认徐吞虎、赵嘉龙以五百两从陈老头手中购得黄精。"
+    },
+    "accepted_names": [
+      "黄精交易链"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_huangjing_trade_chain_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "徐吞虎、赵嘉龙以五百两从陈老头手中购得同一枚黄精。",
+        "source_quote_ids": [
+          "quote_event_huangjing_trade_chain_01"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_huangjing_trade_chain_01"
+    ]
+  },
+  {
+    "expected_card_id": "event_pozi_selection",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "坡子岭选苗考核",
+      "aliases": [],
+      "summary": "四十一名大田镇少年参加坡子岭选苗；本次选苗最终有三人入选。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“大田镇今年有四十一名适龄少年，请两位仙长挑选”；第3章 至上仙尊真乙太初教：“今年的大田镇一举出了三名仙人弟子”",
+      "chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "description": "徐吞虎、赵嘉龙在坡子岭测试四十一名大田镇少年，最终张狂、秦浩轩、张扬入选。"
+    },
+    "accepted_names": [
+      "坡子岭选苗考核"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_pozi_selection_01",
+        "field": "description",
+        "importance": "major",
+        "description": "大田镇四十一名少年参加本次坡子岭选苗。",
+        "source_quote_ids": [
+          "quote_event_pozi_selection_01",
+          "quote_event_pozi_selection_02"
+        ]
+      },
+      {
+        "claim_id": "claim_event_pozi_selection_02",
+        "field": "description",
+        "importance": "critical",
+        "description": "张狂、秦浩轩、张扬成为本次大田镇三名入选弟子。",
+        "source_quote_ids": [
+          "quote_event_pozi_selection_01",
+          "quote_event_pozi_selection_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_pozi_selection_01",
+      "quote_event_pozi_selection_02"
+    ]
+  },
+  {
+    "expected_card_id": "event_da_tian_three_selected_leave",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "秦浩轩、张狂、张扬被收入太初教并离开大田镇",
+      "aliases": [],
+      "summary": "三名入选者领取安家费并准备离镇；三名少年告别乡亲并从镇口启程。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“这是你们的安家费，妥善安置后，明天清晨镇口见”；第3章 至上仙尊真乙太初教：“三名少年在无数家乡父老的簇拥下来到镇口”",
+      "chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "description": "秦浩轩、张狂、张扬入选太初教，领取安家费后告别家乡，随徐吞虎、赵嘉龙前往宗门。"
+    },
+    "accepted_names": [
+      "秦浩轩、张狂、张扬被收入太初教并离开大田镇"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_da_tian_three_selected_leave_01",
+        "field": "description",
+        "importance": "major",
+        "description": "秦浩轩、张狂、张扬领取安家费并准备次日离镇。",
+        "source_quote_ids": [
+          "quote_event_da_tian_three_selected_leave_01",
+          "quote_event_da_tian_three_selected_leave_02"
+        ]
+      },
+      {
+        "claim_id": "claim_event_da_tian_three_selected_leave_02",
+        "field": "description",
+        "importance": "critical",
+        "description": "三名新弟子在乡亲送别下离开大田镇。",
+        "source_quote_ids": [
+          "quote_event_da_tian_three_selected_leave_01",
+          "quote_event_da_tian_three_selected_leave_02"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_da_tian_three_selected_leave_01",
+      "quote_event_da_tian_three_selected_leave_02"
+    ]
+  },
+  {
+    "expected_card_id": "event_xu_zhao_sword_arrival",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "徐吞虎、赵嘉龙御剑抵达坡子岭并驱雾",
+      "aliases": [],
+      "summary": "徐吞虎、赵嘉龙御剑抵达坡子岭；飞剑能够绕场驱散雾气；驱雾后飞剑自动归鞘。",
+      "appearance_chapter_count": 1,
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第3章 至上仙尊真乙太初教：“两道白光从东方天际破雾腾云，御剑而来”；第3章 至上仙尊真乙太初教：“他们脚下的飞剑绕场一周，驱散四周雾气，形成一小块真空界”；第3章 至上仙尊真乙太初教：“飞剑随后自动飞回他们背后剑鞘”",
+      "chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "description": "徐吞虎、赵嘉龙御剑抵达坡子岭，飞剑绕场驱雾后自动归鞘。"
+    },
+    "accepted_names": [
+      "徐吞虎、赵嘉龙御剑抵达坡子岭并驱雾"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_xu_zhao_sword_arrival_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "徐吞虎、赵嘉龙能够御剑飞行，并御剑抵达坡子岭。",
+        "source_quote_ids": [
+          "quote_event_xu_zhao_sword_arrival_01",
+          "quote_event_xu_zhao_sword_arrival_02",
+          "quote_event_xu_zhao_sword_arrival_03"
+        ]
+      },
+      {
+        "claim_id": "claim_event_xu_zhao_sword_arrival_02",
+        "field": "description",
+        "importance": "major",
+        "description": "二人的飞剑绕场驱雾并形成真空区域。",
+        "source_quote_ids": [
+          "quote_event_xu_zhao_sword_arrival_01",
+          "quote_event_xu_zhao_sword_arrival_02",
+          "quote_event_xu_zhao_sword_arrival_03"
+        ]
+      },
+      {
+        "claim_id": "claim_event_xu_zhao_sword_arrival_03",
+        "field": "description",
+        "importance": "normal",
+        "description": "飞剑完成驱雾后自动返回剑鞘。",
+        "source_quote_ids": [
+          "quote_event_xu_zhao_sword_arrival_01",
+          "quote_event_xu_zhao_sword_arrival_02",
+          "quote_event_xu_zhao_sword_arrival_03"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_event_xu_zhao_sword_arrival_01",
+      "quote_event_xu_zhao_sword_arrival_02",
+      "quote_event_xu_zhao_sword_arrival_03"
+    ]
+  }
+]

@@ -18,21 +18,21 @@ from taichu.infrastructure.evaluations.json_dataset_repository import (
 class JsonEvaluationDatasetRepositoryTest(unittest.IsolatedAsyncioTestCase):
     """Validate discovery, checksums, source evidence, and path safety."""
 
-    async def test_loads_curated_first_five_chapter_dataset(self) -> None:
+    async def test_loads_author_confirmed_first_five_chapter_dataset(self) -> None:
         repository = JsonEvaluationDatasetRepository(
             Path("tests/fixtures/evaluations"),
             Path("project_assets/source"),
         )
 
         dataset = await repository.get_dataset(
-            "taichu_knowledge_eval_first5_three_experts"
+            "taichu_knowledge_eval_first5_author_confirmed"
         )
         counts = [
             len(dataset.cases[case.case_id].expected_cards)
             for case in dataset.manifest.cases
         ]
 
-        self.assertEqual(counts, [13, 11, 18, 27, 25, 67])
+        self.assertEqual(counts, [12, 10, 20, 30, 26, 67])
         self.assertEqual(dataset.manifest.lifecycle.value, "confirmed")
         self.assertTrue(dataset.checksum)
 
@@ -45,7 +45,7 @@ class JsonEvaluationDatasetRepositoryTest(unittest.IsolatedAsyncioTestCase):
         datasets = await repository.list_datasets()
 
         self.assertIn(
-            "taichu_knowledge_eval_first5_three_experts",
+            "taichu_knowledge_eval_first5_author_confirmed",
             [dataset.dataset_id for dataset in datasets],
         )
 
@@ -133,12 +133,12 @@ def _write_minimal_dataset(root: Path) -> tuple[Path, Path]:
                     "name": "秦阳",
                     "aliases": [],
                     "summary": "秦阳走入山门。",
-                    "status": "active",
-                    "importance": "normal",
+                    "lifecycle": "confirmed",
+                    "appearance_chapter_count": 1,
                     "source_origin": "agent_extract",
                 },
                 "accepted_names": ["秦阳"],
-                "exact_fields": ["type", "status"],
+                "exact_fields": ["type", "lifecycle"],
                 "set_fields": ["aliases"],
                 "semantic_fields": ["summary"],
                 "expected_claims": [

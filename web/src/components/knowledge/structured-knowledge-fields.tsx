@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 
 import {
+  appearanceImportanceLabel,
   displayKnowledgeFieldValue,
   groupKnowledgeFields,
   splitKnowledgeList,
@@ -43,7 +44,11 @@ export function StructuredKnowledgeView({
       {groups.map(group => {
         const visibleFields = group.fields.filter(field => {
           const value = values[field.field_key];
-          return field.required_when_confirmed || !isEmptyKnowledgeValue(value);
+          return (
+            field.required_when_confirmed ||
+            field.field_key === "appearance_chapter_count" ||
+            !isEmptyKnowledgeValue(value)
+          );
         });
         if (!visibleFields.length) {
           return null;
@@ -100,16 +105,6 @@ export function StructuredKnowledgeView({
       </div>
     </div>
   );
-}
-
-function appearanceImportanceLabel(value: unknown, chapterCount: number): string {
-  const count = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(count) || count < 0) return "暂未统计";
-  if (chapterCount <= 0) return `已出现 ${count} 章`;
-  const ratio = count / chapterCount;
-  const label =
-    ratio >= 0.5 ? "核心" : ratio >= 0.2 ? "重要" : ratio >= 0.05 ? "普通" : "次要";
-  return `${label}（已出现 ${count}/${chapterCount} 章）`;
 }
 
 export function StructuredKnowledgeForm({

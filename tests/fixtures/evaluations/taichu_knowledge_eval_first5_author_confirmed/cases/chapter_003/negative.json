@@ -1,0 +1,101 @@
+[
+  {
+    "negative_case_id": "negative_chapter_003_001",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "第一个少年"
+    ],
+    "reason": "顺序性临时称呼，无姓名和持续身份。",
+    "source_quote_ids": [
+      "quote_negative_chapter_003_001"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_003_002",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "通过摸骨测试的少年"
+    ],
+    "reason": "功能性临时称呼，没有稳定身份。",
+    "source_quote_ids": [
+      "quote_negative_chapter_003_002"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_003_003",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "四十一名少年"
+    ],
+    "reason": "参选者群体，不是单一角色。",
+    "source_quote_ids": [
+      "quote_negative_chapter_003_003"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_003_004",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "二十个猎户"
+    ],
+    "reason": "护送者群体泛称，没有独立身份。",
+    "source_quote_ids": [
+      "quote_negative_chapter_003_004"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_003_005",
+    "knowledge_type": "realm",
+    "accepted_names": [
+      "凡骨"
+    ],
+    "reason": "这是摸道骨测试结果标签，不是正文明确的修炼境界。",
+    "source_quote_ids": [
+      "quote_negative_chapter_003_005"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_003_006",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "仙灵之气"
+    ],
+    "reason": "属于修仙能量表达，不是具体物品或可学习功法；当前 Schema 没有能量类型。",
+    "source_quote_ids": [
+      "quote_negative_chapter_003_006"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_003_007",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "黄色符纸"
+    ],
+    "reason": "未给正式名称，只在催马时一次性使用，信息不足。",
+    "source_quote_ids": [
+      "quote_negative_chapter_003_007"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_003_008",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "五匹好马"
+    ],
+    "reason": "普通坐骑群体，没有专名和超凡身份。",
+    "source_quote_ids": [
+      "quote_negative_chapter_003_008"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_003_009",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "仙剑、飞剑"
+    ],
+    "reason": "本章主要用于徐吞虎、赵嘉龙的登场和能力展示；作者确认不将玄幻开头的通用飞剑介绍建为物品卡。",
+    "source_quote_ids": [
+      "quote_negative_chapter_003_009"
+    ]
+  }
+]

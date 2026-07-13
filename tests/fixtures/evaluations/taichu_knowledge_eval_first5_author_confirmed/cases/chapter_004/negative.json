@@ -1,0 +1,112 @@
+[
+  {
+    "negative_case_id": "negative_chapter_004_001",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "黄长老"
+    ],
+    "reason": "只有姓氏和职务称呼，未直接出场，信息不足以形成稳定角色卡。",
+    "source_quote_ids": [
+      "quote_negative_chapter_004_001"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_004_002",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "黄长老的儿子"
+    ],
+    "reason": "没有姓名，且“废柴”是徐吞虎评价，不能据此建立确定角色摘要。",
+    "source_quote_ids": [
+      "quote_negative_chapter_004_002"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_004_003",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "寿元将尽的老祖宗"
+    ],
+    "reason": "宗门群体或不明确个体的泛称，没有姓名和可核验身份。",
+    "source_quote_ids": [
+      "quote_negative_chapter_004_003"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_004_004",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "引路师兄、引路道人"
+    ],
+    "reason": "只有职务式临时称呼，未给姓名，主要承担引路功能。",
+    "source_quote_ids": [
+      "quote_negative_chapter_004_004"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_004_005",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "权贵子弟"
+    ],
+    "reason": "群体泛称，既不是单一角色，也没有正式组织名。",
+    "source_quote_ids": [
+      "quote_negative_chapter_004_005"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_004_006",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "新弟子平房"
+    ],
+    "reason": "普通临时住宿空间，无正式名称；其处境和功能已进入事件卡。",
+    "source_quote_ids": [
+      "quote_negative_chapter_004_006"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_004_007",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "食堂"
+    ],
+    "reason": "普通功能空间，只是一笔带过的用膳地点。",
+    "source_quote_ids": [
+      "quote_negative_chapter_004_007"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_004_008",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "山门下登记处"
+    ],
+    "reason": "普通登记节点，无专名；应并入抵达太初教事件。",
+    "source_quote_ids": [
+      "quote_negative_chapter_004_008"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_004_009",
+    "knowledge_type": "technique",
+    "accepted_names": [
+      "上古灵法、魔术、法宝"
+    ],
+    "reason": "宝物与传承类别泛称，没有具体名称、功能或唯一对象。",
+    "source_quote_ids": [
+      "quote_negative_chapter_004_009"
+    ]
+  },
+  {
+    "negative_case_id": "negative_chapter_004_010",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "变异灵药"
+    ],
+    "reason": "类别泛称，目前只推断绝仙毒谷可能孕育，未给具体种类。",
+    "source_quote_ids": [
+      "quote_negative_chapter_004_010"
+    ]
+  }
+]

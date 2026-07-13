@@ -1,0 +1,1354 @@
+{
+  "source": "src/taichu/domain/models/structured_knowledge.py",
+  "knowledge_types": [
+    {
+      "type": "character",
+      "label": "角色",
+      "fields": [
+        {
+          "field_key": "name",
+          "label": "名称",
+          "field_type": "short_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "输入知识卡名称",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "知识卡主名称，用于检索和引用。"
+        },
+        {
+          "field_key": "aliases",
+          "label": "别名",
+          "field_type": "string_array",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "多个别名用换行或逗号分隔",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "名称、称号、旧名和简称。"
+        },
+        {
+          "field_key": "summary",
+          "label": "摘要",
+          "field_type": "long_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "一句话或一段摘要",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "面向写作和 AI 引用的核心事实摘要。"
+        },
+        {
+          "field_key": "appearance_chapter_count",
+          "label": "重要程度",
+          "field_type": "number",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": false,
+          "ai_usage": "由正文知识沉淀按实际出现章节累计，前端按全书章节占比显示重要程度。"
+        },
+        {
+          "field_key": "lifecycle",
+          "label": "生命周期",
+          "field_type": "enum",
+          "required_when_confirmed": false,
+          "options": [
+            {
+              "value": "draft",
+              "label": "草稿"
+            },
+            {
+              "value": "confirmed",
+              "label": "已确认"
+            },
+            {
+              "value": "rejected",
+              "label": "已拒绝"
+            }
+          ],
+          "placeholder": "",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "草稿不参与 AI 检索，已确认卡可用于后续引用。"
+        },
+        {
+          "field_key": "source_origin",
+          "label": "来源方式",
+          "field_type": "enum",
+          "required_when_confirmed": true,
+          "options": [
+            {
+              "value": "inbox_fact",
+              "label": "收件箱事实转化"
+            },
+            {
+              "value": "agent_extract",
+              "label": "正文自动提取"
+            },
+            {
+              "value": "manual",
+              "label": "人工添加"
+            }
+          ],
+          "placeholder": "选择来源方式",
+          "display_group": "来源",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "说明知识卡来源类型。"
+        },
+        {
+          "field_key": "source_note",
+          "label": "来源说明",
+          "field_type": "long_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "作者手动添加。可写章节、原文摘录、人工说明。",
+          "display_group": "来源",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "知识卡可被信任和追溯的自由文本来源说明。"
+        },
+        {
+          "field_key": "role_type",
+          "label": "角色定位",
+          "field_type": "enum",
+          "required_when_confirmed": false,
+          "options": [
+            {
+              "value": "protagonist",
+              "label": "主角"
+            },
+            {
+              "value": "supporting",
+              "label": "配角"
+            },
+            {
+              "value": "antagonist",
+              "label": "反派"
+            },
+            {
+              "value": "passerby",
+              "label": "路人"
+            },
+            {
+              "value": "faction_representative",
+              "label": "势力代表"
+            }
+          ],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "角色在故事中的基础定位。"
+        },
+        {
+          "field_key": "identity",
+          "label": "身份",
+          "field_type": "short_text",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "角色出身、身份或公开身份。"
+        },
+        {
+          "field_key": "relationship_summary",
+          "label": "关系摘要",
+          "field_type": "long_text",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": false,
+          "author_editable": true,
+          "ai_usage": "人物关系的文字概述。"
+        },
+        {
+          "field_key": "death_chapter_id",
+          "label": "死亡章节",
+          "field_type": "chapter_ref",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": false,
+          "author_editable": true,
+          "ai_usage": "角色死亡确认章节的稳定 chapter_id。"
+        },
+        {
+          "field_key": "current_realm_text",
+          "label": "当前境界",
+          "field_type": "short_text",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "角色当前境界文本。"
+        },
+        {
+          "field_key": "first_seen_chapter_id",
+          "label": "首次登场章节",
+          "field_type": "chapter_ref",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": false,
+          "author_editable": true,
+          "ai_usage": "角色首次登场章节的稳定 chapter_id。"
+        },
+        {
+          "field_key": "last_seen_chapter_id",
+          "label": "最近出现章节",
+          "field_type": "chapter_ref",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": false,
+          "author_editable": true,
+          "ai_usage": "角色最近出现章节的稳定 chapter_id。"
+        }
+      ]
+    },
+    {
+      "type": "realm",
+      "label": "境界",
+      "fields": [
+        {
+          "field_key": "name",
+          "label": "名称",
+          "field_type": "short_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "输入知识卡名称",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "知识卡主名称，用于检索和引用。"
+        },
+        {
+          "field_key": "aliases",
+          "label": "别名",
+          "field_type": "string_array",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "多个别名用换行或逗号分隔",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "名称、称号、旧名和简称。"
+        },
+        {
+          "field_key": "summary",
+          "label": "摘要",
+          "field_type": "long_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "一句话或一段摘要",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "面向写作和 AI 引用的核心事实摘要。"
+        },
+        {
+          "field_key": "appearance_chapter_count",
+          "label": "重要程度",
+          "field_type": "number",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": false,
+          "ai_usage": "由正文知识沉淀按实际出现章节累计，前端按全书章节占比显示重要程度。"
+        },
+        {
+          "field_key": "lifecycle",
+          "label": "生命周期",
+          "field_type": "enum",
+          "required_when_confirmed": false,
+          "options": [
+            {
+              "value": "draft",
+              "label": "草稿"
+            },
+            {
+              "value": "confirmed",
+              "label": "已确认"
+            },
+            {
+              "value": "rejected",
+              "label": "已拒绝"
+            }
+          ],
+          "placeholder": "",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "草稿不参与 AI 检索，已确认卡可用于后续引用。"
+        },
+        {
+          "field_key": "source_origin",
+          "label": "来源方式",
+          "field_type": "enum",
+          "required_when_confirmed": true,
+          "options": [
+            {
+              "value": "inbox_fact",
+              "label": "收件箱事实转化"
+            },
+            {
+              "value": "agent_extract",
+              "label": "正文自动提取"
+            },
+            {
+              "value": "manual",
+              "label": "人工添加"
+            }
+          ],
+          "placeholder": "选择来源方式",
+          "display_group": "来源",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "说明知识卡来源类型。"
+        },
+        {
+          "field_key": "source_note",
+          "label": "来源说明",
+          "field_type": "long_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "作者手动添加。可写章节、原文摘录、人工说明。",
+          "display_group": "来源",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "知识卡可被信任和追溯的自由文本来源说明。"
+        },
+        {
+          "field_key": "system",
+          "label": "修炼体系",
+          "field_type": "short_text",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "境界所属修炼体系。"
+        },
+        {
+          "field_key": "level_order",
+          "label": "境界排序值",
+          "field_type": "number",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "用于比较境界高低的数字。"
+        }
+      ]
+    },
+    {
+      "type": "technique",
+      "label": "功法",
+      "fields": [
+        {
+          "field_key": "name",
+          "label": "名称",
+          "field_type": "short_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "输入知识卡名称",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "知识卡主名称，用于检索和引用。"
+        },
+        {
+          "field_key": "aliases",
+          "label": "别名",
+          "field_type": "string_array",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "多个别名用换行或逗号分隔",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "名称、称号、旧名和简称。"
+        },
+        {
+          "field_key": "summary",
+          "label": "摘要",
+          "field_type": "long_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "一句话或一段摘要",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "面向写作和 AI 引用的核心事实摘要。"
+        },
+        {
+          "field_key": "appearance_chapter_count",
+          "label": "重要程度",
+          "field_type": "number",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": false,
+          "ai_usage": "由正文知识沉淀按实际出现章节累计，前端按全书章节占比显示重要程度。"
+        },
+        {
+          "field_key": "lifecycle",
+          "label": "生命周期",
+          "field_type": "enum",
+          "required_when_confirmed": false,
+          "options": [
+            {
+              "value": "draft",
+              "label": "草稿"
+            },
+            {
+              "value": "confirmed",
+              "label": "已确认"
+            },
+            {
+              "value": "rejected",
+              "label": "已拒绝"
+            }
+          ],
+          "placeholder": "",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "草稿不参与 AI 检索，已确认卡可用于后续引用。"
+        },
+        {
+          "field_key": "source_origin",
+          "label": "来源方式",
+          "field_type": "enum",
+          "required_when_confirmed": true,
+          "options": [
+            {
+              "value": "inbox_fact",
+              "label": "收件箱事实转化"
+            },
+            {
+              "value": "agent_extract",
+              "label": "正文自动提取"
+            },
+            {
+              "value": "manual",
+              "label": "人工添加"
+            }
+          ],
+          "placeholder": "选择来源方式",
+          "display_group": "来源",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "说明知识卡来源类型。"
+        },
+        {
+          "field_key": "source_note",
+          "label": "来源说明",
+          "field_type": "long_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "作者手动添加。可写章节、原文摘录、人工说明。",
+          "display_group": "来源",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "知识卡可被信任和追溯的自由文本来源说明。"
+        },
+        {
+          "field_key": "technique_type",
+          "label": "功法类型",
+          "field_type": "enum",
+          "required_when_confirmed": false,
+          "options": [
+            {
+              "value": "cultivation_method",
+              "label": "功法"
+            },
+            {
+              "value": "spell",
+              "label": "术法"
+            },
+            {
+              "value": "divine_ability",
+              "label": "神通"
+            },
+            {
+              "value": "sword_art",
+              "label": "剑诀"
+            },
+            {
+              "value": "forbidden_art",
+              "label": "禁术"
+            },
+            {
+              "value": "alchemy",
+              "label": "炼丹"
+            },
+            {
+              "value": "formation",
+              "label": "阵法"
+            },
+            {
+              "value": "other",
+              "label": "其他"
+            }
+          ],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "功法、术法、神通等类型。"
+        },
+        {
+          "field_key": "grade",
+          "label": "品阶",
+          "field_type": "short_text",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "功法品阶或等级。"
+        },
+        {
+          "field_key": "practice_condition",
+          "label": "修炼条件",
+          "field_type": "long_text",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": false,
+          "author_editable": true,
+          "ai_usage": "修炼、施展或学习条件。"
+        },
+        {
+          "field_key": "owner_faction_id",
+          "label": "所属势力",
+          "field_type": "knowledge_ref",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": false,
+          "author_editable": true,
+          "ai_usage": "所属势力或传承的知识卡 id。"
+        }
+      ]
+    },
+    {
+      "type": "location",
+      "label": "地点",
+      "fields": [
+        {
+          "field_key": "name",
+          "label": "名称",
+          "field_type": "short_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "输入知识卡名称",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "知识卡主名称，用于检索和引用。"
+        },
+        {
+          "field_key": "aliases",
+          "label": "别名",
+          "field_type": "string_array",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "多个别名用换行或逗号分隔",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "名称、称号、旧名和简称。"
+        },
+        {
+          "field_key": "summary",
+          "label": "摘要",
+          "field_type": "long_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "一句话或一段摘要",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "面向写作和 AI 引用的核心事实摘要。"
+        },
+        {
+          "field_key": "appearance_chapter_count",
+          "label": "重要程度",
+          "field_type": "number",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": false,
+          "ai_usage": "由正文知识沉淀按实际出现章节累计，前端按全书章节占比显示重要程度。"
+        },
+        {
+          "field_key": "lifecycle",
+          "label": "生命周期",
+          "field_type": "enum",
+          "required_when_confirmed": false,
+          "options": [
+            {
+              "value": "draft",
+              "label": "草稿"
+            },
+            {
+              "value": "confirmed",
+              "label": "已确认"
+            },
+            {
+              "value": "rejected",
+              "label": "已拒绝"
+            }
+          ],
+          "placeholder": "",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "草稿不参与 AI 检索，已确认卡可用于后续引用。"
+        },
+        {
+          "field_key": "source_origin",
+          "label": "来源方式",
+          "field_type": "enum",
+          "required_when_confirmed": true,
+          "options": [
+            {
+              "value": "inbox_fact",
+              "label": "收件箱事实转化"
+            },
+            {
+              "value": "agent_extract",
+              "label": "正文自动提取"
+            },
+            {
+              "value": "manual",
+              "label": "人工添加"
+            }
+          ],
+          "placeholder": "选择来源方式",
+          "display_group": "来源",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "说明知识卡来源类型。"
+        },
+        {
+          "field_key": "source_note",
+          "label": "来源说明",
+          "field_type": "long_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "作者手动添加。可写章节、原文摘录、人工说明。",
+          "display_group": "来源",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "知识卡可被信任和追溯的自由文本来源说明。"
+        },
+        {
+          "field_key": "controlling_faction_id",
+          "label": "控制势力",
+          "field_type": "knowledge_ref",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "控制该地点的势力知识卡 id。"
+        },
+        {
+          "field_key": "first_seen_chapter_id",
+          "label": "首次出现章节",
+          "field_type": "chapter_ref",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": false,
+          "author_editable": true,
+          "ai_usage": "地点首次出现章节的稳定 chapter_id。"
+        }
+      ]
+    },
+    {
+      "type": "faction",
+      "label": "势力",
+      "fields": [
+        {
+          "field_key": "name",
+          "label": "名称",
+          "field_type": "short_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "输入知识卡名称",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "知识卡主名称，用于检索和引用。"
+        },
+        {
+          "field_key": "aliases",
+          "label": "别名",
+          "field_type": "string_array",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "多个别名用换行或逗号分隔",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "名称、称号、旧名和简称。"
+        },
+        {
+          "field_key": "summary",
+          "label": "摘要",
+          "field_type": "long_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "一句话或一段摘要",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "面向写作和 AI 引用的核心事实摘要。"
+        },
+        {
+          "field_key": "appearance_chapter_count",
+          "label": "重要程度",
+          "field_type": "number",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": false,
+          "ai_usage": "由正文知识沉淀按实际出现章节累计，前端按全书章节占比显示重要程度。"
+        },
+        {
+          "field_key": "lifecycle",
+          "label": "生命周期",
+          "field_type": "enum",
+          "required_when_confirmed": false,
+          "options": [
+            {
+              "value": "draft",
+              "label": "草稿"
+            },
+            {
+              "value": "confirmed",
+              "label": "已确认"
+            },
+            {
+              "value": "rejected",
+              "label": "已拒绝"
+            }
+          ],
+          "placeholder": "",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "草稿不参与 AI 检索，已确认卡可用于后续引用。"
+        },
+        {
+          "field_key": "source_origin",
+          "label": "来源方式",
+          "field_type": "enum",
+          "required_when_confirmed": true,
+          "options": [
+            {
+              "value": "inbox_fact",
+              "label": "收件箱事实转化"
+            },
+            {
+              "value": "agent_extract",
+              "label": "正文自动提取"
+            },
+            {
+              "value": "manual",
+              "label": "人工添加"
+            }
+          ],
+          "placeholder": "选择来源方式",
+          "display_group": "来源",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "说明知识卡来源类型。"
+        },
+        {
+          "field_key": "source_note",
+          "label": "来源说明",
+          "field_type": "long_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "作者手动添加。可写章节、原文摘录、人工说明。",
+          "display_group": "来源",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "知识卡可被信任和追溯的自由文本来源说明。"
+        },
+        {
+          "field_key": "faction_type",
+          "label": "势力类型",
+          "field_type": "enum",
+          "required_when_confirmed": false,
+          "options": [
+            {
+              "value": "sect",
+              "label": "宗门"
+            },
+            {
+              "value": "family",
+              "label": "家族"
+            },
+            {
+              "value": "dynasty",
+              "label": "王朝"
+            },
+            {
+              "value": "guild",
+              "label": "商会"
+            },
+            {
+              "value": "demonic",
+              "label": "魔道"
+            },
+            {
+              "value": "alliance",
+              "label": "联盟"
+            },
+            {
+              "value": "academy",
+              "label": "学院"
+            },
+            {
+              "value": "other",
+              "label": "其他"
+            }
+          ],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "宗门、家族、王朝等势力类型。"
+        },
+        {
+          "field_key": "leader_id",
+          "label": "当前首领",
+          "field_type": "knowledge_ref",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "当前首领角色知识卡 id。"
+        }
+      ]
+    },
+    {
+      "type": "item",
+      "label": "物品",
+      "fields": [
+        {
+          "field_key": "name",
+          "label": "名称",
+          "field_type": "short_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "输入知识卡名称",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "知识卡主名称，用于检索和引用。"
+        },
+        {
+          "field_key": "aliases",
+          "label": "别名",
+          "field_type": "string_array",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "多个别名用换行或逗号分隔",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "名称、称号、旧名和简称。"
+        },
+        {
+          "field_key": "summary",
+          "label": "摘要",
+          "field_type": "long_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "一句话或一段摘要",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "面向写作和 AI 引用的核心事实摘要。"
+        },
+        {
+          "field_key": "appearance_chapter_count",
+          "label": "重要程度",
+          "field_type": "number",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": false,
+          "ai_usage": "由正文知识沉淀按实际出现章节累计，前端按全书章节占比显示重要程度。"
+        },
+        {
+          "field_key": "lifecycle",
+          "label": "生命周期",
+          "field_type": "enum",
+          "required_when_confirmed": false,
+          "options": [
+            {
+              "value": "draft",
+              "label": "草稿"
+            },
+            {
+              "value": "confirmed",
+              "label": "已确认"
+            },
+            {
+              "value": "rejected",
+              "label": "已拒绝"
+            }
+          ],
+          "placeholder": "",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "草稿不参与 AI 检索，已确认卡可用于后续引用。"
+        },
+        {
+          "field_key": "source_origin",
+          "label": "来源方式",
+          "field_type": "enum",
+          "required_when_confirmed": true,
+          "options": [
+            {
+              "value": "inbox_fact",
+              "label": "收件箱事实转化"
+            },
+            {
+              "value": "agent_extract",
+              "label": "正文自动提取"
+            },
+            {
+              "value": "manual",
+              "label": "人工添加"
+            }
+          ],
+          "placeholder": "选择来源方式",
+          "display_group": "来源",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "说明知识卡来源类型。"
+        },
+        {
+          "field_key": "source_note",
+          "label": "来源说明",
+          "field_type": "long_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "作者手动添加。可写章节、原文摘录、人工说明。",
+          "display_group": "来源",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "知识卡可被信任和追溯的自由文本来源说明。"
+        },
+        {
+          "field_key": "item_type",
+          "label": "物品类型",
+          "field_type": "enum",
+          "required_when_confirmed": false,
+          "options": [
+            {
+              "value": "magic_treasure",
+              "label": "法宝"
+            },
+            {
+              "value": "pill",
+              "label": "丹药"
+            },
+            {
+              "value": "material",
+              "label": "材料"
+            },
+            {
+              "value": "other",
+              "label": "其他"
+            }
+          ],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "法宝、丹药、材料或其他物品类型。"
+        },
+        {
+          "field_key": "grade",
+          "label": "品阶",
+          "field_type": "short_text",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "物品品阶。"
+        },
+        {
+          "field_key": "current_holder_id",
+          "label": "当前持有人",
+          "field_type": "knowledge_ref",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "当前持有者的角色知识卡 id。"
+        },
+        {
+          "field_key": "first_seen_chapter_id",
+          "label": "首次出现章节",
+          "field_type": "chapter_ref",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": false,
+          "author_editable": true,
+          "ai_usage": "物品首次出现章节的稳定 chapter_id。"
+        },
+        {
+          "field_key": "last_seen_chapter_id",
+          "label": "最近出现章节",
+          "field_type": "chapter_ref",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": false,
+          "author_editable": true,
+          "ai_usage": "物品最近出现章节的稳定 chapter_id。"
+        }
+      ]
+    },
+    {
+      "type": "rule",
+      "label": "规则",
+      "fields": [
+        {
+          "field_key": "name",
+          "label": "名称",
+          "field_type": "short_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "输入知识卡名称",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "知识卡主名称，用于检索和引用。"
+        },
+        {
+          "field_key": "aliases",
+          "label": "别名",
+          "field_type": "string_array",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "多个别名用换行或逗号分隔",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "名称、称号、旧名和简称。"
+        },
+        {
+          "field_key": "summary",
+          "label": "摘要",
+          "field_type": "long_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "一句话或一段摘要",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "面向写作和 AI 引用的核心事实摘要。"
+        },
+        {
+          "field_key": "appearance_chapter_count",
+          "label": "重要程度",
+          "field_type": "number",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": false,
+          "ai_usage": "由正文知识沉淀按实际出现章节累计，前端按全书章节占比显示重要程度。"
+        },
+        {
+          "field_key": "lifecycle",
+          "label": "生命周期",
+          "field_type": "enum",
+          "required_when_confirmed": false,
+          "options": [
+            {
+              "value": "draft",
+              "label": "草稿"
+            },
+            {
+              "value": "confirmed",
+              "label": "已确认"
+            },
+            {
+              "value": "rejected",
+              "label": "已拒绝"
+            }
+          ],
+          "placeholder": "",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "草稿不参与 AI 检索，已确认卡可用于后续引用。"
+        },
+        {
+          "field_key": "source_origin",
+          "label": "来源方式",
+          "field_type": "enum",
+          "required_when_confirmed": true,
+          "options": [
+            {
+              "value": "inbox_fact",
+              "label": "收件箱事实转化"
+            },
+            {
+              "value": "agent_extract",
+              "label": "正文自动提取"
+            },
+            {
+              "value": "manual",
+              "label": "人工添加"
+            }
+          ],
+          "placeholder": "选择来源方式",
+          "display_group": "来源",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "说明知识卡来源类型。"
+        },
+        {
+          "field_key": "source_note",
+          "label": "来源说明",
+          "field_type": "long_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "作者手动添加。可写章节、原文摘录、人工说明。",
+          "display_group": "来源",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "知识卡可被信任和追溯的自由文本来源说明。"
+        },
+        {
+          "field_key": "exceptions",
+          "label": "例外情况",
+          "field_type": "long_text",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": false,
+          "author_editable": true,
+          "ai_usage": "规则例外情况。"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "label": "事件",
+      "fields": [
+        {
+          "field_key": "name",
+          "label": "名称",
+          "field_type": "short_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "输入知识卡名称",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "知识卡主名称，用于检索和引用。"
+        },
+        {
+          "field_key": "aliases",
+          "label": "别名",
+          "field_type": "string_array",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "多个别名用换行或逗号分隔",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "名称、称号、旧名和简称。"
+        },
+        {
+          "field_key": "summary",
+          "label": "摘要",
+          "field_type": "long_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "一句话或一段摘要",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "面向写作和 AI 引用的核心事实摘要。"
+        },
+        {
+          "field_key": "appearance_chapter_count",
+          "label": "重要程度",
+          "field_type": "number",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": false,
+          "ai_usage": "由正文知识沉淀按实际出现章节累计，前端按全书章节占比显示重要程度。"
+        },
+        {
+          "field_key": "lifecycle",
+          "label": "生命周期",
+          "field_type": "enum",
+          "required_when_confirmed": false,
+          "options": [
+            {
+              "value": "draft",
+              "label": "草稿"
+            },
+            {
+              "value": "confirmed",
+              "label": "已确认"
+            },
+            {
+              "value": "rejected",
+              "label": "已拒绝"
+            }
+          ],
+          "placeholder": "",
+          "display_group": "基础信息",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "草稿不参与 AI 检索，已确认卡可用于后续引用。"
+        },
+        {
+          "field_key": "source_origin",
+          "label": "来源方式",
+          "field_type": "enum",
+          "required_when_confirmed": true,
+          "options": [
+            {
+              "value": "inbox_fact",
+              "label": "收件箱事实转化"
+            },
+            {
+              "value": "agent_extract",
+              "label": "正文自动提取"
+            },
+            {
+              "value": "manual",
+              "label": "人工添加"
+            }
+          ],
+          "placeholder": "选择来源方式",
+          "display_group": "来源",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "说明知识卡来源类型。"
+        },
+        {
+          "field_key": "source_note",
+          "label": "来源说明",
+          "field_type": "long_text",
+          "required_when_confirmed": true,
+          "options": [],
+          "placeholder": "作者手动添加。可写章节、原文摘录、人工说明。",
+          "display_group": "来源",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "知识卡可被信任和追溯的自由文本来源说明。"
+        },
+        {
+          "field_key": "chapter_id",
+          "label": "发生章节",
+          "field_type": "chapter_ref",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": true,
+          "author_editable": true,
+          "ai_usage": "事件发生或首次确认章节的稳定 chapter_id。"
+        },
+        {
+          "field_key": "description",
+          "label": "事件描述",
+          "field_type": "long_text",
+          "required_when_confirmed": false,
+          "options": [],
+          "placeholder": "",
+          "display_group": "类型字段",
+          "list_display": false,
+          "author_editable": true,
+          "ai_usage": "事件内容与影响的简要描述。"
+        }
+      ]
+    }
+  ],
+  "forbidden_card_fields": [
+    "appearance",
+    "body",
+    "confidence",
+    "fields",
+    "foreshadow",
+    "importance",
+    "motivation",
+    "personality",
+    "relations",
+    "source_refs",
+    "tags"
+  ],
+  "notes": {
+    "appearance_chapter_count": "保留为统计字段，但不参与抽取效果评分。",
+    "expected_claims_importance": "仅表示评测断言优先级，不是知识卡字段。"
+  }
+}

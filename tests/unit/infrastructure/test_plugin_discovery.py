@@ -19,8 +19,23 @@ class PluginDiscoveryTest(unittest.TestCase):
             ["knowledge_extraction"],
         )
         self.assertEqual(plugins[0].manifest.label, "正文知识沉淀 Agent")
+        self.assertIn(
+            "retrieval_service",
+            plugins[0].manifest.required_capabilities,
+        )
+        self.assertNotIn(
+            "knowledge_repository",
+            plugins[0].manifest.required_capabilities,
+        )
 
-    def test_discover_tools_ignores_contract_modules(self) -> None:
+    def test_discover_tools_finds_builtin_knowledge_retrieval(self) -> None:
         plugins = discover_tools("taichu.application.tools")
 
-        self.assertEqual(plugins, [])
+        self.assertEqual(
+            [plugin.manifest.name for plugin in plugins],
+            ["retrieve_knowledge"],
+        )
+        self.assertEqual(
+            plugins[0].manifest.required_capabilities,
+            frozenset({"retrieval_service"}),
+        )

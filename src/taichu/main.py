@@ -47,6 +47,7 @@ from taichu.application.services.outline_service import OutlineService
 from taichu.application.services.selection_ai_service import SelectionAIService
 from taichu.application.services.settings_service import SettingsPreferenceService
 from taichu.application.services.writing_ai_service import WritingAIService
+from taichu.application.services.retrieval_service import RetrievalService
 from taichu.application.tools.registry import ToolRegistry
 from taichu.config import Settings, settings
 from taichu.infrastructure.llm.adapter import LangChainLLMAdapter
@@ -66,6 +67,10 @@ from taichu.infrastructure.agent_runs import JsonAgentRunStore
 from taichu.infrastructure.knowledge import (
     MongoKnowledgeRepository,
     MongoKnowledgeSedimentationProgressRepository,
+)
+from taichu.infrastructure.retrieval import (
+    JsonlRetrievalTraceRepository,
+    MongoLexicalRetrievalBackend,
 )
 from taichu.infrastructure.storage.json_backend import JsonStorageBackend
 from taichu.infrastructure.storage.markdown_backend import (
@@ -124,6 +129,13 @@ def create_app(
             app_settings.mongodb_database,
         )
     knowledge_service = KnowledgeService(knowledge_repository)
+    retrieval_trace_repository = JsonlRetrievalTraceRepository(
+        app_settings.project_assets_dir
+    )
+    retrieval_service = RetrievalService(
+        MongoLexicalRetrievalBackend(knowledge_repository),
+        retrieval_trace_repository,
+    )
     sedimentation_progress_repository = (
         MongoKnowledgeSedimentationProgressRepository(
             app_settings.mongodb_uri,
@@ -138,7 +150,7 @@ def create_app(
     knowledge_extraction_service = KnowledgeExtractionService(
         chapter_service=chapter_service,
         llm=llm_service,
-        knowledge_repository=knowledge_repository,
+        retrieval_service=retrieval_service,
         knowledge_service=knowledge_service,
         run_store=knowledge_run_store,
         sedimentation_progress_repository=sedimentation_progress_repository,
@@ -167,7 +179,7 @@ def create_app(
     writing_ai_service = WritingAIService(
         storage=project_storage,
         chapter_service=chapter_service,
-        knowledge_repository=knowledge_repository,
+        retrieval_service=retrieval_service,
         llm=llm_service,
         default_model_id=active_default_model,
         llm_configured=llm_configured,
@@ -181,7 +193,7 @@ def create_app(
     chapter_summary_service = ChapterSummaryService(
         storage=project_storage,
         chapter_service=chapter_service,
-        knowledge_service=knowledge_service,
+        retrieval_service=retrieval_service,
         llm=llm_service,
         ai_card_service=ai_card_service,
         default_model_id=active_default_model,
@@ -191,6 +203,7 @@ def create_app(
             "llm": llm_service,
             "chapter_service": chapter_service,
             "knowledge_repository": knowledge_repository,
+            "retrieval_service": retrieval_service,
             "knowledge_run_store": knowledge_run_store,
             "storage": storage,
         }
@@ -248,6 +261,8 @@ def create_app(
     application.state.export_service = export_service
     application.state.knowledge_service = knowledge_service
     application.state.knowledge_repository = knowledge_repository
+    application.state.retrieval_service = retrieval_service
+    application.state.retrieval_trace_repository = retrieval_trace_repository
     application.state.sedimentation_progress_repository = sedimentation_progress_repository
     application.state.knowledge_run_store = knowledge_run_store
     application.state.agent_task_events = agent_task_events

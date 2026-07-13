@@ -44,13 +44,15 @@ import type {
 import { cn } from "@/lib/utils";
 
 const tabs: Array<{ value: InboxTab; label: string }> = [
+  { value: "all", label: "全部" },
   { value: "ideas", label: "灵感" },
   { value: "pending-facts", label: "待确认事实" },
   { value: "issues", label: "系统问题与改进项记录" },
 ];
 
 type InboxEntry = MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue;
-type InboxStatusFilter = "todo" | "processed";
+type InboxEntryTab = Exclude<InboxTab, "all">;
+type InboxStatusFilter = "all" | "todo" | "processed";
 type InboxPriorityFilter = InboxPriority | "all";
 type InboxToastState = {
   id: number;
@@ -59,16 +61,25 @@ type InboxToastState = {
 
 const INBOX_PAGE_SIZE = 6;
 const defaultTabPages: Record<InboxTab, number> = {
+  all: 1,
   ideas: 1,
   "pending-facts": 1,
   issues: 1,
 };
 const defaultTabTotals: Record<InboxTab, number> = {
+  all: 0,
   ideas: 0,
   "pending-facts": 0,
   issues: 0,
 };
+const defaultStatusFilters: Record<InboxTab, InboxStatusFilter> = {
+  all: "todo",
+  ideas: "todo",
+  "pending-facts": "todo",
+  issues: "all",
+};
 const statusFilters: Array<{ value: InboxStatusFilter; label: string }> = [
+  { value: "all", label: "全部状态" },
   { value: "todo", label: "待处理" },
   { value: "processed", label: "已处理" },
 ];
@@ -80,7 +91,8 @@ const priorityFilters: Array<{ value: InboxPriorityFilter; label: string }> = [
 ];
 
 export function InboxBoard() {
-  const [activeTab, setActiveTab] = useState<InboxTab>("ideas");
+  const [activeTab, setActiveTab] = useState<InboxTab>("all");
+  const [allItems, setAllItems] = useState<InboxEntry[]>([]);
   const [ideas, setIdeas] = useState<MVPInboxIdea[]>([]);
   const [pendingFacts, setPendingFacts] = useState<MVPInboxPendingFact[]>([]);
   const [issues, setIssues] = useState<MVPInboxIssue[]>([]);
@@ -96,8 +108,8 @@ export function InboxBoard() {
     useState<Record<InboxTab, number>>(defaultTabPages);
   const [totalByTab, setTotalByTab] =
     useState<Record<InboxTab, number>>(defaultTabTotals);
-  const [statusFilter, setStatusFilter] =
-    useState<InboxStatusFilter>("todo");
+  const [statusFilterByTab, setStatusFilterByTab] =
+    useState<Record<InboxTab, InboxStatusFilter>>(defaultStatusFilters);
   const [priorityFilter, setPriorityFilter] =
     useState<InboxPriorityFilter>("all");
   const [isCreateOpen, setCreateOpen] = useState(false);
@@ -109,6 +121,9 @@ export function InboxBoard() {
   const toastIdRef = useRef(0);
 
   const activeItems = useMemo(() => {
+    if (activeTab === "all") {
+      return allItems;
+    }
     if (activeTab === "ideas") {
       return ideas;
     }
@@ -116,10 +131,11 @@ export function InboxBoard() {
       return pendingFacts;
     }
     return issues;
-  }, [activeTab, ideas, issues, pendingFacts]);
+  }, [activeTab, allItems, ideas, issues, pendingFacts]);
 
   const activePage = pageByTab[activeTab];
   const activeTotal = totalByTab[activeTab];
+  const activeStatusFilter = statusFilterByTab[activeTab];
   const activeTabLabel = tabs.find(tab => tab.value === activeTab)?.label ?? "灵感";
 
   useEffect(() => {
@@ -146,14 +162,14 @@ export function InboxBoard() {
     setConfirmSummary(item.content);
   }, []);
 
-  const requestParams = useCallback((page: number) => {
+  const requestParams = useCallback((tab: InboxTab, page: number) => {
     return {
       page,
       pageSize: INBOX_PAGE_SIZE,
-      status: statusFilter,
+      status: statusFilterByTab[tab],
       priority: priorityFilter,
     };
-  }, [priorityFilter, statusFilter]);
+  }, [priorityFilter, statusFilterByTab]);
 
   async function reloadTab(
     tab: InboxTab,
@@ -163,7 +179,12 @@ export function InboxBoard() {
     setLoading(true);
     setError(null);
     try {
-      const params = requestParams(pageOverride);
+      const params = requestParams(tab, pageOverride);
+      if (tab === "all") {
+        const response = await listInboxItems("all", params);
+        setAllItems(response.items);
+        setTotalByTab(current => ({ ...current, all: response.total }));
+      }
       if (tab === "ideas") {
         const response = await listInboxItems("ideas", params);
         setIdeas(response.items);
@@ -210,7 +231,14 @@ export function InboxBoard() {
     async function loadCurrentTab() {
       setLoading(true);
       try {
-        const params = requestParams(activePage);
+        const params = requestParams(activeTab, activePage);
+        if (activeTab === "all") {
+          const response = await listInboxItems("all", params);
+          if (!cancelled) {
+            setAllItems(response.items);
+            setTotalByTab(current => ({ ...current, all: response.total }));
+          }
+        }
         if (activeTab === "ideas") {
           const response = await listInboxItems("ideas", params);
           if (!cancelled) {
@@ -258,7 +286,7 @@ export function InboxBoard() {
       return;
     }
     setExpandedItemId(item.id);
-    if (activeTab === "pending-facts" && isPendingFact(item)) {
+    if (entryTab(item) === "pending-facts" && isPendingFact(item)) {
       preparePendingFactConfirm(item);
     }
   }
@@ -302,24 +330,24 @@ export function InboxBoard() {
   }
 
   async function patchItem(
-    tab: InboxTab,
-    itemId: string,
+    item: InboxEntry,
     updates: Record<string, unknown>,
   ) {
     setBusy(true);
     setError(null);
     try {
-      if (tab === "ideas") {
-        await patchInboxIdea(itemId, updates);
+      const itemTab = entryTab(item);
+      if (itemTab === "ideas") {
+        await patchInboxIdea(item.id, updates);
       }
-      if (tab === "pending-facts") {
-        await patchInboxPendingFact(itemId, updates);
+      if (itemTab === "pending-facts") {
+        await patchInboxPendingFact(item.id, updates);
       }
-      if (tab === "issues") {
-        await patchInboxIssue(itemId, updates);
+      if (itemTab === "issues") {
+        await patchInboxIssue(item.id, updates);
       }
       const deleted = updates.status === "deprecated";
-      await reloadTab(tab, deleted ? null : itemId);
+      await reloadTab(activeTab, deleted ? null : item.id);
       showInboxToast(deleted ? "已删除条目" : "已更新收件箱");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "更新失败");
@@ -341,7 +369,7 @@ export function InboxBoard() {
           : `收件箱确认：${item.content.slice(0, 120)}`,
       });
       showInboxToast("已确认入库，原记录保留为已处理");
-      await reloadTab("pending-facts");
+      await reloadTab(activeTab);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "确认入库失败");
     } finally {
@@ -395,21 +423,27 @@ export function InboxBoard() {
                 当前模块条目
               </h2>
             </div>
-            <button
-              type="button"
-              onClick={() => setCreateOpen(current => !current)}
-              className="inline-flex h-9 items-center gap-2 rounded-[var(--tc-radius-pill)] border border-[var(--tc-border-subtle)] px-4 text-sm text-[var(--tc-text-secondary)] hover:text-[var(--tc-text-primary)]"
-            >
-              <Plus className="size-4" />
-              新增
-            </button>
+            {activeTab !== "all" ? (
+              <button
+                type="button"
+                onClick={() => setCreateOpen(current => !current)}
+                className="inline-flex h-9 items-center gap-2 rounded-[var(--tc-radius-pill)] border border-[var(--tc-border-subtle)] px-4 text-sm text-[var(--tc-text-secondary)] hover:text-[var(--tc-text-primary)]"
+              >
+                <Plus className="size-4" />
+                新增
+              </button>
+            ) : null}
           </div>
 
           <div className="mb-4 flex max-w-[980px] flex-wrap gap-2">
             <select
-              value={statusFilter}
+              value={activeStatusFilter}
               onChange={event => {
-                setStatusFilter(event.target.value as InboxStatusFilter);
+                const nextStatus = event.target.value as InboxStatusFilter;
+                setStatusFilterByTab(current => ({
+                  ...current,
+                  [activeTab]: nextStatus,
+                }));
                 setPageByTab(current => ({ ...current, [activeTab]: 1 }));
               }}
               className="h-9 min-w-32 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)]"
@@ -507,7 +541,7 @@ export function InboxBoard() {
                   {activeItems.map(item => (
                     <InboxRow
                       key={item.id}
-                      tab={activeTab}
+                      tab={entryTab(item)}
                       item={item}
                       expanded={expandedItemId === item.id}
                       busy={busy}
@@ -516,15 +550,15 @@ export function InboxBoard() {
                       confirmName={confirmName}
                       confirmSummary={confirmSummary}
                       onToggle={() => toggleItem(item)}
-                      onPatch={updates => void patchItem(activeTab, item.id, updates)}
+                      onPatch={updates => void patchItem(item, updates)}
                       onProcessed={() =>
-                        void patchItem(activeTab, item.id, { status: "processed" })
+                        void patchItem(item, { status: "processed" })
                       }
                       onDeprecated={() =>
-                        void patchItem(activeTab, item.id, { status: "deprecated" })
+                        void patchItem(item, { status: "deprecated" })
                       }
                       onConfirm={
-                        activeTab === "pending-facts" && isPendingFact(item)
+                        entryTab(item) === "pending-facts" && isPendingFact(item)
                           ? () => void confirmPendingFact(item)
                           : undefined
                       }
@@ -592,7 +626,7 @@ function InboxRow({
   onConfirmNameChange,
   onConfirmSummaryChange,
 }: {
-  tab: InboxTab;
+  tab: InboxEntryTab;
   item: InboxEntry;
   expanded: boolean;
   busy: boolean;
@@ -788,7 +822,14 @@ function isPendingFact(item: InboxEntry): item is MVPInboxPendingFact {
   return "origin" in item;
 }
 
-function itemTitle(tab: InboxTab, item: InboxEntry): string {
+function entryTab(item: InboxEntry): InboxEntryTab {
+  if (isPendingFact(item)) {
+    return "pending-facts";
+  }
+  return "title" in item ? "issues" : "ideas";
+}
+
+function itemTitle(tab: InboxEntryTab, item: InboxEntry): string {
   if (tab === "ideas") {
     return "灵感";
   }

@@ -16,7 +16,6 @@ from taichu.domain.models import (
     ChapterSummary,
     ChapterSummaryStatus,
     CharacterCard,
-    CharacterImportance,
     IdeaCard,
     IdeaCardSource,
     IdeaCardStatus,
@@ -114,7 +113,6 @@ class DomainModelContractTest(unittest.TestCase):
         character = CharacterCard(
             knowledge_base=knowledge,
             current_realm="炼气",
-            importance=CharacterImportance.CORE,
         )
         idea = IdeaCard(
             id="idea_001",

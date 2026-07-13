@@ -1,0 +1,216 @@
+{
+  "actual_candidate": {
+    "$defs": {
+      "CandidateAction": {
+        "description": "Frozen candidate actions retained for evaluation and audit.",
+        "enum": [
+          "create_card",
+          "update_card",
+          "conflict",
+          "ignore"
+        ],
+        "title": "CandidateAction",
+        "type": "string"
+      },
+      "StructuredKnowledgeType": {
+        "description": "Knowledge card types supported by the first-version knowledge base.",
+        "enum": [
+          "character",
+          "realm",
+          "technique",
+          "location",
+          "faction",
+          "item",
+          "rule",
+          "event"
+        ],
+        "title": "StructuredKnowledgeType",
+        "type": "string"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Frozen actual review candidate consumed by the deterministic engine.",
+    "properties": {
+      "actual_candidate_id": {
+        "minLength": 1,
+        "title": "Actual Candidate Id",
+        "type": "string"
+      },
+      "candidate_action": {
+        "$ref": "#/$defs/CandidateAction",
+        "default": "create_card"
+      },
+      "card": {
+        "additionalProperties": true,
+        "title": "Card",
+        "type": "object"
+      },
+      "evidence_excerpts": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Evidence Excerpts",
+        "type": "array"
+      },
+      "knowledge_type": {
+        "$ref": "#/$defs/StructuredKnowledgeType"
+      },
+      "schema_valid": {
+        "default": true,
+        "title": "Schema Valid",
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "actual_candidate_id",
+      "knowledge_type",
+      "card"
+    ],
+    "title": "ActualCandidate",
+    "type": "object"
+  },
+  "expected_card": {
+    "$defs": {
+      "ClaimImportance": {
+        "description": "Importance of one expected semantic claim.",
+        "enum": [
+          "critical",
+          "major",
+          "normal",
+          "minor"
+        ],
+        "title": "ClaimImportance",
+        "type": "string"
+      },
+      "ExpectedClaim": {
+        "additionalProperties": false,
+        "description": "One human-maintained semantic fact expected from a card.",
+        "properties": {
+          "claim_id": {
+            "minLength": 1,
+            "title": "Claim Id",
+            "type": "string"
+          },
+          "description": {
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "field": {
+            "minLength": 1,
+            "title": "Field",
+            "type": "string"
+          },
+          "importance": {
+            "$ref": "#/$defs/ClaimImportance"
+          },
+          "source_quote_ids": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Source Quote Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "claim_id",
+          "field",
+          "importance",
+          "description",
+          "source_quote_ids"
+        ],
+        "title": "ExpectedClaim",
+        "type": "object"
+      },
+      "StructuredKnowledgeType": {
+        "description": "Knowledge card types supported by the first-version knowledge base.",
+        "enum": [
+          "character",
+          "realm",
+          "technique",
+          "location",
+          "faction",
+          "item",
+          "rule",
+          "event"
+        ],
+        "title": "StructuredKnowledgeType",
+        "type": "string"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Gold card plus the field-level evaluation projection.",
+    "properties": {
+      "accepted_names": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Accepted Names",
+        "type": "array"
+      },
+      "card": {
+        "additionalProperties": true,
+        "title": "Card",
+        "type": "object"
+      },
+      "exact_fields": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Exact Fields",
+        "type": "array"
+      },
+      "expected_card_id": {
+        "minLength": 1,
+        "title": "Expected Card Id",
+        "type": "string"
+      },
+      "expected_claims": {
+        "items": {
+          "$ref": "#/$defs/ExpectedClaim"
+        },
+        "title": "Expected Claims",
+        "type": "array"
+      },
+      "knowledge_type": {
+        "$ref": "#/$defs/StructuredKnowledgeType"
+      },
+      "semantic_fields": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Semantic Fields",
+        "type": "array"
+      },
+      "set_fields": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Set Fields",
+        "type": "array"
+      },
+      "source_quote_ids": {
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "title": "Source Quote Ids",
+        "type": "array"
+      }
+    },
+    "required": [
+      "expected_card_id",
+      "knowledge_type",
+      "card",
+      "accepted_names",
+      "exact_fields",
+      "set_fields",
+      "semantic_fields",
+      "expected_claims",
+      "source_quote_ids"
+    ],
+    "title": "ExpectedCard",
+    "type": "object"
+  }
+}

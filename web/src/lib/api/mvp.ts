@@ -189,6 +189,14 @@ export async function rejectKnowledgeCard(
 }
 
 export async function listInboxItems(
+  tab: "all",
+  params?: InboxListParams,
+): Promise<
+  MVPInboxListResponse<
+    MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue
+  >
+>;
+export async function listInboxItems(
   tab: "ideas",
   params?: InboxListParams,
 ): Promise<MVPInboxListResponse<MVPInboxIdea>>;
@@ -221,7 +229,7 @@ export async function listInboxItems(tab: InboxTab, params: InboxListParams = {}
       `/api/inbox/issues?${search.toString()}`,
     );
   }
-  search.set("tab", "ideas");
+  search.set("tab", tab);
   return apiRequest<MVPInboxListResponse<MVPInboxIdea>>(
     `/api/inbox?${search.toString()}`,
   );
