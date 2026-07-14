@@ -127,6 +127,11 @@ export type GeneralAgentRun = {
   pending_human_request?: GeneralAgentHumanRequest | null;
   final_answer: string;
   verification_issues: string[];
+  lifecycle_events: Array<{
+    status: GeneralAgentRunStatus;
+    reason: string;
+    created_at: string;
+  }>;
   checkpoint_revision: number;
   resumable: boolean;
   created_at: string;
@@ -173,5 +178,43 @@ export type GeneralAgentRunListResponse = {
   runs: GeneralAgentRunSummary[];
   page: number;
   page_size: number;
+  total: number;
+};
+
+export type GeneralAgentInvocationType = "tool" | "subagent" | "llm";
+export type GeneralAgentInvocationStatus = "completed" | "failed" | "timed_out";
+
+export type GeneralAgentInvocationTrace = {
+  lifecycle: "confirmed";
+  trace_id: string;
+  capability_type: GeneralAgentInvocationType;
+  capability_name: string;
+  task_id: string;
+  run_id: string;
+  call_id: string;
+  parent_call_id?: string | null;
+  caller_type: string;
+  caller_name: string;
+  status: GeneralAgentInvocationStatus;
+  input_sha256: string;
+  input_char_count: number;
+  output_char_count: number;
+  source_count: number;
+  side_effect: string;
+  authorization_reference?: string | null;
+  model_role?: string | null;
+  model_id?: string | null;
+  input_tokens?: number | null;
+  output_tokens?: number | null;
+  retry_count: number;
+  started_at: string;
+  finished_at: string;
+  duration_ms: number;
+  error_type?: string | null;
+  error_message?: string | null;
+};
+
+export type GeneralAgentTraceListResponse = {
+  traces: GeneralAgentInvocationTrace[];
   total: number;
 };

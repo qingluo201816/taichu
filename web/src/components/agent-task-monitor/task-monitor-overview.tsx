@@ -1,16 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, Bot, ChevronRight, RefreshCw, Scale } from "lucide-react";
+import { Activity, Bot, ChevronRight, GitBranch, RefreshCw, Scale } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { listAgentTasks } from "@/lib/api/agent-workbench";
+import { listGeneralAgentRuns } from "@/lib/api/general-agent";
 import type { AgentRunSummary } from "@/lib/types/agent-workbench";
+import type { GeneralAgentRunSummary } from "@/lib/types/general-agent";
+import { isGeneralAgentRunActive } from "@/lib/general-agent-display";
 
 export function TaskMonitorOverview() {
   const [tasks, setTasks] = useState<AgentRunSummary[]>([]);
+  const [generalTasks, setGeneralTasks] = useState<GeneralAgentRunSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -18,11 +22,19 @@ export function TaskMonitorOverview() {
     () => tasks.filter(task => task.status === "running").length,
     [tasks],
   );
+  const generalRunningCount = useMemo(
+    () => generalTasks.filter(task => isGeneralAgentRunActive(task.status)).length,
+    [generalTasks],
+  );
 
   async function load() {
     try {
-      const response = await listAgentTasks();
+      const [response, generalResponse] = await Promise.all([
+        listAgentTasks(),
+        listGeneralAgentRuns({ pageSize: 100 }),
+      ]);
       setTasks(response.runs);
+      setGeneralTasks(generalResponse.runs);
       setError("");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "任务监控加载失败");
@@ -35,11 +47,15 @@ export function TaskMonitorOverview() {
     let ignore = false;
     async function loadFromEffect() {
       try {
-        const response = await listAgentTasks();
+        const [response, generalResponse] = await Promise.all([
+          listAgentTasks(),
+          listGeneralAgentRuns({ pageSize: 100 }),
+        ]);
         if (ignore) {
           return;
         }
         setTasks(response.runs);
+        setGeneralTasks(generalResponse.runs);
         setError("");
       } catch (caught) {
         if (!ignore) {
@@ -90,6 +106,27 @@ export function TaskMonitorOverview() {
         ) : null}
 
         <div className="grid gap-2">
+          <Link
+            href="/task-monitor/general-agent"
+            className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
+          >
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)]">
+                <GitBranch className="size-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-medium">通用写作助手节点监控</span>
+                <span className="mt-0.5 flex items-center gap-2 text-xs text-[var(--tc-text-muted)]">
+                  <Activity className="size-3" />
+                  {loading
+                    ? "正在读取任务"
+                    : `共 ${generalTasks.length} 个任务，${generalRunningCount > 0 ? `${generalRunningCount} 个运行中` : "当前无运行中任务"}`}
+                </span>
+              </span>
+            </span>
+            <ChevronRight className="size-4 shrink-0 text-[var(--tc-text-muted)]" />
+          </Link>
+
           <Link
             href="/task-monitor/knowledge-extraction"
             className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"

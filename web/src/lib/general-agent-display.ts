@@ -66,6 +66,8 @@ const capabilityLabels: Record<string, string> = {
   consistency_reviewer: "一致性审查",
   narrative_reviewer: "叙事审查",
   style_reviewer: "文风审查",
+  "general_writing_orchestrator.plan": "高层任务规划",
+  "general_writing_orchestrator.verify": "执行结果校验",
 };
 
 export function isGeneralAgentRunActive(status: GeneralAgentRunStatus): boolean {

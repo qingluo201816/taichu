@@ -11,3 +11,16 @@ class InvocationTraceRepository(Protocol):
 
     async def append(self, record: InvocationTraceRecord) -> None:
         ...
+
+
+@runtime_checkable
+class InvocationTraceReader(Protocol):
+    """按业务运行读取脱敏调用记录，不承担业务状态判断。"""
+
+    async def list_for_run(
+        self,
+        run_id: str,
+        *,
+        limit: int = 500,
+    ) -> tuple[list[InvocationTraceRecord], int]:
+        ...

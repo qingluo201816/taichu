@@ -99,10 +99,25 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
         listing = await self.client.get(
             "/api/agent-workbench/general-assistant/runs"
         )
+        traces = await self.client.get(
+            f"/api/agent-workbench/general-assistant/runs/{run_id}/traces"
+        )
         self.assertEqual(detail.status_code, 200)
         self.assertEqual(listing.status_code, 200)
+        self.assertEqual(traces.status_code, 200)
         self.assertEqual(listing.json()["total"], 1)
         self.assertEqual(listing.json()["runs"][0]["run_id"], run_id)
+        self.assertEqual(traces.json()["total"], 2)
+        self.assertEqual(
+            [item["capability_name"] for item in traces.json()["traces"]],
+            [
+                "general_writing_orchestrator.plan",
+                "general_writing_orchestrator.verify",
+            ],
+        )
+        self.assertTrue(
+            all(item["run_id"] == run_id for item in traces.json()["traces"])
+        )
 
         deleted = await self.client.delete(
             f"/api/agent-workbench/general-assistant/runs/{run_id}"
@@ -110,8 +125,12 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
         missing = await self.client.get(
             f"/api/agent-workbench/general-assistant/runs/{run_id}"
         )
+        missing_traces = await self.client.get(
+            f"/api/agent-workbench/general-assistant/runs/{run_id}/traces"
+        )
         self.assertEqual(deleted.status_code, 200)
         self.assertEqual(missing.status_code, 404)
+        self.assertEqual(missing_traces.status_code, 404)
         self.assertEqual(
             [request.task_name for request in self.gateway.requests],
             [

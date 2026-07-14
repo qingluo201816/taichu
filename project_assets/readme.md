@@ -106,7 +106,7 @@ MongoDB 知识卡统一使用 `lifecycle=draft|confirmed|rejected`；默认列�
 
 统一知识召回技术观测追加保存在 `derived/retrieval/calls.jsonl`。每行保存召回关联 ID、调用方、模式、策略、过滤范围、候选数、命中数、排名、耗时和脱敏错误；查询与辅助上下文只保存长度和 SHA-256，不重复保存正文或用户完整输入。该记录用于跨消费者排查召回链路，但不替代写作区、知识沉淀 Workflow 或通用 Agent Runtime 各自的业务日志、状态机与评测记录。
 
-通用写作助手能力层的 Tool、专业子 Agent 和内部 LLM 技术调用记录追加保存在 `derived/capability_invocations/calls.jsonl`。记录只保存调用树引用、能力名称、状态、输入哈希、字符数、模型角色、耗时、授权引用和脱敏错误，不保存密钥、鉴权头、完整 Prompt、完整模型原文或外部页面全文；它不替代三类执行体系各自的业务日志。
+通用写作助手能力层的 Tool、专业子 Agent 和内部 LLM 技术调用记录追加保存在 `derived/capability_invocations/calls.jsonl`。记录只保存调用树引用、能力名称、状态、输入哈希、字符数、模型角色、耗时、授权引用和脱敏错误，不保存密钥、鉴权头、完整 Prompt、完整模型原文或外部页面全文；通用 Agent 节点监控按运行标识读取这些记录并折叠到所属节点，但它不替代三类执行体系各自的业务日志。
 
 专业子 Agent 的结构化输出保存在 `derived/capability_artifacts/`。每个 JSON 文件显式标记 `lifecycle=draft`，记录产物类型、生产者、输入与内容哈希、来源引用和创建时间，可供后续专业子 Agent 按稳定引用接力消费；这些文件是可审计中间态，不是 Markdown 正文或 MongoDB 结构事实。
 

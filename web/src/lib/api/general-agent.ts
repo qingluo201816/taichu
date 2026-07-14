@@ -4,6 +4,7 @@ import type {
   GeneralAgentRunListResponse,
   GeneralAgentRunRequest,
   GeneralAgentRunResponse,
+  GeneralAgentTraceListResponse,
 } from "@/lib/types/general-agent";
 
 const PREFIX = "/api/agent-workbench/general-assistant";
@@ -17,9 +18,18 @@ export async function startGeneralAgentRun(
   });
 }
 
-export async function listGeneralAgentRuns(): Promise<GeneralAgentRunListResponse> {
+export async function listGeneralAgentRuns(options?: {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+}): Promise<GeneralAgentRunListResponse> {
+  const params = new URLSearchParams({
+    page: String(options?.page ?? 1),
+    page_size: String(options?.pageSize ?? 30),
+    status: options?.status ?? "all",
+  });
   return apiRequest<GeneralAgentRunListResponse>(
-    `${PREFIX}/runs?page=1&page_size=30&status=all`,
+    `${PREFIX}/runs?${params.toString()}`,
   );
 }
 
@@ -56,5 +66,15 @@ export async function deleteGeneralAgentRun(
   return apiRequest<{ run_id: string; deleted: boolean }>(
     `${PREFIX}/runs/${encodeURIComponent(runId)}`,
     { method: "DELETE" },
+  );
+}
+
+export async function listGeneralAgentTraces(
+  runId: string,
+  limit = 500,
+): Promise<GeneralAgentTraceListResponse> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  return apiRequest<GeneralAgentTraceListResponse>(
+    `${PREFIX}/runs/${encodeURIComponent(runId)}/traces?${params.toString()}`,
   );
 }

@@ -10,6 +10,7 @@ from fastapi.responses import StreamingResponse
 from taichu.api.deps import (
     provide_general_agent_event_center,
     provide_general_agent_runtime_service,
+    provide_invocation_trace_reader,
 )
 from taichu.api.schemas.general_agent import (
     GeneralAgentDeleteResponse,
@@ -18,7 +19,9 @@ from taichu.api.schemas.general_agent import (
     GeneralAgentRunRequest,
     GeneralAgentRunResponse,
     GeneralAgentRunSummary,
+    GeneralAgentTraceListResponse,
 )
+from taichu.application.contracts.invocation_trace import InvocationTraceReader
 from taichu.application.general_agent.events import GeneralAgentEventCenter
 from taichu.application.general_agent.models import (
     GeneralAgentNodeStatus,
@@ -116,6 +119,27 @@ async def api_get_general_agent_run(
     except GeneralAgentRunNotFoundError as error:
         raise _not_found(str(error)) from error
     return GeneralAgentRunResponse(run=run)
+
+
+@router.get(
+    "/runs/{run_id}/traces",
+    response_model=GeneralAgentTraceListResponse,
+)
+async def api_list_general_agent_traces(
+    run_id: str,
+    limit: int = Query(default=500, ge=1, le=2_000),
+    service: GeneralAgentRuntimeService = Depends(
+        provide_general_agent_runtime_service
+    ),
+    trace_reader: InvocationTraceReader = Depends(provide_invocation_trace_reader),
+) -> GeneralAgentTraceListResponse:
+    """读取一条通用 Agent 运行的脱敏 Tool、子 Agent 与 LLM 调用树。"""
+    try:
+        await service.get(run_id)
+    except GeneralAgentRunNotFoundError as error:
+        raise _not_found(str(error)) from error
+    traces, total = await trace_reader.list_for_run(run_id, limit=limit)
+    return GeneralAgentTraceListResponse(traces=traces, total=total)
 
 
 @router.post("/runs/{run_id}/resume", response_model=GeneralAgentRunResponse)

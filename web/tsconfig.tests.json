@@ -12,6 +12,7 @@
   "include": [
     "src/lib/editor/save-coordinator.ts",
     "src/lib/general-agent-display.ts",
+    "src/lib/general-agent-monitor.ts",
     "src/lib/agent-evaluation/evaluation-view-model.ts",
     "src/lib/types/agent-evaluation.ts",
     "src/lib/types/general-agent.ts",

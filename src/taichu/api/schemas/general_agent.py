@@ -7,6 +7,7 @@ from taichu.application.general_agent.models import (
     GeneralAgentRunLimits,
     GeneralAgentScope,
 )
+from taichu.application.invocations.models import InvocationTraceRecord
 
 
 class GeneralAgentRunRequest(BaseModel):
@@ -55,3 +56,8 @@ class GeneralAgentRunListResponse(BaseModel):
 class GeneralAgentDeleteResponse(BaseModel):
     run_id: str
     deleted: bool
+
+
+class GeneralAgentTraceListResponse(BaseModel):
+    traces: list[InvocationTraceRecord] = Field(default_factory=list)
+    total: int = Field(ge=0)

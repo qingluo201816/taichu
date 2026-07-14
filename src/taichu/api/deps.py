@@ -5,6 +5,7 @@ from fastapi import Request
 from taichu.application.agents.registry import AgentRegistry
 from taichu.application.general_agent.events import GeneralAgentEventCenter
 from taichu.application.general_agent.service import GeneralAgentRuntimeService
+from taichu.application.contracts.invocation_trace import InvocationTraceReader
 from taichu.application.contracts.storage import StorageBackend
 from taichu.application.contracts.llm import LLMGatewayContract
 from taichu.application.contracts.llm_usage import LLMUsageRepository
@@ -45,6 +46,12 @@ def provide_general_agent_runtime_service(
 def provide_general_agent_event_center(request: Request) -> GeneralAgentEventCenter:
     """返回通用 Runtime 独立事件中心。"""
     return request.app.state.general_agent_event_center
+
+
+def provide_invocation_trace_reader(request: Request) -> InvocationTraceReader:
+    """返回供运行监控读取的脱敏调用记录。"""
+
+    return request.app.state.invocation_trace_repository
 
 
 def provide_storage(request: Request) -> StorageBackend:
