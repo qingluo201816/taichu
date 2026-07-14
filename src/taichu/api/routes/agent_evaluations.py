@@ -411,6 +411,11 @@ def _comparison_response(
         "match_basis": comparison.match_kind,
         "field_diffs": comparison.field_diffs,
         "judge_result": comparison.judge_result,
+        "explanation": (
+            comparison.explanation.model_dump(mode="json")
+            if comparison.explanation
+            else None
+        ),
     }
     return KnowledgeEvaluationComparison.model_validate(_round_floats(payload))
 

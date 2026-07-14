@@ -58,7 +58,9 @@ class KnowledgeService:
         """Return backend schema definitions for all knowledge types."""
         return all_knowledge_type_schemas()
 
-    def get_schema(self, knowledge_type: StructuredKnowledgeType) -> KnowledgeTypeSchema:
+    def get_schema(
+        self, knowledge_type: StructuredKnowledgeType
+    ) -> KnowledgeTypeSchema:
         """Return one backend knowledge schema."""
         return knowledge_type_schema(knowledge_type)
 
@@ -240,6 +242,7 @@ class KnowledgeService:
         *,
         merge_mode: AuthorMergeMode = "append",
         allow_appearance_count_update: bool = False,
+        expected_updated_at: str | None = None,
     ) -> StructuredKnowledgeCard:
         """Apply explicit author edits to a confirmed card."""
         if merge_mode not in {"append", "overwrite"}:
@@ -247,6 +250,13 @@ class KnowledgeService:
         current = await self.get_card(card_id)
         if current.lifecycle is not StructuredKnowledgeLifecycle.CONFIRMED:
             raise KnowledgeCardValidationError("只能更新已确认知识卡。")
+        if (
+            expected_updated_at is not None
+            and current.updated_at != expected_updated_at
+        ):
+            raise KnowledgeConcurrentUpdateError(
+                "知识卡已被其他操作更新，请刷新后重新确认。"
+            )
         _reject_system_fields(updates)
         if not allow_appearance_count_update:
             _reject_author_readonly_fields(updates)
@@ -434,7 +444,9 @@ def _reject_forbidden_fields(
     *,
     agent: bool = False,
 ) -> None:
-    forbidden_keys = _AGENT_FORBIDDEN_FIELDS if agent else FORBIDDEN_KNOWLEDGE_FIELD_KEYS
+    forbidden_keys = (
+        _AGENT_FORBIDDEN_FIELDS if agent else FORBIDDEN_KNOWLEDGE_FIELD_KEYS
+    )
     forbidden = forbidden_keys & set(payload)
     if forbidden:
         raise KnowledgeCardValidationError(

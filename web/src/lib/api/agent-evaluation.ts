@@ -251,6 +251,7 @@ function normalizeComparison(
   const expectedCard = objectValue(value.expected_card);
   const actualCard = objectValue(value.actual_card);
   const judgeResult = objectValue(value.judge_result);
+  const explanation = objectValue(value.explanation);
   const fieldDiffs = Array.isArray(value.field_diffs)
     ? value.field_diffs.map(item => {
         const diff = objectValue(item) ?? {};
@@ -307,6 +308,14 @@ function normalizeComparison(
     judge_call_ids: stringArray(
       value.judge_call_ids ?? judgeResult?.judge_call_ids,
     ),
+    explanation: stringValue(explanation?.summary)
+      ? {
+          summary: stringValue(explanation?.summary),
+          source:
+            stringValue(explanation?.source) === "model" ? "model" : "rule",
+          call_id: stringValue(explanation?.call_id) || null,
+        }
+      : null,
   };
 }
 

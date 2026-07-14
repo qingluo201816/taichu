@@ -216,6 +216,132 @@ class OutlineService:
         await self._sync_manifest_from_outline(normalized)
         return normalized
 
+    async def move_volume(
+        self,
+        volume_id: str,
+        *,
+        after_volume_id: str | None = None,
+    ) -> WritingOutline:
+        """Move one volume to the first position or after another volume."""
+        outline = await self.get_outline()
+        old_outline = outline
+        target = _find_volume(outline, volume_id)
+        remaining = [
+            volume for volume in outline.volumes if volume.volume_id != volume_id
+        ]
+        insert_index = 0
+        if after_volume_id is not None:
+            if after_volume_id == volume_id:
+                raise ValueError("卷不能移动到自身之后")
+            for index, volume in enumerate(remaining):
+                if volume.volume_id == after_volume_id:
+                    insert_index = index + 1
+                    break
+            else:
+                raise OutlineNotFoundError(f"卷“{after_volume_id}”不存在")
+        volumes = [*remaining[:insert_index], target, *remaining[insert_index:]]
+        updated = outline.model_copy(
+            update={"volumes": volumes, "updated_at": _now_iso()}
+        )
+        normalized = _normalize_outline(updated)
+        await self._move_existing_outline_paths(old_outline, normalized)
+        await self._storage.write_outline(normalized.model_dump(mode="json"))
+        await self._sync_manifest_from_outline(normalized)
+        return normalized
+
+    async def move_chapter(
+        self,
+        chapter_id: str,
+        target_volume_id: str,
+        *,
+        after_chapter_id: str | None = None,
+    ) -> WritingOutline:
+        """Move one chapter across or within volumes with stable ordering."""
+        outline = await self.get_outline()
+        old_outline = outline
+        target_volume = _find_volume(outline, target_volume_id)
+        chapter = _find_outline_chapter(outline, chapter_id)
+        volumes_without_target: list[OutlineVolume] = []
+        for volume in outline.volumes:
+            chapters = [
+                item
+                for item in _ordered_chapters(volume)
+                if item.chapter_id != chapter_id
+            ]
+            volumes_without_target.append(
+                volume.model_copy(update={"chapters": chapters})
+            )
+
+        target_after_removal = next(
+            volume
+            for volume in volumes_without_target
+            if volume.volume_id == target_volume.volume_id
+        )
+        target_chapters = _ordered_chapters(target_after_removal)
+        insert_index = 0
+        if after_chapter_id is not None:
+            if after_chapter_id == chapter_id:
+                raise ValueError("章节不能移动到自身之后")
+            for index, item in enumerate(target_chapters):
+                if item.chapter_id == after_chapter_id:
+                    insert_index = index + 1
+                    break
+            else:
+                raise OutlineNotFoundError(f"章节“{after_chapter_id}”不属于目标卷")
+        target_chapters = [
+            *target_chapters[:insert_index],
+            chapter,
+            *target_chapters[insert_index:],
+        ]
+        volumes = [
+            volume.model_copy(update={"chapters": target_chapters})
+            if volume.volume_id == target_volume_id
+            else volume
+            for volume in volumes_without_target
+        ]
+        updated = outline.model_copy(
+            update={
+                "volumes": volumes,
+                "current_volume_id": target_volume_id,
+                "current_chapter_id": chapter_id,
+                "updated_at": _now_iso(),
+            }
+        )
+        normalized = _normalize_outline(updated)
+        await self._move_existing_outline_paths(old_outline, normalized)
+        await self._storage.write_outline(normalized.model_dump(mode="json"))
+        await self._sync_manifest_from_outline(normalized)
+        return normalized
+
+    async def set_chapter_status(
+        self,
+        chapter_id: str,
+        status: ChapterStatus,
+    ) -> WritingOutline:
+        """Update manuscript status without changing the volume/chapter tree."""
+        outline = await self.get_outline()
+        manifest = ChapterManifest.model_validate(await self._storage.read_manifest())
+        found = False
+        chapters: list[Chapter] = []
+        for chapter in manifest.chapters:
+            if chapter.id == chapter_id:
+                found = True
+                chapters.append(
+                    chapter.model_copy(
+                        update={"status": status, "updated_at": _now_iso()}
+                    )
+                )
+            else:
+                chapters.append(chapter)
+        if not found:
+            raise OutlineNotFoundError(f"章节“{chapter_id}”不存在")
+        await self._storage.write_manifest(
+            manifest.model_copy(
+                update={"chapters": chapters, "updated_at": _now_iso()}
+            ).model_dump(mode="json")
+        )
+        return outline
+
     async def delete_chapter(self, chapter_id: str) -> WritingOutline:
         """Remove a chapter from the outline and archive its Markdown."""
         outline = await self.get_outline()
@@ -469,8 +595,7 @@ def _outline_chapters_in_order(outline: WritingOutline) -> list[OutlineChapter]:
 
 def _outline_chapter_map(outline: WritingOutline) -> dict[str, OutlineChapter]:
     return {
-        chapter.chapter_id: chapter
-        for chapter in _outline_chapters_in_order(outline)
+        chapter.chapter_id: chapter for chapter in _outline_chapters_in_order(outline)
     }
 
 
@@ -689,9 +814,7 @@ def _current_chapter_after_volume_delete(
     volumes: list[OutlineVolume],
 ) -> str | None:
     remaining_ids = {
-        chapter.chapter_id
-        for volume in volumes
-        for chapter in volume.chapters
+        chapter.chapter_id for volume in volumes for chapter in volume.chapters
     }
     if (
         outline.current_volume_id != deleted_volume_id

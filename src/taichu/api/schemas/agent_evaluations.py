@@ -202,6 +202,7 @@ class KnowledgeEvaluationComparison(EvaluationApiModel):
     match_basis: str | None = None
     field_diffs: list[dict[str, Any]] = Field(default_factory=list)
     judge_result: dict[str, Any] | None = None
+    explanation: dict[str, Any] | None = None
 
 
 class KnowledgeEvaluationComparisonListResponse(EvaluationApiModel):

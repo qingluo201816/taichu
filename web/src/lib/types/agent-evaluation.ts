@@ -9,6 +9,7 @@ export type EvaluationPhase =
   | "queued"
   | "deterministic"
   | "judging"
+  | "explaining"
   | "aggregating"
   | "finished";
 
@@ -43,7 +44,9 @@ export type EvaluationIssueType =
   | "field_difference"
   | "semantic_issue"
   | "evidence_issue"
-  | "judge_disagreement";
+  | "judge_disagreement"
+  | "judge_inconclusive"
+  | "judge_failed";
 
 export type EvaluationKnowledgeType =
   | "character"
@@ -309,6 +312,12 @@ export type EvaluationJudgeFinding = {
   quote_ids?: string[];
 };
 
+export type EvaluationDifferenceExplanation = {
+  summary: string;
+  source: "model" | "rule";
+  call_id?: string | null;
+};
+
 export type KnowledgeEvaluationComparison = {
   comparison_id: string;
   run_id: string;
@@ -332,6 +341,7 @@ export type KnowledgeEvaluationComparison = {
   judge_status?: string | null;
   judge_findings?: EvaluationJudgeFinding[];
   judge_call_ids?: string[];
+  explanation?: EvaluationDifferenceExplanation | null;
 };
 
 export type KnowledgeEvaluationComparisonListResponse = {

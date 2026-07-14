@@ -30,6 +30,15 @@ from taichu.application.evaluations.knowledge_extraction.dataset import (
     LoadedEvaluationCase,
     LoadedEvaluationDataset,
 )
+from taichu.application.evaluations.knowledge_extraction.difference_explainer import (
+    PROMPT_CONTRACT_ID as DIFFERENCE_EXPLANATION_PROMPT_CONTRACT_ID,
+    DifferenceExplanationBatchOutput,
+    DifferenceExplanationInput,
+    build_difference_explanation_prompt,
+    difference_explanation_prompt_contract_hash,
+    fallback_difference_explanation,
+    parse_difference_explanation_output,
+)
 from taichu.application.evaluations.knowledge_extraction.judge import (
     PROMPT_CONTRACT_ID,
     JudgeBatchOutput,
@@ -81,6 +90,8 @@ from taichu.application.evaluations.knowledge_extraction.profiles import (
     get_metric_profile,
 )
 from taichu.application.evaluations.knowledge_extraction.records import (
+    DifferenceExplanation,
+    DifferenceExplanationSource,
     EvaluationComparison,
     EvaluationMode,
     EvaluationNotice,
@@ -136,7 +147,16 @@ class _PreparedRequest:
 class _JudgeExecution:
     items: dict[str, JudgeItem]
     call_ids: dict[str, list[str]]
+    diagnostics: dict[str, "_JudgeCaseDiagnostic"]
     warnings: list[EvaluationNotice]
+
+
+@dataclass(frozen=True, slots=True)
+class _JudgeCaseDiagnostic:
+    """Valid judge samples and total attempts for one matched card."""
+
+    samples: tuple[JudgeItem, ...]
+    attempt_count: int
 
 
 _REASON_MESSAGES = {
@@ -472,14 +492,26 @@ class KnowledgeExtractionEvaluationService:
             result = await self._results.get_run_result(evaluation_id, summary.run_id)
             source = result or summary
             comparisons.extend(source.comparisons)
+        judge_call_cache: dict[str, JudgeCallRecord | None] = {}
         visible_comparisons: list[EvaluationComparison] = []
         for comparison in comparisons:
+            comparison = await self._hydrate_legacy_judge_result(
+                evaluation_id,
+                comparison,
+                judge_call_cache,
+            )
             normalized_issue_type = _comparison_issue_type(comparison)
             if normalized_issue_type is None:
                 continue
+            normalized = comparison.model_copy(
+                update={"issue_type": normalized_issue_type}
+            )
             visible_comparisons.append(
-                comparison.model_copy(
-                    update={"issue_type": normalized_issue_type}
+                normalized.model_copy(
+                    update={
+                        "explanation": normalized.explanation
+                        or fallback_difference_explanation(normalized)
+                    }
                 )
             )
         comparisons = visible_comparisons
@@ -500,6 +532,39 @@ class KnowledgeExtractionEvaluationService:
             )
             for item in comparisons[start : start + page_size]
         ], total
+
+    async def _hydrate_legacy_judge_result(
+        self,
+        evaluation_id: str,
+        comparison: EvaluationComparison,
+        call_cache: dict[str, JudgeCallRecord | None],
+    ) -> EvaluationComparison:
+        """Recover accurate judge diagnostics for historical disagreement rows."""
+        judge_result = comparison.judge_result or {}
+        if (
+            judge_result.get("status") != "disagreement"
+            or "valid_result_count" in judge_result
+        ):
+            return comparison
+
+        call_ids = [
+            value
+            for value in judge_result.get("judge_call_ids", [])
+            if isinstance(value, str) and value
+        ]
+        calls: list[JudgeCallRecord] = []
+        for call_id in call_ids:
+            if call_id not in call_cache:
+                call_cache[call_id] = await self._results.get_judge_call(
+                    evaluation_id,
+                    call_id,
+                )
+            call = call_cache[call_id]
+            if call is not None:
+                calls.append(call)
+
+        recovered = _legacy_judge_diagnostics(comparison, calls, len(call_ids))
+        return comparison.model_copy(update={"judge_result": recovered})
 
     async def get_judge_call(
         self,
@@ -940,6 +1005,7 @@ class KnowledgeExtractionEvaluationService:
             snapshot = await self._results.read_snapshot_files(evaluation_id)
             frozen = _decode_snapshot(snapshot)
             run_results: list[EvaluationRunResult] = []
+            judged: _JudgeExecution | None = None
             judge_inputs: list[tuple[JudgeInputCase, str, IndependenceLevel]] = []
             warnings: list[EvaluationNotice] = []
             for run in frozen.runs:
@@ -1005,6 +1071,24 @@ class KnowledgeExtractionEvaluationService:
                 )
                 for result in run_results:
                     await self._results.write_run_result(evaluation_id, result)
+                record = await self._results.mutate_record(
+                    evaluation_id,
+                    {
+                        "phase": EvaluationPhase.EXPLAINING,
+                        "updated_at": _now_iso(),
+                    },
+                    expected_status=EvaluationStatus.RUNNING.value,
+                    expected_execution_token=token,
+                )
+            run_results, explanation_warnings = await self._attach_explanations(
+                record,
+                run_results,
+                judged,
+                use_model=record.judge.enabled,
+            )
+            warnings.extend(explanation_warnings)
+            for result in run_results:
+                await self._results.write_run_result(evaluation_id, result)
             record = await self._results.mutate_record(
                 evaluation_id,
                 {
@@ -1056,6 +1140,7 @@ class KnowledgeExtractionEvaluationService:
     ) -> _JudgeExecution:
         items: dict[str, JudgeItem] = {}
         call_ids: dict[str, list[str]] = defaultdict(list)
+        diagnostics: dict[str, _JudgeCaseDiagnostic] = {}
         warnings: list[EvaluationNotice] = []
         grouped: dict[
             tuple[str, str],
@@ -1123,7 +1208,10 @@ class KnowledgeExtractionEvaluationService:
                     sample = first.get(case.case_id)
                     samples = [sample] if sample else []
                     call_ids[case.case_id].extend(ids.get(case.case_id, []))
-                    if sample is not None and should_rejudge(sample):
+                    rejudge_required = (
+                        sample is not None and should_rejudge(sample)
+                    )
+                    if rejudge_required:
                         for _ in range(2):
                             repeated, repeated_ids, repeated_error = (
                                 await self._judge_once(
@@ -1137,7 +1225,15 @@ class KnowledgeExtractionEvaluationService:
                             )
                             if not repeated_error and case.case_id in repeated:
                                 samples.append(repeated[case.case_id])
-                    aggregated = aggregate_judge_samples(samples)
+                    aggregated = (
+                        None
+                        if rejudge_required and len(samples) < 2
+                        else aggregate_judge_samples(samples)
+                    )
+                    diagnostics[case.case_id] = _JudgeCaseDiagnostic(
+                        samples=tuple(samples),
+                        attempt_count=len(call_ids[case.case_id]),
+                    )
                     if aggregated is not None:
                         items[case.case_id] = aggregated
                         if aggregated.status is not JudgeStatus.SCORED:
@@ -1148,11 +1244,19 @@ class KnowledgeExtractionEvaluationService:
                                     run_id=case.run_id,
                                 )
                             )
-                    elif samples:
+                    elif len(samples) >= 2:
                         warnings.append(
                             EvaluationNotice(
                                 code="EVALUATION_JUDGE_DISAGREEMENT",
-                                message="语义裁判重复判断未形成一致结论。",
+                                message="多次有效语义裁判的评分未满足一致性要求。",
+                                run_id=case.run_id,
+                            )
+                        )
+                    elif len(samples) == 1:
+                        warnings.append(
+                            EvaluationNotice(
+                                code="EVALUATION_JUDGE_INCONCLUSIVE",
+                                message="有效语义裁判结果不足，已保留确定性结果。",
                                 run_id=case.run_id,
                             )
                         )
@@ -1170,7 +1274,12 @@ class KnowledgeExtractionEvaluationService:
                     expected_status=EvaluationStatus.RUNNING.value,
                     expected_execution_token=token,
                 )
-        return _JudgeExecution(dict(items), dict(call_ids), warnings)
+        return _JudgeExecution(
+            dict(items),
+            dict(call_ids),
+            diagnostics,
+            warnings,
+        )
 
     async def _judge_once(
         self,
@@ -1224,6 +1333,199 @@ class KnowledgeExtractionEvaluationService:
         await self._results.write_judge_call(call)
         ids = {case.case_id: [call_id] for case in cases}
         return result, ids, error_message
+
+    async def _attach_explanations(
+        self,
+        record: KnowledgeEvaluationRecord,
+        run_results: list[EvaluationRunResult],
+        judged: _JudgeExecution | None,
+        *,
+        use_model: bool,
+    ) -> tuple[list[EvaluationRunResult], list[EvaluationNotice]]:
+        """Attach model summaries, with rule summaries as an auditable fallback."""
+        cases_by_run: dict[str, list[DifferenceExplanationInput]] = defaultdict(list)
+        locations: dict[str, tuple[int, int]] = {}
+        updated_runs: list[EvaluationRunResult] = []
+        diagnostics = judged.diagnostics if judged is not None else {}
+
+        for run_index, run in enumerate(run_results):
+            comparisons: list[EvaluationComparison] = []
+            for comparison_index, comparison in enumerate(run.comparisons):
+                issue_type = _comparison_issue_type(comparison)
+                if issue_type is None:
+                    comparisons.append(comparison)
+                    continue
+                normalized = comparison.model_copy(update={"issue_type": issue_type})
+                explanation_id = _difference_explanation_id(
+                    normalized,
+                    comparison_index,
+                )
+                judge_key = _comparison_judge_key(normalized)
+                diagnostic = diagnostics.get(judge_key) if judge_key else None
+                case = DifferenceExplanationInput(
+                    explanation_id=explanation_id,
+                    run_id=run.run_id,
+                    task_title=normalized.task_title or run.display_title,
+                    knowledge_type=normalized.knowledge_type,
+                    issue_type=normalized.issue_type,
+                    display_title=_comparison_display_title(normalized),
+                    match_kind=normalized.match_kind,
+                    expected_card=normalized.expected_card,
+                    actual_card=normalized.actual_card,
+                    field_diffs=normalized.field_diffs,
+                    judge_result=normalized.judge_result,
+                    valid_judge_samples=(
+                        [
+                            sample.model_dump(mode="json")
+                            for sample in diagnostic.samples
+                        ]
+                        if diagnostic is not None
+                        else []
+                    ),
+                )
+                normalized = normalized.model_copy(
+                    update={
+                        "explanation": fallback_difference_explanation(normalized)
+                    }
+                )
+                locations[explanation_id] = (run_index, len(comparisons))
+                cases_by_run[run.run_id].append(case)
+                comparisons.append(normalized)
+            updated_runs.append(run.model_copy(update={"comparisons": comparisons}))
+
+        if not use_model or not locations:
+            return updated_runs, []
+
+        explanations: dict[str, DifferenceExplanation] = {}
+        fallback_counts: dict[str, int] = defaultdict(int)
+        for run_id, cases in cases_by_run.items():
+            independence = record.judge.independence_by_run.get(
+                run_id,
+                IndependenceLevel.UNKNOWN,
+            )
+            for offset in range(0, len(cases), 5):
+                batch = cases[offset : offset + 5]
+                result, call_id, error = await self._explain_once(
+                    record,
+                    batch,
+                    independence,
+                )
+                if error and len(batch) > 1:
+                    result = {}
+                    for case in batch:
+                        single, single_call_id, single_error = await self._explain_once(
+                            record,
+                            [case],
+                            independence,
+                        )
+                        if single_error:
+                            fallback_counts[run_id] += 1
+                            continue
+                        explanations.update(
+                            {
+                                key: DifferenceExplanation(
+                                    summary=value,
+                                    source=DifferenceExplanationSource.MODEL,
+                                    call_id=single_call_id,
+                                )
+                                for key, value in single.items()
+                            }
+                        )
+                    continue
+                if error:
+                    fallback_counts[run_id] += len(batch)
+                    continue
+                explanations.update(
+                    {
+                        key: DifferenceExplanation(
+                            summary=value,
+                            source=DifferenceExplanationSource.MODEL,
+                            call_id=call_id,
+                        )
+                        for key, value in result.items()
+                    }
+                )
+
+        mutable_comparisons = [list(run.comparisons) for run in updated_runs]
+        for explanation_id, explanation in explanations.items():
+            location = locations.get(explanation_id)
+            if location is None:
+                continue
+            run_index, comparison_index = location
+            comparison = mutable_comparisons[run_index][comparison_index]
+            mutable_comparisons[run_index][comparison_index] = comparison.model_copy(
+                update={"explanation": explanation}
+            )
+        final_runs = [
+            run.model_copy(update={"comparisons": mutable_comparisons[index]})
+            for index, run in enumerate(updated_runs)
+        ]
+        warnings = [
+            EvaluationNotice(
+                code="EVALUATION_EXPLANATION_FALLBACK",
+                message=(
+                    f"{count} 项差异未获得模型总结，已改用规则说明，不影响评估分数。"
+                ),
+                run_id=run_id,
+            )
+            for run_id, count in fallback_counts.items()
+            if count
+        ]
+        return final_runs, warnings
+
+    async def _explain_once(
+        self,
+        record: KnowledgeEvaluationRecord,
+        cases: list[DifferenceExplanationInput],
+        independence: IndependenceLevel,
+    ) -> tuple[dict[str, str], str, str | None]:
+        """Execute and persist one strict difference-explanation request."""
+        prompt = build_difference_explanation_prompt(cases)
+        call_id = f"judge_call_{token_hex(6)}"
+        started_at = _now_iso()
+        started = monotonic()
+        raw: str | None = None
+        parsed: dict[str, Any] | None = None
+        error_message: str | None = None
+        result: dict[str, str] = {}
+        token_usage: dict[str, int] | None = None
+        try:
+            response = await asyncio.wait_for(
+                self._judge.complete(prompt),
+                timeout=120,
+            )
+            raw = response.raw_response
+            token_usage = response.token_usage
+            output = parse_difference_explanation_output(raw, cases)
+            parsed = output.model_dump(mode="json")
+            result = {item.explanation_id: item.summary for item in output.items}
+        except Exception as error:  # noqa: BLE001
+            error_message = _difference_explanation_failure_message(error)
+        finished_at = _now_iso()
+        await self._results.write_judge_call(
+            JudgeCallRecord(
+                call_id=call_id,
+                evaluation_id=record.evaluation_id,
+                run_ids=sorted({item.run_id for item in cases}),
+                judge_model_identity=self._judge.model_identity,
+                independence_level=independence,
+                self_judge=independence is IndependenceLevel.SAME_MODEL,
+                prompt_contract_id=DIFFERENCE_EXPLANATION_PROMPT_CONTRACT_ID,
+                prompt_hash=sha256(prompt.encode("utf-8")).hexdigest(),
+                input_snapshot_hash=_hash_json(
+                    [item.model_dump(mode="json") for item in cases]
+                ),
+                input_prompt=prompt,
+                raw_response=raw,
+                parsed_output=parsed,
+                started_at=started_at,
+                finished_at=finished_at,
+                duration_ms=int((monotonic() - started) * 1000),
+                error=error_message,
+                token_usage=token_usage,
+            )
+        )
+        return result, call_id, error_message
 
     async def _heartbeat(self, evaluation_id: str, token: str) -> None:
         while True:
@@ -1771,24 +2073,41 @@ def _apply_judge_results(
             item = judged.items.get(key)
             if item is None:
                 call_ids = judged.call_ids.get(key, [])
-                disagreement = bool(call_ids)
+                diagnostic = judged.diagnostics.get(key)
+                valid_count = len(diagnostic.samples) if diagnostic else 0
+                attempt_count = (
+                    diagnostic.attempt_count if diagnostic else len(call_ids)
+                )
+                if valid_count >= 2:
+                    judge_status = "disagreement"
+                    issue_type = "judge_disagreement"
+                    reason = (
+                        "多次有效裁判的评分未满足一致性要求，语义结果未计入评分。"
+                    )
+                    disagreement = True
+                elif valid_count == 1:
+                    judge_status = "inconclusive"
+                    issue_type = "judge_inconclusive"
+                    reason = (
+                        "只获得一份有效裁判结果，不足以形成稳健结论，已保留确定性结果。"
+                    )
+                else:
+                    judge_status = "failed"
+                    issue_type = "judge_failed"
+                    reason = (
+                        "语义裁判调用均未成功，无法形成语义结论；这不代表抽取错误。"
+                    )
                 comparisons.append(
                     comparison.model_copy(
                         update={
-                            "issue_type": (
-                                "judge_disagreement"
-                                if call_ids
-                                else comparison.issue_type
-                            ),
-                            "judge_result": (
-                                {
-                                    "status": "disagreement",
-                                    "reason": "多次裁判意见未达成一致。",
-                                    "judge_call_ids": call_ids,
-                                }
-                                if call_ids
-                                else comparison.judge_result
-                            ),
+                            "issue_type": issue_type,
+                            "judge_result": {
+                                "status": judge_status,
+                                "reason": reason,
+                                "judge_call_ids": call_ids,
+                                "attempt_count": attempt_count,
+                                "valid_result_count": valid_count,
+                            },
                         }
                     )
                 )
@@ -1812,6 +2131,16 @@ def _apply_judge_results(
                     "judge_result": {
                         **item.model_dump(mode="json"),
                         "judge_call_ids": judged.call_ids.get(key, []),
+                        "attempt_count": (
+                            judged.diagnostics[key].attempt_count
+                            if key in judged.diagnostics
+                            else len(judged.call_ids.get(key, []))
+                        ),
+                        "valid_result_count": (
+                            len(judged.diagnostics[key].samples)
+                            if key in judged.diagnostics
+                            else 1
+                        ),
                         "semantic_score": score,
                     }
                 }
@@ -1923,6 +2252,10 @@ def _comparison_issue_type(comparison: EvaluationComparison) -> str | None:
     judge_status = str(judge_result.get("status") or "")
     if judge_status in {"reference_conflict", "disagreement"}:
         return "judge_disagreement"
+    if judge_status == "inconclusive":
+        return "judge_inconclusive"
+    if judge_status == "failed":
+        return "judge_failed"
     if judge_status == "insufficient_evidence":
         return "evidence_issue"
 
@@ -1958,9 +2291,56 @@ def _comparison_issue_type(comparison: EvaluationComparison) -> str | None:
         "semantic_issue",
         "evidence_issue",
         "judge_disagreement",
+        "judge_inconclusive",
+        "judge_failed",
     }:
         return comparison.issue_type
     return None
+
+
+def _legacy_judge_diagnostics(
+    comparison: EvaluationComparison,
+    calls: list[JudgeCallRecord],
+    attempt_count: int,
+) -> dict[str, Any]:
+    """Classify a historical generic disagreement from its persisted calls."""
+    judge_result = comparison.judge_result or {}
+    valid_result_count = sum(
+        1 for call in calls if _judge_call_contains_comparison(call, comparison)
+    )
+    if valid_result_count >= 2:
+        status = "disagreement"
+        reason = "多次有效裁判的评分未满足一致性要求，语义结果未计入评分。"
+    elif valid_result_count == 1:
+        status = "inconclusive"
+        reason = "只获得一份有效裁判结果，不足以形成稳健结论，已保留确定性结果。"
+    else:
+        status = "failed"
+        reason = "语义裁判调用均未成功，无法形成语义结论；这不代表抽取错误。"
+    return {
+        **judge_result,
+        "status": status,
+        "reason": reason,
+        "attempt_count": attempt_count,
+        "valid_result_count": valid_result_count,
+    }
+
+
+def _judge_call_contains_comparison(
+    call: JudgeCallRecord,
+    comparison: EvaluationComparison,
+) -> bool:
+    if call.prompt_contract_id != PROMPT_CONTRACT_ID:
+        return False
+    items = (call.parsed_output or {}).get("items")
+    if not isinstance(items, list):
+        return False
+    return any(
+        isinstance(item, dict)
+        and item.get("expected_card_id") == comparison.expected_card_id
+        and item.get("actual_review_item_id") == comparison.actual_candidate_id
+        for item in items
+    )
 
 
 def _judge_dimension_has_issue(value: Any) -> bool:
@@ -2248,6 +2628,15 @@ def _judge_contract_payload(
         ),
         "prompt_hash": prompt_contract_hash(),
         "output_schema": JudgeBatchOutput.model_json_schema(),
+        "difference_explanation": {
+            "prompt_contract_id": DIFFERENCE_EXPLANATION_PROMPT_CONTRACT_ID,
+            "prompt_builder": (
+                "taichu.application.evaluations.knowledge_extraction."
+                "difference_explainer.build_difference_explanation_prompt"
+            ),
+            "prompt_hash": difference_explanation_prompt_contract_hash(),
+            "output_schema": DifferenceExplanationBatchOutput.model_json_schema(),
+        },
         "judge_model_identity": (
             model_identity.model_dump(mode="json") if model_identity else None
         ),
@@ -2302,6 +2691,39 @@ def _hash_json(value: Any) -> str:
     ).hexdigest()
 
 
+def _comparison_judge_key(comparison: EvaluationComparison) -> str | None:
+    if not comparison.expected_card_id or not comparison.actual_candidate_id:
+        return None
+    return (
+        f"{comparison.run_id}::{comparison.actual_candidate_id}::"
+        f"{comparison.expected_card_id}"
+    )
+
+
+def _comparison_display_title(comparison: EvaluationComparison) -> str:
+    for card in (comparison.expected_card, comparison.actual_card):
+        name = (card or {}).get("name")
+        if isinstance(name, str) and name.strip():
+            return name.strip()
+    return "未命名知识卡"
+
+
+def _difference_explanation_id(
+    comparison: EvaluationComparison,
+    comparison_index: int,
+) -> str:
+    return "difference_" + _hash_json(
+        {
+            "run_id": comparison.run_id,
+            "expected_card_id": comparison.expected_card_id,
+            "actual_candidate_id": comparison.actual_candidate_id,
+            "knowledge_type": comparison.knowledge_type,
+            "issue_type": comparison.issue_type,
+            "comparison_index": comparison_index,
+        }
+    )[:16]
+
+
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
@@ -2316,6 +2738,16 @@ def _judge_failure_message(error: Exception) -> str:
     if "JSON" in detail or "json" in detail:
         return "语义裁判没有返回可解析的 JSON 结果。"
     return "语义裁判调用失败或返回格式不符合要求。"
+
+
+def _difference_explanation_failure_message(error: Exception) -> str:
+    """Convert explanation-call failures into a stable Chinese diagnosis."""
+    detail = str(error)
+    if "explanation_id" in detail or "条目" in detail:
+        return "差异说明模型回复的条目标识不完整，未采用本次说明。"
+    if "JSON" in detail or "json" in detail:
+        return "差异说明模型没有返回可解析的 JSON 结果。"
+    return "差异说明模型调用失败或返回格式不符合要求。"
 
 
 def _parse_iso(value: str) -> datetime:

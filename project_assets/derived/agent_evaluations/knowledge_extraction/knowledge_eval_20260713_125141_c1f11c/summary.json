@@ -4,8 +4,8 @@
   "request_fingerprint": "a2bd3b2232a0ab9ed00476ec8ebc5cace8ef995a6022d182e8ef6b722472d71e",
   "snapshot_root_hash": "62be2fe083d53254394a84037673de7f6e717b3d770585d6c2465f97a74efab3",
   "lifecycle": "draft",
-  "status": "running",
-  "phase": "judging",
+  "status": "completed_with_warnings",
+  "phase": "finished",
   "evaluation_mode": "deterministic_and_judge",
   "dataset_id": "taichu_knowledge_eval_first5_author_confirmed",
   "dataset_label": "太初前五章知识沉淀评测集（作者确认标注）",
@@ -32,9 +32,9 @@
     "run_total": 1,
     "run_completed": 1,
     "judge_card_total": 9,
-    "judge_card_completed": 0,
+    "judge_card_completed": 9,
     "judge_batch_total": 4,
-    "judge_batch_completed": 0
+    "judge_batch_completed": 4
   },
   "run_ids": [
     "extract_run_20260713_114610_f7a44a"
@@ -72,25 +72,67 @@
         "ambiguous_count": 0,
         "candidate_true_positive_count": 9,
         "candidate_false_positive_count": 1,
-        "candidate_false_negative_count": 1
+        "candidate_false_negative_count": 1,
+        "semantic_score": 0.9425000000000001,
+        "judge_coverage": 0.5555555555555556,
+        "overall_quality_score": null,
+        "critical_flag_count": 0,
+        "final_quality_state": "not_comparable"
       },
-      "semantic_score": null,
-      "judge_coverage": null,
+      "semantic_score": 0.9425000000000001,
+      "judge_coverage": 0.5555555555555556,
       "overall_quality_score": null,
       "final_quality_state": "not_comparable",
       "comparisons": [],
       "warnings": []
     }
   ],
-  "aggregate_metrics": {},
-  "warnings": [],
+  "aggregate_metrics": {
+    "candidate_precision_micro": 0.9,
+    "candidate_recall_micro": 0.9,
+    "candidate_f1_micro": 0.9,
+    "candidate_f1_macro": 0.76,
+    "structured_field_score": 0.9015151515151515,
+    "evidence_score": 0.6907894736842106,
+    "evidence_grounded_precision": 0.9130434782608695,
+    "expected_evidence_recall": 0.5555555555555556,
+    "negative_suppression_score": 1.0,
+    "schema_compliance_rate": 1.0,
+    "execution_coverage": 1.0,
+    "overall_quality_score": null,
+    "semantic_score": 0.9425000000000001,
+    "judge_coverage": 0.5555555555555556,
+    "final_quality_state": "not_comparable"
+  },
+  "warnings": [
+    {
+      "code": "EVALUATION_JUDGE_DISAGREEMENT",
+      "message": "语义裁判重复判断未形成一致结论。",
+      "run_id": "extract_run_20260713_114610_f7a44a"
+    },
+    {
+      "code": "EVALUATION_JUDGE_INVALID_OUTPUT",
+      "message": "语义裁判未纳入本次评分：语义裁判调用失败或返回格式不符合要求。已保留确定性结果。",
+      "run_id": "extract_run_20260713_114610_f7a44a"
+    },
+    {
+      "code": "EVALUATION_JUDGE_DISAGREEMENT",
+      "message": "语义裁判重复判断未形成一致结论。",
+      "run_id": "extract_run_20260713_114610_f7a44a"
+    },
+    {
+      "code": "EVALUATION_JUDGE_INVALID_OUTPUT",
+      "message": "语义裁判未纳入本次评分：语义裁判调用失败或返回格式不符合要求。已保留确定性结果。",
+      "run_id": "extract_run_20260713_114610_f7a44a"
+    }
+  ],
   "errors": [],
   "error_code": null,
   "error_message": null,
   "created_at": "2026-07-13T12:51:41.335808Z",
   "started_at": "2026-07-13T12:51:41.360875Z",
-  "updated_at": "2026-07-13T12:51:41.385388Z",
-  "heartbeat_at": "2026-07-13T12:54:11.546042Z",
-  "finished_at": null,
-  "execution_token": "0d906c1a7e6e9ebf34ac4f0a"
+  "updated_at": "2026-07-13T13:04:29.370131Z",
+  "heartbeat_at": "2026-07-13T13:04:29.370131Z",
+  "finished_at": "2026-07-13T13:04:29.370131Z",
+  "execution_token": null
 }

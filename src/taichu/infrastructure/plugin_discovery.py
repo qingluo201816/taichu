@@ -8,6 +8,10 @@ from taichu.application.agents.contract import (
     AgentPlugin,
 )
 from taichu.application.tools.contract import ToolManifest, ToolPlugin
+from taichu.application.subagents.contract import (
+    SubagentManifest,
+    SubagentPlugin,
+)
 
 
 def discover_agents(package_name: str) -> list[AgentPlugin]:
@@ -70,19 +74,17 @@ def discover_tools(package_name: str) -> list[ToolPlugin]:
         ) from error
 
     plugins: list[ToolPlugin] = []
-    ignored_modules = {"contract", "registry"}
+    ignored_modules = {"contract", "models", "registry"}
     for module_info in sorted(
         iter_modules(package.__path__, f"{package_name}."),
         key=lambda item: item.name,
     ):
         short_name = module_info.name.rsplit(".", maxsplit=1)[-1]
-        if short_name in ignored_modules:
+        if short_name in ignored_modules or short_name.startswith("_"):
             continue
 
         module_name = (
-            f"{module_info.name}.tool"
-            if module_info.ispkg
-            else module_info.name
+            f"{module_info.name}.tool" if module_info.ispkg else module_info.name
         )
         try:
             tool_module = import_module(module_name)
@@ -104,6 +106,44 @@ def discover_tools(package_name: str) -> list[ToolPlugin]:
 
         plugins.append(ToolPlugin(manifest=manifest, run=run))
 
+    return plugins
+
+
+def discover_subagents(package_name: str) -> list[SubagentPlugin]:
+    """发现独立异步 Handler 协议的专业子 Agent。"""
+    try:
+        package = import_module(package_name)
+    except Exception as error:
+        raise PluginDiscoveryError(
+            f"Unable to import Subagent package '{package_name}'"
+        ) from error
+
+    plugins: list[SubagentPlugin] = []
+    for module_info in sorted(
+        iter_modules(package.__path__, f"{package_name}."),
+        key=lambda item: item.name,
+    ):
+        short_name = module_info.name.rsplit(".", maxsplit=1)[-1]
+        if not module_info.ispkg or short_name.startswith("_"):
+            continue
+        module_name = f"{module_info.name}.agent"
+        try:
+            agent_module = import_module(module_name)
+            manifest = agent_module.manifest
+            run = agent_module.run
+        except Exception as error:
+            raise PluginDiscoveryError(
+                f"Unable to load Subagent plugin '{module_info.name}'"
+            ) from error
+        if not isinstance(manifest, SubagentManifest):
+            raise PluginDiscoveryError(
+                f"Subagent '{module_info.name}' exports an invalid manifest"
+            )
+        if not callable(run):
+            raise PluginDiscoveryError(
+                f"Subagent '{module_info.name}' exports a non-callable run"
+            )
+        plugins.append(SubagentPlugin(manifest=manifest, run=run))
     return plugins
 
 

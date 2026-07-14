@@ -4,6 +4,7 @@ import unittest
 
 from taichu.infrastructure.plugin_discovery import (
     discover_agents,
+    discover_subagents,
     discover_tools,
 )
 
@@ -28,14 +29,62 @@ class PluginDiscoveryTest(unittest.TestCase):
             plugins[0].manifest.required_capabilities,
         )
 
-    def test_discover_tools_finds_builtin_knowledge_retrieval(self) -> None:
+    def test_discover_tools_finds_first_production_capability_catalog(self) -> None:
         plugins = discover_tools("taichu.application.tools")
 
+        names = {plugin.manifest.name for plugin in plugins}
+        self.assertEqual(len(names), 16)
         self.assertEqual(
-            [plugin.manifest.name for plugin in plugins],
-            ["retrieve_knowledge"],
+            names,
+            {
+                "get_novel_structure",
+                "read_manuscript",
+                "search_manuscript",
+                "retrieve_knowledge",
+                "resolve_knowledge_identity",
+                "list_knowledge_catalog",
+                "read_knowledge_cards",
+                "search_external_sources",
+                "read_external_source",
+                "preview_manuscript_patch",
+                "apply_manuscript_patch",
+                "create_novel_structure_items",
+                "update_novel_structure",
+                "delete_novel_structure_items",
+                "create_confirmed_knowledge",
+                "update_confirmed_knowledge",
+            },
+        )
+        retrieval = next(
+            plugin for plugin in plugins if plugin.manifest.name == "retrieve_knowledge"
         )
         self.assertEqual(
-            plugins[0].manifest.required_capabilities,
+            retrieval.manifest.required_capabilities,
             frozenset({"retrieval_service"}),
+        )
+
+    def test_discover_subagents_finds_twelve_independent_handlers(self) -> None:
+        plugins = discover_subagents("taichu.application.subagents")
+
+        self.assertEqual(len(plugins), 12)
+        self.assertEqual(
+            {plugin.manifest.name for plugin in plugins},
+            {
+                "canon_evidence",
+                "external_research",
+                "narrative_summary",
+                "worldbuilding",
+                "character",
+                "story_architecture",
+                "scene_planning",
+                "drafting",
+                "revision",
+                "consistency_reviewer",
+                "narrative_reviewer",
+                "style_reviewer",
+            },
+        )
+        self.assertEqual(
+            len({plugin.manifest.model_role for plugin in plugins}),
+            12,
         )

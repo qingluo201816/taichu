@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     rightcode_request_timeout_seconds: float = 180
     rightcode_max_retries: int = 2
     rightcode_model_prices_json: str = "{}"
+    agent_model_roles_json: str = "{}"
 
     host: str = "127.0.0.1"
     port: int = 8000

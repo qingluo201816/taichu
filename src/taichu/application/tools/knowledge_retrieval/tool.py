@@ -3,13 +3,14 @@
 from pydantic import BaseModel, ConfigDict, Field
 
 from taichu.application.capabilities import CapabilityContext
+from taichu.application.invocations.models import InvocationContext
 from taichu.application.retrieval.models import (
     RetrievalConsumerContext,
     RetrievalRequest,
     RetrievalResult,
 )
 from taichu.application.services.retrieval_service import RetrievalService
-from taichu.application.tools.contract import ToolManifest
+from taichu.application.tools.contract import ToolManifest, ToolSideEffect
 from taichu.domain.models.structured_knowledge import StructuredKnowledgeType
 
 
@@ -36,11 +37,31 @@ manifest = ToolManifest(
     output_schema=RetrievalResult,
     required_capabilities=frozenset({"retrieval_service"}),
     exposures=frozenset({"agent_runtime"}),
+    side_effect=ToolSideEffect.READ_ONLY,
+    allowed_callers=frozenset(
+        {
+            "orchestrator",
+            "canon_evidence",
+            "narrative_summary",
+            "worldbuilding",
+            "character",
+            "story_architecture",
+            "scene_planning",
+            "drafting",
+            "revision",
+            "consistency_reviewer",
+            "narrative_reviewer",
+            "style_reviewer",
+            "test",
+        }
+    ),
+    retryable=True,
 )
 
 
 async def run(
     input_data: BaseModel,
+    invocation: InvocationContext,
     context: CapabilityContext,
 ) -> BaseModel:
     """通过统一召回服务执行只读相关性查询。"""
@@ -57,8 +78,8 @@ async def run(
             max_content_chars=tool_input.max_content_chars,
             consumer=RetrievalConsumerContext(
                 consumer_type="general_agent_runtime",
-                run_id=tool_input.run_id,
-                stage=tool_input.stage or "knowledge_retrieval_tool",
+                run_id=tool_input.run_id or invocation.run_id,
+                stage=tool_input.stage or invocation.phase,
             ),
         )
     )

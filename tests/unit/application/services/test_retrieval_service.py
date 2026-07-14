@@ -20,6 +20,7 @@ from taichu.application.retrieval.models import (
     RetrievalStatus,
 )
 from taichu.application.capabilities import CapabilityContext
+from taichu.application.invocations.models import InvocationContext
 from taichu.application.services.retrieval_service import RetrievalService
 from taichu.application.tools.knowledge_retrieval.tool import (
     KnowledgeRetrievalToolInput,
@@ -207,6 +208,13 @@ async def test_agent_tool_delegates_to_the_same_retrieval_service(
             query_text="秦阳",
             run_id="agent-run-1",
             stage="research",
+        ),
+        InvocationContext(
+            task_id="task-1",
+            run_id="agent-run-1",
+            caller_type="test",
+            caller_name="test",
+            phase="research",
         ),
         context,
     )

@@ -1,0 +1,1713 @@
+{
+  "run_id": "extract_run_20260713_114610_f7a44a",
+  "case_id": "chapter_002",
+  "display_title": "第2章 山中神仙选仙苗",
+  "eligibility_level": "full",
+  "eligibility_reasons": [],
+  "generation_model_identity": {
+    "provider": "rightcode",
+    "model_id": "claude-sonnet-5",
+    "family": "claude-sonnet",
+    "endpoint_kind": "anthropic_messages",
+    "fingerprint": null,
+    "known": true,
+    "unknown_reason": null
+  },
+  "expected_card_count": 10,
+  "actual_card_count": 10,
+  "metrics": {
+    "candidates": {
+      "micro": {
+        "true_positive_count": 9,
+        "false_positive_count": 1,
+        "false_negative_count": 1,
+        "precision": 0.9,
+        "recall": 0.9,
+        "f1": 0.9
+      },
+      "by_type": {
+        "character": {
+          "true_positive_count": 3,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "realm": {
+          "true_positive_count": 0,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        "technique": {
+          "true_positive_count": 0,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        "location": {
+          "true_positive_count": 3,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "faction": {
+          "true_positive_count": 0,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "precision": null,
+          "recall": null,
+          "f1": null
+        },
+        "item": {
+          "true_positive_count": 1,
+          "false_positive_count": 0,
+          "false_negative_count": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "rule": {
+          "true_positive_count": 0,
+          "false_positive_count": 0,
+          "false_negative_count": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
+        },
+        "event": {
+          "true_positive_count": 2,
+          "false_positive_count": 1,
+          "false_negative_count": 0,
+          "precision": 0.6666666666666666,
+          "recall": 1.0,
+          "f1": 0.8
+        }
+      },
+      "macro_f1": 0.76,
+      "ambiguous_count": 0
+    },
+    "structured_fields": {
+      "score": 0.9015151515151515,
+      "weighted_correct": 59.5,
+      "weighted_total": 66.0,
+      "diffs": [
+        {
+          "actual_candidate_id": "review_item_001",
+          "expected_card_id": "character_qin_haoxuan",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "character",
+          "actual_value": "character",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_001",
+          "expected_card_id": "character_qin_haoxuan",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_001",
+          "expected_card_id": "character_qin_haoxuan",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_001",
+          "expected_card_id": "character_qin_haoxuan",
+          "field_name": "role_type",
+          "kind": "exact",
+          "expected_value": "protagonist",
+          "actual_value": null,
+          "score": 0.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_001",
+          "expected_card_id": "character_qin_haoxuan",
+          "field_name": "first_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-333d692f21224f15a5735317ee278132",
+          "actual_value": "chapter-333d692f21224f15a5735317ee278132",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_001",
+          "expected_card_id": "character_qin_haoxuan",
+          "field_name": "last_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-333d692f21224f15a5735317ee278132",
+          "actual_value": "chapter-333d692f21224f15a5735317ee278132",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_001",
+          "expected_card_id": "character_qin_haoxuan",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [],
+          "actual_value": [],
+          "score": null,
+          "weight": 1.0,
+          "comparable": false,
+          "reason": "empty_set_not_applicable"
+        },
+        {
+          "actual_candidate_id": "review_item_002",
+          "expected_card_id": "character_chen_laotou",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "character",
+          "actual_value": "character",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_002",
+          "expected_card_id": "character_chen_laotou",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_002",
+          "expected_card_id": "character_chen_laotou",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_002",
+          "expected_card_id": "character_chen_laotou",
+          "field_name": "role_type",
+          "kind": "exact",
+          "expected_value": "supporting",
+          "actual_value": null,
+          "score": 0.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_002",
+          "expected_card_id": "character_chen_laotou",
+          "field_name": "first_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-333d692f21224f15a5735317ee278132",
+          "actual_value": "chapter-333d692f21224f15a5735317ee278132",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_002",
+          "expected_card_id": "character_chen_laotou",
+          "field_name": "last_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-333d692f21224f15a5735317ee278132",
+          "actual_value": "chapter-333d692f21224f15a5735317ee278132",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_002",
+          "expected_card_id": "character_chen_laotou",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [],
+          "actual_value": [],
+          "score": null,
+          "weight": 1.0,
+          "comparable": false,
+          "reason": "empty_set_not_applicable"
+        },
+        {
+          "actual_candidate_id": "review_item_003",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "character",
+          "actual_value": "character",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_003",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_003",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_003",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "role_type",
+          "kind": "exact",
+          "expected_value": "antagonist",
+          "actual_value": null,
+          "score": 0.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_003",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "first_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-333d692f21224f15a5735317ee278132",
+          "actual_value": "chapter-333d692f21224f15a5735317ee278132",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_003",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "last_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-333d692f21224f15a5735317ee278132",
+          "actual_value": "chapter-333d692f21224f15a5735317ee278132",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_003",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [
+            "张老大"
+          ],
+          "actual_value": [],
+          "score": 0.0,
+          "weight": 1.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_004",
+          "expected_card_id": "location_chenjia_yaopu",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "location",
+          "actual_value": "location",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_004",
+          "expected_card_id": "location_chenjia_yaopu",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_004",
+          "expected_card_id": "location_chenjia_yaopu",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_004",
+          "expected_card_id": "location_chenjia_yaopu",
+          "field_name": "first_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-333d692f21224f15a5735317ee278132",
+          "actual_value": "chapter-333d692f21224f15a5735317ee278132",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_004",
+          "expected_card_id": "location_chenjia_yaopu",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [],
+          "actual_value": [],
+          "score": null,
+          "weight": 1.0,
+          "comparable": false,
+          "reason": "empty_set_not_applicable"
+        },
+        {
+          "actual_candidate_id": "review_item_005",
+          "expected_card_id": "location_da_tian_zhen",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "location",
+          "actual_value": "location",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_005",
+          "expected_card_id": "location_da_tian_zhen",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_005",
+          "expected_card_id": "location_da_tian_zhen",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_005",
+          "expected_card_id": "location_da_tian_zhen",
+          "field_name": "first_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-333d692f21224f15a5735317ee278132",
+          "actual_value": "chapter-333d692f21224f15a5735317ee278132",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_005",
+          "expected_card_id": "location_da_tian_zhen",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [],
+          "actual_value": [],
+          "score": null,
+          "weight": 1.0,
+          "comparable": false,
+          "reason": "empty_set_not_applicable"
+        },
+        {
+          "actual_candidate_id": "review_item_006",
+          "expected_card_id": "location_pozi_ling",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "location",
+          "actual_value": "location",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_006",
+          "expected_card_id": "location_pozi_ling",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_006",
+          "expected_card_id": "location_pozi_ling",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_006",
+          "expected_card_id": "location_pozi_ling",
+          "field_name": "first_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-333d692f21224f15a5735317ee278132",
+          "actual_value": "chapter-333d692f21224f15a5735317ee278132",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_006",
+          "expected_card_id": "location_pozi_ling",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [],
+          "actual_value": [],
+          "score": null,
+          "weight": 1.0,
+          "comparable": false,
+          "reason": "empty_set_not_applicable"
+        },
+        {
+          "actual_candidate_id": "review_item_007",
+          "expected_card_id": "item_huangjing",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "item",
+          "actual_value": "item",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_007",
+          "expected_card_id": "item_huangjing",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_007",
+          "expected_card_id": "item_huangjing",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_007",
+          "expected_card_id": "item_huangjing",
+          "field_name": "item_type",
+          "kind": "exact",
+          "expected_value": "material",
+          "actual_value": "material",
+          "score": 1.0,
+          "weight": 2.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_007",
+          "expected_card_id": "item_huangjing",
+          "field_name": "first_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-333d692f21224f15a5735317ee278132",
+          "actual_value": "chapter-333d692f21224f15a5735317ee278132",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_007",
+          "expected_card_id": "item_huangjing",
+          "field_name": "last_seen_chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-333d692f21224f15a5735317ee278132",
+          "actual_value": "chapter-333d692f21224f15a5735317ee278132",
+          "score": 1.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_007",
+          "expected_card_id": "item_huangjing",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [],
+          "actual_value": [],
+          "score": null,
+          "weight": 1.0,
+          "comparable": false,
+          "reason": "empty_set_not_applicable"
+        },
+        {
+          "actual_candidate_id": "review_item_008",
+          "expected_card_id": "event_da_tian_selection_announced",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "event",
+          "actual_value": "event",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_008",
+          "expected_card_id": "event_da_tian_selection_announced",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_008",
+          "expected_card_id": "event_da_tian_selection_announced",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_008",
+          "expected_card_id": "event_da_tian_selection_announced",
+          "field_name": "chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-333d692f21224f15a5735317ee278132",
+          "actual_value": "chapter-333d692f21224f15a5735317ee278132",
+          "score": 1.0,
+          "weight": 2.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_008",
+          "expected_card_id": "event_da_tian_selection_announced",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [],
+          "actual_value": [
+            "开山选苗",
+            "坡子岭选苗"
+          ],
+          "score": 0.0,
+          "weight": 1.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_009",
+          "expected_card_id": "event_huangjing_trade_chain",
+          "field_name": "type",
+          "kind": "exact",
+          "expected_value": "event",
+          "actual_value": "event",
+          "score": 1.0,
+          "weight": 3.0,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_009",
+          "expected_card_id": "event_huangjing_trade_chain",
+          "field_name": "lifecycle",
+          "kind": "exact",
+          "expected_value": "confirmed",
+          "actual_value": "confirmed",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_009",
+          "expected_card_id": "event_huangjing_trade_chain",
+          "field_name": "source_origin",
+          "kind": "exact",
+          "expected_value": "agent_extract",
+          "actual_value": "agent_extract",
+          "score": 1.0,
+          "weight": 0.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_009",
+          "expected_card_id": "event_huangjing_trade_chain",
+          "field_name": "chapter_id",
+          "kind": "exact",
+          "expected_value": "chapter-333d692f21224f15a5735317ee278132",
+          "actual_value": "chapter-333d692f21224f15a5735317ee278132",
+          "score": 1.0,
+          "weight": 2.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_009",
+          "expected_card_id": "event_huangjing_trade_chain",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [],
+          "actual_value": [],
+          "score": null,
+          "weight": 1.0,
+          "comparable": false,
+          "reason": "empty_set_not_applicable"
+        }
+      ]
+    },
+    "evidence": {
+      "actual_evidence_count": 23,
+      "grounded_evidence_count": 21,
+      "expected_evidence_group_count": 9,
+      "covered_evidence_group_count": 5,
+      "grounded_precision": 0.9130434782608695,
+      "expected_recall": 0.5555555555555556,
+      "score": 0.6907894736842106
+    },
+    "negative_suppression": {
+      "negative_case_count": 10,
+      "suppressed_count": 10,
+      "violated_case_ids": [],
+      "score": 1.0
+    },
+    "schema_compliance_rate": 1.0,
+    "execution_coverage": 1.0,
+    "deterministic_quality_state": "needs_review",
+    "candidate_precision_micro": 0.9,
+    "candidate_recall_micro": 0.9,
+    "candidate_f1_micro": 0.9,
+    "candidate_f1_macro": 0.76,
+    "structured_field_score": 0.9015151515151515,
+    "evidence_score": 0.6907894736842106,
+    "evidence_grounded_precision": 0.9130434782608695,
+    "expected_evidence_recall": 0.5555555555555556,
+    "negative_suppression_score": 1.0,
+    "ambiguous_count": 0,
+    "candidate_true_positive_count": 9,
+    "candidate_false_positive_count": 1,
+    "candidate_false_negative_count": 1,
+    "semantic_score": 0.85695,
+    "judge_coverage": 0.6666666666666666,
+    "overall_quality_score": null,
+    "critical_flag_count": 0,
+    "final_quality_state": "not_comparable"
+  },
+  "semantic_score": 0.85695,
+  "judge_coverage": 0.6666666666666666,
+  "overall_quality_score": null,
+  "final_quality_state": "not_comparable",
+  "comparisons": [
+    {
+      "run_id": "extract_run_20260713_114610_f7a44a",
+      "case_id": "chapter_002",
+      "task_title": "第2章 山中神仙选仙苗",
+      "knowledge_type": "character",
+      "issue_type": "judge_disagreement",
+      "expected_card_id": "character_qin_haoxuan",
+      "actual_candidate_id": "review_item_001",
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "identity": "大田镇少年；采药者；选苗报名者",
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "lifecycle": "confirmed",
+        "name": "秦浩轩",
+        "relationship_summary": "尊重陈老头过往照拂；与张狂仍有敌意",
+        "role_type": "protagonist",
+        "source_note": "第2章 山中神仙选仙苗：“三十两就三十两，若没有您哪有我的今天”；第2章 山中神仙选仙苗：“秦浩轩在报名薄上写上自己的大名”",
+        "source_origin": "agent_extract",
+        "summary": "秦浩轩拒绝更高报价，将黄精以三十两卖给陈老头；秦浩轩报名参加山中神仙选苗。",
+        "type": "character"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "entity_group_id": "entity_group_001",
+        "evidence_excerpt": "秦浩轩在少年们簇拥下，浩浩荡荡来到药铺，吸引来不少注意目光。",
+        "evidence_excerpts": [
+          "秦浩轩在少年们簇拥下，浩浩荡荡来到药铺，吸引来不少注意目光。",
+          "秦浩轩深呼吸了一口气，定了定自己那有些飘摇的魂魄。",
+          "秦浩轩随着激动的少年们一起，在镇长处登基报名",
+          "他转过身，一双眼睛瞪着自信满满的张狂，眼神中厉光闪烁，却默不作声。"
+        ],
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "identity": null,
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "lifecycle": "confirmed",
+        "name": "秦浩轩",
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "出自《第2章 山中神仙选仙苗》：秦浩轩在少年们簇拥下来到药铺，吸引不少目光；他深呼吸平定心神，随后与激动的少年们一起在镇长处登记报名；面对张狂的挑衅，他转身瞪视，眼神厉光闪烁但默不作声。",
+        "source_origin": "agent_extract",
+        "summary": "秦浩轩在少年们簇拥下前往药铺，随后与其他激动的少年一起在镇长处登记报名，面对张狂的挑衅眼神厉光闪烁却不发一言。",
+        "type": "character"
+      },
+      "match_kind": "exact_name",
+      "field_diffs": [
+        {
+          "actual_candidate_id": "review_item_001",
+          "expected_card_id": "character_qin_haoxuan",
+          "field_name": "role_type",
+          "kind": "exact",
+          "expected_value": "protagonist",
+          "actual_value": null,
+          "score": 0.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        }
+      ],
+      "judge_result": {
+        "status": "disagreement",
+        "reason": "多次有效裁判的评分未满足一致性要求，语义结果未计入评分。",
+        "judge_call_ids": [
+          "judge_call_f94a2586f297",
+          "judge_call_b6fe95de4fe5",
+          "judge_call_8a9c44594159"
+        ],
+        "attempt_count": 3,
+        "valid_result_count": 2
+      },
+      "explanation": {
+        "summary": "秦浩轩已与预期卡片正确匹配，但实际抽取未提取角色类型，导致裁判对语义是否充分产生分歧，最终评分无法达成一致，知识卡片在角色定位上不可靠。",
+        "source": "model",
+        "call_id": "judge_call_466fab36203c"
+      }
+    },
+    {
+      "run_id": "extract_run_20260713_114610_f7a44a",
+      "case_id": "chapter_002",
+      "task_title": "第2章 山中神仙选仙苗",
+      "knowledge_type": "character",
+      "issue_type": "semantic_issue",
+      "expected_card_id": "character_chen_laotou",
+      "actual_candidate_id": "review_item_002",
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "identity": "陈家药铺老人；擅长治伤解毒和辨识药材",
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "lifecycle": "confirmed",
+        "name": "陈老头",
+        "relationship_summary": "长期照拂秦浩轩并收购其药材",
+        "role_type": "supporting",
+        "source_note": "第2章 山中神仙选仙苗：“陈老头每次都能药到病除，在大田镇拥有极高的声誉”；第2章 山中神仙选仙苗：“年近八十的他中气十足，一脸红润，健步如飞”；第2章 山中神仙选仙苗：“三十两就三十两，若没有您哪有我的今天”",
+        "source_origin": "agent_extract",
+        "summary": "陈老头医药本领在大田镇声誉极高；陈老头年近八十但身体状态强健；陈老头以三十两买下秦浩轩的黄精。",
+        "type": "character"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "entity_group_id": "entity_group_002",
+        "evidence_excerpt": "陈老头每次都能药到病除，在大田镇拥有极高的声誉。",
+        "evidence_excerpts": [
+          "陈老头每次都能药到病除，在大田镇拥有极高的声誉。",
+          "“黄精，你采到黄精了？”陈老头人未到声音先到，年近八十的他中气十足，一脸红润，健步如飞",
+          "“药材这东西并没有统一定价，如果有救人急用，这块黄精哪怕开到一千两也不为过，但是眼下我只能开三十两。”"
+        ],
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "identity": null,
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "lifecycle": "confirmed",
+        "name": "陈老头",
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "出自《第2章 山中神仙选仙苗》：陈老头每次都能药到病除，在大田镇拥有极高声誉；他听闻有人采到黄精后声先到人，年近八十却中气十足、一脸红润、健步如飞；他解释药材并无统一定价，救人急用时黄精可开高价，但眼下只能开三十两。",
+        "source_origin": "agent_extract",
+        "summary": "陈老头年近八十，中气十足、健步如飞，是大田镇药到病除、声誉极高的医者，对药材定价有自己的一套原则，曾表示黄精若为救急可开高价但眼下只能开三十两。",
+        "type": "character"
+      },
+      "match_kind": "exact_name",
+      "field_diffs": [
+        {
+          "actual_candidate_id": "review_item_002",
+          "expected_card_id": "character_chen_laotou",
+          "field_name": "role_type",
+          "kind": "exact",
+          "expected_value": "supporting",
+          "actual_value": null,
+          "score": 0.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        }
+      ],
+      "judge_result": {
+        "case_id": "extract_run_20260713_114610_f7a44a::review_item_002::character_chen_laotou",
+        "expected_card_id": "character_chen_laotou",
+        "actual_review_item_id": "review_item_002",
+        "status": "scored",
+        "dimensions": {
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "实际摘要中所有事实均有 located_actual_evidence 支持，与原文对应，证据充分。"
+          },
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "实际摘要中关于陈老头年近八十、中气十足、健步如飞、声誉极高、对药材定价原则等描述均与原文一致，无偏离或错误。"
+          },
+          "key_fact_coverage": null,
+          "knowledge_usability": {
+            "score": 2,
+            "verdict": "partial",
+            "quote_ids": [],
+            "reason": "缺失身份与关系信息使卡片作为知识单元的使用价值下降，但摘要中的医者形象和行事原则仍具一定可用性。"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_character_chen_laotou_01",
+              "quote_character_chen_laotou_02",
+              "quote_character_chen_laotou_03"
+            ],
+            "reason": "卡片未引入超出原文的推断，所有事实都局限于第2章提供的范畴。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.8,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_f94a2586f297",
+          "judge_call_3e4830d655eb",
+          "judge_call_1f3f5aece7f8"
+        ],
+        "attempt_count": 3,
+        "valid_result_count": 3,
+        "semantic_score": 0.9
+      },
+      "explanation": {
+        "summary": "陈老头已匹配为同一张实体卡片，但实际提取缺失角色类型，且摘要未明确体现身份和与秦浩轩的关系，导致语义覆盖不足，影响人物关系知识的完整性。",
+        "source": "model",
+        "call_id": "judge_call_466fab36203c"
+      }
+    },
+    {
+      "run_id": "extract_run_20260713_114610_f7a44a",
+      "case_id": "chapter_002",
+      "task_title": "第2章 山中神仙选仙苗",
+      "knowledge_type": "character",
+      "issue_type": "semantic_issue",
+      "expected_card_id": "character_zhang_kuang",
+      "actual_candidate_id": "review_item_003",
+      "expected_card": {
+        "aliases": [
+          "张老大"
+        ],
+        "appearance_chapter_count": 1,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "identity": "大田镇少年；选苗报名者",
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "lifecycle": "confirmed",
+        "name": "张狂",
+        "relationship_summary": "视秦浩轩为宿敌",
+        "role_type": "antagonist",
+        "source_note": "第2章 山中神仙选仙苗：“秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算”",
+        "source_origin": "agent_extract",
+        "summary": "张狂报名后威胁秦浩轩，称被选中后要算账。",
+        "type": "character"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "current_realm_text": null,
+        "death_chapter_id": null,
+        "entity_group_id": "entity_group_003",
+        "evidence_excerpt": "即便父亲是大田镇最优秀猎手的张狂家，一年打猎的收入也不过二三十两",
+        "evidence_excerpts": [
+          "即便父亲是大田镇最优秀猎手的张狂家，一年打猎的收入也不过二三十两",
+          "“秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算。”",
+          "张狂但觉秦浩轩这一眼直抵心房，看穿灵魂，忍不住一个哆嗦，起了一身鸡皮疙瘩。"
+        ],
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "identity": null,
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "lifecycle": "confirmed",
+        "name": "张狂",
+        "relationship_summary": null,
+        "role_type": null,
+        "source_note": "出自《第2章 山中神仙选仙苗》：张狂之父是大田镇最优秀猎手，一年打猎收入不过二三十两；张狂对秦浩轩放话称若明日被神仙选中要算账；秦浩轩的一眼令张狂感觉直抵心房、看穿灵魂，忍不住起了一身鸡皮疙瘩。",
+        "source_origin": "agent_extract",
+        "summary": "张狂之父是大田镇最优秀的猎手，家中一年打猎收入不过二三十两；他对秦浩轩出言挑衅，声称明日若被神仙选中要好好算账，却被秦浩轩的眼神看穿而不寒而栗。",
+        "type": "character"
+      },
+      "match_kind": "exact_name",
+      "field_diffs": [
+        {
+          "actual_candidate_id": "review_item_003",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "role_type",
+          "kind": "exact",
+          "expected_value": "antagonist",
+          "actual_value": null,
+          "score": 0.0,
+          "weight": 1.5,
+          "comparable": true,
+          "reason": null
+        },
+        {
+          "actual_candidate_id": "review_item_003",
+          "expected_card_id": "character_zhang_kuang",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [
+            "张老大"
+          ],
+          "actual_value": [],
+          "score": 0.0,
+          "weight": 1.0,
+          "comparable": true,
+          "reason": null
+        }
+      ],
+      "judge_result": {
+        "case_id": "extract_run_20260713_114610_f7a44a::review_item_003::character_zhang_kuang",
+        "expected_card_id": "character_zhang_kuang",
+        "actual_review_item_id": "review_item_003",
+        "status": "scored",
+        "dimensions": {
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "实际摘要中张狂父亲猎手背景、对秦浩轩的挑衅威胁、以及被眼神吓到等描述完全忠实于原文，无错误。"
+          },
+          "key_fact_coverage": {
+            "score": 3,
+            "verdict": "mostly_correct",
+            "quote_ids": [],
+            "reason": "预期关键事实——威胁秦浩轩——已准确覆盖；但 identity 和 relationship_summary 缺失，未完整呈现角色定位。"
+          },
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "实际摘要的每个陈述均有 located_actual_evidence 片段支撑，证据链完整。"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "补充的背景细节均来自同一章节，未超出原著范围，也无遗漏关键事实，范围控制恰当。"
+          },
+          "knowledge_usability": {
+            "score": 3,
+            "verdict": "mostly_correct",
+            "quote_ids": [],
+            "reason": "摘要描述清晰，威胁关系和人物反应明确，虽缺身份标签但核心冲突信息已可被有效利用。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.85,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_f94a2586f297"
+        ],
+        "attempt_count": 1,
+        "valid_result_count": 1,
+        "semantic_score": 0.9
+      },
+      "explanation": {
+        "summary": "张狂已正确匹配，但实际卡片缺少角色类型和别名“张老大”字段，使得对抗性角色定位和别称信息丢失，语义覆盖不完整，降低了知识条目的可用性。",
+        "source": "model",
+        "call_id": "judge_call_466fab36203c"
+      }
+    },
+    {
+      "run_id": "extract_run_20260713_114610_f7a44a",
+      "case_id": "chapter_002",
+      "task_title": "第2章 山中神仙选仙苗",
+      "knowledge_type": "location",
+      "issue_type": "matched",
+      "expected_card_id": "location_chenjia_yaopu",
+      "actual_candidate_id": "review_item_004",
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "controlling_faction_id": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "lifecycle": "confirmed",
+        "name": "陈家药铺",
+        "source_note": "第2章 山中神仙选仙苗：“陈家药铺在大田镇无人不知无人不晓”；第2章 山中神仙选仙苗：“北街一个不甚起眼的小店铺，高高挂出一个‘药’字”",
+        "source_origin": "agent_extract",
+        "summary": "陈家药铺在大田镇声誉极高；陈家药铺位于北街，外观不甚起眼。",
+        "type": "location"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "controlling_faction_id": null,
+        "entity_group_id": "entity_group_005",
+        "evidence_excerpt": "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除",
+        "evidence_excerpts": [
+          "陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除",
+          "北街一个不甚起眼的小店铺，高高挂出一个“药”字"
+        ],
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "lifecycle": "confirmed",
+        "name": "陈家药铺",
+        "source_note": "第2章 山中神仙选仙苗：原文提到“陈家药铺在大田镇无人不知无人不晓，上山捕猎难免受个伤中个毒，陈老头每次都能药到病除”，并描述其位置为“北街一个不甚起眼的小店铺，高高挂出一个‘药’字”。",
+        "source_origin": "agent_extract",
+        "summary": "陈家药铺是大田镇北街一个不甚起眼的小店铺，挂着“药”字招牌，在镇上无人不知无人不晓；陈老头坐镇，上山捕猎受伤中毒者常来求医，药到病除。",
+        "type": "location"
+      },
+      "match_kind": "exact_name",
+      "field_diffs": [],
+      "judge_result": {
+        "case_id": "extract_run_20260713_114610_f7a44a::review_item_004::location_chenjia_yaopu",
+        "expected_card_id": "location_chenjia_yaopu",
+        "actual_review_item_id": "review_item_004",
+        "status": "scored",
+        "dimensions": {
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_chenjia_yaopu_01",
+              "quote_location_chenjia_yaopu_02"
+            ],
+            "reason": "陈家药铺在大田镇无人不知无人不晓，且位于北街，原文均明确支持；额外提及陈老头医治的有效性亦有原文依据，无事实偏差。"
+          },
+          "key_fact_coverage": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_chenjia_yaopu_01",
+              "quote_location_chenjia_yaopu_02"
+            ],
+            "reason": "实际总结完整覆盖了预期关键点：声誉极高（无人不知无人不晓）和位于北街，且自然融入医治信息，覆盖度很好。"
+          },
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "所有陈述均直接基于提供的原文引用，无捏造或推断过度。"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "提取范围符合地点知识卡片预期，未添加无关信息，不偏离设定。"
+          },
+          "knowledge_usability": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "总结清晰、结构化，可直接用于后续问答与剧情检索。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.95,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_433e4cc8c86f"
+        ],
+        "attempt_count": 1,
+        "valid_result_count": 1,
+        "semantic_score": 1.0
+      },
+      "explanation": null
+    },
+    {
+      "run_id": "extract_run_20260713_114610_f7a44a",
+      "case_id": "chapter_002",
+      "task_title": "第2章 山中神仙选仙苗",
+      "knowledge_type": "location",
+      "issue_type": "semantic_issue",
+      "expected_card_id": "location_da_tian_zhen",
+      "actual_candidate_id": "review_item_005",
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "controlling_faction_id": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "lifecycle": "confirmed",
+        "name": "大田镇",
+        "source_note": "第2章 山中神仙选仙苗：“镇长便遣人将镇上十六岁的适龄少年都聚集起来”",
+        "source_origin": "agent_extract",
+        "summary": "大田镇组织十六岁适龄少年报名参加选苗。",
+        "type": "location"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "controlling_faction_id": null,
+        "entity_group_id": "entity_group_006",
+        "evidence_excerpt": "陈家药铺在大田镇无人不知无人不晓",
+        "evidence_excerpts": [
+          "陈家药铺在大田镇无人不知无人不晓",
+          "在大田镇上看到两个生面孔实属罕见"
+        ],
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "lifecycle": "confirmed",
+        "name": "大田镇",
+        "source_note": "第2章 山中神仙选仙苗：原文提到“陈家药铺在大田镇无人不知无人不晓”，以及“在大田镇上看到两个生面孔实属罕见”，说明该镇人际关系紧密、外来者少见。",
+        "source_origin": "agent_extract",
+        "summary": "大田镇是陈家药铺所在的镇子，镇中人口相对封闭，外地生面孔十分罕见，出现两个陌生人便引人注目。",
+        "type": "location"
+      },
+      "match_kind": "exact_name",
+      "field_diffs": [],
+      "judge_result": {
+        "case_id": "extract_run_20260713_114610_f7a44a::review_item_005::location_da_tian_zhen",
+        "expected_card_id": "location_da_tian_zhen",
+        "actual_review_item_id": "review_item_005",
+        "status": "scored",
+        "dimensions": {
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "所述镇内人员封闭、生面孔罕见均基于原文，忠实无偏离。"
+          },
+          "key_fact_coverage": {
+            "score": 0,
+            "verdict": "unsupported",
+            "quote_ids": [],
+            "reason": "实际总结未包含预期声明中关于镇长组织十六岁适龄少年参加选苗的任何信息，该关键事实完全没有证据覆盖。"
+          },
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "现有内容引用原文中相关描述，证据充分。"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "均属该地点应有描述，无出界。"
+          },
+          "knowledge_usability": {
+            "score": 2,
+            "verdict": "partial",
+            "quote_ids": [],
+            "reason": "地点卡片信息偏重社会特征而缺失组织选苗这一核心情节，可能会在相关查询中不够完整，但其余信息可靠。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.65,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_433e4cc8c86f",
+          "judge_call_71ceda4e8ea2",
+          "judge_call_f71676f6dce8"
+        ],
+        "attempt_count": 3,
+        "valid_result_count": 3,
+        "semantic_score": 0.675
+      },
+      "explanation": {
+        "summary": "大田镇已匹配为同一地点卡片，但实际摘要完全没有包含“组织十六岁适龄少年参加选苗”这一核心事件，关键事实覆盖不足，导致地点知识在剧情层面的实用性严重下降。",
+        "source": "model",
+        "call_id": "judge_call_466fab36203c"
+      }
+    },
+    {
+      "run_id": "extract_run_20260713_114610_f7a44a",
+      "case_id": "chapter_002",
+      "task_title": "第2章 山中神仙选仙苗",
+      "knowledge_type": "location",
+      "issue_type": "matched",
+      "expected_card_id": "location_pozi_ling",
+      "actual_candidate_id": "review_item_006",
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "controlling_faction_id": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "lifecycle": "confirmed",
+        "name": "坡子岭",
+        "source_note": "第2章 山中神仙选仙苗：“明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟”",
+        "source_origin": "agent_extract",
+        "summary": "坡子岭被宣布为次日选苗地点。",
+        "type": "location"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "controlling_faction_id": null,
+        "entity_group_id": "entity_group_007",
+        "evidence_excerpt": "“明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟",
+        "evidence_excerpts": [
+          "“明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟"
+        ],
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "lifecycle": "confirmed",
+        "name": "坡子岭",
+        "source_note": "第2章 山中神仙选仙苗：原文提到“明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟”，表明坡子岭是选徒仪式举行的地点。",
+        "source_origin": "agent_extract",
+        "summary": "坡子岭是山上神仙挑选徒弟仙苗的地点，据称神仙将在此从少年中挑选出最优秀的苗子收作徒弟。",
+        "type": "location"
+      },
+      "match_kind": "exact_name",
+      "field_diffs": [],
+      "judge_result": {
+        "case_id": "extract_run_20260713_114610_f7a44a::review_item_006::location_pozi_ling",
+        "expected_card_id": "location_pozi_ling",
+        "actual_review_item_id": "review_item_006",
+        "status": "scored",
+        "dimensions": {
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_pozi_ling_01"
+            ],
+            "reason": "坡子岭是神仙挑选徒弟仙苗的地点，原文直接支持，表述忠实。"
+          },
+          "key_fact_coverage": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_pozi_ling_01"
+            ],
+            "reason": "完整涵盖预期关键点：坡子岭是大田镇少年参加选苗的地点，概括准确。"
+          },
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "所有描述均根植于提供的原文证据，无额外推测。"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "抽取内容严格围绕选苗地点，范围合理。"
+          },
+          "knowledge_usability": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "总结精简、直接，便于作为地点知识节点使用。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.95,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_433e4cc8c86f"
+        ],
+        "attempt_count": 1,
+        "valid_result_count": 1,
+        "semantic_score": 1.0
+      },
+      "explanation": null
+    },
+    {
+      "run_id": "extract_run_20260713_114610_f7a44a",
+      "case_id": "chapter_002",
+      "task_title": "第2章 山中神仙选仙苗",
+      "knowledge_type": "item",
+      "issue_type": "semantic_issue",
+      "expected_card_id": "item_huangjing",
+      "actual_candidate_id": "review_item_007",
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "current_holder_id": null,
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "grade": null,
+        "item_type": "material",
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "lifecycle": "confirmed",
+        "name": "黄精",
+        "source_note": "第2章 山中神仙选仙苗：“这里是一百两银子，只要小兄弟愿意将这块黄精卖给我”；第2章 山中神仙选仙苗：“三十两就三十两”",
+        "source_origin": "agent_extract",
+        "summary": "外地客先后把黄精报价提高到一百二十两；秦浩轩最终以三十两把黄精卖给陈老头。",
+        "type": "item"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "current_holder_id": null,
+        "entity_group_id": "entity_group_008",
+        "evidence_excerpt": "黄精淡淡清香在浓郁的药香中仍旧十分突出，立刻将两个生面孔的注意力拉了过来",
+        "evidence_excerpts": [
+          "黄精淡淡清香在浓郁的药香中仍旧十分突出，立刻将两个生面孔的注意力拉了过来",
+          "一枚小指甲大小的黄色石子出现在他手中，淡然却浓郁的清香顿时弥散开来",
+          "陈老头将黄精放在两指间轻轻捻动，赞道：“好宝贝，好宝贝！”"
+        ],
+        "first_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "grade": null,
+        "item_type": "material",
+        "last_seen_chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "lifecycle": "confirmed",
+        "name": "黄精",
+        "source_note": "第2章 山中神仙选仙苗：原文描述黄精“淡淡清香在浓郁的药香中仍旧十分突出，立刻将两个生面孔的注意力拉了过来”，其形态为“一枚小指甲大小的黄色石子”，陈老头“将黄精放在两指间轻轻捻动，赞道：‘好宝贝，好宝贝！’”。",
+        "source_origin": "agent_extract",
+        "summary": "黄精是一枚小指甲大小的黄色石子状珍稀药材，散发淡然却浓郁的清香，在浓郁药香中仍十分突出，曾吸引两名外地生面孔的注意；陈老头将其放在两指间轻轻捻动，赞叹其为“好宝贝”。",
+        "type": "item"
+      },
+      "match_kind": "exact_name",
+      "field_diffs": [],
+      "judge_result": {
+        "case_id": "extract_run_20260713_114610_f7a44a::review_item_007::item_huangjing",
+        "expected_card_id": "item_huangjing",
+        "actual_review_item_id": "review_item_007",
+        "status": "scored",
+        "dimensions": {
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "实际摘要的每一项描述均有原文证据直接支持，引用位置明确，grounding 充分。"
+          },
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "实际摘要中关于黄精物理特性的描述（小指甲大小、黄色石子、清香）与原文引用完全一致，无事实错误。"
+          },
+          "key_fact_coverage": {
+            "score": 0,
+            "verdict": "unsupported",
+            "quote_ids": [],
+            "reason": "预期主张涉及外地客报价120两、秦浩轩以30两卖给陈老头的交易信息，但在实际卡片摘要中完全未体现，缺失所有关键事实。"
+          },
+          "knowledge_usability": null,
+          "scope_discipline": null
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.45,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_c273dec86a12",
+          "judge_call_7f9606d78e72",
+          "judge_call_033ceb1ca583"
+        ],
+        "attempt_count": 3,
+        "valid_result_count": 3,
+        "semantic_score": 0.6667
+      },
+      "explanation": {
+        "summary": "黄精已匹配为同一物品卡片，但实际摘要遗漏了所有交易信息（报价、成交价格等），仅停留在外观描述，关键事实完全缺失，无法支持物品相关的剧情查询。",
+        "source": "model",
+        "call_id": "judge_call_466fab36203c"
+      }
+    },
+    {
+      "run_id": "extract_run_20260713_114610_f7a44a",
+      "case_id": "chapter_002",
+      "task_title": "第2章 山中神仙选仙苗",
+      "knowledge_type": "event",
+      "issue_type": "judge_disagreement",
+      "expected_card_id": "event_da_tian_selection_announced",
+      "actual_candidate_id": "review_item_008",
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "description": "镇长召集十六岁适龄少年，宣布坡子岭选苗、安家费和出发安排，并组织报名。",
+        "lifecycle": "confirmed",
+        "name": "大田镇公布并组织开山选苗报名",
+        "source_note": "第2章 山中神仙选仙苗：“明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟”；第2章 山中神仙选仙苗：“如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭”",
+        "source_origin": "agent_extract",
+        "summary": "镇长宣布选苗地点和目的；大田镇组织报名并确定出发时间。",
+        "type": "event"
+      },
+      "actual_card": {
+        "aliases": [
+          "开山选苗",
+          "坡子岭选苗"
+        ],
+        "appearance_chapter_count": 1,
+        "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "description": "山中神仙将在坡子岭开山选苗招徒，消息传开后镇上少年纷纷前往报名，次日黎明集合出发。",
+        "entity_group_id": "entity_group_009",
+        "evidence_excerpt": "“有消息说，明天是山上神仙们开山选苗的大日子！”",
+        "evidence_excerpts": [
+          "“有消息说，明天是山上神仙们开山选苗的大日子！”",
+          "“明天在坡子岭上，山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟，这可是难得的际遇...一旦被神仙们选中，还将得到神仙们赠予的每年两百两白银的安家费！”",
+          "“如果想要报名的，都来我这里报名，明天黎明时分便进发前往坡子岭。”"
+        ],
+        "lifecycle": "confirmed",
+        "name": "山上神仙选苗招徒",
+        "source_note": "第2章 山中神仙选仙苗：原文提到“有消息说，明天是山上神仙们开山选苗的大日子！”，并说明“山上的神仙将在你们中间挑选出最优秀的苗子收作徒弟...一旦被神仙们选中，还将得到神仙们赠予的每年两百两白银的安家费”，报名者需在镇长处登记，次日黎明出发前往坡子岭。",
+        "source_origin": "agent_extract",
+        "summary": "有消息传出，山上神仙将于次日在坡子岭开山选苗，从少年中挑选最优秀的苗子收为徒弟，被选中者还可获得每年两百两白银的安家费，众多少年因此踊跃报名。",
+        "type": "event"
+      },
+      "match_kind": "evidence_anchor",
+      "field_diffs": [
+        {
+          "actual_candidate_id": "review_item_008",
+          "expected_card_id": "event_da_tian_selection_announced",
+          "field_name": "aliases",
+          "kind": "set",
+          "expected_value": [],
+          "actual_value": [
+            "开山选苗",
+            "坡子岭选苗"
+          ],
+          "score": 0.0,
+          "weight": 1.0,
+          "comparable": true,
+          "reason": null
+        }
+      ],
+      "judge_result": {
+        "status": "disagreement",
+        "reason": "多次有效裁判的评分未满足一致性要求，语义结果未计入评分。",
+        "judge_call_ids": [
+          "judge_call_348a760ccb68",
+          "judge_call_fa655c0009c3",
+          "judge_call_786ed871ca8b",
+          "judge_call_2e453e4502dc"
+        ],
+        "attempt_count": 4,
+        "valid_result_count": 2
+      },
+      "explanation": {
+        "summary": "已匹配为同一张卡。语义裁判出现分歧（一方认为关键主体缺失、证据不足，另一方认为整体一致），因此无法形成统一的语义结论。抽取卡片将镇长宣布弱化为“消息传出”并增加了安家费细节，导致评估打分不一致，影响卡片可信度。",
+        "source": "model",
+        "call_id": "judge_call_593d92e8c644"
+      }
+    },
+    {
+      "run_id": "extract_run_20260713_114610_f7a44a",
+      "case_id": "chapter_002",
+      "task_title": "第2章 山中神仙选仙苗",
+      "knowledge_type": "event",
+      "issue_type": "judge_failed",
+      "expected_card_id": "event_huangjing_trade_chain",
+      "actual_candidate_id": "review_item_009",
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "description": "秦浩轩拒绝两名外地客的一百二十两报价，以三十两把黄精卖给陈老头。",
+        "lifecycle": "confirmed",
+        "name": "黄精交易链",
+        "source_note": "第2章 山中神仙选仙苗：“三十两就三十两，若没有您哪有我的今天”",
+        "source_origin": "agent_extract",
+        "summary": "秦浩轩拒绝外地客高价，以三十两把黄精卖给陈老头。",
+        "type": "event"
+      },
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "description": "秦浩轩以三十两银子的价格将黄精卖出，权衡了与陈老伯长期交易关系的利弊。",
+        "entity_group_id": "entity_group_010",
+        "evidence_excerpt": "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！”",
+        "evidence_excerpts": [
+          "秦浩轩微微一笑，挡住陈老头递来黄精的手，道：“三十两就三十两，若没有您哪有我的今天！”",
+          "“陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了"
+        ],
+        "lifecycle": "confirmed",
+        "name": "秦浩轩卖黄精",
+        "source_note": "第2章 山中神仙选仙苗：秦浩轩挡住陈老头递来的黄精，说“三十两就三十两，若没有您哪有我的今天！”，并提到“陈老伯想要一块黄精念念叨叨了好几年，如果他知道我得到一块却卖给你们，日后收我药材时的价格就要低了”。",
+        "source_origin": "agent_extract",
+        "summary": "秦浩轩将得到的黄精以三十两银子的价格卖给了买家，而非留给念叨多年想要黄精的陈老伯，并考虑到此举可能影响日后陈老伯收购药材的价格。",
+        "type": "event"
+      },
+      "match_kind": "evidence_anchor",
+      "field_diffs": [],
+      "judge_result": {
+        "status": "failed",
+        "reason": "语义裁判调用均未成功，无法形成语义结论；这不代表抽取错误。",
+        "judge_call_ids": [
+          "judge_call_348a760ccb68",
+          "judge_call_a78d6ffd638e"
+        ],
+        "attempt_count": 2,
+        "valid_result_count": 0
+      },
+      "explanation": {
+        "summary": "已匹配为同一张卡，但所有语义裁判调用均失败，无法形成语义结论，因此无法评估卡片间的差异。这不代表抽取错误，建议重新触发裁判。",
+        "source": "model",
+        "call_id": "judge_call_593d92e8c644"
+      }
+    },
+    {
+      "run_id": "extract_run_20260713_114610_f7a44a",
+      "case_id": "chapter_002",
+      "task_title": "第2章 山中神仙选仙苗",
+      "knowledge_type": "event",
+      "issue_type": "extra_candidate",
+      "expected_card_id": null,
+      "actual_candidate_id": "review_item_010",
+      "expected_card": null,
+      "actual_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "chapter_id": "chapter-333d692f21224f15a5735317ee278132",
+        "description": "秦浩轩与张狂均在镇长处登记报名参加次日的选苗，张狂对秦浩轩表现出敌意与挑衅。",
+        "entity_group_id": "entity_group_011",
+        "evidence_excerpt": "秦浩轩随着激动的少年们一起，在镇长处登基报名，也在报名的张狂在几名小弟的吹捧中自信满满",
+        "evidence_excerpts": [
+          "秦浩轩随着激动的少年们一起，在镇长处登基报名，也在报名的张狂在几名小弟的吹捧中自信满满",
+          "“秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算。”"
+        ],
+        "lifecycle": "confirmed",
+        "name": "秦浩轩与张狂报名选苗",
+        "source_note": "第2章 山中神仙选仙苗：原文写道“秦浩轩随着激动的少年们一起，在镇长处登基报名，也在报名的张狂在几名小弟的吹捧中自信满满”，张狂还对秦浩轩说“我明天一定会被神仙们选中，到时候有些帐我们好好算一算”。",
+        "source_origin": "agent_extract",
+        "summary": "秦浩轩随其他激动的少年在镇长处登记报名参加选苗，同为报名者的张狂在小弟吹捧下表现得自信满满，并放话要与秦浩轩算旧账。",
+        "type": "event"
+      },
+      "match_kind": null,
+      "field_diffs": [],
+      "judge_result": null,
+      "explanation": {
+        "summary": "本次提取多出了一张事件卡片“秦浩轩与张狂报名选苗”，基准中不存在对应事件，属于多提取。",
+        "source": "model",
+        "call_id": "judge_call_593d92e8c644"
+      }
+    },
+    {
+      "run_id": "extract_run_20260713_114610_f7a44a",
+      "case_id": "chapter_002",
+      "task_title": "第2章 山中神仙选仙苗",
+      "knowledge_type": "rule",
+      "issue_type": "missing_candidate",
+      "expected_card_id": "rule_da_tian_selection_fee",
+      "actual_candidate_id": null,
+      "expected_card": {
+        "aliases": [],
+        "appearance_chapter_count": 1,
+        "exceptions": null,
+        "lifecycle": "confirmed",
+        "name": "大田镇开山选苗与安家费规则",
+        "source_note": "第2章 山中神仙选仙苗：“镇上十六岁的适龄少年都聚集起来”；第2章 山中神仙选仙苗：“一旦被神仙们选中，还将得到神仙们赠予的每年两百两白银的安家费”",
+        "source_origin": "agent_extract",
+        "summary": "大田镇选苗报名面向十六岁适龄少年；入选者每年可获得二百两白银安家费。",
+        "type": "rule"
+      },
+      "actual_card": null,
+      "match_kind": null,
+      "field_diffs": [],
+      "judge_result": null,
+      "explanation": {
+        "summary": "基准中存在规则卡片“大田镇开山选苗与安家费规则”，但本次提取未生成对应卡片，属于漏提取。",
+        "source": "model",
+        "call_id": "judge_call_593d92e8c644"
+      }
+    }
+  ],
+  "warnings": []
+}

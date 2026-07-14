@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  Copy,
   Inbox,
   Loader2,
   Plus,
@@ -155,6 +156,20 @@ export function InboxBoard() {
     toastTimerRef.current = window.setTimeout(() => {
       setToast(null);
     }, 1900);
+  }
+
+  async function copyInboxContent(content: string) {
+    setError(null);
+    if (copyTextWithSelection(content)) {
+      showInboxToast("内容已复制");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(content);
+      showInboxToast("内容已复制");
+    } catch {
+      setError("复制失败，请手动选择文本后重试");
+    }
   }
 
   const preparePendingFactConfirm = useCallback((item: MVPInboxPendingFact) => {
@@ -565,6 +580,7 @@ export function InboxBoard() {
                       onConfirmTypeChange={setConfirmType}
                       onConfirmNameChange={setConfirmName}
                       onConfirmSummaryChange={setConfirmSummary}
+                      onCopyContent={content => void copyInboxContent(content)}
                     />
                   ))}
                 </div>
@@ -625,6 +641,7 @@ function InboxRow({
   onConfirmTypeChange,
   onConfirmNameChange,
   onConfirmSummaryChange,
+  onCopyContent,
 }: {
   tab: InboxEntryTab;
   item: InboxEntry;
@@ -642,6 +659,7 @@ function InboxRow({
   onConfirmTypeChange: (value: KnowledgeTypeValue) => void;
   onConfirmNameChange: (value: string) => void;
   onConfirmSummaryChange: (value: string) => void;
+  onCopyContent: (content: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState(itemTitle(tab, item));
@@ -697,11 +715,7 @@ function InboxRow({
           </p>
 
           {editing ? (
-            <div
-              className="mt-3 grid max-w-[760px] gap-2"
-              onClick={event => event.stopPropagation()}
-              onMouseDown={event => event.stopPropagation()}
-            >
+            <div className="mt-3 grid max-w-[760px] gap-2">
               {tab !== "ideas" ? (
                 <input
                   value={draftTitle}
@@ -710,12 +724,24 @@ function InboxRow({
                   placeholder="标题"
                 />
               ) : null}
-              <textarea
-                value={draftContent}
-                onChange={event => setDraftContent(event.target.value)}
-                className="min-h-20 resize-y select-text rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 text-sm leading-6 text-[var(--tc-text-primary)] outline-none"
-                placeholder="内容"
-              />
+              <div className="relative">
+                <textarea
+                  value={draftContent}
+                  onChange={event => setDraftContent(event.target.value)}
+                  className="min-h-20 w-full resize-y select-text rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 pr-20 text-sm leading-6 text-[var(--tc-text-primary)] outline-none"
+                  placeholder="内容"
+                />
+                <Button
+                  type="button"
+                  size="xs"
+                  variant="secondary"
+                  onClick={() => onCopyContent(draftContent)}
+                  className="absolute right-2 top-2"
+                >
+                  <Copy className="size-3.5" />
+                  复制
+                </Button>
+              </div>
               <div>
                 <Button type="button" size="sm" onClick={submitEdit}>
                   <Save className="size-4" />
@@ -816,6 +842,24 @@ function InboxRow({
       ) : null}
     </article>
   );
+}
+
+function copyTextWithSelection(content: string): boolean {
+  const copySource = document.createElement("textarea");
+  copySource.value = content;
+  copySource.setAttribute("readonly", "");
+  copySource.setAttribute("aria-hidden", "true");
+  copySource.style.position = "fixed";
+  copySource.style.left = "-9999px";
+  copySource.style.opacity = "0";
+  document.body.appendChild(copySource);
+  copySource.select();
+  copySource.setSelectionRange(0, copySource.value.length);
+  try {
+    return document.execCommand("copy");
+  } finally {
+    copySource.remove();
+  }
 }
 
 function isPendingFact(item: InboxEntry): item is MVPInboxPendingFact {

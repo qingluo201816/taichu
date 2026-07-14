@@ -2,10 +2,36 @@
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from taichu.application.capabilities import CapabilityContext
+from taichu.application.invocations.models import InvocationContext
+
+
+class ToolSideEffect(StrEnum):
+    """Tool 的副作用等级。"""
+
+    READ_ONLY = "read_only"
+    PREVIEW = "preview"
+    WRITE = "write"
+    HIGH_RISK_WRITE = "high_risk_write"
+
+
+class ToolAuthorizationPolicy(StrEnum):
+    """Tool 是否需要作者授权。"""
+
+    NONE = "none"
+    AUTHOR_GRANT = "author_grant"
+    SECOND_CONFIRMATION = "second_confirmation"
+
+
+class ToolIdempotencyPolicy(StrEnum):
+    """Tool 的幂等要求。"""
+
+    NONE = "none"
+    REQUIRED = "required"
 
 
 class ToolManifest(BaseModel):
@@ -19,10 +45,18 @@ class ToolManifest(BaseModel):
     output_schema: type[BaseModel]
     required_capabilities: frozenset[str] = frozenset()
     exposures: frozenset[str] = frozenset()
+    side_effect: ToolSideEffect = ToolSideEffect.READ_ONLY
+    allowed_callers: frozenset[str] = frozenset({"orchestrator"})
+    requires_external_access: bool = False
+    authorization_policy: ToolAuthorizationPolicy = ToolAuthorizationPolicy.NONE
+    idempotency_policy: ToolIdempotencyPolicy = ToolIdempotencyPolicy.NONE
+    default_timeout_seconds: float = Field(default=30, gt=0, le=600)
+    max_result_chars: int = Field(default=50_000, ge=100, le=500_000)
+    retryable: bool = False
 
 
 ToolHandler = Callable[
-    [BaseModel, CapabilityContext],
+    [BaseModel, InvocationContext, CapabilityContext],
     Awaitable[BaseModel],
 ]
 

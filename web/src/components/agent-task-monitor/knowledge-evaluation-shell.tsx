@@ -90,7 +90,9 @@ const issueFilters: Array<{
   { value: "field_difference", label: "字段不同" },
   { value: "semantic_issue", label: "语义问题" },
   { value: "evidence_issue", label: "证据问题" },
-  { value: "judge_disagreement", label: "裁判意见不一致" },
+  { value: "judge_disagreement", label: "裁判评分分歧" },
+  { value: "judge_inconclusive", label: "裁判结果不足" },
+  { value: "judge_failed", label: "裁判调用失败" },
 ];
 
 export function KnowledgeEvaluationShell() {
@@ -895,10 +897,10 @@ export function KnowledgeEvaluationShell() {
                     卡片差异
                   </h2>
                   <p className="mt-0.5 text-xs text-[var(--tc-text-muted)]">
-                    当前筛选共 {comparisonTotal} 条，点击查看可读差异说明
+                    当前筛选共 {comparisonTotal} 条，每项优先显示可读总结
                   </p>
                 </div>
-                <div className="flex max-w-full gap-1 overflow-x-auto">
+                <div className="flex max-w-full flex-wrap justify-end gap-1">
                   {issueFilters.map(filter => (
                     <button
                       key={filter.value}
@@ -1428,83 +1430,126 @@ function ComparisonRow({ comparison }: {
             <span>{issueTypeLabels[comparison.issue_type]}</span>
             <span>{comparison.task_title || "未命名章节"}</span>
           </span>
+          {comparison.explanation?.summary ? (
+            <span className="mt-1.5 line-clamp-2 block text-xs leading-5 text-[var(--tc-text-secondary)]">
+              <span className="text-[var(--tc-text-muted)]">
+                {comparison.explanation.source === "model"
+                  ? "模型总结："
+                  : "规则说明："}
+              </span>
+              {comparison.explanation.summary}
+            </span>
+          ) : null}
         </span>
         <FileDiff className="mt-0.5 size-4 shrink-0 text-[var(--tc-text-muted)]" />
       </summary>
       <div className="border-t border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-3 text-sm">
-        <p className="text-xs text-[var(--tc-text-muted)]">匹配依据</p>
-        <p className="mt-1 text-[var(--tc-text-secondary)]">
-          {evaluationMatchBasisLabel(comparison.match_basis)}
-        </p>
-
-        {comparison.field_diffs?.length ? (
-          <div className="mt-3">
-            <p className="text-xs text-[var(--tc-text-muted)]">精确字段差异</p>
-            <div className="mt-1 divide-y divide-[var(--tc-border-subtle)] border-y border-[var(--tc-border-subtle)]">
-              {comparison.field_diffs.map((diff, index) => (
-                <div
-                  key={`${diff.field}-${index}`}
-                  className="grid gap-1 py-2 text-xs sm:grid-cols-[120px_1fr_1fr] sm:gap-3"
-                >
-                  <span className="font-medium text-[var(--tc-text-primary)]">
-                    {evaluationFieldLabel(diff.label, diff.field)}
-                  </span>
-                  <span>
-                    <span className="text-[var(--tc-text-muted)]">评测标准：</span>
-                    {displayValue(diff.expected)}
-                  </span>
-                  <span>
-                    <span className="text-[var(--tc-text-muted)]">本次提取：</span>
-                    {displayValue(diff.actual)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        <IssueList label="缺失关键事实" items={comparison.missing_critical_claims} />
-        <IssueList label="无依据断言" items={comparison.unsupported_claims} />
-        <IssueList label="矛盾项" items={comparison.contradictions} />
-
-        {comparison.evidence_diffs?.length ? (
-          <div className="mt-3">
-            <p className="text-xs text-[var(--tc-text-muted)]">证据与章节定位</p>
-            <div className="mt-1 space-y-2">
-              {comparison.evidence_diffs.map((evidence, index) => (
-                <div
-                  key={`${evidence.quote_id ?? "evidence"}-${index}`}
-                  className="border-l border-[var(--tc-border-strong)] pl-2 text-xs leading-5 text-[var(--tc-text-secondary)]"
-                >
-                  <p>
-                    {evidence.chapter_title || "章节未知"}
-                    {evidence.located === false ? " · 无法定位" : ""}
-                  </p>
-                  {evidence.expected_quote ? (
-                    <p>期望证据：{evidence.expected_quote}</p>
-                  ) : null}
-                  {evidence.actual_quote ? (
-                    <p>实际证据：{evidence.actual_quote}</p>
-                  ) : null}
-                  {evidence.reason ? <p>{evidence.reason}</p> : null}
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {comparison.judge_reason ? (
-          <div className="mt-3">
-            <p className="text-xs text-[var(--tc-text-muted)]">裁判理由</p>
-            <p className="mt-1 leading-5 text-[var(--tc-text-secondary)]">
-              {comparison.judge_reason}
-              {comparison.judge_confidence != null
-                ? ` · 置信度 ${formatEvaluationScore(comparison.judge_confidence)}`
-                : ""}
+        {comparison.explanation?.summary ? (
+          <div>
+            <p className="text-xs text-[var(--tc-text-muted)]">
+              {comparison.explanation.source === "model"
+                ? "模型总结"
+                : "规则说明"}
+            </p>
+            <p className="mt-1 leading-6 text-[var(--tc-text-primary)]">
+              {comparison.explanation.summary}
             </p>
           </div>
         ) : null}
 
+        <details className="mt-3 border-t border-[var(--tc-border-subtle)] pt-2">
+          <summary className="cursor-pointer text-xs text-[var(--tc-text-muted)] hover:text-[var(--tc-text-secondary)]">
+            查看原始对比依据
+          </summary>
+          <div className="pt-3">
+            <p className="text-xs text-[var(--tc-text-muted)]">匹配依据</p>
+            <p className="mt-1 text-[var(--tc-text-secondary)]">
+              {evaluationMatchBasisLabel(comparison.match_basis)}
+            </p>
+
+            {comparison.field_diffs?.length ? (
+              <div className="mt-3">
+                <p className="text-xs text-[var(--tc-text-muted)]">
+                  精确字段差异
+                </p>
+                <div className="mt-1 divide-y divide-[var(--tc-border-subtle)] border-y border-[var(--tc-border-subtle)]">
+                  {comparison.field_diffs.map((diff, index) => (
+                    <div
+                      key={`${diff.field}-${index}`}
+                      className="grid gap-1 py-2 text-xs sm:grid-cols-[120px_1fr_1fr] sm:gap-3"
+                    >
+                      <span className="font-medium text-[var(--tc-text-primary)]">
+                        {evaluationFieldLabel(diff.label, diff.field)}
+                      </span>
+                      <span>
+                        <span className="text-[var(--tc-text-muted)]">
+                          评测标准：
+                        </span>
+                        {displayValue(diff.expected, diff.field)}
+                      </span>
+                      <span>
+                        <span className="text-[var(--tc-text-muted)]">
+                          本次提取：
+                        </span>
+                        {displayValue(diff.actual, diff.field)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <IssueList
+              label="缺失关键事实"
+              items={comparison.missing_critical_claims}
+            />
+            <IssueList
+              label="无依据断言"
+              items={comparison.unsupported_claims}
+            />
+            <IssueList label="矛盾项" items={comparison.contradictions} />
+
+            {comparison.evidence_diffs?.length ? (
+              <div className="mt-3">
+                <p className="text-xs text-[var(--tc-text-muted)]">
+                  证据与章节定位
+                </p>
+                <div className="mt-1 space-y-2">
+                  {comparison.evidence_diffs.map((evidence, index) => (
+                    <div
+                      key={`${evidence.quote_id ?? "evidence"}-${index}`}
+                      className="border-l border-[var(--tc-border-strong)] pl-2 text-xs leading-5 text-[var(--tc-text-secondary)]"
+                    >
+                      <p>
+                        {evidence.chapter_title || "章节未知"}
+                        {evidence.located === false ? " · 无法定位" : ""}
+                      </p>
+                      {evidence.expected_quote ? (
+                        <p>期望证据：{evidence.expected_quote}</p>
+                      ) : null}
+                      {evidence.actual_quote ? (
+                        <p>实际证据：{evidence.actual_quote}</p>
+                      ) : null}
+                      {evidence.reason ? <p>{evidence.reason}</p> : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {comparison.judge_reason ? (
+              <div className="mt-3">
+                <p className="text-xs text-[var(--tc-text-muted)]">裁判理由</p>
+                <p className="mt-1 leading-5 text-[var(--tc-text-secondary)]">
+                  {comparison.judge_reason}
+                  {comparison.judge_confidence != null
+                    ? ` · 置信度 ${formatEvaluationScore(comparison.judge_confidence)}`
+                    : ""}
+                </p>
+              </div>
+            ) : null}
+          </div>
+        </details>
       </div>
     </details>
   );
@@ -1594,9 +1639,55 @@ function StatePanel({
   );
 }
 
-function displayValue(value: unknown): string {
-  if (value == null) return "无";
-  if (typeof value === "string") return value || "空字符串";
+function displayValue(value: unknown, field?: string): string {
+  if (value == null) return "未填写";
+  if (typeof value === "string") {
+    const enumLabels: Record<string, string> = {
+      protagonist: "主角",
+      supporting: "配角",
+      antagonist: "反派",
+      passerby: "路人",
+      faction_representative: "势力代表",
+      cultivation_method: "功法",
+      spell: "术法",
+      divine_ability: "神通",
+      sword_art: "剑诀",
+      forbidden_art: "禁术",
+      alchemy: "炼丹",
+      formation: "阵法",
+      sect: "宗门",
+      family: "家族",
+      dynasty: "王朝",
+      guild: "商会",
+      demonic: "魔道",
+      alliance: "联盟",
+      academy: "学院",
+      magic_treasure: "法宝",
+      pill: "丹药",
+      material: "材料",
+      other: "其他",
+      draft: "草稿",
+      confirmed: "已确认",
+      rejected: "已拒绝",
+      inbox_fact: "收件箱事实转化",
+      agent_extract: "正文自动提取",
+      manual: "人工添加",
+      character: "角色",
+      realm: "境界",
+      technique: "功法",
+      location: "地点",
+      faction: "势力",
+      item: "物品",
+      rule: "规则",
+      event: "事件",
+      create_card: "新建卡片",
+      update_card: "更新卡片",
+    };
+    if (enumLabels[value]) return enumLabels[value];
+    if (field?.endsWith("chapter_id")) return "已填写章节引用";
+    if (field?.endsWith("_id")) return "已填写知识引用";
+    return value || "空字符串";
+  }
   if (Array.isArray(value)) {
     return value
       .filter(item => typeof item === "string" || typeof item === "number")

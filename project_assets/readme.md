@@ -63,6 +63,8 @@ project_assets/
 │   │   └── knowledge_extraction/                # 正文知识沉淀 Agent 的运行记录和候选审核项
 │   ├── llm_usage/                               # 跨任务模型调用遥测，按需创建 calls.jsonl
 │   ├── retrieval/                               # 统一知识召回技术观测，按需创建 calls.jsonl
+│   ├── capability_invocations/                  # Tool、专业子 Agent 与 LLM 的脱敏技术调用记录
+│   ├── capability_artifacts/                    # 专业子 Agent 的有类型 JSON 中间产物
 │   └── agent_evaluations/                       # Agent 效果评估输入快照、结果与审计记录
 │       └── knowledge_extraction/                # 知识沉淀评估报告及裁判校准报告
 └── generated/                                   # 按需创建的临时生成物根目录
@@ -102,6 +104,10 @@ MongoDB 知识卡统一使用 `lifecycle=draft|confirmed|rejected`；默认列�
 跨任务模型调用遥测追加保存在 `derived/llm_usage/calls.jsonl`。每行只包含模型快照、任务来源、Token、费用、耗时、状态、上游请求 ID 和脱敏错误，不保存密钥、鉴权头、完整 Prompt 或模型原文；该目录属于可重建运行遥测，不是正文或结构化知识事实源。
 
 统一知识召回技术观测追加保存在 `derived/retrieval/calls.jsonl`。每行保存召回关联 ID、调用方、模式、策略、过滤范围、候选数、命中数、排名、耗时和脱敏错误；查询与辅助上下文只保存长度和 SHA-256，不重复保存正文或用户完整输入。该记录用于跨消费者排查召回链路，但不替代写作区、知识沉淀 Workflow 或通用 Agent Runtime 各自的业务日志、状态机与评测记录。
+
+通用写作助手能力层的 Tool、专业子 Agent 和内部 LLM 技术调用记录追加保存在 `derived/capability_invocations/calls.jsonl`。记录只保存调用树引用、能力名称、状态、输入哈希、字符数、模型角色、耗时、授权引用和脱敏错误，不保存密钥、鉴权头、完整 Prompt、完整模型原文或外部页面全文；它不替代三类执行体系各自的业务日志。
+
+专业子 Agent 的结构化输出保存在 `derived/capability_artifacts/`。每个 JSON 文件显式标记 `lifecycle=draft`，记录产物类型、生产者、输入与内容哈希、来源引用和创建时间，可供后续专业子 Agent 按稳定引用接力消费；这些文件是可审计中间态，不是 Markdown 正文或 MongoDB 结构事实。
 
 知识沉淀效果评估保存在 `derived/agent_evaluations/knowledge_extraction/`。每次评估独立冻结评测集、实际候选、正文、评分参数和模型身份，并保存确定性结果与裁判调用审计；裁判校准报告位于其 `calibration_reports/` 子目录。评估报告和校准报告都是非事实派生数据，通过 `lifecycle` 区分草稿、已确认和已废弃状态，不得反向成为正文或结构化知识事实源。
 

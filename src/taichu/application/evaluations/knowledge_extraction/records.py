@@ -31,6 +31,7 @@ class EvaluationPhase(StrEnum):
     QUEUED = "queued"
     DETERMINISTIC = "deterministic"
     JUDGING = "judging"
+    EXPLAINING = "explaining"
     AGGREGATING = "aggregating"
     FINISHED = "finished"
 
@@ -49,6 +50,21 @@ class IndependenceLevel(StrEnum):
     SAME_PROVIDER_FAMILY = "same_provider_family"
     SAME_MODEL = "same_model"
     UNKNOWN = "unknown"
+
+
+class DifferenceExplanationSource(StrEnum):
+    """Whether a readable explanation came from the model or fixed rules."""
+
+    MODEL = "model"
+    RULE = "rule"
+
+
+class DifferenceExplanation(EvaluationModel):
+    """One persisted explanation shown before raw comparison details."""
+
+    summary: str = Field(min_length=1, max_length=500)
+    source: DifferenceExplanationSource
+    call_id: str | None = None
 
 
 class EvaluationNotice(EvaluationModel):
@@ -94,6 +110,7 @@ class EvaluationComparison(EvaluationModel):
     match_kind: str | None = None
     field_diffs: list[dict[str, Any]] = Field(default_factory=list)
     judge_result: dict[str, Any] | None = None
+    explanation: DifferenceExplanation | None = None
 
 
 class EvaluationRunResult(EvaluationModel):

@@ -29,7 +29,7 @@ def _actual(
     card_fields: dict[str, object] | None = None,
     evidence_excerpts: list[str] | None = None,
 ) -> ActualCandidate:
-    card = {
+    card: dict[str, object] = {
         "type": knowledge_type.value,
         "name": name,
         "aliases": aliases or [],
@@ -53,7 +53,7 @@ def _expected(
     card_fields: dict[str, object] | None = None,
     source_quote_ids: list[str] | None = None,
 ) -> ExpectedCard:
-    card = {
+    card: dict[str, object] = {
         "type": knowledge_type.value,
         "name": name,
         "aliases": aliases or [],

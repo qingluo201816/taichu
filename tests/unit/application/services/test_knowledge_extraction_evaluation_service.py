@@ -39,6 +39,8 @@ from taichu.application.evaluations.knowledge_extraction.models import (
 from taichu.application.evaluations.knowledge_extraction.records import (
     EvaluationComparison,
     EvaluationStatus,
+    IndependenceLevel,
+    JudgeCallRecord,
     KnowledgeEvaluationRecord,
 )
 from taichu.application.services.knowledge_extraction_evaluation_service import (
@@ -47,6 +49,7 @@ from taichu.application.services.knowledge_extraction_evaluation_service import 
     _build_comparisons,
     _comparison_issue_type,
     _display_model_title,
+    _legacy_judge_diagnostics,
     derive_independence,
 )
 from taichu.domain.models.structured_knowledge import StructuredKnowledgeType
@@ -205,6 +208,45 @@ class _SuccessfulJudge(_Judge):
         return EvaluationJudgeResponse(
             raw_response=raw,
             model_identity=self.model_identity,
+        )
+
+
+class _DifferenceJudge(_SuccessfulJudge):
+    async def complete(self, prompt: str) -> EvaluationJudgeResponse:
+        if "<UNTRUSTED_DIFFERENCE_DATA>" in prompt:
+            self.calls += 1
+            encoded = prompt.split("<UNTRUSTED_DIFFERENCE_DATA>\n", 1)[1].split(
+                "\n</UNTRUSTED_DIFFERENCE_DATA>",
+                1,
+            )[0]
+            cases = json.loads(encoded)
+            return EvaluationJudgeResponse(
+                raw_response=json.dumps(
+                    {
+                        "items": [
+                            {
+                                "explanation_id": item["explanation_id"],
+                                "summary": (
+                                    "已匹配为同一张角色卡，但本次摘要对关键事实的"
+                                    "覆盖不完整。"
+                                ),
+                            }
+                            for item in cases
+                        ]
+                    },
+                    ensure_ascii=False,
+                ),
+                model_identity=self.model_identity,
+            )
+        response = await super().complete(prompt)
+        payload = json.loads(response.raw_response)
+        for item in payload["items"]:
+            dimension = item["dimensions"]["key_fact_coverage"]
+            dimension["score"] = 3
+            dimension["verdict"] = "mostly_correct"
+            dimension["reason"] = "候选覆盖主要事实，但仍有细节遗漏。"
+        return response.model_copy(
+            update={"raw_response": json.dumps(payload, ensure_ascii=False)}
         )
 
 
@@ -397,6 +439,7 @@ async def _judge_failure_and_retry_scenario(tmp_path: Path) -> None:
         metric_profile_id="knowledge_extraction_balanced",
     )
     parent_terminal = await _wait_for_terminal(results, parent.evaluation_id)
+    parent_result = await results.get_run_result(parent.evaluation_id, run.run_id)
     parent_snapshot = await results.read_snapshot_files(parent.evaluation_id)
     chapters.markdown = "当前正文已经变化，但严格重试不得重新读取。"
 
@@ -409,11 +452,17 @@ async def _judge_failure_and_retry_scenario(tmp_path: Path) -> None:
     assert parent_terminal.run_results[0].overall_quality_score is None
     assert parent_terminal.warnings[0].code == "EVALUATION_JUDGE_INVALID_OUTPUT"
     assert "语义裁判未纳入本次评分" in parent_terminal.warnings[0].message
+    assert parent_result is not None
+    assert parent_result.comparisons[0].issue_type == "judge_failed"
+    assert parent_result.comparisons[0].explanation is not None
+    assert parent_result.comparisons[0].explanation.source.value == "rule"
+    assert "不代表抽取错误" in parent_result.comparisons[0].explanation.summary
     assert retry_terminal.status is EvaluationStatus.COMPLETED_WITH_WARNINGS
     assert retry_terminal.parent_evaluation_id == parent.evaluation_id
     assert retry_terminal.snapshot_root_hash == parent_terminal.snapshot_root_hash
     assert retry_snapshot == parent_snapshot
-    assert judge.calls == 2
+    # 每次评估包含一次失败的语义裁判和一次失败的差异说明调用。
+    assert judge.calls == 4
     await service.shutdown()
 
 
@@ -519,6 +568,12 @@ def test_comparison_issue_type_only_reports_real_differences() -> None:
     judge_disagreement = exact_match.model_copy(
         update={"judge_result": {"status": "reference_conflict"}}
     )
+    judge_inconclusive = exact_match.model_copy(
+        update={"judge_result": {"status": "inconclusive"}}
+    )
+    judge_failed = exact_match.model_copy(
+        update={"judge_result": {"status": "failed"}}
+    )
     ambiguous_match = exact_match.model_copy(
         update={"issue_type": "ambiguous_match"}
     )
@@ -528,7 +583,63 @@ def test_comparison_issue_type_only_reports_real_differences() -> None:
     assert _comparison_issue_type(semantic_issue) == "semantic_issue"
     assert _comparison_issue_type(evidence_issue) == "evidence_issue"
     assert _comparison_issue_type(judge_disagreement) == "judge_disagreement"
+    assert _comparison_issue_type(judge_inconclusive) == "judge_inconclusive"
+    assert _comparison_issue_type(judge_failed) == "judge_failed"
     assert _comparison_issue_type(ambiguous_match) == "ambiguous_match"
+
+
+def test_legacy_judge_diagnostics_distinguishes_failed_and_inconclusive() -> None:
+    comparison = EvaluationComparison(
+        run_id="extract_run_20260711_120000_a1b2c3",
+        case_id="chapter-001",
+        knowledge_type="character",
+        issue_type="judge_disagreement",
+        expected_card_id="expected-001",
+        actual_candidate_id="actual-001",
+        judge_result={
+            "status": "disagreement",
+            "judge_call_ids": ["call-1", "call-2"],
+        },
+    )
+    valid_item = {
+        "expected_card_id": "expected-001",
+        "actual_review_item_id": "actual-001",
+    }
+    valid_call = JudgeCallRecord(
+        call_id="call-1",
+        evaluation_id="evaluation-001",
+        run_ids=[comparison.run_id],
+        judge_model_identity=LLMModelIdentity(
+            provider="deepseek",
+            model_id="judge-model",
+            family="judge",
+            endpoint_kind="openai_compatible",
+            known=True,
+        ),
+        independence_level=IndependenceLevel.DIFFERENT_MODEL,
+        prompt_contract_id="knowledge_extraction_semantic_judge",
+        prompt_hash="prompt-hash",
+        input_snapshot_hash="snapshot-hash",
+        input_prompt="prompt",
+        parsed_output={"items": [valid_item]},
+        started_at="2026-07-13T00:00:00Z",
+    )
+
+    failed = _legacy_judge_diagnostics(comparison, [], 2)
+    inconclusive = _legacy_judge_diagnostics(comparison, [valid_call], 2)
+    disagreement = _legacy_judge_diagnostics(
+        comparison,
+        [valid_call, valid_call.model_copy(update={"call_id": "call-2"})],
+        2,
+    )
+
+    assert failed["status"] == "failed"
+    assert failed["valid_result_count"] == 0
+    assert "不代表抽取错误" in failed["reason"]
+    assert inconclusive["status"] == "inconclusive"
+    assert inconclusive["valid_result_count"] == 1
+    assert disagreement["status"] == "disagreement"
+    assert disagreement["valid_result_count"] == 2
 
 
 def test_ambiguous_match_is_one_review_item_without_missing_or_extra_rows() -> None:
@@ -584,6 +695,10 @@ def test_successful_judge_persists_auditable_call_and_semantic_result(
     asyncio.run(_successful_judge_scenario(tmp_path))
 
 
+def test_visible_difference_gets_persisted_model_explanation(tmp_path: Path) -> None:
+    asyncio.run(_model_explanation_scenario(tmp_path))
+
+
 async def _successful_judge_scenario(tmp_path: Path) -> None:
     markdown = "秦阳握着青铜令牌走入山门。"
     dataset = _dataset(markdown)
@@ -618,6 +733,50 @@ async def _successful_judge_scenario(tmp_path: Path) -> None:
     assert call.self_judge is False
     assert call.input_snapshot_hash != terminal.snapshot_root_hash
     assert call.parsed_output is not None
+    await service.shutdown()
+
+
+async def _model_explanation_scenario(tmp_path: Path) -> None:
+    markdown = "秦阳握着青铜令牌走入山门。"
+    dataset = _dataset(markdown)
+    run = _run(markdown)
+    results = JsonEvaluationResultStore(tmp_path)
+    judge = _DifferenceJudge(available=True)
+    service = KnowledgeExtractionEvaluationService(
+        dataset_repository=_DatasetRepository(dataset),
+        result_repository=results,
+        run_store=_RunStore([run]),
+        chapter_service=_ChapterService(markdown),  # type: ignore[arg-type]
+        judge=judge,
+    )
+
+    created = await service.create_evaluation(
+        dataset_id=dataset.manifest.dataset_id,
+        run_ids=[run.run_id],
+        judge_enabled=True,
+        metric_profile_id="knowledge_extraction_balanced",
+    )
+    terminal = await _wait_for_terminal(results, created.evaluation_id)
+    persisted = await results.get_run_result(created.evaluation_id, run.run_id)
+
+    assert terminal.status is EvaluationStatus.COMPLETED
+    assert persisted is not None
+    comparison = persisted.comparisons[0]
+    assert comparison.issue_type == "semantic_issue"
+    assert comparison.explanation is not None
+    assert comparison.explanation.source.value == "model"
+    assert "覆盖不完整" in comparison.explanation.summary
+    assert comparison.explanation.call_id
+    explanation_call = await results.get_judge_call(
+        created.evaluation_id,
+        comparison.explanation.call_id,
+    )
+    assert explanation_call is not None
+    assert (
+        explanation_call.prompt_contract_id
+        == "knowledge_extraction_difference_explanation"
+    )
+    assert judge.calls == 2
     await service.shutdown()
 
 

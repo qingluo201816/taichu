@@ -772,10 +772,15 @@
     "ambiguous_count": 0,
     "candidate_true_positive_count": 9,
     "candidate_false_positive_count": 1,
-    "candidate_false_negative_count": 1
+    "candidate_false_negative_count": 1,
+    "semantic_score": 0.9425000000000001,
+    "judge_coverage": 0.5555555555555556,
+    "overall_quality_score": null,
+    "critical_flag_count": 0,
+    "final_quality_state": "not_comparable"
   },
-  "semantic_score": null,
-  "judge_coverage": null,
+  "semantic_score": 0.9425000000000001,
+  "judge_coverage": 0.5555555555555556,
   "overall_quality_score": null,
   "final_quality_state": "not_comparable",
   "comparisons": [
@@ -784,7 +789,7 @@
       "case_id": "chapter_002",
       "task_title": "第2章 山中神仙选仙苗",
       "knowledge_type": "character",
-      "issue_type": "field_difference",
+      "issue_type": "judge_disagreement",
       "expected_card_id": "character_qin_haoxuan",
       "actual_candidate_id": "review_item_001",
       "expected_card": {
@@ -844,7 +849,16 @@
           "reason": null
         }
       ],
-      "judge_result": null
+      "judge_result": {
+        "status": "disagreement",
+        "reason": "多次裁判意见未达成一致。",
+        "judge_call_ids": [
+          "judge_call_cda3869bf631",
+          "judge_call_4c398ff78c5d",
+          "judge_call_d7fe428a00e5",
+          "judge_call_e02006a30cbf"
+        ]
+      }
     },
     {
       "run_id": "extract_run_20260713_114610_f7a44a",
@@ -910,14 +924,81 @@
           "reason": null
         }
       ],
-      "judge_result": null
+      "judge_result": {
+        "case_id": "extract_run_20260713_114610_f7a44a::review_item_002::character_chen_laotou",
+        "expected_card_id": "character_chen_laotou",
+        "actual_review_item_id": "review_item_002",
+        "status": "scored",
+        "dimensions": {
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_character_chen_laotou_01",
+              "quote_character_chen_laotou_02",
+              "quote_character_chen_laotou_03"
+            ],
+            "reason": "摘要中所有描述均与原文引用精确一致：年近八十且健步如飞、药到病除声誉极高、以三十两成交黄精。"
+          },
+          "key_fact_coverage": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_character_chen_laotou_01",
+              "quote_character_chen_laotou_02",
+              "quote_character_chen_laotou_03"
+            ],
+            "reason": "覆盖了期望摘要的全部要点：高超医术与声誉、年近八十的强健体魄、以三十两收购黄精。"
+          },
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_character_chen_laotou_01",
+              "quote_character_chen_laotou_02",
+              "quote_character_chen_laotou_03"
+            ],
+            "reason": "摘要的每一个事实均可直接追溯至对应的原文引用，无凭空臆造。"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_character_chen_laotou_01",
+              "quote_character_chen_laotou_02"
+            ],
+            "reason": "仅包含角色属性相关信息，未掺杂其他类型知识（如事件、世界观等）。"
+          },
+          "knowledge_usability": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_character_chen_laotou_01",
+              "quote_character_chen_laotou_02",
+              "quote_character_chen_laotou_03"
+            ],
+            "reason": "摘要简洁、实体指代明确，可直接用于角色卡片，且关键信息一目了然。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.92,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_cda3869bf631",
+          "judge_call_a3c6f4438b63"
+        ],
+        "semantic_score": 1.0
+      }
     },
     {
       "run_id": "extract_run_20260713_114610_f7a44a",
       "case_id": "chapter_002",
       "task_title": "第2章 山中神仙选仙苗",
       "knowledge_type": "character",
-      "issue_type": "field_difference",
+      "issue_type": "semantic_issue",
       "expected_card_id": "character_zhang_kuang",
       "actual_candidate_id": "review_item_003",
       "expected_card": {
@@ -992,7 +1073,57 @@
           "reason": null
         }
       ],
-      "judge_result": null
+      "judge_result": {
+        "case_id": "extract_run_20260713_114610_f7a44a::review_item_003::character_zhang_kuang",
+        "expected_card_id": "character_zhang_kuang",
+        "actual_review_item_id": "review_item_003",
+        "status": "scored",
+        "dimensions": {
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "摘要中所有陈述均可在原文中找到对应段落，无编造或歪曲；身份和关系字段为空，未产生不实信息。"
+          },
+          "key_fact_coverage": {
+            "score": 3,
+            "verdict": "mostly_correct",
+            "quote_ids": [],
+            "reason": "捕获了张狂威胁秦浩轩这一核心事件，但未提取身份信息和‘视秦浩轩为宿敌’的关系总结，关键事实覆盖不完整。"
+          },
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "已提取的摘要内容均有明确的原文证据支撑，威胁话语、背景和反应均定位到具体章节位置。"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "摘要内容均直接出自原文，虽然包含背景和反应等上下文细节，但未超出角色描述的正常范围，无无关信息。"
+          },
+          "knowledge_usability": {
+            "score": 2,
+            "verdict": "partial",
+            "quote_ids": [],
+            "reason": "摘要叙述清晰，但由于缺失身份和关系字段，该角色卡片的结构化程度和检索可用性不足。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.7,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_cda3869bf631",
+          "judge_call_d1238618e8e3",
+          "judge_call_c7833d7087c9",
+          "judge_call_377fff976c4e"
+        ],
+        "semantic_score": 0.8625
+      }
     },
     {
       "run_id": "extract_run_20260713_114610_f7a44a",
@@ -1034,14 +1165,71 @@
       },
       "match_kind": "exact_name",
       "field_diffs": [],
-      "judge_result": null
+      "judge_result": {
+        "case_id": "extract_run_20260713_114610_f7a44a::review_item_004::location_chenjia_yaopu",
+        "expected_card_id": "location_chenjia_yaopu",
+        "actual_review_item_id": "review_item_004",
+        "status": "scored",
+        "dimensions": {
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_chenjia_yaopu_01",
+              "quote_location_chenjia_yaopu_02"
+            ],
+            "reason": "实际摘要中'无人不知无人不晓''北街一个不甚起眼的小店铺''挂着药字招牌'均与原文完全一致，陈老头治病细节也准确反映了原文内容，无任何事实错误或夸大。"
+          },
+          "key_fact_coverage": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_chenjia_yaopu_01",
+              "quote_location_chenjia_yaopu_02"
+            ],
+            "reason": "预期关键事实'在大田镇广为人知'和'位于北街'在摘要中均有明确体现（'无人不知无人不晓''北街小店铺'），未遗漏任何关键点，且覆盖了更多背景细节。"
+          },
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_chenjia_yaopu_01",
+              "quote_location_chenjia_yaopu_02"
+            ],
+            "reason": "摘要中每个陈述均有原文引用支撑：声誉来自quote1，位置与招牌来自quote2，治疗细节来自quote1扩展文本（上山捕猎受伤中毒，陈老头药到病除），所有声称都能在给定证据中定位。"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "摘要内容完全限定在提供的证据文本内，仅使用了陈老头治病等原文明确描述的信息，未引入章节外或推断性内容。"
+          },
+          "knowledge_usability": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "摘要结构化清晰，直接给出了地点名称、位置特征、社会声誉和功能性描述（坐镇治病），作为知识卡片可直接用于后续查询或设定引用，无歧义或冗余。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.95,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_04c8c51aef02",
+          "judge_call_8b7c68067469"
+        ],
+        "semantic_score": 1.0
+      }
     },
     {
       "run_id": "extract_run_20260713_114610_f7a44a",
       "case_id": "chapter_002",
       "task_title": "第2章 山中神仙选仙苗",
       "knowledge_type": "location",
-      "issue_type": "matched",
+      "issue_type": "judge_disagreement",
       "expected_card_id": "location_da_tian_zhen",
       "actual_candidate_id": "review_item_005",
       "expected_card": {
@@ -1076,7 +1264,14 @@
       },
       "match_kind": "exact_name",
       "field_diffs": [],
-      "judge_result": null
+      "judge_result": {
+        "status": "disagreement",
+        "reason": "多次裁判意见未达成一致。",
+        "judge_call_ids": [
+          "judge_call_04c8c51aef02",
+          "judge_call_3fcec29e7d8e"
+        ]
+      }
     },
     {
       "run_id": "extract_run_20260713_114610_f7a44a",
@@ -1117,14 +1312,68 @@
       },
       "match_kind": "exact_name",
       "field_diffs": [],
-      "judge_result": null
+      "judge_result": {
+        "case_id": "extract_run_20260713_114610_f7a44a::review_item_006::location_pozi_ling",
+        "expected_card_id": "location_pozi_ling",
+        "actual_review_item_id": "review_item_006",
+        "status": "scored",
+        "dimensions": {
+          "factual_fidelity": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_pozi_ling_01"
+            ],
+            "reason": "实际摘要准确反映了源引用内容，没有添加、遗漏或曲解事实。"
+          },
+          "key_fact_coverage": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_pozi_ling_01"
+            ],
+            "reason": "实际摘要覆盖了坡子岭作为神仙挑选徒弟仙苗地点的关键事实。"
+          },
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [
+              "quote_location_pozi_ling_01"
+            ],
+            "reason": "实际摘要完全基于提供的原文引用，没有无依据的主张。"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "摘要内容符合地点卡片的信息范围，没有无关细节。"
+          },
+          "knowledge_usability": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "摘要表述清晰，适合作为知识卡片使用。"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.95,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_04c8c51aef02",
+          "judge_call_e7febf8acfab"
+        ],
+        "semantic_score": 1.0
+      }
     },
     {
       "run_id": "extract_run_20260713_114610_f7a44a",
       "case_id": "chapter_002",
       "task_title": "第2章 山中神仙选仙苗",
       "knowledge_type": "item",
-      "issue_type": "matched",
+      "issue_type": "judge_disagreement",
       "expected_card_id": "item_huangjing",
       "actual_candidate_id": "review_item_007",
       "expected_card": {
@@ -1166,14 +1415,22 @@
       },
       "match_kind": "exact_name",
       "field_diffs": [],
-      "judge_result": null
+      "judge_result": {
+        "status": "disagreement",
+        "reason": "多次裁判意见未达成一致。",
+        "judge_call_ids": [
+          "judge_call_d4f012d7480e",
+          "judge_call_f9eb1b88ff54",
+          "judge_call_73f49b1eb851"
+        ]
+      }
     },
     {
       "run_id": "extract_run_20260713_114610_f7a44a",
       "case_id": "chapter_002",
       "task_title": "第2章 山中神仙选仙苗",
       "knowledge_type": "event",
-      "issue_type": "field_difference",
+      "issue_type": "semantic_issue",
       "expected_card_id": "event_da_tian_selection_announced",
       "actual_candidate_id": "review_item_008",
       "expected_card": {
@@ -1228,14 +1485,62 @@
           "reason": null
         }
       ],
-      "judge_result": null
+      "judge_result": {
+        "case_id": "extract_run_20260713_114610_f7a44a::review_item_008::event_da_tian_selection_announced",
+        "expected_card_id": "event_da_tian_selection_announced",
+        "actual_review_item_id": "review_item_008",
+        "status": "scored",
+        "dimensions": {
+          "factual_fidelity": {
+            "score": 3,
+            "verdict": "mostly_correct",
+            "quote_ids": [],
+            "reason": "实际描述与原文证据基本一致，但将以镇长宣布选苗弱化为消息传开，略有不准"
+          },
+          "key_fact_coverage": {
+            "score": 3,
+            "verdict": "partial",
+            "quote_ids": [],
+            "reason": "覆盖了选苗日期地点和黎明出发，但镇长宣布这一环节未明确体现"
+          },
+          "evidence_grounding": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "所有信息都有原文引用支持，扎根充分"
+          },
+          "scope_discipline": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "符合事件范畴，无超出"
+          },
+          "knowledge_usability": {
+            "score": 4,
+            "verdict": "equivalent",
+            "quote_ids": [],
+            "reason": "卡片清晰描述了事件要点，可独立使用"
+          }
+        },
+        "findings": [],
+        "critical_flags": [],
+        "reference_issues": [],
+        "missing_quote_ids": [],
+        "confidence": 0.8,
+        "reason": null,
+        "judge_call_ids": [
+          "judge_call_5172b7af52e9",
+          "judge_call_238109f671fe"
+        ],
+        "semantic_score": 0.85
+      }
     },
     {
       "run_id": "extract_run_20260713_114610_f7a44a",
       "case_id": "chapter_002",
       "task_title": "第2章 山中神仙选仙苗",
       "knowledge_type": "event",
-      "issue_type": "matched",
+      "issue_type": "judge_disagreement",
       "expected_card_id": "event_huangjing_trade_chain",
       "actual_candidate_id": "review_item_009",
       "expected_card": {
@@ -1270,7 +1575,14 @@
       },
       "match_kind": "evidence_anchor",
       "field_diffs": [],
-      "judge_result": null
+      "judge_result": {
+        "status": "disagreement",
+        "reason": "多次裁判意见未达成一致。",
+        "judge_call_ids": [
+          "judge_call_5172b7af52e9",
+          "judge_call_da4a5b39080c"
+        ]
+      }
     },
     {
       "run_id": "extract_run_20260713_114610_f7a44a",

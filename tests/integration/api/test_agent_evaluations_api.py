@@ -20,6 +20,8 @@ from taichu.application.evaluations.knowledge_extraction.models import (
     EvaluationLifecycle,
 )
 from taichu.application.evaluations.knowledge_extraction.records import (
+    DifferenceExplanation,
+    DifferenceExplanationSource,
     EvaluationComparison,
     EvaluationMode,
     EvaluationProgress,
@@ -184,6 +186,8 @@ class AgentEvaluationsApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(comparison["task_title"], "第一章")
         self.assertEqual(comparison["actual_review_item_id"], "review-1")
         self.assertEqual(comparison["judge_result"]["confidence"], 0.9877)
+        self.assertEqual(comparison["explanation"]["source"], "model")
+        self.assertIn("同一张角色卡", comparison["explanation"]["summary"])
         self.assertEqual(judge_call.status_code, 200)
         self.assertEqual(judge_call.json()["judge_call"]["call_id"], _CALL_ID)
 
@@ -417,6 +421,11 @@ class _FakeEvaluationService:
                 actual_card={"name": "秦浩轩"},
                 match_kind="exact_name",
                 judge_result={"confidence": 0.987654},
+                explanation=DifferenceExplanation(
+                    summary="已匹配为同一张角色卡，但角色定位字段不同。",
+                    source=DifferenceExplanationSource.MODEL,
+                    call_id="judge_call_explain",
+                ),
             )
         ], 1
 

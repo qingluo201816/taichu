@@ -25,6 +25,7 @@ export const evaluationPhaseLabels: Record<EvaluationPhase, string> = {
   queued: "正在校验评测集",
   deterministic: "正在进行确定性比对",
   judging: "正在进行语义裁判",
+  explaining: "正在生成差异说明",
   aggregating: "正在聚合结果",
   finished: "评估已结束",
 };
@@ -44,7 +45,9 @@ export const issueTypeLabels: Record<EvaluationIssueType, string> = {
   field_difference: "字段不同",
   semantic_issue: "语义问题",
   evidence_issue: "证据问题",
-  judge_disagreement: "裁判意见不一致",
+  judge_disagreement: "裁判评分存在分歧",
+  judge_inconclusive: "有效裁判结果不足",
+  judge_failed: "裁判调用失败",
 };
 
 export function evaluationFieldLabel(
@@ -61,6 +64,28 @@ export function evaluationFieldLabel(
     source_origin: "来源方式",
     evidence_excerpt: "原文证据",
     chapter_id: "所属章节",
+    type: "知识类型",
+    lifecycle: "生命周期",
+    appearance_chapter_count: "出现章节数",
+    role_type: "角色定位",
+    identity: "身份",
+    relationship_summary: "关系摘要",
+    death_chapter_id: "死亡章节",
+    current_realm_text: "当前境界",
+    first_seen_chapter_id: "首次出现章节",
+    last_seen_chapter_id: "最近出现章节",
+    system: "修炼体系",
+    level_order: "境界排序值",
+    technique_type: "功法类型",
+    grade: "品阶",
+    practice_condition: "修炼条件",
+    owner_faction_id: "所属势力",
+    controlling_faction_id: "控制势力",
+    faction_type: "势力类型",
+    leader_id: "当前首领",
+    item_type: "物品类型",
+    current_holder_id: "当前持有人",
+    exceptions: "例外情况",
   };
   return labels[field] ?? "字段内容";
 }

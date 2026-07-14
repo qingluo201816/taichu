@@ -12,6 +12,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 
 from taichu.api.router import register_routes
 from taichu.application.agents.registry import AgentRegistry
+from taichu.application.subagents.registry import SubagentRegistry
 from taichu.application.capabilities import CapabilityContext
 from taichu.application.contracts.llm import (
     LLMGatewayContract,
@@ -48,6 +49,11 @@ from taichu.application.services.selection_ai_service import SelectionAIService
 from taichu.application.services.settings_service import SettingsPreferenceService
 from taichu.application.services.writing_ai_service import WritingAIService
 from taichu.application.services.retrieval_service import RetrievalService
+from taichu.application.services.invocation_policy_service import (
+    InvocationPolicyService,
+)
+from taichu.application.services.model_role_router import ModelRoleRouter
+from taichu.application.external_research.service import ExternalResearchService
 from taichu.application.tools.registry import ToolRegistry
 from taichu.config import Settings, settings
 from taichu.infrastructure.llm.adapter import LangChainLLMAdapter
@@ -61,6 +67,7 @@ from taichu.infrastructure.evaluations import (
 )
 from taichu.infrastructure.plugin_discovery import (
     discover_agents,
+    discover_subagents,
     discover_tools,
 )
 from taichu.infrastructure.agent_runs import JsonAgentRunStore
@@ -76,6 +83,11 @@ from taichu.infrastructure.storage.json_backend import JsonStorageBackend
 from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
+from taichu.infrastructure.external_research import (
+    DuckDuckGoExternalResearchBackend,
+)
+from taichu.infrastructure.invocations import JsonlInvocationTraceRepository
+from taichu.infrastructure.artifacts import JsonIntermediateArtifactRepository
 
 
 def create_app(
@@ -135,6 +147,20 @@ def create_app(
     retrieval_service = RetrievalService(
         MongoLexicalRetrievalBackend(knowledge_repository),
         retrieval_trace_repository,
+    )
+    invocation_trace_repository = JsonlInvocationTraceRepository(
+        app_settings.project_assets_dir
+    )
+    artifact_repository = JsonIntermediateArtifactRepository(
+        app_settings.project_assets_dir
+    )
+    invocation_policy_service = InvocationPolicyService()
+    external_research_service = ExternalResearchService(
+        DuckDuckGoExternalResearchBackend()
+    )
+    model_role_router = ModelRoleRouter.from_json(
+        active_default_model,
+        app_settings.agent_model_roles_json,
     )
     sedimentation_progress_repository = (
         MongoKnowledgeSedimentationProgressRepository(
@@ -202,16 +228,37 @@ def create_app(
         capabilities={
             "llm": llm_service,
             "chapter_service": chapter_service,
+            "outline_service": outline_service,
+            "knowledge_service": knowledge_service,
             "knowledge_repository": knowledge_repository,
             "retrieval_service": retrieval_service,
+            "external_research_service": external_research_service,
+            "invocation_policy_service": invocation_policy_service,
+            "invocation_trace_repository": invocation_trace_repository,
+            "artifact_repository": artifact_repository,
+            "model_role_router": model_role_router,
             "knowledge_run_store": knowledge_run_store,
             "storage": storage,
         }
     )
     agent_registry = AgentRegistry(capability_context)
     agent_registry.register_all(discover_agents("taichu.application.agents"))
-    tool_registry = ToolRegistry(capability_context)
+    tool_registry = ToolRegistry(
+        capability_context,
+        invocation_trace_repository,
+    )
     tool_registry.register_all(discover_tools("taichu.application.tools"))
+    subagent_context = CapabilityContext(
+        capabilities={
+            **capability_context.capabilities,
+            "tool_registry": tool_registry,
+        }
+    )
+    subagent_registry = SubagentRegistry(
+        subagent_context,
+        invocation_trace_repository,
+    )
+    subagent_registry.register_all(discover_subagents("taichu.application.subagents"))
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -251,6 +298,12 @@ def create_app(
     )
     application.state.agent_registry = agent_registry
     application.state.tool_registry = tool_registry
+    application.state.subagent_registry = subagent_registry
+    application.state.invocation_policy_service = invocation_policy_service
+    application.state.invocation_trace_repository = invocation_trace_repository
+    application.state.artifact_repository = artifact_repository
+    application.state.external_research_service = external_research_service
+    application.state.model_role_router = model_role_router
     application.state.storage = storage
     application.state.project_storage = project_storage
     application.state.chapter_service = chapter_service
@@ -263,7 +316,9 @@ def create_app(
     application.state.knowledge_repository = knowledge_repository
     application.state.retrieval_service = retrieval_service
     application.state.retrieval_trace_repository = retrieval_trace_repository
-    application.state.sedimentation_progress_repository = sedimentation_progress_repository
+    application.state.sedimentation_progress_repository = (
+        sedimentation_progress_repository
+    )
     application.state.knowledge_run_store = knowledge_run_store
     application.state.agent_task_events = agent_task_events
     application.state.knowledge_extraction_service = knowledge_extraction_service

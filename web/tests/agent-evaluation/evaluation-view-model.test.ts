@@ -6,12 +6,14 @@ import {
   evaluationFieldLabel,
   evaluationMatchBasisLabel,
   evaluationModelLabel,
+  evaluationPhaseLabels,
   evaluationProgressText,
   evaluationStatusLabels,
   evaluationTaskTitle,
   formatEvaluationScore,
   groupComparisonsByIssue,
   isTerminalEvaluation,
+  issueTypeLabels,
   modelIdentityLabel,
   previewIndependenceLabel,
   qualityStateLabel,
@@ -33,11 +35,15 @@ function test(name: string, run: () => void): void {
 
 test("内部评估状态映射为中文文案", () => {
   assert.equal(evaluationStatusLabels.completed_with_warnings, "已完成但有警告");
+  assert.equal(evaluationPhaseLabels.explaining, "正在生成差异说明");
+  assert.equal(issueTypeLabels.judge_failed, "裁判调用失败");
+  assert.equal(issueTypeLabels.judge_inconclusive, "有效裁判结果不足");
   assert.equal(qualityStateLabel("not_comparable"), "不可比较");
 });
 
 test("字段与匹配依据使用准确中文说明", () => {
   assert.equal(evaluationFieldLabel(null, "aliases"), "别名");
+  assert.equal(evaluationFieldLabel(null, "role_type"), "角色定位");
   assert.equal(
     evaluationMatchBasisLabel("accepted_name"),
     "评测集认可名称一致",
