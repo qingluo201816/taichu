@@ -149,6 +149,24 @@ export function TaskMonitorOverview() {
           </Link>
 
           <Link
+            href="/task-monitor/general-agent/evaluation"
+            className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
+          >
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)]">
+                <Scale className="size-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-medium">通用写作助手效果评测</span>
+                <span className="mt-0.5 block text-xs text-[var(--tc-text-muted)]">
+                  评估完成度、能力路径、权限边界、执行健康和答案覆盖
+                </span>
+              </span>
+            </span>
+            <ChevronRight className="size-4 shrink-0 text-[var(--tc-text-muted)]" />
+          </Link>
+
+          <Link
             href="/task-monitor/knowledge-extraction/evaluation"
             className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
           >

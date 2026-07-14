@@ -67,7 +67,8 @@ project_assets/
 │   ├── capability_artifacts/                    # 专业子 Agent 的有类型 JSON 中间产物
 │   ├── general_agent_runs/                      # 通用写作助手 Runtime 的独立业务检查点
 │   └── agent_evaluations/                       # Agent 效果评估输入快照、结果与审计记录
-│       └── knowledge_extraction/                # 知识沉淀评估报告及裁判校准报告
+│       ├── knowledge_extraction/                # 知识沉淀评估报告及裁判校准报告
+│       └── general_agent/                       # 通用写作助手五维效果评估记录
 └── generated/                                   # 按需创建的临时生成物根目录
     └── temp/                                    # 前后端运行日志等临时输出
 ```
@@ -113,6 +114,8 @@ MongoDB 知识卡统一使用 `lifecycle=draft|confirmed|rejected`；默认列�
 通用写作助手 Runtime 的业务检查点保存在 `derived/general_agent_runs/`。每次运行独立保存目标、范围、计划修订、动态节点状态、人工中断、来源与中间产物引用、校验结果和最终回答，用于任务列表、恢复和后续节点监控。它不复用知识沉淀 Workflow 的 `agent_runs/knowledge_extraction/`，也不成为正文或结构事实源。
 
 知识沉淀效果评估保存在 `derived/agent_evaluations/knowledge_extraction/`。每次评估独立冻结评测集、实际候选、正文、评分参数和模型身份，并保存确定性结果与裁判调用审计；裁判校准报告位于其 `calibration_reports/` 子目录。评估报告和校准报告都是非事实派生数据，通过 `lifecycle` 区分草稿、已确认和已废弃状态，不得反向成为正文或结构化知识事实源。
+
+通用写作助手效果评估保存在 `derived/agent_evaluations/general_agent/`。每次评估冻结评测集校验和、样例、参考答案、实际答案、当前计划能力和五个维度的逐项检查结果；评测基准位于 `tests/fixtures/evaluations/general_writing_assistant_core/`。这些记录用于评测回放和策略调优，不复用知识沉淀的候选卡字段匹配口径，也不成为正文或结构事实。
 
 正文知识沉淀 Agent 的候选卡不单独落到 `source/knowledge/`，而是保存在运行 JSON 的 `review_items[*].suggested_card` 中。只有用户确认并通过 JSON 中间态校验后，才允许由应用层服务写入 MongoDB 成为结构事实。
 

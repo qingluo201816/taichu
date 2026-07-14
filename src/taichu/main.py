@@ -18,6 +18,9 @@ from taichu.application.general_agent.events import GeneralAgentEventCenter
 from taichu.application.general_agent.executor import DynamicDagExecutor
 from taichu.application.general_agent.orchestrator import OrchestratorAgent
 from taichu.application.general_agent.service import GeneralAgentRuntimeService
+from taichu.application.evaluations.general_agent.service import (
+    GeneralAgentEvaluationService,
+)
 from taichu.application.contracts.llm import (
     LLMGatewayContract,
     LLMModelIdentity,
@@ -65,6 +68,8 @@ from taichu.infrastructure.llm.catalog import LLMModelCatalog
 from taichu.infrastructure.llm.rightcode import RightCodeLLMGateway
 from taichu.infrastructure.llm_usage import JsonlLLMUsageRepository
 from taichu.infrastructure.evaluations import (
+    JsonGeneralAgentEvaluationDatasetRepository,
+    JsonGeneralAgentEvaluationResultRepository,
     JsonEvaluationDatasetRepository,
     JsonEvaluationResultStore,
     create_evaluation_judge,
@@ -287,6 +292,16 @@ def create_app(
         executor=dynamic_dag_executor,
         policy_service=invocation_policy_service,
     )
+    general_agent_evaluation_service = GeneralAgentEvaluationService(
+        datasets=JsonGeneralAgentEvaluationDatasetRepository(
+            app_settings.evaluation_datasets_dir
+        ),
+        results=JsonGeneralAgentEvaluationResultRepository(
+            app_settings.project_assets_dir
+        ),
+        runs=general_agent_run_repository,
+        traces=invocation_trace_repository,
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -332,6 +347,9 @@ def create_app(
     application.state.general_agent_run_repository = general_agent_run_repository
     application.state.general_agent_event_center = general_agent_event_center
     application.state.general_agent_runtime_service = general_agent_runtime_service
+    application.state.general_agent_evaluation_service = (
+        general_agent_evaluation_service
+    )
     application.state.invocation_policy_service = invocation_policy_service
     application.state.invocation_trace_repository = invocation_trace_repository
     application.state.artifact_repository = artifact_repository

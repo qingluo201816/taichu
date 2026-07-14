@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { GitBranch } from "lucide-react";
+import { GitBranch, Scale } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -16,6 +16,12 @@ export function GeneralAgentMonitorNav({
       href: "/task-monitor/general-agent",
       label: "节点监控",
       icon: GitBranch,
+    },
+    {
+      key: "evaluation" as const,
+      href: "/task-monitor/general-agent/evaluation",
+      label: "效果评测",
+      icon: Scale,
     },
   ];
   return (
