@@ -18,7 +18,7 @@ const primaryEntries = [
   },
   {
     title: "智能体工作台",
-    detail: "运行正文知识沉淀并审核候选内容",
+    detail: "处理开放式写作任务，并运行正文知识沉淀",
     href: "/agent-workbench",
     icon: Bot,
   },

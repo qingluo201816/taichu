@@ -4,7 +4,6 @@ import {
   Activity,
   AlertTriangle,
   Ban,
-  Bot,
   Check,
   ChevronRight,
   Copy,
@@ -21,6 +20,11 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
+import { GeneralAgentWorkbench } from "@/components/agent-workbench/general-agent-workbench";
+import {
+  AgentWorkbenchSwitcher,
+  type WorkbenchAgent,
+} from "@/components/agent-workbench/agent-workbench-switcher";
 import {
   StructuredKnowledgeForm,
   StructuredKnowledgeView,
@@ -204,6 +208,19 @@ const nodeLabel: Record<string, string> = {
 };
 
 export function AgentWorkbenchShell() {
+  const [activeAgent, setActiveAgent] = useState<WorkbenchAgent>("general");
+
+  if (activeAgent === "general") {
+    return <GeneralAgentWorkbench onAgentChange={setActiveAgent} />;
+  }
+  return <KnowledgeExtractionWorkbench onAgentChange={setActiveAgent} />;
+}
+
+function KnowledgeExtractionWorkbench({
+  onAgentChange,
+}: {
+  onAgentChange: (agent: WorkbenchAgent) => void;
+}) {
   const [chapters, setChapters] = useState<ChapterInfo[]>([]);
   const [runs, setRuns] = useState<AgentRunSummary[]>([]);
   const [sedimentationProgress, setSedimentationProgress] =
@@ -672,38 +689,10 @@ export function AgentWorkbenchShell() {
       {runNotice ? <RunStartNotice notice={runNotice} /> : null}
       <section className="mx-auto grid max-w-[1440px] gap-4 px-4 py-4 xl:grid-cols-[270px_minmax(0,1fr)]">
         <aside className="min-w-0 overflow-hidden rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2">
-          <div className="px-2 py-2">
-            <p className="text-xs text-[var(--tc-text-muted)]">智能体工作台</p>
-            <h1 className="text-xl font-semibold text-[var(--tc-text-primary)]">
-              智能体
-            </h1>
-            <p className="mt-1 text-xs text-[var(--tc-text-muted)]">
-              当前开放 1 个
-            </p>
-          </div>
-
-          <div className="mt-2 grid gap-1">
-            <button
-              type="button"
-              className="rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] px-3 py-2 text-left text-sm text-[var(--tc-text-primary)]"
-            >
-              <span className="flex items-center gap-2 font-semibold">
-                <Bot className="size-4" />
-                正文知识沉淀
-              </span>
-              <span className="mt-1 block text-xs text-[var(--tc-text-muted)]">
-                章节正文到候选知识卡
-              </span>
-            </button>
-            <button
-              type="button"
-              disabled
-              className="rounded-[var(--tc-radius-control)] px-3 py-2 text-left text-sm text-[var(--tc-text-muted)] opacity-60"
-            >
-              后续智能体
-              <span className="mt-1 block text-xs">暂未启用</span>
-            </button>
-          </div>
+          <AgentWorkbenchSwitcher
+            activeAgent="knowledge"
+            onAgentChange={onAgentChange}
+          />
 
           <div className="mt-4 border-t border-[var(--tc-border-subtle)] pt-3">
             <div className="mb-2 flex items-center justify-between gap-2 px-2">
