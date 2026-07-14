@@ -3,6 +3,8 @@
 from fastapi import Request
 
 from taichu.application.agents.registry import AgentRegistry
+from taichu.application.general_agent.events import GeneralAgentEventCenter
+from taichu.application.general_agent.service import GeneralAgentRuntimeService
 from taichu.application.contracts.storage import StorageBackend
 from taichu.application.contracts.llm import LLMGatewayContract
 from taichu.application.contracts.llm_usage import LLMUsageRepository
@@ -31,6 +33,18 @@ from taichu.application.services.writing_ai_service import WritingAIService
 def provide_agent_registry(request: Request) -> AgentRegistry:
     """返回应用启动时创建的 Agent 注册中心。"""
     return request.app.state.agent_registry
+
+
+def provide_general_agent_runtime_service(
+    request: Request,
+) -> GeneralAgentRuntimeService:
+    """返回通用写作助手独立 Runtime。"""
+    return request.app.state.general_agent_runtime_service
+
+
+def provide_general_agent_event_center(request: Request) -> GeneralAgentEventCenter:
+    """返回通用 Runtime 独立事件中心。"""
+    return request.app.state.general_agent_event_center
 
 
 def provide_storage(request: Request) -> StorageBackend:

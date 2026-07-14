@@ -1,0 +1,215 @@
+"""通用写作助手 Runtime 的任务与恢复接口。"""
+
+from __future__ import annotations
+
+import json
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
+
+from taichu.api.deps import (
+    provide_general_agent_event_center,
+    provide_general_agent_runtime_service,
+)
+from taichu.api.schemas.general_agent import (
+    GeneralAgentDeleteResponse,
+    GeneralAgentResumeRequest,
+    GeneralAgentRunListResponse,
+    GeneralAgentRunRequest,
+    GeneralAgentRunResponse,
+    GeneralAgentRunSummary,
+)
+from taichu.application.general_agent.events import GeneralAgentEventCenter
+from taichu.application.general_agent.models import (
+    GeneralAgentNodeStatus,
+    GeneralAgentRun,
+)
+from taichu.application.general_agent.service import (
+    GeneralAgentRunNotFoundError,
+    GeneralAgentRuntimeError,
+    GeneralAgentRuntimeService,
+)
+
+router = APIRouter(prefix="/api/agent-workbench/general-assistant")
+
+
+@router.post("/runs", response_model=GeneralAgentRunResponse)
+async def api_run_general_agent(
+    request: GeneralAgentRunRequest,
+    service: GeneralAgentRuntimeService = Depends(
+        provide_general_agent_runtime_service
+    ),
+) -> GeneralAgentRunResponse:
+    """同步运行到完成、失败或人工中断。"""
+    try:
+        run = await service.run(**request.model_dump())
+    except GeneralAgentRuntimeError as error:
+        raise _unprocessable(str(error)) from error
+    return GeneralAgentRunResponse(run=run)
+
+
+@router.post("/runs/start", response_model=GeneralAgentRunResponse)
+async def api_start_general_agent(
+    request: GeneralAgentRunRequest,
+    service: GeneralAgentRuntimeService = Depends(
+        provide_general_agent_runtime_service
+    ),
+) -> GeneralAgentRunResponse:
+    """创建后台任务并立即返回初始检查点。"""
+    try:
+        run = await service.start(**request.model_dump())
+    except GeneralAgentRuntimeError as error:
+        raise _unprocessable(str(error)) from error
+    return GeneralAgentRunResponse(run=run)
+
+
+@router.get("/runs", response_model=GeneralAgentRunListResponse)
+async def api_list_general_agent_runs(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    status: str = "all",
+    service: GeneralAgentRuntimeService = Depends(
+        provide_general_agent_runtime_service
+    ),
+) -> GeneralAgentRunListResponse:
+    try:
+        runs, total = await service.list(
+            page=page,
+            page_size=page_size,
+            status=status,
+        )
+    except ValueError as error:
+        raise _unprocessable(str(error)) from error
+    return GeneralAgentRunListResponse(
+        runs=[_summary(run) for run in runs],
+        page=page,
+        page_size=page_size,
+        total=total,
+    )
+
+
+@router.get("/runs/stream/events")
+async def api_stream_general_agent_events(
+    event_center: GeneralAgentEventCenter = Depends(
+        provide_general_agent_event_center
+    ),
+) -> StreamingResponse:
+    async def event_lines():
+        async for event in event_center.subscribe():
+            yield json.dumps(event, ensure_ascii=False) + "\n"
+
+    return StreamingResponse(
+        event_lines(),
+        media_type="application/x-ndjson; charset=utf-8",
+    )
+
+
+@router.get("/runs/{run_id}", response_model=GeneralAgentRunResponse)
+async def api_get_general_agent_run(
+    run_id: str,
+    service: GeneralAgentRuntimeService = Depends(
+        provide_general_agent_runtime_service
+    ),
+) -> GeneralAgentRunResponse:
+    try:
+        run = await service.get(run_id)
+    except GeneralAgentRunNotFoundError as error:
+        raise _not_found(str(error)) from error
+    return GeneralAgentRunResponse(run=run)
+
+
+@router.post("/runs/{run_id}/resume", response_model=GeneralAgentRunResponse)
+async def api_resume_general_agent_run(
+    run_id: str,
+    request: GeneralAgentResumeRequest,
+    service: GeneralAgentRuntimeService = Depends(
+        provide_general_agent_runtime_service
+    ),
+) -> GeneralAgentRunResponse:
+    try:
+        run = await service.resume(run_id, **request.model_dump())
+    except GeneralAgentRunNotFoundError as error:
+        raise _not_found(str(error)) from error
+    except GeneralAgentRuntimeError as error:
+        raise _conflict(str(error)) from error
+    return GeneralAgentRunResponse(run=run)
+
+
+@router.post("/runs/{run_id}/cancel", response_model=GeneralAgentRunResponse)
+async def api_cancel_general_agent_run(
+    run_id: str,
+    service: GeneralAgentRuntimeService = Depends(
+        provide_general_agent_runtime_service
+    ),
+) -> GeneralAgentRunResponse:
+    try:
+        run = await service.cancel(run_id)
+    except GeneralAgentRunNotFoundError as error:
+        raise _not_found(str(error)) from error
+    return GeneralAgentRunResponse(run=run)
+
+
+@router.delete("/runs/{run_id}", response_model=GeneralAgentDeleteResponse)
+async def api_delete_general_agent_run(
+    run_id: str,
+    service: GeneralAgentRuntimeService = Depends(
+        provide_general_agent_runtime_service
+    ),
+) -> GeneralAgentDeleteResponse:
+    try:
+        deleted = await service.delete(run_id)
+    except GeneralAgentRuntimeError as error:
+        raise _conflict(str(error)) from error
+    if not deleted:
+        raise _not_found(f"通用写作助手任务“{run_id}”不存在。")
+    return GeneralAgentDeleteResponse(run_id=run_id, deleted=True)
+
+
+def _summary(run: GeneralAgentRun) -> GeneralAgentRunSummary:
+    current = [
+        item for item in run.node_runs if item.plan_revision == run.plan_revision
+    ]
+    return GeneralAgentRunSummary(
+        run_id=run.run_id,
+        agent_name=run.agent_name,
+        user_goal=run.user_goal,
+        status=run.status.value,
+        scope_type=run.scope.scope_type,
+        plan_revision=run.plan_revision,
+        replan_count=run.replan_count,
+        completed_node_count=sum(
+            1 for item in current if item.status is GeneralAgentNodeStatus.SUCCESS
+        ),
+        failed_node_count=sum(
+            1 for item in current if item.status is GeneralAgentNodeStatus.FAILED
+        ),
+        total_node_count=len(current),
+        waiting_human_kind=(
+            run.pending_human_request.kind if run.pending_human_request else None
+        ),
+        final_answer_preview=run.final_answer[:300],
+        created_at=run.created_at,
+        updated_at=run.updated_at,
+        finished_at=run.finished_at,
+    )
+
+
+def _not_found(message: str) -> HTTPException:
+    return HTTPException(
+        status_code=404,
+        detail={"error": {"code": "NOT_FOUND", "message": message}},
+    )
+
+
+def _unprocessable(message: str) -> HTTPException:
+    return HTTPException(
+        status_code=422,
+        detail={"error": {"code": "GENERAL_AGENT_INVALID_REQUEST", "message": message}},
+    )
+
+
+def _conflict(message: str) -> HTTPException:
+    return HTTPException(
+        status_code=409,
+        detail={"error": {"code": "GENERAL_AGENT_STATE_CONFLICT", "message": message}},
+    )

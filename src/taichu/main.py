@@ -14,6 +14,10 @@ from taichu.api.router import register_routes
 from taichu.application.agents.registry import AgentRegistry
 from taichu.application.subagents.registry import SubagentRegistry
 from taichu.application.capabilities import CapabilityContext
+from taichu.application.general_agent.events import GeneralAgentEventCenter
+from taichu.application.general_agent.executor import DynamicDagExecutor
+from taichu.application.general_agent.orchestrator import OrchestratorAgent
+from taichu.application.general_agent.service import GeneralAgentRuntimeService
 from taichu.application.contracts.llm import (
     LLMGatewayContract,
     LLMModelIdentity,
@@ -88,6 +92,7 @@ from taichu.infrastructure.external_research import (
 )
 from taichu.infrastructure.invocations import JsonlInvocationTraceRepository
 from taichu.infrastructure.artifacts import JsonIntermediateArtifactRepository
+from taichu.infrastructure.general_agent_runs import JsonGeneralAgentRunRepository
 
 
 def create_app(
@@ -154,6 +159,10 @@ def create_app(
     artifact_repository = JsonIntermediateArtifactRepository(
         app_settings.project_assets_dir
     )
+    general_agent_run_repository = JsonGeneralAgentRunRepository(
+        app_settings.project_assets_dir
+    )
+    general_agent_event_center = GeneralAgentEventCenter()
     invocation_policy_service = InvocationPolicyService()
     external_research_service = ExternalResearchService(
         DuckDuckGoExternalResearchBackend()
@@ -259,6 +268,25 @@ def create_app(
         invocation_trace_repository,
     )
     subagent_registry.register_all(discover_subagents("taichu.application.subagents"))
+    orchestrator_agent = OrchestratorAgent(
+        llm=llm_service,
+        model_router=model_role_router,
+        tool_registry=tool_registry,
+        subagent_registry=subagent_registry,
+        trace_repository=invocation_trace_repository,
+    )
+    dynamic_dag_executor = DynamicDagExecutor(
+        tool_registry=tool_registry,
+        subagent_registry=subagent_registry,
+        policy_service=invocation_policy_service,
+    )
+    general_agent_runtime_service = GeneralAgentRuntimeService(
+        repository=general_agent_run_repository,
+        event_center=general_agent_event_center,
+        orchestrator=orchestrator_agent,
+        executor=dynamic_dag_executor,
+        policy_service=invocation_policy_service,
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -279,10 +307,12 @@ def create_app(
                     f"MongoDB 知识库初始化失败，后端已停止启动：{error}"
                 ) from error
         await knowledge_extraction_evaluation_service.recover_interrupted()
+        await general_agent_runtime_service.recover_interrupted()
         knowledge_extraction_evaluation_service.start_watchdog()
         try:
             yield
         finally:
+            await general_agent_runtime_service.shutdown()
             await knowledge_extraction_evaluation_service.shutdown()
             if managed_knowledge_repository:
                 await cast(MongoKnowledgeRepository, knowledge_repository).close()
@@ -299,6 +329,9 @@ def create_app(
     application.state.agent_registry = agent_registry
     application.state.tool_registry = tool_registry
     application.state.subagent_registry = subagent_registry
+    application.state.general_agent_run_repository = general_agent_run_repository
+    application.state.general_agent_event_center = general_agent_event_center
+    application.state.general_agent_runtime_service = general_agent_runtime_service
     application.state.invocation_policy_service = invocation_policy_service
     application.state.invocation_trace_repository = invocation_trace_repository
     application.state.artifact_repository = artifact_repository

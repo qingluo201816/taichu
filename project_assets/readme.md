@@ -1,6 +1,6 @@
 # project_assets 目录说明
 
-> 更新日期：2026-07-13
+> 更新日期：2026-07-14
 
 `project_assets/` 是太初单本小说的本地资产根目录，用于保存正文 Markdown、工作区中间态、AI/Agent 运行记录、评测审计和临时生成文件。MongoDB `taichu.knowledge_cards` 是唯一结构事实源，`project_assets/` 下的 JSON/JSONL 不承担兼容事实源职责。
 
@@ -65,6 +65,7 @@ project_assets/
 │   ├── retrieval/                               # 统一知识召回技术观测，按需创建 calls.jsonl
 │   ├── capability_invocations/                  # Tool、专业子 Agent 与 LLM 的脱敏技术调用记录
 │   ├── capability_artifacts/                    # 专业子 Agent 的有类型 JSON 中间产物
+│   ├── general_agent_runs/                      # 通用写作助手 Runtime 的独立业务检查点
 │   └── agent_evaluations/                       # Agent 效果评估输入快照、结果与审计记录
 │       └── knowledge_extraction/                # 知识沉淀评估报告及裁判校准报告
 └── generated/                                   # 按需创建的临时生成物根目录
@@ -108,6 +109,8 @@ MongoDB 知识卡统一使用 `lifecycle=draft|confirmed|rejected`；默认列�
 通用写作助手能力层的 Tool、专业子 Agent 和内部 LLM 技术调用记录追加保存在 `derived/capability_invocations/calls.jsonl`。记录只保存调用树引用、能力名称、状态、输入哈希、字符数、模型角色、耗时、授权引用和脱敏错误，不保存密钥、鉴权头、完整 Prompt、完整模型原文或外部页面全文；它不替代三类执行体系各自的业务日志。
 
 专业子 Agent 的结构化输出保存在 `derived/capability_artifacts/`。每个 JSON 文件显式标记 `lifecycle=draft`，记录产物类型、生产者、输入与内容哈希、来源引用和创建时间，可供后续专业子 Agent 按稳定引用接力消费；这些文件是可审计中间态，不是 Markdown 正文或 MongoDB 结构事实。
+
+通用写作助手 Runtime 的业务检查点保存在 `derived/general_agent_runs/`。每次运行独立保存目标、范围、计划修订、动态节点状态、人工中断、来源与中间产物引用、校验结果和最终回答，用于任务列表、恢复和后续节点监控。它不复用知识沉淀 Workflow 的 `agent_runs/knowledge_extraction/`，也不成为正文或结构事实源。
 
 知识沉淀效果评估保存在 `derived/agent_evaluations/knowledge_extraction/`。每次评估独立冻结评测集、实际候选、正文、评分参数和模型身份，并保存确定性结果与裁判调用审计；裁判校准报告位于其 `calibration_reports/` 子目录。评估报告和校准报告都是非事实派生数据，通过 `lifecycle` 区分草稿、已确认和已废弃状态，不得反向成为正文或结构化知识事实源。
 
