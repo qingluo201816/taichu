@@ -471,6 +471,46 @@ function KnowledgeExtractionWorkbench({
   }, [runNotice]);
 
   useEffect(() => {
+    if (activeSection !== "candidates" || !selectedRunId) {
+      return;
+    }
+    let ignore = false;
+
+    async function syncSelectedRun() {
+      try {
+        const response = await getAgentTask(selectedRunId);
+        if (ignore) {
+          return;
+        }
+        setCurrentRun(response.run);
+        setSelectedCandidateId(current =>
+          pickVisibleCandidateId(response.run, candidateStatusFilter, current),
+        );
+      } catch {
+        // Keep the last usable snapshot; explicit actions still surface failures.
+      }
+    }
+
+    const handleWindowFocus = () => {
+      void syncSelectedRun();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void syncSelectedRun();
+      }
+    };
+
+    void syncSelectedRun();
+    window.addEventListener("focus", handleWindowFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      ignore = true;
+      window.removeEventListener("focus", handleWindowFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [activeSection, candidateStatusFilter, selectedRunId]);
+
+  useEffect(() => {
     const targetId = selectedCandidate?.target_card_id;
     if (!targetId || hasOwnKey(targetCards, targetId)) {
       return;
@@ -643,7 +683,27 @@ function KnowledgeExtractionWorkbench({
       );
       await reloadRuns();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "候选处理失败");
+      const actionError =
+        caught instanceof Error ? caught.message : "候选处理失败";
+      try {
+        const response = await getAgentTask(candidate.run_id);
+        setCurrentRun(response.run);
+        setSelectedCandidateId(current =>
+          pickVisibleCandidateId(response.run, candidateStatusFilter, current),
+        );
+        const synchronizedCandidate = response.run.review_items.find(
+          item => item.review_item_id === candidate.review_item_id,
+        );
+        const actionAlreadyApplied =
+          (action === "reject" &&
+            synchronizedCandidate?.candidate_status === "rejected") ||
+          (action !== "reject" &&
+            synchronizedCandidate?.candidate_status === "confirmed");
+        setError(actionAlreadyApplied ? "" : actionError);
+        void reloadRuns();
+      } catch {
+        setError(actionError);
+      }
     } finally {
       setActionBusyKey("");
     }

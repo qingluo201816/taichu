@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 
 import {
   evaluationOutcomeLabel,
+  generalAgentRunRequestForCase,
   generalAgentEvaluationCategoryLabels,
+  isGeneralAgentRunEvaluable,
   matchingRunsForCase,
   scoreLabel,
 } from "../../src/lib/general-agent-evaluation-view";
@@ -23,6 +25,31 @@ const runs = [
   { run_id: "b", user_goal: "另一个问题" },
 ] as GeneralAgentRunSummary[];
 assert.deepEqual(matchingRunsForCase(runs, evaluationCase).map(run => run.run_id), ["a"]);
+
+assert.equal(isGeneralAgentRunEvaluable("executing"), false);
+assert.equal(isGeneralAgentRunEvaluable("waiting_human"), true);
+assert.equal(isGeneralAgentRunEvaluable("completed"), true);
+
+const executableCase = {
+  user_goal: "把选区改得更紧张。",
+  run_input: {
+    scope: {
+      scope_type: "selection",
+      current_chapter_id: "chapter-82",
+      chapter_ids: ["chapter-82"],
+      selection_text: "门外传来脚步声。",
+      direct_context: "",
+    },
+    author_constraints: ["只返回改写候选。"],
+    external_access_allowed: false,
+  },
+} as GeneralAgentEvaluationCase;
+assert.deepEqual(generalAgentRunRequestForCase(executableCase), {
+  user_goal: "把选区改得更紧张。",
+  scope: executableCase.run_input.scope,
+  author_constraints: ["只返回改写候选。"],
+  external_access_allowed: false,
+});
 
 assert.equal(
   evaluationOutcomeLabel({ passed: true, semantic_review_required: true } as GeneralAgentEvaluationRecord),

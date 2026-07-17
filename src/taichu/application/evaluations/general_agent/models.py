@@ -7,7 +7,10 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from taichu.application.general_agent.models import GeneralAgentRunStatus
+from taichu.application.general_agent.models import (
+    GeneralAgentRunStatus,
+    GeneralAgentScope,
+)
 
 
 class EvaluationModel(BaseModel):
@@ -46,6 +49,14 @@ class GeneralAgentEvaluationExpected(EvaluationModel):
         return self
 
 
+class GeneralAgentEvaluationRunInput(EvaluationModel):
+    """冻结一次评测运行所需、但不属于用户问题正文的输入。"""
+
+    scope: GeneralAgentScope = Field(default_factory=GeneralAgentScope)
+    author_constraints: list[str] = Field(default_factory=list, max_length=100)
+    external_access_allowed: bool = False
+
+
 class GeneralAgentEvaluationCase(EvaluationModel):
     case_id: str = Field(pattern=r"^[a-z0-9][a-z0-9_-]{2,63}$")
     label: str = Field(min_length=1, max_length=200)
@@ -61,12 +72,24 @@ class GeneralAgentEvaluationCase(EvaluationModel):
     ]
     user_goal: str = Field(min_length=1, max_length=100_000)
     scope_type: Literal["none", "selection", "chapter", "range", "novel"]
+    run_input: GeneralAgentEvaluationRunInput
     assessment_mode: GeneralAgentAssessmentMode = (
         GeneralAgentAssessmentMode.DETERMINISTIC
     )
     expected: GeneralAgentEvaluationExpected
     reference_answer: str = Field(min_length=1, max_length=100_000)
     notes: str = Field(default="", max_length=10_000)
+
+    @model_validator(mode="after")
+    def validate_run_input(self) -> GeneralAgentEvaluationCase:
+        if self.run_input.scope.scope_type != self.scope_type:
+            raise ValueError("评测运行输入的正文范围必须与样例范围一致。")
+        if (
+            self.run_input.external_access_allowed
+            != self.expected.external_access_allowed
+        ):
+            raise ValueError("评测运行输入的外部访问许可必须与预期一致。")
+        return self
 
 
 class GeneralAgentEvaluationDataset(EvaluationModel):

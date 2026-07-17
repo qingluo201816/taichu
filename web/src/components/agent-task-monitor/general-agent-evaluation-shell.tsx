@@ -22,20 +22,33 @@ import {
   listGeneralAgentEvaluationDatasets,
   listGeneralAgentEvaluations,
 } from "@/lib/api/general-agent-evaluation";
-import { listGeneralAgentRuns } from "@/lib/api/general-agent";
+import {
+  getGeneralAgentRun,
+  listGeneralAgentRuns,
+  startGeneralAgentRun,
+} from "@/lib/api/general-agent";
 import {
   evaluationOutcomeLabel,
+  generalAgentRunRequestForCase,
   generalAgentEvaluationCategoryLabels,
+  isGeneralAgentRunEvaluable,
   matchingRunsForCase,
   scoreLabel,
 } from "@/lib/general-agent-evaluation-view";
-import { generalCapabilityLabel } from "@/lib/general-agent-display";
+import {
+  generalCapabilityLabel,
+  generalRunStatusLabels,
+  isGeneralAgentRunActive,
+} from "@/lib/general-agent-display";
 import type {
   GeneralAgentEvaluationCase,
   GeneralAgentEvaluationDataset,
   GeneralAgentEvaluationRecord,
 } from "@/lib/types/general-agent-evaluation";
-import type { GeneralAgentRunSummary } from "@/lib/types/general-agent";
+import type {
+  GeneralAgentRun,
+  GeneralAgentRunSummary,
+} from "@/lib/types/general-agent";
 import { cn } from "@/lib/utils";
 
 export function GeneralAgentEvaluationShell() {
@@ -48,15 +61,18 @@ export function GeneralAgentEvaluationShell() {
   const [selectedEvaluation, setSelectedEvaluation] = useState<GeneralAgentEvaluationRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [busyLabel, setBusyLabel] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
   const selectedDataset = datasets.find(item => item.dataset_id === datasetId) ?? null;
   const selectedCase = selectedDataset?.cases.find(item => item.case_id === caseId) ?? null;
   const matchingRuns = selectedCase ? matchingRunsForCase(runs, selectedCase) : [];
-  const effectiveRunId = matchingRuns.some(run => run.run_id === runId)
+  const evaluableRuns = matchingRuns.filter(run => isGeneralAgentRunEvaluable(run.status));
+  const activeMatchingRun = matchingRuns.find(run => isGeneralAgentRunActive(run.status)) ?? null;
+  const effectiveRunId = evaluableRuns.some(run => run.run_id === runId)
     ? runId
-    : (matchingRuns[0]?.run_id ?? "");
+    : (evaluableRuns[0]?.run_id ?? "");
 
   const load = useCallback(async () => {
     const [datasetResponse, runResponse, evaluationResponse] = await Promise.all([
@@ -105,14 +121,32 @@ export function GeneralAgentEvaluationShell() {
   }
 
   async function handleEvaluate() {
-    if (!datasetId || !caseId || !effectiveRunId) return;
+    if (!datasetId || !caseId || !selectedCase) return;
     setBusy(true);
     setError("");
     try {
+      let targetRunId = effectiveRunId;
+      if (!targetRunId) {
+        if (activeMatchingRun) {
+          targetRunId = activeMatchingRun.run_id;
+          setBusyLabel("正在等待同题任务完成");
+        } else {
+          setBusyLabel("正在运行评测案例");
+          const started = await startGeneralAgentRun(
+            generalAgentRunRequestForCase(selectedCase),
+          );
+          targetRunId = started.run.run_id;
+        }
+        await waitForEvaluableRun(targetRunId);
+        const runResponse = await listGeneralAgentRuns({ pageSize: 100 });
+        setRuns(runResponse.runs);
+        setRunId(targetRunId);
+      }
+      setBusyLabel("正在生成评估结果");
       const response = await createGeneralAgentEvaluation({
         dataset_id: datasetId,
         case_id: caseId,
-        run_id: effectiveRunId,
+        run_id: targetRunId,
       });
       setSelectedEvaluation(response.evaluation);
       setEvaluations(current => [
@@ -123,6 +157,7 @@ export function GeneralAgentEvaluationShell() {
       setError(errorMessage(caught));
     } finally {
       setBusy(false);
+      setBusyLabel("");
     }
   }
 
@@ -199,9 +234,9 @@ export function GeneralAgentEvaluationShell() {
             <div className="flex flex-wrap items-end gap-3">
               <SelectField label="评测集" value={datasetId} onChange={chooseDataset} options={datasets.map(item => ({ value: item.dataset_id, label: item.label }))} />
               <SelectField label="评测样例" value={caseId} onChange={chooseCase} options={(selectedDataset?.cases ?? []).map(item => ({ value: item.case_id, label: item.label }))} />
-              <SelectField label="匹配的历史任务" value={effectiveRunId} onChange={setRunId} options={matchingRuns.map(run => ({ value: run.run_id, label: `${formatTime(run.created_at)} · ${run.status}` }))} placeholder="暂无同题任务" />
-              <Button type="button" disabled={busy || !effectiveRunId} onClick={() => void handleEvaluate()}>
-                <Scale className="size-4" />{busy ? "正在评估" : "开始评估"}
+              <SelectField label="可评估的历史任务" value={effectiveRunId} onChange={setRunId} options={evaluableRuns.map(run => ({ value: run.run_id, label: `${formatTime(run.created_at)} · ${generalRunStatusLabels[run.status]}` }))} placeholder={activeMatchingRun ? "同题任务正在运行" : "暂无同题任务"} />
+              <Button type="button" disabled={busy || !selectedCase} onClick={() => void handleEvaluate()}>
+                <Scale className="size-4" />{busy ? busyLabel : effectiveRunId ? "开始评估" : activeMatchingRun ? "等待并评估" : "运行并评估"}
               </Button>
             </div>
             {selectedDataset ? <p className="mt-2 text-xs text-[var(--tc-text-muted)]">{selectedDataset.description} · 共 {selectedDataset.cases.length} 题</p> : null}
@@ -212,7 +247,7 @@ export function GeneralAgentEvaluationShell() {
               {selectedCase ? <CaseBrief evaluationCase={selectedCase} copied={copied} onCopy={() => void copyQuestion()} matchingRunCount={matchingRuns.length} /> : <p className="text-sm text-[var(--tc-text-muted)]">请选择评测样例。</p>}
             </div>
             <div className="min-h-0 overflow-y-auto rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-4">
-              {selectedEvaluation ? <EvaluationDetail evaluation={selectedEvaluation} /> : <div className="flex h-full min-h-52 items-center justify-center text-sm text-[var(--tc-text-muted)]">运行同题任务后即可生成确定性评估。</div>}
+              {selectedEvaluation ? <EvaluationDetail evaluation={selectedEvaluation} /> : <div className="flex h-full min-h-52 items-center justify-center text-sm text-[var(--tc-text-muted)]">点击“运行并评估”，或选择已有任务直接生成评估。</div>}
             </div>
           </section>
         </main>
@@ -240,7 +275,7 @@ function CaseBrief({ evaluationCase, copied, onCopy, matchingRunCount }: { evalu
         <Metric label="必要能力" value={required.join("、") || "直接回答"} />
         <Metric label="同题任务" value={`${matchingRunCount} 个`} />
       </div>
-      {matchingRunCount === 0 ? <div className="mt-4 rounded-[var(--tc-radius-control)] border border-amber-700/50 bg-amber-950/15 p-3 text-xs text-amber-100"><p className="font-medium">还没有同题运行记录</p><p className="mt-1 text-amber-100/70">复制问题到通用写作助手运行；任务完成或进入预期人工中断后，再回到这里评估。</p></div> : null}
+      {matchingRunCount === 0 ? <div className="mt-4 rounded-[var(--tc-radius-control)] border border-amber-700/50 bg-amber-950/15 p-3 text-xs text-amber-100"><p className="font-medium">还没有同题运行记录</p><p className="mt-1 text-amber-100/70">点击“运行并评估”，系统会使用该样例冻结的正文范围和约束启动任务，并在任务收敛后自动生成评估。</p></div> : null}
       {evaluationCase.assessment_mode === "deterministic_with_human_review" ? <div className="mt-4 flex gap-2 rounded-[var(--tc-radius-control)] border border-blue-700/40 bg-blue-950/15 p-3 text-xs text-blue-100"><ShieldAlert className="mt-0.5 size-4 shrink-0" /><p>自动评分只判断路径、安全和参考要点；文风、叙事张力与创作质量仍需人工复核。</p></div> : null}
     </div>
   );
@@ -275,3 +310,13 @@ function Metric({ label, value }: { label: string; value: string }) { return <di
 function scopeLabel(scope: GeneralAgentEvaluationCase["scope_type"]): string { return { none: "无需正文", selection: "选区", chapter: "单章", range: "多章", novel: "全文" }[scope]; }
 function formatTime(value: string): string { return new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value)); }
 function errorMessage(error: unknown): string { return error instanceof Error ? error.message : "通用写作助手评测加载失败"; }
+
+async function waitForEvaluableRun(runId: string): Promise<GeneralAgentRun> {
+  const deadline = Date.now() + 16 * 60 * 1000;
+  while (Date.now() < deadline) {
+    const response = await getGeneralAgentRun(runId);
+    if (isGeneralAgentRunEvaluable(response.run.status)) return response.run;
+    await new Promise(resolve => window.setTimeout(resolve, 800));
+  }
+  throw new Error("评测案例运行超时，请到节点监控查看任务状态。");
+}

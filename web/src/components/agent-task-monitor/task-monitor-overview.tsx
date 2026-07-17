@@ -80,7 +80,7 @@ export function TaskMonitorOverview() {
 
   return (
     <AppShell activePath="/task-monitor">
-      <section className="mx-auto max-w-[760px] px-5 py-6">
+      <section className="mx-auto max-w-[1200px] px-5 py-6">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
             <p className="text-xs text-[var(--tc-text-muted)]">任务监控</p>
@@ -105,84 +105,92 @@ export function TaskMonitorOverview() {
           </div>
         ) : null}
 
-        <div className="grid gap-2">
-          <Link
-            href="/task-monitor/general-agent"
-            className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
-          >
-            <span className="flex min-w-0 items-center gap-3">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)]">
-                <GitBranch className="size-4" />
-              </span>
-              <span className="min-w-0">
-                <span className="block font-medium">通用写作助手节点监控</span>
-                <span className="mt-0.5 flex items-center gap-2 text-xs text-[var(--tc-text-muted)]">
-                  <Activity className="size-3" />
-                  {loading
-                    ? "正在读取任务"
-                    : `共 ${generalTasks.length} 个任务，${generalRunningCount > 0 ? `${generalRunningCount} 个运行中` : "当前无运行中任务"}`}
-                </span>
-              </span>
-            </span>
-            <ChevronRight className="size-4 shrink-0 text-[var(--tc-text-muted)]" />
-          </Link>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="grid content-start gap-2">
+            <h2 className="px-1 text-sm font-medium text-[var(--tc-text-secondary)]">监控</h2>
 
-          <Link
-            href="/task-monitor/knowledge-extraction"
-            className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
-          >
-            <span className="flex min-w-0 items-center gap-3">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)]">
-                <Bot className="size-4" />
-              </span>
-              <span className="min-w-0">
-                <span className="block font-medium">知识沉淀智能体运行监控</span>
-                <span className="mt-0.5 flex items-center gap-2 text-xs text-[var(--tc-text-muted)]">
-                  <Activity className="size-3" />
-                  {loading
-                    ? "正在读取任务"
-                    : `共 ${tasks.length} 个任务，${runningCount > 0 ? `${runningCount} 个运行中` : "当前无运行中任务"}`}
+            <Link
+              href="/task-monitor/knowledge-extraction"
+              className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-agent-knowledge)]">
+                  <Bot className="size-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block font-medium">知识沉淀工作流监控</span>
+                  <span className="mt-0.5 flex items-center gap-2 text-xs text-[var(--tc-text-muted)]">
+                    <Activity className="size-3" />
+                    {loading
+                      ? "正在读取任务"
+                      : `共 ${tasks.length} 个任务，${runningCount > 0 ? `${runningCount} 个运行中` : "当前无运行中任务"}`}
+                  </span>
                 </span>
               </span>
-            </span>
-            <ChevronRight className="size-4 shrink-0 text-[var(--tc-text-muted)]" />
-          </Link>
+              <ChevronRight className="size-4 shrink-0 text-[var(--tc-text-muted)]" />
+            </Link>
 
-          <Link
-            href="/task-monitor/general-agent/evaluation"
-            className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
-          >
-            <span className="flex min-w-0 items-center gap-3">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)]">
-                <Scale className="size-4" />
-              </span>
-              <span className="min-w-0">
-                <span className="block font-medium">通用写作助手效果评测</span>
-                <span className="mt-0.5 block text-xs text-[var(--tc-text-muted)]">
-                  评估完成度、能力路径、权限边界、执行健康和答案覆盖
+            <Link
+              href="/task-monitor/general-agent"
+              className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-agent-writing)]">
+                  <GitBranch className="size-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block font-medium">通用写作智能体监控</span>
+                  <span className="mt-0.5 flex items-center gap-2 text-xs text-[var(--tc-text-muted)]">
+                    <Activity className="size-3" />
+                    {loading
+                      ? "正在读取任务"
+                      : `共 ${generalTasks.length} 个任务，${generalRunningCount > 0 ? `${generalRunningCount} 个运行中` : "当前无运行中任务"}`}
+                  </span>
                 </span>
               </span>
-            </span>
-            <ChevronRight className="size-4 shrink-0 text-[var(--tc-text-muted)]" />
-          </Link>
+              <ChevronRight className="size-4 shrink-0 text-[var(--tc-text-muted)]" />
+            </Link>
+          </div>
 
-          <Link
-            href="/task-monitor/knowledge-extraction/evaluation"
-            className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
-          >
-            <span className="flex min-w-0 items-center gap-3">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)]">
-                <Scale className="size-4" />
-              </span>
-              <span className="min-w-0">
-                <span className="block font-medium">知识沉淀智能体效果评估</span>
-                <span className="mt-0.5 block text-xs text-[var(--tc-text-muted)]">
-                  对比历史任务输出、期望知识卡与差异明细
+          <div className="grid content-start gap-2">
+            <h2 className="px-1 text-sm font-medium text-[var(--tc-text-secondary)]">评测</h2>
+
+            <Link
+              href="/task-monitor/knowledge-extraction/evaluation"
+              className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-agent-knowledge)]">
+                  <Scale className="size-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block font-medium">知识沉淀工作流评测</span>
+                  <span className="mt-0.5 block text-xs text-[var(--tc-text-muted)]">
+                    对比历史任务输出、期望知识卡与差异明细
+                  </span>
                 </span>
               </span>
-            </span>
-            <ChevronRight className="size-4 shrink-0 text-[var(--tc-text-muted)]" />
-          </Link>
+              <ChevronRight className="size-4 shrink-0 text-[var(--tc-text-muted)]" />
+            </Link>
+
+            <Link
+              href="/task-monitor/general-agent/evaluation"
+              className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-agent-writing)]">
+                  <Scale className="size-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block font-medium">通用写作智能体评测</span>
+                  <span className="mt-0.5 block text-xs text-[var(--tc-text-muted)]">
+                    评估完成度、能力路径、权限边界、执行健康和答案覆盖
+                  </span>
+                </span>
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-[var(--tc-text-muted)]" />
+            </Link>
+          </div>
         </div>
       </section>
     </AppShell>

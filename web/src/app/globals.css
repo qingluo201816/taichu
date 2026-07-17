@@ -137,6 +137,8 @@
   --tc-danger-text: #8b2c23;
   --tc-danger-border: rgba(139, 44, 35, 0.38);
   --tc-danger-soft: rgba(139, 44, 35, 0.08);
+  --tc-agent-knowledge: #6d28d9;
+  --tc-agent-writing: #0f766e;
   --tc-success-text: var(--tc-deep-forest-teal);
   --tc-success-border: rgba(3, 79, 70, 0.28);
   --tc-success-soft: rgba(3, 79, 70, 0.08);
@@ -287,6 +289,8 @@
 
   --tc-accent-brand: var(--style-bone-white);
   --tc-accent-highlight: var(--style-recess-black);
+  --tc-agent-knowledge: #c4b5fd;
+  --tc-agent-writing: #67e8f9;
   --tc-nav-bg: var(--style-nav-ink);
   --tc-nav-border: rgba(35, 35, 36, 0.92);
   --tc-nav-active-bg: var(--style-recess-black);
@@ -453,6 +457,8 @@
 
   --tc-accent-brand: var(--style-graphite);
   --tc-accent-highlight: var(--style-mist);
+  --tc-agent-knowledge: #6d28d9;
+  --tc-agent-writing: #0f766e;
   --tc-nav-bg: var(--style-chalk);
   --tc-nav-border: var(--style-hairline);
   --tc-nav-active-bg: var(--style-mist);

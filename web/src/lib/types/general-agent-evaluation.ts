@@ -1,4 +1,7 @@
-import type { GeneralAgentRunStatus } from "@/lib/types/general-agent";
+import type {
+  GeneralAgentRunRequest,
+  GeneralAgentRunStatus,
+} from "@/lib/types/general-agent";
 
 export type GeneralAgentAssessmentMode =
   | "deterministic"
@@ -18,6 +21,7 @@ export type GeneralAgentEvaluationCase = {
     | "authorization_boundary";
   user_goal: string;
   scope_type: "none" | "selection" | "chapter" | "range" | "novel";
+  run_input: Omit<GeneralAgentRunRequest, "user_goal">;
   assessment_mode: GeneralAgentAssessmentMode;
   expected: {
     acceptable_statuses: GeneralAgentRunStatus[];

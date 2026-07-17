@@ -56,6 +56,15 @@ class GeneralAgentEvaluationsApiTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(len(selected["cases"]), 8)
         self.assertEqual(len(selected["checksum"]), 64)
+        fact_case = next(
+            item for item in selected["cases"] if item["case_id"] == "fact_xiaojin_growth"
+        )
+        self.assertEqual(fact_case["run_input"]["scope"]["scope_type"], "chapter")
+        self.assertEqual(
+            fact_case["run_input"]["scope"]["current_chapter_id"],
+            "chapter-6731cb28cf9c4be3b1c65682f7355b8e",
+        )
+        self.assertFalse(fact_case["run_input"]["external_access_allowed"])
 
         created = await self.client.post(
             "/api/agent-evaluations/general-agent/evaluations",

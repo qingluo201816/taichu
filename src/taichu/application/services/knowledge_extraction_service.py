@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
+from hashlib import sha256
 import re
 from typing import Any, cast
 from uuid import uuid4
@@ -45,6 +46,8 @@ from taichu.application.retrieval.models import (
 )
 from taichu.application.services.knowledge_service import (
     AuthorMergeMode,
+    KnowledgeCardNotFoundError,
+    KnowledgeIdentityConflictError,
     KnowledgeService,
 )
 from taichu.application.services.agent_task_event_service import AgentTaskEventCenter
@@ -96,7 +99,9 @@ class _InMemorySedimentationProgressRepository:
         return self._progress
 
     async def advance_to(self, chapter_id: str) -> KnowledgeSedimentationProgress:
-        self._progress = KnowledgeSedimentationProgress(last_accepted_chapter_id=chapter_id)
+        self._progress = KnowledgeSedimentationProgress(
+            last_accepted_chapter_id=chapter_id
+        )
         return self._progress
 
 
@@ -111,7 +116,8 @@ class KnowledgeExtractionService:
         retrieval_service: RetrievalService,
         knowledge_service: KnowledgeService,
         run_store: AgentRunRepository,
-        sedimentation_progress_repository: KnowledgeSedimentationProgressRepository | None = None,
+        sedimentation_progress_repository: KnowledgeSedimentationProgressRepository
+        | None = None,
         task_events: AgentTaskEventCenter | None = None,
         default_model_id: str = "deepseek-v4-pro",
     ) -> None:
@@ -127,6 +133,7 @@ class KnowledgeExtractionService:
         self._task_events = task_events
         self._default_model_id = default_model_id
         self._background_tasks: set[asyncio.Task[None]] = set()
+        self._review_locks: dict[str, asyncio.Lock] = {}
 
     def validate_model_selection(self, model_name: str | None) -> None:
         """Reject request-only model switching before an Agent run is created."""
@@ -145,7 +152,9 @@ class KnowledgeExtractionService:
             item.candidate_status is AgentReviewCandidateStatus.PENDING
             for item in run.review_items
         ):
-            raise KnowledgeExtractionError("请先确认或废弃本次沉淀的全部候选，再采纳章节范围。")
+            raise KnowledgeExtractionError(
+                "请先确认或废弃本次沉淀的全部候选，再采纳章节范围。"
+            )
         chapter_ids = run.scope.chapter_ids or [run.scope.chapter_id]
         await self._validate_sedimentation_scope(chapter_ids)
         return await self._sedimentation_progress_repository.advance_to(chapter_ids[-1])
@@ -413,9 +422,7 @@ class KnowledgeExtractionService:
         event_sink,
     ) -> AgentRun:
         chapter_titles = await self._validate_sedimentation_scope([chapter_id])
-        profile, requested_model_name = self._resolve_model_selection(
-            model_name
-        )
+        profile, requested_model_name = self._resolve_model_selection(model_name)
         initial_state = initial_knowledge_extraction_state(
             chapter_id=chapter_id,
             chapter_title=chapter_titles[chapter_id],
@@ -803,7 +810,9 @@ class KnowledgeExtractionService:
         )
 
         branch_states.sort(
-            key=lambda state: unique_chapter_ids.index(str(state.get("chapter_id") or ""))
+            key=lambda state: unique_chapter_ids.index(
+                str(state.get("chapter_id") or "")
+            )
         )
 
         for branch_state in branch_states:
@@ -1155,7 +1164,18 @@ class KnowledgeExtractionService:
         run_id: str | None = None,
     ) -> AgentRun:
         """Confirm a create or update candidate."""
+        resolved_run_id = await self._resolve_review_run_id(candidate_id, run_id)
+        async with self._review_lock(resolved_run_id):
+            return await self._confirm_candidate_locked(candidate_id, resolved_run_id)
+
+    async def _confirm_candidate_locked(
+        self,
+        candidate_id: str,
+        run_id: str,
+    ) -> AgentRun:
         run, index, item = await self._find_review_item(candidate_id, run_id=run_id)
+        if item.candidate_status is AgentReviewCandidateStatus.CONFIRMED:
+            return run
         _assert_review_item_can_be_processed(item)
         if item.candidate_action is AgentReviewCandidateAction.CONFLICT:
             raise KnowledgeExtractionError("候选冲突必须编辑后确认。")
@@ -1165,9 +1185,13 @@ class KnowledgeExtractionService:
         if item.candidate_action is AgentReviewCandidateAction.CREATE_CARD:
             card = _card_from_payload(
                 item.knowledge_type,
-                _with_appearance_chapter_count(item.suggested_card, item),
+                _with_candidate_card_id(
+                    _with_appearance_chapter_count(item.suggested_card, item),
+                    run_id=run.run_id,
+                    item=item,
+                ),
             )
-            written = await self._knowledge_service.create_confirmed_card(card)
+            written = await self._create_or_recover_candidate_card(card)
             updated = _mark_confirmed(
                 item,
                 author_action="confirm",
@@ -1202,7 +1226,28 @@ class KnowledgeExtractionService:
         run_id: str | None = None,
     ) -> AgentRun:
         """Confirm a candidate after explicit author edits."""
+        resolved_run_id = await self._resolve_review_run_id(candidate_id, run_id)
+        async with self._review_lock(resolved_run_id):
+            return await self._edit_confirm_candidate_locked(
+                candidate_id,
+                card_updates=card_updates,
+                target_card_id=target_card_id,
+                merge_mode=merge_mode,
+                run_id=resolved_run_id,
+            )
+
+    async def _edit_confirm_candidate_locked(
+        self,
+        candidate_id: str,
+        *,
+        card_updates: dict[str, Any],
+        target_card_id: str | None,
+        merge_mode: AuthorMergeMode,
+        run_id: str,
+    ) -> AgentRun:
         run, index, item = await self._find_review_item(candidate_id, run_id=run_id)
+        if item.candidate_status is AgentReviewCandidateStatus.CONFIRMED:
+            return run
         _assert_review_item_can_be_processed(item)
         _reject_author_statistic_updates(card_updates)
         merged_payload = _with_appearance_chapter_count(
@@ -1222,8 +1267,15 @@ class KnowledgeExtractionService:
                 updated_card_id=written.id,
             )
         else:
-            card = _card_from_payload(item.knowledge_type, merged_payload)
-            written = await self._knowledge_service.create_confirmed_card(card)
+            card = _card_from_payload(
+                item.knowledge_type,
+                _with_candidate_card_id(
+                    merged_payload,
+                    run_id=run.run_id,
+                    item=item,
+                ),
+            )
+            written = await self._create_or_recover_candidate_card(card)
             updated = _mark_confirmed(
                 item,
                 author_action="edit_confirm",
@@ -1238,7 +1290,18 @@ class KnowledgeExtractionService:
         run_id: str | None = None,
     ) -> AgentRun:
         """Mark one candidate as rejected without deleting it."""
+        resolved_run_id = await self._resolve_review_run_id(candidate_id, run_id)
+        async with self._review_lock(resolved_run_id):
+            return await self._reject_candidate_locked(candidate_id, resolved_run_id)
+
+    async def _reject_candidate_locked(
+        self,
+        candidate_id: str,
+        run_id: str,
+    ) -> AgentRun:
         run, index, item = await self._find_review_item(candidate_id, run_id=run_id)
+        if item.candidate_status is AgentReviewCandidateStatus.REJECTED:
+            return run
         _assert_review_item_can_be_processed(item)
         return await self._replace_review_item(
             run,
@@ -1251,6 +1314,44 @@ class KnowledgeExtractionService:
                 }
             ),
         )
+
+    async def _resolve_review_run_id(
+        self,
+        candidate_id: str,
+        run_id: str | None,
+    ) -> str:
+        if run_id is not None:
+            return run_id
+        run = await self._run_store.find_run_for_candidate(candidate_id)
+        if run is None:
+            raise KnowledgeExtractionNotFoundError(f"候选记录“{candidate_id}”不存在。")
+        return run.run_id
+
+    def _review_lock(self, run_id: str) -> asyncio.Lock:
+        lock = self._review_locks.get(run_id)
+        if lock is None:
+            lock = asyncio.Lock()
+            self._review_locks[run_id] = lock
+        return lock
+
+    async def _create_or_recover_candidate_card(
+        self,
+        card: StructuredKnowledgeCard,
+    ) -> StructuredKnowledgeCard:
+        try:
+            return await self._knowledge_service.create_confirmed_card(card)
+        except KnowledgeIdentityConflictError as conflict:
+            try:
+                existing = await self._knowledge_service.get_card(card.id)
+            except KnowledgeCardNotFoundError:
+                raise conflict
+            if (
+                existing.lifecycle is StructuredKnowledgeLifecycle.CONFIRMED
+                and existing.type is card.type
+                and _normalize_identity(existing.name) == _normalize_identity(card.name)
+            ):
+                return existing
+            raise conflict
 
     async def _find_review_item(
         self,
@@ -1400,6 +1501,20 @@ def _with_appearance_chapter_count(
     return next_payload
 
 
+def _with_candidate_card_id(
+    payload: dict[str, Any],
+    *,
+    run_id: str,
+    item: AgentReviewItem,
+) -> dict[str, Any]:
+    """Give one create candidate a stable card id for safe request replay."""
+    next_payload = dict(payload)
+    identity = f"{run_id}:{item.review_item_id}:{item.knowledge_type.value}"
+    digest = sha256(identity.encode("utf-8")).hexdigest()[:32]
+    next_payload["id"] = f"{item.knowledge_type.value}-{digest}"
+    return next_payload
+
+
 def _allowed_card_keys(knowledge_type: StructuredKnowledgeType) -> set[str]:
     return {
         "id",
@@ -1431,7 +1546,9 @@ def _editable_card_keys(knowledge_type: StructuredKnowledgeType) -> set[str]:
 
 def _reject_author_statistic_updates(card_updates: dict[str, Any]) -> None:
     if "appearance_chapter_count" in card_updates:
-        raise KnowledgeExtractionError("出现章节数由正文知识沉淀自动累计，不能手动修改。")
+        raise KnowledgeExtractionError(
+            "出现章节数由正文知识沉淀自动累计，不能手动修改。"
+        )
 
 
 def _reject_forbidden(payload: dict[str, Any]) -> None:
@@ -1673,9 +1790,9 @@ def _aggregate_batch_candidates(
         source_entries = _list_strings(candidate.get("source_entries"))
         if source_entries:
             candidate["source_note"] = "\n\n".join(source_entries)
-        candidate["appearance_chapter_count"] = len(
-            _dedupe_strings(_list_strings(candidate.get("chapter_ids")))
-        ) or None
+        candidate["appearance_chapter_count"] = (
+            len(_dedupe_strings(_list_strings(candidate.get("chapter_ids")))) or None
+        )
         candidate.pop("chapter_ids", None)
         candidate.pop("chapter_titles", None)
         candidate.pop("source_entries", None)

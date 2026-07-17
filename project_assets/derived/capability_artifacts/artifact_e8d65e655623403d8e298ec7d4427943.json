@@ -1,0 +1,51 @@
+{
+  "lifecycle": "draft",
+  "artifact_id": "artifact_e8d65e655623403d8e298ec7d4427943",
+  "artifact_type": "canon_evidence_report",
+  "producer": "canon_evidence",
+  "task_id": "general_run_20260714_115826_586943",
+  "run_id": "general_run_20260714_115826_586943",
+  "call_id": "call_3daab08b559b4898b1280b6b98ee8464",
+  "input_sha256": "e22d29dbe9d2f199410a115cf35a6a688b7c319ff570ab309f57da70cbc86eef",
+  "content_sha256": "f628e8c7186c40b0c3c789afdd7b7971787f1541b84652ce57060bfe895377dc",
+  "payload": {
+    "lifecycle": "draft",
+    "artifact_type": "canon_evidence_report",
+    "answer": "小金在修炼七天后发生了以下变化：毛色比以前光亮柔顺不少，身子也更健硕，不再轻易被大力猿猴推倒；实力大幅提升，独自打败并收服了五头大力猿猴，自身未受伤；指挥的猴群数量从十二头增加至二十头（包括自行收服的无驭兽标记的猿猴），并能有效管理玉米地的浇水与耕种。此外，秦浩轩担心其修炼过秘籍后可能生出妖气。",
+    "confidence": "high",
+    "evidence": [
+      {
+        "claim": "毛色比以前光亮柔顺了不少，身子也健硕了很多，至少现在的它，可不是随便一只大力猿猴就能推倒的了。",
+        "source_ref": "manuscript:chapter-6731cb28cf9c4be3b1c65682f7355b8e:0-3301",
+        "excerpt": "不过在它修炼修练的这几天下来，毛色确实比以前光亮柔顺了不少，身子也健硕了很多，至少现在的它，可不是随便一只大力猿猴就能推倒的了。"
+      },
+      {
+        "claim": "独自去百兽山抓来新的大力猿猴，猴群从十二头逐渐增加到二十头，新来的五头猿猴无驭兽标记，是被打服的。",
+        "source_ref": "manuscript:chapter-6731cb28cf9c4be3b1c65682f7355b8e:0-3301",
+        "excerpt": "秦浩轩上次和蒲汉忠在百兽山一共抓了十二头大力猿猴，小金修炼修练后的第三天，他打开门时，便发现自己屋子外一共有十五头大力猿猴了……秦浩轩仔细数了数，竟然足足有二十头！而且让秦浩轩更惊讶的是，这新来的五头大力猿猴额头上并没有驭兽符，看上去也不像吃了驭兽丹，太阳穴上更没有驭兽针！……小金将这五头大力猿猴给打服了！"
+      },
+      {
+        "claim": "小金一己之力打败五头大力猿猴，自身没有受伤的痕迹。",
+        "source_ref": "manuscript:chapter-6731cb28cf9c4be3b1c65682f7355b8e:0-3301",
+        "excerpt": "现在它竟然凭着借一己之力，将这五头大力猿猴给打服了！之前小金连一只大力猿猴都打不赢，现在能将五头大力猿猴生生打服，而且看它身上并没有受伤的痕迹……"
+      },
+      {
+        "claim": "秦浩轩担心小金修炼后可能会生出妖气。",
+        "source_ref": "manuscript:chapter-6731cb28cf9c4be3b1c65682f7355b8e:0-3301",
+        "excerpt": "同时，秦浩轩又隐约有些担心，小金修炼修练了那么久秘籍之后，会不会生出妖气呢？"
+      }
+    ],
+    "conflicting_evidence": [],
+    "unknowns": [],
+    "source_refs": [
+      "manuscript:chapter-6731cb28cf9c4be3b1c65682f7355b8e:0-3301",
+      "retrieval_37c875ddcc374bddb991b1faff24f805"
+    ],
+    "warnings": []
+  },
+  "source_refs": [
+    "manuscript:chapter-6731cb28cf9c4be3b1c65682f7355b8e:0-3301",
+    "retrieval_37c875ddcc374bddb991b1faff24f805"
+  ],
+  "created_at": "2026-07-14T11:59:15.347477Z"
+}

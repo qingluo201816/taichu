@@ -414,6 +414,68 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
                 )
             )
 
+    async def test_concurrent_candidate_confirms_preserve_both_review_states(
+        self,
+    ) -> None:
+        run = _extended_type_review_run()
+        await self.app.state.knowledge_run_store.write_run(run)
+        first, second = run.review_items[:2]
+
+        responses = await asyncio.gather(
+            self.client.post(
+                "/api/agent-workbench/knowledge-extraction/runs/"
+                f"{run.run_id}/candidates/{first.review_item_id}/confirm"
+            ),
+            self.client.post(
+                "/api/agent-workbench/knowledge-extraction/runs/"
+                f"{run.run_id}/candidates/{second.review_item_id}/confirm"
+            ),
+        )
+        detail_response = await self.client.get(
+            f"/api/agent-workbench/knowledge-extraction/runs/{run.run_id}"
+        )
+        statuses = {
+            item["review_item_id"]: item["candidate_status"]
+            for item in detail_response.json()["run"]["review_items"]
+        }
+
+        self.assertTrue(all(response.status_code == 200 for response in responses))
+        self.assertEqual(statuses[first.review_item_id], "confirmed")
+        self.assertEqual(statuses[second.review_item_id], "confirmed")
+
+    async def test_confirm_recovers_when_card_exists_but_review_state_was_lost(
+        self,
+    ) -> None:
+        run = _extended_type_review_run()
+        await self.app.state.knowledge_run_store.write_run(run)
+        candidate = run.review_items[0]
+        path = (
+            "/api/agent-workbench/knowledge-extraction/runs/"
+            f"{run.run_id}/candidates/{candidate.review_item_id}/confirm"
+        )
+
+        first_response = await self.client.post(path)
+        await self.app.state.knowledge_run_store.write_run(run)
+        replay_response = await self.client.post(path)
+        repeated_response = await self.client.post(path)
+        cards_response = await self.client.get(
+            "/api/knowledge/cards?type=realm&lifecycle=confirmed"
+        )
+
+        self.assertEqual(first_response.status_code, 200)
+        self.assertEqual(replay_response.status_code, 200)
+        self.assertEqual(repeated_response.status_code, 200)
+        self.assertEqual(
+            replay_response.json()["run"]["review_items"][0]["candidate_status"],
+            "confirmed",
+        )
+        matching_cards = [
+            card
+            for card in cards_response.json()["cards"]
+            if card["name"] == "炼气一层"
+        ]
+        self.assertEqual(len(matching_cards), 1)
+
     async def test_delete_run_removes_run_record(self) -> None:
         await self.app.state.knowledge_run_store.write_run(_manual_review_run())
 

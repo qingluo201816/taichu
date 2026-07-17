@@ -2,7 +2,19 @@ import type {
   GeneralAgentEvaluationCase,
   GeneralAgentEvaluationRecord,
 } from "@/lib/types/general-agent-evaluation";
-import type { GeneralAgentRunSummary } from "@/lib/types/general-agent";
+import type {
+  GeneralAgentRunRequest,
+  GeneralAgentRunStatus,
+  GeneralAgentRunSummary,
+} from "@/lib/types/general-agent";
+
+const evaluableRunStatuses = new Set<GeneralAgentRunStatus>([
+  "waiting_human",
+  "completed",
+  "failed",
+  "cancelled",
+  "timeout",
+]);
 
 export const generalAgentEvaluationCategoryLabels: Record<
   GeneralAgentEvaluationCase["category"],
@@ -24,6 +36,23 @@ export function matchingRunsForCase(
 ): GeneralAgentRunSummary[] {
   const normalizedGoal = normalize(evaluationCase.user_goal);
   return runs.filter(run => normalize(run.user_goal) === normalizedGoal);
+}
+
+export function isGeneralAgentRunEvaluable(
+  status: GeneralAgentRunStatus,
+): boolean {
+  return evaluableRunStatuses.has(status);
+}
+
+export function generalAgentRunRequestForCase(
+  evaluationCase: GeneralAgentEvaluationCase,
+): GeneralAgentRunRequest {
+  return {
+    user_goal: evaluationCase.user_goal,
+    scope: evaluationCase.run_input.scope,
+    author_constraints: evaluationCase.run_input.author_constraints,
+    external_access_allowed: evaluationCase.run_input.external_access_allowed,
+  };
 }
 
 export function evaluationOutcomeLabel(
