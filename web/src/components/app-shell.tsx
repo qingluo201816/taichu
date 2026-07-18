@@ -15,6 +15,7 @@ import {
 import { useEffect, type CSSProperties, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
+import { resolveAppShellEscapeDestination } from "@/lib/app-shell-navigation";
 
 const navigation = [
   { label: "写作", href: "/editor", icon: BookOpen },
@@ -49,22 +50,26 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const currentPath = activePath ?? pathname;
-  const shouldEscapeToHome = escapeToHome ?? (currentPath !== "/home");
+  const escapeDestination = resolveAppShellEscapeDestination(
+    pathname,
+    escapeToHome,
+  );
 
   useEffect(() => {
-    if (!shouldEscapeToHome) {
+    if (!escapeDestination) {
       return;
     }
+    const destination = escapeDestination;
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.metaKey || event.ctrlKey || event.altKey) {
         return;
       }
       event.preventDefault();
-      router.push("/home");
+      router.push(destination);
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [router, shouldEscapeToHome]);
+  }, [escapeDestination, router]);
 
   return (
     <main

@@ -1,0 +1,216 @@
+{
+  "package": {
+    "name": "太初通用Agent后续推进任务包",
+    "generated_at": "2026-07-17",
+    "repository": "qingluo201816/taichu",
+    "branch": "master",
+    "baseline_commit": "7ad671f1f2558c39558c004e17b6d004b1a6b083",
+    "execution_mode": "continuous_with_phase_self_review",
+    "requires_stop_after_each_phase": false,
+    "git_publish_authorized": false
+  },
+  "status_legend": [
+    "not_started",
+    "in_progress",
+    "pass",
+    "pass_with_limits",
+    "no_go",
+    "skipped_by_gate",
+    "rebase_required"
+  ],
+  "phases": [
+    {
+      "id": "P00",
+      "name": "基线冻结与缺口审计",
+      "file": "phases/阶段00-基线冻结与缺口审计.md",
+      "depends_on": [],
+      "tasks": [
+        "BAS-001",
+        "BAS-002",
+        "BAS-003",
+        "BAS-004",
+        "BAS-005",
+        "BAS-006",
+        "BAS-007"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "P01",
+      "name": "统一召回硬化与评测地基",
+      "file": "phases/阶段01-统一召回硬化与评测地基.md",
+      "depends_on": [
+        "P00:pass"
+      ],
+      "tasks": [
+        "RET-001",
+        "RET-002",
+        "RET-003",
+        "RET-004",
+        "RET-005",
+        "RET-006",
+        "RET-007"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "P02",
+      "name": "向量RAG独立实验与索引链路",
+      "file": "phases/阶段02-向量RAG独立实验与索引链路.md",
+      "depends_on": [
+        "P01:pass"
+      ],
+      "tasks": [
+        "VEC-001",
+        "VEC-002",
+        "VEC-003",
+        "VEC-004",
+        "VEC-005",
+        "VEC-006",
+        "VEC-007",
+        "VEC-008",
+        "VEC-009"
+      ],
+      "status": "not_started",
+      "promotion_outputs": [
+        "GO_TO_HYBRID_SHADOW",
+        "NO_GO_QUALITY",
+        "NO_GO_COST",
+        "NO_GO_LATENCY",
+        "NO_GO_OPERABILITY",
+        "NO_GO_PROVIDER"
+      ]
+    },
+    {
+      "id": "P03",
+      "name": "混合召回接入与灰度",
+      "file": "phases/阶段03-混合召回接入与灰度.md",
+      "depends_on": [
+        "P02:GO_TO_HYBRID_SHADOW"
+      ],
+      "tasks": [
+        "HBR-001",
+        "HBR-002",
+        "HBR-003",
+        "HBR-004",
+        "HBR-005",
+        "HBR-006",
+        "HBR-007"
+      ],
+      "status": "not_started",
+      "skip_when": [
+        "P02:no_go"
+      ]
+    },
+    {
+      "id": "P04",
+      "name": "运行时记忆与上下文压缩",
+      "file": "phases/阶段04-运行时记忆与上下文压缩.md",
+      "depends_on": [
+        "P01:pass"
+      ],
+      "optional_inputs": [
+        "P03"
+      ],
+      "tasks": [
+        "MEM-001",
+        "MEM-002",
+        "MEM-003",
+        "MEM-004",
+        "MEM-005",
+        "MEM-006",
+        "MEM-007",
+        "MEM-008",
+        "MEM-009"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "P05",
+      "name": "自适应模型路由",
+      "file": "phases/阶段05-自适应模型路由.md",
+      "depends_on": [
+        "P00:pass",
+        "P04:pass_or_limited"
+      ],
+      "tasks": [
+        "MOD-001",
+        "MOD-002",
+        "MOD-003",
+        "MOD-004",
+        "MOD-005",
+        "MOD-006",
+        "MOD-007",
+        "MOD-008"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "P06",
+      "name": "检查点恢复可靠性与长链路基准",
+      "file": "phases/阶段06-检查点恢复可靠性与长链路基准.md",
+      "depends_on": [
+        "P04:pass_or_limited",
+        "P05:pass_or_limited"
+      ],
+      "tasks": [
+        "CHK-001",
+        "CHK-002",
+        "CHK-003",
+        "CHK-004",
+        "CHK-005",
+        "CHK-006",
+        "CHK-007",
+        "CHK-008",
+        "CHK-009",
+        "CHK-010",
+        "CHK-011"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "P07",
+      "name": "语义评测与长期运行经验",
+      "file": "phases/阶段07-语义评测与长期运行经验.md",
+      "depends_on": [
+        "P05:pass_or_limited",
+        "P06:pass_or_limited"
+      ],
+      "tasks": [
+        "SEM-001",
+        "SEM-002",
+        "SEM-003",
+        "SEM-004",
+        "SEM-005",
+        "EXP-001",
+        "EXP-002",
+        "EXP-003",
+        "EXP-004",
+        "EXP-005",
+        "EXP-006"
+      ],
+      "status": "not_started"
+    },
+    {
+      "id": "P08",
+      "name": "业务收口与治理",
+      "file": "phases/阶段08-业务收口与治理.md",
+      "depends_on": [
+        "P00-P07:resolved"
+      ],
+      "tasks": [
+        "ROL-001",
+        "ROL-002",
+        "ROL-003",
+        "ROL-004",
+        "ROL-005",
+        "ROL-006",
+        "ROL-007",
+        "ROL-008",
+        "ROL-009",
+        "ROL-010"
+      ],
+      "status": "not_started"
+    }
+  ]
+}

@@ -16,6 +16,7 @@ from taichu.api.routes import (
     llm,
     mvp_knowledge,
     outline,
+    retrieval_evaluations,
     settings,
     writing_ai,
 )
@@ -36,5 +37,6 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(llm.router)
     app.include_router(mvp_knowledge.router)
     app.include_router(outline.router)
+    app.include_router(retrieval_evaluations.router)
     app.include_router(settings.router)
     app.include_router(writing_ai.router)

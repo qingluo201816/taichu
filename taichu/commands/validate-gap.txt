@@ -1,0 +1,40 @@
+description: 分析需求与现有代码库之间的实现差距 allowed-tools: Read, Task argument-hint: <功能名称>
+实现差距验证
+解析参数
+功能名称: $1
+验证
+检查需求是否已完成:
+
+验证 .kiro/specs/$1/ 存在
+验证 .kiro/specs/$1/requirements.md 存在
+如果验证失败，提示用户先完成需求阶段。
+
+调用子 Agent
+将差距分析委托给 validate-gap-agent:
+
+使用 Task 工具调用子 Agent，传入文件路径模式:
+
+Task(
+  subagent_type="validate-gap-agent",
+  description="分析实现差距",
+  prompt="""
+Feature: $1
+Spec directory: .kiro/specs/$1/
+
+File patterns to read:
+- .kiro/specs/$1/spec.json
+- .kiro/specs/$1/requirements.md
+- .kiro/steering/*.md
+- .kiro/settings/rules/gap-analysis.md
+"""
+)
+显示结果
+向用户展示子 Agent 的摘要，然后提供下一步指导:
+
+下一阶段: 设计生成
+如果差距分析完成:
+
+查看差距分析洞察
+运行 /kiro:spec-design $1 创建技术设计文档
+或运行 /kiro:spec-design $1 -y 自动批准需求并直接继续
+注意: 差距分析是可选的，但对于棕地项目推荐执行，以为设计决策提供信息。

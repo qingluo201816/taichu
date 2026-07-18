@@ -1,0 +1,38 @@
+{
+  "lifecycle": "draft",
+  "artifact_id": "artifact_f00bd20dea264c68bba729305470a110",
+  "artifact_type": "revision_candidate",
+  "producer": "revision",
+  "task_id": "general_run_20260718_011713_8a789f",
+  "run_id": "general_run_20260718_011713_8a789f",
+  "call_id": "call_2611b3c253bb41f4911d6aae00fc1dbd",
+  "input_sha256": "45faf998a61ad6bba44110c412618fd0617a0ec37e5262b84b60e1a1b6911239",
+  "content_sha256": "c95ef0f0ff251a9436ef34fab153bb0356a04f2965cddca73e26bff8bf7f8bbd",
+  "payload": {
+    "lifecycle": "draft",
+    "artifact_type": "revision_candidate",
+    "text": "徐羽着急，秦浩轩却不急。他连续七天每晚去巨猿尸骸附近搜寻，每次都熬到神识将尽才出来。虽然一无所获，但神识进步很大！",
+    "change_summary": [
+      "删除“每天晚上”前不必要的“这几天”，直接用“连续七天每晚”合并时间表述",
+      "将“虽然什么都没有得到”改为“虽然一无所获”，更简洁",
+      "将“发觉自己的神识进步很大”改为“神识进步很大”，去掉冗余的“发觉自己的”",
+      "整体拆分短句，使节奏更紧凑，不改变原意"
+    ],
+    "preserved_constraints": [
+      "徐羽着急，秦浩轩不着急的状态",
+      "秦浩轩连续七天每天晚上去巨猿尸骸附近搜寻",
+      "每次都熬到神识即将耗尽才出来",
+      "七天来什么都没有得到",
+      "秦浩轩的神识在过程中获得了很大进步"
+    ],
+    "source_refs": [
+      "retrieval_43ef41c154a543768ad53a2d591eb53b"
+    ],
+    "risks": [],
+    "warnings": []
+  },
+  "source_refs": [
+    "retrieval_43ef41c154a543768ad53a2d591eb53b"
+  ],
+  "created_at": "2026-07-18T01:18:07.378053Z"
+}

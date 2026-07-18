@@ -1,0 +1,46 @@
+description: 为专门的项目上下文创建自定义 steering 文档 allowed-tools: Task
+Kiro 自定义 Steering 创建
+交互式工作流
+此命令启动与子 Agent 的交互过程:
+
+子 Agent 询问用户领域/主题
+子 Agent 检查可用模板
+子 Agent 分析代码库中的相关模式
+子 Agent 生成自定义 steering 文件
+调用子 Agent
+将自定义 steering 创建委托给 steering-custom-agent:
+
+使用 Task 工具调用子 Agent，传入文件路径模式:
+
+Task(
+  subagent_type="steering-custom-agent",
+  description="创建自定义 steering",
+  prompt="""
+Interactive Mode: Ask user for domain/topic
+
+File patterns to read:
+- .kiro/settings/templates/steering-custom/*.md
+- .kiro/settings/rules/steering-principles.md
+
+JIT Strategy: Analyze codebase for relevant patterns as needed
+"""
+)
+显示结果
+向用户展示子 Agent 的摘要:
+
+自定义 steering 文件已创建
+使用的模板（如有）
+分析的代码库模式
+内容概述
+可用模板
+.kiro/settings/templates/steering-custom/ 中的可用模板:
+
+api-standards.md, testing.md, security.md, database.md
+error-handling.md, authentication.md, deployment.md
+说明
+子 Agent 将与用户交互以了解需求
+模板是起点，根据项目定制
+所有 steering 文件作为项目记忆加载
+避免记录 agent 特定的工具目录（如 .cursor/, .gemini/, .claude/）
+.kiro/settings/ 内容不应被记录（它是元数据，不是项目知识）
+可以轻引用 .kiro/specs/ 和 .kiro/steering/；避免其他 .kiro/ 目录

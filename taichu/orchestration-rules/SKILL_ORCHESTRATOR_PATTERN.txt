@@ -1,0 +1,171 @@
+Skill 编排规范（Orchestrator Pattern）
+适用于所有按顺序调用子 skill 的编排类 skill。 编排 skill 的职责是：管理流程、创建子 agent、等待确认、推进步骤。 编排 skill 禁止执行具体工作。
+
+一、子 agent 执行机制
+执行方式
+每个 Step 必须通过 Agent 工具创建工作子 agent 来执行子 skill。 编排 skill 本身不执行任何具体工作（如创建文件、编写文档、修改代码等）。
+
+当前 Step → Agent(prompt="执行 {子skill名称}，输入={...}")
+          → 等待子 agent 返回结果
+          → 展示结果摘要给用户
+          → 输出状态锚点（见第二节）
+          → 暂停
+禁止行为
+禁止在本 skill 上下文中直接执行子 skill 的具体逻辑
+禁止跳过 Agent 工具直接"手动完成"子 skill 的工作
+禁止在子 agent 返回结果后自动进入下一步
+子 agent 上下文
+每个子 agent 必须在其 prompt 中包含：
+
+本步骤的目标和输入参数
+前置步骤的输出路径（供其读取）
+要求返回结构化结果（成功/失败 + 摘要 + 关键产出文件路径）
+Agent 调用模板（强制格式）
+每个 Step 必须严格按以下格式调用 Agent 工具：
+
+Agent(
+  description: "执行 {子skill名称}",
+  prompt: """
+执行 {子skill名称} 子 skill。
+
+【输入】
+- 规格列表: {selected_specs 逗号分隔}
+- 前置步骤输出: {前置步骤产出的文件路径，如无则省略}
+
+【要求】
+1. 读取 .kiro/specs/{规格名}/spec.json 确认每个规格的当前阶段
+2. 根据阶段跳过已完成的步骤
+3. 执行对应的 /kiro: 命令或子 skill 逻辑
+4. 返回以下结构化结果：
+   - 执行状态: 成功 / 失败
+   - 摘要: 简要描述完成的工作
+   - 关键产出: 生成的文件路径列表
+   - 异常信息: 如有失败，说明原因
+"""
+)
+禁止的调用方式：
+
+❌ 用 Skill 工具加载子 skill 后在当前上下文直接执行
+❌ 用 Bash 执行 /kiro: 命令（/kiro: 是内置斜杠命令，不是 CLI）
+❌ 自行完成子 skill 的工作（写文档、写代码等）
+❌ 读取子 skill 文档后，用通用 Agent prompt "等价执行"替代真实调用
+关键原则：编排 skill 看到"执行 {子skill名称}"时，只负责创建子 agent 并传递上下文，不读取子 skill 的具体规范、不假设子 skill 的执行逻辑、不编写子 skill 负责的产出文件。子 skill 怎么干活，交给子 agent 自己加载对应 skill 后决定。
+
+二、步骤间交互方式
+状态锚点
+每步完成后，必须输出以下格式的状态块：
+
+【流程状态】Step X 已完成，等待用户确认
+  - 当前步骤: Step X - {子skill名称}
+  - 执行结果: 成功/失败
+  - 关键产出: {文件路径/目录}
+  - 下一步: Step X+1 - {子skill名称}（需用户明确选择后执行）
+用户选择
+状态锚点输出后，必须使用 AskUserQuestion 工具让用户选择下一步操作。 禁止等待自由文本输入来决定是否推进。
+
+AskUserQuestion 格式：
+
+header: "流程控制"
+question: "Step X ({子skill名称}) 已完成，请选择下一步操作"
+options:
+继续 Step X+1 - {下一个子skill名称} — 进入下一步
+在当前步骤修改 — 对当前结果提出修改意见
+跳过此步骤 — 跳过当前 Step（需说明原因）
+终止流程 — 结束本次流程
+推进信号
+仅当用户选择选项 1（继续）时，才创建子 agent 执行下一个 Step。 其他选项的处理逻辑在当前步骤内完成，不推进流程。
+
+三、Step 收尾检查单（强制）
+目的：解决长流程编排中子 agent 遗漏收尾动作（更新 spec.json、追加 progress.log、同步待开发清单状态、标记 tasks.md checkbox 等）的问题。
+
+3.1 检查单输出要求
+每个子 agent 在返回结果前，必须输出该 Step 的收尾检查单。编排器收到结果后，必须逐项确认全部打勾，方可进入 AskUserQuestion 环节。
+
+检查单格式（统一模板）：
+
+【Step X 收尾检查】({子skill名称})
+- [ ] {检查项1}: {实际值/状态}
+- [ ] {检查项2}: {实际值/状态}
+...
+✅ 全部完成 / ⚠️ 未完成项: {列出}
+执行规则：
+
+预期产出清单由编排 skill 定义：每个 Step 的 prompt 中必须明确告知子 agent 该 Step 应该产出哪些文件、更新哪些状态。
+子 agent 必须逐一检查：不得假设"应该已经生成了"，必须实际检查文件是否存在、内容是否正确。
+编排器在 AskUserQuestion 前展示检查单：用户能看到每个 Step 的收尾完成情况，而非仅看到"成功"摘要。
+有未完成项时 AskUserQuestion 增加"退回修复"选项。
+3.2 通用检查项（所有 Step 必须包含）
+通用检查项	说明
+产出文件已生成	该 Step 预期产出的文件全部存在（逐一确认路径）
+spec.json 已更新	phase/stage 字段已更新到下一阶段
+progress.log 已追加	最新一行日志内容符合阶段日志规范
+3.3 各 Step 的专属检查项
+Step	子 skill	专属检查项
+阶段一-1	prd-requirement-analyzer	out/{版本号}/功能点列表.md 存在且非空
+阶段一-2	prd-function-allocator	out/{版本号}/{工号}/待开发清单-{工号}.md 每个工号一个
+阶段一-3	Excel 生成	out/{版本号}/功能列表-{版本号}.xlsx 存在
+阶段二-2 (prd-to-ccsdd)	prd-to-ccsdd	requirements.md 存在、independent-validation-report-requirements.md 存在且 PASS、待开发清单状态已更新
+阶段二-3 (prd-design-generator)	prd-design-generator	design.md 存在、independent-validation-report-design.md 存在且 PASS
+阶段二-4 (prd-spec-impl)	prd-spec-impl	tasks.md 全 [x]、impl-report.md 存在、verification-report.md 存在且 PASS、spec.json stage=completed
+3.4 编排器侧验证
+编排器收到子 agent 返回结果后，必须：
+
+检查是否存在收尾检查单（无检查单 = 视为未完成）
+确认所有检查项为 true（打勾）
+如存在未完成项，在 AskUserQuestion 中增加"退回修复"选项，不得自动推进
+四、TaskCreate/TaskUpdate 机制
+目的：利用 Claude Code 内置 Task 系统做内存中的状态追踪，解决对话 summarized 后中间承诺丢失、Session 重启后无法恢复的问题。
+
+4.1 启动时创建任务树
+编排 skill 的 Step 0（启动阶段）中，为整个流程创建任务树：
+
+TaskCreate("prd-to-plan 全流程: {版本号}")
+  └─ TaskCreate("阶段一: 需求分析与功能分配")
+       └─ TaskCreate("Step 1: prd-requirement-analyzer")
+       └─ TaskCreate("Step 2: prd-function-allocator")
+       └─ TaskCreate("Step 3: 生成 Excel 工时表")
+  └─ TaskCreate("阶段二: 规格开发")
+       └─ TaskCreate("规格: {规格1名称}")
+            └─ TaskCreate("Step 2.1: prd-to-ccsdd")
+            └─ TaskCreate("Step 2.2: prd-design-generator")
+            └─ TaskCreate("Step 2.3: prd-spec-impl")
+       └─ TaskCreate("规格: {规格2名称}")
+            └─ ...
+4.2 执行时更新状态
+开始执行 Step → TaskUpdate(taskId, status: "in_progress")
+Step 完成     → TaskUpdate(taskId, status: "completed", description: "{收尾检查单摘要}")
+Step 失败     → TaskUpdate(taskId, status: "blocked", description: "{错误信息}")
+4.3 子 agent 中的使用
+编排器在创建子 agent 时，将 taskId 通过 prompt 传递：
+
+你是 {子skill名称} 的执行 agent。
+
+【任务上下文】
+- 当前任务 ID: {taskId}
+- 开始执行前: TaskUpdate(taskId, status: "in_progress")
+- 完成后: TaskUpdate(taskId, status: "completed", description: "{收尾检查单}")
+- 失败时: TaskUpdate(taskId, status: "blocked", description: "{错误}")
+
+【输入】...
+【要求】...
+4.4 恢复时查询进度
+Session 重启或对话 summarized 后：
+
+TaskList → 查看哪些 pending/in_progress → 自动续做
+TaskGet(taskId) → 获取该 Step 的详细要求和前置输出
+五、异常处理
+异常场景	处理方式
+子 skill 因输入缺失报错	向用户展示报错信息和处理建议，使用 AskUserQuestion 让用户选择重试/跳过/终止
+子 agent 执行超时	展示已完成的进度，询问用户是否继续等待或终止
+子 agent 返回部分结果	展示已完成部分，询问是否继续或终止
+四、编排 skill 模板
+所有编排类 skill 必须在文档开头引用本规范：
+
+> 本 skill 遵循 Skill 编排规范（Orchestrator Pattern），见 `.claude/rules/SKILL_ORCHESTRATOR_PATTERN.md`。
+并在"强制规则"章节中至少包含：
+
+严格按步骤顺序执行，不可跳步
+每个子 skill 自行校验输入，编排工具不重复校验
+每步通过 Agent 工具创建子 agent 执行，编排工具不干具体活
+每步完成后通过 AskUserQuestion 等待用户选择，不可自动推进
+Last Updated: 2026-05-26 Maintainer: Platform Engineering Team

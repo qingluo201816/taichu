@@ -318,12 +318,11 @@ export function GeneralAgentWorkbench({
         <section className="min-w-0">
           <header className="flex items-start justify-between gap-4 border-b border-[var(--tc-border-subtle)] pb-4">
             <div>
-              <p className="text-xs text-[var(--tc-text-muted)]">通用写作助手</p>
               <h2 className="mt-1 text-xl font-semibold text-[var(--tc-text-primary)]">
-                处理任意规模的小说写作问题
+                通用写作助手
               </h2>
               <p className="mt-1 max-w-[720px] text-sm text-[var(--tc-text-secondary)]">
-                小问题直接收敛，复杂任务会按需调用工具和专业智能体；持久化修改始终等待你的授权。
+                问答、规划、续写和一致性检查都从这里开始。
               </p>
             </div>
             {currentRun && isGeneralAgentRunActive(currentRun.status) ? (
@@ -352,7 +351,7 @@ export function GeneralAgentWorkbench({
               htmlFor="general-agent-goal"
               className="text-sm font-semibold text-[var(--tc-text-primary)]"
             >
-              你想完成什么
+              任务内容
             </label>
             <textarea
               id="general-agent-goal"
@@ -364,7 +363,7 @@ export function GeneralAgentWorkbench({
                 }
               }}
               rows={4}
-              placeholder="例如：主角第一次见到青铜令牌时发生了什么？或规划并续写接下来三章，再检查人物与时间线一致性。"
+              placeholder="输入要问、要写或要检查的内容。"
               className="mt-2 w-full resize-y rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 text-sm leading-6 text-[var(--tc-text-primary)] outline-none placeholder:text-[var(--tc-text-muted)] focus:border-[var(--tc-border-strong)]"
             />
 
@@ -497,7 +496,7 @@ export function GeneralAgentWorkbench({
 
             <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--tc-border-subtle)] pt-3">
               <p className="text-xs text-[var(--tc-text-muted)]">
-                助手会选择最小充分路径，不会强迫简单问题进入长流程。
+                按需规划 · 修改前确认
               </p>
               <Button
                 type="button"

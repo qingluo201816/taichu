@@ -120,7 +120,7 @@ class ChapterSummaryService:
                     mode=RetrievalMode.CATALOG,
                     top_k=20,
                     consumer=RetrievalConsumerContext(
-                        consumer_type="writing_task",
+                        consumer_type="chapter_summary",
                         run_id=chapter_id,
                         stage="chapter_summary",
                     ),

@@ -8,6 +8,9 @@ from taichu.application.general_agent.service import GeneralAgentRuntimeService
 from taichu.application.evaluations.general_agent.service import (
     GeneralAgentEvaluationService,
 )
+from taichu.application.evaluations.retrieval.service import (
+    RetrievalEvaluationService,
+)
 from taichu.application.contracts.invocation_trace import InvocationTraceReader
 from taichu.application.contracts.storage import StorageBackend
 from taichu.application.contracts.llm import LLMGatewayContract
@@ -57,6 +60,14 @@ def provide_general_agent_evaluation_service(
     """返回通用写作助手独立效果评测服务。"""
 
     return request.app.state.general_agent_evaluation_service
+
+
+def provide_retrieval_evaluation_service(
+    request: Request,
+) -> RetrievalEvaluationService:
+    """返回统一召回专项评测只读服务。"""
+
+    return request.app.state.retrieval_evaluation_service
 
 
 def provide_invocation_trace_reader(request: Request) -> InvocationTraceReader:

@@ -1,0 +1,81 @@
+{
+  "lifecycle": "draft",
+  "artifact_id": "artifact_ac382e681d6e4fd7a99f49fd6ffa51a8",
+  "artifact_type": "canon_evidence_report",
+  "producer": "canon_evidence",
+  "task_id": "general_run_20260718_005757_e9d7a3",
+  "run_id": "general_run_20260718_005757_e9d7a3",
+  "call_id": "call_353c161f6b3843c9a6b9e822b5b50c4b",
+  "input_sha256": "1117f1ca77bf02dd97178170286b805b9a33b2da56cb0838779b01b24ff64167",
+  "content_sha256": "18643a76e4dc373ed740f2212616cfd06a5fd4f02ab3b76cca7033e348978542",
+  "payload": {
+    "lifecycle": "draft",
+    "artifact_type": "canon_evidence_report",
+    "answer": "秦浩轩面对威胁时通常冷静镇定，表现出强硬而务实的反击倾向。被当众挑衅时，会用眼神震慑对方使其退缩；遭遇人身攻击或恶意刁难时，先稳住心神寻找反制手段，必要时以武力警告压制对方，甚至利用对手之间的矛盾坐收渔利。整体性格显得勇敢、冷静、恩怨分明且善于利用局势。",
+    "confidence": "medium",
+    "evidence": [
+      {
+        "claim": "秦浩轩面对张狂的当众威胁时，用眼神将其震慑，使张狂狼狈离去。",
+        "source_ref": "confirmed_knowledge:event-b03ac9311df74e359ac885fbc54ffcbb",
+        "excerpt": "秦浩轩报名后张狂当众威胁日后报复，但被秦浩轩目光震慑，狼狈离去遭众人嘲笑。"
+      },
+      {
+        "claim": "秦浩轩制止张狂殴打少年时，以强硬警告迫使张狂停止，张狂因判断翻脸只会吃亏而没有继续动手。",
+        "source_ref": "confirmed_knowledge:event-382f1715dbfd4bbfa985ef45e33919e6",
+        "excerpt": "秦浩轩出言警告，扬言若张狂继续动手便将其绑去小屿山喂狼；张狂知道翻脸只会吃亏，最终收回了要踢向少年的脚。"
+      },
+      {
+        "claim": "面对不死巫魔的魔念夺舍威胁时，秦浩轩在震惊之后很快沉下心来思索应对之策。",
+        "source_ref": "manuscript:chapter-56642dbc72844155aa7da04e39ff6c7b:0-240",
+        "excerpt": "若是其他人被老谋深算的不死巫魔如此暗算，此时说不定已吓得六神无主，任由不死巫魔夺舍了，但秦浩轩在震惊之后很快沉下心来，开始思索怎么应对不死巫魔入侵的魔念。"
+      },
+      {
+        "claim": "在李靖和张狂的骂战有升级趋势时，秦浩轩面色如常，乐见其成并微微一笑，表现出置身事外的冷静。",
+        "source_ref": "manuscript:chapter-81f477ae875e4bacbfe4cc8dee3af24a:11-251",
+        "excerpt": "在他们两方的唇枪舌剑中，秦浩轩面色如常，张狂和李靖都和他有嫌隙，他们两人若能狗咬狗打起来，他当然是乐见其成的！"
+      }
+    ],
+    "conflicting_evidence": [],
+    "unknowns": [
+      "秦浩轩在面对长期压制或体制性威胁时（如自然堂被四大堂打压）的具体反应方式在给定章节中未充分显现。",
+      "他在极端危急情境下是否有情绪失控或犹豫不决的一面，依据现有证据无法确认。"
+    ],
+    "source_refs": [
+      "manuscript:chapter-6731cb28cf9c4be3b1c65682f7355b8e:0-3301",
+      "manuscript:chapter-f2a0007303a74f769e1609124c30da6b:111-351",
+      "manuscript:chapter-4ff5605bfac64820aa8331b4d3bd1d09:11-251",
+      "manuscript:chapter-58173e915a184489a8c074f845a4b626:48-288",
+      "manuscript:chapter-56642dbc72844155aa7da04e39ff6c7b:0-240",
+      "manuscript:chapter-a1a2d3ec95b24b62a193b1cee2563ea9:0-240",
+      "manuscript:chapter-81f477ae875e4bacbfe4cc8dee3af24a:11-251",
+      "manuscript:chapter-4725a72c9d3042f5b67a07f3daab223e:0-240",
+      "manuscript:chapter-cb3258951a394eb38396278689157272:0-240",
+      "manuscript:chapter-93a3eff7b3e347f784894ad3e2cba827:0-240",
+      "manuscript:chapter-3fb65d89870445169cbf29917c0aadf9:0-240",
+      "manuscript:chapter-cdb5c3ef2e564affb249aedd5f14d311:0-240",
+      "manuscript:chapter-c2a115ffffcd4f51a0440a7b46480bdb:0-240",
+      "retrieval_91fd762a48d74f88a76bfcca5fc46c5c"
+    ],
+    "warnings": [
+      "部分证据来自知识库（confirmed_knowledge），其内容为自动提取的摘要，可能存在细节省略，建议对照原文验证。",
+      "检索到的手稿片段有限，可能遗漏其他章节中秦浩轩面对威胁时的表现。"
+    ]
+  },
+  "source_refs": [
+    "manuscript:chapter-6731cb28cf9c4be3b1c65682f7355b8e:0-3301",
+    "manuscript:chapter-f2a0007303a74f769e1609124c30da6b:111-351",
+    "manuscript:chapter-4ff5605bfac64820aa8331b4d3bd1d09:11-251",
+    "manuscript:chapter-58173e915a184489a8c074f845a4b626:48-288",
+    "manuscript:chapter-56642dbc72844155aa7da04e39ff6c7b:0-240",
+    "manuscript:chapter-a1a2d3ec95b24b62a193b1cee2563ea9:0-240",
+    "manuscript:chapter-81f477ae875e4bacbfe4cc8dee3af24a:11-251",
+    "manuscript:chapter-4725a72c9d3042f5b67a07f3daab223e:0-240",
+    "manuscript:chapter-cb3258951a394eb38396278689157272:0-240",
+    "manuscript:chapter-93a3eff7b3e347f784894ad3e2cba827:0-240",
+    "manuscript:chapter-3fb65d89870445169cbf29917c0aadf9:0-240",
+    "manuscript:chapter-cdb5c3ef2e564affb249aedd5f14d311:0-240",
+    "manuscript:chapter-c2a115ffffcd4f51a0440a7b46480bdb:0-240",
+    "retrieval_91fd762a48d74f88a76bfcca5fc46c5c"
+  ],
+  "created_at": "2026-07-18T00:58:53.349448Z"
+}

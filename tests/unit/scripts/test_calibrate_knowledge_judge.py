@@ -26,7 +26,11 @@ from taichu.application.evaluations.knowledge_extraction.models import (
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 _SPEC = importlib.util.spec_from_file_location(
     "taichu_calibrate_knowledge_judge",
-    REPOSITORY_ROOT / "scripts" / "evaluations" / "calibrate_knowledge_judge.py",
+    REPOSITORY_ROOT
+    / ".agents"
+    / "scripts"
+    / "evaluations"
+    / "calibrate_knowledge_judge.py",
 )
 assert _SPEC is not None and _SPEC.loader is not None
 calibration = importlib.util.module_from_spec(_SPEC)

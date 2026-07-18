@@ -2,7 +2,7 @@
 setlocal EnableExtensions
 chcp 65001 >nul
 
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\start.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0.agents\scripts\start.ps1"
 set "TAICHU_START_EXIT=%ERRORLEVEL%"
 
 if not "%TAICHU_START_EXIT%"=="0" (

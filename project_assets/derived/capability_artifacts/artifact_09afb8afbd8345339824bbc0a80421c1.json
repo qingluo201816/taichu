@@ -1,0 +1,61 @@
+{
+  "lifecycle": "draft",
+  "artifact_id": "artifact_09afb8afbd8345339824bbc0a80421c1",
+  "artifact_type": "revision_candidate",
+  "producer": "revision",
+  "task_id": "general_run_20260718_005757_e9d7a3",
+  "run_id": "general_run_20260718_005757_e9d7a3",
+  "call_id": "call_0a282bd3076240ee9528fce8fc3c8ce7",
+  "input_sha256": "ad7e7ecd9a5bf32acfcf49872628d5e38039ffb36f9259e99618c0b03a5af08f",
+  "content_sha256": "383ebd343330f28f6792c75d9851b6a9df1975bad9d98612bb3827a7c8b8888e",
+  "payload": {
+    "lifecycle": "draft",
+    "artifact_type": "revision_candidate",
+    "text": "门外突然传来一阵急促而沉闷的脚步声，仿佛每一步都踩在人的心口上。秦浩轩眼中闪过一丝警觉，随即侧首看向小金，用极为冷静的眼神示意它保持不动，同时抬手在唇边轻轻一按。",
+    "change_summary": [
+      "将脚步声描写得更加具体和紧张，用“急促而沉闷”和比喻增强压迫感。",
+      "增加了秦浩轩眼中的警觉和侧首的动作，但通过“极为冷静的眼神”和“抬手在唇边轻轻一按”保持克制反应。",
+      "整体节奏加快，但秦浩轩依然表现出冷静沉着的特质。"
+    ],
+    "preserved_constraints": [
+      "秦浩轩的反应必须克制、冷静"
+    ],
+    "source_refs": [
+      "manuscript:chapter-6731cb28cf9c4be3b1c65682f7355b8e:0-3301",
+      "manuscript:chapter-f2a0007303a74f769e1609124c30da6b:111-351",
+      "manuscript:chapter-4ff5605bfac64820aa8331b4d3bd1d09:11-251",
+      "manuscript:chapter-58173e915a184489a8c074f845a4b626:48-288",
+      "manuscript:chapter-56642dbc72844155aa7da04e39ff6c7b:0-240",
+      "manuscript:chapter-a1a2d3ec95b24b62a193b1cee2563ea9:0-240",
+      "manuscript:chapter-81f477ae875e4bacbfe4cc8dee3af24a:11-251",
+      "manuscript:chapter-4725a72c9d3042f5b67a07f3daab223e:0-240",
+      "manuscript:chapter-cb3258951a394eb38396278689157272:0-240",
+      "manuscript:chapter-93a3eff7b3e347f784894ad3e2cba827:0-240",
+      "manuscript:chapter-3fb65d89870445169cbf29917c0aadf9:0-240",
+      "manuscript:chapter-cdb5c3ef2e564affb249aedd5f14d311:0-240",
+      "manuscript:chapter-c2a115ffffcd4f51a0440a7b46480bdb:0-240",
+      "retrieval_5ee6e225766549789d824dc74b0b2970",
+      "retrieval_50c3f2ccf180412dab2ccd781221b531"
+    ],
+    "risks": [],
+    "warnings": []
+  },
+  "source_refs": [
+    "manuscript:chapter-6731cb28cf9c4be3b1c65682f7355b8e:0-3301",
+    "manuscript:chapter-f2a0007303a74f769e1609124c30da6b:111-351",
+    "manuscript:chapter-4ff5605bfac64820aa8331b4d3bd1d09:11-251",
+    "manuscript:chapter-58173e915a184489a8c074f845a4b626:48-288",
+    "manuscript:chapter-56642dbc72844155aa7da04e39ff6c7b:0-240",
+    "manuscript:chapter-a1a2d3ec95b24b62a193b1cee2563ea9:0-240",
+    "manuscript:chapter-81f477ae875e4bacbfe4cc8dee3af24a:11-251",
+    "manuscript:chapter-4725a72c9d3042f5b67a07f3daab223e:0-240",
+    "manuscript:chapter-cb3258951a394eb38396278689157272:0-240",
+    "manuscript:chapter-93a3eff7b3e347f784894ad3e2cba827:0-240",
+    "manuscript:chapter-3fb65d89870445169cbf29917c0aadf9:0-240",
+    "manuscript:chapter-cdb5c3ef2e564affb249aedd5f14d311:0-240",
+    "manuscript:chapter-c2a115ffffcd4f51a0440a7b46480bdb:0-240",
+    "retrieval_5ee6e225766549789d824dc74b0b2970",
+    "retrieval_50c3f2ccf180412dab2ccd781221b531"
+  ],
+  "created_at": "2026-07-18T01:00:37.914277Z"
+}

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 import unicodedata
 
@@ -38,6 +39,8 @@ _IGNORED_QUERY_TERMS = {
 class MongoLexicalRetrievalBackend:
     """从 MongoDB 唯一结构事实源读取并排序已确认知识卡。"""
 
+    strategy_name = STRATEGY_NAME
+
     def __init__(self, repository: StructuredKnowledgeRepository) -> None:
         self._repository = repository
 
@@ -60,6 +63,7 @@ class MongoLexicalRetrievalBackend:
                     )
                     for card in cards
                 ],
+                index_snapshot_id=_snapshot_id(cards),
             )
         candidates = [
             candidate
@@ -77,6 +81,7 @@ class MongoLexicalRetrievalBackend:
             strategy=STRATEGY_NAME,
             candidate_count=len(cards),
             candidates=candidates,
+            index_snapshot_id=_snapshot_id(cards),
         )
 
     async def _retrieve_identity(
@@ -209,3 +214,12 @@ def _append_reason(reasons: list[str], reason: str) -> None:
 
 def _descending_timestamp_key(value: str) -> tuple[int, ...]:
     return tuple(-ord(character) for character in value)
+
+
+def _snapshot_id(cards: list[StructuredKnowledgeCard]) -> str:
+    payload = "\n".join(
+        f"{card.id}:{card.updated_at}"
+        for card in sorted(cards, key=lambda item: item.id)
+    )
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    return f"mongo_confirmed_{digest}"

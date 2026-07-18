@@ -39,6 +39,22 @@ class RetrievalStatus(StrEnum):
     FAILED = "failed"
 
 
+class RetrievalBranchStatus(StrEnum):
+    """单个策略分支的技术执行状态。"""
+
+    COMPLETED = "completed"
+    FAILED = "failed"
+    UNAVAILABLE = "unavailable"
+
+
+class RetrievalFallbackReasonCode(StrEnum):
+    """可机读且不泄露查询内容的回退原因。"""
+
+    STRATEGY_UNAVAILABLE = "strategy_unavailable"
+    BACKEND_TIMEOUT = "backend_timeout"
+    BACKEND_ERROR = "backend_error"
+
+
 class RetrievalConsumerContext(RetrievalModel):
     """关联业务运行但不统一业务日志的最小上下文。"""
 
@@ -69,6 +85,10 @@ class RetrievalRequest(RetrievalModel):
     )
     top_k: int | None = Field(default=None, ge=1, le=200)
     max_content_chars: int | None = Field(default=None, ge=500, le=50_000)
+    requested_strategy: str | None = Field(
+        default=None,
+        pattern=r"^[a-z][a-z0-9_]{1,63}$",
+    )
     consumer: RetrievalConsumerContext = Field(default_factory=RetrievalConsumerContext)
 
     @model_validator(mode="after")
@@ -88,6 +108,11 @@ class RetrievalRequest(RetrievalModel):
                 raise ValueError("身份召回必须提供知识类型、名称和别名。")
         elif self.identity is not None:
             raise ValueError("有效知识快照不能提供身份匹配参数。")
+        if (
+            self.mode is not RetrievalMode.RELEVANCE
+            and self.requested_strategy not in (None, "mongo_lexical")
+        ):
+            raise ValueError("身份和目录召回只能使用确定性词法策略。")
         return self
 
 
@@ -106,6 +131,7 @@ class RetrievalBackendResult(RetrievalModel):
     strategy: str = Field(min_length=1, max_length=64)
     candidate_count: int = Field(ge=0)
     candidates: list[RetrievalBackendCandidate] = Field(default_factory=list)
+    index_snapshot_id: str | None = Field(default=None, max_length=128)
 
 
 class RetrievalItem(RetrievalModel):
@@ -139,6 +165,21 @@ class RetrievalResult(RetrievalModel):
     finished_at: str = Field(min_length=1)
     duration_ms: int = Field(ge=0)
     warnings: list[str] = Field(default_factory=list)
+    policy_name: str = "legacy_default"
+    requested_strategy: str | None = None
+    effective_strategy: str | None = None
+    fallback_used: bool = False
+    fallback_reason_code: RetrievalFallbackReasonCode | None = None
+    applied_top_k: int = Field(default=1, ge=1, le=200)
+    applied_max_content_chars: int = Field(default=500, ge=500, le=50_000)
+    content_chars_used: int = Field(default=0, ge=0)
+    budget_limited: bool = False
+    backend_duration_ms: int = Field(default=0, ge=0)
+    post_filter_duration_ms: int = Field(default=0, ge=0)
+    index_snapshot_id: str | None = Field(default=None, max_length=128)
+    strategy_snapshot: dict[str, str | int | bool | None] = Field(
+        default_factory=dict
+    )
 
 
 class RetrievalTraceItem(RetrievalModel):
@@ -148,6 +189,18 @@ class RetrievalTraceItem(RetrievalModel):
     rank: int = Field(ge=1)
     score: float = Field(ge=0)
     match_reasons: list[str] = Field(default_factory=list)
+
+
+class RetrievalTraceBranch(RetrievalModel):
+    """一次请求内某个策略分支的脱敏观测。"""
+
+    strategy: str = Field(min_length=1, max_length=64)
+    status: RetrievalBranchStatus
+    candidate_count: int = Field(default=0, ge=0)
+    hit_count: int = Field(default=0, ge=0)
+    duration_ms: int = Field(default=0, ge=0)
+    reason_code: RetrievalFallbackReasonCode | None = None
+    error_summary: str | None = Field(default=None, max_length=200)
 
 
 class RetrievalTraceRecord(RetrievalModel):
@@ -176,3 +229,15 @@ class RetrievalTraceRecord(RetrievalModel):
     duration_ms: int = Field(ge=0)
     error_type: str | None = None
     error_message: str | None = None
+    policy_name: str = "legacy_default"
+    requested_strategy: str | None = None
+    effective_strategy: str | None = None
+    fallback_used: bool = False
+    fallback_reason_code: RetrievalFallbackReasonCode | None = None
+    backend_duration_ms: int = Field(default=0, ge=0)
+    post_filter_duration_ms: int = Field(default=0, ge=0)
+    strategy_snapshot: dict[str, str | int | bool | None] = Field(
+        default_factory=dict
+    )
+    index_snapshot_id: str | None = Field(default=None, max_length=128)
+    branches: list[RetrievalTraceBranch] = Field(default_factory=list)

@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     evaluation_datasets_dir: Path = Path("tests/fixtures/evaluations")
     evaluation_judge_model: str = ""
 
+    retrieval_policies_json: str = "{}"
+    retrieval_default_relevance_strategy: str = "mongo_lexical"
+
     mongodb_home: Path | None = None
     mongodb_data_dir: Path | None = None
     mongodb_log_dir: Path | None = None

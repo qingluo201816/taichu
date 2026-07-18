@@ -12,14 +12,20 @@ from typing import Any
 import pytest
 
 from taichu.application.retrieval.models import (
+    RetrievalBackendCandidate,
     RetrievalBackendResult,
     RetrievalConsumerContext,
+    RetrievalFallbackReasonCode,
     RetrievalIdentityQuery,
     RetrievalMode,
     RetrievalRequest,
     RetrievalStatus,
 )
+from taichu.application.retrieval.policy import RetrievalPolicyResolver
 from taichu.application.capabilities import CapabilityContext
+from taichu.application.contracts.knowledge_repository import (
+    KnowledgeRepositoryUnavailableError,
+)
 from taichu.application.invocations.models import InvocationContext
 from taichu.application.services.retrieval_service import RetrievalService
 from taichu.application.tools.knowledge_retrieval.tool import (
@@ -180,6 +186,15 @@ async def test_trace_uses_hash_and_does_not_store_raw_query(tmp_path: Path) -> N
     assert payload["query_char_count"] == len(raw_query)
     assert raw_query not in trace_path.read_text(encoding="utf-8")
     assert "秘密" not in trace_path.read_text(encoding="utf-8")
+    assert payload["policy_name"] == "default_relevance"
+    assert payload["requested_strategy"] == "mongo_lexical"
+    assert payload["effective_strategy"] == "mongo_lexical"
+    assert payload["fallback_used"] is False
+    assert payload["backend_duration_ms"] >= 0
+    assert payload["post_filter_duration_ms"] >= 0
+    assert payload["strategy_snapshot"]["top_k"] == 12
+    assert payload["index_snapshot_id"].startswith("mongo_confirmed_")
+    assert payload["branches"][0]["status"] == "completed"
 
 
 def test_request_rejects_workspace_and_non_confirmed_sources() -> None:
@@ -238,12 +253,207 @@ async def test_backend_failure_is_traced_and_reraised(tmp_path: Path) -> None:
     assert payload["status"] == "failed"
     assert payload["strategy"] == "unavailable"
     assert payload["error_type"] == "RuntimeError"
+    assert payload["error_message"] == "召回后端执行失败。"
+    assert "模拟召回失败" not in trace_path.read_text(encoding="utf-8")
+
+
+@_async_test
+async def test_mongo_repository_failure_has_failed_branch_trace(tmp_path: Path) -> None:
+    service = RetrievalService(
+        MongoLexicalRetrievalBackend(_UnavailableKnowledgeRepository()),
+        JsonlRetrievalTraceRepository(tmp_path),
+    )
+
+    with pytest.raises(KnowledgeRepositoryUnavailableError):
+        await service.retrieve(RetrievalRequest(query_text="秦阳"))
+
+    payload = json.loads(
+        (tmp_path / "derived" / "retrieval" / "calls.jsonl").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert payload["status"] == "failed"
+    assert payload["branches"][0]["status"] == "failed"
+    assert payload["branches"][0]["reason_code"] == "backend_error"
+
+
+@_async_test
+async def test_empty_result_is_successfully_traced(tmp_path: Path) -> None:
+    service = _service(InMemoryKnowledgeRepository(), tmp_path)
+
+    result = await service.retrieve(RetrievalRequest(query_text="不存在的知识"))
+
+    assert result.status is RetrievalStatus.EMPTY
+    assert result.items == []
+    payload = json.loads(
+        (tmp_path / "derived" / "retrieval" / "calls.jsonl").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert payload["status"] == "empty"
+
+
+@_async_test
+async def test_trace_failure_does_not_change_retrieval_result() -> None:
+    repository = InMemoryKnowledgeRepository([_card("character-qin-yang", "秦阳")])
+    service = RetrievalService(
+        MongoLexicalRetrievalBackend(repository),
+        _FailingTraceRepository(),
+    )
+
+    result = await service.retrieve(RetrievalRequest(query_text="秦阳"))
+
+    assert result.status is RetrievalStatus.COMPLETED
+    assert result.items[0].source_id == "character-qin-yang"
+    assert result.warnings == ["召回已完成，但技术观测记录写入失败。"]
+
+
+@_async_test
+async def test_service_filters_unconfirmed_backend_candidates(tmp_path: Path) -> None:
+    service = RetrievalService(
+        _MixedLifecycleBackend(),
+        JsonlRetrievalTraceRepository(tmp_path),
+    )
+
+    result = await service.retrieve(RetrievalRequest(query_text="秦阳"))
+
+    assert [item.source_id for item in result.items] == ["confirmed-card"]
+    assert all(
+        item.knowledge_card.lifecycle is StructuredKnowledgeLifecycle.CONFIRMED
+        for item in result.items
+    )
+
+
+@_async_test
+async def test_unavailable_requested_strategy_falls_back_and_is_observable(
+    tmp_path: Path,
+) -> None:
+    repository = InMemoryKnowledgeRepository([_card("character-qin-yang", "秦阳")])
+    service = _service(repository, tmp_path)
+
+    result = await service.retrieve(
+        RetrievalRequest(query_text="秦阳", requested_strategy="vector")
+    )
+
+    assert result.fallback_used is True
+    assert (
+        result.fallback_reason_code
+        is RetrievalFallbackReasonCode.STRATEGY_UNAVAILABLE
+    )
+    assert result.effective_strategy == "mongo_lexical"
+    payload = json.loads(
+        (tmp_path / "derived" / "retrieval" / "calls.jsonl").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert [branch["status"] for branch in payload["branches"]] == [
+        "unavailable",
+        "completed",
+    ]
+
+
+@_async_test
+async def test_backend_timeout_falls_back_to_mongo_lexical(tmp_path: Path) -> None:
+    repository = InMemoryKnowledgeRepository([_card("character-qin-yang", "秦阳")])
+    resolver = RetrievalPolicyResolver.from_json(
+        '{"default_relevance":{"timeout_ms":100}}',
+        default_relevance_strategy="slow_backend",
+    )
+    service = RetrievalService(
+        _SlowBackend(),
+        JsonlRetrievalTraceRepository(tmp_path),
+        policy_resolver=resolver,
+        additional_backends={
+            "mongo_lexical": MongoLexicalRetrievalBackend(repository),
+        },
+    )
+
+    result = await service.retrieve(RetrievalRequest(query_text="秦阳"))
+
+    assert result.status is RetrievalStatus.COMPLETED
+    assert result.fallback_used is True
+    assert result.fallback_reason_code is RetrievalFallbackReasonCode.BACKEND_TIMEOUT
+    assert result.effective_strategy == "mongo_lexical"
+
+
+@_async_test
+async def test_same_snapshot_and_input_have_stable_order(tmp_path: Path) -> None:
+    repository = InMemoryKnowledgeRepository(
+        [
+            _card("card-b", "秦阳乙", summary="秦阳相关设定。"),
+            _card("card-a", "秦阳甲", summary="秦阳相关设定。"),
+        ]
+    )
+    service = _service(repository, tmp_path)
+    request = RetrievalRequest(query_text="秦阳")
+
+    first = await service.retrieve(request)
+    second = await service.retrieve(request)
+
+    assert [item.source_id for item in first.items] == [
+        item.source_id for item in second.items
+    ]
+    assert first.index_snapshot_id == second.index_snapshot_id
 
 
 class _FailingRetrievalBackend:
     async def retrieve(self, request: RetrievalRequest) -> RetrievalBackendResult:
         del request
         raise RuntimeError("模拟召回失败")
+
+
+class _UnavailableKnowledgeRepository(InMemoryKnowledgeRepository):
+    async def list_confirmed_cards(
+        self,
+        type: StructuredKnowledgeType | None = None,
+    ) -> list[StructuredKnowledgeCard]:
+        del type
+        raise KnowledgeRepositoryUnavailableError("模拟 MongoDB 不可用")
+
+
+class _FailingTraceRepository:
+    async def append(self, record: object) -> None:
+        del record
+        raise OSError("模拟遥测磁盘失败")
+
+
+class _MixedLifecycleBackend:
+    strategy_name = "mongo_lexical"
+
+    async def retrieve(self, request: RetrievalRequest) -> RetrievalBackendResult:
+        del request
+        return RetrievalBackendResult(
+            strategy="mongo_lexical",
+            candidate_count=2,
+            candidates=[
+                RetrievalBackendCandidate(
+                    card=_card(
+                        "draft-card",
+                        "草稿秦阳",
+                        lifecycle=StructuredKnowledgeLifecycle.DRAFT,
+                    ),
+                    score=100,
+                    estimated_content_chars=10,
+                ),
+                RetrievalBackendCandidate(
+                    card=_card("confirmed-card", "秦阳"),
+                    score=90,
+                    estimated_content_chars=10,
+                ),
+            ],
+        )
+
+
+class _SlowBackend:
+    strategy_name = "slow_backend"
+
+    async def retrieve(self, request: RetrievalRequest) -> RetrievalBackendResult:
+        del request
+        await asyncio.sleep(0.2)
+        return RetrievalBackendResult(
+            strategy="slow_backend",
+            candidate_count=0,
+        )
 
 
 def _service(

@@ -1,0 +1,46 @@
+description: 交互式技术设计质量评审与验证 allowed-tools: Read, Task argument-hint: <功能名称>
+技术设计验证
+解析参数
+功能名称: $1
+验证
+检查设计是否已完成:
+
+验证 .kiro/specs/$1/ 存在
+验证 .kiro/specs/$1/design.md 存在
+如果验证失败，提示用户先完成设计阶段。
+
+调用子 Agent
+将设计验证委托给 validate-design-agent:
+
+使用 Task 工具调用子 Agent，传入文件路径模式:
+
+Task(
+  subagent_type="validate-design-agent",
+  description="交互式设计评审",
+  prompt="""
+Feature: $1
+Spec directory: .kiro/specs/$1/
+
+File patterns to read:
+- .kiro/specs/$1/spec.json
+- .kiro/specs/$1/requirements.md
+- .kiro/specs/$1/design.md
+- .kiro/steering/*.md
+- .kiro/settings/rules/design-review.md
+"""
+)
+显示结果
+向用户展示子 Agent 的摘要，然后提供下一步指导:
+
+下一阶段: 任务生成
+如果设计通过验证（GO 决策）:
+
+查看反馈并根据需要应用更改
+运行 /kiro:spec-tasks $1 生成实现任务
+或运行 /kiro:spec-tasks $1 -y 自动批准并直接继续
+如果设计需要修改（NO-GO 决策）:
+
+解决识别出的关键问题
+用改进重新运行 /kiro:spec-design $1
+用 /kiro:validate-design $1 重新验证
+注意: 设计验证是推荐但可选的。质量评审有助于尽早发现问题。

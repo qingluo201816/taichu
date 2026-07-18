@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, Bot, ChevronRight, GitBranch, RefreshCw, Scale } from "lucide-react";
+import {
+  Activity,
+  Bot,
+  ChevronRight,
+  GitBranch,
+  RefreshCw,
+  Scale,
+  Search,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
@@ -36,8 +44,8 @@ export function TaskMonitorOverview() {
       setTasks(response.runs);
       setGeneralTasks(generalResponse.runs);
       setError("");
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "任务监控加载失败");
+    } catch {
+      setError("任务监控加载失败，请确认后端服务是否可用");
     } finally {
       setLoading(false);
     }
@@ -57,9 +65,9 @@ export function TaskMonitorOverview() {
         setTasks(response.runs);
         setGeneralTasks(generalResponse.runs);
         setError("");
-      } catch (caught) {
+      } catch {
         if (!ignore) {
-          setError(caught instanceof Error ? caught.message : "任务监控加载失败");
+          setError("任务监控加载失败，请确认后端服务是否可用");
         }
       } finally {
         if (!ignore) {
@@ -185,6 +193,24 @@ export function TaskMonitorOverview() {
                   <span className="block font-medium">通用写作智能体评测</span>
                   <span className="mt-0.5 block text-xs text-[var(--tc-text-muted)]">
                     评估完成度、能力路径、权限边界、执行健康和答案覆盖
+                  </span>
+                </span>
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-[var(--tc-text-muted)]" />
+            </Link>
+
+            <Link
+              href="/task-monitor/retrieval/evaluation"
+              className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-agent-knowledge)]">
+                  <Search className="size-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block font-medium">统一召回专项评测集</span>
+                  <span className="mt-0.5 block text-xs text-[var(--tc-text-muted)]">
+                    查看 60 条召回题目、词法基线、分组指标与失败样例
                   </span>
                 </span>
               </span>

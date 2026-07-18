@@ -16,6 +16,11 @@ from taichu.infrastructure.evaluations.general_agent_repository import (
     JsonGeneralAgentEvaluationDatasetRepository,
     JsonGeneralAgentEvaluationResultRepository,
 )
+from taichu.infrastructure.evaluations.retrieval import (
+    JsonRetrievalEvaluationDatasetRepository,
+    JsonRetrievalEvaluationResultRepository,
+    RetrievalEvaluationStoreError,
+)
 
 __all__ = [
     "EvaluationDatasetRepositoryError",
@@ -26,4 +31,7 @@ __all__ = [
     "GeneralAgentEvaluationStoreError",
     "JsonGeneralAgentEvaluationDatasetRepository",
     "JsonGeneralAgentEvaluationResultRepository",
+    "JsonRetrievalEvaluationDatasetRepository",
+    "JsonRetrievalEvaluationResultRepository",
+    "RetrievalEvaluationStoreError",
 ]

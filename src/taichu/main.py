@@ -21,6 +21,9 @@ from taichu.application.general_agent.service import GeneralAgentRuntimeService
 from taichu.application.evaluations.general_agent.service import (
     GeneralAgentEvaluationService,
 )
+from taichu.application.evaluations.retrieval.service import (
+    RetrievalEvaluationService,
+)
 from taichu.application.contracts.llm import (
     LLMGatewayContract,
     LLMModelIdentity,
@@ -56,6 +59,7 @@ from taichu.application.services.selection_ai_service import SelectionAIService
 from taichu.application.services.settings_service import SettingsPreferenceService
 from taichu.application.services.writing_ai_service import WritingAIService
 from taichu.application.services.retrieval_service import RetrievalService
+from taichu.application.retrieval.policy import RetrievalPolicyResolver
 from taichu.application.services.invocation_policy_service import (
     InvocationPolicyService,
 )
@@ -72,6 +76,8 @@ from taichu.infrastructure.evaluations import (
     JsonGeneralAgentEvaluationResultRepository,
     JsonEvaluationDatasetRepository,
     JsonEvaluationResultStore,
+    JsonRetrievalEvaluationDatasetRepository,
+    JsonRetrievalEvaluationResultRepository,
     create_evaluation_judge,
 )
 from taichu.infrastructure.plugin_discovery import (
@@ -154,9 +160,16 @@ def create_app(
     retrieval_trace_repository = JsonlRetrievalTraceRepository(
         app_settings.project_assets_dir
     )
+    retrieval_policy_resolver = RetrievalPolicyResolver.from_json(
+        app_settings.retrieval_policies_json,
+        default_relevance_strategy=(
+            app_settings.retrieval_default_relevance_strategy
+        ),
+    )
     retrieval_service = RetrievalService(
         MongoLexicalRetrievalBackend(knowledge_repository),
         retrieval_trace_repository,
+        policy_resolver=retrieval_policy_resolver,
     )
     invocation_trace_repository = JsonlInvocationTraceRepository(
         app_settings.project_assets_dir
@@ -302,6 +315,15 @@ def create_app(
         runs=general_agent_run_repository,
         traces=invocation_trace_repository,
     )
+    retrieval_evaluation_service = RetrievalEvaluationService(
+        datasets=JsonRetrievalEvaluationDatasetRepository(
+            app_settings.evaluation_datasets_dir
+        ),
+        results=JsonRetrievalEvaluationResultRepository(
+            app_settings.project_assets_dir
+        ),
+        retrieval=retrieval_service,
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -350,6 +372,7 @@ def create_app(
     application.state.general_agent_evaluation_service = (
         general_agent_evaluation_service
     )
+    application.state.retrieval_evaluation_service = retrieval_evaluation_service
     application.state.invocation_policy_service = invocation_policy_service
     application.state.invocation_trace_repository = invocation_trace_repository
     application.state.artifact_repository = artifact_repository

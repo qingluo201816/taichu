@@ -1,0 +1,206 @@
+前端探索规则
+适用范围：CC-SDD 设计发现流程中的前端代码探索 前置条件：前端已构建 graphify 知识图谱（.claude/management/web/graphify-out/） 技术栈：Vue 3 (Composition API + TSX) + Ant Design Vue + Vuex + Vue Router 4
+
+一、前端架构概览
+技术栈
+类别	技术
+框架	Vue 3 (Composition API + TSX)
+UI 库	Ant Design Vue
+状态管理	Vuex + vuex-module-decorators
+路由	Vue Router 4
+HTTP	Axios 封装（VAxios）
+国际化	vue-i18n
+页面结构模式
+模式	适用场景	文件结构
+Pattern A（Route-based CRUD）	复杂表单（如映射配置）	Index.tsx + Add.tsx + Edit.tsx + View.tsx + components/
+Pattern B（Modal-based CRUD）	简单表单（如区域配置）	Index.tsx + modals/DetailModal.tsx
+核心公共组件
+组件	路径	用途
+BasicTable	src/components/Table/	封装表格（搜索 + 分页 + 操作）
+BasicForm	src/components/Form/	Schema 驱动表单
+BasicModal	src/components/Modal/	弹窗包装器
+BasicUpload	src/components/Upload/	文件上传
+BasicButtonGroup	src/components/Button/	按钮组
+核心 Hooks
+Hook	来源	用途
+useTable	BasicTable 组件	表格注册和操作方法（reload、setProps）
+useModal	src/hooks/web/useModal.ts	弹窗注册和开关（openModal、closeModal）
+useDict/useDictNew	src/hooks/web/useDict.ts	字典数据获取和缓存
+useI18n	src/hooks/web/useI18n.ts	国际化
+useMessage	src/hooks/web/useMessage.tsx	统一消息提示
+usePage/useTabs	src/hooks/web/	页面导航和标签页管理
+二、图谱查询命令
+2.1 graphify 查询（优先使用）
+查询目标	命令	说明
+某业务域的所有页面	python .claude/scripts/query_unified.py --module web --biz-domain {业务域}	获取页面、路由、API 函数清单
+谁调用了某 API 函数	python .claude/scripts/query_unified.py --module web --caller fetchXxx	追踪前端调用链
+某页面的所有组件	python .claude/scripts/query_unified.py --module web --node Index.tsx	获取页面组件结构
+某路由的配置信息	python .claude/scripts/query_unified.py --module web --route /xxx/xxx	获取路由元信息
+前后端 API 映射	读取 frontend_backend_api_mapping.json	验证 API 对应关系
+某业务域的 Hooks 使用	python .claude/scripts/query_unified.py --module web --biz-domain {业务域} --node-type hook	获取使用的 Hooks
+某业务域的 Vuex 模块	python .claude/scripts/query_unified.py --module web --biz-domain {业务域} --node-type store_module	获取 Vuex 模块
+错误码映射	读取 error_code_mapping.json	了解前端错误展示机制
+2.2 降级查询（图谱不可用时）
+查询目标	命令	说明
+查找某业务域的页面	Glob src/views/pages/{业务域}/**/Index.tsx	定位页面文件
+查找某 API 函数	Grep "export function fetchXxx" src/api/modules/	定位 API 函数
+查找路由配置	Grep "path: 'xxx'" src/router/routes/modules/	定位路由定义
+查找 Vuex 模块	Glob src/store/modules/*.ts	列出所有 Vuex 模块
+查找 Hooks 使用	Grep "useTable|useModal" src/views/pages/	查找 Hooks 使用
+三、探索步骤
+步骤 1：业务域与页面定位
+使用 graphify 前端图谱（.claude/management/web/graphify-out/）进行高效探索：
+
+读取 biz_meta_web.json 获取业务域与页面映射
+使用查询命令（见第二章）查询相关页面、路由和 API 函数
+读取 frontend_backend_api_mapping.json 验证前后端 API 对应关系
+定位涉及的页面：
+
+确认页面路径：src/views/pages/{业务域}/{子模块}/
+识别页面结构模式：
+Pattern A（Route-based CRUD）：Index.tsx + Add.tsx + Edit.tsx + View.tsx + components/
+Pattern B（Modal-based CRUD）：Index.tsx + modals/DetailModal.tsx
+读取 Index.tsx 了解页面入口和组件组合关系
+读取 config.tsx 了解表格列配置、搜索表单配置
+步骤 2：组件层级结构分析
+分析页面组件树：
+
+读取 Index.tsx 的 setup() 函数，识别：
+使用的公共组件（BasicTable、BasicModal、BasicForm 等）
+使用的页面级私有组件（components/ 下）
+Hooks 使用情况（useTable、useModal、useDict、useI18n 等）
+读取 Add.tsx/Edit.tsx/View.tsx 了解弹窗/路由组件结构
+识别组件间的通信方式：
+Props/Emits（父子组件）
+provide/inject（跨层级组件）
+eventBus（兄弟组件/跨页面刷新）
+Vuex store（全局状态）
+输出组件层级关系图（ASCII 格式）：
+
+Index.tsx (页面入口)
+  |-- BasicTable (封装表格 + 搜索表单)
+  |     |-- Search Form (FormSchema 驱动)
+  |     |-- Data Table (BasicColumn 驱动)
+  |     |-- Toolbar slot (新增按钮)
+  |     |-- Action slot (编辑/查看/删除按钮)
+  |-- AddModal (modals/AddModal.tsx)
+  |     |-- BasicModal (弹窗包装器)
+  |     |-- BasicForm (表单)
+  |     |-- SubComponents (子组件)
+步骤 3：API 层深度分析
+分析 API 函数定义：
+
+定位 API 文件：src/api/modules/{业务域}/{entity}Api.ts
+读取 API 常量定义（API_GET_LIST、API_POST_SAVE 等）
+分析请求/响应类型：
+请求参数类型（Query/Request DTO）
+响应数据类型（SingleResponse/PageResponse）
+注意：当前代码库大量使用 any 类型，需从代码上下文推断实际类型
+验证 API 函数与后端接口的对应关系：
+HTTP 方法（GET/POST/PUT/DELETE）
+后端端点路径（如 /{module}/api/xxx）
+请求头要求（token、lang、time-zone 等）
+分析 HTTP 客户端配置：
+
+读取 src/api/baseUrl.ts 了解基础路径配置（BASE、CHARGING_BASE、BILL_BASE 等）
+读取 src/utils/http/axios/index.ts 了解：
+请求拦截器（添加 token、gw-bdus-rid、sgs-userid、lang、time-zone、systemKey、env、Source）
+响应转换器（{ code: '0' } 表示成功；{ code, result, msg } 结构）
+错误处理机制
+步骤 4：状态管理深度分析
+分析 Vuex 全局状态：
+
+读取 src/store/modules/ 下的相关模块
+识别模块使用的状态：
+app：pageLoadingState、baseRouterPath（'admin' | 'iair'）
+dictCache：字典缓存（useDict/useDictNew 的数据源）
+user：用户信息
+tabs：标签页状态、keep-alive 缓存
+分析状态访问模式：appStore.setPageLoadingAction(true)
+分析组件级状态：
+
+识别组件使用的 ref/reactive：
+表单数据：const formData = ref<FormType>({ ... })
+选项数据：const options = shallowRef<OptionType[]>([])
+加载状态：const loading = ref(false)
+弹窗状态：const showModal = ref(false)
+分析计算属性：const derived = computed(() => formData.value.xxx)
+识别状态流转机制：用户操作 → 更新 ref → 触发重新渲染 → API 调用 → 更新 ref → 表格刷新
+步骤 5：路由配置深度分析
+分析路由模块：
+
+定位路由文件：src/router/routes/modules/{业务域}/index.ts
+提取路由配置：
+路由路径（path）
+路由名称（name）
+组件懒加载（() => import('...')）
+元信息（meta）：
+title：页面标题
+menuPath：菜单高亮路径
+permissionKey：权限标识
+ignoreKeepAlive：是否跳过缓存
+affix：是否固定标签
+分析路由层级结构（父路由 → 子路由）
+步骤 6：Hooks 与公共组件分析
+分析使用的 Hooks（使用查询命令或 Grep 确认）：
+
+Hook	来源	用途
+useTable	BasicTable 组件	表格注册和操作方法（reload、setProps）
+useModal	src/hooks/web/useModal.ts	弹窗注册和开关（openModal、closeModal）
+useDict/useDictNew	src/hooks/web/useDict.ts	字典数据获取和缓存
+useI18n	src/hooks/web/useI18n.ts	国际化
+useMessage	src/hooks/web/useMessage.tsx	统一消息提示
+usePage/useTabs	src/hooks/web/	页面导航和标签页管理
+分析公共组件依赖：
+
+组件	路径	用途
+BasicTable	src/components/Table/	封装表格（搜索 + 分页 + 操作）
+BasicForm	src/components/Form/	Schema 驱动表单
+BasicModal	src/components/Modal/	弹窗包装器
+BasicUpload	src/components/Upload/	文件上传
+BasicButtonGroup	src/components/Button/	按钮组
+步骤 7：前后端交互流程分析
+绘制完整交互链路（ASCII 流程图）：
+
+用户操作（搜索/新增/编辑/删除）
+    │
+    ├── 1. 组件 Handler（Index.tsx handleXxx()）
+    │     │
+    │     ├── 2a. useTable.reload() → 触发 API
+    │     │     │
+    │     │     ├── 3. Http.get/post(url, params)（xxxApi.ts）
+    │     │     │     │
+    │     │     │     ├── 4. Axios 拦截器（添加 token、lang 等）（src/utils/http/axios/index.ts）
+    │     │     │     │
+    │     │     │     ├── 5. 后端 Controller → Service → DB
+    │     │     │     │
+    │     │     │     └── 6. 响应 { code: '0', result, msg }
+    │     │     │
+    │     │     └── 7. BasicTable 更新数据、分页（src/components/Table/）
+    │     │
+    │     └── 2b. 直接 API 调用（save/edit/delete）
+    │           │
+    │           ├── 3. const { success, msg } = await apiCall()（xxxApi.ts）
+    │           │
+    │           ├── 4. createMessage.success/error（src/hooks/web/useMessage.tsx）
+    │           │
+    │           └── 5. reload() 或 router.push()
+    │
+    └── 8. 用户界面更新（Vue 响应式更新）
+四、输出要求
+将前端探索发现记录到 research.md 的"前端架构分析"章节，必须包含：
+
+页面清单：页面路径、结构模式（Pattern A/B）、变更类型
+组件层级关系图：ASCII 格式的组件树
+API 函数清单：函数名、HTTP 方法、后端端点、请求/响应类型
+状态管理策略：Vuex 模块 + 组件级 ref 清单
+路由配置清单：路由路径、name、meta 信息（新增页面时）
+Hooks 和公共组件依赖清单
+前后端交互流程图
+标注需要新增/修改的组件和文件路径
+五、降级策略
+场景	降级方案
+graphify 前端图谱不可用	使用 Grep + Glob 手动探索（见第二章 2.2）
+前端源码目录不存在	提示用户并跳过前端发现步骤
+API 映射文件不存在	直接从 API 文件和后端端点推断
+代码库为空	提示用户代码库内容有限，大部分发现将是"需要新增开发"

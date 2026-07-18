@@ -1,0 +1,90 @@
+{
+  "lifecycle": "draft",
+  "artifact_id": "artifact_0cef31babce64982abc6aec64d47d6cd",
+  "artifact_type": "canon_evidence_report",
+  "producer": "canon_evidence",
+  "task_id": "general_run_20260718_005757_e9d7a3",
+  "run_id": "general_run_20260718_005757_e9d7a3",
+  "call_id": "call_230982993c94429c919beee0b97e905e",
+  "input_sha256": "1117f1ca77bf02dd97178170286b805b9a33b2da56cb0838779b01b24ff64167",
+  "content_sha256": "802e3296a6ad289e9fa0e26c703e228733521da80ac3138d61d62949faeea0a4",
+  "payload": {
+    "lifecycle": "draft",
+    "artifact_type": "canon_evidence_report",
+    "answer": "秦浩轩在面临威胁时，总体表现出冷静沉着、强硬果断、善于思考与权衡的特点。面对口头挑衅或压迫性目光时，他通常以更强势的姿态或眼神反击，不退让；在生死危机中，能迅速从震惊中恢复并谋划应对之策；面对权威压力，表面恭敬有礼，内心则保持审慎与独立判断。",
+    "confidence": "high",
+    "evidence": [
+      {
+        "claim": "面对张狂的当众报复威胁，秦浩轩以一眼之威便令张狂哆嗦离去，完全不被言语威胁所动。",
+        "source_ref": "manuscript:chapter-333d692f21224f15a5735317ee278132:?",
+        "excerpt": "秦浩轩在报名薄上写上自己的大名，身后传来张狂近乎嚣张的声音：“秦浩轩，我明天一定会被神仙们选中，到时候有些帐我们好好算一算。”……张狂但觉秦浩轩这一眼直抵心房，看穿灵魂，忍不住一个哆嗦，起了一身鸡皮疙瘩……怨毒的瞪了秦浩轩一眼，在众多看热闹的人前默默转身离去。"
+      },
+      {
+        "claim": "制止张狂殴打他人时，用更强硬的威胁直接压服对方，“你若敢踢下去，我就把你绑了丢小屿山喂狼去”，促使张狂被迫收脚。",
+        "source_ref": "knowledge:event-382f1715dbfd4bbfa985ef45e33919e6",
+        "excerpt": "秦浩轩的声音就像一把无形的枷锁，逼得张狂硬生生收回要踢出去的脚。张狂听的面色难看，却也知道翻脸只能吃亏。"
+      },
+      {
+        "claim": "被不死巫魔魔念入侵夺舍的生死关头，秦浩轩在震惊后迅速沉下心来，开始思索应对之策，而非六神无主。",
+        "source_ref": "manuscript:chapter-56642dbc72844155aa7da04e39ff6c7b:0-240",
+        "excerpt": "若是其他人被老谋深算的不死巫魔如此暗算，此时说不定已吓得六神无主，任由不死巫魔夺舍了，但秦浩轩在震惊之后很快沉下心来，开始思索怎么应对不死巫魔入侵的魔念。"
+      },
+      {
+        "claim": "在与张狂的生死搏杀中，虽受重创，仍高速转动大脑权衡利弊，敢于冒着伤害仙苗根基的风险使用绝仙毒谷无形剑。",
+        "source_ref": "manuscript:chapter-cb3258951a394eb38396278689157272:0-240",
+        "excerpt": "秦浩轩就地翻滚的同时大脑还在高速转动，底牌！底牌！底牌！绝仙毒谷无形剑！使用无形剑可能会伤害到仙苗的根，断送未来的修仙之路，可现在若不使用……"
+      },
+      {
+        "claim": "被许长老居高临下质问时，心中闪过无数念头，但表面依旧保持平静，恭敬行礼应答。",
+        "source_ref": "manuscript:chapter-93a3eff7b3e347f784894ad3e2cba827:0-240",
+        "excerpt": "许长老走到秦浩轩身前，居高临下的态度不再然的从体内散发了出来。秦浩轩心中闪过无数个念头，为何这位长老会前来找自己，但还是尽量让自己面色平静，站起身，恭敬的行了一个礼道：“弟子正是秦浩轩。”"
+      },
+      {
+        "claim": "在张狂与李靖发生激烈争吵时，秦浩轩面色如常，以旁观者姿态乐见其成，保持冷静和耐心。",
+        "source_ref": "manuscript:chapter-81f477ae875e4bacbfe4cc8dee3af24a:11-251",
+        "excerpt": "在他们两方的唇枪舌剑中，秦浩轩面色如常，张狂和李靖都和他有嫌隙，他们两人若能狗咬狗打起来，他当然是乐见其成的！"
+      }
+    ],
+    "conflicting_evidence": [],
+    "unknowns": [
+      "面对非直接口头威胁（如暗算、阴谋）时的具体反应在现有证据中未见描述，无法确定其是否一贯保持冷静。",
+      "在受到更强大敌人直接压制且无法动用底牌时的心理与行为模式，现有证据未充分覆盖。"
+    ],
+    "source_refs": [
+      "manuscript:chapter-6731cb28cf9c4be3b1c65682f7355b8e:0-3301",
+      "manuscript:chapter-f2a0007303a74f769e1609124c30da6b:111-351",
+      "manuscript:chapter-4ff5605bfac64820aa8331b4d3bd1d09:11-251",
+      "manuscript:chapter-58173e915a184489a8c074f845a4b626:48-288",
+      "manuscript:chapter-56642dbc72844155aa7da04e39ff6c7b:0-240",
+      "manuscript:chapter-a1a2d3ec95b24b62a193b1cee2563ea9:0-240",
+      "manuscript:chapter-81f477ae875e4bacbfe4cc8dee3af24a:11-251",
+      "manuscript:chapter-4725a72c9d3042f5b67a07f3daab223e:0-240",
+      "manuscript:chapter-cb3258951a394eb38396278689157272:0-240",
+      "manuscript:chapter-93a3eff7b3e347f784894ad3e2cba827:0-240",
+      "manuscript:chapter-3fb65d89870445169cbf29917c0aadf9:0-240",
+      "manuscript:chapter-cdb5c3ef2e564affb249aedd5f14d311:0-240",
+      "manuscript:chapter-c2a115ffffcd4f51a0440a7b46480bdb:0-240",
+      "retrieval_5ee6e225766549789d824dc74b0b2970"
+    ],
+    "warnings": [
+      "部分证据来自知识抽取摘要而非原始章节全文，可能存在场景不完整，但均为已确认知识。注意，第一个证据‘张狂当众挑衅’的原文摘录来自已确认事件卡，章节 ID 为 chapter-333d692f21224f15a5735317ee278132，但未提供该章节的原始文本片段精确起止位置，已尽可能引用知识卡片给出的原文。"
+    ]
+  },
+  "source_refs": [
+    "manuscript:chapter-6731cb28cf9c4be3b1c65682f7355b8e:0-3301",
+    "manuscript:chapter-f2a0007303a74f769e1609124c30da6b:111-351",
+    "manuscript:chapter-4ff5605bfac64820aa8331b4d3bd1d09:11-251",
+    "manuscript:chapter-58173e915a184489a8c074f845a4b626:48-288",
+    "manuscript:chapter-56642dbc72844155aa7da04e39ff6c7b:0-240",
+    "manuscript:chapter-a1a2d3ec95b24b62a193b1cee2563ea9:0-240",
+    "manuscript:chapter-81f477ae875e4bacbfe4cc8dee3af24a:11-251",
+    "manuscript:chapter-4725a72c9d3042f5b67a07f3daab223e:0-240",
+    "manuscript:chapter-cb3258951a394eb38396278689157272:0-240",
+    "manuscript:chapter-93a3eff7b3e347f784894ad3e2cba827:0-240",
+    "manuscript:chapter-3fb65d89870445169cbf29917c0aadf9:0-240",
+    "manuscript:chapter-cdb5c3ef2e564affb249aedd5f14d311:0-240",
+    "manuscript:chapter-c2a115ffffcd4f51a0440a7b46480bdb:0-240",
+    "retrieval_5ee6e225766549789d824dc74b0b2970"
+  ],
+  "created_at": "2026-07-18T01:00:24.522003Z"
+}

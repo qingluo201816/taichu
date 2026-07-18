@@ -1,0 +1,81 @@
+{
+  "lifecycle": "draft",
+  "artifact_id": "artifact_a9b579554f564c46acf5dcffefd2032f",
+  "artifact_type": "story_architecture",
+  "producer": "story_architecture",
+  "task_id": "general_run_20260718_005432_c80e5d",
+  "run_id": "general_run_20260718_005432_c80e5d",
+  "call_id": "call_1abf2153dc634495a71c80984dfa413c",
+  "input_sha256": "812e95fbfd7f70363e375a45e4c4c117cd1d575f61d6ec161927f4428dc52e78",
+  "content_sha256": "6d987ccde744186c54fd8c367025ba2252077b19897f029006741e4f869a916b",
+  "payload": {
+    "lifecycle": "draft",
+    "artifact_type": "story_architecture",
+    "overview": "以秦浩轩发现小金出现妖气为起点，设计的三步冲突升级框架：从察觉异变引发内心挣扎，到妖气外泄导致外部危机，最终被迫与宗门对抗，推动角色关系与情节转折。",
+    "stage_goals": [
+      "第一步：疑妖初现 - 秦浩轩察觉小金妖气，陷入内心挣扎，怀疑其来历。",
+      "第二步：妖迹暴露 - 妖气被同门发现并举报，秦浩轩面临宗门压力，冲突转向外部。",
+      "第三步：决裂与新生 - 秦浩轩为保护小金与宗门对抗，关系破裂，走向新道路。"
+    ],
+    "plotlines": [
+      "主线：秦浩轩与小金的关系从信赖到怀疑再到共患难，最终联合对抗外界。",
+      "支线：太初教内部对妖族的立场与对秦浩轩的打压。"
+    ],
+    "escalation": [
+      "第一步（内部冲突）：秦浩轩在修炼时感知到小金体内滋生出一丝妖气，这股气息令他不安，开始怀疑小金的来历，内心在信任与恐惧间挣扎。信息释放点：秦浩轩回忆起小金幼时异象，推断其可能非寻常蛇类。",
+      "第二步（外部冲突）：小金在一次外出中妖气外泄，被张狂察觉并向教中长老告发，长老要求秦浩轩交出小金接受审查。秦浩轩面临抉择，冲突从内部转向外部对抗。因果递进：第一步的内心不安导致小金未被及时隐藏，终被他人发现。",
+      "第三步（对抗升级）：审讯中，秦浩轩拒绝交出小金，与张狂、执法长老发生冲突，最终使用小金妖力突围，与小金一同逃离太初教，与昔日同门彻底决裂。信息释放点：揭露小金实为远古妖族血脉，秦浩轩决定走上亦仙亦妖之路。"
+    ],
+    "foreshadowing": [
+      "小金咬伤秦浩轩获得附体能力，暗示其并非凡物。",
+      "小屿山深处有仙魔大战遗迹，小金可能与之有关。",
+      "太初教对妖物零容忍的政策铺垫。"
+    ],
+    "dependencies": [
+      "必须基于秦浩轩已与小金灵魂附体的设定。",
+      "需利用已有角色如张狂、李靖作为冲突对手。",
+      "冲突递进需体现因果：内心不安导致暴露，暴露引发对抗。"
+    ],
+    "source_refs": [
+      "manuscript:manifest",
+      "manuscript:outline",
+      "manuscript:chapter-360f60d8aee34bbbb279c28b989bf59e:0-240",
+      "manuscript:chapter-6731cb28cf9c4be3b1c65682f7355b8e:0-240",
+      "manuscript:chapter-9a428c2a8b3440a387629387c9d52b61:0-240",
+      "manuscript:chapter-f2a0007303a74f769e1609124c30da6b:111-351",
+      "manuscript:chapter-4ff5605bfac64820aa8331b4d3bd1d09:11-251",
+      "manuscript:chapter-58173e915a184489a8c074f845a4b626:48-288",
+      "manuscript:chapter-56642dbc72844155aa7da04e39ff6c7b:0-240",
+      "manuscript:chapter-c6183045982e46ecbfb1bf47f7286d06:0-240",
+      "manuscript:chapter-a1a2d3ec95b24b62a193b1cee2563ea9:0-240",
+      "manuscript:chapter-81f477ae875e4bacbfe4cc8dee3af24a:11-251",
+      "manuscript:chapter-4725a72c9d3042f5b67a07f3daab223e:0-240",
+      "manuscript:chapter-cb3258951a394eb38396278689157272:0-240",
+      "retrieval_9bf449dc7faa4d3da82cfb6d231fe327",
+      "knowledge:character-15ea01664af34da395391a0f43e116c4"
+    ],
+    "warnings": [
+      "小金角色无详细知识卡，仅从第一章推断为其附身的小蛇。",
+      "冲突框架不包含具体章节定位，仅作宏观结构。"
+    ]
+  },
+  "source_refs": [
+    "manuscript:manifest",
+    "manuscript:outline",
+    "manuscript:chapter-360f60d8aee34bbbb279c28b989bf59e:0-240",
+    "manuscript:chapter-6731cb28cf9c4be3b1c65682f7355b8e:0-240",
+    "manuscript:chapter-9a428c2a8b3440a387629387c9d52b61:0-240",
+    "manuscript:chapter-f2a0007303a74f769e1609124c30da6b:111-351",
+    "manuscript:chapter-4ff5605bfac64820aa8331b4d3bd1d09:11-251",
+    "manuscript:chapter-58173e915a184489a8c074f845a4b626:48-288",
+    "manuscript:chapter-56642dbc72844155aa7da04e39ff6c7b:0-240",
+    "manuscript:chapter-c6183045982e46ecbfb1bf47f7286d06:0-240",
+    "manuscript:chapter-a1a2d3ec95b24b62a193b1cee2563ea9:0-240",
+    "manuscript:chapter-81f477ae875e4bacbfe4cc8dee3af24a:11-251",
+    "manuscript:chapter-4725a72c9d3042f5b67a07f3daab223e:0-240",
+    "manuscript:chapter-cb3258951a394eb38396278689157272:0-240",
+    "retrieval_9bf449dc7faa4d3da82cfb6d231fe327",
+    "knowledge:character-15ea01664af34da395391a0f43e116c4"
+  ],
+  "created_at": "2026-07-18T00:55:48.808616Z"
+}

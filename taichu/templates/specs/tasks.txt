@@ -1,0 +1,67 @@
+实现计划
+前后端任务标注规范
+规则: 当规格涉及前端和后端协同开发时，使用 [FE] / [BE] 前缀标注任务所属层级。
+
+标注位置: 在任务序号和描述之间标注。
+
+示例:
+
+- [ ] 1. 付款管理功能开发
+- [ ] 1.1 [BE] 在 PaymentController 中新增付款申请接口
+  - _需求: 1.1_
+  - _边界: {backend-module}/adapter/web_
+- [ ] 1.2 [BE] 在 PaymentServiceImpl 中实现付款申请逻辑
+  - _需求: 1.1_
+  - _边界: {backend-module}/service_
+- [ ] 1.3 [FE] 在 payment.ts 中新增 submitPayment API 函数
+  - _需求: 1.1_
+  - _边界: {frontend-module}/src/api/modules_
+  - _依赖: 1.1, 1.2_
+- [ ] 1.4 [FE] 在 payment/config.ts 中新增操作列和按钮配置
+  - _需求: 1.1_
+  - _边界: {frontend-module}/src/views/pages_
+  - _依赖: 1.3_
+- [ ] 1.5 [FE] 在 payment/Index.tsx 中绑定付款申请事件
+  - _需求: 1.1_
+  - _边界: {frontend-module}/src/views/pages_
+  - _依赖: 1.3, 1.4_
+推荐任务顺序: 后端 API 定义 → 后端逻辑实现 → 前端 API 函数 → 前端配置 → 前端页面绑定
+
+纯后端或纯前端规格: 可省略 [FE] / [BE] 前缀，仅当同时涉及前后端时才需要标注。
+
+依赖关系: 前端任务通常依赖对应的后端任务完成（至少 API 契约已定义）。使用 _依赖:_ 显式声明。
+
+Graphify 模块标注规范
+规则: 每个任务必须标注其关联的 Graphify 模块，确保任务与图谱模块边界对齐。
+
+标注方式: 使用 _Boundary:_ 标签后跟图谱节点名称。
+
+示例:
+
+- [ ] 1. 在 {backend-module} 新增 PaymentStatusValidator
+  - _需求: 1.1_
+  - _边界: {backend-module}/adapter/validator_
+  - _Graphify: PaymentValidatorCluster_
+禁止: 产生跨层依赖任务（如 Domain → Infrastructure 反向依赖），违反时 Reviewer 应驳回。
+
+图谱同步: 如果任务新增/修改了模块关系，需在任务描述中标注"需更新 Graphify"。
+
+任务格式模板
+使用适合工作分解的模式：
+
+仅主任务
+ {{NUMBER}}. {{TASK_DESCRIPTION}}{{PARALLEL_MARK}}
+{{DETAIL_ITEM_1}} （仅在需要时包含详情。如果任务独立，省略子弹项。）
+需求: {{REQUIREMENT_IDS}}
+主任务 + 子任务结构
+ {{MAJOR_NUMBER}}. {{MAJOR_TASK_SUMMARY}}
+ {{MAJOR_NUMBER}}.{{SUB_NUMBER}} {{SUB_TASK_DESCRIPTION}}{{SUB_PARALLEL_MARK}}
+{{DETAIL_ITEM_1}}
+{{DETAIL_ITEM_2}}
+{{OBSERVABLE_COMPLETION_ITEM}} （至少一个详情项应说明此任务的可观察完成条件。）
+需求: {{REQUIREMENT_IDS}} （仅 ID；不要添加描述或括号。）
+边界: {{COMPONENT_NAMES}} （仅适用于 (P) 任务。当范围显而易见时省略。）
+依赖: {{TASK_IDS}} （仅适用于非显而易见的跨边界依赖。大多数任务省略此项。）
+并行标记: 仅附加到可以并行执行的任务的 (P)。在 --sequential 模式下运行时省略标记。
+
+可选测试覆盖: 当子任务是与验收标准挂钩的可延期测试工作时，将复选框标记为 - [ ]* 并在详情子弹中解释引用的需求。

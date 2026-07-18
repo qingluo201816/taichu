@@ -1,0 +1,54 @@
+description: 针对需求、设计和任务验证实现 allowed-tools: Read, Task argument-hint: [功能名称] [任务编号]
+实现验证
+解析参数
+功能名称: $1（可选）
+任务编号: $2（可选）
+自动检测逻辑
+在调用子 Agent 前执行检测:
+
+如果没有参数（$1 为空）:
+
+从对话历史中解析 /kiro:spec-impl <feature> [tasks] 模式
+或扫描 .kiro/specs/*/tasks.md 查找 [x] 复选框
+将检测到的功能和任务传递给子 Agent
+如果只有功能（$1 存在，$2 为空）:
+
+读取 .kiro/specs/$1/tasks.md 并找到所有 [x] 复选框
+将功能和检测到的任务传递给子 Agent
+如果两者都提供（$1 和 $2 都存在）:
+
+直接传递给子 Agent，无需检测
+调用子 Agent
+将验证委托给 validate-impl-agent:
+
+使用 Task 工具调用子 Agent，传入文件路径模式:
+
+Task(
+  subagent_type="validate-impl-agent",
+  description="验证实现",
+  prompt="""
+Feature: {$1 or auto-detected}
+Target tasks: {$2 or auto-detected}
+Mode: {auto-detect, feature-all, or explicit}
+
+File patterns to read:
+- .kiro/specs/{feature}/*.{json,md}
+- .kiro/steering/*.md
+
+Validation scope: {based on detection results}
+"""
+)
+显示结果
+向用户展示子 Agent 的摘要，然后提供下一步指导:
+
+下一步指导
+如果是 GO 决策:
+
+实现已验证并准备就绪
+继续部署或进入下一个功能
+如果是 NO-GO 决策:
+
+解决列出的关键问题
+重新运行 /kiro:spec-impl <feature> [tasks] 进行修复
+用 /kiro:validate-impl [feature] [tasks] 重新验证
+注意: 推荐在实现后进行验证，以确保规格一致性和质量。
