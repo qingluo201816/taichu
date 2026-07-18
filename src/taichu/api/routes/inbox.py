@@ -77,12 +77,9 @@ async def api_read_inbox(
     return InboxResponse(
         ideas=[_idea_info(idea) for idea in snapshot.ideas],
         pending_facts=[
-            _pending_fact_info(pending_fact)
-            for pending_fact in snapshot.pending_facts
+            _pending_fact_info(pending_fact) for pending_fact in snapshot.pending_facts
         ],
-        saved_ai_cards=[
-            _saved_ai_card_info(card) for card in snapshot.saved_ai_cards
-        ],
+        saved_ai_cards=[_saved_ai_card_info(card) for card in snapshot.saved_ai_cards],
         chapter_issues=[
             _chapter_issue_info(issue) for issue in snapshot.chapter_issues
         ],
@@ -232,7 +229,7 @@ async def api_create_mvp_issue(
     """Create a manual issue item."""
     try:
         item = await service.create_issue(request.data)
-    except ValidationError as error:
+    except (InboxValidationError, ValidationError) as error:
         raise _bad_request(_validation_message(error)) from error
     return MVPInboxIssueResponse(item=item)
 
@@ -248,7 +245,7 @@ async def api_patch_mvp_issue(
         item = await service.patch_issue(item_id, request.updates)
     except InboxItemNotFoundError as error:
         raise _not_found(str(error)) from error
-    except ValidationError as error:
+    except (InboxValidationError, ValidationError) as error:
         raise _bad_request(_validation_message(error)) from error
     return MVPInboxIssueResponse(item=item)
 
@@ -310,9 +307,7 @@ async def api_ignore_pending_fact(
         raise HTTPException(status_code=404, detail=str(error)) from error
     except InvalidStateTransitionError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
-    return PendingFactActionResponse(
-        pending_fact=_pending_fact_info(pending_fact)
-    )
+    return PendingFactActionResponse(pending_fact=_pending_fact_info(pending_fact))
 
 
 def _knowledge_type(value: str) -> StructuredKnowledgeType:

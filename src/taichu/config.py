@@ -37,6 +37,15 @@ class Settings(BaseSettings):
     retrieval_policies_json: str = "{}"
     retrieval_default_relevance_strategy: str = "mongo_lexical"
 
+    qdrant_url: str = "http://127.0.0.1:6333"
+    qdrant_collection: str = "taichu_knowledge_vectors"
+    qdrant_api_key: SecretStr = SecretStr("")
+
+    embedding_base_url: str = "http://127.0.0.1:8011/v1"
+    embedding_model_id: str = "Qwen3-Embedding-4B-Q4_K_M"
+    embedding_dimensions: int = 2560
+    embedding_request_timeout_seconds: float = 120
+
     mongodb_home: Path | None = None
     mongodb_data_dir: Path | None = None
     mongodb_log_dir: Path | None = None

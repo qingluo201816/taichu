@@ -27,11 +27,21 @@ from tests.fakes import InMemoryKnowledgeRepository
 class _DirectAnswerGateway:
     def __init__(self) -> None:
         self.requests: list[LLMRequest] = []
+        self.fail_next_orchestration = False
 
     async def complete(self, request: LLMRequest) -> LLMResponse:
         self.requests.append(request)
+        if self.fail_next_orchestration and request.task_name in {
+            "general_writing_orchestrator.plan",
+            "general_writing_orchestrator.replan",
+        }:
+            self.fail_next_orchestration = False
+            raise RuntimeError("一次性模型错误")
         payload: dict[str, object]
-        if request.task_name == "general_writing_orchestrator.plan":
+        if request.task_name in {
+            "general_writing_orchestrator.plan",
+            "general_writing_orchestrator.replan",
+        }:
             payload = {
                 "rationale": "这是不依赖小说事实的通用写作方法问题，可以直接回答。",
                 "direct_response": "可以先明确场景目标，再安排冲突和信息释放。",
@@ -96,9 +106,7 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
         detail = await self.client.get(
             f"/api/agent-workbench/general-assistant/runs/{run_id}"
         )
-        listing = await self.client.get(
-            "/api/agent-workbench/general-assistant/runs"
-        )
+        listing = await self.client.get("/api/agent-workbench/general-assistant/runs")
         traces = await self.client.get(
             f"/api/agent-workbench/general-assistant/runs/{run_id}/traces"
         )
@@ -138,3 +146,86 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
                 "general_writing_orchestrator.verify",
             ],
         )
+
+    async def test_failed_run_resume_clears_recovered_error(self) -> None:
+        self.gateway.fail_next_orchestration = True
+        failed_response = await self.client.post(
+            "/api/agent-workbench/general-assistant/runs",
+            json={"user_goal": "这次调用会先遇到一次瞬时错误。"},
+        )
+        self.assertEqual(failed_response.status_code, 200)
+        failed = failed_response.json()["run"]
+        self.assertEqual(failed["status"], "failed")
+        self.assertEqual(failed["errors"], ["一次性模型错误"])
+
+        resumed_response = await self.client.post(
+            f"/api/agent-workbench/general-assistant/runs/{failed['run_id']}/resume",
+            json={},
+        )
+        self.assertEqual(resumed_response.status_code, 200)
+        resumed = resumed_response.json()["run"]
+        self.assertEqual(resumed["status"], "completed")
+        self.assertEqual(resumed["errors"], [])
+
+    async def test_conversation_keeps_multiple_turns_and_can_be_deleted(self) -> None:
+        first_response = await self.client.post(
+            "/api/agent-workbench/general-assistant/runs",
+            json={"user_goal": "第一轮：怎样安排场景冲突？"},
+        )
+        self.assertEqual(first_response.status_code, 200)
+        first_run = first_response.json()["run"]
+        conversation_id = first_run["task_id"]
+        self.assertTrue(conversation_id.startswith("general_conversation_"))
+
+        second_response = await self.client.post(
+            "/api/agent-workbench/general-assistant/runs",
+            json={
+                "user_goal": "第二轮：把冲突升级得更自然一些。",
+                "conversation_id": conversation_id,
+            },
+        )
+        self.assertEqual(second_response.status_code, 200)
+        second_run = second_response.json()["run"]
+        self.assertEqual(second_run["task_id"], conversation_id)
+        self.assertEqual(
+            [message["role"] for message in second_run["messages"]],
+            ["user", "assistant", "user"],
+        )
+        self.assertEqual(
+            second_run["messages"][0]["content"],
+            "第一轮：怎样安排场景冲突？",
+        )
+        self.assertEqual(
+            second_run["messages"][-1]["content"],
+            "第二轮：把冲突升级得更自然一些。",
+        )
+        self.assertIn("冲突升级", second_run["messages"][1]["content"])
+
+        listing = await self.client.get(
+            "/api/agent-workbench/general-assistant/conversations"
+        )
+        detail = await self.client.get(
+            f"/api/agent-workbench/general-assistant/conversations/{conversation_id}"
+        )
+        self.assertEqual(listing.status_code, 200)
+        self.assertEqual(listing.json()["total"], 1)
+        self.assertEqual(listing.json()["conversations"][0]["turn_count"], 2)
+        self.assertEqual(
+            listing.json()["conversations"][0]["conversation_id"],
+            conversation_id,
+        )
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(
+            [run["run_id"] for run in detail.json()["runs"]],
+            [first_run["run_id"], second_run["run_id"]],
+        )
+
+        deleted = await self.client.delete(
+            f"/api/agent-workbench/general-assistant/conversations/{conversation_id}"
+        )
+        empty_listing = await self.client.get(
+            "/api/agent-workbench/general-assistant/conversations"
+        )
+        self.assertEqual(deleted.status_code, 200)
+        self.assertEqual(deleted.json()["deleted_count"], 2)
+        self.assertEqual(empty_listing.json()["total"], 0)

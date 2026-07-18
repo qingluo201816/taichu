@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 from datetime import UTC, datetime
 from typing import Any, TypedDict
 from uuid import uuid4
@@ -14,6 +15,7 @@ from taichu.application.contracts.general_agent_run import GeneralAgentRunReposi
 from taichu.application.general_agent.events import GeneralAgentEventCenter
 from taichu.application.general_agent.executor import DynamicDagExecutor
 from taichu.application.general_agent.models import (
+    GeneralAgentConversation,
     GeneralAgentHumanRequest,
     GeneralAgentLifecycleEvent,
     GeneralAgentMessage,
@@ -68,6 +70,7 @@ class GeneralAgentRuntimeService:
         self._policy_service = policy_service
         self._tasks: dict[str, asyncio.Task[GeneralAgentRun]] = {}
         self._locks: dict[str, asyncio.Lock] = {}
+        self._conversation_locks: dict[str, asyncio.Lock] = {}
         self._shutting_down = False
         self._graph = self._build_graph()
 
@@ -75,6 +78,7 @@ class GeneralAgentRuntimeService:
         self,
         *,
         user_goal: str,
+        conversation_id: str | None = None,
         scope: GeneralAgentScope | None = None,
         author_constraints: list[str] | None = None,
         external_access_allowed: bool = False,
@@ -84,43 +88,56 @@ class GeneralAgentRuntimeService:
         if not goal:
             raise GeneralAgentRuntimeError("任务目标不能为空。")
         timestamp = datetime.now(UTC)
-        run_id = (
-            f"general_run_{timestamp.strftime('%Y%m%d_%H%M%S')}_"
-            f"{uuid4().hex[:6]}"
+        run_id = f"general_run_{timestamp.strftime('%Y%m%d_%H%M%S')}_{uuid4().hex[:6]}"
+        resolved_conversation_id = (
+            conversation_id.strip()
+            if conversation_id is not None
+            else (
+                f"general_conversation_{timestamp.strftime('%Y%m%d_%H%M%S')}_"
+                f"{uuid4().hex[:6]}"
+            )
         )
+        if not resolved_conversation_id:
+            raise GeneralAgentRuntimeError("对话标识不能为空。")
         created_at = timestamp.isoformat().replace("+00:00", "Z")
-        run = GeneralAgentRun(
-            run_id=run_id,
-            task_id=run_id,
-            user_goal=goal,
-            scope=scope or GeneralAgentScope(),
-            author_constraints=author_constraints or [],
-            external_access_allowed=external_access_allowed,
-            limits=limits or GeneralAgentRunLimits(),
-            messages=[
-                GeneralAgentMessage(
-                    role="user",
-                    content=goal,
-                    created_at=created_at,
-                )
-            ],
-            lifecycle_events=[
-                GeneralAgentLifecycleEvent(
-                    status=GeneralAgentRunStatus.INIT,
-                    reason="任务已创建。",
-                    created_at=created_at,
-                )
-            ],
-            created_at=created_at,
-            updated_at=created_at,
-            started_at=created_at,
+        conversation_lock = self._conversation_locks.setdefault(
+            resolved_conversation_id,
+            asyncio.Lock(),
         )
-        return await self._checkpoint(run, "run_created")
+        async with conversation_lock:
+            messages = await self._messages_for_new_turn(
+                resolved_conversation_id,
+                goal=goal,
+                created_at=created_at,
+                existing_conversation=conversation_id is not None,
+            )
+            run = GeneralAgentRun(
+                run_id=run_id,
+                task_id=resolved_conversation_id,
+                user_goal=goal,
+                scope=scope or GeneralAgentScope(),
+                author_constraints=author_constraints or [],
+                external_access_allowed=external_access_allowed,
+                limits=limits or GeneralAgentRunLimits(),
+                messages=messages,
+                lifecycle_events=[
+                    GeneralAgentLifecycleEvent(
+                        status=GeneralAgentRunStatus.INIT,
+                        reason="任务已创建。",
+                        created_at=created_at,
+                    )
+                ],
+                created_at=created_at,
+                updated_at=created_at,
+                started_at=created_at,
+            )
+            return await self._checkpoint(run, "run_created")
 
     async def run(
         self,
         *,
         user_goal: str,
+        conversation_id: str | None = None,
         scope: GeneralAgentScope | None = None,
         author_constraints: list[str] | None = None,
         external_access_allowed: bool = False,
@@ -128,6 +145,7 @@ class GeneralAgentRuntimeService:
     ) -> GeneralAgentRun:
         run = await self.create_run(
             user_goal=user_goal,
+            conversation_id=conversation_id,
             scope=scope,
             author_constraints=author_constraints,
             external_access_allowed=external_access_allowed,
@@ -139,6 +157,7 @@ class GeneralAgentRuntimeService:
         self,
         *,
         user_goal: str,
+        conversation_id: str | None = None,
         scope: GeneralAgentScope | None = None,
         author_constraints: list[str] | None = None,
         external_access_allowed: bool = False,
@@ -146,6 +165,7 @@ class GeneralAgentRuntimeService:
     ) -> GeneralAgentRun:
         run = await self.create_run(
             user_goal=user_goal,
+            conversation_id=conversation_id,
             scope=scope,
             author_constraints=author_constraints,
             external_access_allowed=external_access_allowed,
@@ -193,7 +213,10 @@ class GeneralAgentRuntimeService:
                 approve=approve,
                 second_confirmation=second_confirmation,
             )
-        elif run.status in {GeneralAgentRunStatus.FAILED, GeneralAgentRunStatus.TIMEOUT}:
+        elif run.status in {
+            GeneralAgentRunStatus.FAILED,
+            GeneralAgentRunStatus.TIMEOUT,
+        }:
             node_runs = [
                 item.model_copy(
                     update={
@@ -229,7 +252,12 @@ class GeneralAgentRuntimeService:
                 if run.plan is not None and has_retryable_nodes
                 else GeneralAgentRunStatus.REPLANNING
             )
-            run = run.model_copy(update={"node_runs": node_runs})
+            run = run.model_copy(
+                update={
+                    "node_runs": node_runs,
+                    "errors": [],
+                }
+            )
             run = await self._refresh_author_grants(run)
             run = _transition(run, target, "作者请求从最近检查点恢复。")
         else:
@@ -245,9 +273,7 @@ class GeneralAgentRuntimeService:
         if run.status in _TERMINAL_STATUSES:
             return run
         run = _transition(run, GeneralAgentRunStatus.CANCELLED, "作者取消任务。")
-        run = run.model_copy(
-            update={"finished_at": now_iso(), "resumable": False}
-        )
+        run = run.model_copy(update={"finished_at": now_iso(), "resumable": False})
         return await self._checkpoint(run, "run_cancelled")
 
     async def get(self, run_id: str) -> GeneralAgentRun:
@@ -259,12 +285,68 @@ class GeneralAgentRuntimeService:
         page: int = 1,
         page_size: int = 20,
         status: str = "all",
-    ) -> tuple[list[GeneralAgentRun], int]:
+    ) -> tuple[builtins.list[GeneralAgentRun], int]:
         return await self._repository.list_runs(
             page=page,
             page_size=page_size,
             status=status,
         )
+
+    async def list_conversations(
+        self,
+        *,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[builtins.list[GeneralAgentConversation], int]:
+        runs = await self._all_runs()
+        grouped: dict[str, builtins.list[GeneralAgentRun]] = {}
+        for run in runs:
+            grouped.setdefault(run.task_id, []).append(run)
+
+        conversations: builtins.list[GeneralAgentConversation] = []
+        for conversation_id, items in grouped.items():
+            ordered = sorted(items, key=lambda item: (item.created_at, item.run_id))
+            first = ordered[0]
+            latest = ordered[-1]
+            conversations.append(
+                GeneralAgentConversation(
+                    conversation_id=conversation_id,
+                    title=first.user_goal,
+                    status=latest.status,
+                    turn_count=len(ordered),
+                    latest_run_id=latest.run_id,
+                    created_at=first.created_at,
+                    updated_at=max(item.updated_at for item in ordered),
+                )
+            )
+
+        conversations.sort(
+            key=lambda item: (item.updated_at, item.conversation_id),
+            reverse=True,
+        )
+        start = (page - 1) * page_size
+        return conversations[start : start + page_size], len(conversations)
+
+    async def get_conversation(
+        self, conversation_id: str
+    ) -> builtins.list[GeneralAgentRun]:
+        runs = [run for run in await self._all_runs() if run.task_id == conversation_id]
+        if not runs:
+            raise GeneralAgentConversationNotFoundError(conversation_id)
+        return sorted(runs, key=lambda item: (item.created_at, item.run_id))
+
+    async def delete_conversation(self, conversation_id: str) -> int:
+        runs = await self.get_conversation(conversation_id)
+        if any(
+            (task := self._tasks.get(run.run_id)) is not None and not task.done()
+            for run in runs
+        ):
+            raise GeneralAgentRuntimeError("对话中仍有任务正在运行，请先停止当前任务。")
+        deleted_count = 0
+        for run in runs:
+            if await self.delete(run.run_id):
+                deleted_count += 1
+        return deleted_count
 
     async def delete(self, run_id: str) -> bool:
         task = self._tasks.get(run_id)
@@ -274,6 +356,63 @@ class GeneralAgentRuntimeService:
         if deleted:
             await self._event_center.delete_snapshot(run_id)
         return deleted
+
+    async def _messages_for_new_turn(
+        self,
+        conversation_id: str,
+        *,
+        goal: str,
+        created_at: str,
+        existing_conversation: bool,
+    ) -> builtins.list[GeneralAgentMessage]:
+        if not existing_conversation:
+            return [
+                GeneralAgentMessage(
+                    role="user",
+                    content=goal,
+                    created_at=created_at,
+                )
+            ]
+
+        previous_runs = await self.get_conversation(conversation_id)
+        latest = previous_runs[-1]
+        if (
+            latest.status in _ACTIVE_STATUSES
+            or latest.status is GeneralAgentRunStatus.WAITING_HUMAN
+        ):
+            raise GeneralAgentRuntimeError(
+                "当前对话仍有任务正在处理，请等待完成或先处理待确认内容。"
+            )
+
+        messages = list(latest.messages)
+        if latest.final_answer.strip() and not (
+            messages
+            and messages[-1].role == "assistant"
+            and messages[-1].content == latest.final_answer
+        ):
+            messages.append(
+                GeneralAgentMessage(
+                    role="assistant",
+                    content=latest.final_answer,
+                    created_at=latest.finished_at or latest.updated_at,
+                )
+            )
+        messages.append(
+            GeneralAgentMessage(
+                role="user",
+                content=goal,
+                created_at=created_at,
+            )
+        )
+        return messages
+
+    async def _all_runs(self) -> builtins.list[GeneralAgentRun]:
+        runs, _ = await self._repository.list_runs(
+            page=1,
+            page_size=100_000,
+            status="all",
+        )
+        return runs
 
     async def recover_interrupted(self) -> int:
         runs, _ = await self._repository.list_runs(
@@ -447,9 +586,7 @@ class GeneralAgentRuntimeService:
                         latest,
                         GeneralAgentRunStatus.CANCELLED,
                         "运行任务被取消。",
-                    ).model_copy(
-                        update={"finished_at": now_iso(), "resumable": False}
-                    )
+                    ).model_copy(update={"finished_at": now_iso(), "resumable": False})
                     await self._checkpoint(latest, "run_cancelled")
                 raise
             except TimeoutError:
@@ -458,9 +595,7 @@ class GeneralAgentRuntimeService:
                     latest,
                     GeneralAgentRunStatus.TIMEOUT,
                     "任务超过运行时限。",
-                ).model_copy(
-                    update={"finished_at": now_iso(), "resumable": True}
-                )
+                ).model_copy(update={"finished_at": now_iso(), "resumable": True})
                 return await self._checkpoint(latest, "run_timed_out")
             except Exception as error:  # noqa: BLE001
                 latest = await self._require_run(run_id)
@@ -471,9 +606,7 @@ class GeneralAgentRuntimeService:
                     latest,
                     GeneralAgentRunStatus.FAILED,
                     f"运行失败：{type(error).__name__}",
-                ).model_copy(
-                    update={"finished_at": now_iso(), "resumable": True}
-                )
+                ).model_copy(update={"finished_at": now_iso(), "resumable": True})
                 return await self._checkpoint(latest, "run_failed")
 
     def _build_graph(self) -> CompiledStateGraph:
@@ -583,6 +716,26 @@ class GeneralAgentRuntimeService:
         run = GeneralAgentRun.model_validate(state["run"])
         run = _transition(run, GeneralAgentRunStatus.VERIFYING, "校验执行结果。")
         run = await self._checkpoint(run, "verification_started")
+        blocking_failures = _blocking_failed_nodes(run)
+        if blocking_failures and run.replan_count < run.limits.max_replans:
+            issues = _execution_failure_issues(blocking_failures)
+            run = run.model_copy(
+                update={
+                    "replan_count": run.replan_count + 1,
+                    "verification_issues": issues,
+                    "final_answer": "",
+                }
+            )
+            run = _transition(
+                run,
+                GeneralAgentRunStatus.REPLANNING,
+                "执行步骤失败，进入有限自动修复。",
+            )
+            run = await self._checkpoint(run, "execution_recovery_requested")
+            return {
+                "run": run.model_dump(mode="json"),
+                "replan_guidance": _execution_replan_guidance(issues),
+            }
         verification = await self._orchestrator.verify(run)
         if verification.should_replan and run.replan_count < run.limits.max_replans:
             run = run.model_copy(
@@ -604,7 +757,7 @@ class GeneralAgentRuntimeService:
             }
         final_status = (
             GeneralAgentRunStatus.FAILED
-            if verification.outcome == "failed"
+            if blocking_failures or verification.outcome == "failed"
             else GeneralAgentRunStatus.COMPLETED
         )
         run = run.model_copy(
@@ -623,7 +776,9 @@ class GeneralAgentRuntimeService:
         status = GeneralAgentRun.model_validate(state["run"]).status
         return "plan" if status is GeneralAgentRunStatus.REPLANNING else "end"
 
-    async def _checkpoint(self, run: GeneralAgentRun, event_type: str) -> GeneralAgentRun:
+    async def _checkpoint(
+        self, run: GeneralAgentRun, event_type: str
+    ) -> GeneralAgentRun:
         updated = run.model_copy(
             update={
                 "checkpoint_revision": run.checkpoint_revision + 1,
@@ -684,6 +839,40 @@ def _replace_node(
     raise GeneralAgentRuntimeError(f"运行节点“{replacement.node_id}”不存在。")
 
 
+def _blocking_failed_nodes(run: GeneralAgentRun) -> list[GeneralAgentNodeRun]:
+    if run.plan is None:
+        return []
+    plan_nodes = {node.node_id: node for node in run.plan.nodes}
+    return [
+        node
+        for node in run.node_runs
+        if node.plan_revision == run.plan_revision
+        and node.status is GeneralAgentNodeStatus.FAILED
+        and not plan_nodes[node.node_id].continue_on_failure
+    ]
+
+
+def _execution_failure_issues(
+    nodes: list[GeneralAgentNodeRun],
+) -> list[str]:
+    return [
+        (
+            f"{node.capability_name}（节点 {node.node_id}）执行失败："
+            f"{node.error_message or node.error_type or '未知错误'}"
+        )
+        for node in nodes
+    ]
+
+
+def _execution_replan_guidance(issues: list[str]) -> str:
+    return (
+        "上一版计划已在真实运行时校验或能力执行中失败。"
+        "请根据失败位置和真实能力输入输出 Schema 重新规划；"
+        "不要假定失败节点已经成功，也不要重复原错误交接地址。失败详情："
+        + "；".join(issues)
+    )
+
+
 class GeneralAgentRuntimeError(RuntimeError):
     """通用 Runtime 请求无法按当前状态执行。"""
 
@@ -691,3 +880,8 @@ class GeneralAgentRuntimeError(RuntimeError):
 class GeneralAgentRunNotFoundError(GeneralAgentRuntimeError):
     def __init__(self, run_id: str) -> None:
         super().__init__(f"通用写作助手任务“{run_id}”不存在。")
+
+
+class GeneralAgentConversationNotFoundError(GeneralAgentRuntimeError):
+    def __init__(self, conversation_id: str) -> None:
+        super().__init__(f"通用写作助手对话“{conversation_id}”不存在。")

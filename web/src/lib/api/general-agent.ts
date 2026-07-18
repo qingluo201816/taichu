@@ -1,5 +1,8 @@
 import { apiRequest } from "@/lib/api-client";
 import type {
+  GeneralAgentConversationDeleteResponse,
+  GeneralAgentConversationListResponse,
+  GeneralAgentConversationResponse,
   GeneralAgentResumeRequest,
   GeneralAgentRunListResponse,
   GeneralAgentRunRequest,
@@ -30,6 +33,36 @@ export async function listGeneralAgentRuns(options?: {
   });
   return apiRequest<GeneralAgentRunListResponse>(
     `${PREFIX}/runs?${params.toString()}`,
+  );
+}
+
+export async function listGeneralAgentConversations(options?: {
+  page?: number;
+  pageSize?: number;
+}): Promise<GeneralAgentConversationListResponse> {
+  const params = new URLSearchParams({
+    page: String(options?.page ?? 1),
+    page_size: String(options?.pageSize ?? 30),
+  });
+  return apiRequest<GeneralAgentConversationListResponse>(
+    `${PREFIX}/conversations?${params.toString()}`,
+  );
+}
+
+export async function getGeneralAgentConversation(
+  conversationId: string,
+): Promise<GeneralAgentConversationResponse> {
+  return apiRequest<GeneralAgentConversationResponse>(
+    `${PREFIX}/conversations/${encodeURIComponent(conversationId)}`,
+  );
+}
+
+export async function deleteGeneralAgentConversation(
+  conversationId: string,
+): Promise<GeneralAgentConversationDeleteResponse> {
+  return apiRequest<GeneralAgentConversationDeleteResponse>(
+    `${PREFIX}/conversations/${encodeURIComponent(conversationId)}`,
+    { method: "DELETE" },
   );
 }
 

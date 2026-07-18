@@ -10,9 +10,12 @@
 - 项目资产根目录：`C:\Users\wyh\Desktop\Taichu\project_assets`，由 `PROJECT_ASSETS_DIR` 指定，仍保留在项目目录中。
 - MongoDB 数据目录：`E:\Taichu\MongoDB\data\db`，由 `MONGODB_DATA_DIR` 指定。
 - MongoDB 日志目录：`E:\Taichu\MongoDB\log`，由 `MONGODB_LOG_DIR` 指定。
+- Qdrant 向量索引：Docker 命名卷 `taichu_qdrant_data`，服务地址为 `http://127.0.0.1:6333`；它是可删除、可重建的外部派生索引，不属于 `project_assets/`。
+- Qwen Embedding 模型：`E:\Taichu\Models\Qwen3-Embedding-4B\Qwen3-Embedding-4B-Q4_K_M.gguf`，仅用于生成向量，不是小说事实源。
+- llama.cpp 运行时：`E:\Taichu\Runtime\llama.cpp\b10066`；Embedding 日志位于 `E:\Taichu\Embedding\log`。
 - 原小说导入资料：`E:\Taichu\导入资料\太初原小说`，只作为外部导入材料，不属于 `project_assets/`。
 - 旧知识 JSON 迁移备份：`E:\Taichu\迁移备份\知识库-20260711-151915`，包含全部 88 张旧卡和 `migration-manifest.json`，不属于运行时数据目录。
-- MongoDB 数据和日志不属于 `project_assets/` 目录树；当前开发机把它们放到 E 盘，避免数据库文件占用项目所在磁盘。更换开发机时，应同步更新当前用户环境变量与项目根目录 `.env`，不得仅修改本说明。
+- MongoDB、Qdrant、模型、推理运行时和日志都不属于 `project_assets/` 目录树；当前开发机把外部数据与大文件放到 E 盘，避免占用项目所在磁盘。更换开发机时，应同步更新项目根目录 `.env`，不得仅修改本说明。
 
 旧知识迁移已完成 `apply` 和 `finalize`：58 张有效卡作为 `lifecycle=confirmed` 写入 MongoDB，30 张已弃用重复卡仅保留在 E 盘备份，`source/knowledge/` 已完成对账并删除。存储骨架和业务代码不得重新创建该目录。
 
@@ -20,7 +23,7 @@
 
 - 修改 `project_assets/` 下的目录结构时，必须同步热更新本文件。
 - 新增、删除、移动或改变任一目录职责时，必须在同一次变更里更新“目录结构”和“目录职责说明”。
-- 文本事实源优先放在 `source/`；结构事实源归属 MongoDB；可再生成的运行产物放在 `derived/`；缓存、索引、日志和导出物放在 `generated/`。
+- 文本事实源优先放在 `source/`；结构事实源归属 MongoDB；仓库内可再生成的运行产物放在 `derived/`，缓存、日志和导出物放在 `generated/`；外部 Qdrant 索引单独记录并保持可重建。
 - 不要把可再生成的缓存或日志当作正式源数据依赖。
 - 不创建或保留 `.gitkeep`；目录由存储实现按需创建。
 - 评测基准和测试夹具放在 `tests/fixtures/evaluations/`，不得作为 `project_assets/` 的额外顶层目录。
@@ -29,7 +32,7 @@
 
 - Markdown 是唯一文本事实源，正文与需要保留作者原始表达的长文本必须以 Markdown 为准。
 - MongoDB 是唯一结构事实源，作者确认后的角色、地点、势力、物品、事件、规则等结构化事实只以 MongoDB 中 `lifecycle=confirmed` 的记录为准。
-- 未来若增加 vector、Elasticsearch、graph 或缓存，它们都只能是可重建派生层。
+- 当前 Qdrant vector 索引以及未来可能增加的 Elasticsearch、graph 或缓存都只能是可重建派生层。
 - SQLite/FTS 已废弃，不属于当前数据目录或后续架构决策。
 - AI 不得直接写入 MongoDB，必须先生成 JSON 中间态并通过 schema、来源、冲突和生命周期校验。
 - 所有非事实数据必须显式标记 `lifecycle`，取值只能是 `draft`、`confirmed`、`rejected`。
@@ -38,6 +41,7 @@
 
 - `source/`：作者和系统长期维护的本地文本源与工作区状态。正文 Markdown 是文本事实；workspace JSONL 是非事实中间态。
 - MongoDB：唯一结构事实源。它不属于 `project_assets/` 目录树，角色、地点、势力、物品、事件、规则等确认事实只存于 `knowledge_cards`。
+- Qdrant：独立向量派生层。它不属于 `project_assets/` 目录树，只保存从 MongoDB confirmed 卡生成的可重建索引；命中后必须回读 MongoDB 当前卡。
 - `derived/`：AI、Agent 和评测产生的 JSON 中间态、运行快照与审计记录，不等同于正式知识库。
 - `generated/`：按需产生的运行日志、导出临时物和可重建缓存，不得承载唯一事实。
 

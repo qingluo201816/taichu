@@ -1,5 +1,0 @@
-Requirements Document
-Project Description (Input)
-{{PROJECT_DESCRIPTION}}
-
-Requirements

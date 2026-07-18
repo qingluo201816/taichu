@@ -206,6 +206,18 @@ class GeneralAgentRun(GeneralAgentModel):
     errors: list[str] = Field(default_factory=list)
 
 
+class GeneralAgentConversation(GeneralAgentModel):
+    """由多次独立运行组成的持久化对话摘要。"""
+
+    conversation_id: str = Field(min_length=1, max_length=128)
+    title: str = Field(min_length=1, max_length=100_000)
+    status: GeneralAgentRunStatus
+    turn_count: int = Field(ge=1)
+    latest_run_id: str = Field(min_length=1, max_length=128)
+    created_at: str = Field(min_length=1)
+    updated_at: str = Field(min_length=1)
+
+
 class GeneralAgentPlanDraft(GeneralAgentExecutionPlan):
     """编排模型输出 Schema；与持久化计划保持同一业务约束。"""
 
@@ -222,7 +234,9 @@ def _ensure_acyclic(nodes: list[GeneralAgentPlanNode]) -> None:
     dependencies = {node.node_id: set(node.dependencies) for node in nodes}
     remaining = set(dependencies)
     while remaining:
-        ready = {node_id for node_id in remaining if not dependencies[node_id] & remaining}
+        ready = {
+            node_id for node_id in remaining if not dependencies[node_id] & remaining
+        }
         if not ready:
             raise ValueError("计划节点依赖形成了循环。")
         remaining -= ready

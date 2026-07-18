@@ -21,6 +21,10 @@ import {
 } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import {
+  IssueDetailContent,
+  issueStatusToneClass,
+} from "@/components/inbox/issue-detail-content";
 import { Button } from "@/components/ui/button";
 import {
   confirmInboxPendingFact,
@@ -33,6 +37,7 @@ import {
   patchInboxIssue,
   patchInboxPendingFact,
 } from "@/lib/api/mvp";
+import { createInboxIssueTemplate } from "@/lib/inbox-issue-format";
 import type {
   InboxPriority,
   InboxTab,
@@ -53,7 +58,7 @@ const tabs: Array<{ value: InboxTab; label: string }> = [
 
 type InboxEntry = MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue;
 type InboxEntryTab = Exclude<InboxTab, "all">;
-type InboxStatusFilter = "all" | "todo" | "processed";
+type InboxStatusFilter = "all" | "todo" | "processed" | "deprecated";
 type InboxPriorityFilter = InboxPriority | "all";
 type InboxToastState = {
   id: number;
@@ -83,6 +88,7 @@ const statusFilters: Array<{ value: InboxStatusFilter; label: string }> = [
   { value: "all", label: "全部状态" },
   { value: "todo", label: "待处理" },
   { value: "processed", label: "已处理" },
+  { value: "deprecated", label: "已废弃" },
 ];
 const priorityFilters: Array<{ value: InboxPriorityFilter; label: string }> = [
   { value: "all", label: "全部优先级" },
@@ -413,6 +419,8 @@ export function InboxBoard() {
                 onClick={() => {
                   setActiveTab(tab.value);
                   setCreateOpen(false);
+                  setNewTitle("");
+                  setNewContent("");
                 }}
                 className={cn(
                   "h-9 rounded-[var(--tc-radius-control)] px-3 text-left text-sm transition-colors",
@@ -441,7 +449,12 @@ export function InboxBoard() {
             {activeTab !== "all" ? (
               <button
                 type="button"
-                onClick={() => setCreateOpen(current => !current)}
+                onClick={() => {
+                  if (!isCreateOpen && activeTab === "issues") {
+                    setNewContent(createInboxIssueTemplate());
+                  }
+                  setCreateOpen(current => !current);
+                }}
                 className="inline-flex h-9 items-center gap-2 rounded-[var(--tc-radius-pill)] border border-[var(--tc-border-subtle)] px-4 text-sm text-[var(--tc-text-secondary)] hover:text-[var(--tc-text-primary)]"
               >
                 <Plus className="size-4" />
@@ -488,7 +501,7 @@ export function InboxBoard() {
           </div>
 
           {isCreateOpen ? (
-            <div className="mb-4 max-w-[760px] border-y border-[var(--tc-border-subtle)] py-4">
+            <div className="mb-4 max-w-[760px] rounded-[var(--tc-radius-card)] bg-[var(--tc-surface-muted)] p-4">
               <div className="grid gap-2">
                 {activeTab !== "ideas" ? (
                   <input
@@ -552,7 +565,7 @@ export function InboxBoard() {
                   加载中
                 </div>
               ) : activeItems.length ? (
-                <div className="divide-y divide-[var(--tc-border-subtle)] border-y border-[var(--tc-border-subtle)]">
+                <div className="space-y-1">
                   {activeItems.map(item => (
                     <InboxRow
                       key={item.id}
@@ -585,7 +598,7 @@ export function InboxBoard() {
                   ))}
                 </div>
               ) : (
-                <div className="grid h-full min-h-28 place-items-center border-y border-dashed border-[var(--tc-border-subtle)] px-3 text-center text-sm text-[var(--tc-text-muted)]">
+                <div className="grid h-full min-h-28 place-items-center rounded-[var(--tc-radius-card)] bg-[var(--tc-surface-muted)] px-3 text-center text-sm text-[var(--tc-text-muted)]">
                   暂无条目
                 </div>
               )}
@@ -685,13 +698,20 @@ function InboxRow({
   }
 
   return (
-    <article>
+    <article
+      className={cn(
+        "rounded-[var(--tc-radius-card)] transition-colors",
+        expanded
+          ? "bg-[var(--tc-surface-muted)]"
+          : "hover:bg-[var(--tc-surface-muted)]",
+      )}
+    >
       <button
         type="button"
         onClick={onToggle}
-        className="flex min-h-12 w-full items-center gap-3 px-1 py-2 text-left"
+        className="group flex min-h-12 w-full items-center gap-3 px-1 py-2 text-left focus-visible:outline-none"
       >
-        <span className="inline-flex size-7 shrink-0 items-center justify-center text-[var(--tc-text-muted)]">
+        <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-[var(--tc-text-muted)] transition-colors group-focus-visible:bg-[var(--tc-action-primary-bg)] group-focus-visible:text-[var(--tc-action-primary-text)]">
           {expanded ? (
             <ChevronDown className="size-4" />
           ) : (
@@ -703,16 +723,27 @@ function InboxRow({
             {itemTitle(tab, item)}
           </span>
           <span className="block truncate text-xs text-[var(--tc-text-muted)]">
-            {priorityLabel(item.priority)} · {statusLabel(item.status)}
+            {priorityLabel(item.priority)} ·{" "}
+            <span
+              className={cn(
+                tab === "issues" && issueStatusToneClass(item.status),
+              )}
+            >
+              {statusLabel(item.status)}
+            </span>
           </span>
         </span>
       </button>
 
       {expanded ? (
         <div className="pb-5 pl-10 pr-2">
-          <p className="max-w-[860px] select-text whitespace-pre-wrap text-sm leading-7 text-[var(--tc-text-secondary)]">
-            {item.content}
-          </p>
+          {tab === "issues" ? (
+            <IssueDetailContent content={item.content} status={item.status} />
+          ) : (
+            <p className="max-w-[860px] select-text whitespace-pre-wrap text-sm leading-7 text-[var(--tc-text-secondary)]">
+              {item.content}
+            </p>
+          )}
 
           {editing ? (
             <div className="mt-3 grid max-w-[760px] gap-2">
@@ -752,7 +783,7 @@ function InboxRow({
           ) : null}
 
           {tab === "pending-facts" && isPendingFact(item) ? (
-            <div className="mt-4 grid max-w-[760px] gap-2 border-l border-[var(--tc-border-subtle)] pl-3">
+            <div className="mt-4 grid max-w-[760px] gap-2 rounded-[var(--tc-radius-card)] bg-[var(--tc-surface-muted)] p-3">
               <div className="grid gap-2 sm:grid-cols-2">
                 <label className="block text-sm text-[var(--tc-text-secondary)]">
                   知识类型
@@ -802,26 +833,30 @@ function InboxRow({
               <Save className="size-4" />
               {editing ? "收起编辑" : "编辑"}
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={onProcessed}
-              disabled={busy}
-            >
-              <CheckCircle2 className="size-4" />
-              标记已处理
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={onDeprecated}
-              disabled={busy}
-            >
-              <Trash2 className="size-4" />
-              废弃
-            </Button>
+            {item.status === "todo" ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={onProcessed}
+                disabled={busy}
+              >
+                <CheckCircle2 className="size-4" />
+                标记已处理
+              </Button>
+            ) : null}
+            {item.status !== "deprecated" ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={onDeprecated}
+                disabled={busy}
+              >
+                <Trash2 className="size-4" />
+                废弃
+              </Button>
+            ) : null}
             {onConfirm ? (
               <Button
                 type="button"
@@ -926,7 +961,7 @@ function PaginationControls({
   }
 
   return (
-    <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-[var(--tc-border-subtle)] pt-4 text-sm text-[var(--tc-text-muted)]">
+    <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4 text-sm text-[var(--tc-text-muted)]">
       <span className="shrink-0">
         第 {page} / {totalPages} 页
       </span>

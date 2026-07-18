@@ -13,6 +13,9 @@ from taichu.api.deps import (
     provide_invocation_trace_reader,
 )
 from taichu.api.schemas.general_agent import (
+    GeneralAgentConversationDeleteResponse,
+    GeneralAgentConversationListResponse,
+    GeneralAgentConversationResponse,
     GeneralAgentDeleteResponse,
     GeneralAgentResumeRequest,
     GeneralAgentRunListResponse,
@@ -28,6 +31,7 @@ from taichu.application.general_agent.models import (
     GeneralAgentRun,
 )
 from taichu.application.general_agent.service import (
+    GeneralAgentConversationNotFoundError,
     GeneralAgentRunNotFoundError,
     GeneralAgentRuntimeError,
     GeneralAgentRuntimeService,
@@ -91,11 +95,74 @@ async def api_list_general_agent_runs(
     )
 
 
+@router.get(
+    "/conversations",
+    response_model=GeneralAgentConversationListResponse,
+)
+async def api_list_general_agent_conversations(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=30, ge=1, le=100),
+    service: GeneralAgentRuntimeService = Depends(
+        provide_general_agent_runtime_service
+    ),
+) -> GeneralAgentConversationListResponse:
+    conversations, total = await service.list_conversations(
+        page=page,
+        page_size=page_size,
+    )
+    return GeneralAgentConversationListResponse(
+        conversations=conversations,
+        page=page,
+        page_size=page_size,
+        total=total,
+    )
+
+
+@router.get(
+    "/conversations/{conversation_id}",
+    response_model=GeneralAgentConversationResponse,
+)
+async def api_get_general_agent_conversation(
+    conversation_id: str,
+    service: GeneralAgentRuntimeService = Depends(
+        provide_general_agent_runtime_service
+    ),
+) -> GeneralAgentConversationResponse:
+    try:
+        runs = await service.get_conversation(conversation_id)
+    except GeneralAgentConversationNotFoundError as error:
+        raise _not_found(str(error)) from error
+    return GeneralAgentConversationResponse(
+        conversation_id=conversation_id,
+        runs=runs,
+    )
+
+
+@router.delete(
+    "/conversations/{conversation_id}",
+    response_model=GeneralAgentConversationDeleteResponse,
+)
+async def api_delete_general_agent_conversation(
+    conversation_id: str,
+    service: GeneralAgentRuntimeService = Depends(
+        provide_general_agent_runtime_service
+    ),
+) -> GeneralAgentConversationDeleteResponse:
+    try:
+        deleted_count = await service.delete_conversation(conversation_id)
+    except GeneralAgentConversationNotFoundError as error:
+        raise _not_found(str(error)) from error
+    except GeneralAgentRuntimeError as error:
+        raise _conflict(str(error)) from error
+    return GeneralAgentConversationDeleteResponse(
+        conversation_id=conversation_id,
+        deleted_count=deleted_count,
+    )
+
+
 @router.get("/runs/stream/events")
 async def api_stream_general_agent_events(
-    event_center: GeneralAgentEventCenter = Depends(
-        provide_general_agent_event_center
-    ),
+    event_center: GeneralAgentEventCenter = Depends(provide_general_agent_event_center),
 ) -> StreamingResponse:
     async def event_lines():
         async for event in event_center.subscribe():

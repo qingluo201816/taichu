@@ -3,16 +3,25 @@
 import { GitBranch } from "lucide-react";
 import { useMemo } from "react";
 
-import { generalCapabilityLabel, generalNodeStatusLabels } from "@/lib/general-agent-display";
+import {
+  generalCapabilityLabel,
+  generalNodeStatusLabel,
+  generalNodeVisualStatus,
+} from "@/lib/general-agent-display";
 import { buildGeneralAgentGraphLayout } from "@/lib/general-agent-monitor";
-import type { GeneralAgentNodeRun } from "@/lib/types/general-agent";
+import type {
+  GeneralAgentNodeRun,
+  GeneralAgentRunStatus,
+} from "@/lib/types/general-agent";
 
 export function GeneralAgentFlowGraph({
   nodes,
+  runStatus,
   selectedNodeId,
   onSelectNode,
 }: {
   nodes: GeneralAgentNodeRun[];
+  runStatus: GeneralAgentRunStatus;
   selectedNodeId: string;
   onSelectNode: (nodeId: string) => void;
 }) {
@@ -70,14 +79,22 @@ export function GeneralAgentFlowGraph({
                 const x2 = target.x;
                 const y2 = target.y + target.height / 2;
                 const bend = Math.max(24, (x2 - x1) / 2);
+                const sourceStatus = generalNodeVisualStatus(
+                  source.status,
+                  runStatus,
+                );
+                const targetStatus = generalNodeVisualStatus(
+                  target.status,
+                  runStatus,
+                );
                 return (
                   <path
                     key={`${source.node_id}-${target.node_id}`}
                     d={`M${x1},${y1} C${x1 + bend},${y1} ${x2 - bend},${y2} ${x2},${y2}`}
-                    stroke={edgeColor(source.status, target.status)}
-                    strokeWidth={target.status === "running" ? 2 : 1.35}
+                    stroke={edgeColor(sourceStatus, targetStatus)}
+                    strokeWidth={targetStatus === "running" ? 2 : 1.35}
                     markerEnd="url(#general-agent-arrow)"
-                    className={target.status === "running" ? "motion-safe:animate-pulse" : ""}
+                    className={targetStatus === "running" ? "motion-safe:animate-pulse" : ""}
                   />
                 );
               }),
@@ -85,12 +102,13 @@ export function GeneralAgentFlowGraph({
           </g>
           {layout.nodes.map((node, index) => {
             const selected = node.node_id === selectedNodeId;
+            const displayStatus = generalNodeVisualStatus(node.status, runStatus);
             return (
               <g
                 key={node.node_id}
                 role="button"
                 tabIndex={0}
-                aria-label={`${generalCapabilityLabel(node.capability_name)}，${generalNodeStatusLabels[node.status]}`}
+                aria-label={`${generalCapabilityLabel(node.capability_name)}，${generalNodeStatusLabel(node.status, runStatus)}`}
                 onClick={() => onSelectNode(node.node_id)}
                 onKeyDown={event => {
                   if (event.key === "Enter" || event.key === " ") {
@@ -107,14 +125,14 @@ export function GeneralAgentFlowGraph({
                   height={node.height}
                   rx="10"
                   fill={selected ? "rgba(63,63,70,.96)" : "rgba(24,24,27,.96)"}
-                  stroke={selected ? "rgba(255,255,255,.92)" : nodeStroke(node.status)}
+                  stroke={selected ? "rgba(255,255,255,.92)" : nodeStroke(displayStatus)}
                   strokeWidth={selected ? 1.8 : 1.2}
                 />
                 <circle
                   cx={node.x + 16}
                   cy={node.y + 17}
                   r="4"
-                  fill={nodeStatusColor(node.status)}
+                  fill={nodeStatusColor(displayStatus)}
                 />
                 <text
                   x={node.x + 27}
@@ -136,10 +154,10 @@ export function GeneralAgentFlowGraph({
                 <text
                   x={node.x + 14}
                   y={node.y + 59}
-                  fill={nodeStatusColor(node.status)}
+                  fill={nodeStatusColor(displayStatus)}
                   fontSize="10"
                 >
-                  {generalNodeStatusLabels[node.status]} · {durationLabel(node.duration_ms)}
+                  {generalNodeStatusLabel(node.status, runStatus)} · {durationLabel(node.duration_ms)}
                 </text>
               </g>
             );

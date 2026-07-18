@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
+import re
 from typing import Any, TypeAlias
 from uuid import uuid4
 
@@ -24,6 +25,25 @@ INBOX_IDEAS_FILE = "inbox_ideas.jsonl"
 INBOX_PENDING_FACTS_FILE = "inbox_pending_facts.jsonl"
 INBOX_ISSUES_FILE = "inbox_issues.jsonl"
 MVPInboxItem: TypeAlias = MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue
+
+_ISSUE_DETAIL_LABELS = (
+    "记录日期",
+    "状态",
+    "现象",
+    "根因",
+    "影响",
+    "修复",
+    "验证",
+    "相关代码",
+)
+_ISSUE_DETAIL_PATTERN = re.compile(
+    r"^(记录日期|状态|现象|根因|影响|修复|验证|相关代码)：\s*(.*)$"
+)
+_ISSUE_LABEL_LIKE_PATTERN = re.compile(r"^[^：\s]{1,16}：")
+_ISSUE_FORMAT_MESSAGE = (
+    "系统问题必须按固定顺序填写："
+    "记录日期、状态、现象、根因、影响、修复、验证、相关代码。"
+)
 
 
 @dataclass(frozen=True)
@@ -121,7 +141,7 @@ class MVPInboxService:
             {
                 "id": data.get("id") or f"issue-{uuid4().hex}",
                 "title": data.get("title", ""),
-                "content": data.get("content", ""),
+                "content": _canonical_issue_content(data.get("content", "")),
                 "source_chapter_id": data.get("source_chapter_id"),
                 "priority": data.get("priority", "normal"),
                 "status": "todo",
@@ -159,10 +179,15 @@ class MVPInboxService:
 
     async def patch_issue(self, item_id: str, updates: dict[str, Any]) -> MVPInboxIssue:
         """Patch one issue item."""
+        normalized_updates = dict(updates)
+        if "content" in normalized_updates:
+            normalized_updates["content"] = _canonical_issue_content(
+                normalized_updates["content"]
+            )
         return await self._patch_jsonl_item(
             INBOX_ISSUES_FILE,
             item_id,
-            updates,
+            normalized_updates,
             MVPInboxIssue,
         )
 
@@ -201,9 +226,7 @@ class MVPInboxService:
     async def _list_ideas(self) -> list[MVPInboxIdea]:
         return [
             MVPInboxIdea.model_validate(record)
-            for record in await self._storage.list_workspace_records(
-                INBOX_IDEAS_FILE
-            )
+            for record in await self._storage.list_workspace_records(INBOX_IDEAS_FILE)
         ]
 
     async def _list_pending_facts(self) -> list[MVPInboxPendingFact]:
@@ -231,7 +254,9 @@ class MVPInboxService:
         filename: str,
         item_id: str,
         updates: dict[str, Any],
-        model_type: type[MVPInboxIdea] | type[MVPInboxPendingFact] | type[MVPInboxIssue],
+        model_type: type[MVPInboxIdea]
+        | type[MVPInboxPendingFact]
+        | type[MVPInboxIssue],
     ) -> Any:
         records = await self._storage.list_workspace_records(filename)
         rewritten: list[dict[str, object]] = []
@@ -284,6 +309,44 @@ def _filter_items(
 
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+
+
+def _canonical_issue_content(value: Any) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise InboxValidationError(_ISSUE_FORMAT_MESSAGE)
+    fields: dict[str, str] = {}
+    current_label: str | None = None
+    for raw_line in value.strip().splitlines():
+        match = _ISSUE_DETAIL_PATTERN.match(raw_line)
+        if match:
+            label = match.group(1)
+            expected_label = (
+                _ISSUE_DETAIL_LABELS[len(fields)]
+                if len(fields) < len(_ISSUE_DETAIL_LABELS)
+                else None
+            )
+            if label != expected_label or label in fields:
+                raise InboxValidationError(_ISSUE_FORMAT_MESSAGE)
+            fields[label] = match.group(2).strip()
+            current_label = label
+            continue
+        if _ISSUE_LABEL_LIKE_PATTERN.match(raw_line):
+            raise InboxValidationError(_ISSUE_FORMAT_MESSAGE)
+        if current_label is None:
+            if raw_line.strip():
+                raise InboxValidationError(_ISSUE_FORMAT_MESSAGE)
+            continue
+        continuation = raw_line.rstrip()
+        fields[current_label] = f"{fields[current_label]}\n{continuation}".strip()
+    if tuple(fields) != _ISSUE_DETAIL_LABELS:
+        raise InboxValidationError(_ISSUE_FORMAT_MESSAGE)
+    if any(not fields[label].strip() for label in _ISSUE_DETAIL_LABELS):
+        raise InboxValidationError(
+            f"{_ISSUE_FORMAT_MESSAGE}每个字段都必须填写；未知内容请写“待调查”或“暂无”。"
+        )
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", fields["记录日期"]):
+        raise InboxValidationError("系统问题的记录日期必须使用 YYYY-MM-DD 格式。")
+    return "\n".join(f"{label}：{fields[label]}" for label in _ISSUE_DETAIL_LABELS)
 
 
 def _source_note_for_pending_fact(pending_fact: MVPInboxPendingFact) -> str:

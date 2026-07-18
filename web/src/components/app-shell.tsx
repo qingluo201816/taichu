@@ -81,10 +81,10 @@ export function AppShell({
     >
       <header
         className={cn(
-          "top-0 z-40 w-full shrink-0 border-b",
+          "top-0 z-40 w-full shrink-0",
           transparentHeader
-            ? "absolute border-white/15 bg-black/15"
-            : "sticky border-[var(--tc-nav-border)] bg-[var(--tc-nav-bg)]/92 backdrop-blur",
+            ? "absolute bg-black/15"
+            : "sticky bg-[var(--tc-nav-bg)]/92 backdrop-blur",
         )}
       >
         <div
@@ -139,10 +139,10 @@ export function AppShell({
           ) : showNavigation ? (
             <nav
               className={cn(
-                "flex gap-2 overflow-x-auto rounded-[var(--tc-radius-control)] border p-1",
+                "flex gap-2 overflow-x-auto rounded-[var(--tc-radius-control)] p-1",
                 transparentHeader
-                  ? "border-white/15 bg-black/10"
-                  : "border-[var(--tc-nav-border)] bg-[var(--tc-nav-bg)]",
+                  ? "bg-black/10"
+                  : "bg-[var(--tc-nav-bg)]",
               )}
             >
               {navigation.map(item => {

@@ -146,14 +146,12 @@ class RightCodeLLMGateway(LLMGatewayContract):
         try:
             self._ensure_configured()
             payload = _request_payload(profile, request, stream=False)
-            response = await self._post_with_retries(profile, payload)
-            parsed = _parse_response(response.json(), profile, call_id)
-            if request.response_mode == "json":
-                parsed = replace(parsed, text=_normalize_json_text(parsed.text))
-            if not parsed.text.strip():
-                raise RightCodeGatewayError(
-                    "LLM_EMPTY_RESPONSE", "模型返回了空内容，请稍后重试。"
-                )
+            parsed = await self._complete_with_retries(
+                profile,
+                request,
+                payload,
+                call_id,
+            )
         except Exception as exc:
             safe = _normalize_error(exc)
             await self._record_failure(
@@ -163,9 +161,13 @@ class RightCodeLLMGateway(LLMGatewayContract):
         await self._record_success(call_id, request, profile, started_at, timer, parsed)
         return parsed
 
-    async def _post_with_retries(
-        self, profile: LLMModelProfile, payload: dict[str, Any]
-    ) -> httpx.Response:
+    async def _complete_with_retries(
+        self,
+        profile: LLMModelProfile,
+        request: LLMRequest,
+        payload: dict[str, Any],
+        call_id: str,
+    ) -> LLMResponse:
         url = self._endpoint(profile)
         attempts = max(0, self._settings.rightcode_max_retries) + 1
         for attempt in range(attempts):
@@ -176,12 +178,26 @@ class RightCodeLLMGateway(LLMGatewayContract):
                     json=payload,
                 )
                 if response.status_code < 400:
-                    return response
-                error = _status_error(response.status_code)
-                if response.status_code != 429 and response.status_code < 500:
-                    raise error
-                if attempt == attempts - 1:
-                    raise error
+                    parsed = _parse_response(response.json(), profile, call_id)
+                    if request.response_mode == "json":
+                        parsed = replace(
+                            parsed,
+                            text=_normalize_json_text(parsed.text),
+                        )
+                    if parsed.text.strip():
+                        return parsed
+                    error = RightCodeGatewayError(
+                        "LLM_EMPTY_RESPONSE",
+                        "模型返回了空内容，请稍后重试。",
+                    )
+                    if attempt == attempts - 1:
+                        raise error
+                else:
+                    error = _status_error(response.status_code)
+                    if response.status_code != 429 and response.status_code < 500:
+                        raise error
+                    if attempt == attempts - 1:
+                        raise error
             except (httpx.TimeoutException, httpx.NetworkError) as exc:
                 if attempt == attempts - 1:
                     raise exc
@@ -250,7 +266,9 @@ class RightCodeLLMGateway(LLMGatewayContract):
                                 "LLM_EMPTY_RESPONSE", "模型返回了空内容，请稍后重试。"
                             )
                         last_usage = parsed.usage
-                        if any(value is not None for value in _usage_values(last_usage)):
+                        if any(
+                            value is not None for value in _usage_values(last_usage)
+                        ):
                             yield LLMStreamEvent(
                                 event_type="usage",
                                 usage=last_usage,
@@ -296,7 +314,9 @@ class RightCodeLLMGateway(LLMGatewayContract):
                             last_usage,
                             _parse_anthropic_usage(event_payload.get("usage", {})),
                         )
-                        if any(value is not None for value in _usage_values(last_usage)):
+                        if any(
+                            value is not None for value in _usage_values(last_usage)
+                        ):
                             yield LLMStreamEvent(
                                 event_type="usage",
                                 usage=last_usage,
@@ -622,8 +642,7 @@ def _parse_anthropic_usage(payload: Any) -> LLMUsage:
         return LLMUsage()
     input_tokens = _optional_int(payload.get("input_tokens"))
     cached_tokens = _optional_int(
-        payload.get("cache_read_input_tokens")
-        or payload.get("cached_input_tokens")
+        payload.get("cache_read_input_tokens") or payload.get("cached_input_tokens")
     )
     output_tokens = _optional_int(payload.get("output_tokens"))
     total_tokens = (

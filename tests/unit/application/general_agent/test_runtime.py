@@ -24,6 +24,7 @@ from taichu.application.general_agent.events import GeneralAgentEventCenter
 from taichu.application.general_agent.executor import DynamicDagExecutor
 from taichu.application.general_agent.models import (
     GeneralAgentNodeStatus,
+    GeneralAgentRunLimits,
     GeneralAgentRunStatus,
 )
 from taichu.application.general_agent.orchestrator import OrchestratorAgent
@@ -37,6 +38,9 @@ from taichu.application.services.model_role_router import ModelRoleRouter
 from taichu.application.services.outline_service import OutlineService
 from taichu.application.services.retrieval_service import RetrievalService
 from taichu.application.subagents.canon_evidence import agent as canon_evidence_agent
+from taichu.application.subagents.narrative_summary import (
+    agent as narrative_summary_agent,
+)
 from taichu.application.subagents.contract import SubagentPlugin
 from taichu.application.subagents.registry import SubagentRegistry
 from taichu.application.tools import (
@@ -252,6 +256,204 @@ async def test_runtime_plans_and_executes_real_subagent_with_real_retrieval_tool
 
 
 @_async_test
+async def test_runtime_recovers_invalid_data_handoff_after_runtime_failure(
+    tmp_path: Path,
+) -> None:
+    storage = ProjectAssetStorageBackend(tmp_path)
+    chapter_service = ChapterService(storage)
+    outline_service = OutlineService(storage)
+    outline = await outline_service.create_volume("第一卷")
+    outline = await outline_service.create_chapter(
+        outline.volumes[0].volume_id,
+        "紫气东来",
+    )
+    chapter_id = outline.current_chapter_id
+    assert chapter_id is not None
+    chapter_content = "张狂测出无上紫种，各堂主震惊并争相收徒。"
+    await chapter_service.save_chapter(chapter_id, chapter_content)
+
+    invalid_plan: dict[str, Any] = {
+        "rationale": "先读取正文，再交给叙事摘要助手。",
+        "nodes": [
+            {
+                "node_id": "read_chapter",
+                "kind": "tool",
+                "capability_name": "read_manuscript",
+                "objective": "读取目标章节。",
+                "input_data": {"chapter_ids": [chapter_id]},
+            },
+            {
+                "node_id": "summarize_chapter",
+                "kind": "subagent",
+                "capability_name": "narrative_summary",
+                "objective": "概括目标章节。",
+                "input_data": {
+                    "summary_goal": "概括本章主要情节。",
+                    "target_chars": 300,
+                    "source_request": {"auto_collect": False},
+                },
+                "dependencies": ["read_chapter"],
+                "input_bindings": [
+                    {
+                        "source_node_id": "read_chapter",
+                        "source_path": "result.content",
+                        "target_path": "text",
+                    }
+                ],
+            },
+        ],
+    }
+    repaired_plan: dict[str, Any] = {
+        **invalid_plan,
+        "rationale": "按真实输入输出结构修正正文交接地址。",
+        "nodes": [
+            invalid_plan["nodes"][0],
+            {
+                **invalid_plan["nodes"][1],
+                "input_bindings": [
+                    {
+                        "source_node_id": "read_chapter",
+                        "source_path": "chunks.0.content",
+                        "target_path": "source_request.direct_context",
+                    }
+                ],
+            },
+        ],
+    }
+    policy = InvocationPolicyService()
+    traces = _TraceRepository()
+    tool_context = CapabilityContext(
+        capabilities={
+            "chapter_service": chapter_service,
+            "outline_service": outline_service,
+            "invocation_policy_service": policy,
+        }
+    )
+    tool_registry = ToolRegistry(tool_context, traces)
+    _register_tools(tool_registry, [read_manuscript])
+    gateway = _ScriptedGateway(
+        plans=[invalid_plan, repaired_plan],
+        verification={
+            "outcome": "satisfied",
+            "final_answer": "本章写张狂测出无上紫种，引发各堂主争抢。",
+            "issues": [],
+            "should_replan": False,
+        },
+        subagent_outputs={
+            "narrative_summary": {
+                "summary": "张狂测出无上紫种，各堂主争相收徒。",
+                "key_events": ["张狂测出无上紫种"],
+                "character_changes": [],
+                "unresolved_items": ["张狂最终拜入哪一堂尚未确定"],
+                "source_refs": [],
+                "warnings": [],
+            }
+        },
+    )
+    subagent_context = CapabilityContext(
+        capabilities={
+            **tool_context.capabilities,
+            "llm": gateway,
+            "model_role_router": ModelRoleRouter("default-model"),
+            "tool_registry": tool_registry,
+            "artifact_repository": JsonIntermediateArtifactRepository(tmp_path),
+            "invocation_trace_repository": traces,
+        }
+    )
+    subagent_registry = SubagentRegistry(subagent_context, traces)
+    subagent_registry.register(
+        SubagentPlugin(
+            manifest=narrative_summary_agent.manifest.model_copy(
+                update={"allowed_tools": frozenset({"read_manuscript"})}
+            ),
+            run=narrative_summary_agent.run,
+        )
+    )
+    runtime = _runtime(
+        tmp_path,
+        gateway,
+        tool_registry,
+        subagent_registry,
+        policy,
+        traces,
+    )
+
+    run = await runtime.run(user_goal="这一章讲了什么？")
+
+    assert run.status is GeneralAgentRunStatus.COMPLETED
+    assert run.replan_count == 1
+    assert run.plan_revision == 2
+    assert run.plan is not None
+    assert run.plan.nodes[1].input_bindings[0].source_path == "chunks.0.content"
+    failed_summary_node = next(
+        node
+        for node in run.node_runs
+        if node.node_id == "summarize_chapter" and node.plan_revision == 1
+    )
+    assert failed_summary_node.status is GeneralAgentNodeStatus.FAILED
+    assert failed_summary_node.error_type == "DynamicDagExecutionError"
+    assert "result.content" in (failed_summary_node.error_message or "")
+    summary_node = next(
+        node
+        for node in run.node_runs
+        if node.node_id == "summarize_chapter"
+        and node.plan_revision == run.plan_revision
+    )
+    assert summary_node.status is GeneralAgentNodeStatus.SUCCESS
+    assert (
+        summary_node.resolved_input["source_request"]["direct_context"]
+        == chapter_content
+    )
+    planning_requests = [
+        request
+        for request in gateway.requests
+        if request.task_name
+        in {
+            "general_writing_orchestrator.plan",
+            "general_writing_orchestrator.replan",
+        }
+    ]
+    assert len(planning_requests) == 2
+    assert '"output_schema"' in planning_requests[0].messages[-1].content
+    assert "result.content" in planning_requests[1].messages[-1].content
+    assert "text" in planning_requests[1].messages[-1].content
+    assert [request.task_name for request in planning_requests] == [
+        "general_writing_orchestrator.plan",
+        "general_writing_orchestrator.replan",
+    ]
+    assert [request.task_name for request in gateway.requests].count(
+        "general_writing_orchestrator.verify"
+    ) == 1
+
+    exhausted_gateway = _ScriptedGateway(
+        plans=[invalid_plan],
+        verification={
+            "outcome": "partial",
+            "final_answer": "只读取到了正文，章节概括没有完成。",
+            "issues": ["章节概括步骤失败。"],
+            "should_replan": False,
+        },
+    )
+    exhausted_runtime = _runtime(
+        tmp_path,
+        exhausted_gateway,
+        tool_registry,
+        subagent_registry,
+        policy,
+        traces,
+    )
+
+    exhausted = await exhausted_runtime.run(
+        user_goal="这一章讲了什么？",
+        limits=GeneralAgentRunLimits(max_replans=0),
+    )
+
+    assert exhausted.status is GeneralAgentRunStatus.FAILED
+    assert exhausted.replan_count == 0
+    assert exhausted.final_answer == "只读取到了正文，章节概括没有完成。"
+
+
+@_async_test
 async def test_runtime_pauses_for_bound_write_and_resumes_from_checkpoint(
     tmp_path: Path,
 ) -> None:
@@ -384,7 +586,8 @@ async def test_runtime_pauses_for_bound_write_and_resumes_from_checkpoint(
     apply_node = next(
         item
         for item in completed.node_runs
-        if item.node_id == "apply_patch" and item.plan_revision == completed.plan_revision
+        if item.node_id == "apply_patch"
+        and item.plan_revision == completed.plan_revision
     )
     assert apply_node.status is GeneralAgentNodeStatus.SUCCESS
     assert apply_node.authorization_grant_id is not None
@@ -398,9 +601,7 @@ async def test_runtime_clarifies_and_performs_one_bounded_replan(
     policy = InvocationPolicyService()
     traces = _TraceRepository()
     tool_registry = ToolRegistry(
-        CapabilityContext(
-            capabilities={"invocation_policy_service": policy}
-        ),
+        CapabilityContext(capabilities={"invocation_policy_service": policy}),
         traces,
     )
     gateway = _ScriptedGateway(

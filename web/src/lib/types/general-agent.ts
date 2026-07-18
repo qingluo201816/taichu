@@ -161,6 +161,7 @@ export type GeneralAgentRunSummary = {
 
 export type GeneralAgentRunRequest = {
   user_goal: string;
+  conversation_id?: string | null;
   scope: GeneralAgentScope;
   author_constraints: string[];
   external_access_allowed: boolean;
@@ -179,6 +180,33 @@ export type GeneralAgentRunListResponse = {
   page: number;
   page_size: number;
   total: number;
+};
+
+export type GeneralAgentConversationSummary = {
+  conversation_id: string;
+  title: string;
+  status: GeneralAgentRunStatus;
+  turn_count: number;
+  latest_run_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type GeneralAgentConversationListResponse = {
+  conversations: GeneralAgentConversationSummary[];
+  page: number;
+  page_size: number;
+  total: number;
+};
+
+export type GeneralAgentConversationResponse = {
+  conversation_id: string;
+  runs: GeneralAgentRun[];
+};
+
+export type GeneralAgentConversationDeleteResponse = {
+  conversation_id: string;
+  deleted_count: number;
 };
 
 export type GeneralAgentInvocationType = "tool" | "subagent" | "llm";

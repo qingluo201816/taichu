@@ -5,6 +5,7 @@
     "repository": "qingluo201816/taichu",
     "branch": "master",
     "baseline_commit": "7ad671f1f2558c39558c004e17b6d004b1a6b083",
+    "decision_revision_at": "2026-07-18",
     "execution_mode": "continuous_with_phase_self_review",
     "requires_stop_after_each_phase": false,
     "git_publish_authorized": false
@@ -14,6 +15,7 @@
     "in_progress",
     "pass",
     "pass_with_limits",
+    "hold_hybrid",
     "no_go",
     "skipped_by_gate",
     "rebase_required"
@@ -33,7 +35,7 @@
         "BAS-006",
         "BAS-007"
       ],
-      "status": "not_started"
+      "status": "pass"
     },
     {
       "id": "P01",
@@ -51,7 +53,7 @@
         "RET-006",
         "RET-007"
       ],
-      "status": "not_started"
+      "status": "pass"
     },
     {
       "id": "P02",
@@ -71,14 +73,14 @@
         "VEC-008",
         "VEC-009"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "promotion_outputs": [
         "GO_TO_HYBRID_SHADOW",
-        "NO_GO_QUALITY",
-        "NO_GO_COST",
-        "NO_GO_LATENCY",
-        "NO_GO_OPERABILITY",
-        "NO_GO_PROVIDER"
+        "HOLD_HYBRID_QUALITY",
+        "HOLD_HYBRID_COST",
+        "HOLD_HYBRID_LATENCY",
+        "HOLD_HYBRID_OPERABILITY",
+        "HOLD_HYBRID_PROVIDER"
       ]
     },
     {
@@ -99,7 +101,7 @@
       ],
       "status": "not_started",
       "skip_when": [
-        "P02:no_go"
+        "P02:hold_hybrid"
       ]
     },
     {

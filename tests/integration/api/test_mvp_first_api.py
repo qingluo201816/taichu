@@ -58,7 +58,9 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
                 "display_title": "第2章 山门回声",
             },
         )
-        created_chapter = create_response.json()["outline"]["volumes"][0]["chapters"][-1]
+        created_chapter = create_response.json()["outline"]["volumes"][0]["chapters"][
+            -1
+        ]
         chapter_id = created_chapter["chapter_id"]
         markdown = "# 第2章 山门回声\n\n第一行\n\n\n    缩进保留\n"
 
@@ -129,8 +131,7 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(create_response.status_code, 200)
         self.assertEqual(schema_response.status_code, 200)
         schema_field_keys = {
-            field["field_key"]
-            for field in schema_response.json()["schema"]["fields"]
+            field["field_key"] for field in schema_response.json()["schema"]["fields"]
         }
         self.assertIn("role_type", schema_field_keys)
         self.assertIn("lifecycle", schema_field_keys)
@@ -228,6 +229,18 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(card[field_key], expected_value)
 
     async def test_mvp_inbox_tabs_and_manual_pending_fact_confirmation(self) -> None:
+        issue_content = "\n".join(
+            [
+                "记录日期：2026-07-18",
+                "状态：待处理",
+                "现象：通用抽取输出达到上限后未覆盖全部类型。",
+                "根因：输出预算不足。",
+                "影响：部分知识类型没有候选结果。",
+                "修复：待处理。",
+                "验证：待验证。",
+                "相关代码：暂无。",
+            ]
+        )
         idea_response = await self.client.post(
             "/api/inbox/ideas",
             json={"data": {"content": "这里可以埋一个山门伏笔。"}},
@@ -250,7 +263,7 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
             json={
                 "data": {
                     "title": "抽取输出截断",
-                    "content": "通用抽取输出达到上限后未覆盖全部类型。",
+                    "content": issue_content,
                 }
             },
         )
@@ -268,7 +281,9 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         pending_list_response = await self.client.get("/api/inbox/pending-facts")
 
         self.assertEqual(idea_response.status_code, 200)
-        self.assertEqual(ideas_response.json()["items"][0]["content"], "这里可以埋一个山门伏笔。")
+        self.assertEqual(
+            ideas_response.json()["items"][0]["content"], "这里可以埋一个山门伏笔。"
+        )
         self.assertEqual(pending_response.status_code, 200)
         self.assertEqual(issue_response.status_code, 200)
         self.assertEqual(all_response.status_code, 200)
@@ -293,6 +308,67 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertNotIn("source_refs", confirm_response.json()["knowledge_card"])
         self.assertEqual(pending_list_response.json()["items"], [])
+
+    async def test_mvp_issue_rejects_noncanonical_detail_format(self) -> None:
+        canonical_content = "\n".join(
+            [
+                "记录日期：2026-07-18",
+                "状态：待处理",
+                "现象：页面只显示了部分字段。",
+                "根因：写入入口没有校验固定格式。",
+                "影响：错误内容直到展示时才暴露。",
+                "修复：写入时校验全部固定字段。",
+                "验证：错误字段会被拒绝。",
+                "相关代码：src/taichu/application/services/mvp_inbox_service.py",
+            ]
+        )
+        response = await self.client.post(
+            "/api/inbox/issues",
+            json={
+                "data": {
+                    "title": "格式错误的系统问题记录",
+                    "content": "\n".join(
+                        [
+                            "现象：页面只显示了部分字段。",
+                            "原因：写入时使用了错误字段名。",
+                            "影响：内容被并入相邻字段。",
+                            "处理：手工改回正确字段。",
+                            "验证：刷新页面后可见。",
+                        ]
+                    ),
+                }
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn(
+            "记录日期、状态、现象、根因、影响、修复、验证、相关代码",
+            response.json()["error"]["message"],
+        )
+
+        created = await self.client.post(
+            "/api/inbox/issues",
+            json={
+                "data": {
+                    "title": "格式契约测试",
+                    "content": canonical_content,
+                }
+            },
+        )
+        patched = await self.client.patch(
+            f"/api/inbox/issues/{created.json()['item']['id']}",
+            json={
+                "updates": {
+                    "content": canonical_content.replace(
+                        "根因：写入入口没有校验固定格式。",
+                        "原因：写入入口没有校验固定格式。",
+                    )
+                }
+            },
+        )
+
+        self.assertEqual(created.status_code, 200)
+        self.assertEqual(patched.status_code, 422)
 
     async def test_writing_ai_run_history_and_replay(self) -> None:
         create_card_response = await self.client.post(
@@ -348,14 +424,18 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         }
         self.assertIn("chapter", source_types)
         self.assertIn("knowledge", source_types)
-        self.assertTrue(run["retrieval_context"]["retrieval_id"].startswith("retrieval_"))
+        self.assertTrue(
+            run["retrieval_context"]["retrieval_id"].startswith("retrieval_")
+        )
         self.assertEqual(run["retrieval_context"]["strategy"], "mongo_lexical")
         self.assertGreaterEqual(run["retrieval_context"]["candidate_count"], 1)
         self.assertIn("真实续写正文", run["raw_llm_output"])
         self.assertEqual(list_response.json()["runs"][0]["run_id"], run_id)
         self.assertEqual(read_response.json()["run_id"], run_id)
         self.assertEqual(replay_response.json()["run_id"], run_id)
-        self.assertEqual(replay_response.json()["raw_llm_output"], run["raw_llm_output"])
+        self.assertEqual(
+            replay_response.json()["raw_llm_output"], run["raw_llm_output"]
+        )
 
     async def test_writing_ai_missing_llm_config_saves_failed_run(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

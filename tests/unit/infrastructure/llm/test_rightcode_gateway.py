@@ -63,7 +63,9 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(context.exception.code, "LLM_MODEL_UNKNOWN")
         self.assertIn("模型不存在", context.exception.message)
 
-    async def test_model_selection_changes_upstream_and_is_concurrency_safe(self) -> None:
+    async def test_model_selection_changes_upstream_and_is_concurrency_safe(
+        self,
+    ) -> None:
         requested_models: list[str] = []
 
         async def handler(request: httpx.Request) -> httpx.Response:
@@ -96,9 +98,7 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
             )
         finally:
             await client.aclose()
-        self.assertEqual(
-            set(requested_models), {"gpt-5.6-luna", "claude-opus-4-6"}
-        )
+        self.assertEqual(set(requested_models), {"gpt-5.6-luna", "claude-opus-4-6"})
         self.assertEqual(
             {item.upstream_model for item in responses}, set(requested_models)
         )
@@ -109,13 +109,7 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
                 200,
                 json={
                     "id": "provider-request",
-                    "output": [
-                        {
-                            "content": [
-                                {"type": "output_text", "text": "完成"}
-                            ]
-                        }
-                    ],
+                    "output": [{"content": [{"type": "output_text", "text": "完成"}]}],
                     "usage": {
                         "input_tokens": 12,
                         "input_tokens_details": {"cached_tokens": 3},
@@ -145,13 +139,13 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
     async def test_responses_sse_stream_is_normalized(self) -> None:
         sse = "\n".join(
             [
-                'event: response.output_text.delta',
+                "event: response.output_text.delta",
                 'data: {"type":"response.output_text.delta","delta":"秦浩"}',
                 "",
-                'event: response.output_text.delta',
+                "event: response.output_text.delta",
                 'data: {"type":"response.output_text.delta","delta":"轩"}',
                 "",
-                'event: response.completed',
+                "event: response.completed",
                 (
                     'data: {"type":"response.completed","response":'
                     '{"id":"stream-request","output_text":"秦浩轩",'
@@ -250,8 +244,7 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         gateway, client, _ = self._gateway(httpx.MockTransport(handler))
         try:
             events = [
-                event
-                async for event in gateway.stream(_request("claude-sonnet-4-6"))
+                event async for event in gateway.stream(_request("claude-sonnet-4-6"))
             ]
         finally:
             await client.aclose()
@@ -264,7 +257,9 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(completed.response.provider_request_id, "msg-stream")
         self.assertEqual(completed.response.usage.total_tokens, 6)
 
-    async def test_json_mode_removes_markdown_fence_after_complete_response(self) -> None:
+    async def test_json_mode_removes_markdown_fence_after_complete_response(
+        self,
+    ) -> None:
         def handler(_: httpx.Request) -> httpx.Response:
             return httpx.Response(
                 200,
@@ -331,7 +326,70 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(captured_max_tokens, 1024)
         self.assertEqual(state.availability, "available")
 
-    async def test_price_missing_is_unavailable_and_configured_price_is_estimated(self) -> None:
+    async def test_empty_response_is_retried_and_recovers(self) -> None:
+        request_count = 0
+
+        def handler(_: httpx.Request) -> httpx.Response:
+            nonlocal request_count
+            request_count += 1
+            text = "" if request_count == 1 else "重试后可用"
+            return httpx.Response(
+                200,
+                json={
+                    "id": f"deepseek-message-{request_count}",
+                    "content": [{"type": "text", "text": text}],
+                    "usage": {"input_tokens": 3, "output_tokens": 2},
+                },
+            )
+
+        gateway, client, repository = self._gateway(
+            httpx.MockTransport(handler),
+            max_retries=1,
+        )
+        try:
+            response = await gateway.complete(_request("deepseek-v4-pro"))
+        finally:
+            await client.aclose()
+        self.assertEqual(response.text, "重试后可用")
+        self.assertEqual(request_count, 2)
+        records = await repository.list_calls(LLMUsageQuery())
+        self.assertEqual(records.total, 1)
+        self.assertEqual(records.items[0].status, "completed")
+
+    async def test_repeated_empty_response_uses_retry_limit(self) -> None:
+        request_count = 0
+
+        def handler(_: httpx.Request) -> httpx.Response:
+            nonlocal request_count
+            request_count += 1
+            return httpx.Response(
+                200,
+                json={
+                    "id": f"deepseek-message-{request_count}",
+                    "content": [],
+                    "usage": {"input_tokens": 3, "output_tokens": 0},
+                },
+            )
+
+        gateway, client, repository = self._gateway(
+            httpx.MockTransport(handler),
+            max_retries=1,
+        )
+        try:
+            with self.assertRaises(RightCodeGatewayError) as context:
+                await gateway.complete(_request("deepseek-v4-pro"))
+        finally:
+            await client.aclose()
+        self.assertEqual(context.exception.code, "LLM_EMPTY_RESPONSE")
+        self.assertEqual(request_count, 2)
+        records = await repository.list_calls(LLMUsageQuery())
+        self.assertEqual(records.total, 1)
+        self.assertEqual(records.items[0].status, "failed")
+        self.assertEqual(records.items[0].error_code, "LLM_EMPTY_RESPONSE")
+
+    async def test_price_missing_is_unavailable_and_configured_price_is_estimated(
+        self,
+    ) -> None:
         def handler(_: httpx.Request) -> httpx.Response:
             return httpx.Response(
                 200,
@@ -349,9 +407,7 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(unavailable.cost.amount)
         self.assertEqual(unavailable.cost.kind, "unavailable")
 
-        prices = json.dumps(
-            {"gpt-5-6-luna": {"input": "2", "output": "3"}}
-        )
+        prices = json.dumps({"gpt-5-6-luna": {"input": "2", "output": "3"}})
         gateway, client, _ = self._gateway(
             httpx.MockTransport(handler), prices_json=prices
         )
@@ -362,7 +418,9 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(estimated.cost.kind, "estimated")
         self.assertEqual(estimated.cost.amount, Decimal("2.000006"))
 
-    async def test_failure_record_and_error_do_not_contain_secret_or_upstream_body(self) -> None:
+    async def test_failure_record_and_error_do_not_contain_secret_or_upstream_body(
+        self,
+    ) -> None:
         secret = "test-rightcode-key"
 
         def handler(_: httpx.Request) -> httpx.Response:
@@ -392,11 +450,13 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         *,
         prices_json: str = "{}",
         key: str = "test-rightcode-key",
+        max_retries: int = 0,
     ) -> tuple[RightCodeLLMGateway, httpx.AsyncClient, JsonlLLMUsageRepository]:
         settings = _settings(
             self.assets_root,
             key=key,
             prices_json=prices_json,
+            max_retries=max_retries,
         )
         repository = JsonlLLMUsageRepository(self.assets_root)
         client = httpx.AsyncClient(transport=transport)
@@ -417,12 +477,13 @@ def _settings(
     *,
     key: str = "test-rightcode-key",
     prices_json: str = "{}",
+    max_retries: int = 0,
 ) -> Settings:
     return Settings(
         project_assets_dir=assets_root,
         rightcode_api_key=SecretStr(key),
         rightcode_model_prices_json=prices_json,
-        rightcode_max_retries=0,
+        rightcode_max_retries=max_retries,
     )
 
 

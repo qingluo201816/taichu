@@ -145,6 +145,16 @@
   --tc-warning-text: #865107;
   --tc-warning-border: rgba(255, 169, 70, 0.48);
   --tc-warning-soft: rgba(255, 169, 70, 0.12);
+  --tc-issue-date: #6d28d9;
+  --tc-issue-status-done: #166534;
+  --tc-issue-status-open: #92400e;
+  --tc-issue-status-deprecated: #6b7280;
+  --tc-issue-symptom: #1d4ed8;
+  --tc-issue-cause: #b42318;
+  --tc-issue-impact: #9a3412;
+  --tc-issue-fix: #5b21b6;
+  --tc-issue-verification: #0e7490;
+  --tc-issue-code: #52525b;
 
   --tc-font-ui: var(--font-geist-sans), "Inter", "PingFang SC",
     "Microsoft YaHei", "Noto Sans SC", sans-serif;
@@ -364,6 +374,16 @@
   --tc-warning-text: var(--style-off-white);
   --tc-warning-border: var(--style-wire-gray);
   --tc-warning-soft: var(--style-recess-black);
+  --tc-issue-date: #c4b5fd;
+  --tc-issue-status-done: #86efac;
+  --tc-issue-status-open: #fcd34d;
+  --tc-issue-status-deprecated: #a1a1aa;
+  --tc-issue-symptom: #93c5fd;
+  --tc-issue-cause: #fda4af;
+  --tc-issue-impact: #fdba74;
+  --tc-issue-fix: #c4b5fd;
+  --tc-issue-verification: #67e8f9;
+  --tc-issue-code: #d4d4d8;
 
   --background: var(--tc-surface-page);
   --foreground: var(--tc-text-primary);
@@ -527,6 +547,16 @@
   --tc-warning-text: var(--style-graphite);
   --tc-warning-border: var(--style-hairline);
   --tc-warning-soft: var(--style-mist);
+  --tc-issue-date: #6d28d9;
+  --tc-issue-status-done: #166534;
+  --tc-issue-status-open: #92400e;
+  --tc-issue-status-deprecated: #6b7280;
+  --tc-issue-symptom: #1d4ed8;
+  --tc-issue-cause: #b42318;
+  --tc-issue-impact: #9a3412;
+  --tc-issue-fix: #5b21b6;
+  --tc-issue-verification: #0e7490;
+  --tc-issue-code: #52525b;
 
   --background: var(--tc-surface-page);
   --foreground: var(--tc-text-primary);

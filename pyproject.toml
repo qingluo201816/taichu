@@ -12,6 +12,7 @@ dependencies = [
     "pydantic-settings>=2.7",
     "python-dotenv>=1.0",
     "pymongo>=4.13,<5",
+    "qdrant-client>=1.18,<2",
 ]
 
 [project.scripts]

@@ -45,7 +45,7 @@ _PLAN_SYSTEM_PROMPT = """你是太初通用写作助手的高层编排 Agent。
 3. 涉及小说事实时必须安排取证能力，不能靠自身猜测。
 4. Tool 是确定性原子能力；需要专业判断、写作、规划或审校时选择子 Agent。
 5. 节点依赖必须形成无环图；可并行的节点不要制造虚假依赖。
-6. 下游需要上游输出字段时，使用 input_bindings；路径使用点号，例如 text 或 result.items.0。
+6. 下游需要上游输出字段时，使用 input_bindings。source_path 已经以上游能力的 output 对象为根，不得自行添加 result、节点 ID 等包装层；字段必须来自上游 output_schema，数组下标使用点号数字，例如 chunks.0.content。target_path 已经以当前能力的输入对象为根，必须来自当前能力 input_schema，例如 source_request.direct_context。不得编造 text 等不存在的字段。
 7. 专业子 Agent 可通过 source_request.upstream_artifact_refs 消费兼容的上游中间产物，Runtime 会根据依赖自动补充引用。
 8. 未经用户明确允许，不得安排外部研究能力。
 9. 写 Tool 可以出现在计划中，但 Runtime 会在执行前暂停并请求作者授权。
@@ -91,34 +91,53 @@ class OrchestratorAgent:
         replan_guidance: str = "",
     ) -> GeneralAgentExecutionPlan:
         """根据当前请求和真实能力目录生成一次动态 DAG。"""
-        payload = {
-            "用户目标": run.user_goal,
-            "对话": [message.model_dump(mode="json") for message in run.messages],
-            "当前范围": run.scope.model_dump(mode="json"),
-            "作者约束": run.author_constraints,
-            "允许外部研究": run.external_access_allowed,
-            "最大计划节点数": run.limits.max_plan_nodes,
-            "当前重规划次数": run.replan_count,
-            "重规划指导": replan_guidance,
-            "上一版计划": (
-                run.plan.model_dump(mode="json") if run.plan is not None else None
-            ),
-            "上一版执行结果": _node_result_payload(run),
-            "能力目录": self._capability_catalog(),
-            "输出Schema": GeneralAgentPlanDraft.model_json_schema(),
-        }
-        draft = await self._complete_json(
-            run=run,
-            phase="plan" if not replan_guidance else "replan",
-            system_prompt=_PLAN_SYSTEM_PROMPT,
-            payload=payload,
-            output_schema=GeneralAgentPlanDraft,
-        )
-        plan = GeneralAgentExecutionPlan.model_validate(draft.model_dump(mode="json"))
-        self._validate_capabilities(plan, run)
-        if len(plan.nodes) > run.limits.max_plan_nodes:
-            raise OrchestratorPlanError("编排计划超过本次任务允许的节点数量。")
-        return plan
+        contract_error = ""
+        invalid_plan: dict[str, Any] | None = None
+        for contract_attempt in range(2):
+            payload = {
+                "用户目标": run.user_goal,
+                "对话": [message.model_dump(mode="json") for message in run.messages],
+                "当前范围": run.scope.model_dump(mode="json"),
+                "作者约束": run.author_constraints,
+                "允许外部研究": run.external_access_allowed,
+                "最大计划节点数": run.limits.max_plan_nodes,
+                "当前重规划次数": run.replan_count,
+                "重规划指导": replan_guidance,
+                "上一版计划": (
+                    run.plan.model_dump(mode="json") if run.plan is not None else None
+                ),
+                "上一版执行结果": _node_result_payload(run),
+                "能力目录": self._capability_catalog(),
+                "输出Schema": GeneralAgentPlanDraft.model_json_schema(),
+            }
+            if contract_error:
+                payload["本次计划契约校验错误"] = contract_error
+                payload["需要修复的本次计划"] = invalid_plan
+                payload["修复要求"] = (
+                    "只修复未知能力、权限或计划规模问题，不要执行这份错误计划。"
+                )
+            draft = await self._complete_json(
+                run=run,
+                phase="plan" if not replan_guidance else "replan",
+                system_prompt=_PLAN_SYSTEM_PROMPT,
+                payload=payload,
+                output_schema=GeneralAgentPlanDraft,
+            )
+            plan = GeneralAgentExecutionPlan.model_validate(
+                draft.model_dump(mode="json")
+            )
+            try:
+                self._validate_capabilities(plan, run)
+                if len(plan.nodes) > run.limits.max_plan_nodes:
+                    raise OrchestratorPlanError("编排计划超过本次任务允许的节点数量。")
+            except OrchestratorPlanError as error:
+                if contract_attempt:
+                    raise
+                contract_error = str(error)
+                invalid_plan = plan.model_dump(mode="json")
+                continue
+            return plan
+        raise OrchestratorPlanError("编排计划未通过能力契约校验。")
 
     async def verify(self, run: GeneralAgentRun) -> GeneralAgentVerification:
         """检查真实执行结果并生成最终回答或有限重规划决定。"""
@@ -155,6 +174,7 @@ class OrchestratorAgent:
                     "side_effect": tool_manifest.side_effect.value,
                     "requires_external_access": tool_manifest.requires_external_access,
                     "input_schema": tool_manifest.input_schema.model_json_schema(),
+                    "output_schema": tool_manifest.output_schema.model_json_schema(),
                 }
             )
         subagents: list[dict[str, Any]] = []
@@ -171,6 +191,9 @@ class OrchestratorAgent:
                         subagent_manifest.accepted_artifact_types
                     ),
                     "input_schema": subagent_manifest.input_schema.model_json_schema(),
+                    "output_schema": (
+                        subagent_manifest.output_schema.model_json_schema()
+                    ),
                 }
             )
         return {"tools": tools, "subagents": subagents}
@@ -186,15 +209,21 @@ class OrchestratorAgent:
         }
         for node in plan.nodes:
             if node.kind is GeneralAgentNodeKind.TOOL:
-                manifest = tools.get(node.capability_name)
-                if manifest is None:
+                tool_manifest = tools.get(node.capability_name)
+                if tool_manifest is None:
                     raise OrchestratorPlanError(
                         f"编排计划引用了未知工具“{node.capability_name}”。"
                     )
-                if manifest.requires_external_access and not run.external_access_allowed:
-                    raise OrchestratorPlanError("用户未允许外部研究，计划却安排了外部工具。")
+                if (
+                    tool_manifest.requires_external_access
+                    and not run.external_access_allowed
+                ):
+                    raise OrchestratorPlanError(
+                        "用户未允许外部研究，计划却安排了外部工具。"
+                    )
             else:
-                if node.capability_name not in subagents:
+                subagent_manifest = subagents.get(node.capability_name)
+                if subagent_manifest is None:
                     raise OrchestratorPlanError(
                         f"编排计划引用了未知专业子智能体“{node.capability_name}”。"
                     )
@@ -202,7 +231,9 @@ class OrchestratorAgent:
                     node.capability_name == "external_research"
                     and not run.external_access_allowed
                 ):
-                    raise OrchestratorPlanError("用户未允许外部研究，计划却安排了外部研究。")
+                    raise OrchestratorPlanError(
+                        "用户未允许外部研究，计划却安排了外部研究。"
+                    )
 
     async def _complete_json(
         self,

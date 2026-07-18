@@ -55,7 +55,7 @@ class MVPInboxIssue(DomainModel):
 
     id: str = Field(min_length=1)
     title: str = Field(min_length=1)
-    content: str = ""
+    content: str = Field(min_length=1)
     source_chapter_id: str | None = None
     priority: MVPInboxPriority = MVPInboxPriority.NORMAL
     status: MVPInboxStatus = MVPInboxStatus.TODO

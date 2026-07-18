@@ -9,6 +9,8 @@ from time import perf_counter
 from typing import Any
 from uuid import uuid4
 
+from pydantic import ValidationError
+
 from taichu.application.general_agent.models import (
     GeneralAgentHumanRequest,
     GeneralAgentNodeKind,
@@ -18,7 +20,11 @@ from taichu.application.general_agent.models import (
     GeneralAgentRun,
     GeneralAgentRunStatus,
 )
-from taichu.application.invocations.models import InvocationBudget, InvocationContext, now_iso
+from taichu.application.invocations.models import (
+    InvocationBudget,
+    InvocationContext,
+    now_iso,
+)
 from taichu.application.services.invocation_policy_service import (
     InvocationPolicyService,
     canonical_input_hash,
@@ -61,7 +67,11 @@ class DynamicDagExecutor:
         plan_nodes = {node.node_id: node for node in run.plan.nodes}
         while True:
             current = _current_runs(run)
-            pending = [item for item in current.values() if item.status is GeneralAgentNodeStatus.PENDING]
+            pending = [
+                item
+                for item in current.values()
+                if item.status is GeneralAgentNodeStatus.PENDING
+            ]
             if not pending:
                 break
             blocked = self._mark_blocked_nodes(run, plan_nodes)
@@ -82,7 +92,9 @@ class DynamicDagExecutor:
                 if self._dependencies_satisfied(item, current, plan_nodes)
             ]
             if not ready:
-                raise DynamicDagExecutionError("动态 DAG 没有可执行节点，依赖状态不一致。")
+                raise DynamicDagExecutionError(
+                    "动态 DAG 没有可执行节点，依赖状态不一致。"
+                )
             approval = self._first_write_approval(run, ready, plan_nodes)
             if approval is not None:
                 node_run, human_request = approval
@@ -131,9 +143,7 @@ class DynamicDagExecutor:
     def _ensure_node_runs(self, run: GeneralAgentRun) -> GeneralAgentRun:
         if run.plan is None:
             return run
-        existing = {
-            (item.plan_revision, item.node_id): item for item in run.node_runs
-        }
+        existing = {(item.plan_revision, item.node_id): item for item in run.node_runs}
         items = list(run.node_runs)
         for node in run.plan.nodes:
             key = (run.plan_revision, node.node_id)
@@ -196,7 +206,8 @@ class DynamicDagExecutor:
             if status is GeneralAgentNodeStatus.SUCCESS:
                 continue
             if (
-                status in {GeneralAgentNodeStatus.FAILED, GeneralAgentNodeStatus.SKIPPED}
+                status
+                in {GeneralAgentNodeStatus.FAILED, GeneralAgentNodeStatus.SKIPPED}
                 and plan_nodes[dependency].continue_on_failure
             ):
                 continue
@@ -323,7 +334,7 @@ class DynamicDagExecutor:
                     "finished_at": now_iso(),
                     "duration_ms": max(0, round((perf_counter() - timer) * 1000)),
                     "error_type": type(error).__name__,
-                    "error_message": str(error)[:2_000],
+                    "error_message": _runtime_error_message(error)[:2_000],
                 }
             )
 
@@ -335,9 +346,16 @@ class DynamicDagExecutor:
         payload = deepcopy(node.input_data)
         current = _current_runs(run)
         for binding in node.input_bindings:
-            source = current[binding.source_node_id].output
-            value = _read_path(source, binding.source_path)
-            _write_path(payload, binding.target_path, value)
+            try:
+                source = current[binding.source_node_id].output
+                value = _read_path(source, binding.source_path)
+                _write_path(payload, binding.target_path, value)
+            except DynamicDagExecutionError as error:
+                raise DynamicDagExecutionError(
+                    f"节点“{node.node_id}”的数据交接失败：从上游节点"
+                    f"“{binding.source_node_id}”读取“{binding.source_path}”并写入"
+                    f"“{binding.target_path}”时出错；{error}"
+                ) from error
         if node.kind is GeneralAgentNodeKind.SUBAGENT:
             subagent_manifest = self._subagent_registry.get_manifest(
                 node.capability_name
@@ -426,6 +444,16 @@ def _write_path(payload: dict[str, Any], path: str, value: Any) -> None:
             raise DynamicDagExecutionError(f"无法写入节点输入路径“{path}”。")
         current = child
     current[parts[-1]] = value
+
+
+def _runtime_error_message(error: Exception) -> str:
+    if not isinstance(error, ValidationError):
+        return str(error)
+    details: list[str] = []
+    for item in error.errors(include_url=False):
+        location = ".".join(str(part) for part in item.get("loc", ())) or "输入"
+        details.append(f"{location}：{item.get('msg', '不符合要求')}")
+    return "能力输入未通过运行时校验：" + "；".join(details)
 
 
 def _resource_scopes(tool_name: str, payload: Mapping[str, Any]) -> list[str]:

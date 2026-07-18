@@ -1,27 +1,27 @@
 # 阶段 02：向量 RAG 独立实验与索引链路
 
-> 更新日期：2026-07-17  
+> 更新日期：2026-07-18
 > 阶段编号：`P02`  
 > 依赖：`P01=PASS`  
 > 默认连续执行：是  
-> 生产接入：本阶段禁止
+> 生产接入：本阶段禁止；独立向量能力必须保留
 
 ## 一、阶段目标
 
-构建一个真实、可重建、可评测的向量召回能力，但不改变任何生产消费者的召回结果。该阶段的成功定义是“得到可信实验结论”，不是“必须上线向量”。
+构建一个真实、可重建、可评测并长期保留的独立向量召回能力，但不改变任何生产消费者的召回结果。该阶段必须把向量能力本身落地；评测结论用于指导优化并决定阶段 03 是否进入融合与生产灰度，而不是决定是否删除向量能力。
 
 ## 二、核心方案修正
 
-当前知识卡数量和单小说范围较小，第一版不需要先引入复杂向量数据库。推荐实现：
+2026-07-18 用户已明确选择一步到位配置长期向量基础设施，但仍要求向量与词法保持独立。最终方案：
 
 - 应用层 `EmbeddingGateway` Protocol。
-- 真实 Embedding 适配器。
+- 本地 Qwen3-Embedding-4B 真实 Embedding 适配器，通过 llama.cpp OpenAI 兼容接口调用。
 - 一张知识卡投影成少量可追溯片段。
-- `project_assets/generated/` 下可删除、可重建的本地向量索引。
-- 精确余弦检索作为首个 `VectorIndexBackend`。
-- 后续若数据规模证明需要，再在同一协议下增加 HNSW、Mongo Vector Search 或其他实现。
+- Qdrant Server 作为首个 `VectorIndexBackend`，向量存于 Docker 命名卷，索引清单与审计产物仍保持可删除、可重建。
+- 所有向量条目只来自 MongoDB `lifecycle=confirmed` 知识卡，命中后回读 MongoDB 当前卡。
+- 当前生产默认继续使用 `mongo_lexical`，阶段 02 不做 RRF、加权融合或消费者切换。
 
-这样可以先验证语义收益，避免把向量数据库选型和 RAG 效果混成一个问题。
+Qdrant 与本地模型的安装、版本、哈希、端口和实机探测记录见 `docs/临时架构/7-18向量知识召回技术设计.md`。首轮效果不理想时应定位投影、指令、模型、维度、过滤或评分问题并继续优化；只有融合与生产晋级可以被门禁阻止。
 
 ## 三、任务清单
 
@@ -72,7 +72,7 @@
 
 生成：
 
-`docs/临时架构/向量知识召回技术设计.md`
+`docs/临时架构/7-18向量知识召回技术设计.md`
 
 其中写明：
 
@@ -82,7 +82,7 @@
 - 隐私、离线可用性和成本。
 - 最终选择及淘汰原因。
 
-只有真实探测成功后才修改 `pyproject.toml`、`.env.example` 和 `config.py`。
+真实探测已于 2026-07-18 成功，Qdrant、本地 Qwen 模型、`pyproject.toml`、`.env.example`、`config.py` 和一键启动配置已经落地；后续不得用假 Embedding 替换该真实链路。
 
 ### `VEC-003` 知识卡向量文档投影
 
@@ -116,14 +116,17 @@
 
 - `src/taichu/application/contracts/vector_index.py`
 - `src/taichu/application/retrieval/vector_index_models.py`
-- `src/taichu/infrastructure/retrieval/vector_index/exact_cosine.py`
-- `src/taichu/infrastructure/retrieval/vector_index/json_store.py`
+- `src/taichu/infrastructure/retrieval/vector_index/qdrant.py`
 
-索引目录：
+Qdrant 配置：
 
-`project_assets/generated/vector_indexes/knowledge_cards/`
+- 服务：`http://127.0.0.1:6333`
+- 集合：`taichu_knowledge_vectors`
+- 距离：Cosine
+- 向量维度：2560，必须与配置模型一致。
+- active 索引使用 Qdrant alias 指向构建完成且校验通过的物理集合。
 
-索引清单至少包含：
+索引清单作为可审计派生产物按需写入 `project_assets/generated/vector_indexes/knowledge_cards/`，至少包含：
 
 - `format_version`：只用于存储兼容。
 - `index_id`
@@ -134,9 +137,9 @@
 - 向量归一化方式。
 - 卡片数和片段数。
 - 构建时间。
-- 文件校验和。
+- Qdrant 物理集合名、active alias 和清单校验和。
 
-向量条目不得成为卡片事实副本；返回时必须按 `card_id` 回读 MongoDB 当前已确认卡，并再次校验生命周期和更新时间。
+Qdrant payload 只保存定位、过滤和过期校验所需的 `card_id`、类型、字段路径、内容哈希、卡片更新时间、投影策略和生命周期快照，不保存可反向取代 MongoDB 的完整卡片事实副本。返回时必须按 `card_id` 回读 MongoDB 当前已确认卡，并再次校验生命周期和更新时间。
 
 ### `VEC-005` 可重建与过期检测
 
@@ -148,14 +151,14 @@ uv run python scripts/rebuild_knowledge_vector_index.py
 
 支持：
 
-- 全量重建到临时目录。
+- 全量重建到新的临时 Qdrant 物理集合。
 - 校验卡片数、片段数、维度和哈希。
-- 成功后原子切换 active manifest。
-- 构建失败保留旧索引。
+- 成功后原子切换 active alias 和清单。
+- 构建失败保留旧 active 集合，不切 alias。
 - `--dry-run`。
 - `--verify-only`。
 - Mongo 卡片更新后检测索引过期。
-- 删除整个索引后可从 MongoDB 重新生成。
+- 删除整个 Qdrant 集合与本地清单后可从 MongoDB 重新生成。
 
 第一版不要求复杂增量更新或 change stream。先证明全量重建稳定，再决定是否需要增量。
 
@@ -169,7 +172,7 @@ uv run python scripts/rebuild_knowledge_vector_index.py
 
 - 只实现 `RetrievalMode.RELEVANCE`。
 - query/context 经过预算和标准化后生成查询 Embedding。
-- 对片段做精确余弦检索。
+- 通过 `VectorIndexBackend` 调用 Qdrant 做 Cosine 检索和 payload 过滤。
 - 按卡片聚合：建议使用最高片段分数加少量多片段覆盖奖励。
 - 返回 `RetrievalBackendCandidate`，保留片段字段路径、原始相似度和后端排名的脱敏信号。
 - 结果回读 MongoDB，并过滤未确认、已删除和更新时间不一致卡。
@@ -219,7 +222,7 @@ uv run python scripts/rebuild_knowledge_vector_index.py
 
 向量后端本身不必在所有分组胜过词法。它的价值应主要体现在语义改写和隐含表达。
 
-### `VEC-009` 形成 GO / NO-GO 结论
+### `VEC-009` 形成融合 GO / HOLD 结论
 
 生成：
 
@@ -228,17 +231,17 @@ uv run python scripts/rebuild_knowledge_vector_index.py
 结论只允许：
 
 - `GO_TO_HYBRID_SHADOW`
-- `NO_GO_QUALITY`
-- `NO_GO_COST`
-- `NO_GO_LATENCY`
-- `NO_GO_OPERABILITY`
-- `NO_GO_PROVIDER`
+- `HOLD_HYBRID_QUALITY`
+- `HOLD_HYBRID_COST`
+- `HOLD_HYBRID_LATENCY`
+- `HOLD_HYBRID_OPERABILITY`
+- `HOLD_HYBRID_PROVIDER`
 
-若 NO-GO：
+若 HOLD：
 
-- 保留或删除实验实现由报告说明。
+- 保留独立向量实现并说明下一轮优化项。
 - 不修改生产召回策略。
-- 记录重新实验的触发条件。
+- 记录重新评测和进入融合的触发条件。
 - 后续阶段 04—08继续执行。
 
 ## 四、测试重点
@@ -248,10 +251,10 @@ uv run python scripts/rebuild_knowledge_vector_index.py
 - Mongo 卡更新导致索引过期。
 - 索引中存在旧卡 ID 时不能返回已删除/未确认卡。
 - 全量重建失败时 active 索引不受影响。
-- Windows 文件原子替换。
+- Qdrant 临时集合构建失败与 alias 原子切换。
 - Embedding 超时、429、5xx 和权限错误。
 - 查询日志不保存原文和向量。
-- 删除 generated 索引后可重建。
+- 删除 Qdrant 集合和 generated 清单后可重建。
 
 ## 五、晋级门禁
 
@@ -259,12 +262,12 @@ uv run python scripts/rebuild_knowledge_vector_index.py
 
 - 单元测试的确定性假 Embedding 只证明代码正确，不作为晋级证据。
 - 必须至少一次真实 Embedding 构建完整索引并运行全量评测。
-- 未达到稳定收益时不得进入生产影子模式之外的接入。
+- 未达到稳定收益时不得进入阶段 03 的混合影子与生产接入，但独立向量能力继续保留和优化。
 - 本阶段不得修改 `src/taichu/main.py` 中生产 `retrieval_service` 注入策略，除非只为评测显式装配且默认关闭。
 
 ## 六、自检
 
-- [ ] 向量索引位于 generated，不是 source/Mongo 事实。
+- [ ] 向量位于 Qdrant 派生集合，清单位于 generated；两者都不是 source/Mongo 事实。
 - [ ] 所有索引条目来自 confirmed 卡。
 - [ ] 返回前重新读取 Mongo 当前卡。
 - [ ] 没有随机/哈希向量冒充生产。
@@ -272,13 +275,13 @@ uv run python scripts/rebuild_knowledge_vector_index.py
 - [ ] 索引可全量重建。
 - [ ] 词法生产路径完全未改变。
 - [ ] 评测与阶段 01 使用同一数据集校验和。
-- [ ] 已输出明确 GO/NO-GO。
+- [ ] 已输出明确的融合 GO/HOLD 结论和向量优化项。
 
 ## 七、交付物
 
 - Embedding 契约和真实适配器。
 - 向量文档投影。
-- 精确余弦索引与存储。
+- Qdrant Cosine 索引、active alias 与清单存储。
 - 重建/校验脚本。
 - 独立向量后端。
-- 评测结果和 GO/NO-GO 报告。
+- 评测结果和融合 GO/HOLD 报告。

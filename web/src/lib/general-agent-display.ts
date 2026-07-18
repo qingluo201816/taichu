@@ -74,6 +74,52 @@ export function isGeneralAgentRunActive(status: GeneralAgentRunStatus): boolean 
   return activeStatuses.has(status);
 }
 
+export function generalNodeStatusLabel(
+  nodeStatus: GeneralAgentNodeStatus,
+  runStatus: GeneralAgentRunStatus,
+): string {
+  if (nodeStatus === "failed" && isGeneralAgentRunActive(runStatus)) {
+    return "等待自动修复";
+  }
+  return generalNodeStatusLabels[nodeStatus];
+}
+
+export function generalNodeVisualStatus(
+  nodeStatus: GeneralAgentNodeStatus,
+  runStatus: GeneralAgentRunStatus,
+): GeneralAgentNodeStatus {
+  if (nodeStatus === "failed" && isGeneralAgentRunActive(runStatus)) {
+    return "running";
+  }
+  return nodeStatus;
+}
+
+export function generalNodeErrorMessage(
+  errorMessage: string | null,
+  runStatus: GeneralAgentRunStatus,
+): string | null {
+  if (!errorMessage || isGeneralAgentRunActive(runStatus)) {
+    return null;
+  }
+  return errorMessage;
+}
+
+export function generalRunProgressSummary(run: GeneralAgentRun): string {
+  const nodes = currentGeneralAgentNodes(run);
+  if (
+    run.status === "replanning" ||
+    (isGeneralAgentRunActive(run.status) &&
+      nodes.some(node => node.status === "failed"))
+  ) {
+    return "正在修复执行问题";
+  }
+  if (!nodes.length) {
+    return "本次任务无需调用额外能力";
+  }
+  const completedNodes = nodes.filter(node => node.status === "success").length;
+  return `已完成 ${completedNodes}/${nodes.length} 个能力步骤`;
+}
+
 export function generalCapabilityLabel(name: string): string {
   return capabilityLabels[name] ?? "未识别能力";
 }

@@ -22,7 +22,9 @@ import {
 } from "@/lib/api/general-agent";
 import {
   generalCapabilityLabel,
-  generalNodeStatusLabels,
+  generalNodeErrorMessage,
+  generalNodeStatusLabel,
+  generalRunProgressSummary,
   generalRunStatusLabels,
   isGeneralAgentRunActive,
 } from "@/lib/general-agent-display";
@@ -224,7 +226,11 @@ export function GeneralAgentMonitorShell() {
                     <span className="line-clamp-2 text-sm font-medium">{run.user_goal}</span>
                     <span className="mt-1 flex items-center justify-between gap-2 text-xs text-[var(--tc-text-muted)]">
                       <span>{generalRunStatusLabels[run.status]}</span>
-                      <span>{run.completed_node_count}/{run.total_node_count} 节点</span>
+                      <span>
+                        {isGeneralAgentRunActive(run.status)
+                          ? "正在内部处理"
+                          : `${run.completed_node_count}/${run.total_node_count} 节点`}
+                      </span>
                     </span>
                   </button>
                 ))}
@@ -272,13 +278,18 @@ export function GeneralAgentMonitorShell() {
                   </div>
                   <GeneralAgentFlowGraph
                     nodes={visibleNodes}
+                    runStatus={currentRun.status}
                     selectedNodeId={selectedNode?.node_id ?? ""}
                     onSelectNode={setSelectedNodeId}
                   />
                 </div>
                 <div className="min-h-0 overflow-y-auto rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-3">
                   {selectedNode ? (
-                    <NodeDetail node={selectedNode} traces={nodeTraces} />
+                    <NodeDetail
+                      node={selectedNode}
+                      runStatus={currentRun.status}
+                      traces={nodeTraces}
+                    />
                   ) : (
                     <DirectRunDetail run={currentRun} traces={plannerTraces} />
                   )}
@@ -298,8 +309,6 @@ export function GeneralAgentMonitorShell() {
 }
 
 function RunHeader({ run, traceTotal }: { run: GeneralAgentRun; traceTotal: number }) {
-  const current = run.node_runs.filter(node => node.plan_revision === run.plan_revision);
-  const completed = current.filter(node => node.status === "success").length;
   return (
     <section className="shrink-0 rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-4 py-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -312,7 +321,7 @@ function RunHeader({ run, traceTotal }: { run: GeneralAgentRun; traceTotal: numb
             {run.user_goal}
           </h2>
           <p className="mt-1 text-xs text-[var(--tc-text-muted)]">
-            当前计划完成 {completed}/{current.length} 个节点 · {traceTotal} 条脱敏调用记录 · 更新于 {formatTime(run.updated_at)}
+            {generalRunProgressSummary(run)} · {traceTotal} 条脱敏调用记录 · 更新于 {formatTime(run.updated_at)}
           </p>
         </div>
         <Link
@@ -329,11 +338,17 @@ function RunHeader({ run, traceTotal }: { run: GeneralAgentRun; traceTotal: numb
 
 function NodeDetail({
   node,
+  runStatus,
   traces,
 }: {
   node: GeneralAgentNodeRun;
+  runStatus: GeneralAgentRunStatus;
   traces: GeneralAgentInvocationTrace[];
 }) {
+  const visibleErrorMessage = generalNodeErrorMessage(
+    node.error_message,
+    runStatus,
+  );
   return (
     <div>
       <p className="text-xs text-[var(--tc-text-muted)]">节点详情</p>
@@ -342,7 +357,10 @@ function NodeDetail({
       </h3>
       <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-border-subtle)] text-xs">
         <Metric label="节点类型" value={node.kind === "tool" ? "工具" : "专业智能体"} />
-        <Metric label="节点状态" value={generalNodeStatusLabels[node.status]} />
+        <Metric
+          label="节点状态"
+          value={generalNodeStatusLabel(node.status, runStatus)}
+        />
         <Metric label="执行耗时" value={durationLabel(node.duration_ms)} />
         <Metric label="来源数量" value={`${node.source_refs.length} 个`} />
       </div>
@@ -361,10 +379,10 @@ function NodeDetail({
           <p className="mt-1">{node.authorization_approved ? "作者已授权该节点的确定输入。" : "该节点正在等待作者授权。"}</p>
         </div>
       ) : null}
-      {node.error_message ? (
+      {visibleErrorMessage ? (
         <div className="mt-3 rounded-[var(--tc-radius-control)] border border-red-700/60 bg-red-950/20 p-3 text-xs text-red-100">
           <p className="font-medium">节点异常</p>
-          <p className="mt-1 whitespace-pre-wrap">{node.error_message}</p>
+          <p className="mt-1 whitespace-pre-wrap">{visibleErrorMessage}</p>
           {node.error_type ? <p className="mt-1 text-red-200/65">技术错误类型：{node.error_type}</p> : null}
         </div>
       ) : null}
