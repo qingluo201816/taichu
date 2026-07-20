@@ -1,0 +1,23 @@
+{
+  "memory_id": "memory_20260719_124654_e29ccb57",
+  "kind": "work_note",
+  "content": "用户发送了一个简单问候“你好”，没有提出具体的写作任务或需要调用能力的问题。根据编排规则，小问题不应强行扩展为长链路，可以直接回答。因此本计划不安排任何节点，仅以直接回应完成交互。",
+  "source_refs": [
+    "run:general_run_20260719_124642_9b420a:plan:1"
+  ],
+  "artifact_refs": [],
+  "run_ids": [
+    "general_run_20260719_124642_9b420a"
+  ],
+  "conversation_id": "general_conversation_20260718_080855_cec285",
+  "created_request_index": 5,
+  "expires_after_request_index": 8,
+  "retention_priority": 65,
+  "created_at": "2026-07-19T12:46:54.633763Z",
+  "updated_at": "2026-07-19T12:46:54.633763Z",
+  "expires_at": null,
+  "supersedes_memory_id": null,
+  "content_sha256": "57788a04e135b98935e76fe0ff58dc5f0cf1875427c7d951f44208535ac97e29",
+  "sensitivity": "normal",
+  "deleted_at": null
+}

@@ -22,7 +22,7 @@ from taichu.application.services.knowledge_extraction_service import (
     KnowledgeExtractionNotFoundError,
     KnowledgeExtractionService,
 )
-from taichu.application.agents.models.agent_run import AgentRun
+from taichu.application.agents.models.agent_run import AgentRun, AgentRunStatus
 from taichu.infrastructure.agent_runs.json_store import AgentRunStoreError
 
 router = APIRouter(prefix="/api/agent-tasks")
@@ -43,7 +43,10 @@ async def api_list_agent_tasks(
     active = await event_center.list_active_tasks()
     by_id = {run.run_id: run for run in persisted}
     for run in active:
-        by_id[run.run_id] = run
+        if run.status not in {AgentRunStatus.COMPLETED, AgentRunStatus.FAILED}:
+            by_id[run.run_id] = run
+        elif run.run_id not in by_id:
+            by_id[run.run_id] = run
     runs = list(by_id.values())
     if status != "all":
         runs = [run for run in runs if run.status.value == status]
@@ -83,11 +86,16 @@ async def api_get_agent_task(
 ) -> KnowledgeExtractionRunDetailResponse:
     """Return one active or persisted Agent task."""
     active = await event_center.get_active_task(task_id)
-    if active is not None:
+    if active is not None and active.status not in {
+        AgentRunStatus.COMPLETED,
+        AgentRunStatus.FAILED,
+    }:
         return KnowledgeExtractionRunDetailResponse(run=active)
     try:
         run = await service.get_run(task_id)
     except (KnowledgeExtractionNotFoundError, AgentRunStoreError) as error:
+        if active is not None:
+            return KnowledgeExtractionRunDetailResponse(run=active)
         raise HTTPException(status_code=404, detail=str(error)) from error
     return KnowledgeExtractionRunDetailResponse(run=run)
 

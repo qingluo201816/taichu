@@ -14,6 +14,9 @@ from taichu.application.tools._structure import (
     current_structure_version,
     require_structure_version,
 )
+from taichu.application.tools._structure_reconciliation import (
+    reconcile_created_items,
+)
 from taichu.application.tools.contract import (
     ToolAuthorizationPolicy,
     ToolIdempotencyPolicy,
@@ -118,4 +121,18 @@ async def run(
         changes=changes,
         audit_ref=f"structure_write:{sha256_text(tool_input.idempotency_key)[:24]}",
         source_refs=["manuscript:manifest", "manuscript:outline"],
+    )
+
+
+async def reconcile(
+    input_data: BaseModel,
+    invocation: InvocationContext,
+    context: CapabilityContext,
+):
+    del invocation
+    tool_input = CreateNovelStructureItemsInput.model_validate(input_data)
+    return await reconcile_created_items(
+        tool_input,
+        context.require("chapter_service", ChapterService),
+        context.require("outline_service", OutlineService),
     )

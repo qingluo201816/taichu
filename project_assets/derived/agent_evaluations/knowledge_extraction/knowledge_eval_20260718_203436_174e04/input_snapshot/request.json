@@ -1,0 +1,16 @@
+{
+  "dataset_checksum": "680832b0d28dfaef6b5070d138bf5cad3fc978e0c114f5fbc5570c8b0783ab61",
+  "dataset_id": "taichu_knowledge_eval_006_020_author_confirmed",
+  "eligibility": {
+    "extract_run_20260718_145223_53667e": {
+      "execution_coverage": 1.0,
+      "level": "full",
+      "reasons": []
+    }
+  },
+  "judge_enabled": true,
+  "metric_profile_id": "knowledge_extraction_balanced",
+  "run_case_ids": {
+    "extract_run_20260718_145223_53667e": "batch_006_010"
+  }
+}

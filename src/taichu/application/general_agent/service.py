@@ -5,20 +5,38 @@ from __future__ import annotations
 import asyncio
 import builtins
 from datetime import UTC, datetime
+import json
 from typing import Any, TypedDict
 from uuid import uuid4
 
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
+from langgraph.checkpoint.base import BaseCheckpointSaver
+from langgraph.checkpoint.memory import InMemorySaver
 
 from taichu.application.contracts.general_agent_run import GeneralAgentRunRepository
+from taichu.application.contracts.general_agent_effects import (
+    GeneralAgentEffectRepository,
+)
+from taichu.application.general_agent.context import (
+    ContextAssembler,
+    ContextAssemblyResult,
+    ContextPhase,
+)
 from taichu.application.general_agent.events import GeneralAgentEventCenter
-from taichu.application.general_agent.executor import DynamicDagExecutor
+from taichu.application.general_agent.executor import (
+    DynamicDagExecutor,
+    InjectedProcessTermination,
+)
 from taichu.application.general_agent.models import (
     GeneralAgentConversation,
+    GeneralAgentContextCategoryStat,
+    GeneralAgentCompressionStats,
     GeneralAgentHumanRequest,
+    GeneralAgentExecutionPlan,
     GeneralAgentLifecycleEvent,
     GeneralAgentMessage,
+    GeneralAgentPlanNode,
     GeneralAgentNodeRun,
     GeneralAgentNodeStatus,
     GeneralAgentRun,
@@ -27,10 +45,21 @@ from taichu.application.general_agent.models import (
     GeneralAgentScope,
 )
 from taichu.application.general_agent.orchestrator import OrchestratorAgent
+from taichu.application.general_agent.request_analysis import (
+    explicit_chapter_orders,
+    is_explicit_chapter_content_request,
+)
+from taichu.application.general_agent.recovery import (
+    CheckpointIntegritySummary,
+    EffectRecord,
+    EffectSummary,
+    GeneralAgentRecoverySnapshot,
+)
 from taichu.application.invocations.models import now_iso
 from taichu.application.services.invocation_policy_service import (
     InvocationPolicyService,
 )
+from taichu.application.services.agent_memory_service import AgentMemoryService
 
 _ACTIVE_STATUSES = {
     GeneralAgentRunStatus.INIT,
@@ -62,12 +91,20 @@ class GeneralAgentRuntimeService:
         orchestrator: OrchestratorAgent,
         executor: DynamicDagExecutor,
         policy_service: InvocationPolicyService,
+        memory_service: AgentMemoryService,
+        context_assembler: ContextAssembler,
+        graph_checkpointer: BaseCheckpointSaver[Any] | None = None,
+        effect_repository: GeneralAgentEffectRepository | None = None,
     ) -> None:
         self._repository = repository
         self._event_center = event_center
         self._orchestrator = orchestrator
         self._executor = executor
         self._policy_service = policy_service
+        self._memory_service = memory_service
+        self._context_assembler = context_assembler
+        self._graph_checkpointer = graph_checkpointer or InMemorySaver()
+        self._effect_repository = effect_repository
         self._tasks: dict[str, asyncio.Task[GeneralAgentRun]] = {}
         self._locks: dict[str, asyncio.Lock] = {}
         self._conversation_locks: dict[str, asyncio.Lock] = {}
@@ -79,6 +116,7 @@ class GeneralAgentRuntimeService:
         *,
         user_goal: str,
         conversation_id: str | None = None,
+        start_new_conversation: bool | None = None,
         scope: GeneralAgentScope | None = None,
         author_constraints: list[str] | None = None,
         external_access_allowed: bool = False,
@@ -89,6 +127,10 @@ class GeneralAgentRuntimeService:
             raise GeneralAgentRuntimeError("任务目标不能为空。")
         timestamp = datetime.now(UTC)
         run_id = f"general_run_{timestamp.strftime('%Y%m%d_%H%M%S')}_{uuid4().hex[:6]}"
+        if start_new_conversation is True and conversation_id is not None:
+            raise GeneralAgentRuntimeError("开启新对话时不能复用已有会话标识。")
+        if start_new_conversation is False and conversation_id is None:
+            raise GeneralAgentRuntimeError("继续当前对话时缺少会话标识。")
         resolved_conversation_id = (
             conversation_id.strip()
             if conversation_id is not None
@@ -105,7 +147,7 @@ class GeneralAgentRuntimeService:
             asyncio.Lock(),
         )
         async with conversation_lock:
-            messages = await self._messages_for_new_turn(
+            messages, parent_run_id, request_index = await self._messages_for_new_turn(
                 resolved_conversation_id,
                 goal=goal,
                 created_at=created_at,
@@ -114,6 +156,9 @@ class GeneralAgentRuntimeService:
             run = GeneralAgentRun(
                 run_id=run_id,
                 task_id=resolved_conversation_id,
+                conversation_id=resolved_conversation_id,
+                request_index=request_index,
+                parent_run_id=parent_run_id,
                 user_goal=goal,
                 scope=scope or GeneralAgentScope(),
                 author_constraints=author_constraints or [],
@@ -131,13 +176,19 @@ class GeneralAgentRuntimeService:
                 updated_at=created_at,
                 started_at=created_at,
             )
-            return await self._checkpoint(run, "run_created")
+            run = await self._checkpoint(run, "run_created")
+            memory_ids = await self._memory_service.record_user_instructions(run)
+            if memory_ids:
+                run = _with_memory_refs(run, memory_ids)
+                run = await self._checkpoint(run, "author_memories_recorded")
+            return run
 
     async def run(
         self,
         *,
         user_goal: str,
         conversation_id: str | None = None,
+        start_new_conversation: bool | None = None,
         scope: GeneralAgentScope | None = None,
         author_constraints: list[str] | None = None,
         external_access_allowed: bool = False,
@@ -146,6 +197,7 @@ class GeneralAgentRuntimeService:
         run = await self.create_run(
             user_goal=user_goal,
             conversation_id=conversation_id,
+            start_new_conversation=start_new_conversation,
             scope=scope,
             author_constraints=author_constraints,
             external_access_allowed=external_access_allowed,
@@ -158,6 +210,7 @@ class GeneralAgentRuntimeService:
         *,
         user_goal: str,
         conversation_id: str | None = None,
+        start_new_conversation: bool | None = None,
         scope: GeneralAgentScope | None = None,
         author_constraints: list[str] | None = None,
         external_access_allowed: bool = False,
@@ -166,6 +219,7 @@ class GeneralAgentRuntimeService:
         run = await self.create_run(
             user_goal=user_goal,
             conversation_id=conversation_id,
+            start_new_conversation=start_new_conversation,
             scope=scope,
             author_constraints=author_constraints,
             external_access_allowed=external_access_allowed,
@@ -182,88 +236,62 @@ class GeneralAgentRuntimeService:
         approve: bool | None = None,
         second_confirmation: bool = False,
     ) -> GeneralAgentRun:
-        run = await self._require_run(run_id)
-        if run.status in _TERMINAL_STATUSES:
+        source_run = await self._require_run(run_id)
+        if source_run.status in _TERMINAL_STATUSES:
             raise GeneralAgentRuntimeError("已结束的任务不能恢复。")
-        request = run.pending_human_request
-        if request is not None and request.kind == "clarification":
-            if not answer.strip():
-                raise GeneralAgentRuntimeError("恢复澄清任务必须提供作者回答。")
-            run = run.model_copy(
-                update={
-                    "messages": [
-                        *run.messages,
-                        GeneralAgentMessage(
-                            role="user",
-                            content=answer.strip(),
-                            created_at=now_iso(),
-                        ),
-                    ],
-                    "pending_human_request": None,
-                    "plan": None,
-                }
-            )
-            run = _transition(run, GeneralAgentRunStatus.REPLANNING, "作者已补充信息。")
-        elif request is not None and request.kind == "write_authorization":
-            if approve is None:
-                raise GeneralAgentRuntimeError("恢复写入任务必须明确批准或拒绝。")
-            run = await self._resolve_write_authorization(
-                run,
-                request,
-                approve=approve,
-                second_confirmation=second_confirmation,
-            )
-        elif run.status in {
-            GeneralAgentRunStatus.FAILED,
-            GeneralAgentRunStatus.TIMEOUT,
-        }:
-            node_runs = [
-                item.model_copy(
-                    update={
-                        "status": GeneralAgentNodeStatus.PENDING,
-                        "started_at": None,
-                        "finished_at": None,
-                        "error_type": None,
-                        "error_message": None,
-                    }
+        conversation_lock = self._conversation_locks.setdefault(
+            source_run.conversation_id,
+            asyncio.Lock(),
+        )
+        async with conversation_lock:
+            conversation_runs = await self.get_conversation(source_run.conversation_id)
+            if conversation_runs[-1].run_id != source_run.run_id:
+                raise GeneralAgentRuntimeError("该轮待处理内容已经由后续轮次接续。")
+
+            request = source_run.pending_human_request
+            if request is not None and request.kind == "clarification":
+                reply = answer.strip()
+                if not reply:
+                    raise GeneralAgentRuntimeError("提交澄清回答时必须提供作者回答。")
+                run = await self._create_continuation_run(
+                    source_run,
+                    user_goal=reply,
+                    assistant_prompt=request.prompt,
                 )
-                if item.plan_revision == run.plan_revision
-                and item.status
-                in {
-                    GeneralAgentNodeStatus.RUNNING,
-                    GeneralAgentNodeStatus.FAILED,
-                    GeneralAgentNodeStatus.WAITING_HUMAN,
-                }
-                else item
-                for item in run.node_runs
-            ]
-            has_retryable_nodes = any(
-                item.plan_revision == run.plan_revision
-                and item.status
-                in {
-                    GeneralAgentNodeStatus.RUNNING,
-                    GeneralAgentNodeStatus.FAILED,
-                    GeneralAgentNodeStatus.WAITING_HUMAN,
-                }
-                for item in run.node_runs
-            )
-            target = (
-                GeneralAgentRunStatus.EXECUTING
-                if run.plan is not None and has_retryable_nodes
-                else GeneralAgentRunStatus.REPLANNING
-            )
-            run = run.model_copy(
-                update={
-                    "node_runs": node_runs,
-                    "errors": [],
-                }
-            )
-            run = await self._refresh_author_grants(run)
-            run = _transition(run, target, "作者请求从最近检查点恢复。")
-        else:
-            raise GeneralAgentRuntimeError("当前任务不处于可恢复状态。")
-        run = await self._checkpoint(run, "run_resumed")
-        return await self._execute_run(run_id)
+                memory_id = await self._memory_service.record_human_correction(
+                    run,
+                    content=reply,
+                )
+                run = _with_memory_refs(run, [memory_id])
+                run = await self._checkpoint(run, "clarification_recorded")
+                return await self._execute_run(run.run_id)
+
+            if request is not None and request.kind == "write_authorization":
+                if approve is None:
+                    raise GeneralAgentRuntimeError("提交写入决定时必须明确批准或拒绝。")
+                if (
+                    approve
+                    and request.second_confirmation_required
+                    and not second_confirmation
+                ):
+                    raise GeneralAgentRuntimeError("该高风险写入需要二次确认。")
+                return await self._continue_write_authorization(
+                    source_run,
+                    request,
+                    approve=approve,
+                    second_confirmation=second_confirmation,
+                )
+
+            if source_run.status in {
+                GeneralAgentRunStatus.FAILED,
+                GeneralAgentRunStatus.TIMEOUT,
+            }:
+                return await self._execute_run(
+                    source_run.run_id,
+                    resume_from_graph=True,
+                )
+
+            raise GeneralAgentRuntimeError("当前任务不处于可接续状态。")
 
     async def cancel(self, run_id: str) -> GeneralAgentRun:
         run = await self._require_run(run_id)
@@ -301,7 +329,7 @@ class GeneralAgentRuntimeService:
         runs = await self._all_runs()
         grouped: dict[str, builtins.list[GeneralAgentRun]] = {}
         for run in runs:
-            grouped.setdefault(run.task_id, []).append(run)
+            grouped.setdefault(run.conversation_id, []).append(run)
 
         conversations: builtins.list[GeneralAgentConversation] = []
         for conversation_id, items in grouped.items():
@@ -313,7 +341,7 @@ class GeneralAgentRuntimeService:
                     conversation_id=conversation_id,
                     title=first.user_goal,
                     status=latest.status,
-                    turn_count=len(ordered),
+                    request_count=len(ordered),
                     latest_run_id=latest.run_id,
                     created_at=first.created_at,
                     updated_at=max(item.updated_at for item in ordered),
@@ -330,7 +358,11 @@ class GeneralAgentRuntimeService:
     async def get_conversation(
         self, conversation_id: str
     ) -> builtins.list[GeneralAgentRun]:
-        runs = [run for run in await self._all_runs() if run.task_id == conversation_id]
+        runs = [
+            run
+            for run in await self._all_runs()
+            if run.conversation_id == conversation_id
+        ]
         if not runs:
             raise GeneralAgentConversationNotFoundError(conversation_id)
         return sorted(runs, key=lambda item: (item.created_at, item.run_id))
@@ -346,6 +378,7 @@ class GeneralAgentRuntimeService:
         for run in runs:
             if await self.delete(run.run_id):
                 deleted_count += 1
+        await self._memory_service.delete_conversation_memories(conversation_id)
         return deleted_count
 
     async def delete(self, run_id: str) -> bool:
@@ -354,8 +387,58 @@ class GeneralAgentRuntimeService:
             raise GeneralAgentRuntimeError("运行中的任务不能删除，请先取消。")
         deleted = await self._repository.delete(run_id)
         if deleted:
+            if self._effect_repository is not None:
+                await self._effect_repository.delete_run(run_id)
+            await self._graph_checkpointer.adelete_thread(run_id)
             await self._event_center.delete_snapshot(run_id)
         return deleted
+
+    async def list_effects(self, run_id: str) -> builtins.list[EffectRecord]:
+        await self._require_run(run_id)
+        if self._effect_repository is None:
+            return []
+        return await self._effect_repository.list_effects(run_id)
+
+    async def recovery_snapshot(
+        self,
+        run_id: str,
+    ) -> GeneralAgentRecoverySnapshot:
+        await self._require_run(run_id)
+        summary_reader = getattr(self._graph_checkpointer, "inspect_thread", None)
+        checkpoint = CheckpointIntegritySummary()
+        if callable(summary_reader):
+            summary = summary_reader(run_id)
+            checkpoint = CheckpointIntegritySummary(
+                current_revision=summary.current_revision,
+                available_revisions=summary.available_revisions,
+                integrity_status=summary.integrity_status,
+                recovered_from_revision=summary.recovered_from_revision,
+                damage_warnings=summary.damage_warnings,
+                legacy_migrated=summary.legacy_migrated,
+            )
+        events = await self.list_effects(run_id)
+        latest: dict[str, EffectRecord] = {}
+        for event in events:
+            latest[event.effect_id] = event
+        effects = [
+            EffectSummary(
+                effect_id=event.effect_id,
+                node_id=event.node_id,
+                tool_name=event.tool_name,
+                status=event.status,
+                resource_scopes=event.resource_scopes,
+                authorization_bound=event.authorization_reference is not None,
+                reason=event.reason,
+                updated_at=event.created_at,
+            )
+            for event in latest.values()
+        ]
+        effects.sort(key=lambda item: (item.updated_at, item.effect_id))
+        return GeneralAgentRecoverySnapshot(
+            run_id=run_id,
+            checkpoint=checkpoint,
+            effects=effects,
+        )
 
     async def _messages_for_new_turn(
         self,
@@ -364,15 +447,19 @@ class GeneralAgentRuntimeService:
         goal: str,
         created_at: str,
         existing_conversation: bool,
-    ) -> builtins.list[GeneralAgentMessage]:
+    ) -> tuple[builtins.list[GeneralAgentMessage], str | None, int]:
         if not existing_conversation:
-            return [
-                GeneralAgentMessage(
-                    role="user",
-                    content=goal,
-                    created_at=created_at,
-                )
-            ]
+            return (
+                [
+                    GeneralAgentMessage(
+                        role="user",
+                        content=goal,
+                        created_at=created_at,
+                    )
+                ],
+                None,
+                1,
+            )
 
         previous_runs = await self.get_conversation(conversation_id)
         latest = previous_runs[-1]
@@ -404,7 +491,7 @@ class GeneralAgentRuntimeService:
                 created_at=created_at,
             )
         )
-        return messages
+        return messages, latest.run_id, latest.request_index + 1
 
     async def _all_runs(self) -> builtins.list[GeneralAgentRun]:
         runs, _ = await self._repository.list_runs(
@@ -424,38 +511,7 @@ class GeneralAgentRuntimeService:
         for run in runs:
             if run.status not in _ACTIVE_STATUSES:
                 continue
-            node_runs = []
-            for item in run.node_runs:
-                updates: dict[str, Any] = {}
-                if item.status is GeneralAgentNodeStatus.RUNNING:
-                    updates.update(
-                        {
-                            "status": GeneralAgentNodeStatus.PENDING,
-                            "started_at": None,
-                            "finished_at": None,
-                            "error_type": None,
-                            "error_message": None,
-                        }
-                    )
-                if (
-                    item.plan_revision == run.plan_revision
-                    and item.authorization_approved
-                    and item.status is not GeneralAgentNodeStatus.SUCCESS
-                ):
-                    updates["authorization_grant_id"] = None
-                node_runs.append(item.model_copy(update=updates) if updates else item)
-            updated = run.model_copy(
-                update={
-                    "node_runs": node_runs,
-                    "errors": [*run.errors, "服务重启中断了执行，可从最近检查点恢复。"],
-                }
-            )
-            updated = _transition(
-                updated,
-                GeneralAgentRunStatus.FAILED,
-                "服务重启后已封存最近检查点。",
-            )
-            await self._checkpoint(updated, "interrupted_recovered")
+            self._start_background(run.run_id, resume_from_graph=True)
             recovered += 1
         return recovered
 
@@ -467,9 +523,64 @@ class GeneralAgentRuntimeService:
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
 
-    async def _resolve_write_authorization(
+    async def _create_continuation_run(
         self,
-        run: GeneralAgentRun,
+        source_run: GeneralAgentRun,
+        *,
+        user_goal: str,
+        assistant_prompt: str = "",
+    ) -> GeneralAgentRun:
+        created_at = now_iso()
+        timestamp = datetime.now(UTC)
+        run_id = f"general_run_{timestamp.strftime('%Y%m%d_%H%M%S')}_{uuid4().hex[:6]}"
+        messages = list(source_run.messages)
+        if assistant_prompt.strip() and not (
+            messages
+            and messages[-1].role == "assistant"
+            and messages[-1].content == assistant_prompt.strip()
+        ):
+            messages.append(
+                GeneralAgentMessage(
+                    role="assistant",
+                    content=assistant_prompt.strip(),
+                    created_at=source_run.updated_at,
+                )
+            )
+        messages.append(
+            GeneralAgentMessage(
+                role="user",
+                content=user_goal,
+                created_at=created_at,
+            )
+        )
+        run = GeneralAgentRun(
+            run_id=run_id,
+            task_id=source_run.conversation_id,
+            conversation_id=source_run.conversation_id,
+            request_index=source_run.request_index + 1,
+            parent_run_id=source_run.run_id,
+            user_goal=user_goal,
+            scope=source_run.scope,
+            author_constraints=source_run.author_constraints,
+            external_access_allowed=source_run.external_access_allowed,
+            limits=source_run.limits,
+            messages=messages,
+            lifecycle_events=[
+                GeneralAgentLifecycleEvent(
+                    status=GeneralAgentRunStatus.INIT,
+                    reason="收到新的作者请求，本轮执行已创建。",
+                    created_at=created_at,
+                )
+            ],
+            created_at=created_at,
+            updated_at=created_at,
+            started_at=created_at,
+        )
+        return await self._checkpoint(run, "continuation_run_created")
+
+    async def _continue_write_authorization(
+        self,
+        source_run: GeneralAgentRun,
         request: GeneralAgentHumanRequest,
         *,
         approve: bool,
@@ -477,83 +588,101 @@ class GeneralAgentRuntimeService:
     ) -> GeneralAgentRun:
         if request.node_id is None or request.tool_name is None:
             raise GeneralAgentRuntimeError("写入授权请求缺少目标节点。")
-        node = _find_current_node(run, request.node_id)
+        source_node = _find_current_node(source_run, request.node_id)
+        decision = "授权继续上一轮的写入操作。" if approve else "拒绝上一轮的写入操作。"
+        run = await self._create_continuation_run(
+            source_run,
+            user_goal=decision,
+            assistant_prompt=request.prompt,
+        )
         if not approve:
-            updated = node.model_copy(
+            final_answer = "已按你的决定拒绝写入，本次没有修改正文。"
+            plan = GeneralAgentExecutionPlan(
+                rationale="作者拒绝了上一轮待确认的持久化操作，本轮不执行写入节点。",
+                direct_response=final_answer,
+                nodes=[],
+            )
+            run = run.model_copy(
                 update={
-                    "status": GeneralAgentNodeStatus.SKIPPED,
+                    "plan": plan,
+                    "plan_revision": 1,
+                    "final_answer": final_answer,
                     "finished_at": now_iso(),
-                    "error_type": "AuthorRejected",
-                    "error_message": "作者拒绝了持久化修改。",
+                    "resumable": False,
                 }
             )
-            run = _replace_node(run, updated)
-            run = run.model_copy(update={"pending_human_request": None})
-            return _transition(
+            run = _transition(
                 run,
-                GeneralAgentRunStatus.EXECUTING,
-                "作者拒绝写入，继续收敛其余结果。",
+                GeneralAgentRunStatus.COMPLETED,
+                "作者拒绝写入，本轮执行已结束。",
             )
-        if request.second_confirmation_required and not second_confirmation:
-            raise GeneralAgentRuntimeError("该高风险写入需要二次确认。")
+            return await self._checkpoint(run, "write_rejected")
+
+        input_payload = dict(request.input_summary or source_node.resolved_input)
         grant = await self._policy_service.issue_author_write(
             task_id=run.task_id,
             tool_name=request.tool_name,
-            input_payload=node.resolved_input,
+            input_payload=input_payload,
             resource_scopes=tuple(request.resource_scopes),
             second_confirmation=second_confirmation,
         )
-        updated = node.model_copy(
+        plan_node = GeneralAgentPlanNode(
+            node_id=source_node.node_id,
+            kind=source_node.kind,
+            capability_name=source_node.capability_name,
+            objective=source_node.objective,
+            input_data=input_payload,
+            dependencies=[],
+            input_bindings=[],
+        )
+        plan = GeneralAgentExecutionPlan(
+            rationale="作者已批准上一轮待确认的确定输入，本轮只执行该授权节点。",
+            nodes=[plan_node],
+            final_response_guidance=(
+                source_run.plan.final_response_guidance if source_run.plan else ""
+            ),
+        )
+        node_run = GeneralAgentNodeRun(
+            node_id=source_node.node_id,
+            plan_revision=1,
+            kind=source_node.kind,
+            capability_name=source_node.capability_name,
+            objective=source_node.objective,
+            dependencies=[],
+            status=GeneralAgentNodeStatus.PENDING,
+            resolved_input=input_payload,
+            authorization_grant_id=grant.grant_id,
+            authorization_approved=True,
+            authorization_second_confirmation=second_confirmation,
+            authorization_resource_scopes=request.resource_scopes,
+        )
+        run = run.model_copy(
             update={
-                "status": GeneralAgentNodeStatus.PENDING,
-                "authorization_grant_id": grant.grant_id,
-                "authorization_approved": True,
-                "authorization_second_confirmation": second_confirmation,
-                "authorization_resource_scopes": request.resource_scopes,
+                "plan": plan,
+                "plan_revision": 1,
+                "node_runs": [node_run],
             }
         )
-        run = _replace_node(run, updated)
-        run = run.model_copy(update={"pending_human_request": None})
-        return _transition(
+        run = _transition(
             run,
             GeneralAgentRunStatus.EXECUTING,
-            "作者已授权本次确定输入的写入。",
+            "作者已授权上一轮的确定输入，开始本轮写入执行。",
         )
+        run = await self._checkpoint(run, "write_authorization_recorded")
+        return await self._execute_run(run.run_id)
 
-    async def _refresh_author_grants(
+    def _start_background(
         self,
-        run: GeneralAgentRun,
-    ) -> GeneralAgentRun:
-        """根据检查点中的作者决定重签进程内授权，不扩大原作用范围。"""
-        result = run
-        for node in run.node_runs:
-            if (
-                node.plan_revision != run.plan_revision
-                or not node.authorization_approved
-                or node.status is GeneralAgentNodeStatus.SUCCESS
-            ):
-                continue
-            scopes = tuple(node.authorization_resource_scopes) or (
-                f"tool:{node.capability_name}",
-            )
-            grant = await self._policy_service.issue_author_write(
-                task_id=run.task_id,
-                tool_name=node.capability_name,
-                input_payload=node.resolved_input,
-                resource_scopes=scopes,
-                second_confirmation=node.authorization_second_confirmation,
-            )
-            result = _replace_node(
-                result,
-                node.model_copy(update={"authorization_grant_id": grant.grant_id}),
-            )
-        return result
-
-    def _start_background(self, run_id: str) -> None:
+        run_id: str,
+        *,
+        resume_from_graph: bool = False,
+    ) -> None:
         current = self._tasks.get(run_id)
         if current is not None and not current.done():
             raise GeneralAgentRuntimeError("该任务已经在运行。")
-        task = asyncio.create_task(self._execute_run(run_id))
+        task = asyncio.create_task(
+            self._execute_run(run_id, resume_from_graph=resume_from_graph)
+        )
         self._tasks[run_id] = task
         task.add_done_callback(lambda completed: self._task_finished(run_id, completed))
 
@@ -566,16 +695,36 @@ class GeneralAgentRuntimeService:
         if not task.cancelled():
             task.exception()
 
-    async def _execute_run(self, run_id: str) -> GeneralAgentRun:
+    async def _execute_run(
+        self,
+        run_id: str,
+        *,
+        resume_from_graph: bool = False,
+    ) -> GeneralAgentRun:
         lock = self._locks.setdefault(run_id, asyncio.Lock())
         async with lock:
             run = await self._require_run(run_id)
             try:
                 async with asyncio.timeout(run.limits.max_runtime_seconds):
-                    result = await self._graph.ainvoke(
-                        {"run": run.model_dump(mode="json")},
-                        config={"recursion_limit": 20},
-                    )
+                    config = {
+                        "recursion_limit": 20,
+                        "configurable": {"thread_id": run_id},
+                    }
+                    graph_input: _RuntimeGraphState | None = {
+                        "run": run.model_dump(mode="json")
+                    }
+                    result: dict[str, Any] | None = None
+                    if resume_from_graph:
+                        graph_state = await self._graph.aget_state(config)
+                        if graph_state.next:
+                            graph_input = None
+                        elif graph_state.values:
+                            result = dict(graph_state.values)
+                    if result is None:
+                        result = await self._graph.ainvoke(
+                            graph_input,
+                            config=config,
+                        )
                 return GeneralAgentRun.model_validate(result["run"])
             except asyncio.CancelledError:
                 if self._shutting_down:
@@ -597,6 +746,8 @@ class GeneralAgentRuntimeService:
                     "任务超过运行时限。",
                 ).model_copy(update={"finished_at": now_iso(), "resumable": True})
                 return await self._checkpoint(latest, "run_timed_out")
+            except InjectedProcessTermination:
+                raise
             except Exception as error:  # noqa: BLE001
                 latest = await self._require_run(run_id)
                 latest = latest.model_copy(
@@ -636,7 +787,7 @@ class GeneralAgentRuntimeService:
             self._route_after_verify,
             {"plan": "plan", "end": END},
         )
-        return graph.compile()
+        return graph.compile(checkpointer=self._graph_checkpointer)
 
     async def _initialize_node(self, state: _RuntimeGraphState) -> _RuntimeGraphState:
         run = GeneralAgentRun.model_validate(state["run"])
@@ -662,10 +813,21 @@ class GeneralAgentRuntimeService:
 
     async def _plan_node(self, state: _RuntimeGraphState) -> _RuntimeGraphState:
         run = GeneralAgentRun.model_validate(state["run"])
-        plan = await self._orchestrator.plan(
+        phase: ContextPhase = "replan" if state.get("replan_guidance", "") else "plan"
+        assembly = await self._context_assembler.assemble(
             run,
+            phase=phase,
             replan_guidance=state.get("replan_guidance", ""),
         )
+        run = _with_context_snapshot(run, assembly)
+        run = await self._checkpoint(run, "context_assembled")
+        plan = await self._orchestrator.plan(
+            run,
+            context=assembly.snapshot.envelope,
+            replan_guidance=state.get("replan_guidance", ""),
+        )
+        memory_ids = await self._memory_service.record_plan(run, plan)
+        run = _with_memory_refs(run, memory_ids)
         if plan.requires_clarification:
             run = run.model_copy(
                 update={
@@ -705,6 +867,18 @@ class GeneralAgentRuntimeService:
         run = _transition(run, GeneralAgentRunStatus.EXECUTING, "执行动态能力图。")
         run = await self._checkpoint(run, "dag_execution_started")
         run = await self._executor.execute(run, checkpoint=self._checkpoint)
+        memory_ids = await self._memory_service.record_node_results(
+            run,
+            [
+                node
+                for node in run.node_runs
+                if node.plan_revision == run.plan_revision
+                and node.status is GeneralAgentNodeStatus.SUCCESS
+            ],
+        )
+        if memory_ids:
+            run = _with_memory_refs(run, memory_ids)
+            run = await self._checkpoint(run, "node_memories_recorded")
         run = await self._checkpoint(run, "dag_execution_finished")
         return {**state, "run": run.model_dump(mode="json")}
 
@@ -717,26 +891,39 @@ class GeneralAgentRuntimeService:
         run = _transition(run, GeneralAgentRunStatus.VERIFYING, "校验执行结果。")
         run = await self._checkpoint(run, "verification_started")
         blocking_failures = _blocking_failed_nodes(run)
-        if blocking_failures and run.replan_count < run.limits.max_replans:
-            issues = _execution_failure_issues(blocking_failures)
+        execution_issues = _execution_failure_issues(blocking_failures)
+        source_quality_issues = _chapter_source_quality_issues(run)
+        recovery_issues = [*execution_issues, *source_quality_issues]
+        if recovery_issues and run.replan_count < run.limits.max_replans:
             run = run.model_copy(
                 update={
                     "replan_count": run.replan_count + 1,
-                    "verification_issues": issues,
+                    "verification_issues": recovery_issues,
                     "final_answer": "",
                 }
             )
             run = _transition(
                 run,
                 GeneralAgentRunStatus.REPLANNING,
-                "执行步骤失败，进入有限自动修复。",
+                "执行结果缺少必要来源或步骤失败，进入有限自动修复。",
             )
             run = await self._checkpoint(run, "execution_recovery_requested")
             return {
                 "run": run.model_dump(mode="json"),
-                "replan_guidance": _execution_replan_guidance(issues),
+                "replan_guidance": _execution_replan_guidance(recovery_issues),
             }
-        verification = await self._orchestrator.verify(run)
+        assembly = await self._context_assembler.assemble(run, phase="verify")
+        run = _with_context_snapshot(run, assembly)
+        run = await self._checkpoint(run, "verification_context_assembled")
+        verification = await self._orchestrator.verify(
+            run,
+            context=assembly.snapshot.envelope,
+        )
+        memory_ids = await self._memory_service.record_verification(
+            run,
+            verification,
+        )
+        run = _with_memory_refs(run, memory_ids)
         if verification.should_replan and run.replan_count < run.limits.max_replans:
             run = run.model_copy(
                 update={
@@ -755,14 +942,19 @@ class GeneralAgentRuntimeService:
                 "run": run.model_dump(mode="json"),
                 "replan_guidance": verification.replan_guidance,
             }
+        unresolved_issues = list(
+            dict.fromkeys([*source_quality_issues, *verification.issues])
+        )
         final_status = (
             GeneralAgentRunStatus.FAILED
-            if blocking_failures or verification.outcome == "failed"
+            if blocking_failures
+            or source_quality_issues
+            or verification.outcome == "failed"
             else GeneralAgentRunStatus.COMPLETED
         )
         run = run.model_copy(
             update={
-                "verification_issues": verification.issues,
+                "verification_issues": unresolved_issues,
                 "final_answer": verification.final_answer,
                 "finished_at": now_iso(),
                 "resumable": final_status is GeneralAgentRunStatus.FAILED,
@@ -824,21 +1016,6 @@ def _find_current_node(run: GeneralAgentRun, node_id: str) -> GeneralAgentNodeRu
     raise GeneralAgentRuntimeError(f"待授权节点“{node_id}”不存在。")
 
 
-def _replace_node(
-    run: GeneralAgentRun,
-    replacement: GeneralAgentNodeRun,
-) -> GeneralAgentRun:
-    items = list(run.node_runs)
-    for index, item in enumerate(items):
-        if (
-            item.plan_revision == replacement.plan_revision
-            and item.node_id == replacement.node_id
-        ):
-            items[index] = replacement
-            return run.model_copy(update={"node_runs": items})
-    raise GeneralAgentRuntimeError(f"运行节点“{replacement.node_id}”不存在。")
-
-
 def _blocking_failed_nodes(run: GeneralAgentRun) -> list[GeneralAgentNodeRun]:
     if run.plan is None:
         return []
@@ -864,6 +1041,30 @@ def _execution_failure_issues(
     ]
 
 
+def _chapter_source_quality_issues(run: GeneralAgentRun) -> list[str]:
+    """明确章节内容请求必须取得 Markdown 正文来源，空检索不能伪装成功。"""
+
+    if not is_explicit_chapter_content_request(run.user_goal):
+        return []
+    current_nodes = [
+        node
+        for node in run.node_runs
+        if node.plan_revision == run.plan_revision
+        and node.status is GeneralAgentNodeStatus.SUCCESS
+    ]
+    source_refs = {
+        source_ref for node in current_nodes for source_ref in node.source_refs
+    }
+    if any(source_ref.startswith("manuscript:") for source_ref in source_refs):
+        return []
+    orders = explicit_chapter_orders(run.user_goal)
+    return [
+        "当前请求明确指定章节顺序"
+        f"{orders}，但执行结果没有取得 manuscript: 正文来源引用；"
+        "必须改用 read_manuscript 按章节顺序直接读取，不能把空搜索视为完成。"
+    ]
+
+
 def _execution_replan_guidance(issues: list[str]) -> str:
     return (
         "上一版计划已在真实运行时校验或能力执行中失败。"
@@ -871,6 +1072,62 @@ def _execution_replan_guidance(issues: list[str]) -> str:
         "不要假定失败节点已经成功，也不要重复原错误交接地址。失败详情："
         + "；".join(issues)
     )
+
+
+def _with_memory_refs(
+    run: GeneralAgentRun,
+    memory_ids: list[str],
+) -> GeneralAgentRun:
+    return run.model_copy(
+        update={"memory_refs": _deduplicate([*run.memory_refs, *memory_ids])}
+    )
+
+
+def _with_context_snapshot(
+    run: GeneralAgentRun,
+    assembly: ContextAssemblyResult,
+) -> GeneralAgentRun:
+    envelope = assembly.snapshot.envelope
+    stats = {item.category: item for item in envelope.category_stats}
+    memory_ids = [reference.memory_id for reference in assembly.snapshot.memory_refs]
+    compression = GeneralAgentCompressionStats(
+        compressed=envelope.compressed,
+        fallback_used=envelope.fallback_used,
+        input_char_count=envelope.total_char_count,
+        output_char_count=(
+            len(json.dumps(envelope.digest.model_dump(mode="json"), ensure_ascii=False))
+            if envelope.digest is not None
+            else envelope.total_char_count
+        ),
+        estimated_token_count=envelope.estimated_token_count,
+        omitted_message_count=stats.get(
+            "process_history",
+            GeneralAgentContextCategoryStat(category="process_history"),
+        ).omitted_count,
+        omitted_node_count=stats.get(
+            "working_memory",
+            GeneralAgentContextCategoryStat(category="working_memory"),
+        ).omitted_count,
+        selected_memory_count=len(memory_ids),
+    )
+    return run.model_copy(
+        update={
+            "memory_refs": _deduplicate([*run.memory_refs, *memory_ids]),
+            "context_snapshot_id": assembly.snapshot.snapshot_id,
+            "context_snapshot": assembly.snapshot,
+            "compression_stats": compression,
+            "context_resume_differences": _deduplicate(
+                [
+                    *run.context_resume_differences,
+                    *assembly.resume_differences,
+                ]
+            ),
+        }
+    )
+
+
+def _deduplicate(values: list[str]) -> list[str]:
+    return list(dict.fromkeys(value for value in values if value))
 
 
 class GeneralAgentRuntimeError(RuntimeError):

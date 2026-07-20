@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from hashlib import sha256
 import json
+import logging
 import re
 from secrets import token_hex
 from time import monotonic
@@ -105,7 +106,12 @@ from taichu.application.evaluations.knowledge_extraction.records import (
     KnowledgeEvaluationRecord,
 )
 from taichu.application.services.chapter_service import ChapterService
+from taichu.application.services.knowledge_service import (
+    merge_knowledge_card_preview,
+)
 
+
+logger = logging.getLogger(__name__)
 
 _RUN_ID_PATTERN = re.compile(r"^extract_run_\d{8}_\d{6}_[a-z0-9]{6}$")
 _ACTIVE_STATUSES = {EvaluationStatus.PENDING, EvaluationStatus.RUNNING}
@@ -114,6 +120,7 @@ _TERMINAL_STATUSES = {
     EvaluationStatus.COMPLETED_WITH_WARNINGS,
     EvaluationStatus.FAILED,
 }
+_JUDGE_BATCH_SIZE = 3
 
 
 class EvaluationServiceError(RuntimeError):
@@ -205,8 +212,7 @@ class KnowledgeExtractionEvaluationService:
                 return summary
         validation = await self._datasets.validate_dataset(dataset_id)
         if not validation.valid and any(
-            issue.code == "EVALUATION_DATASET_NOT_FOUND"
-            for issue in validation.issues
+            issue.code == "EVALUATION_DATASET_NOT_FOUND" for issue in validation.issues
         ):
             raise EvaluationServiceError(
                 "EVALUATION_DATASET_NOT_FOUND",
@@ -247,16 +253,10 @@ class KnowledgeExtractionEvaluationService:
         for run in runs:
             prepared = self._prepare_run(run, dataset)
             latest = next(
-                (
-                    record
-                    for record in records
-                    if run.run_id in record.run_ids
-                ),
+                (record for record in records if run.run_id in record.run_ids),
                 None,
             )
-            response.append(
-                self._eligible_run_payload(prepared, latest=latest)
-            )
+            response.append(self._eligible_run_payload(prepared, latest=latest))
         return response, total
 
     async def preview(
@@ -311,17 +311,14 @@ class KnowledgeExtractionEvaluationService:
                     ),
                     "estimated_matched_card_count": item.estimated_match_count,
                     "estimated_judge_card_count": (
-                        item.estimated_match_count
-                        if judge_enabled and full
-                        else 0
+                        item.estimated_match_count if judge_enabled and full else 0
                     ),
                 }
             )
         judge_count = sum(
             item.estimated_match_count
             for item in prepared.runs
-            if judge_enabled
-            and item.eligibility.level is EligibilityLevel.FULL
+            if judge_enabled and item.eligibility.level is EligibilityLevel.FULL
         )
         return {
             "can_create": not blocking,
@@ -401,8 +398,7 @@ class KnowledgeExtractionEvaluationService:
         judge_count = sum(
             item.estimated_match_count
             for item in prepared.runs
-            if judge_enabled
-            and item.eligibility.level is EligibilityLevel.FULL
+            if judge_enabled and item.eligibility.level is EligibilityLevel.FULL
         )
         record = KnowledgeEvaluationRecord(
             evaluation_id=_evaluation_id(),
@@ -421,7 +417,10 @@ class KnowledgeExtractionEvaluationService:
                 enabled=judge_enabled,
                 model_identity=(self._judge.model_identity if judge_enabled else None),
                 self_judge=(
-                    any(value is IndependenceLevel.SAME_MODEL for value in independence.values())
+                    any(
+                        value is IndependenceLevel.SAME_MODEL
+                        for value in independence.values()
+                    )
                     if judge_enabled
                     else None
                 ),
@@ -430,9 +429,7 @@ class KnowledgeExtractionEvaluationService:
             progress=EvaluationProgress(
                 run_total=len(prepared.runs),
                 judge_card_total=judge_count,
-                judge_batch_total=(
-                    prepared.judge_batch_count if judge_enabled else 0
-                ),
+                judge_batch_total=(prepared.judge_batch_count if judge_enabled else 0),
             ),
             run_ids=[item.run.run_id for item in prepared.runs],
             created_at=now,
@@ -522,13 +519,18 @@ class KnowledgeExtractionEvaluationService:
                 item for item in comparisons if item.knowledge_type == knowledge_type
             ]
         if issue_type and issue_type != "all":
-            comparisons = [item for item in comparisons if item.issue_type == issue_type]
+            comparisons = [
+                item for item in comparisons if item.issue_type == issue_type
+            ]
         total = len(comparisons)
         start = (page - 1) * page_size
         titles = await self._run_title_map(record.run_ids)
         return [
             item.model_copy(
-                update={"task_title": item.task_title or titles.get(item.run_id, "未命名章节")}
+                update={
+                    "task_title": item.task_title
+                    or titles.get(item.run_id, "未命名章节")
+                }
             )
             for item in comparisons[start : start + page_size]
         ], total
@@ -585,14 +587,10 @@ class KnowledgeExtractionEvaluationService:
         evaluation_id: str,
     ) -> KnowledgeEvaluationRecord:
         parent = await self.get_evaluation(evaluation_id)
-        if (
-            parent.lifecycle is EvaluationLifecycle.REJECTED
-            or parent.status
-            not in {
-                EvaluationStatus.FAILED,
-                EvaluationStatus.COMPLETED_WITH_WARNINGS,
-            }
-        ):
+        if parent.lifecycle is EvaluationLifecycle.REJECTED or parent.status not in {
+            EvaluationStatus.FAILED,
+            EvaluationStatus.COMPLETED_WITH_WARNINGS,
+        }:
             raise EvaluationServiceError(
                 "EVALUATION_INVALID_TRANSITION",
                 "当前评估状态不允许重试。",
@@ -615,8 +613,7 @@ class KnowledgeExtractionEvaluationService:
         )
         if (
             frozen_contract.get("prompt_contract_id") != PROMPT_CONTRACT_ID
-            or frozen_contract.get("prompt_hash")
-            != current_contract["prompt_hash"]
+            or frozen_contract.get("prompt_hash") != current_contract["prompt_hash"]
         ):
             raise EvaluationServiceError(
                 "EVALUATION_JUDGE_UNAVAILABLE",
@@ -631,8 +628,7 @@ class KnowledgeExtractionEvaluationService:
             frozen_identity = frozen_contract.get("judge_model_identity")
             if (
                 self._judge.model_identity != parent.judge.model_identity
-                or frozen_identity
-                != self._judge.model_identity.model_dump(mode="json")
+                or frozen_identity != self._judge.model_identity.model_dump(mode="json")
             ):
                 raise EvaluationServiceError(
                     "EVALUATION_JUDGE_UNAVAILABLE",
@@ -686,14 +682,10 @@ class KnowledgeExtractionEvaluationService:
         evaluation_id: str,
     ) -> KnowledgeEvaluationRecord:
         record = await self.get_evaluation(evaluation_id)
-        if (
-            record.lifecycle is not EvaluationLifecycle.DRAFT
-            or record.status
-            not in {
-                EvaluationStatus.COMPLETED,
-                EvaluationStatus.COMPLETED_WITH_WARNINGS,
-            }
-        ):
+        if record.lifecycle is not EvaluationLifecycle.DRAFT or record.status not in {
+            EvaluationStatus.COMPLETED,
+            EvaluationStatus.COMPLETED_WITH_WARNINGS,
+        }:
             raise EvaluationServiceError(
                 "EVALUATION_INVALID_TRANSITION",
                 "当前评估状态不允许确认。",
@@ -803,9 +795,15 @@ class KnowledgeExtractionEvaluationService:
         for item in selected:
             if item.case is None:
                 continue
-            for chapter_id, expected_hash in item.case.ref.source_chapter_hashes.items():
+            for (
+                chapter_id,
+                expected_hash,
+            ) in item.case.ref.source_chapter_hashes.items():
                 markdown = chapters.get(chapter_id)
-                if markdown is None or sha256(markdown.encode("utf-8")).hexdigest() != expected_hash:
+                if (
+                    markdown is None
+                    or sha256(markdown.encode("utf-8")).hexdigest() != expected_hash
+                ):
                     raise EvaluationServiceError(
                         "EVALUATION_SOURCE_CHANGED",
                         "任务使用的正文与评测来源不一致。",
@@ -938,9 +936,7 @@ class KnowledgeExtractionEvaluationService:
                 _judge_contract_payload(
                     enabled=prepared.judge_enabled,
                     model_identity=(
-                        self._judge.model_identity
-                        if prepared.judge_enabled
-                        else None
+                        self._judge.model_identity if prepared.judge_enabled else None
                     ),
                 )
             ),
@@ -1125,8 +1121,12 @@ class KnowledgeExtractionEvaluationService:
             )
         except asyncio.CancelledError:
             raise
-        except Exception:
-            await self._fail_background(evaluation_id, token)
+        except Exception as error:
+            logger.exception(
+                "Knowledge-extraction evaluation background execution failed",
+                extra={"evaluation_id": evaluation_id},
+            )
+            await self._fail_background(evaluation_id, token, error)
         finally:
             if heartbeat is not None:
                 heartbeat.cancel()
@@ -1154,126 +1154,134 @@ class KnowledgeExtractionEvaluationService:
         }
         for value in inputs:
             case, run_id, _ = value
-            grouped[(case.knowledge_type, generation_identity.get(run_id, run_id))].append(
-                value
-            )
+            grouped[
+                (case.knowledge_type, generation_identity.get(run_id, run_id))
+            ].append(value)
         completed = 0
         batch_completed = 0
+
+        async def persist_progress() -> None:
+            nonlocal record
+            progress = record.progress.model_copy(
+                update={
+                    "judge_card_completed": completed,
+                    "judge_batch_completed": batch_completed,
+                }
+            )
+            record = await self._results.mutate_record(
+                record.evaluation_id,
+                {"progress": progress, "updated_at": _now_iso()},
+                expected_status=EvaluationStatus.RUNNING.value,
+                expected_execution_token=token,
+            )
+
+        async def process_case(
+            case: JudgeInputCase,
+            independence: IndependenceLevel,
+            sample: JudgeItem | None,
+            initial_call_ids: list[str],
+            initial_error: str | None,
+        ) -> None:
+            nonlocal completed
+            samples = [sample] if sample else []
+            call_ids[case.case_id].extend(initial_call_ids)
+            if initial_error:
+                warnings.append(
+                    EvaluationNotice(
+                        code="EVALUATION_JUDGE_INVALID_OUTPUT",
+                        message=(
+                            f"语义裁判未纳入本次评分：{initial_error}已保留确定性结果。"
+                        ),
+                        run_id=case.run_id,
+                    )
+                )
+            rejudge_required = sample is not None and should_rejudge(sample)
+            if rejudge_required:
+                for _ in range(2):
+                    repeated, repeated_ids, repeated_error = await self._judge_once(
+                        record,
+                        [case],
+                        independence,
+                    )
+                    call_ids[case.case_id].extend(repeated_ids.get(case.case_id, []))
+                    if not repeated_error and case.case_id in repeated:
+                        samples.append(repeated[case.case_id])
+            aggregated = (
+                None
+                if rejudge_required and len(samples) < 2
+                else aggregate_judge_samples(samples)
+            )
+            diagnostics[case.case_id] = _JudgeCaseDiagnostic(
+                samples=tuple(samples),
+                attempt_count=len(call_ids[case.case_id]),
+            )
+            if aggregated is not None:
+                items[case.case_id] = aggregated
+                if aggregated.status is not JudgeStatus.SCORED:
+                    warnings.append(
+                        EvaluationNotice(
+                            code="EVALUATION_JUDGE_INCOMPLETE",
+                            message="语义裁判缺少足够证据，已保留确定性结果。",
+                            run_id=case.run_id,
+                        )
+                    )
+            elif len(samples) >= 2:
+                warnings.append(
+                    EvaluationNotice(
+                        code="EVALUATION_JUDGE_DISAGREEMENT",
+                        message="多次有效语义裁判的评分未满足一致性要求。",
+                        run_id=case.run_id,
+                    )
+                )
+            elif len(samples) == 1:
+                warnings.append(
+                    EvaluationNotice(
+                        code="EVALUATION_JUDGE_INCONCLUSIVE",
+                        message="有效语义裁判结果不足，已保留确定性结果。",
+                        run_id=case.run_id,
+                    )
+                )
+            completed += 1
+            await persist_progress()
+
         for values in grouped.values():
-            for offset in range(0, len(values), 5):
-                batch = values[offset : offset + 5]
+            for offset in range(0, len(values), _JUDGE_BATCH_SIZE):
+                batch = values[offset : offset + _JUDGE_BATCH_SIZE]
                 first, ids, error = await self._judge_once(
                     record,
                     [item[0] for item in batch],
                     batch[0][2],
                 )
                 if error and len(batch) > 1:
-                    first = {}
-                    original_ids = ids
-                    ids = defaultdict(list)
-                    for key, original_call_ids in original_ids.items():
-                        ids[key].extend(original_call_ids)
                     for case, _, independence in batch:
+                        prior_ids = ids.get(case.case_id, [])
                         single, single_ids, single_error = await self._judge_once(
                             record,
                             [case],
                             independence,
+                            retry_of=prior_ids[-1] if prior_ids else None,
                         )
-                        first.update(single)
-                        for key, values_ids in single_ids.items():
-                            ids[key].extend(values_ids)
-                        if single_error:
-                            warnings.append(
-                                EvaluationNotice(
-                                    code="EVALUATION_JUDGE_INVALID_OUTPUT",
-                                    message=(
-                                        f"语义裁判未纳入本次评分：{single_error}"
-                                        "已保留确定性结果。"
-                                    ),
-                                    run_id=case.run_id,
-                                )
-                            )
-                elif error:
-                    warnings.append(
-                        EvaluationNotice(
-                            code="EVALUATION_JUDGE_INVALID_OUTPUT",
-                            message=(
-                                f"语义裁判未纳入本次评分：{error}"
-                                "已保留确定性结果。"
-                            ),
-                            run_id=batch[0][1],
+                        await process_case(
+                            case,
+                            independence,
+                            single.get(case.case_id),
+                            [
+                                *ids.get(case.case_id, []),
+                                *single_ids.get(case.case_id, []),
+                            ],
+                            single_error,
                         )
-                    )
-                for case, _, independence in batch:
-                    sample = first.get(case.case_id)
-                    samples = [sample] if sample else []
-                    call_ids[case.case_id].extend(ids.get(case.case_id, []))
-                    rejudge_required = (
-                        sample is not None and should_rejudge(sample)
-                    )
-                    if rejudge_required:
-                        for _ in range(2):
-                            repeated, repeated_ids, repeated_error = (
-                                await self._judge_once(
-                                    record,
-                                    [case],
-                                    independence,
-                                )
-                            )
-                            call_ids[case.case_id].extend(
-                                repeated_ids.get(case.case_id, [])
-                            )
-                            if not repeated_error and case.case_id in repeated:
-                                samples.append(repeated[case.case_id])
-                    aggregated = (
-                        None
-                        if rejudge_required and len(samples) < 2
-                        else aggregate_judge_samples(samples)
-                    )
-                    diagnostics[case.case_id] = _JudgeCaseDiagnostic(
-                        samples=tuple(samples),
-                        attempt_count=len(call_ids[case.case_id]),
-                    )
-                    if aggregated is not None:
-                        items[case.case_id] = aggregated
-                        if aggregated.status is not JudgeStatus.SCORED:
-                            warnings.append(
-                                EvaluationNotice(
-                                    code="EVALUATION_JUDGE_INCOMPLETE",
-                                    message="语义裁判缺少足够证据，已保留确定性结果。",
-                                    run_id=case.run_id,
-                                )
-                            )
-                    elif len(samples) >= 2:
-                        warnings.append(
-                            EvaluationNotice(
-                                code="EVALUATION_JUDGE_DISAGREEMENT",
-                                message="多次有效语义裁判的评分未满足一致性要求。",
-                                run_id=case.run_id,
-                            )
+                else:
+                    for case, _, independence in batch:
+                        await process_case(
+                            case,
+                            independence,
+                            first.get(case.case_id),
+                            ids.get(case.case_id, []),
+                            error,
                         )
-                    elif len(samples) == 1:
-                        warnings.append(
-                            EvaluationNotice(
-                                code="EVALUATION_JUDGE_INCONCLUSIVE",
-                                message="有效语义裁判结果不足，已保留确定性结果。",
-                                run_id=case.run_id,
-                            )
-                        )
-                    completed += 1
                 batch_completed += 1
-                progress = record.progress.model_copy(
-                    update={
-                        "judge_card_completed": completed,
-                        "judge_batch_completed": batch_completed,
-                    }
-                )
-                record = await self._results.mutate_record(
-                    record.evaluation_id,
-                    {"progress": progress, "updated_at": _now_iso()},
-                    expected_status=EvaluationStatus.RUNNING.value,
-                    expected_execution_token=token,
-                )
+                await persist_progress()
         return _JudgeExecution(
             dict(items),
             dict(call_ids),
@@ -1286,6 +1294,8 @@ class KnowledgeExtractionEvaluationService:
         record: KnowledgeEvaluationRecord,
         cases: list[JudgeInputCase],
         independence: IndependenceLevel,
+        *,
+        retry_of: str | None = None,
     ) -> tuple[dict[str, JudgeItem], dict[str, list[str]], str | None]:
         prompt = build_judge_prompt(cases)
         call_id = f"judge_call_{token_hex(6)}"
@@ -1293,6 +1303,7 @@ class KnowledgeExtractionEvaluationService:
         started = monotonic()
         raw: str | None = None
         parsed: dict[str, Any] | None = None
+        error_code: str | None = None
         error_message: str | None = None
         result: dict[str, JudgeItem] = {}
         token_usage: dict[str, int] | None = None
@@ -1307,7 +1318,8 @@ class KnowledgeExtractionEvaluationService:
             parsed = output.model_dump(mode="json")
             result = {item.case_id: item for item in output.items}
         except Exception as error:  # noqa: BLE001
-            error_message = _judge_failure_message(error)
+            error_code = _judge_failure_code(error)
+            error_message = _judge_failure_message(error, error_code=error_code)
         finished_at = _now_iso()
         call = JudgeCallRecord(
             call_id=call_id,
@@ -1327,6 +1339,8 @@ class KnowledgeExtractionEvaluationService:
             started_at=started_at,
             finished_at=finished_at,
             duration_ms=int((monotonic() - started) * 1000),
+            retry_of=retry_of,
+            error_code=error_code,
             error=error_message,
             token_usage=token_usage,
         )
@@ -1384,9 +1398,7 @@ class KnowledgeExtractionEvaluationService:
                     ),
                 )
                 normalized = normalized.model_copy(
-                    update={
-                        "explanation": fallback_difference_explanation(normalized)
-                    }
+                    update={"explanation": fallback_difference_explanation(normalized)}
                 )
                 locations[explanation_id] = (run_index, len(comparisons))
                 cases_by_run[run.run_id].append(case)
@@ -1583,16 +1595,22 @@ class KnowledgeExtractionEvaluationService:
         except Exception:
             return
 
-    async def _fail_background(self, evaluation_id: str, token: str) -> None:
+    async def _fail_background(
+        self,
+        evaluation_id: str,
+        token: str,
+        error: Exception,
+    ) -> None:
         now = _now_iso()
+        error_code, error_message = _background_failure(error)
         try:
             await self._results.mutate_record(
                 evaluation_id,
                 {
                     "status": EvaluationStatus.FAILED,
                     "phase": EvaluationPhase.FINISHED,
-                    "error_code": "EVALUATION_SNAPSHOT_CORRUPTED",
-                    "error_message": "评估执行失败，冻结快照或中间结果无法可靠读取。",
+                    "error_code": error_code,
+                    "error_message": error_message,
                     "updated_at": now,
                     "heartbeat_at": now,
                     "finished_at": now,
@@ -1694,7 +1712,9 @@ class KnowledgeExtractionEvaluationService:
 
     @staticmethod
     def _reason_text(eligibility: EvaluationEligibility) -> str:
-        return "；".join(_REASON_MESSAGES[reason.value] for reason in eligibility.reasons)
+        return "；".join(
+            _REASON_MESSAGES[reason.value] for reason in eligibility.reasons
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -1746,13 +1766,11 @@ def _evaluate_deterministic_run(
         case.expected_cards,
         case.rules,
     )
-    actual_by_id = {item.actual_candidate_id: item for item in actual}
     expected_by_id = {item.expected_card_id: item for item in case.expected_cards}
     quote_by_id = {item.quote_id: item for item in case.source_evidence}
     located: list[LocatedEvidence] = []
     expected_groups: list[ExpectedEvidenceGroup] = []
-    for match in matches.matches:
-        candidate = actual_by_id[match.actual_candidate_id]
+    for candidate in actual:
         for index, excerpt in enumerate(candidate.evidence_excerpts):
             location = _locate_excerpt(excerpt, case.ref.chapter_ids, chapters)
             located.append(
@@ -1761,6 +1779,7 @@ def _evaluate_deterministic_run(
                     **location,
                 )
             )
+    for match in matches.matches:
         expected = expected_by_id[match.expected_card_id]
         quotes = [
             quote_by_id[quote_id]
@@ -1996,9 +2015,7 @@ def _build_judge_inputs(
         for excerpt in actual_card.evidence_excerpts:
             location = _locate_excerpt(excerpt, case.ref.chapter_ids, chapters)
             if location:
-                located_actual_evidence.append(
-                    {"text": excerpt[:350], **location}
-                )
+                located_actual_evidence.append({"text": excerpt[:350], **location})
         result.append(
             JudgeInputCase(
                 case_id=(
@@ -2081,9 +2098,7 @@ def _apply_judge_results(
                 if valid_count >= 2:
                     judge_status = "disagreement"
                     issue_type = "judge_disagreement"
-                    reason = (
-                        "多次有效裁判的评分未满足一致性要求，语义结果未计入评分。"
-                    )
+                    reason = "多次有效裁判的评分未满足一致性要求，语义结果未计入评分。"
                     disagreement = True
                 elif valid_count == 1:
                     judge_status = "inconclusive"
@@ -2183,9 +2198,7 @@ def _apply_judge_results(
             ),
             profile,
         )
-        deterministic_state = QualityState(
-            run.metrics["deterministic_quality_state"]
-        )
+        deterministic_state = QualityState(run.metrics["deterministic_quality_state"])
         overall = compute_overall_quality_score(
             OverallScoreInputs(
                 candidate_f1_micro=run.metrics.get("candidate_f1_micro"),
@@ -2196,9 +2209,7 @@ def _apply_judge_results(
                     "negative_suppression_score"
                 ),
                 judge_coverage=coverage,
-                critical_claims_covered=(
-                    coverage == 1 and not critical_claim_missing
-                ),
+                critical_claims_covered=(coverage == 1 and not critical_claim_missing),
                 unresolved_critical_disagreement=disagreement,
             ),
             profile,
@@ -2280,8 +2291,7 @@ def _comparison_issue_type(comparison: EvaluationComparison) -> str | None:
     if isinstance(critical_flags, list) and critical_flags:
         return "semantic_issue"
     if isinstance(dimensions, dict) and any(
-        _judge_dimension_has_issue(dimension)
-        for dimension in dimensions.values()
+        _judge_dimension_has_issue(dimension) for dimension in dimensions.values()
     ):
         return "semantic_issue"
 
@@ -2353,9 +2363,7 @@ def _judge_dimension_has_issue(value: Any) -> bool:
 def _is_evidence_finding(value: Any) -> bool:
     if not isinstance(value, dict):
         return False
-    marker = " ".join(
-        str(value.get(key) or "").casefold() for key in ("kind", "field")
-    )
+    marker = " ".join(str(value.get(key) or "").casefold() for key in ("kind", "field"))
     return any(
         keyword in marker
         for keyword in ("evidence", "grounding", "quote", "citation", "source")
@@ -2401,12 +2409,8 @@ def _aggregate_metrics(run_results: list[EvaluationRunResult]) -> dict[str, Any]
     aggregate["overall_quality_score"] = (
         sum(overall) / len(overall) if len(overall) == len(full) else None
     )
-    aggregate["semantic_score"] = (
-        sum(semantic) / len(semantic) if semantic else None
-    )
-    aggregate["judge_coverage"] = (
-        sum(coverage) / len(coverage) if coverage else None
-    )
+    aggregate["semantic_score"] = sum(semantic) / len(semantic) if semantic else None
+    aggregate["judge_coverage"] = sum(coverage) / len(coverage) if coverage else None
     ranks = {
         QualityState.HIGH_RISK: 0,
         QualityState.NEEDS_REVIEW: 1,
@@ -2423,6 +2427,13 @@ def _aggregate_metrics(run_results: list[EvaluationRunResult]) -> dict[str, Any]
 
 def _actual_candidates(run: AgentRun) -> list[ActualCandidate]:
     result: list[ActualCandidate] = []
+    existing_by_target = {
+        str(candidate.get("target_card_id") or ""): existing
+        for candidate in run.typed_candidates
+        if isinstance(candidate, dict)
+        and str(candidate.get("target_card_id") or "").strip()
+        and isinstance((existing := candidate.get("_existing_card")), dict)
+    }
     for item in run.review_items:
         excerpts: list[str] = []
         if item.source_excerpt.strip():
@@ -2437,14 +2448,29 @@ def _actual_candidates(run: AgentRun) -> list[ActualCandidate]:
                 for value in values
                 if isinstance(value, str) and value.strip()
             )
+        card = dict(item.suggested_card)
+        merge_preview_applied = False
+        if (
+            item.candidate_action.value == CandidateAction.UPDATE_CARD.value
+            and item.target_card_id
+            and item.target_card_id in existing_by_target
+        ):
+            card = merge_knowledge_card_preview(
+                item.knowledge_type,
+                existing_by_target[item.target_card_id],
+                card,
+                merge_mode="merge",
+            )
+            merge_preview_applied = True
         result.append(
             ActualCandidate(
                 actual_candidate_id=item.review_item_id,
                 knowledge_type=item.knowledge_type,
                 candidate_action=CandidateAction(item.candidate_action.value),
-                card=item.suggested_card,
+                card=card,
                 schema_valid=item.schema_validation.passed,
                 evidence_excerpts=list(dict.fromkeys(excerpts)),
+                merge_preview_applied=merge_preview_applied,
             )
         )
     return result
@@ -2454,7 +2480,9 @@ def _run_scope(run: AgentRun) -> tuple[EvaluationScopeType, list[str]]:
     scope = run.scope
     if scope.scope_type == EvaluationScopeType.CHAPTER_BATCH.value:
         return EvaluationScopeType.CHAPTER_BATCH, list(scope.chapter_ids)
-    chapter_ids = list(scope.chapter_ids) or ([scope.chapter_id] if scope.chapter_id else [])
+    chapter_ids = list(scope.chapter_ids) or (
+        [scope.chapter_id] if scope.chapter_id else []
+    )
     if len(chapter_ids) > 1:
         return EvaluationScopeType.CHAPTER_BATCH, chapter_ids
     return EvaluationScopeType.CHAPTER, chapter_ids
@@ -2549,7 +2577,10 @@ def _judge_batch_count(runs: Sequence[_PreparedRun]) -> int:
                 item.run.generation_model_identity.model_dump(mode="json")
             )
             groups[(match.knowledge_type.value, identity)] += 1
-    return sum((count + 4) // 5 for count in groups.values())
+    return sum(
+        (count + _JUDGE_BATCH_SIZE - 1) // _JUDGE_BATCH_SIZE
+        for count in groups.values()
+    )
 
 
 def derive_independence(
@@ -2558,10 +2589,7 @@ def derive_independence(
 ) -> IndependenceLevel:
     if not generation.known or not judge.known:
         return IndependenceLevel.UNKNOWN
-    if (
-        generation.provider == judge.provider
-        and generation.model_id == judge.model_id
-    ):
+    if generation.provider == judge.provider and generation.model_id == judge.model_id:
         return IndependenceLevel.SAME_MODEL
     if (
         generation.provider == judge.provider
@@ -2712,32 +2740,81 @@ def _difference_explanation_id(
     comparison: EvaluationComparison,
     comparison_index: int,
 ) -> str:
-    return "difference_" + _hash_json(
-        {
-            "run_id": comparison.run_id,
-            "expected_card_id": comparison.expected_card_id,
-            "actual_candidate_id": comparison.actual_candidate_id,
-            "knowledge_type": comparison.knowledge_type,
-            "issue_type": comparison.issue_type,
-            "comparison_index": comparison_index,
-        }
-    )[:16]
+    return (
+        "difference_"
+        + _hash_json(
+            {
+                "run_id": comparison.run_id,
+                "expected_card_id": comparison.expected_card_id,
+                "actual_candidate_id": comparison.actual_candidate_id,
+                "knowledge_type": comparison.knowledge_type,
+                "issue_type": comparison.issue_type,
+                "comparison_index": comparison_index,
+            }
+        )[:16]
+    )
 
 
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
-def _judge_failure_message(error: Exception) -> str:
+def _background_failure(error: Exception) -> tuple[str, str]:
+    """Classify background failures without misreporting every defect as corruption."""
+    if getattr(error, "code", None) == "EVALUATION_SNAPSHOT_CORRUPTED":
+        return (
+            "EVALUATION_SNAPSHOT_CORRUPTED",
+            "评估冻结快照或中间结果已损坏，无法可靠读取。",
+        )
+    return (
+        "EVALUATION_EXECUTION_FAILED",
+        "评估后台执行失败，已保留当前进度与审计结果，可在排查后重试。",
+    )
+
+
+def _judge_failure_code(error: Exception) -> str:
+    if isinstance(error, TimeoutError):
+        return "judge_timeout"
+    if isinstance(error, json.JSONDecodeError):
+        return "judge_protocol_invalid_json"
+    detail = str(error).casefold()
+    if "json" in detail and any(
+        marker in detail for marker in ("decode", "解析", "parse", "expecting")
+    ):
+        return "judge_protocol_invalid_json"
+    if any(
+        marker in detail
+        for marker in (
+            "validation error",
+            "expected_card_id",
+            "actual_review_item_id",
+            "dimensions",
+            "confidence",
+        )
+    ):
+        return "judge_protocol_invalid_schema"
+    return "judge_provider_error"
+
+
+def _judge_failure_message(
+    error: Exception,
+    *,
+    error_code: str | None = None,
+) -> str:
     """Convert strict judge-contract failures into an author-readable diagnosis."""
+    code = error_code or _judge_failure_code(error)
+    if code == "judge_timeout":
+        return "语义裁判调用超时。"
+    if code == "judge_protocol_invalid_json":
+        return "语义裁判没有返回可解析的 JSON 结果。"
+    if code == "judge_protocol_invalid_schema":
+        return "语义裁判回复不符合当前评分协议。"
     detail = str(error)
     if "expected_card_id" in detail or "actual_review_item_id" in detail:
         return "语义裁判回复缺少固定卡片标识，未遵守当前评估格式。"
     if "dimensions" in detail or "confidence" in detail:
         return "语义裁判回复未按要求提供嵌套评分维度或置信度。"
-    if "JSON" in detail or "json" in detail:
-        return "语义裁判没有返回可解析的 JSON 结果。"
-    return "语义裁判调用失败或返回格式不符合要求。"
+    return "语义裁判提供方调用失败。"
 
 
 def _difference_explanation_failure_message(error: Exception) -> str:

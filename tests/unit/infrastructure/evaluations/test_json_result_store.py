@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from taichu.application.contracts.llm import LLMModelIdentity
 from taichu.application.evaluations.knowledge_extraction.models import (
@@ -23,6 +24,7 @@ from taichu.application.evaluations.knowledge_extraction.records import (
 from taichu.infrastructure.evaluations.json_result_store import (
     EvaluationResultStoreError,
     JsonEvaluationResultStore,
+    _write_json,
 )
 
 
@@ -157,6 +159,31 @@ class JsonEvaluationResultStoreTest(unittest.IsolatedAsyncioTestCase):
                 await store.read_snapshot_files(record.evaluation_id)
 
             self.assertEqual(context.exception.code, "EVALUATION_SNAPSHOT_CORRUPTED")
+
+    def test_atomic_write_retries_transient_windows_permission_error(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "summary.json"
+            original_replace = Path.replace
+            attempts = 0
+
+            def flaky_replace(source: Path, destination: Path) -> Path:
+                nonlocal attempts
+                attempts += 1
+                if attempts < 3:
+                    raise PermissionError("transient sharing violation")
+                return original_replace(source, destination)
+
+            with (
+                patch.object(Path, "replace", new=flaky_replace),
+                patch(
+                    "taichu.infrastructure.evaluations.json_result_store.sleep"
+                ) as mocked_sleep,
+            ):
+                _write_json(target, {"status": "completed"})
+
+            self.assertEqual(attempts, 3)
+            self.assertEqual(mocked_sleep.call_count, 2)
+            self.assertIn('"completed"', target.read_text(encoding="utf-8"))
 
 
 def _record(evaluation_id: str) -> KnowledgeEvaluationRecord:

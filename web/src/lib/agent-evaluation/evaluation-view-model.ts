@@ -291,3 +291,79 @@ export function previewIndependenceLabel(runs: EvaluationPreviewRun[]): string {
   if (levels.has("different_model")) return "不同模型";
   return "未启用裁判";
 }
+
+export function buildKnowledgeEvaluationCodexAnalysisRequest(
+  evaluation: KnowledgeEvaluation,
+): string {
+  const evaluationRoot =
+    "project_assets/derived/agent_evaluations/knowledge_extraction/" +
+    evaluation.evaluation_id;
+  const datasetLabel =
+    evaluation.dataset.display_name ||
+    evaluation.dataset.name ||
+    evaluation.dataset.dataset_id;
+  const runSummary = evaluation.run_results.map(run => ({
+    run_id: run.run_id,
+    case_id: run.case_id ?? null,
+    display_title: run.display_title ?? run.chapter_title ?? "未命名章节",
+    eligibility_level: run.eligibility_level ?? null,
+    metrics: run.metrics ?? {},
+    semantic_score: run.semantic_score ?? null,
+    judge_coverage: run.judge_coverage ?? null,
+    overall_quality_score: run.overall_quality_score ?? null,
+    final_quality_state: run.final_quality_state ?? null,
+    warnings: (run.warnings ?? []).map(noticeMessage),
+  }));
+  const diagnostics = [
+    ...(evaluation.warnings ?? []).map(noticeMessage),
+    ...(evaluation.errors ?? []).map(noticeMessage),
+  ].filter(Boolean);
+
+  return `请对太初“知识沉淀 Workflow”的本次评测做一次证据化诊断。先分析，不要直接修改代码、评测集、正文或 MongoDB；完成后给出等待我确认的修订清单。
+
+本次评测定位：
+- 评估标识：${evaluation.evaluation_id}
+- 评估对象：${evaluation.subject_title || "未命名章节"}
+- 评测集：${datasetLabel}（${evaluation.dataset.dataset_id}）
+- 评测集校验和：${evaluation.dataset.checksum}
+- 状态：${evaluationStatusLabels[evaluation.status]}
+- 报告生命周期：${evaluation.lifecycle}
+- 创建时间：${evaluation.created_at}
+- 快照根哈希：${evaluation.snapshot_root_hash || "未记录"}
+- 持久化目录（相对仓库根目录）：${evaluationRoot}
+
+请从当前仓库直接读取并交叉核对这些真实资料：
+1. \`${evaluationRoot}/summary.json\`。
+2. \`${evaluationRoot}/input_snapshot/_snapshot_manifest.json\`、\`request.json\`、\`dataset_manifest.json\`、\`metric_profile.json\` 与 \`evaluation_schema.json\`。
+3. \`${evaluationRoot}/input_snapshot/runs/\`、\`cases/\`、\`chapters/\` 下的全部冻结输入。
+4. \`${evaluationRoot}/judge_calls/\` 下的全部裁判调用；区分裁判协议失败、裁判分歧与 Workflow 本身的问题。
+5. 当前实现：\`src/taichu/application/agents/knowledge_extraction/\`、\`src/taichu/application/services/knowledge_extraction_service.py\` 和评测实现；不要只依据历史文档推断。
+
+分析要求：
+1. 先验证评估是否完整、快照是否可读、正文与评测范围是否一致；若结果不可比较，先说明原因。
+2. 汇总候选识别、结构字段、语义、证据、负样本抑制、Schema、执行覆盖和裁判覆盖的短板，不要只复述综合分。
+3. 逐项检查漏提取、多提取、错误合并、重复候选、字段差异、无依据断言、证据遗漏和裁判异常；每个结论引用 run_id、case_id、候选或期望卡标识及原文证据。
+4. 把确认属于 Workflow 的问题映射到当前具体节点、Prompt、Schema、聚合、匹配或质量闸门，并给出源码路径和代码证据。
+5. 明确区分四类原因：评测集标注问题、裁判噪声、模型偶发波动、Workflow 可修复缺陷。没有证据时标记为待验证。
+6. 给出按影响排序的最小修订方案、预期改善指标和必须补充的回归测试；不要为了单个样例硬编码小说专名或章节规则。
+7. 如果仓库中存在同评测集、同范围且口径兼容的历史报告，补充前后对比；口径不兼容时不得直接比较分数。
+
+前端携带的快速摘要仅用于定位，最终结论以持久化快照为准：
+
+聚合指标：
+\`\`\`json
+${JSON.stringify(evaluation.aggregate_metrics ?? {}, null, 2)}
+\`\`\`
+
+单任务摘要：
+\`\`\`json
+${JSON.stringify(runSummary, null, 2)}
+\`\`\`
+
+诊断与错误：
+\`\`\`json
+${JSON.stringify(diagnostics, null, 2)}
+\`\`\`
+
+请按“结论 → 指标瓶颈 → 具体失败证据 → 根因定位 → 修订优先级 → 回归验证方案”的顺序输出。`;
+}

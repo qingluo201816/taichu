@@ -1,0 +1,96 @@
+{
+  "evaluation_id": "knowledge_eval_20260718_192740_aa2f8b",
+  "parent_evaluation_id": null,
+  "request_fingerprint": "180fb5cd3556bbf2ee310f090cda48df8db974fff2b35713118947735aba9190",
+  "snapshot_root_hash": "bfb823a161cd4be9b9329b1773a23cb716a9f77d079e0a19f29f7cf2601ec23e",
+  "lifecycle": "draft",
+  "status": "failed",
+  "phase": "finished",
+  "evaluation_mode": "deterministic_and_judge",
+  "dataset_id": "taichu_knowledge_eval_006_020_author_confirmed",
+  "dataset_label": "太初第6—20章知识沉淀评测集（作者确认标注）",
+  "dataset_checksum": "680832b0d28dfaef6b5070d138bf5cad3fc978e0c114f5fbc5570c8b0783ab61",
+  "subject_title": "批量知识沉淀：第6章 紫气东来惊仙鉴 至 第10章 书中自有黄金屋（共 5 章）",
+  "metric_profile_id": "knowledge_extraction_balanced",
+  "judge": {
+    "enabled": true,
+    "model_identity": {
+      "provider": "rightcode",
+      "model_id": "deepseek-v4-pro",
+      "family": "deepseek-v4",
+      "endpoint_kind": "anthropic_messages",
+      "fingerprint": null,
+      "known": true,
+      "unknown_reason": null
+    },
+    "self_judge": true,
+    "independence_by_run": {
+      "extract_run_20260718_145223_53667e": "same_model"
+    }
+  },
+  "progress": {
+    "run_total": 1,
+    "run_completed": 1,
+    "judge_card_total": 21,
+    "judge_card_completed": 0,
+    "judge_batch_total": 7,
+    "judge_batch_completed": 0
+  },
+  "run_ids": [
+    "extract_run_20260718_145223_53667e"
+  ],
+  "run_results": [
+    {
+      "run_id": "extract_run_20260718_145223_53667e",
+      "case_id": "batch_006_010",
+      "display_title": "批量知识沉淀：第6章 紫气东来惊仙鉴 至 第10章 书中自有黄金屋（共 5 章）",
+      "eligibility_level": "full",
+      "eligibility_reasons": [],
+      "generation_model_identity": {
+        "provider": "rightcode",
+        "model_id": "deepseek-v4-pro",
+        "family": "deepseek-v4",
+        "endpoint_kind": "anthropic_messages",
+        "fingerprint": null,
+        "known": true,
+        "unknown_reason": null
+      },
+      "expected_card_count": 32,
+      "actual_card_count": 63,
+      "metrics": {
+        "schema_compliance_rate": 1.0,
+        "execution_coverage": 1.0,
+        "candidate_precision_micro": 0.3333333333333333,
+        "candidate_recall_micro": 0.65625,
+        "candidate_f1_micro": 0.4421052631578948,
+        "candidate_f1_macro": 0.3777281746031746,
+        "structured_field_score": 0.7752442996742671,
+        "evidence_score": 0.8496459808413159,
+        "evidence_grounded_precision": 0.7669172932330827,
+        "expected_evidence_recall": 0.9523809523809523,
+        "negative_suppression_score": 1.0,
+        "ambiguous_count": 0,
+        "candidate_true_positive_count": 21,
+        "candidate_false_positive_count": 42,
+        "candidate_false_negative_count": 11
+      },
+      "semantic_score": null,
+      "judge_coverage": null,
+      "overall_quality_score": null,
+      "final_quality_state": "not_comparable",
+      "comparisons": [],
+      "warnings": []
+    }
+  ],
+  "aggregate_metrics": {},
+  "warnings": [],
+  "errors": [],
+  "error_code": "EVALUATION_PROCESS_INTERRUPTED",
+  "error_message": "评估进程已中断，可基于原快照重试。",
+  "created_at": "2026-07-18T19:27:40.393357Z",
+  "started_at": "2026-07-18T19:27:40.419893Z",
+  "updated_at": "2026-07-18T19:35:05.673836Z",
+  "heartbeat_at": "2026-07-18T19:35:05.673836Z",
+  "finished_at": "2026-07-18T19:35:05.673836Z",
+  "execution_token": null
+}

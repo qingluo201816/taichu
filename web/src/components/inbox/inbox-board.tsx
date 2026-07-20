@@ -37,6 +37,7 @@ import {
   patchInboxIssue,
   patchInboxPendingFact,
 } from "@/lib/api/mvp";
+import { inboxIdeaDisplayTitle } from "@/lib/inbox-idea-title";
 import { createInboxIssueTemplate } from "@/lib/inbox-issue-format";
 import type {
   InboxPriority,
@@ -318,6 +319,7 @@ export function InboxBoard() {
     try {
       if (activeTab === "ideas") {
         await createInboxIdea({
+          title: newTitle,
           content: newContent,
           priority,
         });
@@ -503,14 +505,13 @@ export function InboxBoard() {
           {isCreateOpen ? (
             <div className="mb-4 max-w-[760px] rounded-[var(--tc-radius-card)] bg-[var(--tc-surface-muted)] p-4">
               <div className="grid gap-2">
-                {activeTab !== "ideas" ? (
-                  <input
-                    value={newTitle}
-                    onChange={event => setNewTitle(event.target.value)}
-                    placeholder="标题"
-                    className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)] outline-none"
-                  />
-                ) : null}
+                <input
+                  value={newTitle}
+                  onChange={event => setNewTitle(event.target.value)}
+                  placeholder={activeTab === "ideas" ? "灵感标题" : "标题"}
+                  aria-label={activeTab === "ideas" ? "灵感标题" : "标题"}
+                  className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)] outline-none focus:border-[var(--tc-border-strong)]"
+                />
                 <textarea
                   value={newContent}
                   onChange={event => setNewContent(event.target.value)}
@@ -535,8 +536,9 @@ export function InboxBoard() {
                     onClick={createItem}
                     disabled={
                       busy ||
+                      !newTitle.trim() ||
                       !newContent.trim() ||
-                      (activeTab !== "ideas" && !newTitle.trim())
+                      activeTab === "all"
                     }
                   >
                     {busy ? (
@@ -689,11 +691,7 @@ function InboxRow({
   }
 
   function submitEdit() {
-    onPatch(
-      tab === "ideas"
-        ? { content: draftContent }
-        : { title: draftTitle.trim() || itemTitle(tab, item), content: draftContent },
-    );
+    onPatch({ title: draftTitle.trim(), content: draftContent });
     setEditing(false);
   }
 
@@ -747,14 +745,13 @@ function InboxRow({
 
           {editing ? (
             <div className="mt-3 grid max-w-[760px] gap-2">
-              {tab !== "ideas" ? (
-                <input
-                  value={draftTitle}
-                  onChange={event => setDraftTitle(event.target.value)}
-                  className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)] outline-none"
-                  placeholder="标题"
-                />
-              ) : null}
+              <input
+                value={draftTitle}
+                onChange={event => setDraftTitle(event.target.value)}
+                className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)] outline-none focus:border-[var(--tc-border-strong)]"
+                placeholder={tab === "ideas" ? "灵感标题" : "标题"}
+                aria-label={tab === "ideas" ? "灵感标题" : "标题"}
+              />
               <div className="relative">
                 <textarea
                   value={draftContent}
@@ -774,7 +771,12 @@ function InboxRow({
                 </Button>
               </div>
               <div>
-                <Button type="button" size="sm" onClick={submitEdit}>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={submitEdit}
+                  disabled={busy || !draftTitle.trim() || !draftContent.trim()}
+                >
                   <Save className="size-4" />
                   保存编辑
                 </Button>
@@ -898,10 +900,19 @@ function copyTextWithSelection(content: string): boolean {
 }
 
 function isPendingFact(item: InboxEntry): item is MVPInboxPendingFact {
-  return "origin" in item;
+  return item.entry_type === "pending_fact" || "origin" in item;
 }
 
 function entryTab(item: InboxEntry): InboxEntryTab {
+  if (item.entry_type === "idea") {
+    return "ideas";
+  }
+  if (item.entry_type === "pending_fact") {
+    return "pending-facts";
+  }
+  if (item.entry_type === "issue") {
+    return "issues";
+  }
   if (isPendingFact(item)) {
     return "pending-facts";
   }
@@ -910,9 +921,9 @@ function entryTab(item: InboxEntry): InboxEntryTab {
 
 function itemTitle(tab: InboxEntryTab, item: InboxEntry): string {
   if (tab === "ideas") {
-    return "灵感";
+    return inboxIdeaDisplayTitle(item);
   }
-  return "title" in item && item.title ? item.title : "未命名条目";
+  return item.title || "未命名条目";
 }
 
 function priorityLabel(priority: string): string {

@@ -1,0 +1,3652 @@
+{
+  "evaluation_id": "retrieval_eval_20260718_213445_ed0330",
+  "lifecycle": "confirmed",
+  "status": "completed",
+  "dataset_id": "retrieval_knowledge_core",
+  "dataset_checksum": "2e7d6b5770eeee71b800fe20d9727f9fe0c64c9f3af8852ba319e3157ce4e7ad",
+  "requested_strategy": "mongo_lexical",
+  "effective_strategies": [
+    "mongo_lexical"
+  ],
+  "index_snapshot_id": "mongo_confirmed_253b031ede4fda5c82ae1ab8fedae634ef9a121138bb81a05e1b99d870197cc2",
+  "confirmed_card_count": 57,
+  "policy_snapshots": [
+    {
+      "policy_name": "retrieval_evaluation",
+      "top_k": 10,
+      "max_content_chars": 50000,
+      "timeout_ms": 10000,
+      "requested_strategy": "mongo_lexical",
+      "fallback_strategy": null
+    }
+  ],
+  "summary": {
+    "case_count": 60,
+    "relevance_case_count": 55,
+    "at_k": [
+      {
+        "k": 1,
+        "recall": 0.85,
+        "precision": 0.909091,
+        "ndcg": 0.909091
+      },
+      {
+        "k": 3,
+        "recall": 0.986364,
+        "precision": 0.381818,
+        "ndcg": 0.966448
+      },
+      {
+        "k": 5,
+        "recall": 1.0,
+        "precision": 0.24,
+        "ndcg": 0.966448
+      },
+      {
+        "k": 10,
+        "recall": 1.0,
+        "precision": 0.12,
+        "ndcg": 0.966448
+      }
+    ],
+    "mrr": 0.954545,
+    "empty_result_accuracy": 0.2,
+    "forbidden_hit_rate": 0.05,
+    "average_latency_ms": 6.4,
+    "p95_latency_ms": 10.0,
+    "average_candidate_count": 16.917,
+    "truncation_rate": 0.066667,
+    "content_budget_hit_rate": 0.0,
+    "embedding_call_count": 0,
+    "embedding_failure_count": 0,
+    "embedding_failure_rate": 0.0,
+    "embedding_p50_latency_ms": null,
+    "embedding_p95_latency_ms": null,
+    "index_search_p50_latency_ms": null,
+    "index_search_p95_latency_ms": null,
+    "embedding_cost_amount": 0.0
+  },
+  "groups": [
+    {
+      "category": "exact_name_alias",
+      "summary": {
+        "case_count": 15,
+        "relevance_case_count": 15,
+        "at_k": [
+          {
+            "k": 1,
+            "recall": 1.0,
+            "precision": 1.0,
+            "ndcg": 1.0
+          },
+          {
+            "k": 3,
+            "recall": 1.0,
+            "precision": 0.333333,
+            "ndcg": 1.0
+          },
+          {
+            "k": 5,
+            "recall": 1.0,
+            "precision": 0.2,
+            "ndcg": 1.0
+          },
+          {
+            "k": 10,
+            "recall": 1.0,
+            "precision": 0.1,
+            "ndcg": 1.0
+          }
+        ],
+        "mrr": 1.0,
+        "empty_result_accuracy": 1.0,
+        "forbidden_hit_rate": 0.066667,
+        "average_latency_ms": 6.733,
+        "p95_latency_ms": 16.0,
+        "average_candidate_count": 11.067,
+        "truncation_rate": 0.0,
+        "content_budget_hit_rate": 0.0,
+        "embedding_call_count": 0,
+        "embedding_failure_count": 0,
+        "embedding_failure_rate": 0.0,
+        "embedding_p50_latency_ms": null,
+        "embedding_p95_latency_ms": null,
+        "index_search_p50_latency_ms": null,
+        "index_search_p95_latency_ms": null,
+        "embedding_cost_amount": 0.0
+      }
+    },
+    {
+      "category": "multi_entity_disambiguation",
+      "summary": {
+        "case_count": 5,
+        "relevance_case_count": 5,
+        "at_k": [
+          {
+            "k": 1,
+            "recall": 0.35,
+            "precision": 1.0,
+            "ndcg": 1.0
+          },
+          {
+            "k": 3,
+            "recall": 0.85,
+            "precision": 0.866667,
+            "ndcg": 1.0
+          },
+          {
+            "k": 5,
+            "recall": 1.0,
+            "precision": 0.64,
+            "ndcg": 1.0
+          },
+          {
+            "k": 10,
+            "recall": 1.0,
+            "precision": 0.32,
+            "ndcg": 1.0
+          }
+        ],
+        "mrr": 1.0,
+        "empty_result_accuracy": 1.0,
+        "forbidden_hit_rate": 0.0,
+        "average_latency_ms": 6.6,
+        "p95_latency_ms": 8.0,
+        "average_candidate_count": 27.8,
+        "truncation_rate": 0.6,
+        "content_budget_hit_rate": 0.0,
+        "embedding_call_count": 0,
+        "embedding_failure_count": 0,
+        "embedding_failure_rate": 0.0,
+        "embedding_p50_latency_ms": null,
+        "embedding_p95_latency_ms": null,
+        "index_search_p50_latency_ms": null,
+        "index_search_p95_latency_ms": null,
+        "embedding_cost_amount": 0.0
+      }
+    },
+    {
+      "category": "no_answer_adversarial",
+      "summary": {
+        "case_count": 5,
+        "relevance_case_count": 0,
+        "at_k": [
+          {
+            "k": 1,
+            "recall": 0.0,
+            "precision": 0.0,
+            "ndcg": 0.0
+          },
+          {
+            "k": 3,
+            "recall": 0.0,
+            "precision": 0.0,
+            "ndcg": 0.0
+          },
+          {
+            "k": 5,
+            "recall": 0.0,
+            "precision": 0.0,
+            "ndcg": 0.0
+          },
+          {
+            "k": 10,
+            "recall": 0.0,
+            "precision": 0.0,
+            "ndcg": 0.0
+          }
+        ],
+        "mrr": 0.0,
+        "empty_result_accuracy": 0.2,
+        "forbidden_hit_rate": 0.0,
+        "average_latency_ms": 8.4,
+        "p95_latency_ms": 12.0,
+        "average_candidate_count": 57.0,
+        "truncation_rate": 0.0,
+        "content_budget_hit_rate": 0.0,
+        "embedding_call_count": 0,
+        "embedding_failure_count": 0,
+        "embedding_failure_rate": 0.0,
+        "embedding_p50_latency_ms": null,
+        "embedding_p95_latency_ms": null,
+        "index_search_p50_latency_ms": null,
+        "index_search_p95_latency_ms": null,
+        "embedding_cost_amount": 0.0
+      }
+    },
+    {
+      "category": "semantic_paraphrase",
+      "summary": {
+        "case_count": 20,
+        "relevance_case_count": 20,
+        "at_k": [
+          {
+            "k": 1,
+            "recall": 0.85,
+            "precision": 0.85,
+            "ndcg": 0.85
+          },
+          {
+            "k": 3,
+            "recall": 1.0,
+            "precision": 0.333333,
+            "ndcg": 0.94464
+          },
+          {
+            "k": 5,
+            "recall": 1.0,
+            "precision": 0.2,
+            "ndcg": 0.94464
+          },
+          {
+            "k": 10,
+            "recall": 1.0,
+            "precision": 0.1,
+            "ndcg": 0.94464
+          }
+        ],
+        "mrr": 0.925,
+        "empty_result_accuracy": 1.0,
+        "forbidden_hit_rate": 0.0,
+        "average_latency_ms": 6.45,
+        "p95_latency_ms": 10.0,
+        "average_candidate_count": 11.0,
+        "truncation_rate": 0.0,
+        "content_budget_hit_rate": 0.0,
+        "embedding_call_count": 0,
+        "embedding_failure_count": 0,
+        "embedding_failure_rate": 0.0,
+        "embedding_p50_latency_ms": null,
+        "embedding_p95_latency_ms": null,
+        "index_search_p50_latency_ms": null,
+        "index_search_p95_latency_ms": null,
+        "embedding_cost_amount": 0.0
+      }
+    },
+    {
+      "category": "state_relation_event_rule",
+      "summary": {
+        "case_count": 15,
+        "relevance_case_count": 15,
+        "at_k": [
+          {
+            "k": 1,
+            "recall": 0.866667,
+            "precision": 0.866667,
+            "ndcg": 0.866667
+          },
+          {
+            "k": 3,
+            "recall": 1.0,
+            "precision": 0.333333,
+            "ndcg": 0.950791
+          },
+          {
+            "k": 5,
+            "recall": 1.0,
+            "precision": 0.2,
+            "ndcg": 0.950791
+          },
+          {
+            "k": 10,
+            "recall": 1.0,
+            "precision": 0.1,
+            "ndcg": 0.950791
+          }
+        ],
+        "mrr": 0.933333,
+        "empty_result_accuracy": 1.0,
+        "forbidden_hit_rate": 0.133333,
+        "average_latency_ms": 5.267,
+        "p95_latency_ms": 7.0,
+        "average_candidate_count": 13.667,
+        "truncation_rate": 0.066667,
+        "content_budget_hit_rate": 0.0,
+        "embedding_call_count": 0,
+        "embedding_failure_count": 0,
+        "embedding_failure_rate": 0.0,
+        "embedding_p50_latency_ms": null,
+        "embedding_p95_latency_ms": null,
+        "index_search_p50_latency_ms": null,
+        "index_search_p95_latency_ms": null,
+        "embedding_cost_amount": 0.0
+      }
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "exact_01_qin_haoxuan",
+      "category": "exact_name_alias",
+      "retrieval_id": "retrieval_97f4eba1bf9842368837de56cbb07ca2",
+      "returned_card_ids": [
+        "character-15ea01664af34da395391a0f43e116c4",
+        "character-019332a54400a68faab1f22916653574",
+        "character-498cd95d5c99422bb9ec6374cd4cd907",
+        "character-f25ddfbd97874ee8bf8dc57761ea4868",
+        "character-7c502d59472144a78fff8c2d7c82f395",
+        "character-f49cc19da0914307a680d397f99dd024",
+        "character-7e3d9dea3607438fbbe3dd4da85962ad",
+        "character-0c41e0e6711143ad9cdc5edc7c77f508",
+        "character-ad18ab8d1def485086b6f642598be332",
+        "character-c5c937b783924539988df8e1a0a00c58"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 8,
+      "candidate_count": 19,
+      "hit_count": 10,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 2052,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "exact_02_snake_alias",
+      "category": "exact_name_alias",
+      "retrieval_id": "retrieval_96b3e90abb75491580cbb3926e6caa95",
+      "returned_card_ids": [
+        "character-c5c937b783924539988df8e1a0a00c58",
+        "character-15ea01664af34da395391a0f43e116c4"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 19,
+      "hit_count": 2,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 558,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "exact_03_taichu_alias",
+      "category": "exact_name_alias",
+      "retrieval_id": "retrieval_64de3d6950c943aaa5536a4798ad1237",
+      "returned_card_ids": [
+        "faction-50197cb535794630b4471328478fbc7e",
+        "faction-efe1f9ece6e6b674dc8e3c7c17e23ce5"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 2,
+      "hit_count": 2,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 124,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "exact_04_li_jing",
+      "category": "exact_name_alias",
+      "retrieval_id": "retrieval_9d1d08fe502148709c6ea6259d101e1b",
+      "returned_card_ids": [
+        "character-498cd95d5c99422bb9ec6374cd4cd907"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 19,
+      "hit_count": 1,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 160,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "exact_05_xu_yu",
+      "category": "exact_name_alias",
+      "retrieval_id": "retrieval_65db6d697a684344bc34f1171c59d557",
+      "returned_card_ids": [
+        "character-f25ddfbd97874ee8bf8dc57761ea4868"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 19,
+      "hit_count": 1,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 146,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "exact_06_zhang_kuang",
+      "category": "exact_name_alias",
+      "retrieval_id": "retrieval_b30f1a6783f34e0094467cf4e7f274b8",
+      "returned_card_ids": [
+        "character-0c41e0e6711143ad9cdc5edc7c77f508",
+        "character-7c502d59472144a78fff8c2d7c82f395",
+        "character-f49cc19da0914307a680d397f99dd024",
+        "character-7e3d9dea3607438fbbe3dd4da85962ad",
+        "character-15ea01664af34da395391a0f43e116c4"
+      ],
+      "forbidden_hit_ids": [
+        "character-7e3d9dea3607438fbbe3dd4da85962ad"
+      ],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 19,
+      "hit_count": 5,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 1059,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "exact_07_seedling_realm",
+      "category": "exact_name_alias",
+      "retrieval_id": "retrieval_11b1172ba92746adae553fd2b249626b",
+      "returned_card_ids": [
+        "realm-fc086ffc3b8c4e06830d89866e1c7cd9",
+        "realm-24103221b80945438a7469029603cf80"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 4,
+      "hit_count": 2,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 102,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "exact_08_root_realm",
+      "category": "exact_name_alias",
+      "retrieval_id": "retrieval_1e3f89c56bf04811a6b0111ceb0efd70",
+      "returned_card_ids": [
+        "realm-24103221b80945438a7469029603cf80"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 4,
+      "hit_count": 1,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 46,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "exact_09_poison_valley",
+      "category": "exact_name_alias",
+      "retrieval_id": "retrieval_c76bb510d1484afba1f06d985dcab2bb",
+      "returned_card_ids": [
+        "location-707eb7979eeb4de2bbe25d1a9d2d9763"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 9,
+      "hit_count": 1,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 126,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "exact_10_chen_pharmacy",
+      "category": "exact_name_alias",
+      "retrieval_id": "retrieval_3a312f3c5e4141389d9579b1e167ecbf",
+      "returned_card_ids": [
+        "location-cbc7cbd91b5348bd94404657b1c527f9",
+        "location-91418b5bc4e3496aa34c7a9d3908203a"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 9,
+      "hit_count": 2,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 343,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "exact_11_huangjing",
+      "category": "exact_name_alias",
+      "retrieval_id": "retrieval_4d3c6bce451542eea2df90eaaba42900",
+      "returned_card_ids": [
+        "item-b5f642e95d67401296c8f73a8ce41471"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 7,
+      "candidate_count": 1,
+      "hit_count": 1,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 257,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "exact_12_qin_rule",
+      "category": "exact_name_alias",
+      "retrieval_id": "retrieval_6d61ffaa753044659d907c0961664fc6",
+      "returned_card_ids": [
+        "rule-0bcaf2c415b14cde9b42cd29bdc3a7d4"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 11,
+      "hit_count": 1,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 37,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "exact_13_seed_selection",
+      "category": "exact_name_alias",
+      "retrieval_id": "retrieval_b18c8f0e71454885bc6160e000f9e84f",
+      "returned_card_ids": [
+        "event-aeba86495bac4a08a190f1b4e46eed31"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 11,
+      "hit_count": 1,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 155,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "exact_14_sell_huangjing",
+      "category": "exact_name_alias",
+      "retrieval_id": "retrieval_bafea601b2c44ea58187547d61342bc5",
+      "returned_card_ids": [
+        "event-0874beeb681b4813b7ef3e879f59f384",
+        "event-f41e1e451c414372857165d898162f03",
+        "event-b03ac9311df74e359ac885fbc54ffcbb",
+        "event-382f1715dbfd4bbfa985ef45e33919e6",
+        "event-0ca7f971ea6642c9a6337fa3199238ba",
+        "event-4f854a08cd56e8eefba50f85ff56d9ae",
+        "event-aeba86495bac4a08a190f1b4e46eed31"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 16,
+      "candidate_count": 11,
+      "hit_count": 7,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 1038,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "exact_15_poziling",
+      "category": "exact_name_alias",
+      "retrieval_id": "retrieval_90bd9ddc1b6142cb8e5d16c108286bd8",
+      "returned_card_ids": [
+        "location-4b2a7f4aa73d495b91abf00a4db9b9eb",
+        "location-0dea0d4f51ff4606a511e05acdb5f927"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 7,
+      "candidate_count": 9,
+      "hit_count": 2,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 212,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_01_prince",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_e3c0144f2dfb4b8e8bd2fae1359dfd22",
+      "returned_card_ids": [
+        "character-498cd95d5c99422bb9ec6374cd4cd907"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 10,
+      "candidate_count": 19,
+      "hit_count": 1,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 160,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_02_demon_ancestor",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_2845efbe91024a6181ca5f808d111dcd",
+      "returned_card_ids": [
+        "character-0e295a6bd3bd4244934afac395af979f"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 8,
+      "candidate_count": 19,
+      "hit_count": 1,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 177,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_03_timid_boy",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_1d548bb2422141de84249fd000ce107e",
+      "returned_card_ids": [
+        "character-f25ddfbd97874ee8bf8dc57761ea4868",
+        "character-15ea01664af34da395391a0f43e116c4",
+        "character-ad18ab8d1def485086b6f642598be332",
+        "character-019332a54400a68faab1f22916653574",
+        "character-498cd95d5c99422bb9ec6374cd4cd907",
+        "character-7c502d59472144a78fff8c2d7c82f395",
+        "character-f49cc19da0914307a680d397f99dd024",
+        "character-7e3d9dea3607438fbbe3dd4da85962ad",
+        "character-0c41e0e6711143ad9cdc5edc7c77f508",
+        "character-c5c937b783924539988df8e1a0a00c58"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 7,
+      "candidate_count": 19,
+      "hit_count": 10,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 2052,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_04_spirit_tester",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_d7a7a481c90c41438c55fc60333fe384",
+      "returned_card_ids": [
+        "character-7c502d59472144a78fff8c2d7c82f395",
+        "character-7ab9d6b64310c778119df373fbc90b72",
+        "character-84dfc46002d94b3b6fd19fc72396f88d",
+        "character-4a17d1ee132b22fccea5052f37dfa621",
+        "character-b2077b62da4a31ff406e7fdc1a617e66",
+        "character-019332a54400a68faab1f22916653574",
+        "character-d8d4cd99e81931ca99379d5121007516",
+        "character-f25ddfbd97874ee8bf8dc57761ea4868",
+        "character-7e3d9dea3607438fbbe3dd4da85962ad"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 7,
+      "candidate_count": 19,
+      "hit_count": 9,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 1573,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_05_selection_host",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_3486da370a684f7cbc3147f476f5d600",
+      "returned_card_ids": [
+        "character-f49cc19da0914307a680d397f99dd024",
+        "character-0c41e0e6711143ad9cdc5edc7c77f508",
+        "character-7c502d59472144a78fff8c2d7c82f395",
+        "character-84dfc46002d94b3b6fd19fc72396f88d",
+        "character-4a17d1ee132b22fccea5052f37dfa621",
+        "character-7e3d9dea3607438fbbe3dd4da85962ad",
+        "character-15ea01664af34da395391a0f43e116c4"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 8,
+      "candidate_count": 19,
+      "hit_count": 7,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 1437,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_06_soul_animal",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_873d6af4519f4c99af4f82da4894e952",
+      "returned_card_ids": [
+        "character-15ea01664af34da395391a0f43e116c4",
+        "character-c5c937b783924539988df8e1a0a00c58",
+        "character-019332a54400a68faab1f22916653574",
+        "character-f49cc19da0914307a680d397f99dd024",
+        "character-498cd95d5c99422bb9ec6374cd4cd907",
+        "character-f25ddfbd97874ee8bf8dc57761ea4868",
+        "character-7c502d59472144a78fff8c2d7c82f395",
+        "character-7e3d9dea3607438fbbe3dd4da85962ad",
+        "character-0c41e0e6711143ad9cdc5edc7c77f508",
+        "character-ad18ab8d1def485086b6f642598be332"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 0.63093
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 0.63093
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 0.63093
+        }
+      ],
+      "reciprocal_rank": 0.5,
+      "empty_result_correct": null,
+      "latency_ms": 12,
+      "candidate_count": 19,
+      "hit_count": 10,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 2052,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_07_fortynine_leaves",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_50a8352a8fdf4a0b8c772a121358302d",
+      "returned_card_ids": [
+        "realm-fc086ffc3b8c4e06830d89866e1c7cd9",
+        "realm-24103221b80945438a7469029603cf80",
+        "realm-ab9e7e3e81ec4193805ecf1764b91228",
+        "realm-b0f0e0e7e408444c8f6ae8449d6224ee"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 8,
+      "candidate_count": 4,
+      "hit_count": 4,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 184,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_08_tree_lifespan",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_7be5d6f90d8b47608fde328afa060bd4",
+      "returned_card_ids": [
+        "realm-b0f0e0e7e408444c8f6ae8449d6224ee",
+        "realm-fc086ffc3b8c4e06830d89866e1c7cd9",
+        "realm-ab9e7e3e81ec4193805ecf1764b91228",
+        "realm-24103221b80945438a7469029603cf80"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 4,
+      "hit_count": 4,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 184,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_09_hundreds_years",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_3bf31e5f9dda41f3a4c6c9a7d2e4975d",
+      "returned_card_ids": [
+        "realm-ab9e7e3e81ec4193805ecf1764b91228",
+        "realm-b0f0e0e7e408444c8f6ae8449d6224ee",
+        "realm-fc086ffc3b8c4e06830d89866e1c7cd9",
+        "realm-24103221b80945438a7469029603cf80"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 4,
+      "hit_count": 4,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 184,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_10_only_sect",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_961431c9d6864b57930bf95dd8963608",
+      "returned_card_ids": [
+        "faction-efe1f9ece6e6b674dc8e3c7c17e23ce5",
+        "faction-50197cb535794630b4471328478fbc7e"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 0.63093
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 0.63093
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 0.63093
+        }
+      ],
+      "reciprocal_rank": 0.5,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 2,
+      "hit_count": 2,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 124,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_11_self_explosion_valley",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_d32dc33a43844d34a14178f3e5c313e6",
+      "returned_card_ids": [
+        "location-707eb7979eeb4de2bbe25d1a9d2d9763",
+        "location-39a9f7baf0c3476f8fcbfd3895cc1393",
+        "location-0d8802c15a2545d88a10dab7af674ec7",
+        "location-ee3ad92fdc9249aa98dc302bd87d102b",
+        "location-28c152808da447efb16b89af3bbdbfc0",
+        "location-0dea0d4f51ff4606a511e05acdb5f927",
+        "location-91418b5bc4e3496aa34c7a9d3908203a"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 9,
+      "hit_count": 7,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 781,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_12_stair_peak",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_6630e99acee94dc8838a70fbf836bce4",
+      "returned_card_ids": [
+        "location-28c152808da447efb16b89af3bbdbfc0",
+        "location-0d8802c15a2545d88a10dab7af674ec7"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 9,
+      "hit_count": 2,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 163,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_13_hunter_town",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_446f900b108243daa11827c4a6288440",
+      "returned_card_ids": [
+        "location-91418b5bc4e3496aa34c7a9d3908203a",
+        "location-0dea0d4f51ff4606a511e05acdb5f927"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 9,
+      "hit_count": 2,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 312,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_14_mountain_boundary",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_226275a6e06a43f995ce98346f06f9a3",
+      "returned_card_ids": [
+        "location-4b2a7f4aa73d495b91abf00a4db9b9eb",
+        "location-0dea0d4f51ff4606a511e05acdb5f927",
+        "location-91418b5bc4e3496aa34c7a9d3908203a"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 0.63093
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 0.63093
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 0.63093
+        }
+      ],
+      "reciprocal_rank": 0.5,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 9,
+      "hit_count": 3,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 377,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_15_yellow_medicine",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_ea6d67bebce845df8ebe1674bc53425e",
+      "returned_card_ids": [
+        "item-b5f642e95d67401296c8f73a8ce41471"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 4,
+      "candidate_count": 1,
+      "hit_count": 1,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 257,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_16_age_limit",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_0783121237074964acfdccef540f3926",
+      "returned_card_ids": [
+        "rule-50950f1242ca4d3599a239656bfae43b",
+        "rule-590f66a1a75647d3980dea1a24606169",
+        "rule-3b84193368076ea056cec571e62f6a83",
+        "rule-bec8cd4d43fcc0260a88c472a1a026c5",
+        "rule-a3a8c130619db2cd901e9e544766134c",
+        "rule-553a0bf84c1a4077ba70dcd1fda815ee",
+        "rule-0bcaf2c415b14cde9b42cd29bdc3a7d4"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 11,
+      "hit_count": 7,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 457,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_17_two_tests",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_515313deb0e54168a27d29781dd217ab",
+      "returned_card_ids": [
+        "rule-590f66a1a75647d3980dea1a24606169",
+        "rule-bec8cd4d43fcc0260a88c472a1a026c5"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 11,
+      "hit_count": 2,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 141,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_18_black_eye",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_d473f142959749249e6b986a3fb64b30",
+      "returned_card_ids": [
+        "rule-b3d811e0f0754c66aa85c2f1655eec9b",
+        "rule-553a0bf84c1a4077ba70dcd1fda815ee",
+        "rule-bec8cd4d43fcc0260a88c472a1a026c5",
+        "rule-590f66a1a75647d3980dea1a24606169"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 11,
+      "hit_count": 4,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 301,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_19_reject_hundred_taels",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_ea149237b92540ef880ce3bce01582c3",
+      "returned_card_ids": [
+        "event-0874beeb681b4813b7ef3e879f59f384",
+        "event-f41e1e451c414372857165d898162f03",
+        "event-b03ac9311df74e359ac885fbc54ffcbb",
+        "event-382f1715dbfd4bbfa985ef45e33919e6",
+        "event-0ca7f971ea6642c9a6337fa3199238ba",
+        "event-4f854a08cd56e8eefba50f85ff56d9ae",
+        "event-aeba86495bac4a08a190f1b4e46eed31",
+        "event-0dff962109004751be74c48910414a7c"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 11,
+      "hit_count": 8,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 1146,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "semantic_20_bite_ability",
+      "category": "semantic_paraphrase",
+      "retrieval_id": "retrieval_50815b0565a6498c8b0034211fd02bf5",
+      "returned_card_ids": [
+        "event-0ca7f971ea6642c9a6337fa3199238ba",
+        "event-b03ac9311df74e359ac885fbc54ffcbb",
+        "event-0874beeb681b4813b7ef3e879f59f384",
+        "event-382f1715dbfd4bbfa985ef45e33919e6",
+        "event-f41e1e451c414372857165d898162f03",
+        "event-4f854a08cd56e8eefba50f85ff56d9ae",
+        "event-aeba86495bac4a08a190f1b4e46eed31"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 11,
+      "hit_count": 7,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 1038,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "state_01_old_grudge",
+      "category": "state_relation_event_rule",
+      "retrieval_id": "retrieval_d77fd9fa57ae4bc5a59beeca8bf1fcea",
+      "returned_card_ids": [
+        "character-0c41e0e6711143ad9cdc5edc7c77f508",
+        "character-15ea01664af34da395391a0f43e116c4",
+        "character-019332a54400a68faab1f22916653574",
+        "character-c5c937b783924539988df8e1a0a00c58",
+        "character-498cd95d5c99422bb9ec6374cd4cd907",
+        "character-f25ddfbd97874ee8bf8dc57761ea4868",
+        "character-7c502d59472144a78fff8c2d7c82f395",
+        "character-f49cc19da0914307a680d397f99dd024",
+        "character-7e3d9dea3607438fbbe3dd4da85962ad",
+        "character-ad18ab8d1def485086b6f642598be332"
+      ],
+      "forbidden_hit_ids": [
+        "character-7e3d9dea3607438fbbe3dd4da85962ad"
+      ],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 19,
+      "hit_count": 10,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 2052,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "state_02_protagonist_ability",
+      "category": "state_relation_event_rule",
+      "retrieval_id": "retrieval_49d4fde6e0964593a8b7e3793f65265d",
+      "returned_card_ids": [
+        "character-c5c937b783924539988df8e1a0a00c58",
+        "character-15ea01664af34da395391a0f43e116c4",
+        "character-0c41e0e6711143ad9cdc5edc7c77f508",
+        "character-ad18ab8d1def485086b6f642598be332",
+        "character-5171318fcf63832e083d05eff8bb4669",
+        "character-019332a54400a68faab1f22916653574",
+        "character-f25ddfbd97874ee8bf8dc57761ea4868"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 0.63093
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 0.63093
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 0.63093
+        }
+      ],
+      "reciprocal_rank": 0.5,
+      "empty_result_correct": null,
+      "latency_ms": 7,
+      "candidate_count": 19,
+      "hit_count": 7,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 1613,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "state_03_medicine_mentor",
+      "category": "state_relation_event_rule",
+      "retrieval_id": "retrieval_16c9e2bedede469995ad99e600d2e314",
+      "returned_card_ids": [
+        "character-15ea01664af34da395391a0f43e116c4",
+        "character-ad18ab8d1def485086b6f642598be332",
+        "character-c5c937b783924539988df8e1a0a00c58",
+        "character-019332a54400a68faab1f22916653574",
+        "character-498cd95d5c99422bb9ec6374cd4cd907",
+        "character-f25ddfbd97874ee8bf8dc57761ea4868",
+        "character-7c502d59472144a78fff8c2d7c82f395",
+        "character-f49cc19da0914307a680d397f99dd024",
+        "character-7e3d9dea3607438fbbe3dd4da85962ad",
+        "character-0c41e0e6711143ad9cdc5edc7c77f508"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 0.63093
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 0.63093
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 0.63093
+        }
+      ],
+      "reciprocal_rank": 0.5,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 19,
+      "hit_count": 10,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 2052,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "state_04_elder_son",
+      "category": "state_relation_event_rule",
+      "retrieval_id": "retrieval_926eda9039074d9f9fbdfdc5bf58a57f",
+      "returned_card_ids": [
+        "character-c54a2085d20f455f8e942dd3b29248ab",
+        "character-84dfc46002d94b3b6fd19fc72396f88d",
+        "character-4a17d1ee132b22fccea5052f37dfa621",
+        "character-b2077b62da4a31ff406e7fdc1a617e66",
+        "character-7c502d59472144a78fff8c2d7c82f395",
+        "character-f49cc19da0914307a680d397f99dd024",
+        "character-7e3d9dea3607438fbbe3dd4da85962ad",
+        "character-f25ddfbd97874ee8bf8dc57761ea4868"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 19,
+      "hit_count": 8,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 1299,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "state_05_clan_brother",
+      "category": "state_relation_event_rule",
+      "retrieval_id": "retrieval_0457f09ecc7a4fbd99ba0e86d0dd82be",
+      "returned_card_ids": [
+        "character-7e3d9dea3607438fbbe3dd4da85962ad",
+        "character-15ea01664af34da395391a0f43e116c4",
+        "character-0c41e0e6711143ad9cdc5edc7c77f508",
+        "character-f49cc19da0914307a680d397f99dd024",
+        "character-7c502d59472144a78fff8c2d7c82f395",
+        "character-019332a54400a68faab1f22916653574",
+        "character-498cd95d5c99422bb9ec6374cd4cd907",
+        "character-f25ddfbd97874ee8bf8dc57761ea4868",
+        "character-ad18ab8d1def485086b6f642598be332",
+        "character-c5c937b783924539988df8e1a0a00c58"
+      ],
+      "forbidden_hit_ids": [
+        "character-0c41e0e6711143ad9cdc5edc7c77f508"
+      ],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 19,
+      "hit_count": 10,
+      "truncated": true,
+      "budget_limited": false,
+      "content_chars_used": 2052,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "state_06_snake_properties",
+      "category": "state_relation_event_rule",
+      "retrieval_id": "retrieval_681d8034021648c9a68753c2b9e9cd52",
+      "returned_card_ids": [
+        "rule-77194329f496429daf9f12ffc6f789ab",
+        "rule-553a0bf84c1a4077ba70dcd1fda815ee",
+        "rule-3b84193368076ea056cec571e62f6a83",
+        "rule-a3a8c130619db2cd901e9e544766134c",
+        "rule-bec8cd4d43fcc0260a88c472a1a026c5",
+        "rule-590f66a1a75647d3980dea1a24606169",
+        "rule-b3d811e0f0754c66aa85c2f1655eec9b"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 11,
+      "hit_count": 7,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 475,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "state_07_miasma_death",
+      "category": "state_relation_event_rule",
+      "retrieval_id": "retrieval_c5b071ac539a4ff18731b5b4dcc9d8f1",
+      "returned_card_ids": [
+        "rule-553a0bf84c1a4077ba70dcd1fda815ee",
+        "rule-77194329f496429daf9f12ffc6f789ab",
+        "rule-b3d811e0f0754c66aa85c2f1655eec9b"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 11,
+      "hit_count": 3,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 219,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "state_08_family_instruction",
+      "category": "state_relation_event_rule",
+      "retrieval_id": "retrieval_c903eaa32bfb4db390cde5b427d6ff7c",
+      "returned_card_ids": [
+        "rule-0bcaf2c415b14cde9b42cd29bdc3a7d4",
+        "rule-50950f1242ca4d3599a239656bfae43b",
+        "rule-590f66a1a75647d3980dea1a24606169"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 11,
+      "hit_count": 3,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 140,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "state_09_seed_survival",
+      "category": "state_relation_event_rule",
+      "retrieval_id": "retrieval_8f775d84b680483e98a4654870a6a2a5",
+      "returned_card_ids": [
+        "rule-50950f1242ca4d3599a239656bfae43b",
+        "rule-3b84193368076ea056cec571e62f6a83",
+        "rule-bec8cd4d43fcc0260a88c472a1a026c5",
+        "rule-a3a8c130619db2cd901e9e544766134c",
+        "rule-590f66a1a75647d3980dea1a24606169"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 4,
+      "candidate_count": 11,
+      "hit_count": 5,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 316,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "state_10_selection_rules",
+      "category": "state_relation_event_rule",
+      "retrieval_id": "retrieval_5d594db92ed04fc9894b91599688ca95",
+      "returned_card_ids": [
+        "rule-590f66a1a75647d3980dea1a24606169",
+        "rule-50950f1242ca4d3599a239656bfae43b",
+        "rule-3b84193368076ea056cec571e62f6a83",
+        "rule-bec8cd4d43fcc0260a88c472a1a026c5",
+        "rule-0bcaf2c415b14cde9b42cd29bdc3a7d4"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 4,
+      "candidate_count": 11,
+      "hit_count": 5,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 307,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "state_11_public_provocation",
+      "category": "state_relation_event_rule",
+      "retrieval_id": "retrieval_6d0f405930224ae78884709685e71fc7",
+      "returned_card_ids": [
+        "event-b03ac9311df74e359ac885fbc54ffcbb",
+        "event-382f1715dbfd4bbfa985ef45e33919e6",
+        "event-0874beeb681b4813b7ef3e879f59f384",
+        "event-f41e1e451c414372857165d898162f03",
+        "event-0ca7f971ea6642c9a6337fa3199238ba",
+        "event-aeba86495bac4a08a190f1b4e46eed31",
+        "event-4f854a08cd56e8eefba50f85ff56d9ae"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 11,
+      "hit_count": 7,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 1038,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "state_12_stop_assault",
+      "category": "state_relation_event_rule",
+      "retrieval_id": "retrieval_b137140a6ae44484bcba809c6460b320",
+      "returned_card_ids": [
+        "event-382f1715dbfd4bbfa985ef45e33919e6",
+        "event-b03ac9311df74e359ac885fbc54ffcbb",
+        "event-0874beeb681b4813b7ef3e879f59f384",
+        "event-f41e1e451c414372857165d898162f03",
+        "event-0ca7f971ea6642c9a6337fa3199238ba",
+        "event-4f854a08cd56e8eefba50f85ff56d9ae",
+        "event-aeba86495bac4a08a190f1b4e46eed31",
+        "event-0dff962109004751be74c48910414a7c"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 11,
+      "hit_count": 8,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 1146,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "state_13_herb_livelihood",
+      "category": "state_relation_event_rule",
+      "retrieval_id": "retrieval_227a4e80fc7d4b478f74611e4077af8a",
+      "returned_card_ids": [
+        "event-f41e1e451c414372857165d898162f03",
+        "event-0ca7f971ea6642c9a6337fa3199238ba",
+        "event-b03ac9311df74e359ac885fbc54ffcbb",
+        "event-0874beeb681b4813b7ef3e879f59f384",
+        "event-382f1715dbfd4bbfa985ef45e33919e6",
+        "event-4f854a08cd56e8eefba50f85ff56d9ae",
+        "event-aeba86495bac4a08a190f1b4e46eed31",
+        "event-0dff962109004751be74c48910414a7c"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 11,
+      "hit_count": 8,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 1146,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "state_14_mayor_announcement",
+      "category": "state_relation_event_rule",
+      "retrieval_id": "retrieval_ed88d72ad2bc4e7382df00c36a6a993f",
+      "returned_card_ids": [
+        "event-0dff962109004751be74c48910414a7c",
+        "event-382f1715dbfd4bbfa985ef45e33919e6",
+        "event-4f854a08cd56e8eefba50f85ff56d9ae",
+        "event-0874beeb681b4813b7ef3e879f59f384",
+        "event-aeba86495bac4a08a190f1b4e46eed31"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 11,
+      "hit_count": 5,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 711,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "state_15_three_selected",
+      "category": "state_relation_event_rule",
+      "retrieval_id": "retrieval_fb050b7117694c708ff7410b05606cfa",
+      "returned_card_ids": [
+        "event-aeba86495bac4a08a190f1b4e46eed31",
+        "event-b03ac9311df74e359ac885fbc54ffcbb",
+        "event-382f1715dbfd4bbfa985ef45e33919e6",
+        "event-f41e1e451c414372857165d898162f03",
+        "event-0874beeb681b4813b7ef3e879f59f384",
+        "event-0ca7f971ea6642c9a6337fa3199238ba",
+        "event-4f854a08cd56e8eefba50f85ff56d9ae",
+        "event-40e53f9e249aae41f8ff76a379f86bec"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 1.0,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.333333,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.1,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 11,
+      "hit_count": 8,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 1158,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "multi_01_sect_location",
+      "category": "multi_entity_disambiguation",
+      "retrieval_id": "retrieval_ed29848bd76846f48337672653832a52",
+      "returned_card_ids": [
+        "faction-50197cb535794630b4471328478fbc7e",
+        "location-0d8802c15a2545d88a10dab7af674ec7",
+        "faction-efe1f9ece6e6b674dc8e3c7c17e23ce5",
+        "location-ee3ad92fdc9249aa98dc302bd87d102b",
+        "location-39a9f7baf0c3476f8fcbfd3895cc1393",
+        "location-707eb7979eeb4de2bbe25d1a9d2d9763",
+        "location-0dea0d4f51ff4606a511e05acdb5f927",
+        "location-cbc7cbd91b5348bd94404657b1c527f9"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 0.5,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.666667,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.4,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 5,
+      "candidate_count": 11,
+      "hit_count": 8,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 833,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "multi_02_snake_herb_trip",
+      "category": "multi_entity_disambiguation",
+      "retrieval_id": "retrieval_872c6919402244e0a67accda9c90c83e",
+      "returned_card_ids": [
+        "character-c5c937b783924539988df8e1a0a00c58",
+        "event-f41e1e451c414372857165d898162f03",
+        "character-15ea01664af34da395391a0f43e116c4",
+        "location-0dea0d4f51ff4606a511e05acdb5f927",
+        "event-382f1715dbfd4bbfa985ef45e33919e6",
+        "event-0ca7f971ea6642c9a6337fa3199238ba",
+        "event-b03ac9311df74e359ac885fbc54ffcbb",
+        "event-0874beeb681b4813b7ef3e879f59f384",
+        "character-ad18ab8d1def485086b6f642598be332",
+        "location-39a9f7baf0c3476f8fcbfd3895cc1393"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 0.25,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 0.75,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.8,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.4,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 8,
+      "candidate_count": 39,
+      "hit_count": 10,
+      "truncated": true,
+      "budget_limited": false,
+      "content_chars_used": 1767,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "multi_03_huangjing_trade",
+      "category": "multi_entity_disambiguation",
+      "retrieval_id": "retrieval_4251290bff1d49e2a50374258b73fe45",
+      "returned_card_ids": [
+        "character-ad18ab8d1def485086b6f642598be332",
+        "character-15ea01664af34da395391a0f43e116c4",
+        "event-0874beeb681b4813b7ef3e879f59f384",
+        "item-b5f642e95d67401296c8f73a8ce41471",
+        "event-f41e1e451c414372857165d898162f03",
+        "event-b03ac9311df74e359ac885fbc54ffcbb",
+        "event-382f1715dbfd4bbfa985ef45e33919e6",
+        "event-0ca7f971ea6642c9a6337fa3199238ba",
+        "event-4f854a08cd56e8eefba50f85ff56d9ae",
+        "character-019332a54400a68faab1f22916653574"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 0.25,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 0.75,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.8,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.4,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 7,
+      "candidate_count": 31,
+      "hit_count": 10,
+      "truncated": true,
+      "budget_limited": false,
+      "content_chars_used": 1853,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "multi_04_selection_winners",
+      "category": "multi_entity_disambiguation",
+      "retrieval_id": "retrieval_779574b18a9c4606b41f23e3858c524c",
+      "returned_card_ids": [
+        "event-aeba86495bac4a08a190f1b4e46eed31",
+        "character-15ea01664af34da395391a0f43e116c4",
+        "character-0c41e0e6711143ad9cdc5edc7c77f508",
+        "character-7e3d9dea3607438fbbe3dd4da85962ad",
+        "event-b03ac9311df74e359ac885fbc54ffcbb",
+        "event-382f1715dbfd4bbfa985ef45e33919e6",
+        "event-0874beeb681b4813b7ef3e879f59f384",
+        "event-f41e1e451c414372857165d898162f03",
+        "event-0ca7f971ea6642c9a6337fa3199238ba",
+        "character-ad18ab8d1def485086b6f642598be332"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 0.25,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 0.75,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.8,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.4,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 7,
+      "candidate_count": 30,
+      "hit_count": 10,
+      "truncated": true,
+      "budget_limited": false,
+      "content_chars_used": 1853,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "multi_05_poison_origin",
+      "category": "multi_entity_disambiguation",
+      "retrieval_id": "retrieval_4be0a928bf224d39a8016d93eed7e6ef",
+      "returned_card_ids": [
+        "location-707eb7979eeb4de2bbe25d1a9d2d9763",
+        "character-0e295a6bd3bd4244934afac395af979f"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 0.5,
+          "precision": 1.0,
+          "ndcg": 1.0
+        },
+        {
+          "k": 3,
+          "recall": 1.0,
+          "precision": 0.666667,
+          "ndcg": 1.0
+        },
+        {
+          "k": 5,
+          "recall": 1.0,
+          "precision": 0.4,
+          "ndcg": 1.0
+        },
+        {
+          "k": 10,
+          "recall": 1.0,
+          "precision": 0.2,
+          "ndcg": 1.0
+        }
+      ],
+      "reciprocal_rank": 1.0,
+      "empty_result_correct": null,
+      "latency_ms": 6,
+      "candidate_count": 28,
+      "hit_count": 2,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 303,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "empty_01_unknown_sword",
+      "category": "no_answer_adversarial",
+      "retrieval_id": "retrieval_5c2a9a6f5fa543e0ad5b9e458391d6ac",
+      "returned_card_ids": [
+        "character-f25ddfbd97874ee8bf8dc57761ea4868",
+        "location-91418b5bc4e3496aa34c7a9d3908203a"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 3,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 5,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 10,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        }
+      ],
+      "reciprocal_rank": 0.0,
+      "empty_result_correct": false,
+      "latency_ms": 7,
+      "candidate_count": 57,
+      "hit_count": 2,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 311,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "empty_02_dragon_palace",
+      "category": "no_answer_adversarial",
+      "retrieval_id": "retrieval_c6fdd880d74342ee8fca2e0c43635216",
+      "returned_card_ids": [],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 3,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 5,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 10,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        }
+      ],
+      "reciprocal_rank": 0.0,
+      "empty_result_correct": true,
+      "latency_ms": 7,
+      "candidate_count": 57,
+      "hit_count": 0,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 0,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "empty_03_final_villain",
+      "category": "no_answer_adversarial",
+      "retrieval_id": "retrieval_36f3e32486af4166853d15490939246f",
+      "returned_card_ids": [
+        "character-7c502d59472144a78fff8c2d7c82f395",
+        "event-382f1715dbfd4bbfa985ef45e33919e6"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 3,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 5,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 10,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        }
+      ],
+      "reciprocal_rank": 0.0,
+      "empty_result_correct": false,
+      "latency_ms": 7,
+      "candidate_count": 57,
+      "hit_count": 2,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 333,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "empty_04_bypass_drafts",
+      "category": "no_answer_adversarial",
+      "retrieval_id": "retrieval_bb4240816b7b4f00b0a230450f9ce5da",
+      "returned_card_ids": [
+        "event-0874beeb681b4813b7ef3e879f59f384",
+        "event-0ca7f971ea6642c9a6337fa3199238ba"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 3,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 5,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 10,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        }
+      ],
+      "reciprocal_rank": 0.0,
+      "empty_result_correct": false,
+      "latency_ms": 12,
+      "candidate_count": 57,
+      "hit_count": 2,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 289,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    },
+    {
+      "case_id": "empty_05_invented_character",
+      "category": "no_answer_adversarial",
+      "retrieval_id": "retrieval_8954cd92f2d242a586fbd9e418672377",
+      "returned_card_ids": [
+        "event-0ca7f971ea6642c9a6337fa3199238ba"
+      ],
+      "forbidden_hit_ids": [],
+      "at_k": [
+        {
+          "k": 1,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 3,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 5,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        },
+        {
+          "k": 10,
+          "recall": 0.0,
+          "precision": 0.0,
+          "ndcg": 0.0
+        }
+      ],
+      "reciprocal_rank": 0.0,
+      "empty_result_correct": false,
+      "latency_ms": 9,
+      "candidate_count": 57,
+      "hit_count": 1,
+      "truncated": false,
+      "budget_limited": false,
+      "content_chars_used": 169,
+      "backend_metrics": {
+        "embedding_call_id": null,
+        "embedding_duration_ms": null,
+        "embedding_input_tokens": null,
+        "embedding_cost_amount": 0.0,
+        "index_search_duration_ms": null
+      }
+    }
+  ],
+  "failures": [
+    {
+      "case_id": "exact_06_zhang_kuang",
+      "reasons": [
+        "召回结果命中了样例明确禁止的知识卡。"
+      ],
+      "returned_card_ids": [
+        "character-0c41e0e6711143ad9cdc5edc7c77f508",
+        "character-7c502d59472144a78fff8c2d7c82f395",
+        "character-f49cc19da0914307a680d397f99dd024",
+        "character-7e3d9dea3607438fbbe3dd4da85962ad",
+        "character-15ea01664af34da395391a0f43e116c4"
+      ]
+    },
+    {
+      "case_id": "state_01_old_grudge",
+      "reasons": [
+        "召回结果命中了样例明确禁止的知识卡。"
+      ],
+      "returned_card_ids": [
+        "character-0c41e0e6711143ad9cdc5edc7c77f508",
+        "character-15ea01664af34da395391a0f43e116c4",
+        "character-019332a54400a68faab1f22916653574",
+        "character-c5c937b783924539988df8e1a0a00c58",
+        "character-498cd95d5c99422bb9ec6374cd4cd907",
+        "character-f25ddfbd97874ee8bf8dc57761ea4868",
+        "character-7c502d59472144a78fff8c2d7c82f395",
+        "character-f49cc19da0914307a680d397f99dd024",
+        "character-7e3d9dea3607438fbbe3dd4da85962ad",
+        "character-ad18ab8d1def485086b6f642598be332"
+      ]
+    },
+    {
+      "case_id": "state_05_clan_brother",
+      "reasons": [
+        "召回结果命中了样例明确禁止的知识卡。"
+      ],
+      "returned_card_ids": [
+        "character-7e3d9dea3607438fbbe3dd4da85962ad",
+        "character-15ea01664af34da395391a0f43e116c4",
+        "character-0c41e0e6711143ad9cdc5edc7c77f508",
+        "character-f49cc19da0914307a680d397f99dd024",
+        "character-7c502d59472144a78fff8c2d7c82f395",
+        "character-019332a54400a68faab1f22916653574",
+        "character-498cd95d5c99422bb9ec6374cd4cd907",
+        "character-f25ddfbd97874ee8bf8dc57761ea4868",
+        "character-ad18ab8d1def485086b6f642598be332",
+        "character-c5c937b783924539988df8e1a0a00c58"
+      ]
+    },
+    {
+      "case_id": "empty_01_unknown_sword",
+      "reasons": [
+        "期望空结果，但召回返回了知识卡。"
+      ],
+      "returned_card_ids": [
+        "character-f25ddfbd97874ee8bf8dc57761ea4868",
+        "location-91418b5bc4e3496aa34c7a9d3908203a"
+      ]
+    },
+    {
+      "case_id": "empty_03_final_villain",
+      "reasons": [
+        "期望空结果，但召回返回了知识卡。"
+      ],
+      "returned_card_ids": [
+        "character-7c502d59472144a78fff8c2d7c82f395",
+        "event-382f1715dbfd4bbfa985ef45e33919e6"
+      ]
+    },
+    {
+      "case_id": "empty_04_bypass_drafts",
+      "reasons": [
+        "期望空结果，但召回返回了知识卡。"
+      ],
+      "returned_card_ids": [
+        "event-0874beeb681b4813b7ef3e879f59f384",
+        "event-0ca7f971ea6642c9a6337fa3199238ba"
+      ]
+    },
+    {
+      "case_id": "empty_05_invented_character",
+      "reasons": [
+        "期望空结果，但召回返回了知识卡。"
+      ],
+      "returned_card_ids": [
+        "event-0ca7f971ea6642c9a6337fa3199238ba"
+      ]
+    }
+  ],
+  "environment": {
+    "python": "3.12.7",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "executable": "python.exe",
+    "vector_index_id": "knowledge_vectors_20260718_212249_82df20",
+    "vector_build_duration_ms": "23164",
+    "vector_estimated_bytes": "1648640",
+    "embedding_model_id": "Qwen3-Embedding-4B-Q4_K_M",
+    "embedding_dimensions": "2560",
+    "repetition": "1"
+  },
+  "ranking_fingerprint_sha256": "de4bc8db2da3672c83c0b44291640eb7f64409ed69dab0c5764cb77907444f49",
+  "started_at": "2026-07-18T21:34:44.817962Z",
+  "finished_at": "2026-07-18T21:34:45.337931Z"
+}

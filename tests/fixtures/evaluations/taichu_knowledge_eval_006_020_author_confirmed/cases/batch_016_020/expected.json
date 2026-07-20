@@ -1,0 +1,2218 @@
+[
+  {
+    "expected_card_id": "character_qin_haoxuan",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "秦浩轩",
+      "aliases": [],
+      "summary": "被判入岩浆地窖思过七天；在地热、老油子攻击和道心种魔大法共同作用下持续吸收一叶金莲药力，并在袁山象的灵法攻击中首次出现明显淤伤。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第16章 三紫对峙各打板：“　　“这样吧！”虚云子沉思良久，道：“就算排除李靖，秦浩轩那面还有徐羽！我们也得卖她一个面子，而且据我们了解，这事乃袁山虎三人挑起的，甚至可能是张狂背后唆使。所以我决定将袁山虎三人打入寒冰崖思过十五天！将秦浩轩打入岩浆地窖思过七天！至于秦浩轩是不是其他仙门间谍或者妖怪，还需求证，一旦有证据表明秦浩轩非善类，无论谁出面袒护，也必将按宗规教义处置，三位师弟，你们可有异议？””；第18章 狱中霸王自在身：“　　秦浩轩运起道心种魔大法，包含着岩浆暴躁热气的灵力疯狂涌入他的身体，灵力中夹杂的这股暴躁，其他人必需仔细剔除，如果一并吸入体内势必走火入魔，但秦浩轩却完全不用，巫修的身体极为硬朗，这股夹杂着暴躁热气的灵力入体时，反而和他体内灵力的那股暴躁中和了，就像一只清凉的手轻柔的抚摸着他燥热的身体。”；第20章 你方唱罢我登场：“　　怎么可能？袁山象眼睛陡然瞪大，便是仙苗五叶的修仙者被我陨石拳打中头，脑袋都会变成烂泥，真正的岩石也会化为齑粉，怎么这秦浩轩的额头上只是略有淤青红肿，看上去并无大碍？”",
+      "role_type": "protagonist",
+      "identity": "太初教新弟子、无色弱种",
+      "relationship_summary": "受徐羽持续探望；遭张狂安排袁山象追杀。",
+      "current_realm_text": "种植仙根境（破种阶段）",
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "last_seen_chapter_id": "chapter-6829374be0494020b4a9302d08b23e72"
+    },
+    "accepted_names": [
+      "秦浩轩"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_016_020_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦浩轩：被判入岩浆地窖思过七天。",
+        "source_quote_ids": [
+          "quote_batch_016_020_001",
+          "quote_batch_016_020_002",
+          "quote_batch_016_020_003"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_016_020_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦浩轩：在地热、老油子攻击和道心种魔大法共同作用下持续吸收一叶金莲药力，并在袁山象的灵法攻击中首次出现明显淤伤。",
+        "source_quote_ids": [
+          "quote_batch_016_020_001",
+          "quote_batch_016_020_002",
+          "quote_batch_016_020_003"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_016_020_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "秦浩轩的身份：太初教新弟子、无色弱种。",
+        "source_quote_ids": [
+          "quote_batch_016_020_001",
+          "quote_batch_016_020_002",
+          "quote_batch_016_020_003"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_016_020_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "秦浩轩的关系信息：受徐羽持续探望。",
+        "source_quote_ids": [
+          "quote_batch_016_020_001",
+          "quote_batch_016_020_002",
+          "quote_batch_016_020_003"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_016_020_05",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "秦浩轩的关系信息：遭张狂安排袁山象追杀。",
+        "source_quote_ids": [
+          "quote_batch_016_020_001",
+          "quote_batch_016_020_002",
+          "quote_batch_016_020_003"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_016_020_06",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "秦浩轩的当前境界：种植仙根境（破种阶段）。",
+        "source_quote_ids": [
+          "quote_batch_016_020_001",
+          "quote_batch_016_020_002",
+          "quote_batch_016_020_003"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_001",
+      "quote_batch_016_020_002",
+      "quote_batch_016_020_003"
+    ]
+  },
+  {
+    "expected_card_id": "character_zhang_kuang",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "张狂",
+      "aliases": [],
+      "summary": "在执法判罚后继续谋害秦浩轩，买通执法弟子并招募故意犯错者进入岩浆地窖，最终由袁山象接下任务。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第16章 三紫对峙各打板：“　　就在执法弟子要将他们四人带走，前去禁闭所在地时，张狂凑近秦浩轩，冷笑道：“你以为关了禁闭就能躲过我么？咱们走着瞧。””；第18章 狱中霸王自在身：“　　“也许你们都知道，我的同乡秦浩轩和我有矛盾，去年还打断了我几根肋骨，现在他被关进了岩浆地窖中，我不想给他翻身的机会！”张狂眼神中透着杀意，在这些杂役师兄身上扫过，道：“我与一个执法弟子打过招呼了，只要有人愿意故意犯错，他会帮我把人送进岩浆地窖！我要让秦浩轩无处可逃！””",
+      "role_type": "antagonist",
+      "identity": "太初教无上紫种新弟子",
+      "relationship_summary": "安排袁山象进入岩浆地窖袭击秦浩轩。",
+      "current_realm_text": "种植仙根境（破种阶段）",
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "last_seen_chapter_id": "chapter-6829374be0494020b4a9302d08b23e72"
+    },
+    "accepted_names": [
+      "张狂"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_zhang_kuang_batch_016_020_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "张狂：在执法判罚后继续谋害秦浩轩，买通执法弟子并招募故意犯错者进入岩浆地窖，最终由袁山象接下任务。",
+        "source_quote_ids": [
+          "quote_batch_016_020_004",
+          "quote_batch_016_020_005"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_batch_016_020_02",
+        "field": "identity",
+        "importance": "critical",
+        "description": "张狂的身份：太初教无上紫种新弟子。",
+        "source_quote_ids": [
+          "quote_batch_016_020_004",
+          "quote_batch_016_020_005"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_batch_016_020_03",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "张狂的关系信息：安排袁山象进入岩浆地窖袭击秦浩轩。",
+        "source_quote_ids": [
+          "quote_batch_016_020_004",
+          "quote_batch_016_020_005"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_batch_016_020_04",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "张狂的当前境界：种植仙根境（破种阶段）。",
+        "source_quote_ids": [
+          "quote_batch_016_020_004",
+          "quote_batch_016_020_005"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_004",
+      "quote_batch_016_020_005"
+    ]
+  },
+  {
+    "expected_card_id": "character_xu_yu",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "徐羽",
+      "aliases": [],
+      "summary": "在秦浩轩被关入岩浆地窖后，冒险穿过思过峰通道探望，持续送来课堂笔记、水和虚云子补偿的灵药。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第18章 狱中霸王自在身：“　　“浩轩哥哥，浩轩哥哥。””；第18章 狱中霸王自在身：“　　“这是今天下午讲课的笔记，你看看吧。我听说这里很热，给你带了一些水。”徐羽走到秦浩轩身前，递上笔记本后，又摸出一个水袋。”；第19章 初明仙路叩仙门：“　　“对了，虚云子长老还给了我不少灵药。”徐羽从小背包里取出几只品相极好的灵药递向秦浩轩说道：“说是那样判罚你，他也不想的。所以用这些做补偿，在禁闭的时间可以不耽误基本的修炼。””",
+      "role_type": "supporting",
+      "identity": "太初教无上紫种女弟子",
+      "relationship_summary": "持续照顾和维护秦浩轩。",
+      "current_realm_text": "种植仙根境（破种阶段）",
+      "first_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537",
+      "last_seen_chapter_id": "chapter-6829374be0494020b4a9302d08b23e72"
+    },
+    "accepted_names": [
+      "徐羽"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_xu_yu_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "徐羽：在秦浩轩被关入岩浆地窖后，冒险穿过思过峰通道探望，持续送来课堂笔记、水和虚云子补偿的灵药。",
+        "source_quote_ids": [
+          "quote_batch_016_020_006",
+          "quote_batch_016_020_007",
+          "quote_batch_016_020_008"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xu_yu_batch_016_020_02",
+        "field": "identity",
+        "importance": "critical",
+        "description": "徐羽的身份：太初教无上紫种女弟子。",
+        "source_quote_ids": [
+          "quote_batch_016_020_006",
+          "quote_batch_016_020_007",
+          "quote_batch_016_020_008"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xu_yu_batch_016_020_03",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "徐羽的关系信息：持续照顾和维护秦浩轩。",
+        "source_quote_ids": [
+          "quote_batch_016_020_006",
+          "quote_batch_016_020_007",
+          "quote_batch_016_020_008"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xu_yu_batch_016_020_04",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "徐羽的当前境界：种植仙根境（破种阶段）。",
+        "source_quote_ids": [
+          "quote_batch_016_020_006",
+          "quote_batch_016_020_007",
+          "quote_batch_016_020_008"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_006",
+      "quote_batch_016_020_007",
+      "quote_batch_016_020_008"
+    ]
+  },
+  {
+    "expected_card_id": "character_li_jing",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "李靖",
+      "aliases": [],
+      "summary": "翔龙国皇子、无上紫种；其皇族身份引发楚云子旧恨，并继续与张狂围绕徐羽和未来掌教位置对立。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第16章 三紫对峙各打板：“虚云子等长老一愣之后马上反应过来，楚云子这么针对李靖，缘由他早年的一段往事。”；第16章 三紫对峙各打板：“　　才刚入门两天，李靖现在就开始拉拢人了，看来往后对付秦浩轩，得尽量避开徐羽一些，如果真将她逼到李靖那边，那自己的掌教之路就更加坎坷难行了。”",
+      "role_type": "supporting",
+      "identity": "翔龙国三皇子、太初教无上紫种新弟子",
+      "relationship_summary": "与张狂竞争；遭楚云子因李氏皇朝旧怨敌视。",
+      "current_realm_text": "种植仙根境（破种阶段）",
+      "first_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537",
+      "last_seen_chapter_id": "chapter-1fe535fec6344ae894a73bf961da97df"
+    },
+    "accepted_names": [
+      "李靖"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_li_jing_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "李靖：翔龙国皇子、无上紫种。",
+        "source_quote_ids": [
+          "quote_batch_016_020_009",
+          "quote_batch_016_020_010"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_batch_016_020_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "李靖：其皇族身份引发楚云子旧恨，并继续与张狂围绕徐羽和未来掌教位置对立。",
+        "source_quote_ids": [
+          "quote_batch_016_020_009",
+          "quote_batch_016_020_010"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_batch_016_020_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "李靖的身份：翔龙国三皇子、太初教无上紫种新弟子。",
+        "source_quote_ids": [
+          "quote_batch_016_020_009",
+          "quote_batch_016_020_010"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_batch_016_020_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "李靖的关系信息：与张狂竞争。",
+        "source_quote_ids": [
+          "quote_batch_016_020_009",
+          "quote_batch_016_020_010"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_batch_016_020_05",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "李靖的关系信息：遭楚云子因李氏皇朝旧怨敌视。",
+        "source_quote_ids": [
+          "quote_batch_016_020_009",
+          "quote_batch_016_020_010"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_batch_016_020_06",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "李靖的当前境界：种植仙根境（破种阶段）。",
+        "source_quote_ids": [
+          "quote_batch_016_020_009",
+          "quote_batch_016_020_010"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_009",
+      "quote_batch_016_020_010"
+    ]
+  },
+  {
+    "expected_card_id": "character_yuan_shanhu",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "袁山虎",
+      "aliases": [],
+      "summary": "因恶意刁难秦浩轩被判至寒冰崖思过十五天；其堂哥袁山象随后为替他报仇接受张狂安排。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第16章 三紫对峙各打板：“　　商议妥当后，光幕散去，虚云子清了清嗓子，扫视全场，宣判道：“袁山虎、张伞、李斯恶意刁难秦浩轩，有伤同门情谊，驱逐至寒冰崖思过十五天，认真思过，下次再犯严惩不贷！秦浩轩在袁山虎三人停止侵犯后，仍旧重伤袁山虎三人，怎样说也是犯了门规的私斗，打入岩浆地窖思过七天，以示惩戒！太初教赏罚分明，无论是谁都不例外，还望诸位引以为戒！””；第18章 狱中霸王自在身：“　　“我去！”一个长相和袁山虎有几分相似的汉子，随手一拳打在一颗腰身粗的大树上，但听哗啦一声，那颗大树应声断裂，倒在地上发出砰的一声巨响，压下其他人杂乱的报名声，道：“我是袁山虎的堂哥，袁山象！仙苗境五叶！秦浩轩害我堂弟带伤关禁闭，我一定不会轻饶他！””",
+      "role_type": "antagonist",
+      "identity": "灵田谷杂役弟子",
+      "relationship_summary": "袁山象的堂弟；张狂的执行者。",
+      "current_realm_text": "仙苗境三叶",
+      "first_seen_chapter_id": "chapter-a1a2d3ec95b24b62a193b1cee2563ea9",
+      "last_seen_chapter_id": "chapter-1692b7a5c347465b8383e59e9d64aa3e"
+    },
+    "accepted_names": [
+      "袁山虎"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_yuan_shanhu_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "袁山虎：因恶意刁难秦浩轩被判至寒冰崖思过十五天。",
+        "source_quote_ids": [
+          "quote_batch_016_020_011",
+          "quote_batch_016_020_012"
+        ]
+      },
+      {
+        "claim_id": "claim_character_yuan_shanhu_batch_016_020_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "袁山虎：其堂哥袁山象随后为替他报仇接受张狂安排。",
+        "source_quote_ids": [
+          "quote_batch_016_020_011",
+          "quote_batch_016_020_012"
+        ]
+      },
+      {
+        "claim_id": "claim_character_yuan_shanhu_batch_016_020_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "袁山虎的身份：灵田谷杂役弟子。",
+        "source_quote_ids": [
+          "quote_batch_016_020_011",
+          "quote_batch_016_020_012"
+        ]
+      },
+      {
+        "claim_id": "claim_character_yuan_shanhu_batch_016_020_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "袁山虎的关系信息：袁山象的堂弟。",
+        "source_quote_ids": [
+          "quote_batch_016_020_011",
+          "quote_batch_016_020_012"
+        ]
+      },
+      {
+        "claim_id": "claim_character_yuan_shanhu_batch_016_020_05",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "袁山虎的关系信息：张狂的执行者。",
+        "source_quote_ids": [
+          "quote_batch_016_020_011",
+          "quote_batch_016_020_012"
+        ]
+      },
+      {
+        "claim_id": "claim_character_yuan_shanhu_batch_016_020_06",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "袁山虎的当前境界：仙苗境三叶。",
+        "source_quote_ids": [
+          "quote_batch_016_020_011",
+          "quote_batch_016_020_012"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_011",
+      "quote_batch_016_020_012"
+    ]
+  },
+  {
+    "expected_card_id": "character_xuyunzi",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "虚云子",
+      "aliases": [],
+      "summary": "灵田谷执法长老；主持最终判罚，将袁山虎等人送往寒冰崖、秦浩轩送往岩浆地窖，并试图以灵药和解释平息徐羽不满。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第16章 三紫对峙各打板：“　　“这样吧！”虚云子沉思良久，道：“就算排除李靖，秦浩轩那面还有徐羽！我们也得卖她一个面子，而且据我们了解，这事乃袁山虎三人挑起的，甚至可能是张狂背后唆使。所以我决定将袁山虎三人打入寒冰崖思过十五天！将秦浩轩打入岩浆地窖思过七天！至于秦浩轩是不是其他仙门间谍或者妖怪，还需求证，一旦有证据表明秦浩轩非善类，无论谁出面袒护，也必将按宗规教义处置，三位师弟，你们可有异议？””；第16章 三紫对峙各打板：“　　虚云子更是打算好了，待会立刻去找一下徐羽，跟徐羽保证秦浩轩在监牢之中不会被欺负，自己还会拿出灵药送给对方，助对方在牢中修炼，希望能将这过节就这么揭过去。”；第19章 初明仙路叩仙门：“　　“对了，虚云子长老还给了我不少灵药。”徐羽从小背包里取出几只品相极好的灵药递向秦浩轩说道：“说是那样判罚你，他也不想的。所以用这些做补偿，在禁闭的时间可以不耽误基本的修炼。””",
+      "role_type": "faction_representative",
+      "identity": "灵田谷执法长老",
+      "relationship_summary": "主持私斗案判罚；试图缓和与徐羽的关系。",
+      "first_seen_chapter_id": "chapter-f5dae65c0ee144ec9db1ca55f7316cd6",
+      "last_seen_chapter_id": "chapter-3c172caecc6b4f0c991c122ec5d189dc"
+    },
+    "accepted_names": [
+      "虚云子"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_xuyunzi_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "虚云子：灵田谷执法长老。",
+        "source_quote_ids": [
+          "quote_batch_016_020_001",
+          "quote_batch_016_020_013",
+          "quote_batch_016_020_008"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xuyunzi_batch_016_020_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "虚云子：主持最终判罚，将袁山虎等人送往寒冰崖、秦浩轩送往岩浆地窖，并试图以灵药和解释平息徐羽不满。",
+        "source_quote_ids": [
+          "quote_batch_016_020_001",
+          "quote_batch_016_020_013",
+          "quote_batch_016_020_008"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xuyunzi_batch_016_020_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "虚云子的身份：灵田谷执法长老。",
+        "source_quote_ids": [
+          "quote_batch_016_020_001",
+          "quote_batch_016_020_013",
+          "quote_batch_016_020_008"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xuyunzi_batch_016_020_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "虚云子的关系信息：主持私斗案判罚。",
+        "source_quote_ids": [
+          "quote_batch_016_020_001",
+          "quote_batch_016_020_013",
+          "quote_batch_016_020_008"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xuyunzi_batch_016_020_05",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "虚云子的关系信息：试图缓和与徐羽的关系。",
+        "source_quote_ids": [
+          "quote_batch_016_020_001",
+          "quote_batch_016_020_013",
+          "quote_batch_016_020_008"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_001",
+      "quote_batch_016_020_013",
+      "quote_batch_016_020_008"
+    ]
+  },
+  {
+    "expected_card_id": "character_chuyunzi",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "楚云子",
+      "aliases": [],
+      "summary": "出身贫民家庭，亲人在翔龙国大旱与贪官压榨中饿死；因此仇恨李家皇朝及皇子李靖，并在执法堂主张怀疑秦浩轩。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第16章 三紫对峙各打板：“　　这楚云子出身于一户贫民之家，世代农耕为生，在他十五岁那年遇罕见大旱，颗粒无收，当地的贪官污吏不但私吞救济款，还要求吃不上饭的百姓上缴往年一样多的税赋，一时间怨声载道，哀鸿遍野，还出现了人吃人的惨剧。”；第16章 三紫对峙各打板：“　　此后，楚云子恨上了所有李家皇朝的官僚，更别提出身皇家的三皇子李靖了，谁让他那身装扮太显眼，一眼就让人认出来。”",
+      "role_type": "faction_representative",
+      "identity": "灵田谷执法长老",
+      "relationship_summary": "因家仇敌视李氏皇朝及李靖。",
+      "first_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838",
+      "last_seen_chapter_id": "chapter-1fe535fec6344ae894a73bf961da97df"
+    },
+    "accepted_names": [
+      "楚云子"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_chuyunzi_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "楚云子：出身贫民家庭，亲人在翔龙国大旱与贪官压榨中饿死。",
+        "source_quote_ids": [
+          "quote_batch_016_020_014",
+          "quote_batch_016_020_015"
+        ]
+      },
+      {
+        "claim_id": "claim_character_chuyunzi_batch_016_020_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "楚云子：因此仇恨李家皇朝及皇子李靖，并在执法堂主张怀疑秦浩轩。",
+        "source_quote_ids": [
+          "quote_batch_016_020_014",
+          "quote_batch_016_020_015"
+        ]
+      },
+      {
+        "claim_id": "claim_character_chuyunzi_batch_016_020_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "楚云子的身份：灵田谷执法长老。",
+        "source_quote_ids": [
+          "quote_batch_016_020_014",
+          "quote_batch_016_020_015"
+        ]
+      },
+      {
+        "claim_id": "claim_character_chuyunzi_batch_016_020_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "楚云子的关系信息：因家仇敌视李氏皇朝及李靖。",
+        "source_quote_ids": [
+          "quote_batch_016_020_014",
+          "quote_batch_016_020_015"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_014",
+      "quote_batch_016_020_015"
+    ]
+  },
+  {
+    "expected_card_id": "character_yuan_shanxiang",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "袁山象",
+      "aliases": [],
+      "summary": "袁山虎堂哥、仙苗境五叶的杂役弟子；受张狂所托故意进入岩浆地窖，为袁山虎报仇并袭击秦浩轩。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第18章 狱中霸王自在身：“　　“我去！”一个长相和袁山虎有几分相似的汉子，随手一拳打在一颗腰身粗的大树上，但听哗啦一声，那颗大树应声断裂，倒在地上发出砰的一声巨响，压下其他人杂乱的报名声，道：“我是袁山虎的堂哥，袁山象！仙苗境五叶！秦浩轩害我堂弟带伤关禁闭，我一定不会轻饶他！””；第20章 你方唱罢我登场：“　　这汉子便是受张狂所托，前来岩浆地窖收拾秦浩轩的袁山象！”；第20章 你方唱罢我登场：“　　“怪不得有人要我进来收拾你。”袁山象粗犷的声音回荡在不大的岩浆地窖中，精神也在这一刻骤然集中，一个能接下自己一招陨石拳的人，哪怕是个凡夫俗子也有资格成为他的对手了：“小子，记住我叫袁山象！你前天打的袁山虎就是我弟弟，今天我是来为他报仇的！免得待会死了不明不白，做个糊涂鬼！””",
+      "role_type": "antagonist",
+      "identity": "太初教杂役弟子",
+      "relationship_summary": "袁山虎堂哥；受张狂委托袭击秦浩轩。",
+      "current_realm_text": "仙苗境五叶",
+      "first_seen_chapter_id": "chapter-1692b7a5c347465b8383e59e9d64aa3e",
+      "last_seen_chapter_id": "chapter-6829374be0494020b4a9302d08b23e72"
+    },
+    "accepted_names": [
+      "袁山象"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_yuan_shanxiang_batch_016_020_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "袁山象：袁山虎堂哥、仙苗境五叶的杂役弟子。",
+        "source_quote_ids": [
+          "quote_batch_016_020_012",
+          "quote_batch_016_020_016",
+          "quote_batch_016_020_017"
+        ]
+      },
+      {
+        "claim_id": "claim_character_yuan_shanxiang_batch_016_020_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "袁山象：受张狂所托故意进入岩浆地窖，为袁山虎报仇并袭击秦浩轩。",
+        "source_quote_ids": [
+          "quote_batch_016_020_012",
+          "quote_batch_016_020_016",
+          "quote_batch_016_020_017"
+        ]
+      },
+      {
+        "claim_id": "claim_character_yuan_shanxiang_batch_016_020_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "袁山象的身份：太初教杂役弟子。",
+        "source_quote_ids": [
+          "quote_batch_016_020_012",
+          "quote_batch_016_020_016",
+          "quote_batch_016_020_017"
+        ]
+      },
+      {
+        "claim_id": "claim_character_yuan_shanxiang_batch_016_020_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "袁山象的关系信息：袁山虎堂哥。",
+        "source_quote_ids": [
+          "quote_batch_016_020_012",
+          "quote_batch_016_020_016",
+          "quote_batch_016_020_017"
+        ]
+      },
+      {
+        "claim_id": "claim_character_yuan_shanxiang_batch_016_020_05",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "袁山象的关系信息：受张狂委托袭击秦浩轩。",
+        "source_quote_ids": [
+          "quote_batch_016_020_012",
+          "quote_batch_016_020_016",
+          "quote_batch_016_020_017"
+        ]
+      },
+      {
+        "claim_id": "claim_character_yuan_shanxiang_batch_016_020_06",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "袁山象的当前境界：仙苗境五叶。",
+        "source_quote_ids": [
+          "quote_batch_016_020_012",
+          "quote_batch_016_020_016",
+          "quote_batch_016_020_017"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_012",
+      "quote_batch_016_020_016",
+      "quote_batch_016_020_017"
+    ]
+  },
+  {
+    "expected_card_id": "character_laoye",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "老叶",
+      "aliases": [],
+      "summary": "被关在岩浆地窖的老资格弟子，率先对秦浩轩施展爆炎术并参与“新人餐”，后被秦浩轩反击打伤。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第17章 岩浆地窖好修行：“　　那名叫老叶的汉子顿觉颜面大失，灵法一个接一个打在秦浩轩身上，紧接着其他人看得眼热，纷纷加入打击秦浩轩的行列，不大的岩浆地窖各种灵法呼啸，纷纷砸在秦浩轩身上，一时间，各种火焰、风刃、冰雹将他淹没。”；第18章 狱中霸王自在身：“　　“你……你……”老叶看着这个新入门的怪物弟子连连吞咽口水说道：“掌教说过，做人要讲道理……””",
+      "role_type": "passerby",
+      "identity": "岩浆地窖中的受罚弟子",
+      "relationship_summary": "与其他老油子共同袭击秦浩轩。",
+      "first_seen_chapter_id": "chapter-935b8c9e880e41399f4f32c1616d5a72",
+      "last_seen_chapter_id": "chapter-6829374be0494020b4a9302d08b23e72"
+    },
+    "accepted_names": [
+      "老叶"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_laoye_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "老叶：被关在岩浆地窖的老资格弟子，率先对秦浩轩施展爆炎术并参与“新人餐”，后被秦浩轩反击打伤。",
+        "source_quote_ids": [
+          "quote_batch_016_020_018",
+          "quote_batch_016_020_019"
+        ]
+      },
+      {
+        "claim_id": "claim_character_laoye_batch_016_020_02",
+        "field": "identity",
+        "importance": "critical",
+        "description": "老叶的身份：岩浆地窖中的受罚弟子。",
+        "source_quote_ids": [
+          "quote_batch_016_020_018",
+          "quote_batch_016_020_019"
+        ]
+      },
+      {
+        "claim_id": "claim_character_laoye_batch_016_020_03",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "老叶的关系信息：与其他老油子共同袭击秦浩轩。",
+        "source_quote_ids": [
+          "quote_batch_016_020_018",
+          "quote_batch_016_020_019"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_018",
+      "quote_batch_016_020_019"
+    ]
+  },
+  {
+    "expected_card_id": "location_siguofeng",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "思过峰",
+      "aliases": [
+        "禁闭山"
+      ],
+      "summary": "太初教禁闭山，山腹由前辈以大神通开辟众多禁闭地，包括岩浆地窖、寒冰崖、刀山窟等。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第17章 岩浆地窖好修行：“　　禁闭所在地距离灵田谷不远，走过一条羊肠小道，可以看到一座钟灵敏秀的山峰，这就是太初教十分有名的禁闭山，又名思过峰。”；第17章 岩浆地窖好修行：“　　太初教门人弟子上万，每天都有不少弟子犯错关禁闭，为防止弟子在关禁闭时还拉帮结伙，引发大规模混乱冲突，有先见之明的太初教前辈高人用大神通在思过峰山腹中开拓了许多禁闭点，诸如岩浆地窖、寒冰崖、刀山窟之类不胜其数，每个禁闭地同时可以关押十多人，既保证了屡教不改的弟子每次都能享受不同“待遇”，又大大降低了管理风险。”",
+      "first_seen_chapter_id": "chapter-935b8c9e880e41399f4f32c1616d5a72"
+    },
+    "accepted_names": [
+      "思过峰",
+      "禁闭山"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_siguofeng_batch_016_020_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "思过峰：太初教禁闭山，山腹由前辈以大神通开辟众多禁闭地，包括岩浆地窖、寒冰崖、刀山窟等。",
+        "source_quote_ids": [
+          "quote_batch_016_020_020",
+          "quote_batch_016_020_021"
+        ]
+      },
+      {
+        "claim_id": "claim_location_siguofeng_batch_016_020_02",
+        "field": "aliases",
+        "importance": "major",
+        "description": "思过峰的别名包括：禁闭山。",
+        "source_quote_ids": [
+          "quote_batch_016_020_020",
+          "quote_batch_016_020_021"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_020",
+      "quote_batch_016_020_021"
+    ]
+  },
+  {
+    "expected_card_id": "location_yanjiang_dijiao",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "岩浆地窖",
+      "aliases": [],
+      "summary": "位于思过峰山腹的高温禁闭地，热浪足以令人呼吸不畅；内部有铁门和多人关押空间，地热反而帮助秦浩轩压制并吸收一叶金莲药力。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第17章 岩浆地窖好修行：“　　一步踏进岩浆地窖，但觉一股热浪扑面而来，这种温度的热浪虽然令人很难受，甚至呼吸不畅，却没有生命危险，那几名执法弟子一路为秦浩轩保驾护航，到了禁闭地，也没必要再护着他，反而带着揶揄的表情，想看看两名紫种弟子力保的人有什么特别的。”；第18章 狱中霸王自在身：“　　吃饱喝足后，秦浩轩继续修炼，岩浆地窖在别人眼里是受苦受难的禁闭地，在秦浩轩眼里是修炼的洞天福地，只有七天时间，必须抓紧时间修炼，把体内一叶金莲的药力完全消化，这种机会太难得了！”",
+      "first_seen_chapter_id": "chapter-1fe535fec6344ae894a73bf961da97df"
+    },
+    "accepted_names": [
+      "岩浆地窖"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_yanjiang_dijiao_batch_016_020_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "岩浆地窖：位于思过峰山腹的高温禁闭地，热浪足以令人呼吸不畅。",
+        "source_quote_ids": [
+          "quote_batch_016_020_022",
+          "quote_batch_016_020_023"
+        ]
+      },
+      {
+        "claim_id": "claim_location_yanjiang_dijiao_batch_016_020_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "岩浆地窖：内部有铁门和多人关押空间，地热反而帮助秦浩轩压制并吸收一叶金莲药力。",
+        "source_quote_ids": [
+          "quote_batch_016_020_022",
+          "quote_batch_016_020_023"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_022",
+      "quote_batch_016_020_023"
+    ]
+  },
+  {
+    "expected_card_id": "location_hanbing_ya",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "寒冰崖",
+      "aliases": [],
+      "summary": "位于思过峰山腹、与岩浆地窖相对的禁闭地；袁山虎、张伞、李斯被判在此思过十五天。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第16章 三紫对峙各打板：“　　“这样吧！”虚云子沉思良久，道：“就算排除李靖，秦浩轩那面还有徐羽！我们也得卖她一个面子，而且据我们了解，这事乃袁山虎三人挑起的，甚至可能是张狂背后唆使。所以我决定将袁山虎三人打入寒冰崖思过十五天！将秦浩轩打入岩浆地窖思过七天！至于秦浩轩是不是其他仙门间谍或者妖怪，还需求证，一旦有证据表明秦浩轩非善类，无论谁出面袒护，也必将按宗规教义处置，三位师弟，你们可有异议？””；第17章 岩浆地窖好修行：“　　走过大约十多道门，袁山虎三人被押着走进了写着寒冰崖的小门，秦浩轩的岩浆地窖，正在寒冰崖的对面。”",
+      "first_seen_chapter_id": "chapter-1fe535fec6344ae894a73bf961da97df"
+    },
+    "accepted_names": [
+      "寒冰崖"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_hanbing_ya_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "寒冰崖：位于思过峰山腹、与岩浆地窖相对的禁闭地。",
+        "source_quote_ids": [
+          "quote_batch_016_020_001",
+          "quote_batch_016_020_024"
+        ]
+      },
+      {
+        "claim_id": "claim_location_hanbing_ya_batch_016_020_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "寒冰崖：袁山虎、张伞、李斯被判在此思过十五天。",
+        "source_quote_ids": [
+          "quote_batch_016_020_001",
+          "quote_batch_016_020_024"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_001",
+      "quote_batch_016_020_024"
+    ]
+  },
+  {
+    "expected_card_id": "location_daoshan_ku",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "刀山窟",
+      "aliases": [],
+      "summary": "思过峰山腹中的禁闭地之一，门后会逸出凌厉刀气。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第17章 岩浆地窖好修行：“　　每经过一道小门，就能感受到门后禁闭地传来的恐怖气息，他们经过刀山窟时，数道凌厉的刀气透门射出，若不是之前有执法弟子的提醒，加上这些刀气的威力不算很强，在它们射来之时，袁山虎等人在全身布满元力护体，而秦浩轩则有执法弟子化解危机，以他的实力还不足以抵挡这几道刀气，但作为两名紫种弟子力保的人，执法长老们已经嘱咐执法弟子，务必不能让他有失。”",
+      "first_seen_chapter_id": "chapter-935b8c9e880e41399f4f32c1616d5a72"
+    },
+    "accepted_names": [
+      "刀山窟"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_daoshan_ku_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "刀山窟：思过峰山腹中的禁闭地之一，门后会逸出凌厉刀气。",
+        "source_quote_ids": [
+          "quote_batch_016_020_025"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_025"
+    ]
+  },
+  {
+    "expected_card_id": "location_fengren_gu",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "风刃谷",
+      "aliases": [],
+      "summary": "思过峰山腹中的命名禁闭地之一，与刀山窟、雷电峡等并列。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第17章 岩浆地窖好修行：“　　每两个火把间，就有一个小门，这一个个不起眼的小门后，连接着令每个太初教弟子闻风丧胆的各式各样的禁闭地，门的上方写着该禁闭地的名字，诸如刀山窟、风刃谷，雷电峡。”",
+      "first_seen_chapter_id": "chapter-935b8c9e880e41399f4f32c1616d5a72"
+    },
+    "accepted_names": [
+      "风刃谷"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_fengren_gu_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "风刃谷：思过峰山腹中的命名禁闭地之一，与刀山窟、雷电峡等并列。",
+        "source_quote_ids": [
+          "quote_batch_016_020_026"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_026"
+    ]
+  },
+  {
+    "expected_card_id": "location_leidian_xia",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "雷电峡",
+      "aliases": [],
+      "summary": "思过峰山腹中的命名禁闭地之一，与刀山窟、风刃谷等并列。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第17章 岩浆地窖好修行：“　　每两个火把间，就有一个小门，这一个个不起眼的小门后，连接着令每个太初教弟子闻风丧胆的各式各样的禁闭地，门的上方写着该禁闭地的名字，诸如刀山窟、风刃谷，雷电峡。”",
+      "first_seen_chapter_id": "chapter-935b8c9e880e41399f4f32c1616d5a72"
+    },
+    "accepted_names": [
+      "雷电峡"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_leidian_xia_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "雷电峡：思过峰山腹中的命名禁闭地之一，与刀山窟、风刃谷等并列。",
+        "source_quote_ids": [
+          "quote_batch_016_020_026"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_026"
+    ]
+  },
+  {
+    "expected_card_id": "technique_baoyanshu",
+    "knowledge_type": "technique",
+    "card": {
+      "type": "technique",
+      "name": "爆炎术",
+      "aliases": [],
+      "summary": "最低级的攻击灵法之一，可凝成小火团并爆炸；一般足以令种植仙根境后期弟子受伤。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第17章 岩浆地窖好修行：“　　“我们打的这么辛苦，这小子竟然连惨叫都没一句，好，让你尝尝老子的爆炎术！”只见一个五大三粗的汉子，忽然怒吼一声，双手连连捏动法诀，他身边温度骤升，灵力激荡，一个小火团出现在他手中，甩到地上的秦浩轩身上，砰的一声爆炸开来，如一团灿烂的焰火。”；第17章 岩浆地窖好修行：“　　爆炎术只是最低级的灵法，在他手里使出来，威力也不足以致人死，但就算一个种植仙根境后期弟子，在爆炎术下都得受伤，把秦浩轩这级别打个半死还是不成问题。”",
+      "technique_type": "spell",
+      "grade": "最低级灵法"
+    },
+    "accepted_names": [
+      "爆炎术"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "technique_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "grade"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_baoyanshu_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "爆炎术：最低级的攻击灵法之一，可凝成小火团并爆炸。",
+        "source_quote_ids": [
+          "quote_batch_016_020_027",
+          "quote_batch_016_020_028"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_baoyanshu_batch_016_020_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "爆炎术：一般足以令种植仙根境后期弟子受伤。",
+        "source_quote_ids": [
+          "quote_batch_016_020_027",
+          "quote_batch_016_020_028"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_baoyanshu_batch_016_020_03",
+        "field": "grade",
+        "importance": "normal",
+        "description": "爆炎术的品阶：最低级灵法。",
+        "source_quote_ids": [
+          "quote_batch_016_020_027",
+          "quote_batch_016_020_028"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_027",
+      "quote_batch_016_020_028"
+    ]
+  },
+  {
+    "expected_card_id": "technique_chiyun_yanbao",
+    "knowledge_type": "technique",
+    "card": {
+      "type": "technique",
+      "name": "赤云炎爆",
+      "aliases": [],
+      "summary": "袁山象施展的火系灵法，凝聚灵力形成火球；单击通常连仙苗境一二叶修士都难以承受。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第20章 你方唱罢我登场：“　　“赤云炎爆！””；第20章 你方唱罢我登场：“　　袁山象微微皱了皱眉，刚才这一击赤云炎爆，寻常仙苗境一二叶都难以接下，他却跟没事人一样，看来他的传言果然不假，只是这厮到底是什么怪胎？”",
+      "technique_type": "spell"
+    },
+    "accepted_names": [
+      "赤云炎爆"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "technique_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_chiyun_yanbao_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "赤云炎爆：袁山象施展的火系灵法，凝聚灵力形成火球。",
+        "source_quote_ids": [
+          "quote_batch_016_020_029",
+          "quote_batch_016_020_030"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_chiyun_yanbao_batch_016_020_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "赤云炎爆：单击通常连仙苗境一二叶修士都难以承受。",
+        "source_quote_ids": [
+          "quote_batch_016_020_029",
+          "quote_batch_016_020_030"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_029",
+      "quote_batch_016_020_030"
+    ]
+  },
+  {
+    "expected_card_id": "technique_yunshi_quan",
+    "knowledge_type": "technique",
+    "card": {
+      "type": "technique",
+      "name": "陨石拳",
+      "aliases": [],
+      "summary": "袁山象使用的极端刚猛霸道灵法，能凝成磨盘大小的拳影；修炼困难但威力非比寻常。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第20章 你方唱罢我登场：“　　“区区蝼蚁还敢有脾气！尝尝老子的陨石拳！”袁山象冷笑一声，身上灵力波动，在秦浩轩怒发冲冠时，身上肌肉块块暴起，鼓足力气虚空打出一拳，拳速奇快无比，带起嘶嘶破空声，一道拳头虚影透体而出，拳头虚影迎风见长，化作磨盘大小，直朝秦浩轩脑门砸去。”；第20章 你方唱罢我登场：“　　陨石拳这种极端刚猛霸道的灵法十分难练，但一旦练成，威力非比寻常，这一拳打在秦浩轩头上，剧烈的疼痛感瞬间让他短暂昏迷，好一会儿才恢复知觉。”",
+      "technique_type": "spell"
+    },
+    "accepted_names": [
+      "陨石拳"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "technique_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_yunshi_quan_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "陨石拳：袁山象使用的极端刚猛霸道灵法，能凝成磨盘大小的拳影。",
+        "source_quote_ids": [
+          "quote_batch_016_020_031",
+          "quote_batch_016_020_032"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_yunshi_quan_batch_016_020_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "陨石拳：修炼困难但威力非比寻常。",
+        "source_quote_ids": [
+          "quote_batch_016_020_031",
+          "quote_batch_016_020_032"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_031",
+      "quote_batch_016_020_032"
+    ]
+  },
+  {
+    "expected_card_id": "technique_shenshi_chongji",
+    "knowledge_type": "technique",
+    "card": {
+      "type": "technique",
+      "name": "神识冲击",
+      "aliases": [
+        "神识攻击"
+      ],
+      "summary": "秦浩轩已能在岩浆地窖中以目光触发神识攻击，使仙苗境三叶弟子灵魂受创、灵法中断。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第18章 狱中霸王自在身：“　　过了好久，那名被秦浩轩神识攻击的弟子再看他的眼神，就如见到鬼一般，回想起刚才灵魂受到的重创，那种魂飞魄散的恐惧感让他许多年以后都噩梦连连。”；第18章 狱中霸王自在身：“　　一个体内还有几分灵力的仙苗境三叶弟子还想反抗，凝聚灵力再度捏动法诀，就要再攻击秦浩轩，秦浩轩狠狠瞪他一眼，在秦浩轩远称不上凶神恶煞的眼神中，那名仙苗境三叶的强者顿时愣住了，他只觉得自己的灵魂仿佛受了重击，脑海里一片空白，手中灵法不但没打出来，反而被随即扑上去的秦浩轩揍成猪头，临结束时还狠狠踩了几脚！”",
+      "technique_type": "divine_ability",
+      "practice_condition": "秦浩轩自发触发，使用后会疲乏"
+    },
+    "accepted_names": [
+      "神识冲击",
+      "神识攻击"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "technique_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "practice_condition"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_shenshi_chongji_batch_016_020_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "神识冲击：秦浩轩已能在岩浆地窖中以目光触发神识攻击，使仙苗境三叶弟子灵魂受创、灵法中断。",
+        "source_quote_ids": [
+          "quote_batch_016_020_033",
+          "quote_batch_016_020_034"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_shenshi_chongji_batch_016_020_02",
+        "field": "aliases",
+        "importance": "major",
+        "description": "神识冲击的别名包括：神识攻击。",
+        "source_quote_ids": [
+          "quote_batch_016_020_033",
+          "quote_batch_016_020_034"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_shenshi_chongji_batch_016_020_03",
+        "field": "practice_condition",
+        "importance": "major",
+        "description": "神识冲击的修炼或施展条件：秦浩轩自发触发，使用后会疲乏。",
+        "source_quote_ids": [
+          "quote_batch_016_020_033",
+          "quote_batch_016_020_034"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_033",
+      "quote_batch_016_020_034"
+    ]
+  },
+  {
+    "expected_card_id": "realm_zhongzhi_xiangen",
+    "knowledge_type": "realm",
+    "card": {
+      "type": "realm",
+      "name": "种植仙根境",
+      "aliases": [],
+      "summary": "引种后引气入体破开仙种即进入种植仙根境；境内依次分为破种、扎根、出苗三个阶段。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第19章 初明仙路叩仙门：“　　“种植仙根境前还有引种这个步骤，感受体内仙种存在，从而引气入体破开仙种，跨入种植仙根境，种植仙根境又分为破种，扎根，出苗三个阶段。””",
+      "system": "太初教修仙体系",
+      "level_order": 1
+    },
+    "accepted_names": [
+      "种植仙根境"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "level_order"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "system"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_realm_zhongzhi_xiangen_batch_016_020_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "种植仙根境：引种后引气入体破开仙种即进入种植仙根境。",
+        "source_quote_ids": [
+          "quote_batch_016_020_035"
+        ]
+      },
+      {
+        "claim_id": "claim_realm_zhongzhi_xiangen_batch_016_020_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "种植仙根境：境内依次分为破种、扎根、出苗三个阶段。",
+        "source_quote_ids": [
+          "quote_batch_016_020_035"
+        ]
+      },
+      {
+        "claim_id": "claim_realm_zhongzhi_xiangen_batch_016_020_03",
+        "field": "system",
+        "importance": "normal",
+        "description": "种植仙根境的所属修炼体系：太初教修仙体系。",
+        "source_quote_ids": [
+          "quote_batch_016_020_035"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_035"
+    ]
+  },
+  {
+    "expected_card_id": "realm_xianmiao",
+    "knowledge_type": "realm",
+    "card": {
+      "type": "realm",
+      "name": "仙苗境",
+      "aliases": [],
+      "summary": "仙苗境以叶数区分层次，每多一叶实力通常提高一个层次；达到仙苗境十叶可升格为灰袍弟子。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第18章 狱中霸王自在身：“　　仙苗境每多一叶，实力就要高一个层次，仙苗境五叶在这些杂役弟子中已经是较高的修为了，袁山象报名之后，其他自忖不如的弟子纷纷闭嘴。”；第19章 初明仙路叩仙门：“　　而成为灰袍弟子，除了达到累积门派贡献外，还有一个途径就是自身实力到达仙苗境十叶，便可升格。”",
+      "system": "太初教修仙体系",
+      "level_order": 2
+    },
+    "accepted_names": [
+      "仙苗境"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "level_order"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "system"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_realm_xianmiao_batch_016_020_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "仙苗境以叶数区分层次，每多一叶实力通常提高一个层次。",
+        "source_quote_ids": [
+          "quote_batch_016_020_036",
+          "quote_batch_016_020_037"
+        ]
+      },
+      {
+        "claim_id": "claim_realm_xianmiao_batch_016_020_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "达到仙苗境十叶可升格为灰袍弟子。",
+        "source_quote_ids": [
+          "quote_batch_016_020_036",
+          "quote_batch_016_020_037"
+        ]
+      },
+      {
+        "claim_id": "claim_realm_xianmiao_batch_016_020_03",
+        "field": "system",
+        "importance": "normal",
+        "description": "仙苗境的所属修炼体系：太初教修仙体系。",
+        "source_quote_ids": [
+          "quote_batch_016_020_036",
+          "quote_batch_016_020_037"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_036",
+      "quote_batch_016_020_037"
+    ]
+  },
+  {
+    "expected_card_id": "item_xianyuan_dan",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "仙元丹",
+      "aliases": [],
+      "summary": "最初级丹药，是修仙者的基础口粮；门派停止供粮后，弟子可自行炼制或以剩余灵药向炼丹弟子换取。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第19章 初明仙路叩仙门：“　　不想饿肚子的方法只有两个，第一是炼一种叫仙元丹的最初级丹药，就像馒头是凡夫俗子们的口粮一样，仙元丹就是修仙者们的口粮。第二是种植灵药，交了门派基本贡献后，剩余的可以找炼丹的弟子换仙元丹饱腹。”",
+      "item_type": "pill",
+      "grade": "最初级丹药",
+      "first_seen_chapter_id": "chapter-3c172caecc6b4f0c991c122ec5d189dc",
+      "last_seen_chapter_id": "chapter-3c172caecc6b4f0c991c122ec5d189dc"
+    },
+    "accepted_names": [
+      "仙元丹"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "item_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "grade"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_xianyuan_dan_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "仙元丹：最初级丹药，是修仙者的基础口粮。",
+        "source_quote_ids": [
+          "quote_batch_016_020_038"
+        ]
+      },
+      {
+        "claim_id": "claim_item_xianyuan_dan_batch_016_020_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "仙元丹：门派停止供粮后，弟子可自行炼制或以剩余灵药向炼丹弟子换取。",
+        "source_quote_ids": [
+          "quote_batch_016_020_038"
+        ]
+      },
+      {
+        "claim_id": "claim_item_xianyuan_dan_batch_016_020_03",
+        "field": "grade",
+        "importance": "normal",
+        "description": "仙元丹的品阶：最初级丹药。",
+        "source_quote_ids": [
+          "quote_batch_016_020_038"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_038"
+    ]
+  },
+  {
+    "expected_card_id": "item_shenxing_fu",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "神行符",
+      "aliases": [],
+      "summary": "辅助类灵符，可使普通人日行千里。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第19章 初明仙路叩仙门：“　　辅助类灵符不胜其数，各有妙处，比如神行符可以让一个普通人日行千里，比如遁地符可以遁入地底，简直是逃跑必备啊！而最让秦浩轩感兴趣的，还是一种叫聚灵符的灵符。”",
+      "item_type": "magic_treasure",
+      "grade": "辅助类灵符",
+      "first_seen_chapter_id": "chapter-3c172caecc6b4f0c991c122ec5d189dc",
+      "last_seen_chapter_id": "chapter-3c172caecc6b4f0c991c122ec5d189dc"
+    },
+    "accepted_names": [
+      "神行符"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "item_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "grade"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_shenxing_fu_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "神行符：辅助类灵符，可使普通人日行千里。",
+        "source_quote_ids": [
+          "quote_batch_016_020_039"
+        ]
+      },
+      {
+        "claim_id": "claim_item_shenxing_fu_batch_016_020_02",
+        "field": "grade",
+        "importance": "normal",
+        "description": "神行符的品阶：辅助类灵符。",
+        "source_quote_ids": [
+          "quote_batch_016_020_039"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_039"
+    ]
+  },
+  {
+    "expected_card_id": "item_dundi_fu",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "遁地符",
+      "aliases": [],
+      "summary": "辅助类灵符，可使使用者遁入地底。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第19章 初明仙路叩仙门：“　　辅助类灵符不胜其数，各有妙处，比如神行符可以让一个普通人日行千里，比如遁地符可以遁入地底，简直是逃跑必备啊！而最让秦浩轩感兴趣的，还是一种叫聚灵符的灵符。”",
+      "item_type": "magic_treasure",
+      "grade": "辅助类灵符",
+      "first_seen_chapter_id": "chapter-3c172caecc6b4f0c991c122ec5d189dc",
+      "last_seen_chapter_id": "chapter-3c172caecc6b4f0c991c122ec5d189dc"
+    },
+    "accepted_names": [
+      "遁地符"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "item_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "grade"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_dundi_fu_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "遁地符：辅助类灵符，可使使用者遁入地底。",
+        "source_quote_ids": [
+          "quote_batch_016_020_039"
+        ]
+      },
+      {
+        "claim_id": "claim_item_dundi_fu_batch_016_020_02",
+        "field": "grade",
+        "importance": "normal",
+        "description": "遁地符的品阶：辅助类灵符。",
+        "source_quote_ids": [
+          "quote_batch_016_020_039"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_039"
+    ]
+  },
+  {
+    "expected_card_id": "item_juling_fu",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "聚灵符",
+      "aliases": [],
+      "summary": "基础辅助类灵符，可使小范围天地灵气短时浓郁，通常用于促进灵药和谷物产量并改善药性。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第19章 初明仙路叩仙门：“　　聚灵符是辅助类灵符中最基础的一种，但刻制起来也不简单，它的功用是可以让一小片范围内的天地灵气瞬间浓郁起来，当然这种浓郁程度对修炼所需的灵气还是十分稀薄的，所以人们一般将它用在种植灵药和谷物上，可以促进种植物的产量，而且药性也更好。”",
+      "item_type": "magic_treasure",
+      "grade": "基础辅助类灵符",
+      "first_seen_chapter_id": "chapter-3c172caecc6b4f0c991c122ec5d189dc",
+      "last_seen_chapter_id": "chapter-3c172caecc6b4f0c991c122ec5d189dc"
+    },
+    "accepted_names": [
+      "聚灵符"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "item_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "grade"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_juling_fu_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "聚灵符：基础辅助类灵符，可使小范围天地灵气短时浓郁，通常用于促进灵药和谷物产量并改善药性。",
+        "source_quote_ids": [
+          "quote_batch_016_020_040"
+        ]
+      },
+      {
+        "claim_id": "claim_item_juling_fu_batch_016_020_02",
+        "field": "grade",
+        "importance": "normal",
+        "description": "聚灵符的品阶：基础辅助类灵符。",
+        "source_quote_ids": [
+          "quote_batch_016_020_040"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_040"
+    ]
+  },
+  {
+    "expected_card_id": "rule_menpai_gongxian",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "太初教门派贡献规则",
+      "aliases": [],
+      "summary": "门派停止供粮后，炼丹或种植灵药弟子每月需按预估收成的七成上缴门派贡献；不足者可能被逐出宗门，长老以上免缴。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第19章 初明仙路叩仙门：“　　不论是炼丹，还是种植灵药的弟子，每个月都要上缴固定份额的门派贡献，在月初门派都会估算大概的收成数量，然后按照估算的收成数量七成上缴，如果遇到什么天灾人祸收成不足，哪怕卖掉裤衩都要凑够交齐，否则将面临逐出宗门的危险。”；第19章 初明仙路叩仙门：“　　笔记中记载，太初教只有长老以上的人物才不需要自己种植灵药和缴纳门派贡献，其他人哪怕是未来潜力无可限量的紫种弟子也不能例外！看到这里，秦浩轩心情才稍稍舒畅了些。”",
+      "exceptions": "长老以上人物免缴"
+    },
+    "accepted_names": [
+      "太初教门派贡献规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "exceptions"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_menpai_gongxian_batch_016_020_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初教门派贡献规则：门派停止供粮后，炼丹或种植灵药弟子每月需按预估收成的七成上缴门派贡献。",
+        "source_quote_ids": [
+          "quote_batch_016_020_041",
+          "quote_batch_016_020_042"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_menpai_gongxian_batch_016_020_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初教门派贡献规则：不足者可能被逐出宗门，长老以上免缴。",
+        "source_quote_ids": [
+          "quote_batch_016_020_041",
+          "quote_batch_016_020_042"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_menpai_gongxian_batch_016_020_03",
+        "field": "exceptions",
+        "importance": "major",
+        "description": "太初教门派贡献规则的例外情况：长老以上人物免缴。",
+        "source_quote_ids": [
+          "quote_batch_016_020_041",
+          "quote_batch_016_020_042"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_041",
+      "quote_batch_016_020_042"
+    ]
+  },
+  {
+    "expected_card_id": "rule_disciple_rank",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "太初教弟子袍色晋升规则",
+      "aliases": [],
+      "summary": "新弟子起始为普通弟子；门派贡献达标或修为达到仙苗境十叶可升灰袍，之后依次为褐袍、青袍、橙袍、赤袍、金袍、紫袍，每升一级少缴一成收成。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第19章 初明仙路叩仙门：“　　所有新弟子入门之初都是普通弟子，门派贡献达到一定程度，可以升格为灰袍弟子，灰袍弟子可比普通弟子少上缴一成的贡献！”；第19章 初明仙路叩仙门：“　　灰袍弟子之上又有褐袍、青袍、橙袍、赤袍、金袍、紫袍之分，每上升一个层次，便可少缴纳一成收成。”"
+    },
+    "accepted_names": [
+      "太初教弟子袍色晋升规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_disciple_rank_batch_016_020_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初教弟子袍色晋升规则：新弟子起始为普通弟子。",
+        "source_quote_ids": [
+          "quote_batch_016_020_043",
+          "quote_batch_016_020_044"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_disciple_rank_batch_016_020_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "太初教弟子袍色晋升规则：门派贡献达标或修为达到仙苗境十叶可升灰袍，之后依次为褐袍、青袍、橙袍、赤袍、金袍、紫袍，每升一级少缴一成收成。",
+        "source_quote_ids": [
+          "quote_batch_016_020_043",
+          "quote_batch_016_020_044"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_043",
+      "quote_batch_016_020_044"
+    ]
+  },
+  {
+    "expected_card_id": "rule_food_supply",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "太初教新弟子供粮规则",
+      "aliases": [],
+      "summary": "门派粮食只供应新弟子半年；出苗后普通粮食灵力不足，半年后弟子需自行炼制仙元丹或以灵药换取口粮。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第19章 初明仙路叩仙门：“　　门派所提供的粮食中只含有极其稀薄的灵力，无法满足出苗后的身体所需，而且这种供应也只有半年，半年之后就要自给自足。”；第19章 初明仙路叩仙门：“　　不想饿肚子的方法只有两个，第一是炼一种叫仙元丹的最初级丹药，就像馒头是凡夫俗子们的口粮一样，仙元丹就是修仙者们的口粮。第二是种植灵药，交了门派基本贡献后，剩余的可以找炼丹的弟子换仙元丹饱腹。”"
+    },
+    "accepted_names": [
+      "太初教新弟子供粮规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_food_supply_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "太初教新弟子供粮规则：门派粮食只供应新弟子半年。",
+        "source_quote_ids": [
+          "quote_batch_016_020_045",
+          "quote_batch_016_020_038"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_food_supply_batch_016_020_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "太初教新弟子供粮规则：出苗后普通粮食灵力不足，半年后弟子需自行炼制仙元丹或以灵药换取口粮。",
+        "source_quote_ids": [
+          "quote_batch_016_020_045",
+          "quote_batch_016_020_038"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_045",
+      "quote_batch_016_020_038"
+    ]
+  },
+  {
+    "expected_card_id": "rule_lingfu_craft",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "灵符制作与分类",
+      "aliases": [],
+      "summary": "灵符以玉简为载体，由制作者用特殊手法把自身灵力雕刻其中，分攻防类和辅助类。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第19章 初明仙路叩仙门：“　　灵符并不是那些神汉们装神弄鬼的道具纸符，而是货真价实的玉简，制作者用一种特殊手法，将自身灵力雕刻在玉简上制作而成，灵符分为攻防类和辅助类。”"
+    },
+    "accepted_names": [
+      "灵符制作与分类"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_lingfu_craft_batch_016_020_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "灵符制作与分类：灵符以玉简为载体，由制作者用特殊手法把自身灵力雕刻其中，分攻防类和辅助类。",
+        "source_quote_ids": [
+          "quote_batch_016_020_046"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_046"
+    ]
+  },
+  {
+    "expected_card_id": "event_private_fight_verdict",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "灵田谷私斗案最终判罚",
+      "aliases": [],
+      "summary": "执法堂判袁山虎、张伞、李斯赴寒冰崖思过十五天，秦浩轩赴岩浆地窖思过七天。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第16章 三紫对峙各打板：“　　商议妥当后，光幕散去，虚云子清了清嗓子，扫视全场，宣判道：“袁山虎、张伞、李斯恶意刁难秦浩轩，有伤同门情谊，驱逐至寒冰崖思过十五天，认真思过，下次再犯严惩不贷！秦浩轩在袁山虎三人停止侵犯后，仍旧重伤袁山虎三人，怎样说也是犯了门规的私斗，打入岩浆地窖思过七天，以示惩戒！太初教赏罚分明，无论是谁都不例外，还望诸位引以为戒！””",
+      "chapter_id": "chapter-1fe535fec6344ae894a73bf961da97df",
+      "description": "执法堂判袁山虎、张伞、李斯赴寒冰崖思过十五天，秦浩轩赴岩浆地窖思过七天。"
+    },
+    "accepted_names": [
+      "灵田谷私斗案最终判罚"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_private_fight_verdict_batch_016_020_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "灵田谷私斗案最终判罚：执法堂判袁山虎、张伞、李斯赴寒冰崖思过十五天，秦浩轩赴岩浆地窖思过七天。",
+        "source_quote_ids": [
+          "quote_batch_016_020_011"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_011"
+    ]
+  },
+  {
+    "expected_card_id": "event_qin_dominates_dungeon",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "秦浩轩反制岩浆地窖老油子",
+      "aliases": [],
+      "summary": "秦浩轩入岩浆地窖后遭“新人餐”和多种灵法围攻，却借此吸收药力，随后反击并震慑全部老油子。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第17章 岩浆地窖好修行：“　　每个新来的都会享受一顿“新人餐”，任何人都不例外。”；第17章 岩浆地窖好修行：“　　“诸位师兄是否打够了？若是的话，那么接下来轮到我了！”从地上站起来，秦浩轩晃了晃脖颈，拳头的关节被按的噼里啪啦作响，他面色阴冷，虽然刚才那一顿打挨得很舒服，但如果自己是一个没甚本事的普通人，在这一顿不分青红皂白的殴打中，只怕非死即残吧！”；第18章 狱中霸王自在身：“　　什么叫暴打？被秦浩轩收拾的人们，深深切切用身体明白了什么叫做暴打。”",
+      "chapter_id": "chapter-1692b7a5c347465b8383e59e9d64aa3e",
+      "description": "秦浩轩入岩浆地窖后遭“新人餐”和多种灵法围攻，却借此吸收药力，随后反击并震慑全部老油子。"
+    },
+    "accepted_names": [
+      "秦浩轩反制岩浆地窖老油子"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_qin_dominates_dungeon_batch_016_020_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "秦浩轩反制岩浆地窖老油子：秦浩轩入岩浆地窖后遭“新人餐”和多种灵法围攻，却借此吸收药力，随后反击并震慑全部老油子。",
+        "source_quote_ids": [
+          "quote_batch_016_020_047",
+          "quote_batch_016_020_048",
+          "quote_batch_016_020_049"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_047",
+      "quote_batch_016_020_048",
+      "quote_batch_016_020_049"
+    ]
+  },
+  {
+    "expected_card_id": "event_zhang_hires_yuanshanxiang",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "张狂安排袁山象入狱袭击",
+      "aliases": [],
+      "summary": "张狂买通执法弟子并招募杂役弟子故意犯错进入岩浆地窖，仙苗境五叶的袁山象主动接下袭击秦浩轩的任务。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第18章 狱中霸王自在身：“　　“也许你们都知道，我的同乡秦浩轩和我有矛盾，去年还打断了我几根肋骨，现在他被关进了岩浆地窖中，我不想给他翻身的机会！”张狂眼神中透着杀意，在这些杂役师兄身上扫过，道：“我与一个执法弟子打过招呼了，只要有人愿意故意犯错，他会帮我把人送进岩浆地窖！我要让秦浩轩无处可逃！””；第18章 狱中霸王自在身：“　　“我去！”一个长相和袁山虎有几分相似的汉子，随手一拳打在一颗腰身粗的大树上，但听哗啦一声，那颗大树应声断裂，倒在地上发出砰的一声巨响，压下其他人杂乱的报名声，道：“我是袁山虎的堂哥，袁山象！仙苗境五叶！秦浩轩害我堂弟带伤关禁闭，我一定不会轻饶他！””",
+      "chapter_id": "chapter-1692b7a5c347465b8383e59e9d64aa3e",
+      "description": "张狂买通执法弟子并招募杂役弟子故意犯错进入岩浆地窖，仙苗境五叶的袁山象主动接下袭击秦浩轩的任务。"
+    },
+    "accepted_names": [
+      "张狂安排袁山象入狱袭击"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_zhang_hires_yuanshanxiang_batch_016_020_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "张狂安排袁山象入狱袭击：张狂买通执法弟子并招募杂役弟子故意犯错进入岩浆地窖，仙苗境五叶的袁山象主动接下袭击秦浩轩的任务。",
+        "source_quote_ids": [
+          "quote_batch_016_020_005",
+          "quote_batch_016_020_012"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_005",
+      "quote_batch_016_020_012"
+    ]
+  },
+  {
+    "expected_card_id": "event_yuanshanxiang_attacks_qin",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "袁山象在岩浆地窖袭击秦浩轩",
+      "aliases": [],
+      "summary": "袁山象受张狂所托进入岩浆地窖，先后施展赤云炎爆和陨石拳袭击秦浩轩，使其短暂昏迷并出现淤青红肿。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第20章 你方唱罢我登场：“　　这汉子便是受张狂所托，前来岩浆地窖收拾秦浩轩的袁山象！”；第20章 你方唱罢我登场：“　　“赤云炎爆！””；第20章 你方唱罢我登场：“　　“区区蝼蚁还敢有脾气！尝尝老子的陨石拳！”袁山象冷笑一声，身上灵力波动，在秦浩轩怒发冲冠时，身上肌肉块块暴起，鼓足力气虚空打出一拳，拳速奇快无比，带起嘶嘶破空声，一道拳头虚影透体而出，拳头虚影迎风见长，化作磨盘大小，直朝秦浩轩脑门砸去。”；第20章 你方唱罢我登场：“　　怎么可能？袁山象眼睛陡然瞪大，便是仙苗五叶的修仙者被我陨石拳打中头，脑袋都会变成烂泥，真正的岩石也会化为齑粉，怎么这秦浩轩的额头上只是略有淤青红肿，看上去并无大碍？”",
+      "chapter_id": "chapter-6829374be0494020b4a9302d08b23e72",
+      "description": "袁山象受张狂所托进入岩浆地窖，先后施展赤云炎爆和陨石拳袭击秦浩轩，使其短暂昏迷并出现淤青红肿。"
+    },
+    "accepted_names": [
+      "袁山象在岩浆地窖袭击秦浩轩"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_yuanshanxiang_attacks_qin_batch_016_020_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "袁山象在岩浆地窖袭击秦浩轩：袁山象受张狂所托进入岩浆地窖，先后施展赤云炎爆和陨石拳袭击秦浩轩，使其短暂昏迷并出现淤青红肿。",
+        "source_quote_ids": [
+          "quote_batch_016_020_016",
+          "quote_batch_016_020_029",
+          "quote_batch_016_020_031",
+          "quote_batch_016_020_003"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_016_020_016",
+      "quote_batch_016_020_029",
+      "quote_batch_016_020_031",
+      "quote_batch_016_020_003"
+    ]
+  }
+]

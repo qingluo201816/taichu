@@ -52,6 +52,17 @@ class KnowledgeSchemaFieldType(StrEnum):
     RECORD_ARRAY = "record_array"
 
 
+class KnowledgeFieldMergeStrategy(StrEnum):
+    """Author-confirmed merge behavior exposed through the schema registry."""
+
+    PRESERVE_EXISTING = "preserve_existing"
+    REPLACE = "replace"
+    APPEND_UNIQUE = "append_unique"
+    UNION = "union"
+    SUM = "sum"
+    LATEST = "latest"
+
+
 class KnowledgeFieldOption(DomainModel):
     """One Chinese-labeled option for an enum field."""
 
@@ -72,6 +83,9 @@ class KnowledgeFieldSchema(DomainModel):
     list_display: bool = False
     author_editable: bool = True
     ai_usage: str = ""
+    merge_strategy: KnowledgeFieldMergeStrategy = (
+        KnowledgeFieldMergeStrategy.PRESERVE_EXISTING
+    )
 
 
 class KnowledgeTypeSchema(DomainModel):
@@ -187,6 +201,17 @@ def knowledge_type_field_keys(knowledge_type: StructuredKnowledgeType) -> set[st
     }
 
 
+def knowledge_field_merge_strategy(
+    knowledge_type: StructuredKnowledgeType,
+    field_key: str,
+) -> KnowledgeFieldMergeStrategy:
+    """Return the merge strategy declared for one knowledge field."""
+    for field in knowledge_type_schema(knowledge_type).fields:
+        if field.field_key == field_key:
+            return field.merge_strategy
+    raise KeyError(field_key)
+
+
 def type_specific_field_keys(knowledge_type: StructuredKnowledgeType) -> set[str]:
     """Return type-specific top-level field keys for one knowledge type."""
     return {field.field_key for field in _TYPE_FIELD_SCHEMAS[knowledge_type]}
@@ -227,6 +252,9 @@ def _field(
     list_display: bool = False,
     author_editable: bool = True,
     ai_usage: str = "",
+    merge_strategy: KnowledgeFieldMergeStrategy = (
+        KnowledgeFieldMergeStrategy.PRESERVE_EXISTING
+    ),
 ) -> KnowledgeFieldSchema:
     return KnowledgeFieldSchema(
         field_key=field_key,
@@ -239,6 +267,7 @@ def _field(
         list_display=list_display,
         author_editable=author_editable,
         ai_usage=ai_usage,
+        merge_strategy=merge_strategy,
     )
 
 
@@ -271,6 +300,7 @@ _COMMON_FIELD_SCHEMAS = [
         placeholder="多个别名用换行或逗号分隔",
         list_display=True,
         ai_usage="名称、称号、旧名和简称。",
+        merge_strategy=KnowledgeFieldMergeStrategy.UNION,
     ),
     _field(
         "summary",
@@ -280,6 +310,7 @@ _COMMON_FIELD_SCHEMAS = [
         placeholder="一句话或一段摘要",
         list_display=True,
         ai_usage="面向写作和 AI 引用的核心事实摘要。",
+        merge_strategy=KnowledgeFieldMergeStrategy.REPLACE,
     ),
     _field(
         "appearance_chapter_count",
@@ -288,6 +319,7 @@ _COMMON_FIELD_SCHEMAS = [
         list_display=True,
         author_editable=False,
         ai_usage="由正文知识沉淀按实际出现章节累计，前端按全书章节占比显示重要程度。",
+        merge_strategy=KnowledgeFieldMergeStrategy.SUM,
     ),
     _field(
         "lifecycle",
@@ -317,6 +349,7 @@ _COMMON_FIELD_SCHEMAS = [
         display_group="来源",
         list_display=True,
         ai_usage="知识卡可被信任和追溯的自由文本来源说明。",
+        merge_strategy=KnowledgeFieldMergeStrategy.APPEND_UNIQUE,
     ),
 ]
 
@@ -411,6 +444,7 @@ _TYPE_FIELD_SCHEMAS: dict[StructuredKnowledgeType, list[KnowledgeFieldSchema]] =
             KnowledgeSchemaFieldType.CHAPTER_REF,
             display_group="类型字段",
             ai_usage="角色最近出现章节的稳定 chapter_id。",
+            merge_strategy=KnowledgeFieldMergeStrategy.LATEST,
         ),
     ],
     StructuredKnowledgeType.REALM: [
@@ -539,6 +573,7 @@ _TYPE_FIELD_SCHEMAS: dict[StructuredKnowledgeType, list[KnowledgeFieldSchema]] =
             KnowledgeSchemaFieldType.CHAPTER_REF,
             display_group="类型字段",
             ai_usage="物品最近出现章节的稳定 chapter_id。",
+            merge_strategy=KnowledgeFieldMergeStrategy.LATEST,
         ),
     ],
     StructuredKnowledgeType.RULE: [

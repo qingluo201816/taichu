@@ -1,0 +1,302 @@
+{
+  "dataset_id": "taichu_knowledge_eval_006_020_author_confirmed",
+  "lifecycle": "confirmed",
+  "generated_at": "2026-07-18T17:30:46.933617+00:00",
+  "generation_note": "基于 master 分支当前 Markdown 正文、知识卡领域模型、MongoDB 严格校验规则、知识沉淀 Workflow/Prompt/候选校验、评测模型与前五章评测约定生成。理想卡 lifecycle=confirmed 仅表示理想作者确认结果；整个数据集仍为 draft。",
+  "repository": "qingluo201816/taichu",
+  "repository_ref": "master",
+  "repository_contract_inputs": [
+    "AGENTS.md",
+    "project_assets/source/manuscripts/manifest.json",
+    "src/taichu/domain/models/structured_knowledge.py",
+    "src/taichu/infrastructure/knowledge/mongo_repository.py",
+    "src/taichu/application/agents/knowledge_extraction/schemas.py",
+    "src/taichu/application/agents/knowledge_extraction/prompts.py",
+    "src/taichu/application/agents/knowledge_extraction/workflow.py",
+    "src/taichu/application/evaluations/knowledge_extraction/models.py",
+    ".agents/scripts/evaluations/import_knowledge_annotation_package.py",
+    "tests/fixtures/evaluations/taichu_knowledge_eval_first5_author_confirmed/manifest.json",
+    "tests/fixtures/evaluations/taichu_knowledge_eval_first5_author_confirmed/_metadata/schema.json",
+    "tests/fixtures/evaluations/taichu_knowledge_eval_first5_author_confirmed/cases/batch_001_005/expected.json",
+    "tests/fixtures/evaluations/taichu_knowledge_eval_first5_author_confirmed/cases/batch_001_005/evidence.json",
+    "tests/fixtures/evaluations/taichu_knowledge_eval_first5_author_confirmed/cases/batch_001_005/negative.json",
+    "tests/fixtures/evaluations/taichu_knowledge_eval_first5_author_confirmed/cases/batch_001_005/rules.json"
+  ],
+  "source_chapters": [
+    {
+      "chapter_number": 6,
+      "chapter_id": "chapter-71d9db70aabb4de2a050c9d6beb9a984",
+      "title": "第6章 紫气东来惊仙鉴",
+      "manifest_path": "manuscripts/chapters/volume_001_第一卷/chapter_006_紫气东来惊仙鉴.md",
+      "repository_path": "project_assets/source/manuscripts/chapters/volume_001_第一卷/chapter_006_紫气东来惊仙鉴.md",
+      "sha256": "da47f45267a1e716ae2437c5644a881cf733386a82ee04b2f7eb5f56918a7b8a",
+      "git_blob_sha_verified": true
+    },
+    {
+      "chapter_number": 7,
+      "chapter_id": "chapter-1542b22d9c214d2baf67c3a5175e2e90",
+      "title": "第7章 淡然明鉴道初心",
+      "manifest_path": "manuscripts/chapters/volume_001_第一卷/chapter_007_淡然明鉴道初心.md",
+      "repository_path": "project_assets/source/manuscripts/chapters/volume_001_第一卷/chapter_007_淡然明鉴道初心.md",
+      "sha256": "0be9db5a1aec30916034d5e76acc4aaf3e2dcd445d254e94db82af9f244c12a4",
+      "git_blob_sha_verified": true
+    },
+    {
+      "chapter_number": 8,
+      "chapter_id": "chapter-a7731db47da6476aa3ed62030d28bc6a",
+      "title": "第8章 灵田谷中引灵种",
+      "manifest_path": "manuscripts/chapters/volume_001_第一卷/chapter_008_灵田谷中引灵种.md",
+      "repository_path": "project_assets/source/manuscripts/chapters/volume_001_第一卷/chapter_008_灵田谷中引灵种.md",
+      "sha256": "9d5f7fc89c7fa5d0be1c504cc170f73a954354468188e9e09498f6fb45e0ac1c",
+      "git_blob_sha_verified": true
+    },
+    {
+      "chapter_number": 9,
+      "chapter_id": "chapter-cd8b61413cc94cd98316fe59afb5dcb2",
+      "title": "第9章 道心固来一炷香",
+      "manifest_path": "manuscripts/chapters/volume_001_第一卷/chapter_009_道心固来一炷香.md",
+      "repository_path": "project_assets/source/manuscripts/chapters/volume_001_第一卷/chapter_009_道心固来一炷香.md",
+      "sha256": "f0bea100bc90fa07c4a4f98539d27040ea401ef27f71512624414786a3c1f6c2",
+      "git_blob_sha_verified": true
+    },
+    {
+      "chapter_number": 10,
+      "chapter_id": "chapter-cdb5c3ef2e564affb249aedd5f14d311",
+      "title": "第10章 书中自有黄金屋",
+      "manifest_path": "manuscripts/chapters/volume_001_第一卷/chapter_010_书中自有黄金屋.md",
+      "repository_path": "project_assets/source/manuscripts/chapters/volume_001_第一卷/chapter_010_书中自有黄金屋.md",
+      "sha256": "0e5498cee491ccd742eef2b475326a70a664c2bd12f057f119a2dcf816255d29",
+      "git_blob_sha_verified": true
+    },
+    {
+      "chapter_number": 11,
+      "chapter_id": "chapter-e2b56ac1801e40c6b31bf77e8c558efd",
+      "title": "第11章 未学丹道强生吞",
+      "manifest_path": "manuscripts/chapters/volume_001_第一卷/chapter_011_未学丹道强生吞.md",
+      "repository_path": "project_assets/source/manuscripts/chapters/volume_001_第一卷/chapter_011_未学丹道强生吞.md",
+      "sha256": "efe0a964cbc60c17557e253825816e6f27ea6dcb20d08187bcbac7733c13f488",
+      "git_blob_sha_verified": true
+    },
+    {
+      "chapter_number": 12,
+      "chapter_id": "chapter-a1a2d3ec95b24b62a193b1cee2563ea9",
+      "title": "第12章 袁山有虎排山力",
+      "manifest_path": "manuscripts/chapters/volume_001_第一卷/chapter_012_袁山有虎排山力.md",
+      "repository_path": "project_assets/source/manuscripts/chapters/volume_001_第一卷/chapter_012_袁山有虎排山力.md",
+      "sha256": "2fa16f43d5a124871b48d09c65cacdf91511b3a873dfa999dedea8c40460561c",
+      "git_blob_sha_verified": true
+    },
+    {
+      "chapter_number": 13,
+      "chapter_id": "chapter-3fb65d89870445169cbf29917c0aadf9",
+      "title": "第13章 霸王排山助金莲",
+      "manifest_path": "manuscripts/chapters/volume_001_第一卷/chapter_013_霸王排山助金莲.md",
+      "repository_path": "project_assets/source/manuscripts/chapters/volume_001_第一卷/chapter_013_霸王排山助金莲.md",
+      "sha256": "55a431f2ab064c4a55e31416d201a5b6865a6d9dab16505e47c8801b9677b184",
+      "git_blob_sha_verified": true
+    },
+    {
+      "chapter_number": 14,
+      "chapter_id": "chapter-f5dae65c0ee144ec9db1ca55f7316cd6",
+      "title": "第14章 神识自显初展威",
+      "manifest_path": "manuscripts/chapters/volume_001_第一卷/chapter_014_神识自显初展威.md",
+      "repository_path": "project_assets/source/manuscripts/chapters/volume_001_第一卷/chapter_014_神识自显初展威.md",
+      "sha256": "ff581018a31ebd2ee5d81425b84dd7d33a0e8c01cfdf82e03b544849b99471f5",
+      "git_blob_sha_verified": true
+    },
+    {
+      "chapter_number": 15,
+      "chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838",
+      "title": "第15章 是非黑白岂颠倒",
+      "manifest_path": "manuscripts/chapters/volume_001_第一卷/chapter_015_是非黑白岂颠倒.md",
+      "repository_path": "project_assets/source/manuscripts/chapters/volume_001_第一卷/chapter_015_是非黑白岂颠倒.md",
+      "sha256": "e3109950fe442002a4fc0321337c772412319eab0940b044a53f1f73f904f0ee",
+      "git_blob_sha_verified": true
+    },
+    {
+      "chapter_number": 16,
+      "chapter_id": "chapter-1fe535fec6344ae894a73bf961da97df",
+      "title": "第16章 三紫对峙各打板",
+      "manifest_path": "manuscripts/chapters/volume_001_第一卷/chapter_016_三紫对峙各打板.md",
+      "repository_path": "project_assets/source/manuscripts/chapters/volume_001_第一卷/chapter_016_三紫对峙各打板.md",
+      "sha256": "4d7013c54eb80e27f8c7d741b46cca0f644b5a5aa9d9873e350966fba4eb45e8",
+      "git_blob_sha_verified": true
+    },
+    {
+      "chapter_number": 17,
+      "chapter_id": "chapter-935b8c9e880e41399f4f32c1616d5a72",
+      "title": "第17章 岩浆地窖好修行",
+      "manifest_path": "manuscripts/chapters/volume_001_第一卷/chapter_017_岩浆地窖好修行.md",
+      "repository_path": "project_assets/source/manuscripts/chapters/volume_001_第一卷/chapter_017_岩浆地窖好修行.md",
+      "sha256": "50d0fba2f69234e30197ea7821bb0a9e73a4b18d6e7bd88d077a8f9af5030e51",
+      "git_blob_sha_verified": true
+    },
+    {
+      "chapter_number": 18,
+      "chapter_id": "chapter-1692b7a5c347465b8383e59e9d64aa3e",
+      "title": "第18章 狱中霸王自在身",
+      "manifest_path": "manuscripts/chapters/volume_001_第一卷/chapter_018_狱中霸王自在身.md",
+      "repository_path": "project_assets/source/manuscripts/chapters/volume_001_第一卷/chapter_018_狱中霸王自在身.md",
+      "sha256": "c1d70fd6f87ce2c82a20ef0cac01352a2cf93ebad93565cfc3d68a423ed25480",
+      "git_blob_sha_verified": true
+    },
+    {
+      "chapter_number": 19,
+      "chapter_id": "chapter-3c172caecc6b4f0c991c122ec5d189dc",
+      "title": "第19章 初明仙路叩仙门",
+      "manifest_path": "manuscripts/chapters/volume_001_第一卷/chapter_019_初明仙路叩仙门.md",
+      "repository_path": "project_assets/source/manuscripts/chapters/volume_001_第一卷/chapter_019_初明仙路叩仙门.md",
+      "sha256": "11918623f7f21322b66fe44efab27e0d6214fb59f2b297e9d666d6e020f43eb5",
+      "git_blob_sha_verified": true
+    },
+    {
+      "chapter_number": 20,
+      "chapter_id": "chapter-6829374be0494020b4a9302d08b23e72",
+      "title": "第20章 你方唱罢我登场",
+      "manifest_path": "manuscripts/chapters/volume_001_第一卷/chapter_020_你方唱罢我登场.md",
+      "repository_path": "project_assets/source/manuscripts/chapters/volume_001_第一卷/chapter_020_你方唱罢我登场.md",
+      "sha256": "4d38f7273652146be624605bc79b9e119ede7baee181544e9d1ec737a3b36fb4",
+      "git_blob_sha_verified": true
+    }
+  ],
+  "batches": {
+    "batch_006_010": {
+      "candidate_count": 32,
+      "evidence_count": 49,
+      "negative_count": 12,
+      "knowledge_type_counts": {
+        "character": 10,
+        "event": 6,
+        "faction": 1,
+        "item": 4,
+        "location": 2,
+        "rule": 5,
+        "technique": 4
+      },
+      "ambiguities": [
+        "六爻卦的实物卦具与功法同名；按正文核心语义标为 technique，未另建物品卡。",
+        "神识冲击来自课堂笔记，属于明确知识，但秦浩轩尚未在第10章实际掌握。",
+        "麒麟峰老祖宗未给姓名，仅保留地点卡，不建角色卡。"
+      ],
+      "continuity_with_previous_batches": [
+        "延续并更新前五章实体：秦浩轩、张狂、李靖、徐羽、张扬、黄龙真人、夏云子、苏百花、太初教、明鉴仙眼。",
+        "五彩小蛇只作为秦浩轩秘密相关既有实体被提及，本批次没有新增足够独立事实，未重复提交候选。"
+      ],
+      "claim_count": 90
+    },
+    "batch_011_015": {
+      "candidate_count": 26,
+      "evidence_count": 42,
+      "negative_count": 12,
+      "knowledge_type_counts": {
+        "character": 12,
+        "event": 4,
+        "item": 1,
+        "location": 1,
+        "rule": 4,
+        "technique": 4
+      },
+      "ambiguities": [
+        "“孤独冷傲的络腮胡子”截至第15章无姓名，列入负样本，等待后文身份揭示后再更新。",
+        "执法长老的偏袒属于行为事实，不提升为正式宗门规则。",
+        "一叶金莲可能助老祖突破法相境为秦浩轩推测，未写为确定药效。"
+      ],
+      "continuity_with_previous_batches": [
+        "延续并更新：秦浩轩、张狂、李靖、徐羽、一叶金莲、道心种魔大法、神识冲击。",
+        "一叶金莲与九叶金莲保持同一规范身份，九叶金莲仅作为别名。"
+      ],
+      "claim_count": 89
+    },
+    "batch_016_020": {
+      "candidate_count": 33,
+      "evidence_count": 58,
+      "negative_count": 12,
+      "knowledge_type_counts": {
+        "character": 9,
+        "event": 4,
+        "item": 4,
+        "location": 6,
+        "realm": 2,
+        "rule": 4,
+        "technique": 4
+      },
+      "ambiguities": [
+        "老叶仅有稳定称呼而无本名，暂按可追踪昵称建立 passerby 角色候选，需人工确认是否保留。",
+        "神行符、遁地符、聚灵符按当前 Schema 归为 item/magic_treasure；若项目后续细分符箓类型需迁移。",
+        "袁山象章节末凝聚的匕首灵法未命名，列入负样本，不提前命名。",
+        "“武道先天”关于秦浩轩的判断仅为狱友传闻，未写入角色卡。"
+      ],
+      "continuity_with_previous_batches": [
+        "延续并更新：秦浩轩、张狂、李靖、徐羽、袁山虎、虚云子、楚云子、神识冲击、种植仙根境、仙苗境。",
+        "禁闭山作为思过峰别名合并；未把武道先天传闻写入秦浩轩知识卡。"
+      ],
+      "claim_count": 90
+    }
+  },
+  "totals": {
+    "case_count": 3,
+    "candidate_count": 91,
+    "evidence_count": 149,
+    "negative_count": 36,
+    "knowledge_type_counts": {
+      "character": 31,
+      "event": 14,
+      "faction": 1,
+      "item": 9,
+      "location": 9,
+      "realm": 2,
+      "rule": 13,
+      "technique": 12
+    },
+    "claim_count": 269
+  },
+  "ambiguities_and_manual_review": [
+    "六爻卦的实物卦具与功法同名；按正文核心语义标为 technique，未另建物品卡。",
+    "神识冲击来自课堂笔记，属于明确知识，但秦浩轩尚未在第10章实际掌握。",
+    "麒麟峰老祖宗未给姓名，仅保留地点卡，不建角色卡。",
+    "“孤独冷傲的络腮胡子”截至第15章无姓名，列入负样本，等待后文身份揭示后再更新。",
+    "执法长老的偏袒属于行为事实，不提升为正式宗门规则。",
+    "一叶金莲可能助老祖突破法相境为秦浩轩推测，未写为确定药效。",
+    "老叶仅有稳定称呼而无本名，暂按可追踪昵称建立 passerby 角色候选，需人工确认是否保留。",
+    "神行符、遁地符、聚灵符按当前 Schema 归为 item/magic_treasure；若项目后续细分符箓类型需迁移。",
+    "袁山象章节末凝聚的匕首灵法未命名，列入负样本，不提前命名。",
+    "“武道先天”关于秦浩轩的判断仅为狱友传闻，未写入角色卡。"
+  ],
+  "undetermined_content": [
+    "未命名角色、普通场景、普通物品、临时状态、人物猜测、传闻及未来结果均未写入理想卡，已尽量转入 negative.json。",
+    "现行严格 manifest 模型没有章节路径、generated_at、generation_note 字段；为保持机器兼容，这些信息记录在本 generation_report 中。",
+    "老叶是否达到作者期望的稳定角色建卡阈值需要 Codex/作者复核。",
+    "第20章末袁山象凝聚的匕首灵法尚无名称与效果结果，未建卡。"
+  ],
+  "validation": {
+    "status": "passed",
+    "json_files_parsed": 16,
+    "chapter_git_blob_sha_verified": 15,
+    "chapter_sha256_verified": 15,
+    "evidence_offset_checks": 149,
+    "cross_reference_checks": "passed",
+    "forbidden_field_checks": "passed",
+    "checksum_coverage_files": 15,
+    "backend_dataset_validation": "passed",
+    "errors": []
+  },
+  "repair": {
+    "repaired_at": "2026-07-18T19:17:53.165642+00:00",
+    "basis_dataset_id": "taichu_knowledge_eval_first5_author_confirmed",
+    "original_zip_sha256": "080c18e24f10a6e43ea651742544ae8a54b4260806b2f68101ec689ea3899252",
+    "changes": [
+      "去除 4 张卡片中重复的证据引用和来源说明片段。",
+      "从 91 张期望卡的 exact_fields 中移除 name，保持名称只用于身份匹配。",
+      "按摘要、事件描述、身份、关系、境界、品阶、修炼条件与例外情况重建原子断言。",
+      "补齐与前五章已确认评测集一致的禁用字段快照和评测说明。"
+    ]
+  },
+  "confirmation": {
+    "confirmed_at": "2026-07-18T19:23:04.590585+00:00",
+    "confirmed_by": "author",
+    "source_dataset_id": "taichu_knowledge_eval_006_020_annotation_draft",
+    "source_package_sha256": "676f4be0206cb1fbe405b81daaac4befbd55736670d8993c1be186ac51b2d76f",
+    "source_package_path": "docs/任务包/taichu_knowledge_eval_006_020_annotation_draft.zip",
+    "decision": "作者明确确认修订后的第6—20章标注可注册为正式评测集。"
+  }
+}

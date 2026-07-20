@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+import re
 from typing import Any, Literal
 from uuid import uuid4
 
@@ -18,12 +19,14 @@ from taichu.application.contracts.knowledge_repository import (
 )
 from taichu.domain.models import (
     KnowledgeTypeSchema,
+    KnowledgeFieldMergeStrategy,
     StructuredKnowledgeCard,
     StructuredKnowledgeLifecycle,
     StructuredKnowledgeSourceOrigin,
     StructuredKnowledgeType,
     all_knowledge_type_schemas,
     knowledge_type_field_keys,
+    knowledge_field_merge_strategy,
     knowledge_type_schema,
     type_specific_field_keys,
 )
@@ -31,7 +34,7 @@ from taichu.domain.models.structured_knowledge import (
     FORBIDDEN_KNOWLEDGE_FIELD_KEYS,
 )
 
-AuthorMergeMode = Literal["append", "overwrite"]
+AuthorMergeMode = Literal["merge", "overwrite"]
 
 _SYSTEM_FIELDS = frozenset(
     {"id", "type", "lifecycle", "created_at", "updated_at", "identity_keys"}
@@ -240,12 +243,12 @@ class KnowledgeService:
         card_id: str,
         updates: dict[str, Any],
         *,
-        merge_mode: AuthorMergeMode = "append",
+        merge_mode: AuthorMergeMode = "merge",
         allow_appearance_count_update: bool = False,
         expected_updated_at: str | None = None,
     ) -> StructuredKnowledgeCard:
         """Apply explicit author edits to a confirmed card."""
-        if merge_mode not in {"append", "overwrite"}:
+        if merge_mode not in {"merge", "overwrite"}:
             raise KnowledgeCardValidationError("编辑后确认方式不支持。")
         current = await self.get_card(card_id)
         if current.lifecycle is not StructuredKnowledgeLifecycle.CONFIRMED:
@@ -267,13 +270,12 @@ class KnowledgeService:
             raise KnowledgeCardValidationError(
                 f"知识卡字段不支持：{', '.join(sorted(unknown_keys))}"
             )
-        payload = current.model_dump(mode="json")
-        for key, value in updates.items():
-            payload[key] = (
-                value
-                if merge_mode == "overwrite" and key != "appearance_chapter_count"
-                else _merge_author_value(key, payload.get(key), value)
-            )
+        payload = merge_knowledge_card_preview(
+            current.type,
+            current.model_dump(mode="json"),
+            updates,
+            merge_mode=merge_mode,
+        )
         payload["updated_at"] = _now_iso()
         card = StructuredKnowledgeCard.model_validate(payload)
         _validate_confirmed_card(card)
@@ -354,6 +356,29 @@ class KnowledgeConcurrentUpdateError(KnowledgeCardValidationError):
 
 class KnowledgeUnavailableError(RuntimeError):
     """Raised when MongoDB cannot serve a knowledge request."""
+
+
+def merge_knowledge_card_preview(
+    knowledge_type: StructuredKnowledgeType,
+    current: dict[str, Any],
+    incoming: dict[str, Any],
+    *,
+    merge_mode: AuthorMergeMode = "merge",
+) -> dict[str, Any]:
+    """Build the same schema-driven card preview used by confirmed updates."""
+    if merge_mode not in {"merge", "overwrite"}:
+        raise KnowledgeCardValidationError("编辑后确认方式不支持。")
+    allowed_keys = knowledge_type_field_keys(knowledge_type) - {"lifecycle"}
+    payload = dict(current)
+    for key, value in incoming.items():
+        if key not in allowed_keys:
+            continue
+        payload[key] = (
+            value
+            if merge_mode == "overwrite" and key != "appearance_chapter_count"
+            else _merge_author_value(knowledge_type, key, payload.get(key), value)
+        )
+    return payload
 
 
 def _lifecycles_for_filter(value: str) -> frozenset[StructuredKnowledgeLifecycle]:
@@ -454,16 +479,30 @@ def _reject_forbidden_fields(
         )
 
 
-def _merge_author_value(key: str, current: object, incoming: object) -> object:
-    if key in {"summary", "source_note"}:
-        return _append_text(str(current or ""), str(incoming or ""))
-    if key == "aliases":
+def _merge_author_value(
+    knowledge_type: StructuredKnowledgeType,
+    key: str,
+    current: object,
+    incoming: object,
+) -> object:
+    strategy = knowledge_field_merge_strategy(knowledge_type, key)
+    if strategy is KnowledgeFieldMergeStrategy.REPLACE:
+        return current if _is_empty_value(incoming) else incoming
+    if strategy is KnowledgeFieldMergeStrategy.APPEND_UNIQUE:
+        return _append_unique_text_blocks(str(current or ""), str(incoming or ""))
+    if strategy is KnowledgeFieldMergeStrategy.UNION:
         return _merge_aliases(current, incoming)
-    if key == "last_seen_chapter_id":
-        return incoming
-    if key == "appearance_chapter_count":
-        current_count = current if isinstance(current, int) else 0
-        incoming_count = incoming if isinstance(incoming, int) else 0
+    if strategy is KnowledgeFieldMergeStrategy.LATEST:
+        return current if _is_empty_value(incoming) else incoming
+    if strategy is KnowledgeFieldMergeStrategy.SUM:
+        current_count = (
+            current if isinstance(current, int) and not isinstance(current, bool) else 0
+        )
+        incoming_count = (
+            incoming
+            if isinstance(incoming, int) and not isinstance(incoming, bool)
+            else 0
+        )
         return current_count + incoming_count
     if _is_empty_value(current) or current == incoming:
         return incoming
@@ -484,15 +523,24 @@ def _as_string_list(value: object) -> list[str]:
     return [item for item in value if isinstance(item, str) and item.strip()]
 
 
-def _append_text(current: str, addition: str) -> str:
-    addition = addition.strip()
-    if not addition:
-        return current
-    if not current.strip():
-        return addition
-    if addition in current:
-        return current
-    return f"{current.rstrip()}\n\n{addition}"
+def _append_unique_text_blocks(current: str, addition: str) -> str:
+    merged: list[str] = []
+    seen: set[str] = set()
+    for block in [*_text_blocks(current), *_text_blocks(addition)]:
+        normalized = " ".join(block.split())
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        merged.append(block)
+    return "\n\n".join(merged)
+
+
+def _text_blocks(value: str) -> list[str]:
+    return [
+        block.strip()
+        for block in re.split(r"(?:\r?\n)\s*(?:\r?\n)+", value.strip())
+        if block.strip()
+    ]
 
 
 def _is_empty_value(value: object) -> bool:

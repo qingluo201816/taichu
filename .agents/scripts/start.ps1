@@ -120,8 +120,13 @@ function Wait-ForHttpHealth([string]$uri, [int]$timeoutSeconds) {
 }
 
 function Test-DockerReady {
-    [void](& docker.exe info --format "{{.ServerVersion}}" 2>$null)
-    return $LASTEXITCODE -eq 0
+    try {
+        $serverVersion = & docker.exe info --format "{{.ServerVersion}}" 2>$null
+        return $LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($serverVersion)
+    }
+    catch {
+        return $false
+    }
 }
 
 function Ensure-DockerReady([int]$timeoutSeconds) {
@@ -136,13 +141,19 @@ function Ensure-DockerReady([int]$timeoutSeconds) {
     if (-not (Test-Path -LiteralPath $dockerDesktop -PathType Leaf)) {
         throw "Docker 服务未运行，且找不到 Docker Desktop：$dockerDesktop"
     }
+
+    Write-Host "  Docker Engine 未就绪，正在启动 Docker Desktop..."
     if (-not (Get-Process -Name "Docker Desktop" -ErrorAction SilentlyContinue)) {
         [void](Start-Process -FilePath $dockerDesktop -WindowStyle Hidden -PassThru)
+    }
+    else {
+        [void](Start-Process -FilePath $dockerDesktop -WindowStyle Hidden -ErrorAction SilentlyContinue)
     }
 
     $deadline = (Get-Date).AddSeconds($timeoutSeconds)
     while ((Get-Date) -lt $deadline) {
         if (Test-DockerReady) {
+            Write-Host "  Docker Desktop 已就绪。"
             return
         }
         Start-Sleep -Seconds 2

@@ -1,0 +1,1961 @@
+[
+  {
+    "expected_card_id": "character_qin_haoxuan",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "秦浩轩",
+      "aliases": [],
+      "summary": "修炼道心种魔大法后生吞一叶金莲，体内积存狂暴药力；在袁山虎等人攻击下意外通过巫修排打吸收药力，并首次显现可使对手失神的神识攻击。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第11章 未学丹道强生吞：“　　为免夜长梦多，秦浩轩心一横，也顾不上什么浪费不浪费，将一叶金莲送到嘴边，本想咬一小口，分成几次吞食，谁知这一叶金莲刚刚进秦浩轩的嘴便化作一道燥热的津液，自动流入秦浩轩咽喉。”；第13章 霸王排山助金莲：“　　偏偏，秦浩轩服用一叶金莲之后，用的是绝仙毒谷中，不死巫魔传授的道心种魔大法，这法决之中却有着修仙界都没有修巫之术，巫修在当今修仙界几乎早已经失传，这巫修首先要修一个无比强健的体魄，最初便是吸收灵气，然后找实力相当或者更强者排打身体，将吸入体内的灵气，打入骨骼跟五脏六腑之中。”；第14章 神识自显初展威：“　　神识！”",
+      "role_type": "protagonist",
+      "identity": "太初教新弟子、无色弱种",
+      "relationship_summary": "受徐羽保护；遭张狂指使袁山虎等人袭击。",
+      "current_realm_text": "种植仙根境（破种阶段）",
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "last_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838"
+    },
+    "accepted_names": [
+      "秦浩轩"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_011_015_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦浩轩：修炼道心种魔大法后生吞一叶金莲，体内积存狂暴药力。",
+        "source_quote_ids": [
+          "quote_batch_011_015_001",
+          "quote_batch_011_015_002",
+          "quote_batch_011_015_003"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_011_015_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦浩轩：在袁山虎等人攻击下意外通过巫修排打吸收药力，并首次显现可使对手失神的神识攻击。",
+        "source_quote_ids": [
+          "quote_batch_011_015_001",
+          "quote_batch_011_015_002",
+          "quote_batch_011_015_003"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_011_015_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "秦浩轩的身份：太初教新弟子、无色弱种。",
+        "source_quote_ids": [
+          "quote_batch_011_015_001",
+          "quote_batch_011_015_002",
+          "quote_batch_011_015_003"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_011_015_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "秦浩轩的关系信息：受徐羽保护。",
+        "source_quote_ids": [
+          "quote_batch_011_015_001",
+          "quote_batch_011_015_002",
+          "quote_batch_011_015_003"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_011_015_05",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "秦浩轩的关系信息：遭张狂指使袁山虎等人袭击。",
+        "source_quote_ids": [
+          "quote_batch_011_015_001",
+          "quote_batch_011_015_002",
+          "quote_batch_011_015_003"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_011_015_06",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "秦浩轩的当前境界：种植仙根境（破种阶段）。",
+        "source_quote_ids": [
+          "quote_batch_011_015_001",
+          "quote_batch_011_015_002",
+          "quote_batch_011_015_003"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_001",
+      "quote_batch_011_015_002",
+      "quote_batch_011_015_003"
+    ]
+  },
+  {
+    "expected_card_id": "character_zhang_kuang",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "张狂",
+      "aliases": [],
+      "summary": "无上紫种新弟子；指使袁山虎、张伞、李斯刁难并攻击秦浩轩，后在执法调查中歪曲事件经过。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第12章 袁山有虎排山力：“　　“袁山虎师兄，还有其他几位师兄，我同乡秦浩轩来灵田谷也有两天了，可你们还没为他准备点节目，要不就今天中午好好的为他接风洗尘吧？””；第15章 是非黑白岂颠倒：“　　“我的同乡秦浩轩冲撞了袁山虎师兄不肯道歉，双方口角几句，秦浩轩还打伤袁山虎及张伞李斯两位师兄，事情原委就是这样！”张狂说罢，眼睛早已经不看黄鹂，而是看向她旁边的执法长老虚云子。”",
+      "role_type": "antagonist",
+      "identity": "太初教新弟子、无上紫种",
+      "relationship_summary": "指使袁山虎等人对付秦浩轩；与李靖竞争。",
+      "current_realm_text": "种植仙根境（破种阶段）",
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "last_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838"
+    },
+    "accepted_names": [
+      "张狂"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_zhang_kuang_batch_011_015_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "张狂：无上紫种新弟子。",
+        "source_quote_ids": [
+          "quote_batch_011_015_004",
+          "quote_batch_011_015_005"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_batch_011_015_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "张狂：指使袁山虎、张伞、李斯刁难并攻击秦浩轩，后在执法调查中歪曲事件经过。",
+        "source_quote_ids": [
+          "quote_batch_011_015_004",
+          "quote_batch_011_015_005"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_batch_011_015_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "张狂的身份：太初教新弟子、无上紫种。",
+        "source_quote_ids": [
+          "quote_batch_011_015_004",
+          "quote_batch_011_015_005"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_batch_011_015_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "张狂的关系信息：指使袁山虎等人对付秦浩轩。",
+        "source_quote_ids": [
+          "quote_batch_011_015_004",
+          "quote_batch_011_015_005"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_batch_011_015_05",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "张狂的关系信息：与李靖竞争。",
+        "source_quote_ids": [
+          "quote_batch_011_015_004",
+          "quote_batch_011_015_005"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_batch_011_015_06",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "张狂的当前境界：种植仙根境（破种阶段）。",
+        "source_quote_ids": [
+          "quote_batch_011_015_004",
+          "quote_batch_011_015_005"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_004",
+      "quote_batch_011_015_005"
+    ]
+  },
+  {
+    "expected_card_id": "character_xu_yu",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "徐羽",
+      "aliases": [],
+      "summary": "无上紫种女弟子；在袁山虎等人挑衅秦浩轩时直接出面保护，并在执法队偏袒张狂后以自身紫种身份阻止抓捕秦浩轩。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第12章 袁山有虎排山力：“　　“你们想对浩轩哥哥作甚？””；第15章 是非黑白岂颠倒：“　　“谁敢！”几名白衣执法人员正要上前，徐羽哪里还沉得住气，两步快跑冲出，横亘在秦浩轩和执法弟子之间，怒目圆瞪，一改往日的胆小内向，直视虚云子，毫无惧色道：“虚云子长老，我也是紫种！””",
+      "role_type": "supporting",
+      "identity": "太初教新弟子、无上紫种女弟子",
+      "relationship_summary": "坚定维护秦浩轩。",
+      "current_realm_text": "种植仙根境（破种阶段）",
+      "first_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537",
+      "last_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838"
+    },
+    "accepted_names": [
+      "徐羽"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_xu_yu_batch_011_015_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "徐羽：无上紫种女弟子。",
+        "source_quote_ids": [
+          "quote_batch_011_015_006",
+          "quote_batch_011_015_007"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xu_yu_batch_011_015_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "徐羽：在袁山虎等人挑衅秦浩轩时直接出面保护，并在执法队偏袒张狂后以自身紫种身份阻止抓捕秦浩轩。",
+        "source_quote_ids": [
+          "quote_batch_011_015_006",
+          "quote_batch_011_015_007"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xu_yu_batch_011_015_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "徐羽的身份：太初教新弟子、无上紫种女弟子。",
+        "source_quote_ids": [
+          "quote_batch_011_015_006",
+          "quote_batch_011_015_007"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xu_yu_batch_011_015_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "徐羽的关系信息：坚定维护秦浩轩。",
+        "source_quote_ids": [
+          "quote_batch_011_015_006",
+          "quote_batch_011_015_007"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xu_yu_batch_011_015_05",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "徐羽的当前境界：种植仙根境（破种阶段）。",
+        "source_quote_ids": [
+          "quote_batch_011_015_006",
+          "quote_batch_011_015_007"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_006",
+      "quote_batch_011_015_007"
+    ]
+  },
+  {
+    "expected_card_id": "character_li_jing",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "李靖",
+      "aliases": [],
+      "summary": "无上紫种皇子；主动申请旁听灵田谷执法堂审理，并为秦浩轩说明袁山虎三人挑衅在先，借此公开站到张狂对立面。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第15章 是非黑白岂颠倒：“　　就在他们基本商议妥当，就要宣判时，一名执法弟子面色古怪的跑来，禀告那四名执法长老道：“本届新弟子李靖前来拜见四位长老，并请求旁听宣判！””；第15章 是非黑白岂颠倒：“　　“其实很简单，袁山虎三人欺压挑衅浩轩师弟，没想到自己撞上了铁板，反被浩轩痛揍一顿，为平日里那些被袁山虎欺压的其他弟子出了口气。真是快哉啊！””",
+      "role_type": "supporting",
+      "identity": "翔龙国三皇子、太初教无上紫种新弟子",
+      "relationship_summary": "公开针对张狂，并借帮助秦浩轩向徐羽示好。",
+      "current_realm_text": "种植仙根境（破种阶段）",
+      "first_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537",
+      "last_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838"
+    },
+    "accepted_names": [
+      "李靖"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_li_jing_batch_011_015_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "李靖：无上紫种皇子。",
+        "source_quote_ids": [
+          "quote_batch_011_015_008",
+          "quote_batch_011_015_009"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_batch_011_015_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "李靖：主动申请旁听灵田谷执法堂审理，并为秦浩轩说明袁山虎三人挑衅在先，借此公开站到张狂对立面。",
+        "source_quote_ids": [
+          "quote_batch_011_015_008",
+          "quote_batch_011_015_009"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_batch_011_015_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "李靖的身份：翔龙国三皇子、太初教无上紫种新弟子。",
+        "source_quote_ids": [
+          "quote_batch_011_015_008",
+          "quote_batch_011_015_009"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_batch_011_015_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "李靖的关系信息：公开针对张狂，并借帮助秦浩轩向徐羽示好。",
+        "source_quote_ids": [
+          "quote_batch_011_015_008",
+          "quote_batch_011_015_009"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_batch_011_015_05",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "李靖的当前境界：种植仙根境（破种阶段）。",
+        "source_quote_ids": [
+          "quote_batch_011_015_008",
+          "quote_batch_011_015_009"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_008",
+      "quote_batch_011_015_009"
+    ]
+  },
+  {
+    "expected_card_id": "character_yuan_shanhu",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "袁山虎",
+      "aliases": [],
+      "summary": "太初教杂役弟子，入门二十五年、仙苗境三叶；受张狂指使与张伞、李斯挑衅秦浩轩，使用排山掌和霸王拳攻击，最终反被重伤。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第12章 袁山有虎排山力：“　　“袁山虎师兄，还有其他几位师兄，我同乡秦浩轩来灵田谷也有两天了，可你们还没为他准备点节目，要不就今天中午好好的为他接风洗尘吧？””；第13章 霸王排山助金莲：“　　袁山虎入门二十五年，仙苗境第三叶，这资质进度丢在整个太初教绝对是垫底的货色，但在灵田谷这个废柴聚集地，也算是中等水准。”；第14章 神识自显初展威：“　　袁山虎一泄气，秦浩轩便已经扑了上去，如饿虎夺食，一通乱拳打在袁山虎的胸腔上，刚才还自称袁爷爷的这位身上传出一阵清脆的咔嚓声，肋骨断了好几根，如果没有灵丹妙药辅助恢复，三两个月根本别想下床。”",
+      "role_type": "antagonist",
+      "identity": "灵田谷杂役弟子",
+      "relationship_summary": "受张狂指使；与张伞、李斯共同袭击秦浩轩。",
+      "current_realm_text": "仙苗境三叶",
+      "first_seen_chapter_id": "chapter-a1a2d3ec95b24b62a193b1cee2563ea9",
+      "last_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838"
+    },
+    "accepted_names": [
+      "袁山虎"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_yuan_shanhu_batch_011_015_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "袁山虎：太初教杂役弟子，入门二十五年、仙苗境三叶。",
+        "source_quote_ids": [
+          "quote_batch_011_015_004",
+          "quote_batch_011_015_010",
+          "quote_batch_011_015_011"
+        ]
+      },
+      {
+        "claim_id": "claim_character_yuan_shanhu_batch_011_015_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "袁山虎：受张狂指使与张伞、李斯挑衅秦浩轩，使用排山掌和霸王拳攻击，最终反被重伤。",
+        "source_quote_ids": [
+          "quote_batch_011_015_004",
+          "quote_batch_011_015_010",
+          "quote_batch_011_015_011"
+        ]
+      },
+      {
+        "claim_id": "claim_character_yuan_shanhu_batch_011_015_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "袁山虎的身份：灵田谷杂役弟子。",
+        "source_quote_ids": [
+          "quote_batch_011_015_004",
+          "quote_batch_011_015_010",
+          "quote_batch_011_015_011"
+        ]
+      },
+      {
+        "claim_id": "claim_character_yuan_shanhu_batch_011_015_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "袁山虎的关系信息：受张狂指使。",
+        "source_quote_ids": [
+          "quote_batch_011_015_004",
+          "quote_batch_011_015_010",
+          "quote_batch_011_015_011"
+        ]
+      },
+      {
+        "claim_id": "claim_character_yuan_shanhu_batch_011_015_05",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "袁山虎的关系信息：与张伞、李斯共同袭击秦浩轩。",
+        "source_quote_ids": [
+          "quote_batch_011_015_004",
+          "quote_batch_011_015_010",
+          "quote_batch_011_015_011"
+        ]
+      },
+      {
+        "claim_id": "claim_character_yuan_shanhu_batch_011_015_06",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "袁山虎的当前境界：仙苗境三叶。",
+        "source_quote_ids": [
+          "quote_batch_011_015_004",
+          "quote_batch_011_015_010",
+          "quote_batch_011_015_011"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_004",
+      "quote_batch_011_015_010",
+      "quote_batch_011_015_011"
+    ]
+  },
+  {
+    "expected_card_id": "character_zhang_san",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "张伞",
+      "aliases": [],
+      "summary": "跟随袁山虎的灵田谷杂役弟子，种植仙根境后期；参与袭击秦浩轩并准备施展风刃术，最终被秦浩轩击倒。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第12章 袁山有虎排山力：“　　袁山虎感应到张狂的眼神命令，迈步便去追秦浩轩，嘴里同时喊道：“张伞！李斯！动手！””；第14章 神识自显初展威：“　　这时，张伞也扑上来了，他正捏动手势，要使出他最擅长的风刃术，但在秦浩轩眼中那道微光又一闪后，正在捏手诀的张伞忽然动作奇慢无比，被秦浩轩一个横扫千军打倒在地，按在地上吃了一顿老拳。”",
+      "role_type": "antagonist",
+      "identity": "灵田谷杂役弟子",
+      "relationship_summary": "袁山虎同伙，与李斯共同参与袭击。",
+      "current_realm_text": "种植仙根境后期",
+      "first_seen_chapter_id": "chapter-a1a2d3ec95b24b62a193b1cee2563ea9",
+      "last_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838"
+    },
+    "accepted_names": [
+      "张伞"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_zhang_san_batch_011_015_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "张伞：跟随袁山虎的灵田谷杂役弟子，种植仙根境后期。",
+        "source_quote_ids": [
+          "quote_batch_011_015_012",
+          "quote_batch_011_015_013"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_san_batch_011_015_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "张伞：参与袭击秦浩轩并准备施展风刃术，最终被秦浩轩击倒。",
+        "source_quote_ids": [
+          "quote_batch_011_015_012",
+          "quote_batch_011_015_013"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_san_batch_011_015_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "张伞的身份：灵田谷杂役弟子。",
+        "source_quote_ids": [
+          "quote_batch_011_015_012",
+          "quote_batch_011_015_013"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_san_batch_011_015_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "张伞的关系信息：袁山虎同伙，与李斯共同参与袭击。",
+        "source_quote_ids": [
+          "quote_batch_011_015_012",
+          "quote_batch_011_015_013"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_san_batch_011_015_05",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "张伞的当前境界：种植仙根境后期。",
+        "source_quote_ids": [
+          "quote_batch_011_015_012",
+          "quote_batch_011_015_013"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_012",
+      "quote_batch_011_015_013"
+    ]
+  },
+  {
+    "expected_card_id": "character_li_si",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "李斯",
+      "aliases": [],
+      "summary": "跟随袁山虎的灵田谷杂役弟子，种植仙根境后期；参与袭击秦浩轩，最先受到秦浩轩神识影响并被打倒。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第12章 袁山有虎排山力：“　　袁山虎感应到张狂的眼神命令，迈步便去追秦浩轩，嘴里同时喊道：“张伞！李斯！动手！””；第14章 神识自显初展威：“　　就在仔细盯着他们扑来的动作，要寻他们破绽的秦浩轩泥宫丸猛然跳动了一下，金色的光芒在脑海中骤然炸开，整个人的精神瞬间有了一种莫名的升华，天地间的一切，在这一刻从没有过的清晰，同时秦浩轩眼中闪过一道不为人知的微光，微光闪过后，冲在最前面的李斯忽然顿住脚步，大脑更是一阵剧痛！整个人愣在了原地！”",
+      "role_type": "antagonist",
+      "identity": "灵田谷杂役弟子",
+      "relationship_summary": "袁山虎同伙，与张伞共同参与袭击。",
+      "current_realm_text": "种植仙根境后期",
+      "first_seen_chapter_id": "chapter-a1a2d3ec95b24b62a193b1cee2563ea9",
+      "last_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838"
+    },
+    "accepted_names": [
+      "李斯"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_li_si_batch_011_015_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "李斯：跟随袁山虎的灵田谷杂役弟子，种植仙根境后期。",
+        "source_quote_ids": [
+          "quote_batch_011_015_012",
+          "quote_batch_011_015_014"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_si_batch_011_015_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "李斯：参与袭击秦浩轩，最先受到秦浩轩神识影响并被打倒。",
+        "source_quote_ids": [
+          "quote_batch_011_015_012",
+          "quote_batch_011_015_014"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_si_batch_011_015_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "李斯的身份：灵田谷杂役弟子。",
+        "source_quote_ids": [
+          "quote_batch_011_015_012",
+          "quote_batch_011_015_014"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_si_batch_011_015_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "李斯的关系信息：袁山虎同伙，与张伞共同参与袭击。",
+        "source_quote_ids": [
+          "quote_batch_011_015_012",
+          "quote_batch_011_015_014"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_si_batch_011_015_05",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "李斯的当前境界：种植仙根境后期。",
+        "source_quote_ids": [
+          "quote_batch_011_015_012",
+          "quote_batch_011_015_014"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_012",
+      "quote_batch_011_015_014"
+    ]
+  },
+  {
+    "expected_card_id": "character_xuyunzi",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "虚云子",
+      "aliases": [],
+      "summary": "太初教灵田谷执法长老；在处理袁山虎袭击案时优先考虑紫种弟子的价值与立场，先试图拘押秦浩轩，后主持进一步调查。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第14章 神识自显初展威：“　　秦浩轩正在胡乱猜测着，这时远处匆匆走来一名长老和几名统一白色衣衫的弟子，这几人正是太初教执法队灵田谷小队的成员，那名执法长老名叫虚云子，领头弟子黄鹂是一个面容俊秀的女子，看她名字秀气、相貌姣好，却常冰冷着脸，仿佛谁都欠她钱似的，在灵田谷中她有一个令人闻风丧胆的外号——冰罗刹。”；第15章 是非黑白岂颠倒：“　　虚云子看到黄鹂的神情，抢在她之前开口说道：“既然如此，那么便将秦浩轩给绑了吧。””",
+      "role_type": "faction_representative",
+      "identity": "灵田谷执法长老",
+      "relationship_summary": "与惊云子、元云子、楚云子共同审理案件。",
+      "first_seen_chapter_id": "chapter-f5dae65c0ee144ec9db1ca55f7316cd6",
+      "last_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838"
+    },
+    "accepted_names": [
+      "虚云子"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_xuyunzi_batch_011_015_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "虚云子：太初教灵田谷执法长老。",
+        "source_quote_ids": [
+          "quote_batch_011_015_015",
+          "quote_batch_011_015_016"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xuyunzi_batch_011_015_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "虚云子：在处理袁山虎袭击案时优先考虑紫种弟子的价值与立场，先试图拘押秦浩轩，后主持进一步调查。",
+        "source_quote_ids": [
+          "quote_batch_011_015_015",
+          "quote_batch_011_015_016"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xuyunzi_batch_011_015_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "虚云子的身份：灵田谷执法长老。",
+        "source_quote_ids": [
+          "quote_batch_011_015_015",
+          "quote_batch_011_015_016"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xuyunzi_batch_011_015_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "虚云子的关系信息：与惊云子、元云子、楚云子共同审理案件。",
+        "source_quote_ids": [
+          "quote_batch_011_015_015",
+          "quote_batch_011_015_016"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_015",
+      "quote_batch_011_015_016"
+    ]
+  },
+  {
+    "expected_card_id": "character_huangli",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "黄鹂",
+      "aliases": [
+        "冰罗刹"
+      ],
+      "summary": "太初教执法队灵田谷小队领头弟子，外号冰罗刹；面容俊秀但执法严厉，负责调查袁山虎与秦浩轩私斗事件。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第14章 神识自显初展威：“　　秦浩轩正在胡乱猜测着，这时远处匆匆走来一名长老和几名统一白色衣衫的弟子，这几人正是太初教执法队灵田谷小队的成员，那名执法长老名叫虚云子，领头弟子黄鹂是一个面容俊秀的女子，看她名字秀气、相貌姣好，却常冰冷着脸，仿佛谁都欠她钱似的，在灵田谷中她有一个令人闻风丧胆的外号——冰罗刹。”；第15章 是非黑白岂颠倒：“　　经过黄鹂的多方调查，综合当事人口述，以及袁山虎等人的老案底，一个欺负新人反被教训的典型案例出现在众人眼前。”",
+      "role_type": "faction_representative",
+      "identity": "灵田谷执法队领头弟子",
+      "relationship_summary": "虚云子下属，负责现场执法和调查。",
+      "first_seen_chapter_id": "chapter-f5dae65c0ee144ec9db1ca55f7316cd6",
+      "last_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838"
+    },
+    "accepted_names": [
+      "黄鹂",
+      "冰罗刹"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_huangli_batch_011_015_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "黄鹂：太初教执法队灵田谷小队领头弟子，外号冰罗刹。",
+        "source_quote_ids": [
+          "quote_batch_011_015_015",
+          "quote_batch_011_015_017"
+        ]
+      },
+      {
+        "claim_id": "claim_character_huangli_batch_011_015_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "黄鹂：面容俊秀但执法严厉，负责调查袁山虎与秦浩轩私斗事件。",
+        "source_quote_ids": [
+          "quote_batch_011_015_015",
+          "quote_batch_011_015_017"
+        ]
+      },
+      {
+        "claim_id": "claim_character_huangli_batch_011_015_03",
+        "field": "aliases",
+        "importance": "major",
+        "description": "黄鹂的别名包括：冰罗刹。",
+        "source_quote_ids": [
+          "quote_batch_011_015_015",
+          "quote_batch_011_015_017"
+        ]
+      },
+      {
+        "claim_id": "claim_character_huangli_batch_011_015_04",
+        "field": "identity",
+        "importance": "critical",
+        "description": "黄鹂的身份：灵田谷执法队领头弟子。",
+        "source_quote_ids": [
+          "quote_batch_011_015_015",
+          "quote_batch_011_015_017"
+        ]
+      },
+      {
+        "claim_id": "claim_character_huangli_batch_011_015_05",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "黄鹂的关系信息：虚云子下属，负责现场执法和调查。",
+        "source_quote_ids": [
+          "quote_batch_011_015_015",
+          "quote_batch_011_015_017"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_015",
+      "quote_batch_011_015_017"
+    ]
+  },
+  {
+    "expected_card_id": "character_jingyunzi",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "惊云子",
+      "aliases": [],
+      "summary": "灵田谷执法堂四大执法长老之一，与虚云子、元云子、楚云子共同审理袁山虎袭击案。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第15章 是非黑白岂颠倒：“　　灵田谷执法堂正厅“光大严明”的牌匾下，依次坐着四大执法长老，虚云子、惊云子、元云子、楚云子。”",
+      "role_type": "faction_representative",
+      "identity": "灵田谷执法长老",
+      "first_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838",
+      "last_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838"
+    },
+    "accepted_names": [
+      "惊云子"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_jingyunzi_batch_011_015_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "惊云子：灵田谷执法堂四大执法长老之一，与虚云子、元云子、楚云子共同审理袁山虎袭击案。",
+        "source_quote_ids": [
+          "quote_batch_011_015_018"
+        ]
+      },
+      {
+        "claim_id": "claim_character_jingyunzi_batch_011_015_02",
+        "field": "identity",
+        "importance": "critical",
+        "description": "惊云子的身份：灵田谷执法长老。",
+        "source_quote_ids": [
+          "quote_batch_011_015_018"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_018"
+    ]
+  },
+  {
+    "expected_card_id": "character_yuanyunzi",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "元云子",
+      "aliases": [],
+      "summary": "灵田谷执法堂四大执法长老之一，与虚云子、惊云子、楚云子共同审理袁山虎袭击案。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第15章 是非黑白岂颠倒：“　　灵田谷执法堂正厅“光大严明”的牌匾下，依次坐着四大执法长老，虚云子、惊云子、元云子、楚云子。”",
+      "role_type": "faction_representative",
+      "identity": "灵田谷执法长老",
+      "first_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838",
+      "last_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838"
+    },
+    "accepted_names": [
+      "元云子"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_yuanyunzi_batch_011_015_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "元云子：灵田谷执法堂四大执法长老之一，与虚云子、惊云子、楚云子共同审理袁山虎袭击案。",
+        "source_quote_ids": [
+          "quote_batch_011_015_018"
+        ]
+      },
+      {
+        "claim_id": "claim_character_yuanyunzi_batch_011_015_02",
+        "field": "identity",
+        "importance": "critical",
+        "description": "元云子的身份：灵田谷执法长老。",
+        "source_quote_ids": [
+          "quote_batch_011_015_018"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_018"
+    ]
+  },
+  {
+    "expected_card_id": "character_chuyunzi",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "楚云子",
+      "aliases": [],
+      "summary": "灵田谷执法堂四大执法长老之一；在李靖到场旁听后表现出强烈敌意，具体旧怨在本批次末尚未揭示。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第15章 是非黑白岂颠倒：“　　果然是那无上紫种的李靖，在他走过来时，三名执法长老起身相迎，以示尊重，唯独楚云子仍坐在椅子上，阴沉着脸，眼中闪烁着仇恨的光芒，死死瞪着李靖。”；第15章 是非黑白岂颠倒：“　　李靖出面为秦浩轩作证，秦浩轩这边站了两颗紫种弟子，分量不可谓不重，看来之前商定好的判决结果要改动了，就在虚云子准备和其他三名长老重新商议时，一直坐着的楚云子忽然暴跳起来，怒斥道：“放屁！””",
+      "role_type": "faction_representative",
+      "identity": "灵田谷执法长老",
+      "relationship_summary": "明显敌视李靖。",
+      "first_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838",
+      "last_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838"
+    },
+    "accepted_names": [
+      "楚云子"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_chuyunzi_batch_011_015_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "楚云子：灵田谷执法堂四大执法长老之一。",
+        "source_quote_ids": [
+          "quote_batch_011_015_019",
+          "quote_batch_011_015_020"
+        ]
+      },
+      {
+        "claim_id": "claim_character_chuyunzi_batch_011_015_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "楚云子：在李靖到场旁听后表现出强烈敌意，具体旧怨在本批次末尚未揭示。",
+        "source_quote_ids": [
+          "quote_batch_011_015_019",
+          "quote_batch_011_015_020"
+        ]
+      },
+      {
+        "claim_id": "claim_character_chuyunzi_batch_011_015_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "楚云子的身份：灵田谷执法长老。",
+        "source_quote_ids": [
+          "quote_batch_011_015_019",
+          "quote_batch_011_015_020"
+        ]
+      },
+      {
+        "claim_id": "claim_character_chuyunzi_batch_011_015_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "楚云子的关系信息：明显敌视李靖。",
+        "source_quote_ids": [
+          "quote_batch_011_015_019",
+          "quote_batch_011_015_020"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_019",
+      "quote_batch_011_015_020"
+    ]
+  },
+  {
+    "expected_card_id": "item_yiye_jinlian",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "一叶金莲",
+      "aliases": [
+        "九叶金莲"
+      ],
+      "summary": "秦浩轩从绝仙毒谷采得并直接吞食；其药力化作强烈燥热与海量灵力，远超秦浩轩当时的正常承受能力。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第11章 未学丹道强生吞：“　　为免夜长梦多，秦浩轩心一横，也顾不上什么浪费不浪费，将一叶金莲送到嘴边，本想咬一小口，分成几次吞食，谁知这一叶金莲刚刚进秦浩轩的嘴便化作一道燥热的津液，自动流入秦浩轩咽喉。”；第11章 未学丹道强生吞：“　　一叶金莲吃进秦浩轩的肚子里，顿时觉得犹如一团火在腹中熊熊燃烧，身上燥热无比。”",
+      "item_type": "material",
+      "grade": "极品灵药",
+      "first_seen_chapter_id": "chapter-cdb5c3ef2e564affb249aedd5f14d311",
+      "last_seen_chapter_id": "chapter-3fb65d89870445169cbf29917c0aadf9"
+    },
+    "accepted_names": [
+      "一叶金莲",
+      "九叶金莲"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "item_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "grade"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_yiye_jinlian_batch_011_015_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "一叶金莲：秦浩轩从绝仙毒谷采得并直接吞食。",
+        "source_quote_ids": [
+          "quote_batch_011_015_001",
+          "quote_batch_011_015_021"
+        ]
+      },
+      {
+        "claim_id": "claim_item_yiye_jinlian_batch_011_015_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "一叶金莲：其药力化作强烈燥热与海量灵力，远超秦浩轩当时的正常承受能力。",
+        "source_quote_ids": [
+          "quote_batch_011_015_001",
+          "quote_batch_011_015_021"
+        ]
+      },
+      {
+        "claim_id": "claim_item_yiye_jinlian_batch_011_015_03",
+        "field": "aliases",
+        "importance": "major",
+        "description": "一叶金莲的别名包括：九叶金莲。",
+        "source_quote_ids": [
+          "quote_batch_011_015_001",
+          "quote_batch_011_015_021"
+        ]
+      },
+      {
+        "claim_id": "claim_item_yiye_jinlian_batch_011_015_04",
+        "field": "grade",
+        "importance": "normal",
+        "description": "一叶金莲的品阶：极品灵药。",
+        "source_quote_ids": [
+          "quote_batch_011_015_001",
+          "quote_batch_011_015_021"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_001",
+      "quote_batch_011_015_021"
+    ]
+  },
+  {
+    "expected_card_id": "technique_daoxin_zhongmo",
+    "knowledge_type": "technique",
+    "card": {
+      "type": "technique",
+      "name": "道心种魔大法",
+      "aliases": [],
+      "summary": "需仙道功法辅助的魔道功法；秦浩轩修炼后大幅提升吸纳灵气速度，并显现失传巫修的排打炼体机制。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第11章 未学丹道强生吞：“　　道心种魔大法第一篇是迥异于引气术这种低级功法的高级法诀，而且将其解释的非常明白，这道心种魔大法虽是魔道功法，却需要仙道功法辅助修炼，若不修炼仙门道法，只是修炼着道心种魔大法也炼不成。”；第13章 霸王排山助金莲：“　　偏偏，秦浩轩服用一叶金莲之后，用的是绝仙毒谷中，不死巫魔传授的道心种魔大法，这法决之中却有着修仙界都没有修巫之术，巫修在当今修仙界几乎早已经失传，这巫修首先要修一个无比强健的体魄，最初便是吸收灵气，然后找实力相当或者更强者排打身体，将吸入体内的灵气，打入骨骼跟五脏六腑之中。”",
+      "technique_type": "forbidden_art",
+      "grade": "无上魔道功法",
+      "practice_condition": "需同时修炼仙门道法；巫修部分需以外力排打身体"
+    },
+    "accepted_names": [
+      "道心种魔大法"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "technique_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "grade",
+      "practice_condition"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_daoxin_zhongmo_batch_011_015_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "道心种魔大法：需仙道功法辅助的魔道功法。",
+        "source_quote_ids": [
+          "quote_batch_011_015_022",
+          "quote_batch_011_015_002"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_daoxin_zhongmo_batch_011_015_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "道心种魔大法：秦浩轩修炼后大幅提升吸纳灵气速度，并显现失传巫修的排打炼体机制。",
+        "source_quote_ids": [
+          "quote_batch_011_015_022",
+          "quote_batch_011_015_002"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_daoxin_zhongmo_batch_011_015_03",
+        "field": "grade",
+        "importance": "normal",
+        "description": "道心种魔大法的品阶：无上魔道功法。",
+        "source_quote_ids": [
+          "quote_batch_011_015_022",
+          "quote_batch_011_015_002"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_daoxin_zhongmo_batch_011_015_04",
+        "field": "practice_condition",
+        "importance": "major",
+        "description": "道心种魔大法的修炼或施展条件：需同时修炼仙门道法。",
+        "source_quote_ids": [
+          "quote_batch_011_015_022",
+          "quote_batch_011_015_002"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_daoxin_zhongmo_batch_011_015_05",
+        "field": "practice_condition",
+        "importance": "major",
+        "description": "道心种魔大法的修炼或施展条件：巫修部分需以外力排打身体。",
+        "source_quote_ids": [
+          "quote_batch_011_015_022",
+          "quote_batch_011_015_002"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_022",
+      "quote_batch_011_015_002"
+    ]
+  },
+  {
+    "expected_card_id": "technique_paishanzhang",
+    "knowledge_type": "technique",
+    "card": {
+      "type": "technique",
+      "name": "排山掌",
+      "aliases": [],
+      "summary": "太初教初级战斗灵法，可将黄色掌影隔空打出；袁山虎用其击飞秦浩轩。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第12章 袁山有虎排山力：“　　围观的众人一惊！这出手也太狠了吧？排山掌虽然只是太初教最初级的战斗灵法，但秦浩轩肉体凡胎受这一掌，势必断掉几根肋骨爬不起来了。”",
+      "technique_type": "spell",
+      "grade": "初级战斗灵法"
+    },
+    "accepted_names": [
+      "排山掌"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "technique_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "grade"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_paishanzhang_batch_011_015_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "排山掌：太初教初级战斗灵法，可将黄色掌影隔空打出。",
+        "source_quote_ids": [
+          "quote_batch_011_015_023"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_paishanzhang_batch_011_015_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "排山掌：袁山虎用其击飞秦浩轩。",
+        "source_quote_ids": [
+          "quote_batch_011_015_023"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_paishanzhang_batch_011_015_03",
+        "field": "grade",
+        "importance": "normal",
+        "description": "排山掌的品阶：初级战斗灵法。",
+        "source_quote_ids": [
+          "quote_batch_011_015_023"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_023"
+    ]
+  },
+  {
+    "expected_card_id": "technique_bawangquan",
+    "knowledge_type": "technique",
+    "card": {
+      "type": "technique",
+      "name": "霸王拳",
+      "aliases": [],
+      "summary": "袁山虎使用的霸道灵法；一经使出不能中途停止，强行收力会导致灵力反噬，可能经脉寸断甚至死亡。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第13章 霸王排山助金莲：“　　反正已经得罪了徐羽，就算停下来，待她修为大成时也未必能饶过自己，除了继续讨好张狂外，他别无他法，再说霸王拳一经使出不能停止，强行收力的话将会导致灵力反噬，很可能经脉寸断，轻则变成废人，重则变成死人。”",
+      "technique_type": "spell",
+      "practice_condition": "施展后不可强行收力"
+    },
+    "accepted_names": [
+      "霸王拳"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "technique_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "practice_condition"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_bawangquan_batch_011_015_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "霸王拳：袁山虎使用的霸道灵法。",
+        "source_quote_ids": [
+          "quote_batch_011_015_024"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_bawangquan_batch_011_015_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "霸王拳：一经使出不能中途停止，强行收力会导致灵力反噬，可能经脉寸断甚至死亡。",
+        "source_quote_ids": [
+          "quote_batch_011_015_024"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_bawangquan_batch_011_015_03",
+        "field": "practice_condition",
+        "importance": "major",
+        "description": "霸王拳的修炼或施展条件：施展后不可强行收力。",
+        "source_quote_ids": [
+          "quote_batch_011_015_024"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_024"
+    ]
+  },
+  {
+    "expected_card_id": "technique_shenshi_chongji",
+    "knowledge_type": "technique",
+    "card": {
+      "type": "technique",
+      "name": "神识冲击",
+      "aliases": [
+        "神识攻击"
+      ],
+      "summary": "秦浩轩在战斗中首次自发显现神识攻击，使李斯、张伞、袁山虎短暂失神或动作迟缓；其神识来自长期附身小蛇的积累。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第14章 神识自显初展威：“　　神识！”；第14章 神识自显初展威：“　　其实他不知道的是，自从他得到小蛇并且把灵魂放在小蛇身上，本身就是修炼，这日积月累下来，他的神识已经非常强大，而且已经可以攻击人了！而且还会和附身小蛇之后的后遗症一样，第二天会十分困倦疲乏，忍不住睡觉。”",
+      "technique_type": "divine_ability",
+      "practice_condition": "秦浩轩当前为自发触发，尚不掌握正规修炼法"
+    },
+    "accepted_names": [
+      "神识冲击",
+      "神识攻击"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "technique_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "practice_condition"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_shenshi_chongji_batch_011_015_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "神识冲击：秦浩轩在战斗中首次自发显现神识攻击，使李斯、张伞、袁山虎短暂失神或动作迟缓。",
+        "source_quote_ids": [
+          "quote_batch_011_015_003",
+          "quote_batch_011_015_025"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_shenshi_chongji_batch_011_015_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "神识冲击：其神识来自长期附身小蛇的积累。",
+        "source_quote_ids": [
+          "quote_batch_011_015_003",
+          "quote_batch_011_015_025"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_shenshi_chongji_batch_011_015_03",
+        "field": "aliases",
+        "importance": "major",
+        "description": "神识冲击的别名包括：神识攻击。",
+        "source_quote_ids": [
+          "quote_batch_011_015_003",
+          "quote_batch_011_015_025"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_shenshi_chongji_batch_011_015_04",
+        "field": "practice_condition",
+        "importance": "major",
+        "description": "神识冲击的修炼或施展条件：秦浩轩当前为自发触发，尚不掌握正规修炼法。",
+        "source_quote_ids": [
+          "quote_batch_011_015_003",
+          "quote_batch_011_015_025"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_003",
+      "quote_batch_011_015_025"
+    ]
+  },
+  {
+    "expected_card_id": "location_lingtian_zhifatang",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "灵田谷执法堂",
+      "aliases": [
+        "灵田谷执法堂分堂"
+      ],
+      "summary": "太初教执法堂设在灵田谷的分堂，管辖灵田谷及附近杂役弟子；正厅由虚云子等四名执法长老审案。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第15章 是非黑白岂颠倒：“　　距离学舍大约两三里远，有一大片种植了许多灵药的灵田，而从这一大片灵田中穿过，可以看到一栋红砖绿瓦的建筑，这里就是执法堂设在灵田谷的分堂所在，管辖着灵田谷及附近的杂役弟子，是这些弟子心中的活阎罗殿。”；第15章 是非黑白岂颠倒：“　　灵田谷执法堂正厅“光大严明”的牌匾下，依次坐着四大执法长老，虚云子、惊云子、元云子、楚云子。”",
+      "first_seen_chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838"
+    },
+    "accepted_names": [
+      "灵田谷执法堂",
+      "灵田谷执法堂分堂"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_lingtian_zhifatang_batch_011_015_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "灵田谷执法堂：太初教执法堂设在灵田谷的分堂，管辖灵田谷及附近杂役弟子。",
+        "source_quote_ids": [
+          "quote_batch_011_015_026",
+          "quote_batch_011_015_018"
+        ]
+      },
+      {
+        "claim_id": "claim_location_lingtian_zhifatang_batch_011_015_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "灵田谷执法堂：正厅由虚云子等四名执法长老审案。",
+        "source_quote_ids": [
+          "quote_batch_011_015_026",
+          "quote_batch_011_015_018"
+        ]
+      },
+      {
+        "claim_id": "claim_location_lingtian_zhifatang_batch_011_015_03",
+        "field": "aliases",
+        "importance": "major",
+        "description": "灵田谷执法堂的别名包括：灵田谷执法堂分堂。",
+        "source_quote_ids": [
+          "quote_batch_011_015_026",
+          "quote_batch_011_015_018"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_026",
+      "quote_batch_011_015_018"
+    ]
+  },
+  {
+    "expected_card_id": "rule_raw_herb_risk",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "高阶灵药直接吞食风险",
+      "aliases": [],
+      "summary": "高阶灵药若未炼丹中和药性而直接吞食，会产生难以承受的狂暴药力；秦浩轩吞食一叶金莲后持续燥热，存在严重隐患。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第13章 霸王排山助金莲：“　　秦浩轩不知道乱吃灵草虽然修为涨的快，却也有着巨大的隐忧。”；第11章 未学丹道强生吞：“　　一叶金莲吃进秦浩轩的肚子里，顿时觉得犹如一团火在腹中熊熊燃烧，身上燥热无比。”"
+    },
+    "accepted_names": [
+      "高阶灵药直接吞食风险"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_raw_herb_risk_batch_011_015_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "高阶灵药直接吞食风险：高阶灵药若未炼丹中和药性而直接吞食，会产生难以承受的狂暴药力。",
+        "source_quote_ids": [
+          "quote_batch_011_015_027",
+          "quote_batch_011_015_021"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_raw_herb_risk_batch_011_015_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "高阶灵药直接吞食风险：秦浩轩吞食一叶金莲后持续燥热，存在严重隐患。",
+        "source_quote_ids": [
+          "quote_batch_011_015_027",
+          "quote_batch_011_015_021"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_027",
+      "quote_batch_011_015_021"
+    ]
+  },
+  {
+    "expected_card_id": "rule_wuxiu_paida",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "巫修排打炼体规则",
+      "aliases": [],
+      "summary": "巫修先吸收灵气，再由实力相当或更强者排打身体，把灵气打入骨骼和五脏六腑；过程危险，可能被打死或重伤。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第13章 霸王排山助金莲：“　　偏偏，秦浩轩服用一叶金莲之后，用的是绝仙毒谷中，不死巫魔传授的道心种魔大法，这法决之中却有着修仙界都没有修巫之术，巫修在当今修仙界几乎早已经失传，这巫修首先要修一个无比强健的体魄，最初便是吸收灵气，然后找实力相当或者更强者排打身体，将吸入体内的灵气，打入骨骼跟五脏六腑之中。”；第13章 霸王排山助金莲：“　　只是，这种修行非常的残酷危险，修炼者一个不小心就会被人生生打死或者打成重伤。”"
+    },
+    "accepted_names": [
+      "巫修排打炼体规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_wuxiu_paida_batch_011_015_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "巫修排打炼体规则：巫修先吸收灵气，再由实力相当或更强者排打身体，把灵气打入骨骼和五脏六腑。",
+        "source_quote_ids": [
+          "quote_batch_011_015_002",
+          "quote_batch_011_015_028"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_wuxiu_paida_batch_011_015_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "巫修排打炼体规则：过程危险，可能被打死或重伤。",
+        "source_quote_ids": [
+          "quote_batch_011_015_002",
+          "quote_batch_011_015_028"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_002",
+      "quote_batch_011_015_028"
+    ]
+  },
+  {
+    "expected_card_id": "rule_bawang_no_stop",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "霸王拳不可强行收力",
+      "aliases": [],
+      "summary": "霸王拳施展后不能停止，强行收力会导致灵力反噬，轻则经脉寸断成为废人，重则死亡。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第13章 霸王排山助金莲：“　　反正已经得罪了徐羽，就算停下来，待她修为大成时也未必能饶过自己，除了继续讨好张狂外，他别无他法，再说霸王拳一经使出不能停止，强行收力的话将会导致灵力反噬，很可能经脉寸断，轻则变成废人，重则变成死人。”"
+    },
+    "accepted_names": [
+      "霸王拳不可强行收力"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_bawang_no_stop_batch_011_015_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "霸王拳不可强行收力：霸王拳施展后不能停止，强行收力会导致灵力反噬，轻则经脉寸断成为废人，重则死亡。",
+        "source_quote_ids": [
+          "quote_batch_011_015_024"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_024"
+    ]
+  },
+  {
+    "expected_card_id": "rule_private_fight",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "太初教严禁弟子私斗",
+      "aliases": [],
+      "summary": "太初教宗规严禁弟子私斗，情节严重者可能被逐出山门、永不再录。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第14章 神识自显初展威：“　　“作为新入门弟子，你没翻阅过宗规教义么？如果翻阅了为什么还要私斗？难道不知道私斗犯了门规，事态严重者甚至要逐出山门，永不再录么？””"
+    },
+    "accepted_names": [
+      "太初教严禁弟子私斗"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_private_fight_batch_011_015_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "太初教严禁弟子私斗：太初教宗规严禁弟子私斗，情节严重者可能被逐出山门、永不再录。",
+        "source_quote_ids": [
+          "quote_batch_011_015_029"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_029"
+    ]
+  },
+  {
+    "expected_card_id": "event_qin_eats_yiye_jinlian",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "秦浩轩生吞一叶金莲",
+      "aliases": [],
+      "summary": "秦浩轩从绝仙毒谷带回一叶金莲，在不会炼丹且不愿暴露秘密的情况下直接吞食，随后体内出现强烈燥热与充沛灵力。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第11章 未学丹道强生吞：“　　为免夜长梦多，秦浩轩心一横，也顾不上什么浪费不浪费，将一叶金莲送到嘴边，本想咬一小口，分成几次吞食，谁知这一叶金莲刚刚进秦浩轩的嘴便化作一道燥热的津液，自动流入秦浩轩咽喉。”；第11章 未学丹道强生吞：“　　一叶金莲吃进秦浩轩的肚子里，顿时觉得犹如一团火在腹中熊熊燃烧，身上燥热无比。”",
+      "chapter_id": "chapter-e2b56ac1801e40c6b31bf77e8c558efd",
+      "description": "秦浩轩从绝仙毒谷带回一叶金莲，在不会炼丹且不愿暴露秘密的情况下直接吞食，随后体内出现强烈燥热与充沛灵力。"
+    },
+    "accepted_names": [
+      "秦浩轩生吞一叶金莲"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_qin_eats_yiye_jinlian_batch_011_015_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "秦浩轩生吞一叶金莲：秦浩轩从绝仙毒谷带回一叶金莲，在不会炼丹且不愿暴露秘密的情况下直接吞食，随后体内出现强烈燥热与充沛灵力。",
+        "source_quote_ids": [
+          "quote_batch_011_015_001",
+          "quote_batch_011_015_021"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_001",
+      "quote_batch_011_015_021"
+    ]
+  },
+  {
+    "expected_card_id": "event_yuanshanhu_attacks_qin",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "袁山虎等人袭击秦浩轩",
+      "aliases": [],
+      "summary": "张狂指使袁山虎、张伞、李斯借故挑衅秦浩轩；袁山虎率先施展排山掌将秦浩轩击飞。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第12章 袁山有虎排山力：“　　“袁山虎师兄，还有其他几位师兄，我同乡秦浩轩来灵田谷也有两天了，可你们还没为他准备点节目，要不就今天中午好好的为他接风洗尘吧？””；第12章 袁山有虎排山力：“　　袁山虎冷笑一声，身上闪过一阵灵光，双手捏动法诀，只见一道黄色毫光从他手中冲出，直印在距离自己十步之外的秦浩轩身上，将他击飞数米远：“排山掌！””",
+      "chapter_id": "chapter-a1a2d3ec95b24b62a193b1cee2563ea9",
+      "description": "张狂指使袁山虎、张伞、李斯借故挑衅秦浩轩；袁山虎率先施展排山掌将秦浩轩击飞。"
+    },
+    "accepted_names": [
+      "袁山虎等人袭击秦浩轩"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_yuanshanhu_attacks_qin_batch_011_015_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "袁山虎等人袭击秦浩轩：张狂指使袁山虎、张伞、李斯借故挑衅秦浩轩。",
+        "source_quote_ids": [
+          "quote_batch_011_015_004",
+          "quote_batch_011_015_030"
+        ]
+      },
+      {
+        "claim_id": "claim_event_yuanshanhu_attacks_qin_batch_011_015_02",
+        "field": "description",
+        "importance": "critical",
+        "description": "袁山虎等人袭击秦浩轩：袁山虎率先施展排山掌将秦浩轩击飞。",
+        "source_quote_ids": [
+          "quote_batch_011_015_004",
+          "quote_batch_011_015_030"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_004",
+      "quote_batch_011_015_030"
+    ]
+  },
+  {
+    "expected_card_id": "event_qin_defeats_three",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "秦浩轩击败袁山虎三人",
+      "aliases": [],
+      "summary": "秦浩轩在排打吸收金莲药力的同时首次显现神识攻击，先后击倒李斯、张伞并重伤袁山虎。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第14章 神识自显初展威：“　　只是一瞬间功夫，秦浩轩的反击放倒了张伞李斯二人，这两人只是种植仙根境后期，无限接近仙苗境，但也不是种植仙根境前期的秦浩轩能比拟的，可偏偏秦浩轩轻而易举就放倒了他们两个，谁也不知道他用的什么手段。”；第14章 神识自显初展威：“　　袁山虎一泄气，秦浩轩便已经扑了上去，如饿虎夺食，一通乱拳打在袁山虎的胸腔上，刚才还自称袁爷爷的这位身上传出一阵清脆的咔嚓声，肋骨断了好几根，如果没有灵丹妙药辅助恢复，三两个月根本别想下床。”",
+      "chapter_id": "chapter-f5dae65c0ee144ec9db1ca55f7316cd6",
+      "description": "秦浩轩在排打吸收金莲药力的同时首次显现神识攻击，先后击倒李斯、张伞并重伤袁山虎。"
+    },
+    "accepted_names": [
+      "秦浩轩击败袁山虎三人"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_qin_defeats_three_batch_011_015_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "秦浩轩击败袁山虎三人：秦浩轩在排打吸收金莲药力的同时首次显现神识攻击，先后击倒李斯、张伞并重伤袁山虎。",
+        "source_quote_ids": [
+          "quote_batch_011_015_031",
+          "quote_batch_011_015_011"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_031",
+      "quote_batch_011_015_011"
+    ]
+  },
+  {
+    "expected_card_id": "event_lingtian_enforcement_hearing",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "灵田谷执法堂审理私斗案",
+      "aliases": [],
+      "summary": "黄鹂调查后确认袁山虎等人欺负新人反被教训；因徐羽、张狂、李靖三名紫种介入，四名执法长老在判罚上发生权衡。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第15章 是非黑白岂颠倒：“　　经过黄鹂的多方调查，综合当事人口述，以及袁山虎等人的老案底，一个欺负新人反被教训的典型案例出现在众人眼前。”；第15章 是非黑白岂颠倒：“　　只是……如今还牵扯了两名紫种在其中，虽然他们现在还非常的稚嫩，但毕竟是紫种，各大堂的堂主看他们时候的眼睛里都冒着绿光呢。”；第15章 是非黑白岂颠倒：“　　就在他们基本商议妥当，就要宣判时，一名执法弟子面色古怪的跑来，禀告那四名执法长老道：“本届新弟子李靖前来拜见四位长老，并请求旁听宣判！””",
+      "chapter_id": "chapter-bcaa446ac74c4cee9d3cc2aad1f21838",
+      "description": "黄鹂调查后确认袁山虎等人欺负新人反被教训；因徐羽、张狂、李靖三名紫种介入，四名执法长老在判罚上发生权衡。"
+    },
+    "accepted_names": [
+      "灵田谷执法堂审理私斗案"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_lingtian_enforcement_hearing_batch_011_015_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "灵田谷执法堂审理私斗案：黄鹂调查后确认袁山虎等人欺负新人反被教训。",
+        "source_quote_ids": [
+          "quote_batch_011_015_017",
+          "quote_batch_011_015_032",
+          "quote_batch_011_015_008"
+        ]
+      },
+      {
+        "claim_id": "claim_event_lingtian_enforcement_hearing_batch_011_015_02",
+        "field": "description",
+        "importance": "critical",
+        "description": "灵田谷执法堂审理私斗案：因徐羽、张狂、李靖三名紫种介入，四名执法长老在判罚上发生权衡。",
+        "source_quote_ids": [
+          "quote_batch_011_015_017",
+          "quote_batch_011_015_032",
+          "quote_batch_011_015_008"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_011_015_017",
+      "quote_batch_011_015_032",
+      "quote_batch_011_015_008"
+    ]
+  }
+]

@@ -1,0 +1,32 @@
+{
+  "lifecycle": "draft",
+  "artifact_id": "artifact_a970db25b7d640bebc81c67f47f34edc",
+  "artifact_type": "canon_evidence_report",
+  "producer": "canon_evidence",
+  "task_id": "general_conversation_20260718_080855_cec285",
+  "run_id": "general_run_20260719_144520_0f9f81",
+  "call_id": "call_f7f6ce8b8c834aa9aa848222c80cb9dd",
+  "input_sha256": "6af4d8630490f6da0c687b7cc6051368c47bcbd1ae5a7a9228396686969f3c3f",
+  "content_sha256": "489411b75c2e8909d08cb795f60a1577e3c6df1d8d6f400f641dfbdc694e6d5b",
+  "payload": {
+    "lifecycle": "draft",
+    "artifact_type": "canon_evidence_report",
+    "answer": "未检索到正文第8章的内容，无法回答该章节讲了什么。",
+    "confidence": "unknown",
+    "evidence": [],
+    "conflicting_evidence": [],
+    "unknowns": [
+      "正文第8章的具体内容"
+    ],
+    "source_refs": [
+      "retrieval_72575cd4883d463aa246f6f3137cee87"
+    ],
+    "warnings": [
+      "所有已授权来源均未返回与正文第8章相关的稿件或知识卡信息。"
+    ]
+  },
+  "source_refs": [
+    "retrieval_72575cd4883d463aa246f6f3137cee87"
+  ],
+  "created_at": "2026-07-19T14:46:29.414731Z"
+}

@@ -35,7 +35,7 @@ const defaultSingleGraphNodes: AgentRunGraphNode[] = [
   { node_name: "NormalizeAndValidateNode", label: "规范校验", lane: "后处理" },
   {
     node_name: "RunInternalConflictCheckNode",
-    label: "本轮冲突检查",
+    label: "本次冲突检查",
     lane: "后处理",
   },
   { node_name: "MatchExistingKnowledgeNode", label: "匹配有效知识", lane: "后处理" },
@@ -246,6 +246,10 @@ function BatchFlowGraph({ run, now }: { run: AgentRun; now: number }) {
   const branchStages = layeredBranchStages();
   const postStages = layeredPostStages();
   const branchEdges = layeredBranchEdges(branchStages);
+  const dispatchStage = branchStages.find(stage => stage.key === "dispatch");
+  const expertStages = branchStages.filter(stage =>
+    ["character", "entityExpert", "eventRule"].includes(stage.key),
+  );
   const mergeStage = branchStages.find(stage => stage.key === "merge");
   const mergeStatus = mergeStage
     ? combinedStatus(
@@ -290,21 +294,6 @@ function BatchFlowGraph({ run, now }: { run: AgentRun; now: number }) {
           </defs>
           <rect width="100%" height="100%" fill="url(#task-flow-grid)" />
 
-          <text
-            x="54"
-            y="22"
-            fill="rgba(161,161,170,0.78)"
-            fontFamily="var(--tc-font-mono)"
-            fontSize="10"
-          >
-            分支层叠 · {lanes.length} 条 · 当前并发 {run.current_concurrency}/
-            {run.max_concurrency || 5}
-          </text>
-
-          <LayeredBranchLegend lanes={lanes} />
-
-          <LayeredBusLabels />
-
           {branchEdges.map(([source, target]) => (
             <LayeredAggregateEdge
               key={`${source.key}-${target.key}`}
@@ -315,6 +304,26 @@ function BatchFlowGraph({ run, now }: { run: AgentRun; now: number }) {
               now={now}
             />
           ))}
+
+          {dispatchStage && expertStages.length > 0 ? (
+            <LayeredForkConnector
+              source={dispatchStage}
+              targets={expertStages}
+              lanes={lanes}
+              runStatus={run.status}
+              now={now}
+            />
+          ) : null}
+
+          {mergeStage && expertStages.length > 0 ? (
+            <LayeredJoinConnector
+              sources={expertStages}
+              target={mergeStage}
+              lanes={lanes}
+              runStatus={run.status}
+              now={now}
+            />
+          ) : null}
 
           {mergeStage ? (
             <LayeredSingleEdge
@@ -343,16 +352,6 @@ function BatchFlowGraph({ run, now }: { run: AgentRun; now: number }) {
             />
           ))}
 
-          <text
-            x="438"
-            y="450"
-            fill="rgba(161,161,170,0.76)"
-            fontFamily="var(--tc-font-mono)"
-            fontSize="10"
-          >
-            统一后处理
-          </text>
-
           {postStages.map((stage, index) => (
             <PostStageNode
               key={stage.key}
@@ -377,6 +376,10 @@ type LayeredStage = {
   nodeName?: string;
   llmHeavy?: boolean;
 };
+
+const BATCH_FORK_BUS_Y = 194;
+const BATCH_JOIN_BUS_Y = 330;
+const BATCH_POST_BUS_Y = 448;
 
 function layeredBranchStages(): LayeredStage[] {
   return [
@@ -503,10 +506,10 @@ function layeredPostStages(): LayeredStage[] {
     index: 12 + index,
     label: node.label,
     nodeName: node.node_name,
-    x: 890 - index * 155,
+    x: 940 - index * 210,
     y: 470,
-    width: 116,
-    height: 48,
+    width: 156,
+    height: 64,
   }));
 }
 
@@ -519,93 +522,12 @@ function layeredBranchEdges(stages: LayeredStage[]): Array<[LayeredStage, Layere
     ["mention", "entity"],
     ["entity", "quality"],
     ["quality", "dispatch"],
-    ["dispatch", "character"],
-    ["dispatch", "entityExpert"],
-    ["dispatch", "eventRule"],
-    ["character", "merge"],
-    ["entityExpert", "merge"],
-    ["eventRule", "merge"],
   ];
   return edgeKeys.flatMap(([sourceKey, targetKey]) => {
     const source = byKey.get(sourceKey);
     const target = byKey.get(targetKey);
     return source && target ? [[source, target] as [LayeredStage, LayeredStage]] : [];
   });
-}
-
-function LayeredBusLabels() {
-  return (
-    <g>
-      <path
-        d="M 345 194 H 1088"
-        stroke="rgba(167,234,220,0.24)"
-        strokeDasharray="4 8"
-        strokeWidth="1"
-      />
-      <path
-        d="M 350 342 H 948"
-        stroke="rgba(167,234,220,0.2)"
-        strokeDasharray="4 8"
-        strokeWidth="1"
-      />
-      <path
-        d="M 420 456 H 1030"
-        stroke="rgba(167,234,220,0.15)"
-        strokeDasharray="4 8"
-        strokeWidth="1"
-      />
-      <text
-        x="916"
-        y="188"
-        fill="rgba(161,161,170,0.74)"
-        fontFamily="var(--tc-font-mono)"
-        fontSize="10"
-      >
-        分发总线
-      </text>
-      <text
-        x="632"
-        y="336"
-        fill="rgba(161,161,170,0.74)"
-        fontFamily="var(--tc-font-mono)"
-        fontSize="10"
-      >
-        汇合总线
-      </text>
-    </g>
-  );
-}
-
-function LayeredBranchLegend({ lanes }: { lanes: AgentBatchChapterProgress[] }) {
-  return (
-    <g>
-      <text
-        x="54"
-        y="48"
-        fill="rgba(161,161,170,0.78)"
-        fontFamily="var(--tc-font-mono)"
-        fontSize="10"
-      >
-        {lanes.length} 条章节分支叠片 · 前景显示汇总状态
-      </text>
-      {lanes.slice(0, 5).map((lane, index) => {
-        const style = statusStyle(lane.status);
-        return (
-          <g key={lane.chapter_id || index} transform={`translate(${54 + index * 20} 58)`}>
-            <rect
-              width="16"
-              height="8"
-              rx="2"
-              fill="rgba(24,24,24,0.52)"
-              stroke={style.stroke}
-              strokeWidth="0.75"
-            />
-            <circle cx="12" cy="4" r="2" fill={style.accent} opacity="0.84" />
-          </g>
-        );
-      })}
-    </g>
-  );
 }
 
 function LayeredStageNode({
@@ -762,7 +684,7 @@ function PostStageNode({
       <rect
         width={stage.width}
         height={stage.height}
-        rx="7"
+        rx="8"
         fill={style.fill}
         stroke={style.stroke}
         strokeWidth={state.status === "running" ? 1.45 : 0.95}
@@ -781,33 +703,147 @@ function PostStageNode({
         opacity={state.status === "pending" ? 0.45 : 0.95}
       />
       <text
-        x="11"
-        y="17"
+        x="12"
+        y="19"
         fill="rgba(161,161,170,0.95)"
         fontFamily="var(--tc-font-mono)"
-        fontSize="8.2"
+        fontSize="9.2"
       >
         {String(stage.index).padStart(2, "0")}
       </text>
       <text
-        x="11"
-        y="31"
+        x="12"
+        y="39"
         fill="var(--tc-text-primary)"
         fontFamily="var(--tc-font-ui)"
-        fontSize="12"
+        fontSize="14"
         fontWeight="700"
       >
         {stage.label}
       </text>
       <text
-        x="11"
-        y="42"
+        x="12"
+        y="54"
         fill="rgba(161,161,170,0.95)"
         fontFamily="var(--tc-font-mono)"
-        fontSize="7.5"
+        fontSize="8.8"
       >
         {state.durationLabel}
       </text>
+    </g>
+  );
+}
+
+function layeredStageStatus(
+  stage: LayeredStage,
+  lanes: AgentBatchChapterProgress[],
+  runStatus: AgentRun["status"],
+  now: number,
+): AgentNodeStatus {
+  return combinedStatus(
+    lanes.map(lane => stageStateForLane(stage, lane, runStatus, now).status),
+  );
+}
+
+function LayeredForkConnector({
+  source,
+  targets,
+  lanes,
+  runStatus,
+  now,
+}: {
+  source: LayeredStage;
+  targets: LayeredStage[];
+  lanes: AgentBatchChapterProgress[];
+  runStatus: AgentRun["status"];
+  now: number;
+}) {
+  if (targets.length === 0) {
+    return null;
+  }
+  const sourceStatus = layeredStageStatus(source, lanes, runStatus, now);
+  const targetStates = targets.map(target => ({
+    target,
+    status: layeredStageStatus(target, lanes, runStatus, now),
+  }));
+  const busStatus = edgeStatus(
+    sourceStatus,
+    combinedStatus(targetStates.map(item => item.status)),
+  );
+  const sourceX = source.x + source.width / 2;
+  const targetCenters = targets.map(target => target.x + target.width / 2);
+  const busStartX = Math.min(...targetCenters);
+
+  return (
+    <g fill="none">
+      <LayeredConnectorPath
+        d={`M ${sourceX} ${source.y + source.height} V ${BATCH_FORK_BUS_Y} H ${busStartX}`}
+        status={busStatus}
+      />
+      {targetStates.map(({ target, status }) => {
+        const targetX = target.x + target.width / 2;
+        return (
+          <LayeredConnectorPath
+            key={target.key}
+            d={`M ${targetX} ${BATCH_FORK_BUS_Y} V ${target.y}`}
+            status={edgeStatus(sourceStatus, status)}
+            withArrow
+          />
+        );
+      })}
+    </g>
+  );
+}
+
+function LayeredJoinConnector({
+  sources,
+  target,
+  lanes,
+  runStatus,
+  now,
+}: {
+  sources: LayeredStage[];
+  target: LayeredStage;
+  lanes: AgentBatchChapterProgress[];
+  runStatus: AgentRun["status"];
+  now: number;
+}) {
+  if (sources.length === 0) {
+    return null;
+  }
+  const sourceStates = sources.map(source => ({
+    source,
+    status: layeredStageStatus(source, lanes, runStatus, now),
+  }));
+  const targetStatus = layeredStageStatus(target, lanes, runStatus, now);
+  const combinedSourceStatus = combinedStatus(sourceStates.map(item => item.status));
+  const busStatus = downstreamEdgeStatus(combinedSourceStatus, targetStatus);
+  const sourceCenters = sources.map(source => source.x + source.width / 2);
+  const busStartX = Math.min(...sourceCenters);
+  const busEndX = Math.max(...sourceCenters);
+  const targetX = target.x + target.width / 2;
+
+  return (
+    <g fill="none">
+      {sourceStates.map(({ source, status }) => {
+        const sourceX = source.x + source.width / 2;
+        return (
+          <LayeredConnectorPath
+            key={source.key}
+            d={`M ${sourceX} ${source.y + source.height} V ${BATCH_JOIN_BUS_Y}`}
+            status={edgeStatus(status, targetStatus)}
+          />
+        );
+      })}
+      <LayeredConnectorPath
+        d={`M ${busStartX} ${BATCH_JOIN_BUS_Y} H ${busEndX}`}
+        status={busStatus}
+      />
+      <LayeredConnectorPath
+        d={`M ${targetX} ${BATCH_JOIN_BUS_Y} V ${target.y}`}
+        status={busStatus}
+        withArrow
+      />
     </g>
   );
 }
@@ -831,12 +867,36 @@ function LayeredAggregateEdge({
 }) {
   const sourceStatus =
     sourceOverride ??
-    combinedStatus(lanes.map(lane => stageStateForLane(source, lane, runStatus, now).status));
+    layeredStageStatus(source, lanes, runStatus, now);
   const targetStatus =
     targetOverride ??
-    combinedStatus(lanes.map(lane => stageStateForLane(target, lane, runStatus, now).status));
+    layeredStageStatus(target, lanes, runStatus, now);
   const status = edgeStatus(sourceStatus, targetStatus);
   return <LayeredSingleEdge source={source} target={target} status={status} />;
+}
+
+function LayeredConnectorPath({
+  d,
+  status,
+  withArrow = false,
+}: {
+  d: string;
+  status: AgentNodeStatus;
+  withArrow?: boolean;
+}) {
+  return (
+    <path
+      d={d}
+      fill="none"
+      stroke={edgeStroke(status)}
+      strokeWidth={status === "running" ? 1.7 : 1.15}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      markerEnd={withArrow ? "url(#batch-task-flow-arrow)" : undefined}
+      opacity={edgeOpacity(status)}
+      className={status === "running" ? "motion-safe:animate-pulse" : ""}
+    />
+  );
 }
 
 function LayeredSingleEdge({
@@ -849,16 +909,10 @@ function LayeredSingleEdge({
   status: AgentNodeStatus;
 }) {
   return (
-    <path
+    <LayeredConnectorPath
       d={layeredEdgePath(source, target, { x: 0, y: 0 })}
-      fill="none"
-      stroke={edgeStroke(status)}
-      strokeWidth={status === "running" ? 1.7 : 1.15}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      markerEnd="url(#batch-task-flow-arrow)"
-      opacity={edgeOpacity(status)}
-      className={status === "running" ? "motion-safe:animate-pulse" : ""}
+      status={status}
+      withArrow
     />
   );
 }
@@ -868,29 +922,12 @@ function layeredEdgePath(
   target: LayeredStage,
   offset: { x: number; y: number },
 ): string {
-  const expertKeys = new Set(["character", "entityExpert", "eventRule"]);
-  if (source.key === "dispatch" && expertKeys.has(target.key)) {
-    const startX = source.x + source.width / 2 + offset.x;
-    const startY = source.y + source.height + offset.y;
-    const targetX = target.x + target.width / 2 + offset.x;
-    const targetY = target.y + offset.y;
-    const busY = 194 + offset.y;
-    return `M ${startX} ${startY} V ${busY} H ${targetX} V ${targetY}`;
-  }
-  if (expertKeys.has(source.key) && target.key === "merge") {
-    const startX = source.x + source.width / 2 + offset.x;
-    const startY = source.y + source.height + offset.y;
-    const targetX = target.x + target.width / 2 + offset.x;
-    const targetY = target.y + offset.y;
-    const busY = 342 + offset.y;
-    return `M ${startX} ${startY} V ${busY} H ${targetX} V ${targetY}`;
-  }
   if (source.key === "merge" && target.key === "BatchCardAggregationNode") {
     const startX = source.x + source.width / 2 + offset.x;
     const startY = source.y + source.height + offset.y;
     const targetX = target.x + target.width / 2 + offset.x;
     const targetY = target.y + offset.y;
-    const busY = 456 + offset.y;
+    const busY = BATCH_POST_BUS_Y + offset.y;
     return `M ${startX} ${startY} V ${busY} H ${targetX} V ${targetY}`;
   }
   const sourceCenterX = source.x + source.width / 2 + offset.x;

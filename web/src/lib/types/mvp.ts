@@ -68,6 +68,14 @@ export type KnowledgeFieldOption = {
   label: string;
 };
 
+export type KnowledgeFieldMergeStrategy =
+  | "preserve_existing"
+  | "replace"
+  | "append_unique"
+  | "union"
+  | "sum"
+  | "latest";
+
 export type KnowledgeFieldSchema = {
   field_key: string;
   label: string;
@@ -79,6 +87,7 @@ export type KnowledgeFieldSchema = {
   list_display: boolean;
   author_editable?: boolean;
   ai_usage: string;
+  merge_strategy: KnowledgeFieldMergeStrategy;
 };
 
 export type KnowledgeTypeSchema = {
@@ -151,9 +160,12 @@ export type KnowledgeCardResponse = {
 
 export type InboxStatus = "todo" | "processed" | "deprecated";
 export type InboxPriority = "low" | "normal" | "high";
+export type MVPInboxEntryType = "idea" | "pending_fact" | "issue";
 
 export type MVPInboxIdea = {
   id: string;
+  entry_type?: "idea";
+  title?: string;
   content: string;
   source_chapter_id?: string | null;
   priority: InboxPriority;
@@ -164,6 +176,7 @@ export type MVPInboxIdea = {
 
 export type MVPInboxPendingFact = {
   id: string;
+  entry_type?: "pending_fact";
   title: string;
   content: string;
   source_chapter_id?: string | null;
@@ -177,6 +190,7 @@ export type MVPInboxPendingFact = {
 
 export type MVPInboxIssue = {
   id: string;
+  entry_type?: "issue";
   title: string;
   content: string;
   source_chapter_id?: string | null;

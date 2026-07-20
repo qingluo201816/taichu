@@ -131,6 +131,7 @@ class RetrievalService:
                 backend_duration_ms=backend_duration_ms,
                 post_filter_duration_ms=post_filter_duration_ms,
                 index_snapshot_id=backend_result.index_snapshot_id,
+                backend_metrics=backend_result.metrics,
                 strategy_snapshot=plan.snapshot(),
             )
             warning = await self._append_trace(
@@ -341,6 +342,7 @@ def _trace_from_result(
         strategy_snapshot=plan.snapshot(),
         index_snapshot_id=result.index_snapshot_id,
         branches=branches,
+        backend_metrics=result.backend_metrics,
     )
 
 

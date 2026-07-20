@@ -75,7 +75,7 @@
 - **SQLite/FTS 已废弃**：SQLite/FTS 不属于当前实现或后续预留方案，不得重新引入其依赖、配置、目录、接口或文档决策。
 - **AI 不得直接写入 MongoDB**：AI 输出必须先落为 JSON 中间态，经过 schema 校验、来源校验、冲突校验、生命周期校验和作者确认后，才允许由应用层服务写入 MongoDB。
 - **JSON 仅作中间态**：AI 结果、Agent 运行、效果评测和 Inbox 工作区的 JSON/JSONL 只用于候选、运行、审计与回放，不得成为结构事实兼容源或回退源。
-- **非事实数据必须标记 lifecycle**：所有非事实数据必须显式标记 `lifecycle`，取值只能是 `draft`、`confirmed`、`rejected`；业务状态字段可以另设，但不得替代 `lifecycle`。
+- **非事实候选必须标记 lifecycle**：需要作者审核、业务确认或评测状态管理的非事实候选必须显式标记 `lifecycle`，取值只能是 `draft`、`confirmed`、`rejected`；业务状态字段可以另设，但不得替代 `lifecycle`。通用 Agent 自动运行记忆和 LangGraph 节点检查点属于纯运行状态，不经过作者确认，不使用事实生命周期；它们分别通过请求序号、自动过期、`deleted_at` 和检查点线程标识管理有效性。
 
 ### 功能边界
 - 专注于**单本玄幻小说写作**场景，系统运行期间只有一个小说上下文

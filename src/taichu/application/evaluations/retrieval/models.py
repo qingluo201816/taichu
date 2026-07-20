@@ -8,6 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from taichu.domain.models.structured_knowledge import StructuredKnowledgeType
+from taichu.application.retrieval.models import RetrievalBackendMetrics
 
 
 class RetrievalEvaluationModel(BaseModel):
@@ -108,6 +109,9 @@ class RetrievalEvaluationCaseResult(RetrievalEvaluationModel):
     truncated: bool = False
     budget_limited: bool = False
     content_chars_used: int = Field(ge=0)
+    backend_metrics: RetrievalBackendMetrics = Field(
+        default_factory=RetrievalBackendMetrics
+    )
 
 
 class RetrievalEvaluationSummary(RetrievalEvaluationModel):
@@ -122,6 +126,14 @@ class RetrievalEvaluationSummary(RetrievalEvaluationModel):
     average_candidate_count: float = Field(ge=0)
     truncation_rate: float = Field(ge=0, le=1)
     content_budget_hit_rate: float = Field(ge=0, le=1)
+    embedding_call_count: int = Field(default=0, ge=0)
+    embedding_failure_count: int = Field(default=0, ge=0)
+    embedding_failure_rate: float = Field(default=0, ge=0, le=1)
+    embedding_p50_latency_ms: float | None = Field(default=None, ge=0)
+    embedding_p95_latency_ms: float | None = Field(default=None, ge=0)
+    index_search_p50_latency_ms: float | None = Field(default=None, ge=0)
+    index_search_p95_latency_ms: float | None = Field(default=None, ge=0)
+    embedding_cost_amount: float = Field(default=0, ge=0)
 
 
 class RetrievalEvaluationGroupResult(RetrievalEvaluationModel):
@@ -155,5 +167,6 @@ class RetrievalEvaluationRecord(RetrievalEvaluationModel):
     cases: list[RetrievalEvaluationCaseResult] = Field(min_length=60)
     failures: list[RetrievalEvaluationFailure] = Field(default_factory=list)
     environment: dict[str, str] = Field(default_factory=dict)
+    ranking_fingerprint_sha256: str = Field(default="", max_length=64)
     started_at: str = Field(min_length=1)
     finished_at: str = Field(min_length=1)

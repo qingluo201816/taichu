@@ -15,7 +15,12 @@ from taichu.application.agents.registry import AgentRegistry
 from taichu.application.subagents.registry import SubagentRegistry
 from taichu.application.capabilities import CapabilityContext
 from taichu.application.general_agent.events import GeneralAgentEventCenter
+from taichu.application.general_agent.context import (
+    ContextAssembler,
+    GeneralAgentContextPolicy,
+)
 from taichu.application.general_agent.executor import DynamicDagExecutor
+from taichu.application.general_agent.memory_policy import AgentMemoryPolicy
 from taichu.application.general_agent.orchestrator import OrchestratorAgent
 from taichu.application.general_agent.service import GeneralAgentRuntimeService
 from taichu.application.evaluations.general_agent.service import (
@@ -36,6 +41,7 @@ from taichu.application.contracts.knowledge_sedimentation_progress_repository im
     InMemoryKnowledgeSedimentationProgressRepository,
 )
 from taichu.application.services.ai_card_service import AICardService
+from taichu.application.services.agent_memory_service import AgentMemoryService
 from taichu.application.services.chapter_summary_service import (
     ChapterSummaryService,
 )
@@ -59,6 +65,9 @@ from taichu.application.services.selection_ai_service import SelectionAIService
 from taichu.application.services.settings_service import SettingsPreferenceService
 from taichu.application.services.writing_ai_service import WritingAIService
 from taichu.application.services.retrieval_service import RetrievalService
+from taichu.application.services.knowledge_vector_index_service import (
+    KnowledgeVectorIndexService,
+)
 from taichu.application.retrieval.policy import RetrievalPolicyResolver
 from taichu.application.services.invocation_policy_service import (
     InvocationPolicyService,
@@ -71,6 +80,10 @@ from taichu.infrastructure.llm.adapter import LangChainLLMAdapter
 from taichu.infrastructure.llm.catalog import LLMModelCatalog
 from taichu.infrastructure.llm.rightcode import RightCodeLLMGateway
 from taichu.infrastructure.llm_usage import JsonlLLMUsageRepository
+from taichu.infrastructure.embedding import (
+    JsonlEmbeddingUsageRepository,
+    LlamaCppEmbeddingGateway,
+)
 from taichu.infrastructure.evaluations import (
     JsonGeneralAgentEvaluationDatasetRepository,
     JsonGeneralAgentEvaluationResultRepository,
@@ -92,7 +105,12 @@ from taichu.infrastructure.knowledge import (
 )
 from taichu.infrastructure.retrieval import (
     JsonlRetrievalTraceRepository,
+    KnowledgeVectorRetrievalBackend,
     MongoLexicalRetrievalBackend,
+)
+from taichu.infrastructure.retrieval.vector_index import (
+    JsonVectorIndexManifestRepository,
+    QdrantVectorIndexBackend,
 )
 from taichu.infrastructure.storage.json_backend import JsonStorageBackend
 from taichu.infrastructure.storage.markdown_backend import (
@@ -103,7 +121,15 @@ from taichu.infrastructure.external_research import (
 )
 from taichu.infrastructure.invocations import JsonlInvocationTraceRepository
 from taichu.infrastructure.artifacts import JsonIntermediateArtifactRepository
-from taichu.infrastructure.general_agent_runs import JsonGeneralAgentRunRepository
+from taichu.infrastructure.general_agent_runs import (
+    JsonGeneralAgentEffectRepository,
+    JsonGeneralAgentRunRepository,
+    JsonLangGraphCheckpointSaver,
+)
+from taichu.infrastructure.agent_memory import (
+    JsonAgentMemoryLexicalIndex,
+    JsonAgentMemoryRepository,
+)
 
 
 def create_app(
@@ -162,14 +188,54 @@ def create_app(
     )
     retrieval_policy_resolver = RetrievalPolicyResolver.from_json(
         app_settings.retrieval_policies_json,
-        default_relevance_strategy=(
-            app_settings.retrieval_default_relevance_strategy
-        ),
+        default_relevance_strategy=(app_settings.retrieval_default_relevance_strategy),
     )
     retrieval_service = RetrievalService(
         MongoLexicalRetrievalBackend(knowledge_repository),
         retrieval_trace_repository,
         policy_resolver=retrieval_policy_resolver,
+    )
+    embedding_gateway = LlamaCppEmbeddingGateway(
+        base_url=app_settings.embedding_base_url,
+        model_id=app_settings.embedding_model_id,
+        dimensions=app_settings.embedding_dimensions,
+        timeout_seconds=app_settings.embedding_request_timeout_seconds,
+        usage_repository=JsonlEmbeddingUsageRepository(app_settings.project_assets_dir),
+        max_input_tokens=app_settings.embedding_max_input_tokens,
+    )
+    vector_index_backend = QdrantVectorIndexBackend(
+        url=app_settings.qdrant_url,
+        api_key=app_settings.qdrant_api_key.get_secret_value(),
+    )
+    vector_manifest_repository = JsonVectorIndexManifestRepository(
+        app_settings.project_assets_dir
+    )
+    knowledge_vector_index_service = KnowledgeVectorIndexService(
+        knowledge_repository=knowledge_repository,
+        embedding_gateway=embedding_gateway,
+        vector_index=vector_index_backend,
+        manifests=vector_manifest_repository,
+        active_alias=app_settings.qdrant_collection,
+        document_batch_size=app_settings.vector_document_batch_size,
+        embedding_input_char_budget=(app_settings.vector_embedding_input_char_budget),
+    )
+    knowledge_vector_backend = KnowledgeVectorRetrievalBackend(
+        knowledge_repository=knowledge_repository,
+        embedding_gateway=embedding_gateway,
+        vector_index=vector_index_backend,
+        manifests=vector_manifest_repository,
+        query_char_budget=app_settings.vector_query_char_budget,
+        candidate_multiplier=app_settings.vector_candidate_multiplier,
+        score_threshold=app_settings.vector_score_threshold,
+        coverage_bonus=app_settings.vector_coverage_bonus,
+    )
+    retrieval_evaluation_runtime = RetrievalService(
+        MongoLexicalRetrievalBackend(knowledge_repository),
+        retrieval_trace_repository,
+        policy_resolver=retrieval_policy_resolver,
+        additional_backends={
+            knowledge_vector_backend.strategy_name: knowledge_vector_backend
+        },
     )
     invocation_trace_repository = JsonlInvocationTraceRepository(
         app_settings.project_assets_dir
@@ -179,6 +245,55 @@ def create_app(
     )
     general_agent_run_repository = JsonGeneralAgentRunRepository(
         app_settings.project_assets_dir
+    )
+    general_agent_graph_checkpointer = JsonLangGraphCheckpointSaver(
+        app_settings.project_assets_dir
+    )
+    general_agent_effect_repository = JsonGeneralAgentEffectRepository(
+        app_settings.project_assets_dir
+    )
+    agent_memory_repository = JsonAgentMemoryRepository(app_settings.project_assets_dir)
+    agent_memory_lexical_index = JsonAgentMemoryLexicalIndex(
+        app_settings.project_assets_dir
+    )
+    agent_memory_service = AgentMemoryService(
+        repository=agent_memory_repository,
+        lexical_index=agent_memory_lexical_index,
+        policy=AgentMemoryPolicy(
+            top_k=app_settings.general_agent_related_memory_top_k,
+            char_budget=app_settings.general_agent_related_memory_char_budget,
+            age_decay_days=app_settings.general_agent_memory_age_decay_days,
+            minimum_relevance=(app_settings.general_agent_memory_minimum_relevance),
+        ),
+    )
+    general_agent_context_assembler = ContextAssembler(
+        memory_service=agent_memory_service,
+        policy=GeneralAgentContextPolicy(
+            total_char_budget=app_settings.general_agent_context_char_budget,
+            related_memory_top_k=(app_settings.general_agent_related_memory_top_k),
+            related_memory_char_budget=(
+                app_settings.general_agent_related_memory_char_budget
+            ),
+            working_memory_char_budget=(
+                app_settings.general_agent_working_memory_char_budget
+            ),
+            process_history_limit=(app_settings.general_agent_process_history_limit),
+            process_history_char_budget=(
+                app_settings.general_agent_process_history_char_budget
+            ),
+            node_summary_char_budget=(
+                app_settings.general_agent_node_summary_char_budget
+            ),
+            plan_summary_char_budget=(
+                app_settings.general_agent_plan_summary_char_budget
+            ),
+            message_compaction_threshold=(
+                app_settings.general_agent_message_compaction_threshold
+            ),
+            node_output_compaction_threshold=(
+                app_settings.general_agent_node_output_compaction_threshold
+            ),
+        ),
     )
     general_agent_event_center = GeneralAgentEventCenter()
     invocation_policy_service = InvocationPolicyService()
@@ -292,11 +407,16 @@ def create_app(
         tool_registry=tool_registry,
         subagent_registry=subagent_registry,
         trace_repository=invocation_trace_repository,
+        capability_catalog_char_budget=(
+            app_settings.general_agent_capability_catalog_char_budget
+        ),
     )
     dynamic_dag_executor = DynamicDagExecutor(
         tool_registry=tool_registry,
         subagent_registry=subagent_registry,
         policy_service=invocation_policy_service,
+        graph_checkpointer=general_agent_graph_checkpointer,
+        effect_repository=general_agent_effect_repository,
     )
     general_agent_runtime_service = GeneralAgentRuntimeService(
         repository=general_agent_run_repository,
@@ -304,6 +424,10 @@ def create_app(
         orchestrator=orchestrator_agent,
         executor=dynamic_dag_executor,
         policy_service=invocation_policy_service,
+        memory_service=agent_memory_service,
+        context_assembler=general_agent_context_assembler,
+        graph_checkpointer=general_agent_graph_checkpointer,
+        effect_repository=general_agent_effect_repository,
     )
     general_agent_evaluation_service = GeneralAgentEvaluationService(
         datasets=JsonGeneralAgentEvaluationDatasetRepository(
@@ -322,7 +446,7 @@ def create_app(
         results=JsonRetrievalEvaluationResultRepository(
             app_settings.project_assets_dir
         ),
-        retrieval=retrieval_service,
+        retrieval=retrieval_evaluation_runtime,
     )
 
     @asynccontextmanager
@@ -335,6 +459,8 @@ def create_app(
                     sedimentation_progress_repository,
                 ).initialize()
             except Exception as error:
+                await embedding_gateway.close()
+                await vector_index_backend.close()
                 await cast(MongoKnowledgeRepository, knowledge_repository).close()
                 await cast(
                     MongoKnowledgeSedimentationProgressRepository,
@@ -351,6 +477,8 @@ def create_app(
         finally:
             await general_agent_runtime_service.shutdown()
             await knowledge_extraction_evaluation_service.shutdown()
+            await embedding_gateway.close()
+            await vector_index_backend.close()
             if managed_knowledge_repository:
                 await cast(MongoKnowledgeRepository, knowledge_repository).close()
                 await cast(
@@ -369,6 +497,9 @@ def create_app(
     application.state.general_agent_run_repository = general_agent_run_repository
     application.state.general_agent_event_center = general_agent_event_center
     application.state.general_agent_runtime_service = general_agent_runtime_service
+    application.state.agent_memory_service = agent_memory_service
+    application.state.agent_memory_repository = agent_memory_repository
+    application.state.agent_memory_lexical_index = agent_memory_lexical_index
     application.state.general_agent_evaluation_service = (
         general_agent_evaluation_service
     )
@@ -389,6 +520,12 @@ def create_app(
     application.state.knowledge_service = knowledge_service
     application.state.knowledge_repository = knowledge_repository
     application.state.retrieval_service = retrieval_service
+    application.state.retrieval_evaluation_runtime = retrieval_evaluation_runtime
+    application.state.embedding_gateway = embedding_gateway
+    application.state.vector_index_backend = vector_index_backend
+    application.state.vector_manifest_repository = vector_manifest_repository
+    application.state.knowledge_vector_index_service = knowledge_vector_index_service
+    application.state.knowledge_vector_backend = knowledge_vector_backend
     application.state.retrieval_trace_repository = retrieval_trace_repository
     application.state.sedimentation_progress_repository = (
         sedimentation_progress_repository

@@ -49,6 +49,7 @@ export function generalAgentRunRequestForCase(
 ): GeneralAgentRunRequest {
   return {
     user_goal: evaluationCase.user_goal,
+    start_new_conversation: true,
     scope: evaluationCase.run_input.scope,
     author_constraints: evaluationCase.run_input.author_constraints,
     external_access_allowed: evaluationCase.run_input.external_access_allowed,

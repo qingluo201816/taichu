@@ -1,6 +1,6 @@
 # project_assets 目录说明
 
-> 更新日期：2026-07-18
+> 更新日期：2026-07-19
 
 `project_assets/` 是太初单本小说的本地资产根目录，用于保存正文 Markdown、工作区中间态、AI/Agent 运行记录、评测审计和临时生成文件。MongoDB `taichu.knowledge_cards` 是唯一结构事实源，`project_assets/` 下的 JSON/JSONL 不承担兼容事实源职责。
 
@@ -35,7 +35,7 @@
 - 当前 Qdrant vector 索引以及未来可能增加的 Elasticsearch、graph 或缓存都只能是可重建派生层。
 - SQLite/FTS 已废弃，不属于当前数据目录或后续架构决策。
 - AI 不得直接写入 MongoDB，必须先生成 JSON 中间态并通过 schema、来源、冲突和生命周期校验。
-- 所有非事实数据必须显式标记 `lifecycle`，取值只能是 `draft`、`confirmed`、`rejected`。
+- 需要作者审核、业务确认或评测状态管理的非事实候选必须显式标记 `lifecycle`，取值只能是 `draft`、`confirmed`、`rejected`。通用 Agent 自动运行记忆和 LangGraph 节点检查点是纯运行状态，不经过作者确认，分别用请求序号、自动过期、`deleted_at` 和线程检查点管理有效性。
 
 ## 数据分层
 
@@ -66,15 +66,22 @@ project_assets/
 │   ├── agent_runs/                              # Agent 运行快照根目录
 │   │   └── knowledge_extraction/                # 正文知识沉淀 Agent 的运行记录和候选审核项
 │   ├── llm_usage/                               # 跨任务模型调用遥测，按需创建 calls.jsonl
+│   ├── embedding_usage/                         # Embedding 脱敏调用遥测，按需创建 calls.jsonl
 │   ├── retrieval/                               # 统一知识召回技术观测，按需创建 calls.jsonl
 │   ├── capability_invocations/                  # Tool、专业子 Agent 与 LLM 的脱敏技术调用记录
 │   ├── capability_artifacts/                    # 专业子 Agent 的有类型 JSON 中间产物
 │   ├── general_agent_runs/                      # 通用写作助手 Runtime 的独立业务检查点
+│   ├── general_agent_graph_checkpoints/         # LangGraph 节点级持久检查点
+│   ├── general_agent_recovery_benchmarks/        # 通用写作助手恢复机制的可重建基准报告
+│   ├── general_agent_memory/                    # 通用写作助手运行记忆记录，不是小说事实
 │   └── agent_evaluations/                       # Agent 效果评估输入快照、结果与审计记录
 │       ├── knowledge_extraction/                # 知识沉淀评估报告及裁判校准报告
 │       ├── general_agent/                       # 通用写作助手五维效果评估记录
 │       └── retrieval/                           # 统一知识召回离线评测结果
 └── generated/                                   # 按需创建的临时生成物根目录
+    ├── vector_indexes/                          # 可重建向量索引清单
+    │   └── knowledge_cards/                     # active 清单与按 index_id 留存的构建审计
+    ├── agent_memory_indexes/                    # 从运行记忆记录重建的词法索引
     └── temp/                                    # 前后端运行日志等临时输出
 ```
 
@@ -110,6 +117,8 @@ MongoDB 知识卡统一使用 `lifecycle=draft|confirmed|rejected`；默认列�
 
 跨任务模型调用遥测追加保存在 `derived/llm_usage/calls.jsonl`。每行只包含模型快照、任务来源、Token、费用、耗时、状态、上游请求 ID 和脱敏错误，不保存密钥、鉴权头、完整 Prompt 或模型原文；该目录属于可重建运行遥测，不是正文或结构化知识事实源。
 
+Embedding 调用遥测追加保存在 `derived/embedding_usage/calls.jsonl`。每行只保存调用关联、逻辑用途、模型、维度、文本数量、字符数、输入 SHA-256、Token、费用、耗时、状态和脱敏错误；不保存查询原文、知识片段原文或向量。该文件用于独立向量索引构建和召回评测，不是知识事实或向量备份。
+
 统一知识召回技术观测追加保存在 `derived/retrieval/calls.jsonl`。每行保存召回关联 ID、调用方、模式、策略档案、请求与实际策略、回退原因、分支候选数与命中数、后端与过滤耗时、索引快照和脱敏错误；查询与辅助上下文只保存长度和 SHA-256，不重复保存正文或用户完整输入。该记录用于跨消费者排查召回链路，但不替代写作区、知识沉淀 Workflow 或通用 Agent Runtime 各自的业务日志、状态机与评测记录。旧记录不要求补写新增字段，读取时使用兼容默认值。
 
 通用写作助手能力层的 Tool、专业子 Agent 和内部 LLM 技术调用记录追加保存在 `derived/capability_invocations/calls.jsonl`。记录只保存调用树引用、能力名称、状态、输入哈希、字符数、模型角色、耗时、授权引用和脱敏错误，不保存密钥、鉴权头、完整 Prompt、完整模型原文或外部页面全文；通用 Agent 节点监控按运行标识读取这些记录并折叠到所属节点，但它不替代三类执行体系各自的业务日志。
@@ -117,6 +126,12 @@ MongoDB 知识卡统一使用 `lifecycle=draft|confirmed|rejected`；默认列�
 专业子 Agent 的结构化输出保存在 `derived/capability_artifacts/`。每个 JSON 文件显式标记 `lifecycle=draft`，记录产物类型、生产者、输入与内容哈希、来源引用和创建时间，可供后续专业子 Agent 按稳定引用接力消费；这些文件是可审计中间态，不是 Markdown 正文或 MongoDB 结构事实。
 
 通用写作助手 Runtime 的业务检查点保存在 `derived/general_agent_runs/`。每次运行独立保存目标、范围、计划修订、动态节点状态、人工中断、来源与中间产物引用、校验结果和最终回答，用于任务列表、恢复和后续节点监控。它不复用知识沉淀 Workflow 的 `agent_runs/knowledge_extraction/`，也不成为正文或结构事实源。
+
+LangGraph 节点级检查点保存在 `derived/general_agent_graph_checkpoints/`。每个 `run_id（运行标识）` 对应一个线程目录，内部使用原子写入、哈希链修订和最新修订指针保存 LangGraph 通道状态、中间写入及父检查点关系；服务重启后以同一个 `thread_id（线程标识）` 和计划命名空间恢复未完成节点，已经成功的能力节点不会重复执行。写能力的副作用日志也追加保存在该线程目录中，用于在“外部写入成功、检查点尚未落盘”的窗口内先核对真实资源，再决定复用、继续或转人工处理。它与 `general_agent_runs/` 的业务投影互补，不替代任务列表、最终回答或能力节点审计。
+
+通用写作助手恢复基准保存在 `derived/general_agent_recovery_benchmarks/`。报告由 `scripts/benchmark_general_agent_recovery.py` 使用真实能力注册表和动态 LangGraph 执行器生成，记录不同节点数、并发度和进程中断场景的完成率、恢复率、重复执行保护、修订数量、存储体积与耗时。该目录是可重建的工程验证产物，不保存完整 Prompt、正文或密钥，也不构成业务状态或小说事实。
+
+通用写作助手运行记忆保存在 `derived/general_agent_memory/`。每条 JSON 记录使用原子替换写入，保存类型、短摘要、来源运行、稳定引用、创建请求序号、自动退出上下文的请求序号、内容哈希和 `deleted_at（删除时间）`。运行记忆由 Runtime 自动写入和自动过期，不存在草稿、确认、拒绝生命周期，也不要求作者确认；前端只提供查看来源和手动删除。章节或长资源只保存短摘要与引用，不复制全文。运行记忆用于延续任务，不是 MongoDB 知识卡或小说事实，事实引用在消费时仍须重新取证。
 
 知识沉淀效果评估保存在 `derived/agent_evaluations/knowledge_extraction/`。每次评估独立冻结评测集、实际候选、正文、评分参数和模型身份，并保存确定性结果与裁判调用审计；裁判校准报告位于其 `calibration_reports/` 子目录。评估报告和校准报告都是非事实派生数据，通过 `lifecycle` 区分草稿、已确认和已废弃状态，不得反向成为正文或结构化知识事实源。
 
@@ -134,6 +149,8 @@ MongoDB 知识卡统一使用 `lifecycle=draft|confirmed|rejected`；默认列�
 
 ### generated
 
-`generated/` 是按需创建的临时生成物层。当前主要保存前后端运行日志；未来新增的导出临时物或缓存必须可删除、可重建。
+`generated/` 是按需创建的临时生成物层。除前后端运行日志外，`generated/vector_indexes/knowledge_cards/` 保存 Qdrant active 索引清单和按 `index_id` 留存的构建审计。清单记录 Mongo confirmed 快照哈希、Embedding 模型与维度、投影策略、卡片数、片段数、物理集合、active alias、构建耗时和校验和；它不保存向量或完整知识卡。删除 Qdrant 集合和这些清单后，可以通过显式重建命令从 MongoDB 重新生成。
+
+`generated/agent_memory_indexes/lexical_index.json` 是运行记忆的可重建词法索引，只保存记忆标识、内容哈希和词项，不保存唯一内容副本。索引缺失、过期或损坏时会从 `derived/general_agent_memory/` 自动重建；它不得与知识库向量索引混用。
 
 该目录下的数据不得成为唯一事实来源。若生成物丢失，系统应能从 Markdown 文本事实源、MongoDB 结构事实源和必要的运行流程重新生成。

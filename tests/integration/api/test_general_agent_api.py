@@ -93,7 +93,10 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
     async def test_run_list_detail_and_delete(self) -> None:
         response = await self.client.post(
             "/api/agent-workbench/general-assistant/runs",
-            json={"user_goal": "怎样规划一个有冲突的场景？"},
+            json={
+                "user_goal": "怎样规划一个有冲突的场景？",
+                "start_new_conversation": True,
+            },
         )
 
         self.assertEqual(response.status_code, 200)
@@ -110,11 +113,20 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
         traces = await self.client.get(
             f"/api/agent-workbench/general-assistant/runs/{run_id}/traces"
         )
+        recovery = await self.client.get(
+            f"/api/agent-workbench/general-assistant/runs/{run_id}/recovery"
+        )
         self.assertEqual(detail.status_code, 200)
         self.assertEqual(listing.status_code, 200)
         self.assertEqual(traces.status_code, 200)
+        self.assertEqual(recovery.status_code, 200)
         self.assertEqual(listing.json()["total"], 1)
         self.assertEqual(listing.json()["runs"][0]["run_id"], run_id)
+        self.assertEqual(
+            listing.json()["runs"][0]["conversation_id"],
+            run["conversation_id"],
+        )
+        self.assertIsNotNone(listing.json()["runs"][0]["context_snapshot_id"])
         self.assertEqual(traces.json()["total"], 2)
         self.assertEqual(
             [item["capability_name"] for item in traces.json()["traces"]],
@@ -126,6 +138,15 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(
             all(item["run_id"] == run_id for item in traces.json()["traces"])
         )
+        self.assertEqual(
+            recovery.json()["recovery"]["checkpoint"]["integrity_status"],
+            "valid",
+        )
+        self.assertGreater(
+            len(recovery.json()["recovery"]["checkpoint"]["available_revisions"]),
+            0,
+        )
+        self.assertEqual(recovery.json()["recovery"]["effects"], [])
 
         deleted = await self.client.delete(
             f"/api/agent-workbench/general-assistant/runs/{run_id}"
@@ -136,9 +157,13 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
         missing_traces = await self.client.get(
             f"/api/agent-workbench/general-assistant/runs/{run_id}/traces"
         )
+        missing_recovery = await self.client.get(
+            f"/api/agent-workbench/general-assistant/runs/{run_id}/recovery"
+        )
         self.assertEqual(deleted.status_code, 200)
         self.assertEqual(missing.status_code, 404)
         self.assertEqual(missing_traces.status_code, 404)
+        self.assertEqual(missing_recovery.status_code, 404)
         self.assertEqual(
             [request.task_name for request in self.gateway.requests],
             [
@@ -151,7 +176,10 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
         self.gateway.fail_next_orchestration = True
         failed_response = await self.client.post(
             "/api/agent-workbench/general-assistant/runs",
-            json={"user_goal": "这次调用会先遇到一次瞬时错误。"},
+            json={
+                "user_goal": "这次调用会先遇到一次瞬时错误。",
+                "start_new_conversation": True,
+            },
         )
         self.assertEqual(failed_response.status_code, 200)
         failed = failed_response.json()["run"]
@@ -164,40 +192,61 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(resumed_response.status_code, 200)
         resumed = resumed_response.json()["run"]
+        self.assertEqual(resumed["run_id"], failed["run_id"])
+        self.assertIsNone(resumed["parent_run_id"])
+        self.assertEqual(resumed["conversation_id"], failed["conversation_id"])
+        self.assertEqual(resumed["request_index"], 1)
         self.assertEqual(resumed["status"], "completed")
         self.assertEqual(resumed["errors"], [])
 
-    async def test_conversation_keeps_multiple_turns_and_can_be_deleted(self) -> None:
+        preserved_response = await self.client.get(
+            f"/api/agent-workbench/general-assistant/runs/{failed['run_id']}"
+        )
+        self.assertEqual(preserved_response.status_code, 200)
+        self.assertEqual(preserved_response.json()["run"]["status"], "completed")
+        self.assertEqual(preserved_response.json()["run"]["errors"], [])
+
+    async def test_conversation_keeps_multiple_requests_and_can_be_deleted(
+        self,
+    ) -> None:
         first_response = await self.client.post(
             "/api/agent-workbench/general-assistant/runs",
-            json={"user_goal": "第一轮：怎样安排场景冲突？"},
+            json={
+                "user_goal": "第一次请求：怎样安排场景冲突？",
+                "start_new_conversation": True,
+            },
         )
         self.assertEqual(first_response.status_code, 200)
         first_run = first_response.json()["run"]
-        conversation_id = first_run["task_id"]
+        conversation_id = first_run["conversation_id"]
         self.assertTrue(conversation_id.startswith("general_conversation_"))
+        self.assertIsNone(first_run["parent_run_id"])
+        self.assertEqual(first_run["request_index"], 1)
 
         second_response = await self.client.post(
             "/api/agent-workbench/general-assistant/runs",
             json={
-                "user_goal": "第二轮：把冲突升级得更自然一些。",
+                "user_goal": "第二次请求：把冲突升级得更自然一些。",
                 "conversation_id": conversation_id,
+                "start_new_conversation": False,
             },
         )
         self.assertEqual(second_response.status_code, 200)
         second_run = second_response.json()["run"]
-        self.assertEqual(second_run["task_id"], conversation_id)
+        self.assertEqual(second_run["conversation_id"], conversation_id)
+        self.assertEqual(second_run["parent_run_id"], first_run["run_id"])
+        self.assertEqual(second_run["request_index"], 2)
         self.assertEqual(
             [message["role"] for message in second_run["messages"]],
             ["user", "assistant", "user"],
         )
         self.assertEqual(
             second_run["messages"][0]["content"],
-            "第一轮：怎样安排场景冲突？",
+            "第一次请求：怎样安排场景冲突？",
         )
         self.assertEqual(
             second_run["messages"][-1]["content"],
-            "第二轮：把冲突升级得更自然一些。",
+            "第二次请求：把冲突升级得更自然一些。",
         )
         self.assertIn("冲突升级", second_run["messages"][1]["content"])
 
@@ -209,7 +258,7 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(listing.status_code, 200)
         self.assertEqual(listing.json()["total"], 1)
-        self.assertEqual(listing.json()["conversations"][0]["turn_count"], 2)
+        self.assertEqual(listing.json()["conversations"][0]["request_count"], 2)
         self.assertEqual(
             listing.json()["conversations"][0]["conversation_id"],
             conversation_id,
@@ -229,3 +278,61 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(deleted.status_code, 200)
         self.assertEqual(deleted.json()["deleted_count"], 2)
         self.assertEqual(empty_listing.json()["total"], 0)
+
+    async def test_runtime_memories_are_automatic_and_can_be_deleted(
+        self,
+    ) -> None:
+        response = await self.client.post(
+            "/api/agent-workbench/general-assistant/runs",
+            json={
+                "user_goal": "给出一套场景冲突规划方法。",
+                "author_constraints": ["不要改变秦阳的姓名。"],
+                "start_new_conversation": True,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        run = response.json()["run"]
+        conversation_id = run["conversation_id"]
+
+        listing = await self.client.get(
+            "/api/agent-workbench/general-assistant/"
+            f"conversations/{conversation_id}/memories"
+        )
+        self.assertEqual(listing.status_code, 200)
+        memories = listing.json()["memories"]
+        self.assertGreaterEqual(len(memories), 2)
+        instruction = next(
+            item for item in memories if item["kind"] == "user_instruction"
+        )
+        summary = next(item for item in memories if item["kind"] == "task_summary")
+        self.assertTrue(all("lifecycle" not in item for item in memories))
+
+        detail = await self.client.get(
+            f"/api/agent-workbench/general-assistant/memories/{summary['memory_id']}"
+        )
+        self.assertEqual(detail.status_code, 200)
+
+        deleted = await self.client.delete(
+            "/api/agent-workbench/general-assistant/"
+            f"memories/{instruction['memory_id']}"
+        )
+        self.assertEqual(deleted.status_code, 200)
+        visible = await self.client.get(
+            "/api/agent-workbench/general-assistant/"
+            f"conversations/{conversation_id}/memories"
+        )
+        self.assertNotIn(
+            instruction["memory_id"],
+            {item["memory_id"] for item in visible.json()["memories"]},
+        )
+        audit = await self.client.get(
+            "/api/agent-workbench/general-assistant/"
+            f"conversations/{conversation_id}/memories?include_deleted=true"
+        )
+        deleted_entry = next(
+            item
+            for item in audit.json()["memories"]
+            if item["memory_id"] == instruction["memory_id"]
+        )
+        self.assertNotIn("lifecycle", deleted_entry)
+        self.assertIsNotNone(deleted_entry["deleted_at"])

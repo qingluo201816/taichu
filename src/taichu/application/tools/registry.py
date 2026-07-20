@@ -27,6 +27,9 @@ from taichu.application.tools.contract import (
     ToolIdempotencyPolicy,
     ToolManifest,
     ToolPlugin,
+    ToolReconciliationResult,
+    ToolReconciliationStatus,
+    ToolSideEffect,
 )
 
 
@@ -54,6 +57,14 @@ class ToolRegistry:
         if missing:
             raise ToolRegistrationError(
                 f"工具“{name}”缺少所需能力：{', '.join(sorted(missing))}"
+            )
+        if (
+            plugin.manifest.side_effect
+            in {ToolSideEffect.WRITE, ToolSideEffect.HIGH_RISK_WRITE}
+            and plugin.reconcile is None
+        ):
+            raise ToolRegistrationError(
+                f"写入工具“{name}”必须注册真实资源副作用对账器。"
             )
 
         self._plugins[name] = plugin
@@ -187,6 +198,41 @@ class ToolRegistry:
                 error,
             )
             raise
+
+    async def reconcile(
+        self,
+        name: str,
+        input_data: BaseModel | dict[str, object],
+        invocation: InvocationContext,
+    ) -> ToolReconciliationResult:
+        """由 Tool 自身只读核对真实副作用，不复用运行时分支判断。"""
+        if name not in self._plugins:
+            raise ToolNotFoundError(name)
+        plugin = self._plugins[name]
+        manifest = plugin.manifest
+        parsed_input = manifest.input_schema.model_validate(input_data)
+        self._validate_caller(manifest, invocation)
+        if plugin.reconcile is None:
+            return ToolReconciliationResult(
+                status=ToolReconciliationStatus.UNKNOWN,
+                reason="该写入工具没有注册副作用对账器。",
+            )
+        result = await plugin.reconcile(parsed_input, invocation, self._context)
+        if result.status is not ToolReconciliationStatus.SUCCEEDED:
+            return result
+        output = manifest.output_schema.model_validate(result.output)
+        idempotency_key = _string_field(parsed_input, "idempotency_key")
+        if (
+            manifest.idempotency_policy is ToolIdempotencyPolicy.REQUIRED
+            and idempotency_key is not None
+        ):
+            await self._policy_service().save_idempotent_result(
+                tool_name=name,
+                idempotency_key=idempotency_key,
+                input_payload=parsed_input,
+                output=output,
+            )
+        return result.model_copy(update={"output": output.model_dump(mode="json")})
 
     def _validate_caller(
         self,

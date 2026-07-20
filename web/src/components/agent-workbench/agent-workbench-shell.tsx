@@ -3,32 +3,32 @@
 import {
   Activity,
   AlertTriangle,
-  Ban,
   Check,
   ChevronRight,
   Copy,
   Database,
   Download,
+  Eye,
   FileText,
-  PencilLine,
   Play,
   RefreshCw,
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
+import { CandidateReviewDialog } from "@/components/agent-workbench/candidate-review-dialog";
+import {
+  BulkAcceptConfirmDialogs,
+  type BulkAcceptConfirmationStep,
+} from "@/components/agent-workbench/bulk-accept-confirm-dialogs";
 import { GeneralAgentWorkbench } from "@/components/agent-workbench/general-agent-workbench";
 import {
   AgentWorkbenchSwitcher,
   type WorkbenchAgent,
 } from "@/components/agent-workbench/agent-workbench-switcher";
-import {
-  StructuredKnowledgeForm,
-  StructuredKnowledgeView,
-} from "@/components/knowledge/structured-knowledge-fields";
 import { ModelSelector } from "@/components/llm/model-selector";
 import type { ReturnTypeOfModelSelection } from "@/components/llm/types";
 import { Button } from "@/components/ui/button";
@@ -86,10 +86,6 @@ import { cn } from "@/lib/utils";
 
 type WorkbenchSection = "run" | "candidates" | "detail" | "metrics";
 type CandidateStatusFilter = ReviewCandidateStatus | "all";
-const CANDIDATE_CARD_HIDDEN_FIELD_KEYS = new Set([
-  ...CANDIDATE_LOCKED_FIELD_KEYS,
-  "name",
-]);
 type RunNotice = {
   message: string;
   runId?: string;
@@ -159,11 +155,6 @@ const candidateStatusFilters: Array<{
   { value: "all", label: "全部" },
 ];
 
-const mergeModeLabel: Record<EditConfirmMergeMode, string> = {
-  append: "追加到现有知识卡",
-  overwrite: "覆盖为编辑内容",
-};
-
 const candidateActionLabel: Record<ReviewCandidateAction, string> = {
   create_card: "候选新卡",
   update_card: "候选更新",
@@ -201,7 +192,7 @@ const nodeLabel: Record<string, string> = {
   EventRuleExpertNode: "事件规则专家",
   MergeExpertCandidatesNode: "合并候选",
   NormalizeAndValidateNode: "规范校验",
-  RunInternalConflictCheckNode: "本轮冲突检查",
+  RunInternalConflictCheckNode: "本次冲突检查",
   MatchExistingKnowledgeNode: "匹配有效知识",
   BuildReviewItemsNode: "生成审核项",
   WriteIntermediateJsonNode: "写入中间态",
@@ -243,6 +234,9 @@ function KnowledgeExtractionWorkbench({
     Record<string, KnowledgeFormErrors>
   >({});
   const [editingCandidateId, setEditingCandidateId] = useState("");
+  const [candidateDialogOpen, setCandidateDialogOpen] = useState(false);
+  const [bulkAcceptConfirmationStep, setBulkAcceptConfirmationStep] =
+    useState<BulkAcceptConfirmationStep>(null);
   const [candidateMergeModes, setCandidateMergeModes] = useState<
     Record<string, EditConfirmMergeMode>
   >({});
@@ -302,8 +296,8 @@ function KnowledgeExtractionWorkbench({
     : {};
 
   const selectedCandidateMergeMode = selectedCandidate
-    ? candidateMergeModes[selectedCandidate.review_item_id] ?? "append"
-    : "append";
+    ? candidateMergeModes[selectedCandidate.review_item_id] ?? "merge"
+    : "merge";
 
   const selectedTargetCardId = selectedCandidate?.target_card_id ?? "";
   const selectedTargetCard = selectedTargetCardId
@@ -321,6 +315,8 @@ function KnowledgeExtractionWorkbench({
     const response = await getAgentTask(runId);
     setCurrentRun(response.run);
     setEditingCandidateId("");
+    setCandidateDialogOpen(false);
+    setBulkAcceptConfirmationStep(null);
     setSelectedCandidateId(
       response.run.review_items.find(item => item.candidate_status === "pending")
         ?.review_item_id ??
@@ -368,6 +364,7 @@ function KnowledgeExtractionWorkbench({
           setSelectedRunId("");
           setCurrentRun(null);
           setSelectedCandidateId("");
+          setCandidateDialogOpen(false);
           setSelectedCallId("");
         }
       }
@@ -380,6 +377,8 @@ function KnowledgeExtractionWorkbench({
 
   function handleCandidateStatusFilterChange(filter: CandidateStatusFilter) {
     setCandidateStatusFilter(filter);
+    setCandidateDialogOpen(false);
+    setEditingCandidateId("");
     if (!currentRun) {
       return;
     }
@@ -612,7 +611,7 @@ function KnowledgeExtractionWorkbench({
   async function handleCandidateAction(
     candidate: AgentReviewItem,
     action: "confirm" | "edit-confirm" | "reject",
-    mergeMode: EditConfirmMergeMode = "append",
+    mergeMode: EditConfirmMergeMode = "merge",
   ) {
     setSelectedCandidateId(candidate.review_item_id);
     setError("");
@@ -661,7 +660,7 @@ function KnowledgeExtractionWorkbench({
                 {
                   card_updates: cardUpdates ?? {},
                   target_card_id: candidate.target_card_id ?? null,
-                  merge_mode: candidate.target_card_id ? mergeMode : "append",
+                  merge_mode: candidate.target_card_id ? mergeMode : "merge",
                 },
               )
             : await rejectKnowledgeExtractionCandidate(
@@ -674,13 +673,18 @@ function KnowledgeExtractionWorkbench({
         ...current,
         [candidate.review_item_id]: {},
       }));
-      setSelectedCandidateId(
-        pickVisibleCandidateId(
-          response.run,
-          candidateStatusFilter,
-          candidate.review_item_id,
-        ),
+      const targetCardId = candidate.target_card_id;
+      if (targetCardId) {
+        setTargetCards(current => omitRecordKey(current, targetCardId));
+        setTargetCardErrors(current => omitRecordKey(current, targetCardId));
+      }
+      const nextCandidateId = pickNextPendingCandidateId(
+        response.run,
+        candidateStatusFilter,
+        candidate.review_item_id,
       );
+      setSelectedCandidateId(nextCandidateId);
+      setCandidateDialogOpen(Boolean(nextCandidateId));
       await reloadRuns();
     } catch (caught) {
       const actionError =
@@ -699,6 +703,20 @@ function KnowledgeExtractionWorkbench({
             synchronizedCandidate?.candidate_status === "rejected") ||
           (action !== "reject" &&
             synchronizedCandidate?.candidate_status === "confirmed");
+        const targetCardId = candidate.target_card_id;
+        if (actionAlreadyApplied && targetCardId) {
+          setTargetCards(current => omitRecordKey(current, targetCardId));
+          setTargetCardErrors(current => omitRecordKey(current, targetCardId));
+        }
+        if (actionAlreadyApplied) {
+          const nextCandidateId = pickNextPendingCandidateId(
+            response.run,
+            candidateStatusFilter,
+            candidate.review_item_id,
+          );
+          setSelectedCandidateId(nextCandidateId);
+          setCandidateDialogOpen(Boolean(nextCandidateId));
+        }
         setError(actionAlreadyApplied ? "" : actionError);
         void reloadRuns();
       } catch {
@@ -711,11 +729,19 @@ function KnowledgeExtractionWorkbench({
 
   async function handleAcceptRun() {
     if (!currentRun) return;
+    const runId = currentRun.run_id;
     setError("");
     setActionBusyKey("accept-run");
     try {
-      const progress = await acceptKnowledgeExtractionRun(currentRun.run_id);
+      const progress = await acceptKnowledgeExtractionRun(runId);
+      const response = await getAgentTask(runId);
       setSedimentationProgress(progress);
+      setCurrentRun(response.run);
+      setCandidateDialogOpen(false);
+      setSelectedCandidateId(
+        pickVisibleCandidateId(response.run, candidateStatusFilter, ""),
+      );
+      await reloadRuns();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "采纳本次沉淀失败");
     } finally {
@@ -747,6 +773,19 @@ function KnowledgeExtractionWorkbench({
   return (
     <AppShell activePath="/agent-workbench">
       {runNotice ? <RunStartNotice notice={runNotice} /> : null}
+      <BulkAcceptConfirmDialogs
+        step={bulkAcceptConfirmationStep}
+        pendingCount={
+          currentRun?.review_items.filter(
+            item => item.candidate_status === "pending",
+          ).length ?? 0
+        }
+        onStepChange={setBulkAcceptConfirmationStep}
+        onConfirm={() => {
+          setBulkAcceptConfirmationStep(null);
+          void handleAcceptRun();
+        }}
+      />
       <section className="mx-auto grid max-w-[1440px] gap-4 px-4 py-4 xl:grid-cols-[270px_minmax(0,1fr)]">
         <aside className="min-w-0 overflow-hidden rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2">
           <AgentWorkbenchSwitcher
@@ -842,12 +881,20 @@ function KnowledgeExtractionWorkbench({
                   selectedTargetCard={selectedTargetCard}
                   selectedTargetCardError={selectedTargetCardError}
                   selectedCandidateMergeMode={selectedCandidateMergeMode}
+                  dialogOpen={candidateDialogOpen}
                   statusFilter={candidateStatusFilter}
                   actionBusyKey={actionBusyKey}
-                  onAcceptRun={() => void handleAcceptRun()}
+                  onAcceptRun={() => setBulkAcceptConfirmationStep("first")}
                   onSelectCandidate={candidateId => {
                     setSelectedCandidateId(candidateId);
+                    setCandidateDialogOpen(true);
                     if (editingCandidateId && editingCandidateId !== candidateId) {
+                      setEditingCandidateId("");
+                    }
+                  }}
+                  onDialogOpenChange={nextOpen => {
+                    setCandidateDialogOpen(nextOpen);
+                    if (!nextOpen) {
                       setEditingCandidateId("");
                     }
                   }}
@@ -931,7 +978,13 @@ function KnowledgeExtractionWorkbench({
             </section>
             <SectionRail
               activeSection={activeSection}
-              onSectionChange={setActiveSection}
+              onSectionChange={section => {
+                setActiveSection(section);
+                if (section !== "candidates") {
+                  setCandidateDialogOpen(false);
+                  setEditingCandidateId("");
+                }
+              }}
             />
           </div>
         </section>
@@ -1041,6 +1094,9 @@ function runSummaryTitle(run: AgentRunSummary): string {
   if (run.scope_type === "chapter_batch") {
     return formatBatchRunTitle(run);
   }
+  if (run.scope_type === "summary_repair") {
+    return "历史摘要修复";
+  }
   return run.chapter_title || "未命名章节";
 }
 
@@ -1054,6 +1110,8 @@ function RunSummaryStrip({
   const scopeLabel =
     run?.scope.scope_type === "chapter_batch"
       ? `${run.total_chapter_count} 章批量`
+      : run?.scope.scope_type === "summary_repair"
+        ? "有效知识卡摘要"
       : run?.scope.chapter_title || "未命名章节";
   const values = run
     ? [
@@ -1141,6 +1199,8 @@ function RunTaskPanel({
   onChapterToggle: (chapterId: string, checked: boolean) => void;
   onCreateRun: () => void;
 }) {
+  const chapterListRef = useRef<HTMLDivElement>(null);
+  const nextChapterRowRef = useRef<HTMLLabelElement>(null);
   const selectedChapterSet = new Set(selectedChapterIds);
   const acceptedIndex = sedimentationProgress.last_accepted_chapter_id
     ? chapters.findIndex(
@@ -1161,6 +1221,28 @@ function RunTaskPanel({
       : selectedCount > 1
         ? "批量生成候选"
         : "开始抽取";
+
+  useEffect(() => {
+    const chapterList = chapterListRef.current;
+    const nextChapterRow = nextChapterRowRef.current;
+    if (!chapterList || !nextChapterRow) {
+      return;
+    }
+
+    const listRect = chapterList.getBoundingClientRect();
+    const rowRect = nextChapterRow.getBoundingClientRect();
+    const rowTop = rowRect.top - listRect.top + chapterList.scrollTop;
+    const centeredScrollTop =
+      rowTop - (chapterList.clientHeight - nextChapterRow.offsetHeight) / 2;
+    const maximumScrollTop =
+      chapterList.scrollHeight - chapterList.clientHeight;
+
+    chapterList.scrollTop = Math.max(
+      0,
+      Math.min(centeredScrollTop, maximumScrollTop),
+    );
+  }, [chapters.length, nextChapter?.id]);
+
   return (
     <div className="mx-auto grid w-full max-w-[960px] gap-2">
       <div className="grid gap-2 text-sm">
@@ -1184,13 +1266,17 @@ function RunTaskPanel({
             暂无可运行章节，请先在写作页创建章节。
           </div>
         ) : (
-          <div className="max-h-[292px] overflow-y-auto rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)]">
+          <div
+            ref={chapterListRef}
+            className="max-h-[292px] overflow-y-auto rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)]"
+          >
             {chapters.map((chapter, index) => {
               const checked = selectedChapterSet.has(chapter.id);
               const unavailable = index < acceptedIndex + 1;
               return (
                 <label
                   key={chapter.id}
+                  ref={chapter.id === nextChapter?.id ? nextChapterRowRef : null}
                   className={cn(
                     "flex cursor-pointer items-start gap-2.5 border-b border-[var(--tc-border-subtle)] px-3 py-2 text-sm last:border-b-0",
                     unavailable
@@ -1276,10 +1362,12 @@ function CandidatePanel({
   selectedTargetCard,
   selectedTargetCardError,
   selectedCandidateMergeMode,
+  dialogOpen,
   statusFilter,
   actionBusyKey,
   onAcceptRun,
   onSelectCandidate,
+  onDialogOpenChange,
   onStatusFilterChange,
   onMergeModeChange,
   onCandidateDraftChange,
@@ -1297,10 +1385,12 @@ function CandidatePanel({
   selectedTargetCard?: StructuredKnowledgeCard | null;
   selectedTargetCardError: string;
   selectedCandidateMergeMode: EditConfirmMergeMode;
+  dialogOpen: boolean;
   statusFilter: CandidateStatusFilter;
   actionBusyKey: string;
   onAcceptRun: () => void;
   onSelectCandidate: (candidateId: string) => void;
+  onDialogOpenChange: (open: boolean) => void;
   onStatusFilterChange: (filter: CandidateStatusFilter) => void;
   onMergeModeChange: (value: EditConfirmMergeMode) => void;
   onCandidateDraftChange: (value: KnowledgeFormState) => void;
@@ -1320,10 +1410,6 @@ function CandidatePanel({
   }
 
   const candidates = filterCandidates(run.review_items, statusFilter);
-  const hasPending = run.review_items.some(
-    candidate => candidate.candidate_status === "pending",
-  );
-
   return (
     <div className="grid max-w-[980px] gap-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -1344,18 +1430,18 @@ function CandidatePanel({
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-y border-[var(--tc-border-subtle)] py-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] px-3 py-2">
         <p className="text-xs text-[var(--tc-text-muted)]">
-          全部候选确认或废弃后，才可采纳本次连续章节范围并推进沉淀进度。
+          可逐条审核，也可一键按合并更新采纳全部待处理候选；已废弃项保持不变。
         </p>
         <Button
           type="button"
           size="sm"
-          disabled={hasPending || actionBusyKey !== ""}
+          disabled={actionBusyKey !== ""}
           onClick={onAcceptRun}
         >
           <Check className="size-4" />
-          采纳本次沉淀
+          {actionBusyKey === "accept-run" ? "正在采纳..." : "采纳本次沉淀"}
         </Button>
       </div>
 
@@ -1363,239 +1449,77 @@ function CandidatePanel({
         <EmptyPanel text="当前筛选下暂无候选。" />
       ) : null}
 
-      <div className="grid gap-0">
+      <div className="grid gap-1">
         {candidates.map(candidate => {
-          const isSelected =
-            selectedCandidate?.review_item_id === candidate.review_item_id;
-          const requiresEditedConfirm =
-            candidate.candidate_action === "conflict" ||
-            Boolean(candidate.target_card_id);
-          const canConfirm = candidate.candidate_action !== "ignore";
-          const isEditing = editingCandidateId === candidate.review_item_id;
           return (
-            <article
-              key={candidate.review_item_id}
-              className="border-b border-[var(--tc-border-subtle)] py-3 last:border-b-0"
-            >
             <button
+              key={candidate.review_item_id}
               type="button"
-              className="flex w-full items-start gap-3 text-left"
-              onClick={() =>
-                onSelectCandidate(isSelected ? "" : candidate.review_item_id)
-              }
-              aria-expanded={isSelected}
+              className="grid min-h-11 w-full grid-cols-[auto_minmax(96px,128px)_minmax(160px,1fr)_auto_auto] items-center gap-2 rounded-[var(--tc-radius-control)] px-3 py-2 text-left outline-none transition-colors hover:bg-[var(--tc-surface-muted)] hover:[&>svg]:text-[var(--tc-text-primary)]"
+              onClick={() => onSelectCandidate(candidate.review_item_id)}
+              aria-haspopup="dialog"
             >
-              <ChevronRight
-                className={cn(
-                  "mt-1 size-4 shrink-0 text-[var(--tc-text-muted)] transition-transform",
-                  isSelected ? "rotate-90" : "",
-                )}
+              <Eye
+                aria-hidden="true"
+                className="size-4 shrink-0 text-[var(--tc-text-muted)]"
               />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-semibold text-[var(--tc-text-primary)]">
-                  {candidate.display_title}
-                </span>
-                <span className="mt-2 flex flex-wrap gap-2">
-                  <Tag>{knowledgeTypeLabel[candidate.knowledge_type]}</Tag>
-                  <Tag>{candidateActionLabel[candidate.candidate_action]}</Tag>
-                  <Tag>{candidateStatusLabel[candidate.candidate_status]}</Tag>
-                </span>
+              <span className="min-w-0 truncate text-sm font-semibold text-[var(--tc-text-primary)]">
+                {candidate.display_title}
               </span>
-              <span className="hidden text-sm text-[var(--tc-text-muted)] md:block">
-                {candidate.schema_validation.passed
-                  ? "校验通过"
-                  : "校验失败"}
+              <span className="min-w-0 truncate text-xs text-[var(--tc-text-muted)]">
+                {candidate.source_excerpt || candidate.suggested_action_label}
+              </span>
+              <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
+                <CandidateTag>
+                  {knowledgeTypeLabel[candidate.knowledge_type]}
+                </CandidateTag>
+                <CandidateTag>
+                  {candidateActionLabel[candidate.candidate_action]}
+                </CandidateTag>
+                <CandidateTag>
+                  {candidateStatusLabel[candidate.candidate_status]}
+                </CandidateTag>
+              </span>
+              <span className="whitespace-nowrap text-xs text-[var(--tc-text-muted)]">
+                {candidate.schema_validation.passed ? "校验通过" : "校验失败"}
               </span>
             </button>
-
-            {isSelected ? (
-              <div className="mt-3 grid max-w-[720px] gap-3 pl-7">
-                {candidate.source_excerpt ? (
-                  <p className="border-l border-[var(--tc-border-subtle)] pl-3 text-sm leading-6 text-[var(--tc-text-secondary)]">
-                    {candidate.source_excerpt}
-                  </p>
-                ) : null}
-                {candidate.schema_validation.errors.length > 0 ? (
-                  <ul className="grid gap-1 text-sm text-[var(--tc-text-muted)]">
-                    {candidate.schema_validation.errors.map(item => (
-                      <li key={item}>校验提示：{item}</li>
-                    ))}
-                  </ul>
-                ) : null}
-
-                {candidate.target_card_id ? (
-                  <section className="grid gap-2 text-sm">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-medium text-[var(--tc-text-primary)]">
-                        现有知识卡
-                      </span>
-                      <Tag>{candidate.matched_card_name || "已匹配知识卡"}</Tag>
-                    </div>
-                    {selectedTargetCardError ? (
-                      <p className="rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 text-[var(--tc-text-muted)]">
-                        {selectedTargetCardError}
-                      </p>
-                    ) : selectedTargetCard === undefined ? (
-                      <p className="rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 text-[var(--tc-text-muted)]">
-                        正在读取现有知识卡...
-                      </p>
-                    ) : selectedTargetCard && selectedCandidateSchema ? (
-                      <KnowledgeCardPreview
-                        card={selectedTargetCard}
-                        schema={selectedCandidateSchema}
-                        referenceOptions={referenceOptions}
-                      />
-                    ) : (
-                      <p className="rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 text-[var(--tc-text-muted)]">
-                        未找到现有知识卡。
-                      </p>
-                    )}
-                  </section>
-                ) : null}
-
-                {candidate.target_card_id ? (
-                  <fieldset className="grid gap-2 text-sm">
-                    <legend className="font-medium text-[var(--tc-text-primary)]">
-                      编辑确认方式
-                    </legend>
-                    <div className="flex flex-wrap gap-2">
-                      {(["append", "overwrite"] as EditConfirmMergeMode[]).map(
-                        mode => (
-                          <Button
-                            key={mode}
-                            type="button"
-                            variant={
-                              selectedCandidateMergeMode === mode
-                                ? "default"
-                                : "outline"
-                            }
-                            size="sm"
-                            aria-pressed={selectedCandidateMergeMode === mode}
-                            onClick={() => onMergeModeChange(mode)}
-                          >
-                            {mergeModeLabel[mode]}
-                          </Button>
-                        ),
-                      )}
-                    </div>
-                    <p className="text-xs leading-5 text-[var(--tc-text-muted)]">
-                      追加会合并别名、追加摘要和来源说明，并保留现有非空字段；覆盖会用下方编辑内容替换可编辑字段。
-                    </p>
-                  </fieldset>
-                ) : null}
-
-                <section className="grid gap-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-sm font-medium text-[var(--tc-text-primary)]">
-                      {isEditing ? "编辑候选内容" : "候选知识内容"}
-                    </span>
-                    <Tag>正文自动提取</Tag>
-                  </div>
-                  {selectedCandidateSchema ? (
-                    isEditing ? (
-                      <StructuredKnowledgeForm
-                        schema={selectedCandidateSchema}
-                        form={selectedCandidateDraft}
-                        errors={selectedCandidateFormErrors}
-                        hiddenFieldKeys={CANDIDATE_LOCKED_FIELD_KEYS}
-                        referenceOptions={referenceOptions}
-                        onChange={onCandidateDraftChange}
-                      />
-                    ) : (
-                      <StructuredKnowledgeView
-                        schema={selectedCandidateSchema}
-                        values={candidate.suggested_card}
-                        hiddenFieldKeys={CANDIDATE_CARD_HIDDEN_FIELD_KEYS}
-                        referenceOptions={referenceOptions}
-                      />
-                    )
-                  ) : (
-                    <p className="border-y border-dashed border-[var(--tc-border-subtle)] py-3 text-sm text-[var(--tc-text-muted)]">
-                      知识字段配置加载失败，请刷新后重试。
-                    </p>
-                  )}
-                </section>
-                {!isProcessed(candidate) ? (
-                  <div className="flex flex-wrap gap-2">
-                  {canConfirm && !isEditing ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={isProcessed(candidate) || actionBusyKey !== ""}
-                      onClick={() =>
-                        onAction(
-                          candidate,
-                          requiresEditedConfirm ? "edit-confirm" : "confirm",
-                          selectedCandidateMergeMode,
-                        )
-                      }
-                    >
-                      <Check className="size-4" />
-                      确认入库
-                    </Button>
-                  ) : null}
-                  {canConfirm && !isEditing ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={actionBusyKey !== "" || !selectedCandidateSchema}
-                      onClick={() => onStartEdit(candidate)}
-                    >
-                      <PencilLine className="size-4" />
-                      编辑
-                    </Button>
-                  ) : null}
-                  {canConfirm && isEditing ? (
-                    <>
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={actionBusyKey !== ""}
-                        onClick={() =>
-                          onAction(
-                            candidate,
-                            "edit-confirm",
-                            selectedCandidateMergeMode,
-                          )
-                        }
-                      >
-                        <Check className="size-4" />
-                        保存并确认
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={actionBusyKey !== ""}
-                        onClick={() => onCancelEdit(candidate)}
-                      >
-                        取消编辑
-                      </Button>
-                    </>
-                  ) : null}
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    disabled={isProcessed(candidate) || actionBusyKey !== ""}
-                    onClick={() => onAction(candidate, "reject")}
-                  >
-                    <Ban className="size-4" />
-                    废弃
-                  </Button>
-                  </div>
-                ) : (
-                  <p className="text-xs text-[var(--tc-text-muted)]">
-                    该候选已处理，当前仅供阅读。
-                  </p>
-                )}
-              </div>
-            ) : null}
-            </article>
           );
         })}
       </div>
+
+      <CandidateReviewDialog
+        open={dialogOpen}
+        candidate={selectedCandidate}
+        schema={selectedCandidateSchema}
+        draft={selectedCandidateDraft}
+        formErrors={selectedCandidateFormErrors}
+        referenceOptions={referenceOptions}
+        isEditing={
+          Boolean(selectedCandidate) &&
+          editingCandidateId === selectedCandidate?.review_item_id
+        }
+        targetCard={selectedTargetCard}
+        targetCardError={selectedTargetCardError}
+        mergeMode={selectedCandidateMergeMode}
+        actionBusyKey={actionBusyKey}
+        knowledgeTypeText={
+          selectedCandidate
+            ? knowledgeTypeLabel[selectedCandidate.knowledge_type]
+            : "知识卡"
+        }
+        candidateActionText={
+          selectedCandidate
+            ? candidateActionLabel[selectedCandidate.candidate_action]
+            : "候选"
+        }
+        onOpenChange={onDialogOpenChange}
+        onMergeModeChange={onMergeModeChange}
+        onDraftChange={onCandidateDraftChange}
+        onStartEdit={onStartEdit}
+        onCancelEdit={onCancelEdit}
+        onAction={onAction}
+      />
     </div>
   );
 }
@@ -2062,31 +1986,13 @@ function TraceBlock({
   );
 }
 
-function KnowledgeCardPreview({
-  card,
-  schema,
-  referenceOptions,
-}: {
-  card: StructuredKnowledgeCard;
-  schema: KnowledgeTypeSchema;
-  referenceOptions: KnowledgeReferenceOptions;
-}) {
-  return (
-    <div className="border-y border-[var(--tc-border-subtle)] py-3">
-      <StructuredKnowledgeView
-        schema={schema}
-        values={card as Record<string, unknown>}
-        referenceOptions={referenceOptions}
-      />
-    </div>
-  );
-}
-
 function buildRunLLMTrace(run: AgentRun): string {
   const nodeByName = new Map(run.nodes.map(node => [node.node_name, node]));
   const scopeLine =
     run.scope.scope_type === "chapter_batch"
       ? `- 任务范围：批量 ${run.total_chapter_count} 章（完成 ${run.completed_chapter_count}，失败 ${run.failed_chapter_count}）`
+      : run.scope.scope_type === "summary_repair"
+        ? `- 任务范围：历史摘要修复（${run.metrics.candidate_total} 个候选）`
       : `- 章节：${run.scope.chapter_title || "未命名章节"}（${run.scope.chapter_id}）`;
   const orderedCalls = run.llm_calls
     .map((call, index) => ({ call, index }))
@@ -2242,12 +2148,16 @@ function Tag({ children }: { children: ReactNode }) {
   );
 }
 
-function EmptyPanel({ text }: { text: string }) {
-  return <p className="text-sm text-[var(--tc-text-muted)]">{text}</p>;
+function CandidateTag({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-[var(--tc-radius-badge)] border border-[var(--tc-border-subtle)] px-1.5 py-0.5 text-xs leading-4 text-[var(--tc-text-secondary)]">
+      {children}
+    </span>
+  );
 }
 
-function isProcessed(candidate: AgentReviewItem): boolean {
-  return candidate.candidate_status !== "pending";
+function EmptyPanel({ text }: { text: string }) {
+  return <p className="text-sm text-[var(--tc-text-muted)]">{text}</p>;
 }
 
 function filterCandidates(
@@ -2280,6 +2190,34 @@ function pickVisibleCandidateId(
     return preferredId;
   }
   return candidates[0]?.review_item_id ?? "";
+}
+
+function pickNextPendingCandidateId(
+  run: AgentRun,
+  filter: CandidateStatusFilter,
+  currentCandidateId: string,
+): string {
+  const candidates = filterCandidates(run.review_items, filter);
+  const currentIndex = candidates.findIndex(
+    candidate => candidate.review_item_id === currentCandidateId,
+  );
+  const orderedCandidates =
+    currentIndex >= 0
+      ? [
+          ...candidates.slice(currentIndex + 1),
+          ...candidates.slice(0, currentIndex),
+        ]
+      : candidates;
+  return (
+    orderedCandidates.find(candidate => candidate.candidate_status === "pending")
+      ?.review_item_id ?? ""
+  );
+}
+
+function omitRecordKey<T>(record: Record<string, T>, key: string): Record<string, T> {
+  const next = { ...record };
+  delete next[key];
+  return next;
 }
 
 function formatJson(value: unknown): string {

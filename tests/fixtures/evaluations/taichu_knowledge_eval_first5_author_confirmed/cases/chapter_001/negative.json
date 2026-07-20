@@ -69,7 +69,8 @@
     "negative_case_id": "negative_chapter_001_007",
     "knowledge_type": "location",
     "accepted_names": [
-      "秦浩轩的房间、西头院落"
+      "秦浩轩的房间",
+      "西头院落"
     ],
     "reason": "普通居住空间，没有专名、特殊规则或独立世界观价值。",
     "source_quote_ids": [
@@ -80,7 +81,9 @@
     "negative_case_id": "negative_chapter_001_008",
     "knowledge_type": "character",
     "accepted_names": [
-      "獐子、豹子、饿狼"
+      "獐子",
+      "豹子",
+      "饿狼"
     ],
     "reason": "普通动物或动物类别，没有独立姓名和稳定身份。",
     "source_quote_ids": [
@@ -91,7 +94,8 @@
     "negative_case_id": "negative_chapter_001_009",
     "knowledge_type": "item",
     "accepted_names": [
-      "银钱、衣衫"
+      "银钱",
+      "衣衫"
     ],
     "reason": "普通货币和日用品，没有特殊功能、专名或持续设定价值。",
     "source_quote_ids": [
@@ -102,7 +106,8 @@
     "negative_case_id": "negative_chapter_001_010",
     "knowledge_type": "item",
     "accepted_names": [
-      "珍稀药材、灵药异草"
+      "珍稀药材",
+      "灵药异草"
     ],
     "reason": "药材类别泛称，未指向单一种类或唯一物件；黄精已有明确名称，应单独抽取。",
     "source_quote_ids": [

@@ -15,10 +15,14 @@ from taichu.application.agents.knowledge_extraction.workflow import (
     BATCH_KNOWLEDGE_EXTRACTION_GRAPH_EDGES,
     BATCH_KNOWLEDGE_EXTRACTION_GRAPH_NODES,
     KnowledgeExtractionDependencies,
+    KnowledgeExtractionState,
     build_knowledge_extraction_branch_graph,
     build_knowledge_extraction_graph,
+    dedupe_candidates_by_target,
     initial_knowledge_extraction_state,
+    mark_cross_type_projection_conflicts,
     run_snapshot_from_state,
+    synthesize_candidate_summaries,
     _action_label,
     _candidate_action,
     _candidate_validation_errors,
@@ -144,20 +148,50 @@ class KnowledgeExtractionService:
         return await self._sedimentation_progress_repository.get_progress()
 
     async def accept_run(self, run_id: str) -> KnowledgeSedimentationProgress:
-        """Advance the frontier after every candidate in a continuous run is reviewed."""
-        run = await self.get_run(run_id)
-        if run.status is not AgentRunStatus.COMPLETED:
-            raise KnowledgeExtractionError("只能采纳已完成的知识沉淀任务。")
-        if any(
-            item.candidate_status is AgentReviewCandidateStatus.PENDING
-            for item in run.review_items
-        ):
-            raise KnowledgeExtractionError(
-                "请先确认或废弃本次沉淀的全部候选，再采纳章节范围。"
+        """Confirm pending candidates with merge semantics, then advance the frontier."""
+        async with self._review_lock(run_id):
+            run = await self.get_run(run_id)
+            if run.status is not AgentRunStatus.COMPLETED:
+                raise KnowledgeExtractionError("只能采纳已完成的知识沉淀任务。")
+
+            pending = [
+                item
+                for item in run.review_items
+                if item.candidate_status is AgentReviewCandidateStatus.PENDING
+            ]
+            blocked = [
+                item
+                for item in pending
+                if item.candidate_action is AgentReviewCandidateAction.IGNORE
+                or not item.schema_validation.passed
+            ]
+            if blocked:
+                titles = "、".join(item.display_title for item in blocked[:3])
+                suffix = "等" if len(blocked) > 3 else ""
+                raise KnowledgeExtractionError(
+                    f"候选“{titles}”{suffix}未通过结构校验，无法一键采纳；"
+                    "请先编辑确认或废弃这些候选。"
+                )
+
+            chapter_ids = run.scope.chapter_ids or [run.scope.chapter_id]
+            await self._validate_sedimentation_scope(chapter_ids)
+            for item in pending:
+                if item.candidate_action is AgentReviewCandidateAction.CONFLICT:
+                    run = await self._edit_confirm_candidate_locked(
+                        item.review_item_id,
+                        card_updates={},
+                        target_card_id=item.target_card_id,
+                        merge_mode="merge",
+                        run_id=run_id,
+                    )
+                else:
+                    run = await self._confirm_candidate_locked(
+                        item.review_item_id,
+                        run_id,
+                    )
+            return await self._sedimentation_progress_repository.advance_to(
+                chapter_ids[-1]
             )
-        chapter_ids = run.scope.chapter_ids or [run.scope.chapter_id]
-        await self._validate_sedimentation_scope(chapter_ids)
-        return await self._sedimentation_progress_repository.advance_to(chapter_ids[-1])
 
     def _resolve_model_selection(
         self,
@@ -222,6 +256,191 @@ class KnowledgeExtractionService:
             force=force,
             event_sink=self._publish_task_event if self._task_events else None,
         )
+
+    async def create_summary_repair_run(
+        self,
+        *,
+        card_ids: list[str] | None = None,
+        model_name: str | None = None,
+    ) -> AgentRun:
+        """Generate review candidates for suspicious confirmed summaries."""
+        profile, requested_model_name = self._resolve_model_selection(model_name)
+        requested_ids = _unique_non_empty(card_ids or [])
+        if requested_ids:
+            cards: list[StructuredKnowledgeCard] = []
+            for card_id in requested_ids:
+                card = await self._knowledge_service.get_card(card_id)
+                if card.lifecycle is not StructuredKnowledgeLifecycle.CONFIRMED:
+                    raise KnowledgeExtractionError(
+                        f"知识卡“{card.name or card.id}”不是有效知识，不能生成摘要修复候选。"
+                    )
+                cards.append(card)
+        else:
+            cards = await self._list_confirmed_cards_for_summary_repair()
+        suspicious_cards = [
+            card for card in cards if _summary_needs_repair(card.summary)
+        ]
+
+        started_at = _now_iso()
+        run_id = _new_run_id(started_at)
+        candidates = [_summary_repair_candidate(card) for card in suspicious_cards]
+        state = cast(
+            KnowledgeExtractionState,
+            {
+                "run_id": run_id,
+                "model_name": profile.display_name,
+                "requested_model_name": requested_model_name,
+                "model_id": profile.id,
+                "model_display_name": profile.display_name,
+                "upstream_model": profile.upstream_model,
+                "wire_protocol": profile.wire_protocol,
+                "chapter_id": "",
+                "chapter_ids": [],
+                "llm_calls": [],
+                "errors": [],
+            },
+        )
+        dependencies = KnowledgeExtractionDependencies(
+            chapter_service=self._chapter_service,
+            llm=self._llm,
+            retrieval_service=self._retrieval_service,
+            run_store=self._run_store,
+        )
+        candidates = await synthesize_candidate_summaries(
+            state,
+            dependencies,
+            candidates,
+            include_new=True,
+            node_name="RepairSynthesizeSummariesNode",
+        )
+        review_items = _build_batch_review_items(run_id, candidates)
+        finished_at = _now_iso()
+        llm_calls = [
+            AgentLLMCall.model_validate(call) for call in state.get("llm_calls", [])
+        ]
+        nodes = [
+            _make_node(
+                "RepairScanCardsNode",
+                AgentRunNodeStatus.SUCCESS,
+                started_at=started_at,
+                input_summary=(
+                    f"指定 {len(requested_ids)} 张知识卡。"
+                    if requested_ids
+                    else f"扫描 {len(cards)} 张有效知识卡。"
+                ),
+                output_summary=f"发现 {len(suspicious_cards)} 张待修复摘要。",
+            ),
+            _make_node(
+                "RepairSynthesizeSummariesNode",
+                AgentRunNodeStatus.SUCCESS,
+                output_summary=f"综合 {len(candidates)} 个统一摘要。",
+            ),
+            _make_node(
+                "RepairBuildReviewItemsNode",
+                AgentRunNodeStatus.SUCCESS,
+                output_summary=f"生成 {len(review_items)} 个审核项。",
+            ),
+            _make_node(
+                "RepairWriteRunNode",
+                AgentRunNodeStatus.SUCCESS,
+                output_summary="已写入摘要修复运行 JSON。",
+            ),
+        ]
+        graph_nodes = [
+            AgentRunGraphNode(
+                node_name="RepairScanCardsNode",
+                label="扫描异常摘要",
+                lane="历史修复",
+            ),
+            AgentRunGraphNode(
+                node_name="RepairSynthesizeSummariesNode",
+                label="综合统一摘要",
+                lane="历史修复",
+            ),
+            AgentRunGraphNode(
+                node_name="RepairBuildReviewItemsNode",
+                label="生成审核项",
+                lane="历史修复",
+            ),
+            AgentRunGraphNode(
+                node_name="RepairWriteRunNode",
+                label="写入中间态",
+                lane="写入",
+            ),
+        ]
+        graph_edges = [
+            AgentRunGraphEdge(
+                source="RepairScanCardsNode",
+                target="RepairSynthesizeSummariesNode",
+            ),
+            AgentRunGraphEdge(
+                source="RepairSynthesizeSummariesNode",
+                target="RepairBuildReviewItemsNode",
+            ),
+            AgentRunGraphEdge(
+                source="RepairBuildReviewItemsNode",
+                target="RepairWriteRunNode",
+            ),
+        ]
+        run = AgentRun(
+            run_id=run_id,
+            model_name=profile.display_name,
+            requested_model_name=requested_model_name,
+            model_id=profile.id,
+            model_display_name=profile.display_name,
+            upstream_model=profile.upstream_model,
+            wire_protocol=profile.wire_protocol,
+            generation_model_identity=_identity_for_gateway(self._llm, profile),
+            status=AgentRunStatus.COMPLETED,
+            scope=AgentRunScope(
+                scope_type="summary_repair",
+                chapter_title="历史摘要修复",
+            ),
+            started_at=started_at,
+            finished_at=finished_at,
+            nodes=nodes,
+            graph_nodes=graph_nodes,
+            graph_edges=graph_edges,
+            max_concurrency=5,
+            llm_calls=llm_calls,
+            typed_candidates=[
+                _strip_internal_candidate_fields(candidate) for candidate in candidates
+            ],
+            review_items=review_items,
+            metrics=_metrics_for_items(
+                review_items=review_items,
+                nodes=nodes,
+                llm_calls=llm_calls,
+                started_at=started_at,
+                finished_at=finished_at,
+            ),
+            errors=state.get("errors", []),
+            prompt_version="knowledge_summary_repair",
+        )
+        await self._run_store.write_run(run)
+        return run
+
+    async def _list_confirmed_cards_for_summary_repair(
+        self,
+    ) -> list[StructuredKnowledgeCard]:
+        """Enumerate confirmed cards through the maintenance query boundary."""
+        cards: list[StructuredKnowledgeCard] = []
+        for knowledge_type in self._knowledge_service.list_types():
+            page_number = 1
+            type_card_count = 0
+            while True:
+                page = await self._knowledge_service.list_cards(
+                    knowledge_type,
+                    lifecycle=StructuredKnowledgeLifecycle.CONFIRMED.value,
+                    page=page_number,
+                    page_size=200,
+                )
+                cards.extend(page.cards)
+                type_card_count += len(page.cards)
+                if type_card_count >= page.total or len(page.cards) < page.limit:
+                    break
+                page_number += 1
+        return cards
 
     async def stream_run(
         self,
@@ -887,6 +1106,56 @@ class KnowledgeExtractionService:
             lambda: self._batch_match_existing(typed_candidates),
         )
 
+        summary_state = cast(
+            KnowledgeExtractionState,
+            {
+                "run_id": run_id,
+                "model_name": profile.display_name,
+                "requested_model_name": requested_model_name,
+                "model_id": profile.id,
+                "model_display_name": profile.display_name,
+                "upstream_model": profile.upstream_model,
+                "wire_protocol": profile.wire_protocol,
+                "chapter_id": unique_chapter_ids[0],
+                "chapter_ids": unique_chapter_ids,
+                "llm_calls": [],
+                "errors": [],
+            },
+        )
+        summary_dependencies = KnowledgeExtractionDependencies(
+            chapter_service=self._chapter_service,
+            llm=self._llm,
+            retrieval_service=self._retrieval_service,
+            run_store=self._run_store,
+            event_sink=event_sink,
+        )
+
+        async def synthesize_batch_summaries() -> list[dict[str, Any]]:
+            result = await synthesize_candidate_summaries(
+                summary_state,
+                summary_dependencies,
+                typed_candidates,
+                include_new=True,
+                node_name="BatchSynthesizeCandidateSummariesNode",
+            )
+            for call in summary_state.get("llm_calls", []):
+                llm_calls[:] = _upsert_llm_call(
+                    llm_calls,
+                    AgentLLMCall.model_validate(call),
+                )
+            errors.extend(summary_state.get("errors", []))
+            return result
+
+        typed_candidates = await self._run_batch_node(
+            run_id,
+            nodes,
+            event_sink,
+            "BatchSynthesizeCandidateSummariesNode",
+            "综合候选摘要",
+            snapshot,
+            synthesize_batch_summaries,
+        )
+
         review_items = await self._run_batch_node(
             run_id,
             nodes,
@@ -1003,10 +1272,11 @@ class KnowledgeExtractionService:
             candidate["target_card_id"] = match.id
             candidate["matched_card_name"] = match.name
             candidate["match_reason"] = "命中已有有效知识卡的名称或别名。"
+            candidate["_existing_card"] = match.model_dump(mode="json")
             conflicts = _external_conflicts(candidate, match)
             if conflicts:
                 candidate["external_conflicts"] = conflicts
-        return candidates
+        return dedupe_candidates_by_target(candidates)
 
     async def _run_batch_node(
         self,
@@ -1206,7 +1476,7 @@ class KnowledgeExtractionService:
                     item.knowledge_type,
                     _with_appearance_chapter_count(item.suggested_card, item),
                 ),
-                merge_mode="append",
+                merge_mode="merge",
                 allow_appearance_count_update=True,
             )
             updated = _mark_confirmed(
@@ -1222,7 +1492,7 @@ class KnowledgeExtractionService:
         *,
         card_updates: dict[str, Any],
         target_card_id: str | None = None,
-        merge_mode: AuthorMergeMode = "append",
+        merge_mode: AuthorMergeMode = "merge",
         run_id: str | None = None,
     ) -> AgentRun:
         """Confirm a candidate after explicit author edits."""
@@ -1588,6 +1858,66 @@ def _new_run_id(now: str) -> str:
     return f"extract_run_{moment.strftime('%Y%m%d_%H%M%S')}_{uuid4().hex[:6]}"
 
 
+def _summary_needs_repair(summary: str) -> bool:
+    paragraphs = [
+        paragraph.strip()
+        for paragraph in re.split(r"\n\s*\n", str(summary or ""))
+        if paragraph.strip()
+    ]
+    if len(paragraphs) > 1:
+        return True
+    sentences = [
+        sentence.strip()
+        for sentence in re.split(r"(?<=[。！？!?；;])|\n+", str(summary or ""))
+        if sentence.strip()
+    ]
+    normalized = [
+        re.sub(r"[^\w\u4e00-\u9fff]", "", sentence).casefold() for sentence in sentences
+    ]
+    normalized = [sentence for sentence in normalized if sentence]
+    return len(normalized) != len(set(normalized))
+
+
+def _summary_repair_candidate(
+    card: StructuredKnowledgeCard,
+) -> dict[str, Any]:
+    card_payload = card.model_dump(mode="json")
+    allowed_card_fields = {
+        "type",
+        "name",
+        "aliases",
+        "summary",
+        "lifecycle",
+        "source_origin",
+        "source_note",
+        *type_specific_field_keys(card.type),
+    }
+    candidate = {
+        key: value for key, value in card_payload.items() if key in allowed_card_fields
+    }
+    source_note = str(card.source_note or "").strip()
+    evidence_excerpt = " ".join((source_note or card.summary).split())[:300]
+    candidate.update(
+        {
+            "lifecycle": "confirmed",
+            "source_origin": "agent_extract",
+            "entity_group_id": f"summary_repair_{card.id}",
+            "evidence_excerpt": evidence_excerpt,
+            "evidence_excerpts": [evidence_excerpt] if evidence_excerpt else [],
+            "target_card_id": card.id,
+            "matched_card_name": card.name,
+            "match_reason": "历史摘要包含多段或规范化重复句段。",
+            "_existing_card": card.model_dump(mode="json"),
+        }
+    )
+    validation_errors = _candidate_validation_errors(candidate)
+    candidate["schema_validation"] = {
+        "passed": not validation_errors,
+        "errors": validation_errors,
+    }
+    return candidate
+
+
 def _make_node(
     node_name: str,
     status: AgentRunNodeStatus,
@@ -1689,6 +2019,7 @@ def _agent_node_display_label(node_name: str) -> str:
         "BatchCardAggregationNode": "多章卡片聚合",
         "BatchConflictCheckNode": "批量冲突检查",
         "BatchMatchExistingKnowledgeNode": "匹配有效知识",
+        "BatchSynthesizeCandidateSummariesNode": "综合候选摘要",
         "BatchBuildReviewItemsNode": "生成审核项",
         "BatchWriteRunNode": "写入批量运行",
     }
@@ -1737,11 +2068,11 @@ def _aggregate_batch_candidates(
                 continue
             payload = dict(candidate)
             source_entry = _source_entry(chapter_title, payload)
-            knowledge_type = str(payload.get("type") or "")
+            knowledge_type_value = str(payload.get("type") or "")
             identity = _normalize_identity(payload.get("name"))
-            if not knowledge_type or not identity:
+            if not knowledge_type_value or not identity:
                 continue
-            key = (knowledge_type, identity)
+            key = (knowledge_type_value, identity)
             if key not in grouped:
                 payload["chapter_ids"] = [chapter_id] if chapter_id else []
                 payload["chapter_titles"] = [chapter_title] if chapter_title else []
@@ -1793,8 +2124,19 @@ def _aggregate_batch_candidates(
         candidate["appearance_chapter_count"] = (
             len(_dedupe_strings(_list_strings(candidate.get("chapter_ids")))) or None
         )
-        candidate.pop("chapter_ids", None)
-        candidate.pop("chapter_titles", None)
+        chapter_ids = _dedupe_strings(_list_strings(candidate.get("chapter_ids")))
+        try:
+            resolved_type: StructuredKnowledgeType | None = StructuredKnowledgeType(
+                str(candidate.get("type") or "")
+            )
+        except ValueError:
+            resolved_type = None
+        if resolved_type is not None:
+            type_fields = type_specific_field_keys(resolved_type)
+            if chapter_ids and "first_seen_chapter_id" in type_fields:
+                candidate["first_seen_chapter_id"] = chapter_ids[0]
+            if chapter_ids and "last_seen_chapter_id" in type_fields:
+                candidate["last_seen_chapter_id"] = chapter_ids[-1]
         candidate.pop("source_entries", None)
         candidate["source_origin"] = "agent_extract"
         candidate.setdefault("lifecycle", "confirmed")
@@ -1817,6 +2159,7 @@ def _source_entry(chapter_title: str, candidate: dict[str, Any]) -> str:
 def _batch_internal_conflict_check(
     candidates: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
+    candidates = mark_cross_type_projection_conflicts(candidates)
     seen: dict[tuple[str, str], int] = {}
     for index, candidate in enumerate(candidates):
         key = (
@@ -1903,6 +2246,8 @@ def _batch_node_output(node_name: str, result: object) -> str:
     if isinstance(result, list):
         if node_name == "BatchCardAggregationNode":
             return f"聚合为 {len(result)} 个跨章节候选。"
+        if node_name == "BatchSynthesizeCandidateSummariesNode":
+            return f"完成 {len(result)} 个候选的摘要综合。"
         if node_name == "BatchBuildReviewItemsNode":
             return f"生成 {len(result)} 个审核项。"
     if node_name == "BatchConflictCheckNode":

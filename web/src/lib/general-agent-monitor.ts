@@ -1,9 +1,23 @@
 import type {
   GeneralAgentInvocationTrace,
   GeneralAgentNodeRun,
+  GeneralAgentNodeStatus,
+  GeneralAgentRunStatus,
 } from "@/lib/types/general-agent";
 
-export type GeneralAgentGraphNode = GeneralAgentNodeRun & {
+export const GENERAL_AGENT_FLOW_ORCHESTRATOR_ID = "flow_orchestrator";
+export const GENERAL_AGENT_FLOW_ANSWER_ID = "flow_answer";
+
+export type GeneralAgentFlowRole = "orchestrator" | "capability" | "answer";
+
+export type GeneralAgentFlowNode = Pick<
+  GeneralAgentNodeRun,
+  "node_id" | "kind" | "capability_name" | "dependencies" | "status" | "duration_ms"
+> & {
+  flow_role: GeneralAgentFlowRole;
+};
+
+export type GeneralAgentGraphNode = GeneralAgentFlowNode & {
   x: number;
   y: number;
   width: number;
@@ -17,18 +31,73 @@ export interface GeneralAgentGraphLayout {
   height: number;
 }
 
-const NODE_WIDTH = 172;
-const NODE_HEIGHT = 72;
-const COLUMN_GAP = 70;
-const ROW_GAP = 34;
-const PADDING = 28;
+const NODE_WIDTH = 148;
+const NODE_HEIGHT = 56;
+const COLUMN_GAP = 52;
+const ROW_GAP = 24;
+const PADDING = 22;
 
 export function generalAgentPlanRevisions(nodes: GeneralAgentNodeRun[]): number[] {
   return [...new Set(nodes.map(node => node.plan_revision))].sort((a, b) => b - a);
 }
 
-export function buildGeneralAgentGraphLayout(
+export function buildGeneralAgentExecutionFlow(
   nodes: GeneralAgentNodeRun[],
+  runStatus: GeneralAgentRunStatus,
+): GeneralAgentFlowNode[] {
+  const knownNodeIds = new Set(nodes.map(node => node.node_id));
+  const capabilityNodes: GeneralAgentFlowNode[] = nodes.map(node => {
+    const knownDependencies = node.dependencies.filter(dependency =>
+      knownNodeIds.has(dependency),
+    );
+    return {
+      node_id: node.node_id,
+      kind: node.kind,
+      capability_name: node.capability_name,
+      dependencies:
+        knownDependencies.length > 0
+          ? knownDependencies
+          : [GENERAL_AGENT_FLOW_ORCHESTRATOR_ID],
+      status: node.status,
+      duration_ms: node.duration_ms,
+      flow_role: "capability",
+    };
+  });
+  const dependedOnNodeIds = new Set(
+    capabilityNodes.flatMap(node => node.dependencies),
+  );
+  const leafNodeIds = capabilityNodes
+    .filter(node => !dependedOnNodeIds.has(node.node_id))
+    .map(node => node.node_id);
+
+  return [
+    {
+      node_id: GENERAL_AGENT_FLOW_ORCHESTRATOR_ID,
+      kind: "subagent",
+      capability_name: "general_writing_orchestrator",
+      dependencies: [],
+      status: orchestratorFlowStatus(runStatus, nodes.length > 0),
+      duration_ms: 0,
+      flow_role: "orchestrator",
+    },
+    ...capabilityNodes,
+    {
+      node_id: GENERAL_AGENT_FLOW_ANSWER_ID,
+      kind: "subagent",
+      capability_name: "general_agent_final_answer",
+      dependencies:
+        leafNodeIds.length > 0
+          ? leafNodeIds
+          : [GENERAL_AGENT_FLOW_ORCHESTRATOR_ID],
+      status: answerFlowStatus(runStatus),
+      duration_ms: 0,
+      flow_role: "answer",
+    },
+  ];
+}
+
+export function buildGeneralAgentGraphLayout(
+  nodes: GeneralAgentFlowNode[],
 ): GeneralAgentGraphLayout {
   if (nodes.length === 0) {
     return { nodes: [], width: 520, height: 220 };
@@ -59,13 +128,17 @@ export function buildGeneralAgentGraphLayout(
       remaining.clear();
     }
   }
-  const columns = new Map<number, GeneralAgentNodeRun[]>();
+  const columns = new Map<number, GeneralAgentFlowNode[]>();
   for (const node of nodes) {
     const level = levels.get(node.node_id) ?? 0;
     columns.set(level, [...(columns.get(level) ?? []), node]);
   }
   const maxRows = Math.max(...[...columns.values()].map(column => column.length));
   const maxLevel = Math.max(...levels.values());
+  const naturalWidth =
+    PADDING * 2 + (maxLevel + 1) * NODE_WIDTH + maxLevel * COLUMN_GAP;
+  const width = Math.max(520, naturalWidth);
+  const horizontalOffset = (width - naturalWidth) / 2;
   const height = Math.max(
     220,
     PADDING * 2 + maxRows * NODE_HEIGHT + Math.max(0, maxRows - 1) * ROW_GAP,
@@ -79,7 +152,7 @@ export function buildGeneralAgentGraphLayout(
       layoutNodes.push({
         ...node,
         level,
-        x: PADDING + level * (NODE_WIDTH + COLUMN_GAP),
+        x: horizontalOffset + PADDING + level * (NODE_WIDTH + COLUMN_GAP),
         y: startY + index * (NODE_HEIGHT + ROW_GAP),
         width: NODE_WIDTH,
         height: NODE_HEIGHT,
@@ -88,12 +161,41 @@ export function buildGeneralAgentGraphLayout(
   }
   return {
     nodes: layoutNodes,
-    width: Math.max(
-      520,
-      PADDING * 2 + (maxLevel + 1) * NODE_WIDTH + maxLevel * COLUMN_GAP,
-    ),
+    width,
     height,
   };
+}
+
+function orchestratorFlowStatus(
+  runStatus: GeneralAgentRunStatus,
+  hasCapabilityNodes: boolean,
+): GeneralAgentNodeStatus {
+  if (hasCapabilityNodes) {
+    return "success";
+  }
+  if (["failed", "timeout"].includes(runStatus)) {
+    return "failed";
+  }
+  if (runStatus === "cancelled") {
+    return "skipped";
+  }
+  if (["init", "clarifying", "planning", "replanning"].includes(runStatus)) {
+    return "running";
+  }
+  return "success";
+}
+
+function answerFlowStatus(runStatus: GeneralAgentRunStatus): GeneralAgentNodeStatus {
+  if (runStatus === "completed") {
+    return "success";
+  }
+  if (["failed", "timeout"].includes(runStatus)) {
+    return "failed";
+  }
+  if (runStatus === "cancelled") {
+    return "skipped";
+  }
+  return "pending";
 }
 
 export function tracesForGeneralAgentNode(

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import UTC, datetime
+from hashlib import sha256
 import json
 import math
 from secrets import token_hex
@@ -75,6 +76,7 @@ class RetrievalEvaluationService:
 
         case_results: list[RetrievalEvaluationCaseResult] = []
         effective_strategies: set[str] = set()
+        case_snapshot_ids: set[str] = set()
         policy_snapshots: dict[str, dict[str, str | int | bool | None]] = {}
         for case in dataset.cases:
             retrieval_result = await self._retrieval.retrieve(
@@ -95,6 +97,8 @@ class RetrievalEvaluationService:
             effective_strategies.add(
                 retrieval_result.effective_strategy or retrieval_result.strategy
             )
+            if retrieval_result.index_snapshot_id:
+                case_snapshot_ids.add(retrieval_result.index_snapshot_id)
             snapshot_key = json.dumps(
                 retrieval_result.strategy_snapshot,
                 ensure_ascii=False,
@@ -104,6 +108,20 @@ class RetrievalEvaluationService:
             case_results.append(_evaluate_case(case, retrieval_result))
 
         failures = _failures(dataset, case_results)
+        if effective_strategies != {strategy}:
+            raise RetrievalEvaluationError(
+                "召回评测发生了策略回退，不能作为请求策略的效果证据。",
+                code="RETRIEVAL_EVALUATION_STRATEGY_FALLBACK",
+            )
+        if strategy == "mongo_lexical":
+            evaluation_snapshot_id = snapshot_id
+        elif len(case_snapshot_ids) == 1:
+            evaluation_snapshot_id = next(iter(case_snapshot_ids))
+        else:
+            raise RetrievalEvaluationError(
+                "同一次召回评测使用了多个索引快照，结果不可比较。",
+                code="RETRIEVAL_EVALUATION_SNAPSHOT_CHANGED",
+            )
         groups_by_category: dict[
             RetrievalEvaluationCategory,
             list[RetrievalEvaluationCaseResult],
@@ -126,7 +144,7 @@ class RetrievalEvaluationService:
             dataset_checksum=dataset.checksum,
             requested_strategy=strategy,
             effective_strategies=sorted(effective_strategies),
-            index_snapshot_id=snapshot_id,
+            index_snapshot_id=evaluation_snapshot_id,
             confirmed_card_count=snapshot.candidate_count,
             policy_snapshots=[policy_snapshots[key] for key in sorted(policy_snapshots)],
             summary=_summary(case_results),
@@ -134,6 +152,7 @@ class RetrievalEvaluationService:
             cases=case_results,
             failures=failures,
             environment=environment or {},
+            ranking_fingerprint_sha256=_ranking_fingerprint(case_results),
             started_at=started_at,
             finished_at=_now_iso(),
         )
@@ -203,6 +222,7 @@ def _evaluate_case(
         truncated=retrieval.truncated,
         budget_limited=retrieval.budget_limited,
         content_chars_used=retrieval.content_chars_used,
+        backend_metrics=retrieval.backend_metrics,
     )
 
 
@@ -263,6 +283,16 @@ def _summary(
     latencies = sorted(result.latency_ms for result in case_results)
     p95_index = max(0, math.ceil(len(latencies) * 0.95) - 1)
     case_count = len(case_results)
+    embedding_latencies = sorted(
+        result.backend_metrics.embedding_duration_ms
+        for result in case_results
+        if result.backend_metrics.embedding_duration_ms is not None
+    )
+    index_latencies = sorted(
+        result.backend_metrics.index_search_duration_ms
+        for result in case_results
+        if result.backend_metrics.index_search_duration_ms is not None
+    )
     return RetrievalEvaluationSummary(
         case_count=case_count,
         relevance_case_count=len(relevance_results),
@@ -294,6 +324,17 @@ def _summary(
         ),
         content_budget_hit_rate=round(
             sum(result.budget_limited for result in case_results) / case_count,
+            6,
+        ),
+        embedding_call_count=len(embedding_latencies),
+        embedding_failure_count=0,
+        embedding_failure_rate=0,
+        embedding_p50_latency_ms=_percentile(embedding_latencies, 0.50),
+        embedding_p95_latency_ms=_percentile(embedding_latencies, 0.95),
+        index_search_p50_latency_ms=_percentile(index_latencies, 0.50),
+        index_search_p95_latency_ms=_percentile(index_latencies, 0.95),
+        embedding_cost_amount=round(
+            sum(result.backend_metrics.embedding_cost_amount for result in case_results),
             6,
         ),
     )
@@ -331,13 +372,31 @@ def _failures(
 
 
 def _fallback_snapshot_id(result: RetrievalResult) -> str:
-    from hashlib import sha256
-
     payload = "\n".join(
         f"{item.source_id}:{item.knowledge_card.updated_at}"
         for item in result.items
     )
     return "confirmed_catalog_" + sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _percentile(values: list[int], fraction: float) -> float | None:
+    if not values:
+        return None
+    index = max(0, math.ceil(len(values) * fraction) - 1)
+    return float(values[index])
+
+
+def _ranking_fingerprint(results: list[RetrievalEvaluationCaseResult]) -> str:
+    payload = json.dumps(
+        [
+            {"case_id": result.case_id, "returned_card_ids": result.returned_card_ids}
+            for result in results
+        ],
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return sha256(payload.encode("utf-8")).hexdigest()
 
 
 def _new_evaluation_id() -> str:

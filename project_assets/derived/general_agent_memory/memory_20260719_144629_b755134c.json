@@ -1,0 +1,25 @@
+{
+  "memory_id": "memory_20260719_144629_b755134c",
+  "kind": "resource_summary",
+  "content": "资源摘要：获取第8章的正文内容并忠实概括其主要情节和关键事件。结果摘要：{\"lifecycle\":\"draft\",\"artifact_type\":\"canon_evidence_report\",\"answer\":\"未检索到正文第8章的内容，无法回答该章节讲了什么。\",\"confidence\":\"unknown\",\"evidence\":[],\"conflicting_evidence\":[],\"unknowns\":[\"正文第8章的具体内容\"],\"source_refs\":[\"retrieval_72575cd4883d463aa246f6f3137cee87\"]}",
+  "source_refs": [
+    "retrieval_72575cd4883d463aa246f6f3137cee87"
+  ],
+  "artifact_refs": [
+    "artifact_a970db25b7d640bebc81c67f47f34edc"
+  ],
+  "run_ids": [
+    "general_run_20260719_144520_0f9f81"
+  ],
+  "conversation_id": "general_conversation_20260718_080855_cec285",
+  "created_request_index": 8,
+  "expires_after_request_index": 13,
+  "retention_priority": 60,
+  "created_at": "2026-07-19T14:46:29.424625Z",
+  "updated_at": "2026-07-19T14:46:29.424625Z",
+  "expires_at": null,
+  "supersedes_memory_id": null,
+  "content_sha256": "45c68a1f126f0c0f895543373eec9b8cacb396ecdee39ef627ddf512d4eb33f2",
+  "sensitivity": "normal",
+  "deleted_at": null
+}

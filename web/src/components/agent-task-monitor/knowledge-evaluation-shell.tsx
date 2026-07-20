@@ -4,10 +4,12 @@ import Link from "next/link";
 import {
   AlertCircle,
   ArchiveX,
+  Check,
   CheckCircle2,
   ChevronLeft,
   CircleDashed,
   Clock3,
+  Copy,
   FileDiff,
   LoaderCircle,
   MoreHorizontal,
@@ -39,6 +41,7 @@ import {
 } from "@/lib/api/agent-evaluation";
 import {
   canRetryEvaluation,
+  buildKnowledgeEvaluationCodexAnalysisRequest,
   evaluationErrorMessage,
   evaluationFieldLabel,
   evaluationIndependenceLabel,
@@ -126,6 +129,7 @@ export function KnowledgeEvaluationShell() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [comparisonLoading, setComparisonLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [copiedEvaluationId, setCopiedEvaluationId] = useState("");
 
   const [loadError, setLoadError] = useState("");
   const [runsError, setRunsError] = useState("");
@@ -460,6 +464,20 @@ export function KnowledgeEvaluationShell() {
       );
     } finally {
       setActionLoading(false);
+    }
+  }
+
+  async function handleCopyForCodex(evaluation: KnowledgeEvaluation) {
+    setActionError("");
+    try {
+      await copyTextToClipboard(
+        buildKnowledgeEvaluationCodexAnalysisRequest(evaluation),
+      );
+      setCopiedEvaluationId(evaluation.evaluation_id);
+    } catch {
+      setActionError(
+        "复制失败，请检查浏览器的剪贴板权限后重试。评估结果仍已保存在本地。",
+      );
     }
   }
 
@@ -877,6 +895,12 @@ export function KnowledgeEvaluationShell() {
               <EvaluationResult
                 evaluation={currentEvaluation}
                 actionLoading={actionLoading}
+                copiedForCodex={
+                  copiedEvaluationId === currentEvaluation.evaluation_id
+                }
+                onCopyForCodex={() =>
+                  void handleCopyForCodex(currentEvaluation)
+                }
                 onRetry={() => void handleRetry()}
               />
             ) : (
@@ -1169,10 +1193,14 @@ function PreviewReadout({ label, value }: { label: string; value: string }) {
 function EvaluationResult({
   evaluation,
   actionLoading,
+  copiedForCodex,
+  onCopyForCodex,
   onRetry,
 }: {
   evaluation: KnowledgeEvaluation;
   actionLoading: boolean;
+  copiedForCodex: boolean;
+  onCopyForCodex: () => void;
   onRetry: () => void;
 }) {
   const metrics = evaluation.aggregate_metrics ?? {};
@@ -1212,18 +1240,35 @@ function EvaluationResult({
               评估对象：{evaluation.subject_title || "未命名章节"}
             </p>
           </div>
-          {canRetryEvaluation(evaluation) ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={actionLoading}
-              onClick={onRetry}
-            >
-              <RotateCcw className="size-3.5" />
-              基于原快照重试
-            </Button>
-          ) : null}
+          <div className="flex flex-wrap justify-end gap-2">
+            {terminal ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onCopyForCodex}
+              >
+                {copiedForCodex ? (
+                  <Check className="size-3.5" />
+                ) : (
+                  <Copy className="size-3.5" />
+                )}
+                {copiedForCodex ? "已复制分析请求" : "复制给 Codex 分析"}
+              </Button>
+            ) : null}
+            {canRetryEvaluation(evaluation) ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={actionLoading}
+                onClick={onRetry}
+              >
+                <RotateCcw className="size-3.5" />
+                基于原快照重试
+              </Button>
+            ) : null}
+          </div>
         </div>
 
         {!terminal ? (
@@ -1694,6 +1739,30 @@ function displayValue(value: unknown, field?: string): string {
       .join("、") || "无";
   }
   return "内容不同";
+}
+
+async function copyTextToClipboard(value: string): Promise<void> {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return;
+    } catch {
+      // 浏览器拒绝现代剪贴板接口时，继续尝试本地同步回退。
+    }
+  }
+
+  const textArea = document.createElement("textarea");
+  textArea.value = value;
+  textArea.setAttribute("readonly", "");
+  textArea.style.position = "fixed";
+  textArea.style.opacity = "0";
+  document.body.appendChild(textArea);
+  textArea.select();
+  const copied = document.execCommand("copy");
+  document.body.removeChild(textArea);
+  if (!copied) {
+    throw new Error("clipboard unavailable");
+  }
 }
 
 function formatDateTime(value: string | null | undefined): string {

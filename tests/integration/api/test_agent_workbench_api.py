@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import asyncio
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -532,6 +533,65 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(active_delete_response.status_code, 200)
         self.assertEqual(active_detail_response.status_code, 404)
 
+    async def test_agent_task_prefers_persisted_review_state_over_stale_completed_snapshot(
+        self,
+    ) -> None:
+        stale = _manual_review_run()
+        stale = stale.model_copy(
+            update={
+                "metrics": stale.metrics.model_copy(
+                    update={"candidate_total": 2, "pending_count": 2}
+                )
+            }
+        )
+        rejected_items = [
+            item.model_copy(
+                update={
+                    "candidate_status": AgentReviewCandidateStatus.REJECTED,
+                    "author_action": "reject",
+                }
+            )
+            for item in stale.review_items
+        ]
+        persisted = stale.model_copy(
+            update={
+                "review_items": rejected_items,
+                "metrics": stale.metrics.model_copy(
+                    update={"pending_count": 0, "rejected_count": 2}
+                ),
+            }
+        )
+        await self.app.state.knowledge_run_store.write_run(persisted)
+        await self.app.state.agent_task_events.publish(
+            {
+                "type": "task_completed",
+                "event_type": "task_completed",
+                "run_id": stale.run_id,
+                "message": "旧的任务完成快照。",
+                "run": stale.model_dump(mode="json"),
+            }
+        )
+
+        detail_response = await self.client.get(f"/api/agent-tasks/{stale.run_id}")
+        list_response = await self.client.get(
+            "/api/agent-tasks?page=1&page_size=20&status=all"
+        )
+
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertTrue(
+            all(
+                item["candidate_status"] == "rejected"
+                for item in detail_response.json()["run"]["review_items"]
+            )
+        )
+        summary = next(
+            item
+            for item in list_response.json()["runs"]
+            if item["run_id"] == stale.run_id
+        )
+        self.assertEqual(summary["pending_count"], 0)
+        self.assertEqual(summary["rejected_count"], 2)
+
     async def test_agent_task_event_merges_chapter_progress_with_run_snapshot(
         self,
     ) -> None:
@@ -626,7 +686,9 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
             "rejected",
         )
 
-    async def test_direct_confirm_update_card_appends_to_existing_card(self) -> None:
+    async def test_direct_confirm_update_card_replaces_summary_and_merges_sources(
+        self,
+    ) -> None:
         await self.app.state.knowledge_service.create_confirmed_card(
             _confirmed_character_card(
                 "character-qin-direct",
@@ -654,14 +716,168 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertIsNotNone(card)
         assert card is not None
-        self.assertIn("秦阳原本是太初教弟子。", card.summary)
-        self.assertIn("新章显示秦阳进入山门。", card.summary)
+        self.assertEqual(card.summary, "新章显示秦阳进入山门。")
         self.assertIn("第1章旧来源。", card.source_note)
         self.assertIn("第2章新来源。", card.source_note)
         self.assertEqual(card.aliases, ["阿阳", "小秦"])
         self.assertEqual(card.identity, "太初教弟子")
         self.assertEqual(card.last_seen_chapter_id, "chapter_002")
         self.assertEqual(card.appearance_chapter_count, 1)
+
+    async def test_accept_run_confirms_pending_candidates_with_merge_and_advances(
+        self,
+    ) -> None:
+        await self.app.state.knowledge_service.create_confirmed_card(
+            _confirmed_character_card(
+                "character-qin-bulk",
+                summary="秦阳原本是太初教弟子。",
+                source_note="第1章旧来源。",
+                aliases=["阿阳"],
+                identity="太初教弟子",
+            )
+        )
+        run = _targeted_update_run(
+            "review_item_bulk_update",
+            "character-qin-bulk",
+            run_id="extract_run_20260719_060000_bulk01",
+        )
+        await self.app.state.knowledge_run_store.write_run(run)
+
+        response = await self.client.post(
+            f"/api/agent-workbench/knowledge-extraction/runs/{run.run_id}/accept"
+        )
+        detail = await self.client.get(f"/api/agent-tasks/{run.run_id}")
+        card = await self.app.state.knowledge_repository.get_card("character-qin-bulk")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["last_accepted_chapter_id"], "chapter_001")
+        self.assertEqual(
+            detail.json()["run"]["review_items"][0]["candidate_status"],
+            "confirmed",
+        )
+        self.assertIsNotNone(card)
+        assert card is not None
+        self.assertEqual(card.summary, "新章显示秦阳进入山门。")
+        self.assertIn("第1章旧来源。", card.source_note)
+        self.assertIn("第2章新来源。", card.source_note)
+        self.assertEqual(card.aliases, ["阿阳", "小秦"])
+        self.assertEqual(card.identity, "太初教弟子")
+
+    async def test_accept_run_blocks_invalid_candidates_before_writing(self) -> None:
+        run = _manual_review_run()
+        await self.app.state.knowledge_run_store.write_run(run)
+
+        response = await self.client.post(
+            f"/api/agent-workbench/knowledge-extraction/runs/{run.run_id}/accept"
+        )
+        detail = await self.client.get(f"/api/agent-tasks/{run.run_id}")
+        cards = await self.app.state.knowledge_repository.list_confirmed_cards()
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("无法一键采纳", response.json()["error"]["message"])
+        self.assertEqual(cards, [])
+        self.assertTrue(
+            all(
+                item["candidate_status"] == "pending"
+                for item in detail.json()["run"]["review_items"]
+            )
+        )
+
+    async def test_accept_run_confirms_reviewable_conflict_candidate(self) -> None:
+        source = _manual_review_run()
+        conflict = source.review_items[0].model_copy(
+            update={
+                "suggested_card": {
+                    "type": "character",
+                    "name": "秦阳",
+                    "summary": "秦阳持青铜令牌进入太初教山门。",
+                    "source_note": "第1章 山门：秦阳持令牌入山。",
+                }
+            }
+        )
+        run = source.model_copy(update={"review_items": [conflict]})
+        await self.app.state.knowledge_run_store.write_run(run)
+
+        response = await self.client.post(
+            f"/api/agent-workbench/knowledge-extraction/runs/{run.run_id}/accept"
+        )
+        detail = await self.client.get(f"/api/agent-tasks/{run.run_id}")
+        cards = await self.app.state.knowledge_repository.list_confirmed_cards()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            detail.json()["run"]["review_items"][0]["candidate_status"],
+            "confirmed",
+        )
+        self.assertEqual([card.name for card in cards], ["秦阳"])
+
+    async def test_summary_repair_run_creates_review_candidate_without_writing_card(
+        self,
+    ) -> None:
+        original_summary = (
+            "大田镇少年，靠采药补贴家用。\n\n大田镇少年，参加太初教入门测试。"
+        )
+        original_source = "第1章\n关键原文：旧证据\n\n第2章\n关键原文：新证据"
+        await self.app.state.knowledge_service.create_confirmed_card(
+            _confirmed_character_card(
+                "character-qin-haoxuan",
+                name="秦浩轩",
+                summary=original_summary,
+                source_note=original_source,
+                aliases=[],
+                identity="大田镇少年",
+                appearance_chapter_count=5,
+            )
+        )
+
+        response = await self.client.post(
+            "/api/agent-workbench/knowledge-extraction/summary-repair-runs/start",
+            json={"card_ids": ["character-qin-haoxuan"]},
+        )
+        run_id = response.json()["run"]["run_id"]
+        detail = await self.client.get(
+            f"/api/agent-workbench/knowledge-extraction/runs/{run_id}"
+        )
+        persisted = await self.app.state.knowledge_repository.get_card(
+            "character-qin-haoxuan"
+        )
+        candidate = detail.json()["run"]["review_items"][0]
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["run"]["scope_type"], "summary_repair")
+        self.assertEqual(candidate["candidate_action"], "update_card")
+        self.assertEqual(
+            candidate["suggested_card"]["summary"],
+            "秦浩轩是大田镇少年，靠采药补贴家用，并参加太初教入门测试。",
+        )
+        self.assertEqual(
+            candidate["suggested_card"]["summary"].count("大田镇少年"),
+            1,
+        )
+        self.assertEqual(candidate["suggested_card"]["source_note"], original_source)
+        self.assertNotIn(
+            "appearance_chapter_count",
+            candidate["suggested_card"],
+        )
+        self.assertIsNotNone(persisted)
+        assert persisted is not None
+        self.assertEqual(persisted.summary, original_summary)
+        self.assertEqual(persisted.source_note, original_source)
+
+        confirm = await self.client.post(
+            "/api/agent-workbench/knowledge-extraction/runs/"
+            f"{run_id}/candidates/{candidate['review_item_id']}/confirm"
+        )
+        repaired = await self.app.state.knowledge_repository.get_card(
+            "character-qin-haoxuan"
+        )
+
+        self.assertEqual(confirm.status_code, 200)
+        self.assertIsNotNone(repaired)
+        assert repaired is not None
+        self.assertEqual(repaired.summary.count("大田镇少年"), 1)
+        self.assertEqual(repaired.source_note, original_source)
+        self.assertEqual(repaired.appearance_chapter_count, 5)
 
     async def test_scoped_confirm_uses_run_id_when_candidate_ids_repeat(self) -> None:
         await self.app.state.knowledge_service.create_confirmed_card(
@@ -712,7 +928,7 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
             "confirmed",
         )
 
-    async def test_edit_confirm_can_append_to_existing_card(self) -> None:
+    async def test_edit_confirm_can_merge_into_existing_card(self) -> None:
         await self.app.state.knowledge_service.create_confirmed_card(
             _confirmed_character_card(
                 "character-qin",
@@ -730,7 +946,7 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
             "/api/agent-workbench/knowledge-extraction/candidates/review_item_append/edit-confirm",
             json={
                 "target_card_id": "character-qin",
-                "merge_mode": "append",
+                "merge_mode": "merge",
                 "card_updates": {
                     "type": "character",
                     "name": "秦阳",
@@ -751,13 +967,23 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertIsNotNone(card)
         assert card is not None
-        self.assertIn("秦阳原本是太初教弟子。", card.summary)
-        self.assertIn("新章显示秦阳进入山门。", card.summary)
+        self.assertEqual(card.summary, "新章显示秦阳进入山门。")
         self.assertIn("第1章旧来源。", card.source_note)
         self.assertIn("第2章新来源。", card.source_note)
         self.assertEqual(card.aliases, ["阿阳", "小秦"])
         self.assertEqual(card.identity, "太初教弟子")
         self.assertEqual(card.last_seen_chapter_id, "chapter_002")
+
+    async def test_edit_confirm_rejects_retired_append_mode(self) -> None:
+        response = await self.client.post(
+            "/api/agent-workbench/knowledge-extraction/candidates/missing/edit-confirm",
+            json={
+                "merge_mode": "append",
+                "card_updates": {"summary": "旧协议不应继续接受。"},
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
 
     async def test_edit_confirm_can_overwrite_existing_card(self) -> None:
         await self.app.state.knowledge_service.create_confirmed_card(
@@ -818,6 +1044,15 @@ class _SequenceChatModel(BaseChatModel):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
+        prompt_text = "\n".join(str(message.content) for message in messages)
+        if '"candidate_id"' in prompt_text:
+            return ChatResult(
+                generations=[
+                    ChatGeneration(
+                        message=AIMessage(content=_summary_response(prompt_text))
+                    )
+                ]
+            )
         if not self.responses:
             raise RuntimeError("没有可用的模拟 LLM 响应。")
         return ChatResult(
@@ -870,7 +1105,38 @@ def _success_responses() -> list[str]:
             },
             ensure_ascii=False,
         ),
+        json.dumps(
+            {
+                "summaries": [
+                    {
+                        "candidate_id": "summary_candidate_001",
+                        "summary": "秦阳是太初教弟子，本章手持青铜令牌走入太初教山门。",
+                    }
+                ]
+            },
+            ensure_ascii=False,
+        ),
     ]
+
+
+def _summary_response(prompt: str) -> str:
+    candidate_ids = list(
+        dict.fromkeys(re.findall(r'"candidate_id":\s*"([^"]+)"', prompt))
+    )
+    summary = (
+        "秦浩轩是大田镇少年，靠采药补贴家用，并参加太初教入门测试。"
+        if "秦浩轩" in prompt
+        else "秦阳是太初教弟子，本章手持青铜令牌走入太初教山门。"
+    )
+    return json.dumps(
+        {
+            "summaries": [
+                {"candidate_id": candidate_id, "summary": summary}
+                for candidate_id in candidate_ids
+            ]
+        },
+        ensure_ascii=False,
+    )
 
 
 def _branch_node_event_index(
@@ -1138,17 +1404,20 @@ def _processed_review_run(
 def _confirmed_character_card(
     card_id: str,
     *,
+    name: str = "秦阳",
     summary: str,
     source_note: str,
     aliases: list[str],
     identity: str,
+    appearance_chapter_count: int | None = None,
 ) -> StructuredKnowledgeCard:
     return StructuredKnowledgeCard(
         id=card_id,
         type=StructuredKnowledgeType.CHARACTER,
-        name="秦阳",
+        name=name,
         aliases=aliases,
         summary=summary,
+        appearance_chapter_count=appearance_chapter_count,
         lifecycle=StructuredKnowledgeLifecycle.CONFIRMED,
         source_origin=StructuredKnowledgeSourceOrigin.AGENT_EXTRACT,
         source_note=source_note,

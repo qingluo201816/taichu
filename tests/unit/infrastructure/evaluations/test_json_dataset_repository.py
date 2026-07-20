@@ -36,6 +36,34 @@ class JsonEvaluationDatasetRepositoryTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(dataset.manifest.lifecycle.value, "confirmed")
         self.assertTrue(dataset.checksum)
 
+    async def test_loads_author_confirmed_chapter_six_to_twenty_dataset(
+        self,
+    ) -> None:
+        repository = JsonEvaluationDatasetRepository(
+            Path("tests/fixtures/evaluations"),
+            Path("project_assets/source"),
+        )
+
+        dataset = await repository.get_dataset(
+            "taichu_knowledge_eval_006_020_author_confirmed"
+        )
+        card_counts = [
+            len(dataset.cases[case.case_id].expected_cards)
+            for case in dataset.manifest.cases
+        ]
+        claim_counts = [
+            sum(
+                len(card.expected_claims)
+                for card in dataset.cases[case.case_id].expected_cards
+            )
+            for case in dataset.manifest.cases
+        ]
+
+        self.assertEqual(card_counts, [32, 26, 33])
+        self.assertEqual(claim_counts, [90, 89, 90])
+        self.assertEqual(dataset.manifest.lifecycle.value, "confirmed")
+        self.assertTrue(dataset.checksum)
+
     async def test_default_list_only_returns_confirmed_valid_datasets(self) -> None:
         repository = JsonEvaluationDatasetRepository(
             Path("tests/fixtures/evaluations"),
@@ -94,8 +122,35 @@ class JsonEvaluationDatasetRepositoryTest(unittest.IsolatedAsyncioTestCase):
 
             result = await repository.validate_dataset("demo_dataset")
 
+        self.assertFalse(result.valid)
+        self.assertEqual(result.issues[0].code, "EVALUATION_SOURCE_CHANGED")
+
+    async def test_rejects_negative_name_lists_joined_into_one_string(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            datasets_root, source_root = _write_minimal_dataset(Path(directory))
+            dataset_root = datasets_root / "demo_dataset"
+            _write_json(
+                dataset_root / "negative.json",
+                [
+                    {
+                        "negative_case_id": "negative_joined_names",
+                        "knowledge_type": "character",
+                        "accepted_names": ["权贵子弟们、寒门子弟"],
+                        "reason": "两个负样本名称不得合写成一个字符串。",
+                        "source_quote_ids": ["quote_qinyang"],
+                    }
+                ],
+            )
+            _write_checksums(dataset_root)
+            repository = JsonEvaluationDatasetRepository(
+                datasets_root,
+                source_root,
+            )
+
+            result = await repository.validate_dataset("demo_dataset")
+
             self.assertFalse(result.valid)
-            self.assertEqual(result.issues[0].code, "EVALUATION_SOURCE_CHANGED")
+            self.assertEqual(result.issues[0].code, "EVALUATION_DATASET_INVALID")
 
 
 def _write_minimal_dataset(root: Path) -> tuple[Path, Path]:

@@ -235,7 +235,7 @@ export function TaskMonitorShell() {
 
   return (
     <AppShell activePath="/task-monitor" viewportLocked>
-      <section className="mx-auto grid h-full min-h-0 max-w-[1440px] grid-rows-[auto_minmax(0,1fr)] gap-4 px-4 py-4 xl:grid-cols-[270px_minmax(0,1fr)]">
+      <section className="mx-auto grid h-full min-h-0 max-w-[1440px] grid-rows-[auto_minmax(0,1fr)] gap-4 px-4 py-4 xl:grid-cols-[300px_minmax(0,1fr)]">
         <div className="xl:col-span-2">
           <KnowledgeExtractionMonitorNav />
         </div>
@@ -298,7 +298,7 @@ export function TaskMonitorShell() {
                 <div
                   key={task.run_id}
                   className={cn(
-                    "flex items-stretch gap-1 rounded-[var(--tc-radius-control)] text-sm",
+                    "group grid grid-cols-[minmax(0,1fr)_2rem] items-center gap-1 rounded-[var(--tc-radius-control)] pr-1 text-sm",
                     selectedTaskId === task.run_id
                       ? "bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
                       : "text-[var(--tc-text-secondary)] hover:bg-[var(--tc-surface-muted)]",
@@ -323,7 +323,7 @@ export function TaskMonitorShell() {
                     disabled={deletingTaskId !== ""}
                     aria-label={`删除${taskTitle(task)}任务记录`}
                     onClick={() => void handleDeleteTask(task.run_id)}
-                    className="my-1 mr-1 shrink-0 text-[var(--tc-text-muted)]"
+                    className="shrink-0 text-[var(--tc-text-muted)] opacity-70 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
                   >
                     <Trash2 className="size-4" />
                   </Button>

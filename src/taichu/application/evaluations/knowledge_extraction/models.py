@@ -259,6 +259,7 @@ class ActualCandidate(EvaluationModel):
     card: dict[str, Any]
     schema_valid: bool = True
     evidence_excerpts: list[str] = Field(default_factory=list)
+    merge_preview_applied: bool = False
 
     @property
     def name(self) -> str:

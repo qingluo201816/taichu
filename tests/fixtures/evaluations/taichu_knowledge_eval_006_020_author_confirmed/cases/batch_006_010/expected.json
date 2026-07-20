@@ -1,0 +1,2168 @@
+[
+  {
+    "expected_card_id": "character_zhang_yang",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "张扬",
+      "aliases": [],
+      "summary": "灰色仙种弟子，经黄龙真人同意归入古云堂；张狂显露紫种后，其地位和掌教前景明显下降。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第6章 紫气东来惊仙鉴：“　　古云子的“盛情难却”，黄龙真人也就“却之不恭”了，张扬这棵难得的苗子自然而然就落入古云堂帐下了。”；第6章 紫气东来惊仙鉴：“　　有了紫种，自己大代价换来的灰种弟子哪有当掌教的希望。不行，说什么也要再争一争！”",
+      "role_type": "antagonist",
+      "identity": "大田镇出身的太初教新弟子、灰色仙种",
+      "relationship_summary": "与张狂同乡，归入古云堂；敌视秦浩轩。",
+      "current_realm_text": "种植仙根境（已引灵入体）",
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "last_seen_chapter_id": "chapter-cd8b61413cc94cd98316fe59afb5dcb2"
+    },
+    "accepted_names": [
+      "张扬"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_zhang_yang_batch_006_010_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "张扬：灰色仙种弟子，经黄龙真人同意归入古云堂。",
+        "source_quote_ids": [
+          "quote_batch_006_010_001",
+          "quote_batch_006_010_002"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_yang_batch_006_010_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "张扬：张狂显露紫种后，其地位和掌教前景明显下降。",
+        "source_quote_ids": [
+          "quote_batch_006_010_001",
+          "quote_batch_006_010_002"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_yang_batch_006_010_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "张扬的身份：大田镇出身的太初教新弟子、灰色仙种。",
+        "source_quote_ids": [
+          "quote_batch_006_010_001",
+          "quote_batch_006_010_002"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_yang_batch_006_010_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "张扬的关系信息：与张狂同乡，归入古云堂。",
+        "source_quote_ids": [
+          "quote_batch_006_010_001",
+          "quote_batch_006_010_002"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_yang_batch_006_010_05",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "张扬的关系信息：敌视秦浩轩。",
+        "source_quote_ids": [
+          "quote_batch_006_010_001",
+          "quote_batch_006_010_002"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_yang_batch_006_010_06",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "张扬的当前境界：种植仙根境（已引灵入体）。",
+        "source_quote_ids": [
+          "quote_batch_006_010_001",
+          "quote_batch_006_010_002"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_001",
+      "quote_batch_006_010_002"
+    ]
+  },
+  {
+    "expected_card_id": "character_zhang_kuang",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "张狂",
+      "aliases": [],
+      "summary": "经明鉴仙眼确认拥有无上紫种；入门初训首日即在三十息内引灵入体、破开仙种，并持续敌视秦浩轩、与李靖形成竞争。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第6章 紫气东来惊仙鉴：“　　谁知，就在张狂手接触到【明鉴仙眼】那一霎，一道强烈而璀璨的紫光爆出，照亮了半边天空，直刺到在场所有人的心窝。”；第8章 灵田谷中引灵种：“　　在不到三十息的时间内，三名紫种弟子先后引灵入体，破开仙种。”；第9章 道心固来一炷香：“　　张狂的紫种资质潜力无限，未来成就无可限量，这些杂役弟子们正愁不知怎么巴结这个天才人物呢，张狂现在主动开口，他们一个个摩拳擦掌，若非门规严禁弟子内斗，恨不得立马斩下秦浩轩的脑袋邀功。”",
+      "role_type": "antagonist",
+      "identity": "大田镇出身的太初教新弟子、无上紫种",
+      "relationship_summary": "与秦浩轩长期有仇；与李靖竞争未来掌教位置。",
+      "current_realm_text": "种植仙根境（已破种）",
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "last_seen_chapter_id": "chapter-cdb5c3ef2e564affb249aedd5f14d311"
+    },
+    "accepted_names": [
+      "张狂"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_zhang_kuang_batch_006_010_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "张狂：经明鉴仙眼确认拥有无上紫种。",
+        "source_quote_ids": [
+          "quote_batch_006_010_003",
+          "quote_batch_006_010_004",
+          "quote_batch_006_010_005"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_batch_006_010_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "张狂：入门初训首日即在三十息内引灵入体、破开仙种，并持续敌视秦浩轩、与李靖形成竞争。",
+        "source_quote_ids": [
+          "quote_batch_006_010_003",
+          "quote_batch_006_010_004",
+          "quote_batch_006_010_005"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_batch_006_010_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "张狂的身份：大田镇出身的太初教新弟子、无上紫种。",
+        "source_quote_ids": [
+          "quote_batch_006_010_003",
+          "quote_batch_006_010_004",
+          "quote_batch_006_010_005"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_batch_006_010_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "张狂的关系信息：与秦浩轩长期有仇。",
+        "source_quote_ids": [
+          "quote_batch_006_010_003",
+          "quote_batch_006_010_004",
+          "quote_batch_006_010_005"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_batch_006_010_05",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "张狂的关系信息：与李靖竞争未来掌教位置。",
+        "source_quote_ids": [
+          "quote_batch_006_010_003",
+          "quote_batch_006_010_004",
+          "quote_batch_006_010_005"
+        ]
+      },
+      {
+        "claim_id": "claim_character_zhang_kuang_batch_006_010_06",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "张狂的当前境界：种植仙根境（已破种）。",
+        "source_quote_ids": [
+          "quote_batch_006_010_003",
+          "quote_batch_006_010_004",
+          "quote_batch_006_010_005"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_003",
+      "quote_batch_006_010_004",
+      "quote_batch_006_010_005"
+    ]
+  },
+  {
+    "expected_card_id": "character_li_jing",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "李靖",
+      "aliases": [],
+      "summary": "翔龙国皇子、无上紫种；在本届新弟子中率先引灵入体并破开仙种，与张狂形成未来掌教竞争。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第7章 淡然明鉴道初心：“　　皇室每一代都会选一名资质极佳的皇子前往太初教修仙，肩负着成为李家皇朝未来守护神的使命，以保皇朝千秋万代，李靖就是这一代被选中的皇子。”；第7章 淡然明鉴道初心：“　　艳阳高照，暖风和煦，在太初教掌教和诸多地位崇高的前辈高人面前，【明鉴仙眼】再次爆出璀璨夺目的紫色光芒，亮瞎了许多人的眼！”；第8章 灵田谷中引灵种：“　　“砰！”西北角冲起一道通天气势，李靖率先引灵入体成功，出身皇族的他自幼受过系统学习，吃着灵丹泡着灵药长大，仙种活力在这批新生弟子中是当之无愧的第一，在吃下引灵丹后，他身上气势一扬，瞬间就纳灵气入体，浇灌仙种，仙种微微一震探出一丝细微的根须。”",
+      "role_type": "supporting",
+      "identity": "翔龙国三皇子、太初教新弟子、无上紫种",
+      "relationship_summary": "与张狂竞争；尝试拉拢徐羽。",
+      "current_realm_text": "种植仙根境（已破种）",
+      "first_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537",
+      "last_seen_chapter_id": "chapter-cdb5c3ef2e564affb249aedd5f14d311"
+    },
+    "accepted_names": [
+      "李靖"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_li_jing_batch_006_010_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "李靖：翔龙国皇子、无上紫种。",
+        "source_quote_ids": [
+          "quote_batch_006_010_006",
+          "quote_batch_006_010_007",
+          "quote_batch_006_010_008"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_batch_006_010_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "李靖：在本届新弟子中率先引灵入体并破开仙种，与张狂形成未来掌教竞争。",
+        "source_quote_ids": [
+          "quote_batch_006_010_006",
+          "quote_batch_006_010_007",
+          "quote_batch_006_010_008"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_batch_006_010_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "李靖的身份：翔龙国三皇子、太初教新弟子、无上紫种。",
+        "source_quote_ids": [
+          "quote_batch_006_010_006",
+          "quote_batch_006_010_007",
+          "quote_batch_006_010_008"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_batch_006_010_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "李靖的关系信息：与张狂竞争。",
+        "source_quote_ids": [
+          "quote_batch_006_010_006",
+          "quote_batch_006_010_007",
+          "quote_batch_006_010_008"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_batch_006_010_05",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "李靖的关系信息：尝试拉拢徐羽。",
+        "source_quote_ids": [
+          "quote_batch_006_010_006",
+          "quote_batch_006_010_007",
+          "quote_batch_006_010_008"
+        ]
+      },
+      {
+        "claim_id": "claim_character_li_jing_batch_006_010_06",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "李靖的当前境界：种植仙根境（已破种）。",
+        "source_quote_ids": [
+          "quote_batch_006_010_006",
+          "quote_batch_006_010_007",
+          "quote_batch_006_010_008"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_006",
+      "quote_batch_006_010_007",
+      "quote_batch_006_010_008"
+    ]
+  },
+  {
+    "expected_card_id": "character_xu_yu",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "徐羽",
+      "aliases": [],
+      "summary": "女扮男装入门的无上紫种女弟子；在初训首日迅速引灵入体，并持续维护秦浩轩。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第7章 淡然明鉴道初心：“　　徐羽是这一批新弟子中最后一个上测试台的，除了秦浩轩，其他人都争先恐后的讨好紫种的张狂和李靖，没人关心徐羽的成绩会怎么样，直到【明鉴仙眼】爆出瑰丽的紫色仙光。”；第7章 淡然明鉴道初心：“　　“你不是精通相术么？连她是女人都瞧不出来！咱太初教女弟子拜入百花堂，不是顺理成章么？”没仔细瞧的夏云子被讽刺得满脸通红，犹在死鸭子嘴硬。”；第8章 灵田谷中引灵种：“　　这次引灵入体的是徐羽，在引灵入体后，她面色红润，身上隐约散发出女人卓越的风姿，一双明亮的眼睛在秦浩轩身上扫过，见秦浩轩闭目潜修没有反应后，便也不顾其他人艳羡和讨好的眼神，闭目吐纳，吸取灵气浇灌仙种，争取早日进入仙苗境。”",
+      "role_type": "supporting",
+      "identity": "太初教新弟子、无上紫种女弟子",
+      "relationship_summary": "信任并维护秦浩轩；苏百花希望其归入百花堂。",
+      "current_realm_text": "种植仙根境（已破种）",
+      "first_seen_chapter_id": "chapter-cecd924ed73c43a1880b24584ed49537",
+      "last_seen_chapter_id": "chapter-cdb5c3ef2e564affb249aedd5f14d311"
+    },
+    "accepted_names": [
+      "徐羽"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_xu_yu_batch_006_010_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "徐羽：女扮男装入门的无上紫种女弟子。",
+        "source_quote_ids": [
+          "quote_batch_006_010_009",
+          "quote_batch_006_010_010",
+          "quote_batch_006_010_011"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xu_yu_batch_006_010_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "徐羽：在初训首日迅速引灵入体，并持续维护秦浩轩。",
+        "source_quote_ids": [
+          "quote_batch_006_010_009",
+          "quote_batch_006_010_010",
+          "quote_batch_006_010_011"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xu_yu_batch_006_010_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "徐羽的身份：太初教新弟子、无上紫种女弟子。",
+        "source_quote_ids": [
+          "quote_batch_006_010_009",
+          "quote_batch_006_010_010",
+          "quote_batch_006_010_011"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xu_yu_batch_006_010_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "徐羽的关系信息：信任并维护秦浩轩。",
+        "source_quote_ids": [
+          "quote_batch_006_010_009",
+          "quote_batch_006_010_010",
+          "quote_batch_006_010_011"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xu_yu_batch_006_010_05",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "徐羽的关系信息：苏百花希望其归入百花堂。",
+        "source_quote_ids": [
+          "quote_batch_006_010_009",
+          "quote_batch_006_010_010",
+          "quote_batch_006_010_011"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xu_yu_batch_006_010_06",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "徐羽的当前境界：种植仙根境（已破种）。",
+        "source_quote_ids": [
+          "quote_batch_006_010_009",
+          "quote_batch_006_010_010",
+          "quote_batch_006_010_011"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_009",
+      "quote_batch_006_010_010",
+      "quote_batch_006_010_011"
+    ]
+  },
+  {
+    "expected_card_id": "character_qin_haoxuan",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "秦浩轩",
+      "aliases": [],
+      "summary": "明鉴仙眼判定为濒临死亡的无色弱种，但身具微弱纯正灵气、道心稳固；初训首日最后一息成功引灵入体破种，并在绝仙毒谷获得道心种魔大法。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第7章 淡然明鉴道初心：“　　无色仙种中的弱种，濒临死亡的最差弱种！”；第9章 道心固来一炷香：“　　在最后一秒，秦浩轩终于引导灵气入体，破开仙种，成功出仙根，那接下来就是扎根！将根扎好，便能真正踏上修仙的真正大道了。”；第10章 书中自有黄金屋：“　　“这是我的独门绝学道心种魔大法，这门功法修炼到精深处极为厉害。这山谷毒气太重，任何生物进不来，为了不让它失传，我现在就传授给你。””",
+      "role_type": "protagonist",
+      "identity": "大田镇猎户之子、太初教新弟子、无色弱种",
+      "relationship_summary": "与五彩小蛇共享附身秘密；受徐羽维护，与张狂长期敌对。",
+      "current_realm_text": "种植仙根境（已破种）",
+      "first_seen_chapter_id": "chapter-f2a0007303a74f769e1609124c30da6b",
+      "last_seen_chapter_id": "chapter-cdb5c3ef2e564affb249aedd5f14d311"
+    },
+    "accepted_names": [
+      "秦浩轩"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary",
+      "current_realm_text"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_006_010_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦浩轩：明鉴仙眼判定为濒临死亡的无色弱种，但身具微弱纯正灵气、道心稳固。",
+        "source_quote_ids": [
+          "quote_batch_006_010_012",
+          "quote_batch_006_010_013",
+          "quote_batch_006_010_014"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_006_010_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "秦浩轩：初训首日最后一息成功引灵入体破种，并在绝仙毒谷获得道心种魔大法。",
+        "source_quote_ids": [
+          "quote_batch_006_010_012",
+          "quote_batch_006_010_013",
+          "quote_batch_006_010_014"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_006_010_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "秦浩轩的身份：大田镇猎户之子、太初教新弟子、无色弱种。",
+        "source_quote_ids": [
+          "quote_batch_006_010_012",
+          "quote_batch_006_010_013",
+          "quote_batch_006_010_014"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_006_010_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "秦浩轩的关系信息：与五彩小蛇共享附身秘密。",
+        "source_quote_ids": [
+          "quote_batch_006_010_012",
+          "quote_batch_006_010_013",
+          "quote_batch_006_010_014"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_006_010_05",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "秦浩轩的关系信息：受徐羽维护，与张狂长期敌对。",
+        "source_quote_ids": [
+          "quote_batch_006_010_012",
+          "quote_batch_006_010_013",
+          "quote_batch_006_010_014"
+        ]
+      },
+      {
+        "claim_id": "claim_character_qin_haoxuan_batch_006_010_06",
+        "field": "current_realm_text",
+        "importance": "major",
+        "description": "秦浩轩的当前境界：种植仙根境（已破种）。",
+        "source_quote_ids": [
+          "quote_batch_006_010_012",
+          "quote_batch_006_010_013",
+          "quote_batch_006_010_014"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_012",
+      "quote_batch_006_010_013",
+      "quote_batch_006_010_014"
+    ]
+  },
+  {
+    "expected_card_id": "character_huanglong_zhenren",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "黄龙真人",
+      "aliases": [],
+      "summary": "太初教掌教；确认本届出现三名紫种后，要求各堂严格封锁消息，以防万载大教获知后攻伐太初教。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第8章 灵田谷中引灵种：“　　黄龙真人手扶太师椅扶手，面色凝重说道：“诸位，今日这紫种之事，还请回到各堂交代下去封锁消息。若这消息从哪个堂流到了山门外，我太初被灭，谁也没有脸面去见历代祖师爷。””",
+      "role_type": "faction_representative",
+      "identity": "太初教掌教",
+      "relationship_summary": "主持新弟子归属与宗门秘密处置。",
+      "first_seen_chapter_id": "chapter-f3a712cf4fdf404b935942fe3ff297a0",
+      "last_seen_chapter_id": "chapter-a7731db47da6476aa3ed62030d28bc6a"
+    },
+    "accepted_names": [
+      "黄龙真人"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_huanglong_zhenren_batch_006_010_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "黄龙真人：太初教掌教。",
+        "source_quote_ids": [
+          "quote_batch_006_010_015"
+        ]
+      },
+      {
+        "claim_id": "claim_character_huanglong_zhenren_batch_006_010_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "黄龙真人：确认本届出现三名紫种后，要求各堂严格封锁消息，以防万载大教获知后攻伐太初教。",
+        "source_quote_ids": [
+          "quote_batch_006_010_015"
+        ]
+      },
+      {
+        "claim_id": "claim_character_huanglong_zhenren_batch_006_010_03",
+        "field": "identity",
+        "importance": "critical",
+        "description": "黄龙真人的身份：太初教掌教。",
+        "source_quote_ids": [
+          "quote_batch_006_010_015"
+        ]
+      },
+      {
+        "claim_id": "claim_character_huanglong_zhenren_batch_006_010_04",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "黄龙真人的关系信息：主持新弟子归属与宗门秘密处置。",
+        "source_quote_ids": [
+          "quote_batch_006_010_015"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_015"
+    ]
+  },
+  {
+    "expected_card_id": "character_chu_cai",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "楚才",
+      "aliases": [],
+      "summary": "灵田谷长老和本届新弟子的启蒙仙师，负责三个月入门初训、引灵丹发放、修仙基础与药材课程。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第8章 灵田谷中引灵种：“　　“本座是尔等的启蒙仙师，灵田谷长老楚才，接下来三个月中，尔等将在灵田谷学习灵法，种植仙根。这三个月中能成功破种出苗突破仙苗境的弟子，将被宗门重点培养，甚至直接晋入内门，拜入四脉首座门下，且家内供养金也从两百两一年提升到四百两一年，若三个月内不能出苗，就会安排工作，从杂役弟子做起。””；第9章 道心固来一炷香：“　　许多复杂的眼神投在犹在坚持的秦浩轩身上，有敬佩，有鄙夷，而楚长老眼中满是欣赏，秦浩轩资质不行但道心坚固，作为启蒙仙师，他深知引灵入体破开仙种的时间越长，难度越大，如果道心不稳固，心境不平和，是根本无法成功的，秦浩轩端坐到现在还能坚守本心，呼吸平稳，持之以恒，无痴无妄无惧，是他见过道心最坚固的新人之一。”",
+      "role_type": "faction_representative",
+      "identity": "太初教灵田谷长老、启蒙仙师",
+      "relationship_summary": "负责本届约两百名新弟子的入门初训。",
+      "first_seen_chapter_id": "chapter-a7731db47da6476aa3ed62030d28bc6a",
+      "last_seen_chapter_id": "chapter-cdb5c3ef2e564affb249aedd5f14d311"
+    },
+    "accepted_names": [
+      "楚才"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_chu_cai_batch_006_010_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "楚才：灵田谷长老和本届新弟子的启蒙仙师，负责三个月入门初训、引灵丹发放、修仙基础与药材课程。",
+        "source_quote_ids": [
+          "quote_batch_006_010_016",
+          "quote_batch_006_010_017"
+        ]
+      },
+      {
+        "claim_id": "claim_character_chu_cai_batch_006_010_02",
+        "field": "identity",
+        "importance": "critical",
+        "description": "楚才的身份：太初教灵田谷长老、启蒙仙师。",
+        "source_quote_ids": [
+          "quote_batch_006_010_016",
+          "quote_batch_006_010_017"
+        ]
+      },
+      {
+        "claim_id": "claim_character_chu_cai_batch_006_010_03",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "楚才的关系信息：负责本届约两百名新弟子的入门初训。",
+        "source_quote_ids": [
+          "quote_batch_006_010_016",
+          "quote_batch_006_010_017"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_016",
+      "quote_batch_006_010_017"
+    ]
+  },
+  {
+    "expected_card_id": "character_busi_wumo",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "不死巫魔",
+      "aliases": [],
+      "summary": "被困绝仙毒谷、已油尽灯枯的魔道强者，自称纵横天下数千年，并将独门绝学道心种魔大法传给附身小蛇的秦浩轩。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第10章 书中自有黄金屋：“　　“我不死巫魔纵横天下数千年，从不诳人，说传你绝学就传你绝学，你来这里不就是为了寻些宝贝么？我的绝学丢在修仙界也是顶级的功法，难道你就不心动么？”那身子主人似有些愠怒，原本油尽灯枯的身子徒然散出一股可怕的气息，仿佛秦浩轩要是不从，不死巫魔立马就要跳起来捏死他似的，吓得秦浩轩连连后退，不过等了很久，不死巫魔也没能跳起来捏死他。”；第10章 书中自有黄金屋：“　　“这是我的独门绝学道心种魔大法，这门功法修炼到精深处极为厉害。这山谷毒气太重，任何生物进不来，为了不让它失传，我现在就传授给你。””",
+      "role_type": "supporting",
+      "identity": "绝仙毒谷中的魔道强者",
+      "relationship_summary": "将道心种魔大法传给秦浩轩附身的小蛇，真实目的仍未明。",
+      "first_seen_chapter_id": "chapter-cdb5c3ef2e564affb249aedd5f14d311",
+      "last_seen_chapter_id": "chapter-cdb5c3ef2e564affb249aedd5f14d311"
+    },
+    "accepted_names": [
+      "不死巫魔"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_busi_wumo_batch_006_010_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "不死巫魔：被困绝仙毒谷、已油尽灯枯的魔道强者，自称纵横天下数千年，并将独门绝学道心种魔大法传给附身小蛇的秦浩轩。",
+        "source_quote_ids": [
+          "quote_batch_006_010_018",
+          "quote_batch_006_010_014"
+        ]
+      },
+      {
+        "claim_id": "claim_character_busi_wumo_batch_006_010_02",
+        "field": "identity",
+        "importance": "critical",
+        "description": "不死巫魔的身份：绝仙毒谷中的魔道强者。",
+        "source_quote_ids": [
+          "quote_batch_006_010_018",
+          "quote_batch_006_010_014"
+        ]
+      },
+      {
+        "claim_id": "claim_character_busi_wumo_batch_006_010_03",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "不死巫魔的关系信息：将道心种魔大法传给秦浩轩附身的小蛇，真实目的仍未明。",
+        "source_quote_ids": [
+          "quote_batch_006_010_018",
+          "quote_batch_006_010_014"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_018",
+      "quote_batch_006_010_014"
+    ]
+  },
+  {
+    "expected_card_id": "character_xiayunzi",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "夏云子",
+      "aliases": [],
+      "summary": "夏云堂堂主，掌握残缺的上古绝学六爻卦，并希望以此招收张扬或张狂。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第6章 紫气东来惊仙鉴：“　　夏云子讥笑着，反驳道：“古云师兄，你刚收了张扬，莫非是想把好苗子一箩筐揽了？黄龙师叔，我的六爻卦旷绝古今，上知天下通地，有鬼神莫测之神奇，张狂天资绝佳，正是六爻卦最好的继承人！””；第6章 紫气东来惊仙鉴：“　　夏云子说着，转头望向张狂道：“六爻卦乃上古绝学，不但可预知福祸，还能制敌于无形中，乃是我教最奥妙的绝学。””",
+      "role_type": "faction_representative",
+      "identity": "太初教夏云堂堂主",
+      "relationship_summary": "六爻卦传承者。",
+      "last_seen_chapter_id": "chapter-1542b22d9c214d2baf67c3a5175e2e90"
+    },
+    "accepted_names": [
+      "夏云子"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_xiayunzi_batch_006_010_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "夏云子：夏云堂堂主，掌握残缺的上古绝学六爻卦，并希望以此招收张扬或张狂。",
+        "source_quote_ids": [
+          "quote_batch_006_010_019",
+          "quote_batch_006_010_020"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xiayunzi_batch_006_010_02",
+        "field": "identity",
+        "importance": "critical",
+        "description": "夏云子的身份：太初教夏云堂堂主。",
+        "source_quote_ids": [
+          "quote_batch_006_010_019",
+          "quote_batch_006_010_020"
+        ]
+      },
+      {
+        "claim_id": "claim_character_xiayunzi_batch_006_010_03",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "夏云子的关系信息：六爻卦传承者。",
+        "source_quote_ids": [
+          "quote_batch_006_010_019",
+          "quote_batch_006_010_020"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_019",
+      "quote_batch_006_010_020"
+    ]
+  },
+  {
+    "expected_card_id": "character_su_baihua",
+    "knowledge_type": "character",
+    "card": {
+      "type": "character",
+      "name": "苏百花",
+      "aliases": [],
+      "summary": "百花堂堂主，识破徐羽女扮男装身份，并明确希望无上紫种徐羽归入百花堂。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第7章 淡然明鉴道初心：“　　“嗤噗！”苏百花面色古怪的仔细端详徐羽，忽然笑了，对古云子等人道：“张狂和李靖你们争去，我百花堂有徐羽就够了！””；第7章 淡然明鉴道初心：“　　“你不是精通相术么？连她是女人都瞧不出来！咱太初教女弟子拜入百花堂，不是顺理成章么？”没仔细瞧的夏云子被讽刺得满脸通红，犹在死鸭子嘴硬。”",
+      "role_type": "faction_representative",
+      "identity": "太初教百花堂堂主",
+      "relationship_summary": "希望收徐羽进入百花堂。",
+      "last_seen_chapter_id": "chapter-1542b22d9c214d2baf67c3a5175e2e90"
+    },
+    "accepted_names": [
+      "苏百花"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "role_type",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "identity",
+      "relationship_summary"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_character_su_baihua_batch_006_010_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "苏百花：百花堂堂主，识破徐羽女扮男装身份，并明确希望无上紫种徐羽归入百花堂。",
+        "source_quote_ids": [
+          "quote_batch_006_010_021",
+          "quote_batch_006_010_010"
+        ]
+      },
+      {
+        "claim_id": "claim_character_su_baihua_batch_006_010_02",
+        "field": "identity",
+        "importance": "critical",
+        "description": "苏百花的身份：太初教百花堂堂主。",
+        "source_quote_ids": [
+          "quote_batch_006_010_021",
+          "quote_batch_006_010_010"
+        ]
+      },
+      {
+        "claim_id": "claim_character_su_baihua_batch_006_010_03",
+        "field": "relationship_summary",
+        "importance": "major",
+        "description": "苏百花的关系信息：希望收徐羽进入百花堂。",
+        "source_quote_ids": [
+          "quote_batch_006_010_021",
+          "quote_batch_006_010_010"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_021",
+      "quote_batch_006_010_010"
+    ]
+  },
+  {
+    "expected_card_id": "faction_taichu_jiao",
+    "knowledge_type": "faction",
+    "card": {
+      "type": "faction",
+      "name": "太初教",
+      "aliases": [],
+      "summary": "大屿山修仙宗门；本届同时出现张狂、李靖、徐羽三名无上紫种，宗门将此视为足以引来万载大教攻伐的最高机密。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第8章 灵田谷中引灵种：“　　黄龙真人手扶太师椅扶手，面色凝重说道：“诸位，今日这紫种之事，还请回到各堂交代下去封锁消息。若这消息从哪个堂流到了山门外，我太初被灭，谁也没有脸面去见历代祖师爷。””",
+      "faction_type": "sect"
+    },
+    "accepted_names": [
+      "太初教"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "faction_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_faction_taichu_jiao_batch_006_010_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "太初教：大屿山修仙宗门。",
+        "source_quote_ids": [
+          "quote_batch_006_010_015"
+        ]
+      },
+      {
+        "claim_id": "claim_faction_taichu_jiao_batch_006_010_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "太初教：本届同时出现张狂、李靖、徐羽三名无上紫种，宗门将此视为足以引来万载大教攻伐的最高机密。",
+        "source_quote_ids": [
+          "quote_batch_006_010_015"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_015"
+    ]
+  },
+  {
+    "expected_card_id": "location_lingtian_gu",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "灵田谷",
+      "aliases": [],
+      "summary": "太初教灵气充裕的山谷，历代新弟子在此接受三个月初训、学习灵法并种植仙根；谷中另有大量种植灵药的杂役弟子。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第8章 灵田谷中引灵种：“　　灵田谷，顾名思义是一个灵气十分充裕的山谷，它就像一块沃土，一代又一代的新人弟子在这里初学修仙，种植仙根，出苗成才。”；第9章 道心固来一炷香：“　　灵田谷除了是新弟子入门初训的地方外，还有许多入门十几年甚至几十年的杂役弟子，他们大多停留在第一层种植仙根或第二层仙苗境初期不得寸进，安排他们在灵田谷种植灵药供宗门其他人使用，如果没有很大的际遇突破境界，那这一辈子也就混吃等死，出头无望了。”",
+      "first_seen_chapter_id": "chapter-a7731db47da6476aa3ed62030d28bc6a"
+    },
+    "accepted_names": [
+      "灵田谷"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_lingtian_gu_batch_006_010_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "灵田谷：太初教灵气充裕的山谷，历代新弟子在此接受三个月初训、学习灵法并种植仙根。",
+        "source_quote_ids": [
+          "quote_batch_006_010_022",
+          "quote_batch_006_010_023"
+        ]
+      },
+      {
+        "claim_id": "claim_location_lingtian_gu_batch_006_010_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "灵田谷：谷中另有大量种植灵药的杂役弟子。",
+        "source_quote_ids": [
+          "quote_batch_006_010_022",
+          "quote_batch_006_010_023"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_022",
+      "quote_batch_006_010_023"
+    ]
+  },
+  {
+    "expected_card_id": "location_qilin_feng",
+    "knowledge_type": "location",
+    "card": {
+      "type": "location",
+      "name": "麒麟峰",
+      "aliases": [],
+      "summary": "太初教老祖宗长期闭关、不理俗事的山峰；黄龙真人因三名紫种之事决定亲赴麒麟峰请示。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第7章 淡然明鉴道初心：“　　听到此话，苏百花等人震惊的同时暗暗叫苦，老祖宗闭关麒麟峰几百年不理俗事，收几个紫种弟子这种“小事”还叨扰他老人家干嘛。”",
+      "first_seen_chapter_id": "chapter-1542b22d9c214d2baf67c3a5175e2e90"
+    },
+    "accepted_names": [
+      "麒麟峰"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "first_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_location_qilin_feng_batch_006_010_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "麒麟峰：太初教老祖宗长期闭关、不理俗事的山峰。",
+        "source_quote_ids": [
+          "quote_batch_006_010_024"
+        ]
+      },
+      {
+        "claim_id": "claim_location_qilin_feng_batch_006_010_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "麒麟峰：黄龙真人因三名紫种之事决定亲赴麒麟峰请示。",
+        "source_quote_ids": [
+          "quote_batch_006_010_024"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_024"
+    ]
+  },
+  {
+    "expected_card_id": "item_mingjian_xianyan",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "明鉴仙眼",
+      "aliases": [],
+      "summary": "太初教用于检验新弟子仙种资质的测试宝物；本批次先后显示张狂、李靖、徐羽为紫种，秦浩轩为无色弱种。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第6章 紫气东来惊仙鉴：“　　这一霎，所有人都以为自己出现幻觉了，不由自主的擦了擦眼睛，没错，【明鉴仙眼】爆出的是璀璨的紫光。”；第7章 淡然明鉴道初心：“　　落叶真人打出一道仙灵之气，【明鉴仙眼】在这一刻仿佛洞悉了秦浩轩的身体，嗡嗡轻颤后，发出一阵微弱的光芒，却无任何色彩。”",
+      "item_type": "magic_treasure",
+      "first_seen_chapter_id": "chapter-6790213f5de24a21a00623ee7b467f80",
+      "last_seen_chapter_id": "chapter-1542b22d9c214d2baf67c3a5175e2e90"
+    },
+    "accepted_names": [
+      "明鉴仙眼"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "item_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_mingjian_xianyan_batch_006_010_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "明鉴仙眼：太初教用于检验新弟子仙种资质的测试宝物。",
+        "source_quote_ids": [
+          "quote_batch_006_010_025",
+          "quote_batch_006_010_026"
+        ]
+      },
+      {
+        "claim_id": "claim_item_mingjian_xianyan_batch_006_010_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "明鉴仙眼：本批次先后显示张狂、李靖、徐羽为紫种，秦浩轩为无色弱种。",
+        "source_quote_ids": [
+          "quote_batch_006_010_025",
+          "quote_batch_006_010_026"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_025",
+      "quote_batch_006_010_026"
+    ]
+  },
+  {
+    "expected_card_id": "item_xianyun_che",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "仙云车",
+      "aliases": [],
+      "summary": "太初教用于运送新弟子的巨大、全封闭飞行载具，能够腾空飞行并平稳绕行黄帝峰。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第8章 灵田谷中引灵种：“　　说罢，由几名长老带着两百名新弟子，坐上一艘巨大又全封闭的仙云车，去一个叫灵田谷的地方。”；第8章 灵田谷中引灵种：“　　在半空中快速行驶的仙云车又平又稳，黄帝峰全景尽收眼底，各种错落有致的建筑，一草一木的生长都这么自然和恰到好处，令人不禁心旷神怡，许多杂心俗念消失一空，生出一股悲天悯人的高人情怀。”",
+      "item_type": "magic_treasure",
+      "first_seen_chapter_id": "chapter-a7731db47da6476aa3ed62030d28bc6a",
+      "last_seen_chapter_id": "chapter-a7731db47da6476aa3ed62030d28bc6a"
+    },
+    "accepted_names": [
+      "仙云车"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "item_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_xianyun_che_batch_006_010_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "仙云车：太初教用于运送新弟子的巨大、全封闭飞行载具，能够腾空飞行并平稳绕行黄帝峰。",
+        "source_quote_ids": [
+          "quote_batch_006_010_027",
+          "quote_batch_006_010_028"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_027",
+      "quote_batch_006_010_028"
+    ]
+  },
+  {
+    "expected_card_id": "item_yinling_dan",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "引灵丹",
+      "aliases": [],
+      "summary": "供尚未感知灵气的新弟子使用的灰色丹药，可使服用者瞬间感知灵气，药效仅持续半个时辰；初训三个月内每人每天可领一颗。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第8章 灵田谷中引灵种：“　　“现在尔等都是肉体凡胎，感受不到天地间纯正的灵气，若按部就班，便是悟性极佳的弟子，也需要至少一个月时间才能感受到灵气存在，为加快引灵入体的进度，这三个月内每人每天都能领一颗引灵丹，可以让尔等瞬间感受灵气存在，至于多久能引灵气入体，就看各自的造化了。记住，服用引灵丹后，药效只有半个时辰，若是失败，就只能明天再服用了！””",
+      "item_type": "pill",
+      "first_seen_chapter_id": "chapter-a7731db47da6476aa3ed62030d28bc6a",
+      "last_seen_chapter_id": "chapter-cd8b61413cc94cd98316fe59afb5dcb2"
+    },
+    "accepted_names": [
+      "引灵丹"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "item_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_yinling_dan_batch_006_010_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "引灵丹：供尚未感知灵气的新弟子使用的灰色丹药，可使服用者瞬间感知灵气，药效仅持续半个时辰。",
+        "source_quote_ids": [
+          "quote_batch_006_010_029"
+        ]
+      },
+      {
+        "claim_id": "claim_item_yinling_dan_batch_006_010_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "引灵丹：初训三个月内每人每天可领一颗。",
+        "source_quote_ids": [
+          "quote_batch_006_010_029"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_029"
+    ]
+  },
+  {
+    "expected_card_id": "item_yiye_jinlian",
+    "knowledge_type": "item",
+    "card": {
+      "type": "item",
+      "name": "一叶金莲",
+      "aliases": [
+        "九叶金莲"
+      ],
+      "summary": "生于至阴至毒之地的金色灵药，又名九叶金莲；每百年生一叶，九叶成熟，一叶状态也足以炼制虚还丹、化生丹等高阶丹药。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第10章 书中自有黄金屋：“　　徐羽在那幅图下标注道：一叶金莲，通体金色，生于至阴至毒之地，每一百年生一片叶子，最多可生九片叶子，所以又名九叶金莲，九叶时为成熟期，这时候药效最足最全，乃炼丹极品材料。不过即便是一株一叶金莲，也足以炼出虚还丹、化生丹之类的高阶丹药。”",
+      "item_type": "material",
+      "grade": "极品灵药",
+      "first_seen_chapter_id": "chapter-cdb5c3ef2e564affb249aedd5f14d311",
+      "last_seen_chapter_id": "chapter-cdb5c3ef2e564affb249aedd5f14d311"
+    },
+    "accepted_names": [
+      "一叶金莲",
+      "九叶金莲"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "item_type",
+      "first_seen_chapter_id",
+      "last_seen_chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "grade"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_item_yiye_jinlian_batch_006_010_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "一叶金莲：生于至阴至毒之地的金色灵药，又名九叶金莲。",
+        "source_quote_ids": [
+          "quote_batch_006_010_030"
+        ]
+      },
+      {
+        "claim_id": "claim_item_yiye_jinlian_batch_006_010_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "一叶金莲：每百年生一叶，九叶成熟，一叶状态也足以炼制虚还丹、化生丹等高阶丹药。",
+        "source_quote_ids": [
+          "quote_batch_006_010_030"
+        ]
+      },
+      {
+        "claim_id": "claim_item_yiye_jinlian_batch_006_010_03",
+        "field": "aliases",
+        "importance": "major",
+        "description": "一叶金莲的别名包括：九叶金莲。",
+        "source_quote_ids": [
+          "quote_batch_006_010_030"
+        ]
+      },
+      {
+        "claim_id": "claim_item_yiye_jinlian_batch_006_010_04",
+        "field": "grade",
+        "importance": "normal",
+        "description": "一叶金莲的品阶：极品灵药。",
+        "source_quote_ids": [
+          "quote_batch_006_010_030"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_030"
+    ]
+  },
+  {
+    "expected_card_id": "technique_liuyao_gua",
+    "knowledge_type": "technique",
+    "card": {
+      "type": "technique",
+      "name": "六爻卦",
+      "aliases": [],
+      "summary": "夏云子掌握的残缺上古绝学，可预知福祸并制敌于无形，被称为太初教极奥妙的绝学。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第6章 紫气东来惊仙鉴：“　　夏云子说着，转头望向张狂道：“六爻卦乃上古绝学，不但可预知福祸，还能制敌于无形中，乃是我教最奥妙的绝学。””；第6章 紫气东来惊仙鉴：“　　“夏云师兄，你那六爻卦只是上古六爻卦的皮毛，残缺不全，这种功法传给张狂，岂不是糟蹋了一枚无上紫种？””",
+      "technique_type": "divine_ability",
+      "grade": "上古残缺绝学",
+      "practice_condition": "由夏云子传承"
+    },
+    "accepted_names": [
+      "六爻卦"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "technique_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "grade",
+      "practice_condition"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_liuyao_gua_batch_006_010_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "六爻卦：夏云子掌握的残缺上古绝学，可预知福祸并制敌于无形，被称为太初教极奥妙的绝学。",
+        "source_quote_ids": [
+          "quote_batch_006_010_020",
+          "quote_batch_006_010_031"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_liuyao_gua_batch_006_010_02",
+        "field": "grade",
+        "importance": "normal",
+        "description": "六爻卦的品阶：上古残缺绝学。",
+        "source_quote_ids": [
+          "quote_batch_006_010_020",
+          "quote_batch_006_010_031"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_liuyao_gua_batch_006_010_03",
+        "field": "practice_condition",
+        "importance": "major",
+        "description": "六爻卦的修炼或施展条件：由夏云子传承。",
+        "source_quote_ids": [
+          "quote_batch_006_010_020",
+          "quote_batch_006_010_031"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_020",
+      "quote_batch_006_010_031"
+    ]
+  },
+  {
+    "expected_card_id": "technique_yinqi_shu",
+    "knowledge_type": "technique",
+    "card": {
+      "type": "technique",
+      "name": "引气术",
+      "aliases": [],
+      "summary": "太初教发给新弟子的基础功法，用于加快吸收天地灵气、浇灌仙种并推动仙苗成长。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第9章 道心固来一炷香：“　　接下来是初修功法的时候了，楚长老给每人发了一本修仙小册子，里面记载了一篇最基础的引气术，已经引气入体的弟子可以修炼引气术，加快吸收灵气浇灌仙苗，催使仙苗成长的速度，只要仙苗破种而出，那就是第二层仙苗境了。”",
+      "technique_type": "cultivation_method",
+      "grade": "基础功法",
+      "practice_condition": "引灵入体后修炼"
+    },
+    "accepted_names": [
+      "引气术"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "technique_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "grade",
+      "practice_condition"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_yinqi_shu_batch_006_010_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "引气术：太初教发给新弟子的基础功法，用于加快吸收天地灵气、浇灌仙种并推动仙苗成长。",
+        "source_quote_ids": [
+          "quote_batch_006_010_032"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_yinqi_shu_batch_006_010_02",
+        "field": "grade",
+        "importance": "normal",
+        "description": "引气术的品阶：基础功法。",
+        "source_quote_ids": [
+          "quote_batch_006_010_032"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_yinqi_shu_batch_006_010_03",
+        "field": "practice_condition",
+        "importance": "major",
+        "description": "引气术的修炼或施展条件：引灵入体后修炼。",
+        "source_quote_ids": [
+          "quote_batch_006_010_032"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_032"
+    ]
+  },
+  {
+    "expected_card_id": "technique_daoxin_zhongmo",
+    "knowledge_type": "technique",
+    "card": {
+      "type": "technique",
+      "name": "道心种魔大法",
+      "aliases": [],
+      "summary": "不死巫魔传授的独门魔道功法；正文称修炼到精深处极为厉害，其详细修炼条件在第10章尚未揭示。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第10章 书中自有黄金屋：“　　“这是我的独门绝学道心种魔大法，这门功法修炼到精深处极为厉害。这山谷毒气太重，任何生物进不来，为了不让它失传，我现在就传授给你。””",
+      "technique_type": "forbidden_art",
+      "grade": "顶级功法（不死巫魔自述）"
+    },
+    "accepted_names": [
+      "道心种魔大法"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "technique_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "grade"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_daoxin_zhongmo_batch_006_010_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "道心种魔大法：不死巫魔传授的独门魔道功法。",
+        "source_quote_ids": [
+          "quote_batch_006_010_014"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_daoxin_zhongmo_batch_006_010_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "道心种魔大法：正文称修炼到精深处极为厉害，其详细修炼条件在第10章尚未揭示。",
+        "source_quote_ids": [
+          "quote_batch_006_010_014"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_daoxin_zhongmo_batch_006_010_03",
+        "field": "grade",
+        "importance": "normal",
+        "description": "道心种魔大法的品阶：顶级功法（不死巫魔自述）。",
+        "source_quote_ids": [
+          "quote_batch_006_010_014"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_014"
+    ]
+  },
+  {
+    "expected_card_id": "technique_shenshi_chongji",
+    "knowledge_type": "technique",
+    "card": {
+      "type": "technique",
+      "name": "神识冲击",
+      "aliases": [
+        "神识攻击"
+      ],
+      "summary": "以神魂衍生的攻击法，可令对手失去行动、布置幻境甚至使其魂飞魄散；教材称最低需仙婴道果境才能修炼。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第10章 书中自有黄金屋：“　　神识冲击是实力到达一定境界后，开始对修炼灵魂衍生的攻击法，可以令对手瞬间失去行动力，也可以用神识布置幻境，甚至可以令对手魂飞魄散，神魂越强大，实力越精深，神识攻击越强。”；第10章 书中自有黄金屋：“　　还有这种神奇的攻击方法，仅仅只是看简单的介绍也知道很是不凡，秦浩轩登时激动了，不过接下来的介绍像泼了他一盆冷水，神识攻击最低也要仙婴道果境的强者才能修炼。”",
+      "technique_type": "divine_ability",
+      "practice_condition": "教材记载最低仙婴道果境可修炼"
+    },
+    "accepted_names": [
+      "神识冲击",
+      "神识攻击"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "technique_type"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "practice_condition"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_technique_shenshi_chongji_batch_006_010_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "神识冲击：以神魂衍生的攻击法，可令对手失去行动、布置幻境甚至使其魂飞魄散。",
+        "source_quote_ids": [
+          "quote_batch_006_010_033",
+          "quote_batch_006_010_034"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_shenshi_chongji_batch_006_010_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "神识冲击：教材称最低需仙婴道果境才能修炼。",
+        "source_quote_ids": [
+          "quote_batch_006_010_033",
+          "quote_batch_006_010_034"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_shenshi_chongji_batch_006_010_03",
+        "field": "aliases",
+        "importance": "major",
+        "description": "神识冲击的别名包括：神识攻击。",
+        "source_quote_ids": [
+          "quote_batch_006_010_033",
+          "quote_batch_006_010_034"
+        ]
+      },
+      {
+        "claim_id": "claim_technique_shenshi_chongji_batch_006_010_04",
+        "field": "practice_condition",
+        "importance": "major",
+        "description": "神识冲击的修炼或施展条件：教材记载最低仙婴道果境可修炼。",
+        "source_quote_ids": [
+          "quote_batch_006_010_033",
+          "quote_batch_006_010_034"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_033",
+      "quote_batch_006_010_034"
+    ]
+  },
+  {
+    "expected_card_id": "rule_zizhong_value",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "无上紫种成长价值",
+      "aliases": [],
+      "summary": "无上紫种若彻底成长，可使所在仙门获得晋升无上大教的机会；即使无上大教也可能数千年难得一名。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第6章 紫气东来惊仙鉴：“　　一名拥有无上紫种的仙门，若是让紫种彻底成长起来，甚至可以令所在仙门未来有机会晋升为无上大教！那种大教，远不是太初教可以媲美的存在。”；第6章 紫气东来惊仙鉴：“　　即便是无上大教，数千年也不见得可以找到一名紫种传人！这种传人出现，足够引起两个教派大打出手的争夺。”"
+    },
+    "accepted_names": [
+      "无上紫种成长价值"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_zizhong_value_batch_006_010_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "无上紫种成长价值：无上紫种若彻底成长，可使所在仙门获得晋升无上大教的机会。",
+        "source_quote_ids": [
+          "quote_batch_006_010_035",
+          "quote_batch_006_010_036"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_zizhong_value_batch_006_010_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "无上紫种成长价值：即使无上大教也可能数千年难得一名。",
+        "source_quote_ids": [
+          "quote_batch_006_010_035",
+          "quote_batch_006_010_036"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_035",
+      "quote_batch_006_010_036"
+    ]
+  },
+  {
+    "expected_card_id": "rule_zizhong_secrecy",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "紫种消息封锁规则",
+      "aliases": [],
+      "summary": "太初教要求各堂封锁三名紫种消息；一旦泄露给万载大教，可能招致宗门攻伐与覆灭。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第8章 灵田谷中引灵种：“　　黄龙真人手扶太师椅扶手，面色凝重说道：“诸位，今日这紫种之事，还请回到各堂交代下去封锁消息。若这消息从哪个堂流到了山门外，我太初被灭，谁也没有脸面去见历代祖师爷。””；第8章 灵田谷中引灵种：“　　众人纷纷点头，之前的争夺弟子气氛不见，各个面色凝重，大家都知道这紫种非同小可，若是被万载大教知道了……恐怕转眼间便会伐上山门，如今的太初虽说也能让万载大教崩下几颗门牙，可太初定然是覆灭不存了！那可是……经过万载教劫存在的恐怖存在。”"
+    },
+    "accepted_names": [
+      "紫种消息封锁规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_zizhong_secrecy_batch_006_010_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "紫种消息封锁规则：太初教要求各堂封锁三名紫种消息。",
+        "source_quote_ids": [
+          "quote_batch_006_010_015",
+          "quote_batch_006_010_037"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_zizhong_secrecy_batch_006_010_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "紫种消息封锁规则：一旦泄露给万载大教，可能招致宗门攻伐与覆灭。",
+        "source_quote_ids": [
+          "quote_batch_006_010_015",
+          "quote_batch_006_010_037"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_015",
+      "quote_batch_006_010_037"
+    ]
+  },
+  {
+    "expected_card_id": "rule_lingtian_initial_training",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "灵田谷三个月初训规则",
+      "aliases": [],
+      "summary": "新弟子在灵田谷接受三个月初训；期间破种出苗、突破仙苗境者将获重点培养，甚至进入内门，未出苗者将从杂役弟子做起。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第8章 灵田谷中引灵种：“　　“本座是尔等的启蒙仙师，灵田谷长老楚才，接下来三个月中，尔等将在灵田谷学习灵法，种植仙根。这三个月中能成功破种出苗突破仙苗境的弟子，将被宗门重点培养，甚至直接晋入内门，拜入四脉首座门下，且家内供养金也从两百两一年提升到四百两一年，若三个月内不能出苗，就会安排工作，从杂役弟子做起。””"
+    },
+    "accepted_names": [
+      "灵田谷三个月初训规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_lingtian_initial_training_batch_006_010_01",
+        "field": "summary",
+        "importance": "critical",
+        "description": "灵田谷三个月初训规则：新弟子在灵田谷接受三个月初训。",
+        "source_quote_ids": [
+          "quote_batch_006_010_016"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_lingtian_initial_training_batch_006_010_02",
+        "field": "summary",
+        "importance": "critical",
+        "description": "灵田谷三个月初训规则：期间破种出苗、突破仙苗境者将获重点培养，甚至进入内门，未出苗者将从杂役弟子做起。",
+        "source_quote_ids": [
+          "quote_batch_006_010_016"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_016"
+    ]
+  },
+  {
+    "expected_card_id": "rule_yinlingdan_time_limit",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "引灵丹领取与时效规则",
+      "aliases": [],
+      "summary": "入门初训三个月内，每名新弟子每天可领一颗引灵丹；单颗药效仅半个时辰，失败后需次日再试。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第8章 灵田谷中引灵种：“　　“现在尔等都是肉体凡胎，感受不到天地间纯正的灵气，若按部就班，便是悟性极佳的弟子，也需要至少一个月时间才能感受到灵气存在，为加快引灵入体的进度，这三个月内每人每天都能领一颗引灵丹，可以让尔等瞬间感受灵气存在，至于多久能引灵气入体，就看各自的造化了。记住，服用引灵丹后，药效只有半个时辰，若是失败，就只能明天再服用了！””"
+    },
+    "accepted_names": [
+      "引灵丹领取与时效规则"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_yinlingdan_time_limit_batch_006_010_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "引灵丹领取与时效规则：入门初训三个月内，每名新弟子每天可领一颗引灵丹。",
+        "source_quote_ids": [
+          "quote_batch_006_010_029"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_yinlingdan_time_limit_batch_006_010_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "引灵丹领取与时效规则：单颗药效仅半个时辰，失败后需次日再试。",
+        "source_quote_ids": [
+          "quote_batch_006_010_029"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_029"
+    ]
+  },
+  {
+    "expected_card_id": "rule_xiuxian_liuyi",
+    "knowledge_type": "rule",
+    "card": {
+      "type": "rule",
+      "name": "修仙六艺",
+      "aliases": [],
+      "summary": "修仙六艺为法、丹、器、符、阵、御；御又分驾御法器与驭兽驯兽。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第10章 书中自有黄金屋：“　　楚长老重重的咳嗽了一声，希望能警醒秦浩轩发现没有什么效果，语带几分不满地说道：“今天我给尔等说说修仙六艺，修仙六艺便是【法丹器符阵御】，法便是灵法道术，丹便是炼丹之术，炼制灵丹妙药，器便是炼器之术，制作各种法器，符便是制符之术，制作出各种灵符，阵便是布阵之术，御则分为两种，一为驾御法器的方式方法，二为驭兽驯兽。””"
+    },
+    "accepted_names": [
+      "修仙六艺"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_rule_xiuxian_liuyi_batch_006_010_01",
+        "field": "summary",
+        "importance": "major",
+        "description": "修仙六艺为法、丹、器、符、阵、御。",
+        "source_quote_ids": [
+          "quote_batch_006_010_038"
+        ]
+      },
+      {
+        "claim_id": "claim_rule_xiuxian_liuyi_batch_006_010_02",
+        "field": "summary",
+        "importance": "major",
+        "description": "修仙六艺：御又分驾御法器与驭兽驯兽。",
+        "source_quote_ids": [
+          "quote_batch_006_010_038"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_038"
+    ]
+  },
+  {
+    "expected_card_id": "event_zhangkuang_zizhong_test",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "张狂测出无上紫种",
+      "aliases": [],
+      "summary": "张狂触碰明鉴仙眼后爆出璀璨紫光，被确认拥有无上紫种，引发太初教高层争抢。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第6章 紫气东来惊仙鉴：“　　谁知，就在张狂手接触到【明鉴仙眼】那一霎，一道强烈而璀璨的紫光爆出，照亮了半边天空，直刺到在场所有人的心窝。”",
+      "chapter_id": "chapter-71d9db70aabb4de2a050c9d6beb9a984",
+      "description": "张狂触碰明鉴仙眼后爆出璀璨紫光，被确认拥有无上紫种，引发太初教高层争抢。"
+    },
+    "accepted_names": [
+      "张狂测出无上紫种"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_zhangkuang_zizhong_test_batch_006_010_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "张狂测出无上紫种：张狂触碰明鉴仙眼后爆出璀璨紫光，被确认拥有无上紫种，引发太初教高层争抢。",
+        "source_quote_ids": [
+          "quote_batch_006_010_003"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_003"
+    ]
+  },
+  {
+    "expected_card_id": "event_three_zizhong_test",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "本届三名无上紫种完成测试",
+      "aliases": [],
+      "summary": "张狂、李靖、徐羽先后经明鉴仙眼确认拥有无上紫种，太初教将消息列为宗门最高机密。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第6章 紫气东来惊仙鉴：“　　“紫种！””；第7章 淡然明鉴道初心：“　　艳阳高照，暖风和煦，在太初教掌教和诸多地位崇高的前辈高人面前，【明鉴仙眼】再次爆出璀璨夺目的紫色光芒，亮瞎了许多人的眼！”；第7章 淡然明鉴道初心：“　　徐羽是这一批新弟子中最后一个上测试台的，除了秦浩轩，其他人都争先恐后的讨好紫种的张狂和李靖，没人关心徐羽的成绩会怎么样，直到【明鉴仙眼】爆出瑰丽的紫色仙光。”",
+      "chapter_id": "chapter-1542b22d9c214d2baf67c3a5175e2e90",
+      "description": "张狂、李靖、徐羽先后经明鉴仙眼确认拥有无上紫种，太初教将消息列为宗门最高机密。"
+    },
+    "accepted_names": [
+      "本届三名无上紫种完成测试"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_three_zizhong_test_batch_006_010_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "本届三名无上紫种完成测试：张狂、李靖、徐羽先后经明鉴仙眼确认拥有无上紫种，太初教将消息列为宗门最高机密。",
+        "source_quote_ids": [
+          "quote_batch_006_010_039",
+          "quote_batch_006_010_007",
+          "quote_batch_006_010_009"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_039",
+      "quote_batch_006_010_007",
+      "quote_batch_006_010_009"
+    ]
+  },
+  {
+    "expected_card_id": "event_qin_weak_seed_test",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "秦浩轩测出无色弱种",
+      "aliases": [],
+      "summary": "秦浩轩经明鉴仙眼判定为濒临死亡的无色弱种，但落叶真人同时注意到其身上存在微弱而纯正的灵气。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第7章 淡然明鉴道初心：“　　无色仙种中的弱种，濒临死亡的最差弱种！”；第7章 淡然明鉴道初心：“　　在秦浩轩走上测试台时，落叶真人眼神闪过一丝诧异，秦浩轩不但气宇轩昂，少年老成，在他面前不像其他弟子一般畏畏缩缩，且身上传出一道若有若无的灵气，十分微弱却异常纯正。”",
+      "chapter_id": "chapter-1542b22d9c214d2baf67c3a5175e2e90",
+      "description": "秦浩轩经明鉴仙眼判定为濒临死亡的无色弱种，但落叶真人同时注意到其身上存在微弱而纯正的灵气。"
+    },
+    "accepted_names": [
+      "秦浩轩测出无色弱种"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_qin_weak_seed_test_batch_006_010_01",
+        "field": "description",
+        "importance": "major",
+        "description": "秦浩轩测出无色弱种：秦浩轩经明鉴仙眼判定为濒临死亡的无色弱种，但落叶真人同时注意到其身上存在微弱而纯正的灵气。",
+        "source_quote_ids": [
+          "quote_batch_006_010_012",
+          "quote_batch_006_010_040"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_012",
+      "quote_batch_006_010_040"
+    ]
+  },
+  {
+    "expected_card_id": "event_three_purple_break_seed",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "三名紫种首日破种",
+      "aliases": [],
+      "summary": "李靖、徐羽、张狂在不到三十息内先后引灵入体并破开仙种。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第8章 灵田谷中引灵种：“　　在不到三十息的时间内，三名紫种弟子先后引灵入体，破开仙种。”",
+      "chapter_id": "chapter-a7731db47da6476aa3ed62030d28bc6a",
+      "description": "李靖、徐羽、张狂在不到三十息内先后引灵入体并破开仙种。"
+    },
+    "accepted_names": [
+      "三名紫种首日破种"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_three_purple_break_seed_batch_006_010_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "三名紫种首日破种：李靖、徐羽、张狂在不到三十息内先后引灵入体并破开仙种。",
+        "source_quote_ids": [
+          "quote_batch_006_010_004"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_004"
+    ]
+  },
+  {
+    "expected_card_id": "event_qin_break_seed_last_second",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "秦浩轩最后一息破种",
+      "aliases": [],
+      "summary": "秦浩轩在引灵丹药效与计时香即将结束的最后一秒成功引灵入体、破开仙种。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第9章 道心固来一炷香：“　　在最后一秒，秦浩轩终于引导灵气入体，破开仙种，成功出仙根，那接下来就是扎根！将根扎好，便能真正踏上修仙的真正大道了。”",
+      "chapter_id": "chapter-cd8b61413cc94cd98316fe59afb5dcb2",
+      "description": "秦浩轩在引灵丹药效与计时香即将结束的最后一秒成功引灵入体、破开仙种。"
+    },
+    "accepted_names": [
+      "秦浩轩最后一息破种"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_qin_break_seed_last_second_batch_006_010_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "秦浩轩最后一息破种：秦浩轩在引灵丹药效与计时香即将结束的最后一秒成功引灵入体、破开仙种。",
+        "source_quote_ids": [
+          "quote_batch_006_010_013"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_013"
+    ]
+  },
+  {
+    "expected_card_id": "event_qin_enters_juexian_and_inherits",
+    "knowledge_type": "event",
+    "card": {
+      "type": "event",
+      "name": "秦浩轩进入绝仙毒谷并获传承",
+      "aliases": [],
+      "summary": "秦浩轩附身小蛇进入绝仙毒谷，遇到不死巫魔并被传授道心种魔大法，同时发现一叶金莲。",
+      "lifecycle": "confirmed",
+      "source_origin": "agent_extract",
+      "source_note": "第10章 书中自有黄金屋：“　　“我不死巫魔纵横天下数千年，从不诳人，说传你绝学就传你绝学，你来这里不就是为了寻些宝贝么？我的绝学丢在修仙界也是顶级的功法，难道你就不心动么？”那身子主人似有些愠怒，原本油尽灯枯的身子徒然散出一股可怕的气息，仿佛秦浩轩要是不从，不死巫魔立马就要跳起来捏死他似的，吓得秦浩轩连连后退，不过等了很久，不死巫魔也没能跳起来捏死他。”；第10章 书中自有黄金屋：“　　“这是我的独门绝学道心种魔大法，这门功法修炼到精深处极为厉害。这山谷毒气太重，任何生物进不来，为了不让它失传，我现在就传授给你。””；第10章 书中自有黄金屋：“　　这株金色植物仅有三四寸高，通体金色，有些像莲花，在笔直的叶茎之上也只有一片金色的叶子，仿佛一阵风就能刮倒，虽然透出极强的灵气，但秦浩轩根本不敢下口，万一这要是什么绝毒的毒物将自己毒死了可怎么得了。”",
+      "chapter_id": "chapter-cdb5c3ef2e564affb249aedd5f14d311",
+      "description": "秦浩轩附身小蛇进入绝仙毒谷，遇到不死巫魔并被传授道心种魔大法，同时发现一叶金莲。"
+    },
+    "accepted_names": [
+      "秦浩轩进入绝仙毒谷并获传承"
+    ],
+    "exact_fields": [
+      "type",
+      "lifecycle",
+      "source_origin",
+      "chapter_id"
+    ],
+    "set_fields": [
+      "aliases"
+    ],
+    "semantic_fields": [
+      "summary",
+      "source_note",
+      "description"
+    ],
+    "expected_claims": [
+      {
+        "claim_id": "claim_event_qin_enters_juexian_and_inherits_batch_006_010_01",
+        "field": "description",
+        "importance": "critical",
+        "description": "秦浩轩进入绝仙毒谷并获传承：秦浩轩附身小蛇进入绝仙毒谷，遇到不死巫魔并被传授道心种魔大法，同时发现一叶金莲。",
+        "source_quote_ids": [
+          "quote_batch_006_010_018",
+          "quote_batch_006_010_014",
+          "quote_batch_006_010_041"
+        ]
+      }
+    ],
+    "source_quote_ids": [
+      "quote_batch_006_010_018",
+      "quote_batch_006_010_014",
+      "quote_batch_006_010_041"
+    ]
+  }
+]

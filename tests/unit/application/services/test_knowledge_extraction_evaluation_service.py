@@ -46,9 +46,12 @@ from taichu.application.evaluations.knowledge_extraction.records import (
 from taichu.application.services.knowledge_extraction_evaluation_service import (
     EvaluationServiceError,
     KnowledgeExtractionEvaluationService,
+    _actual_candidates,
+    _background_failure,
     _build_comparisons,
     _comparison_issue_type,
     _display_model_title,
+    _judge_failure_code,
     _legacy_judge_diagnostics,
     derive_independence,
 )
@@ -256,6 +259,13 @@ def test_preview_and_deterministic_background_use_frozen_inputs(
     asyncio.run(_preview_and_background_scenario(tmp_path))
 
 
+def test_background_failure_does_not_misreport_internal_error_as_corruption() -> None:
+    code, message = _background_failure(PermissionError("sharing violation"))
+
+    assert code == "EVALUATION_EXECUTION_FAILED"
+    assert "后台执行失败" in message
+
+
 def test_update_candidate_is_fully_evaluable(tmp_path: Path) -> None:
     asyncio.run(_update_candidate_preview_scenario(tmp_path))
 
@@ -448,12 +458,22 @@ async def _judge_failure_and_retry_scenario(tmp_path: Path) -> None:
     retry_snapshot = await results.read_snapshot_files(retried.evaluation_id)
 
     assert parent_terminal.status is EvaluationStatus.COMPLETED_WITH_WARNINGS
+    assert parent_terminal.progress.judge_card_completed == 1
+    assert parent_terminal.progress.judge_batch_completed == 1
     assert parent_terminal.run_results[0].metrics["candidate_f1_micro"] == 1
     assert parent_terminal.run_results[0].overall_quality_score is None
     assert parent_terminal.warnings[0].code == "EVALUATION_JUDGE_INVALID_OUTPUT"
     assert "语义裁判未纳入本次评分" in parent_terminal.warnings[0].message
     assert parent_result is not None
     assert parent_result.comparisons[0].issue_type == "judge_failed"
+    judge_result = parent_result.comparisons[0].judge_result
+    assert judge_result is not None
+    failed_call = await results.get_judge_call(
+        parent.evaluation_id,
+        judge_result["judge_call_ids"][0],
+    )
+    assert failed_call is not None
+    assert failed_call.error_code == "judge_provider_error"
     assert parent_result.comparisons[0].explanation is not None
     assert parent_result.comparisons[0].explanation.source.value == "rule"
     assert "不代表抽取错误" in parent_result.comparisons[0].explanation.summary
@@ -480,10 +500,7 @@ def test_model_independence_uses_real_provider_model_and_family() -> None:
     )
 
     assert derive_independence(generation, generation).value == "same_model"
-    assert (
-        derive_independence(generation, same_family).value
-        == "same_provider_family"
-    )
+    assert derive_independence(generation, same_family).value == "same_provider_family"
     assert derive_independence(generation, different).value == "different_model"
     assert (
         derive_independence(
@@ -492,6 +509,59 @@ def test_model_independence_uses_real_provider_model_and_family() -> None:
         ).value
         == "unknown"
     )
+
+
+def test_update_candidates_are_evaluated_after_schema_merge_preview() -> None:
+    markdown = "秦阳握着青铜令牌走入山门。"
+    run = _run(markdown, action=AgentReviewCandidateAction.UPDATE_CARD)
+    review_item = run.review_items[0].model_copy(
+        update={
+            "target_card_id": "character-qinyang",
+            "suggested_card": {
+                **run.review_items[0].suggested_card,
+                "aliases": ["新别名"],
+                "summary": "秦阳带着青铜令牌进入山门。",
+                "role_type": "antagonist",
+                "last_seen_chapter_id": "chapter-002",
+            },
+        }
+    )
+    run = run.model_copy(
+        update={
+            "review_items": [review_item],
+            "typed_candidates": [
+                {
+                    "type": "character",
+                    "name": "秦阳",
+                    "target_card_id": "character-qinyang",
+                    "_existing_card": {
+                        "type": "character",
+                        "name": "秦阳",
+                        "aliases": ["旧别名"],
+                        "summary": "秦阳原本是山下少年。",
+                        "role_type": "supporting",
+                        "last_seen_chapter_id": "chapter-001",
+                    },
+                }
+            ],
+        }
+    )
+
+    candidate = _actual_candidates(run)[0]
+
+    assert candidate.merge_preview_applied is True
+    assert candidate.card["summary"] == "秦阳带着青铜令牌进入山门。"
+    assert candidate.card["aliases"] == ["旧别名", "新别名"]
+    assert candidate.card["role_type"] == "supporting"
+    assert candidate.card["last_seen_chapter_id"] == "chapter-002"
+
+
+def test_judge_failure_code_distinguishes_timeout_protocol_and_provider() -> None:
+    assert _judge_failure_code(asyncio.TimeoutError()) == "judge_timeout"
+    assert _judge_failure_code(json.JSONDecodeError("坏 JSON", "", 0)) == (
+        "judge_protocol_invalid_json"
+    )
+    assert _judge_failure_code(RuntimeError("连接中断")) == "judge_provider_error"
 
 
 def test_display_model_title_uses_frozen_author_facing_name() -> None:
@@ -571,12 +641,8 @@ def test_comparison_issue_type_only_reports_real_differences() -> None:
     judge_inconclusive = exact_match.model_copy(
         update={"judge_result": {"status": "inconclusive"}}
     )
-    judge_failed = exact_match.model_copy(
-        update={"judge_result": {"status": "failed"}}
-    )
-    ambiguous_match = exact_match.model_copy(
-        update={"issue_type": "ambiguous_match"}
-    )
+    judge_failed = exact_match.model_copy(update={"judge_result": {"status": "failed"}})
+    ambiguous_match = exact_match.model_copy(update={"issue_type": "ambiguous_match"})
 
     assert _comparison_issue_type(exact_match) is None
     assert _comparison_issue_type(field_difference) == "field_difference"

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 
 import {
+  buildKnowledgeEvaluationCodexAnalysisRequest,
   canRetryEvaluation,
   evaluationErrorMessage,
   evaluationFieldLabel,
@@ -205,6 +206,43 @@ test("差异按问题类型稳定分组", () => {
   );
   assert.equal(groups.field_difference?.length, 1);
   assert.equal(groups.ambiguous_match?.length, 1);
+});
+
+test("生成可复制给 Codex 的评测分析请求并指向完整冻结资料", () => {
+  const request = buildKnowledgeEvaluationCodexAnalysisRequest(
+    evaluation({
+      status: "completed_with_warnings",
+      phase: "finished",
+      snapshot_root_hash: "snapshot-sha256",
+      subject_title: "第6章至第10章",
+      dataset: {
+        dataset_id: "taichu_knowledge_eval_006_020",
+        display_name: "第6章至第20章批量知识沉淀评测集",
+        checksum: "dataset-sha256",
+      },
+      aggregate_metrics: {
+        candidate_f1_micro: 0.82,
+        evidence_score: 0.61,
+      },
+      warnings: [
+        {
+          code: "EVALUATION_JUDGE_DISAGREEMENT",
+          message: "语义裁判评分存在分歧。",
+        },
+      ],
+    }),
+  );
+
+  assert.match(request, /knowledge_eval_20260711_120000_a1b2c3/);
+  assert.match(
+    request,
+    /project_assets\/derived\/agent_evaluations\/knowledge_extraction\/knowledge_eval_20260711_120000_a1b2c3/,
+  );
+  assert.match(request, /input_snapshot\/runs/);
+  assert.match(request, /judge_calls/);
+  assert.match(request, /先分析，不要直接修改代码/);
+  assert.match(request, /"candidate_f1_micro": 0.82/);
+  assert.match(request, /语义裁判评分存在分歧/);
 });
 
 for (const [name, runTest] of tests) {

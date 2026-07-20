@@ -95,7 +95,7 @@ export function generalNodeVisualStatus(
 }
 
 export function generalNodeErrorMessage(
-  errorMessage: string | null,
+  errorMessage: string | null | undefined,
   runStatus: GeneralAgentRunStatus,
 ): string | null {
   if (!errorMessage || isGeneralAgentRunActive(runStatus)) {

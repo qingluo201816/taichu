@@ -94,9 +94,11 @@ class MVPInboxService:
     async def create_idea(self, data: dict[str, Any]) -> MVPInboxIdea:
         """Create a manual inspiration item."""
         now = _now_iso()
+        title = _required_idea_title(data.get("title"))
         item = MVPInboxIdea.model_validate(
             {
                 "id": data.get("id") or f"idea-{uuid4().hex}",
+                "title": title,
                 "content": data.get("content", ""),
                 "source_chapter_id": data.get("source_chapter_id"),
                 "priority": data.get("priority", "normal"),
@@ -157,10 +159,15 @@ class MVPInboxService:
 
     async def patch_idea(self, item_id: str, updates: dict[str, Any]) -> MVPInboxIdea:
         """Patch one idea item."""
+        normalized_updates = dict(updates)
+        if "title" in normalized_updates:
+            normalized_updates["title"] = _required_idea_title(
+                normalized_updates["title"]
+            )
         return await self._patch_jsonl_item(
             INBOX_IDEAS_FILE,
             item_id,
-            updates,
+            normalized_updates,
             MVPInboxIdea,
         )
 
@@ -309,6 +316,12 @@ def _filter_items(
 
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+
+
+def _required_idea_title(value: Any) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise InboxValidationError("请填写灵感标题")
+    return value.strip()
 
 
 def _canonical_issue_content(value: Any) -> str:

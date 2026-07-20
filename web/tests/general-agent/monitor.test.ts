@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 
 import {
+  buildGeneralAgentExecutionFlow,
   buildGeneralAgentGraphLayout,
+  GENERAL_AGENT_FLOW_ANSWER_ID,
+  GENERAL_AGENT_FLOW_ORCHESTRATOR_ID,
   generalAgentPlanRevisions,
   orchestratorTraces,
   tracesForGeneralAgentNode,
@@ -19,11 +22,49 @@ const nodes = [
 ];
 assert.deepEqual(generalAgentPlanRevisions(nodes), [2, 1]);
 
-const layout = buildGeneralAgentGraphLayout(nodes.slice(0, 3));
+const executionFlow = buildGeneralAgentExecutionFlow(nodes.slice(0, 3), "completed");
+assert.deepEqual(executionFlow.map(item => item.node_id), [
+  GENERAL_AGENT_FLOW_ORCHESTRATOR_ID,
+  "evidence",
+  "draft",
+  "review",
+  GENERAL_AGENT_FLOW_ANSWER_ID,
+]);
+assert.deepEqual(
+  executionFlow.find(item => item.node_id === "evidence")?.dependencies,
+  [GENERAL_AGENT_FLOW_ORCHESTRATOR_ID],
+);
+assert.deepEqual(
+  executionFlow.find(item => item.node_id === GENERAL_AGENT_FLOW_ANSWER_ID)?.dependencies,
+  ["review"],
+);
+
+const layout = buildGeneralAgentGraphLayout(executionFlow);
 const levels = Object.fromEntries(layout.nodes.map(item => [item.node_id, item.level]));
-assert.deepEqual(levels, { evidence: 0, draft: 1, review: 2 });
+assert.deepEqual(levels, {
+  [GENERAL_AGENT_FLOW_ORCHESTRATOR_ID]: 0,
+  evidence: 1,
+  draft: 2,
+  review: 3,
+  [GENERAL_AGENT_FLOW_ANSWER_ID]: 4,
+});
 assert.ok(layout.width >= 520);
 assert.ok(layout.height >= 220);
+assert.ok(layout.nodes.every(item => item.width <= 148 && item.height <= 56));
+
+const singleNodeLayout = buildGeneralAgentGraphLayout(
+  buildGeneralAgentExecutionFlow([], "completed"),
+);
+assert.equal(
+  singleNodeLayout.nodes[0].level,
+  0,
+);
+assert.equal(singleNodeLayout.nodes[1].level, 1);
+assert.deepEqual(singleNodeLayout.nodes[1].dependencies, [GENERAL_AGENT_FLOW_ORCHESTRATOR_ID]);
+
+const failedExecutionFlow = buildGeneralAgentExecutionFlow(nodes.slice(0, 1), "failed");
+assert.equal(failedExecutionFlow[0].status, "success");
+assert.equal(failedExecutionFlow.at(-1)?.status, "failed");
 
 const traces = [
   trace("trace_root", "call_root", null, "subagent", "canon_evidence", "canon_evidence"),

@@ -33,7 +33,10 @@ from taichu.application.tools import (
     update_confirmed_knowledge,
     update_novel_structure,
 )
-from taichu.application.tools.contract import ToolPlugin
+from taichu.application.tools.contract import (
+    ToolPlugin,
+    ToolReconciliationStatus,
+)
 from taichu.application.tools.knowledge_retrieval import tool as retrieve_knowledge
 from taichu.application.tools.registry import ToolRegistry
 from taichu.infrastructure.retrieval import (
@@ -146,6 +149,12 @@ async def test_manuscript_patch_and_structure_writes_are_real_and_guarded(
     assert (await chapter_service.read_chapter(chapter_id)).markdown.startswith(
         "新内容"
     )
+    patch_reconciliation = await registry.reconcile(
+        "apply_manuscript_patch",
+        authorized_patch,
+        invocation,
+    )
+    assert patch_reconciliation.status is ToolReconciliationStatus.SUCCEEDED
 
     structure = await registry.invoke("get_novel_structure", {}, invocation)
     create_payload = {
@@ -165,6 +174,13 @@ async def test_manuscript_patch_and_structure_writes_are_real_and_guarded(
         invocation,
     )
     created_chapter_id = _output(created).changes[0].item_id
+    assert (
+        await registry.reconcile(
+            "create_novel_structure_items",
+            {**create_payload, "author_grant_id": create_grant.grant_id},
+            invocation,
+        )
+    ).status is ToolReconciliationStatus.SUCCEEDED
 
     update_payload = {
         "expected_structure_version": _output(created).structure_version,
@@ -189,6 +205,13 @@ async def test_manuscript_patch_and_structure_writes_are_real_and_guarded(
         invocation,
     )
     assert "改名后的第二幕" in _output(updated).changes[0].title
+    assert (
+        await registry.reconcile(
+            "update_novel_structure",
+            {**update_payload, "author_grant_id": update_grant.grant_id},
+            invocation,
+        )
+    ).status is ToolReconciliationStatus.SUCCEEDED
 
     delete_payload = {
         "expected_structure_version": _output(updated).structure_version,
@@ -212,6 +235,13 @@ async def test_manuscript_patch_and_structure_writes_are_real_and_guarded(
     assert all(
         item.id != created_chapter_id for item in await chapter_service.list_chapters()
     )
+    assert (
+        await registry.reconcile(
+            "delete_novel_structure_items",
+            {**delete_payload, "author_grant_id": delete_grant.grant_id},
+            invocation,
+        )
+    ).status is ToolReconciliationStatus.SUCCEEDED
 
 
 @_async_test
@@ -270,6 +300,13 @@ async def test_four_knowledge_reads_and_confirmed_writes_share_real_services(
         invocation,
     )
     card = _output(created).card
+    assert (
+        await registry.reconcile(
+            "create_confirmed_knowledge",
+            {**create_payload, "author_grant_id": grant.grant_id},
+            invocation,
+        )
+    ).status is ToolReconciliationStatus.SUCCEEDED
 
     relevance = await registry.invoke(
         "retrieve_knowledge",
@@ -318,11 +355,24 @@ async def test_four_knowledge_reads_and_confirmed_writes_share_real_services(
     )
     assert _output(updated).card.summary.endswith("本书主角。")
     assert _output(updated).changed_fields == ["summary"]
+    assert (
+        await registry.reconcile(
+            "update_confirmed_knowledge",
+            {**update_payload, "author_grant_id": update_grant.grant_id},
+            invocation,
+        )
+    ).status is ToolReconciliationStatus.SUCCEEDED
 
 
 def _register_modules(registry: ToolRegistry, modules: list[ModuleType]) -> None:
     for module in modules:
-        registry.register(ToolPlugin(manifest=module.manifest, run=module.run))
+        registry.register(
+            ToolPlugin(
+                manifest=module.manifest,
+                run=module.run,
+                reconcile=getattr(module, "reconcile", None),
+            )
+        )
 
 
 def _output(envelope: object) -> Any:

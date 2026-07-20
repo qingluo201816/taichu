@@ -243,7 +243,16 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         )
         idea_response = await self.client.post(
             "/api/inbox/ideas",
-            json={"data": {"content": "这里可以埋一个山门伏笔。"}},
+            json={
+                "data": {
+                    "title": "山门伏笔",
+                    "content": "这里可以埋一个山门伏笔。",
+                }
+            },
+        )
+        missing_idea_title_response = await self.client.post(
+            "/api/inbox/ideas",
+            json={"data": {"content": "没有标题的灵感不应保存。"}},
         )
         ideas_response = await self.client.get("/api/inbox?tab=ideas")
         pending_response = await self.client.post(
@@ -281,6 +290,14 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         pending_list_response = await self.client.get("/api/inbox/pending-facts")
 
         self.assertEqual(idea_response.status_code, 200)
+        self.assertEqual(idea_response.json()["item"]["title"], "山门伏笔")
+        self.assertEqual(idea_response.json()["item"]["entry_type"], "idea")
+        self.assertEqual(missing_idea_title_response.status_code, 422)
+        self.assertEqual(
+            missing_idea_title_response.json()["error"]["message"],
+            "请填写灵感标题",
+        )
+        self.assertEqual(ideas_response.json()["items"][0]["title"], "山门伏笔")
         self.assertEqual(
             ideas_response.json()["items"][0]["content"], "这里可以埋一个山门伏笔。"
         )

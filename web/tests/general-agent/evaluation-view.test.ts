@@ -46,6 +46,7 @@ const executableCase = {
 } as GeneralAgentEvaluationCase;
 assert.deepEqual(generalAgentRunRequestForCase(executableCase), {
   user_goal: "把选区改得更紧张。",
+  start_new_conversation: true,
   scope: executableCase.run_input.scope,
   author_constraints: ["只返回改写候选。"],
   external_access_allowed: false,

@@ -18,7 +18,7 @@ export type ReviewCandidateStatus =
   | "confirmed"
   | "rejected";
 
-export type EditConfirmMergeMode = "append" | "overwrite";
+export type EditConfirmMergeMode = "merge" | "overwrite";
 
 export type KnowledgeType =
   | "character"

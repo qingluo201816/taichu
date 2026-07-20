@@ -1,0 +1,143 @@
+[
+  {
+    "negative_case_id": "negative_batch_006_010_001",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "权贵子弟们",
+      "寒门子弟",
+      "众多新弟子"
+    ],
+    "reason": "无专名群体泛称，不能形成单一稳定角色。",
+    "source_quote_ids": [
+      "quote_batch_006_010_042"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_006_010_002",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "窗户",
+      "火把",
+      "香"
+    ],
+    "reason": "普通设施或计时用品，无专名和持续知识价值。",
+    "source_quote_ids": [
+      "quote_batch_006_010_043"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_006_010_003",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "睡着的秦浩轩",
+      "黑眼圈少年"
+    ],
+    "reason": "临时状态或外观，不是新角色或稳定身份。",
+    "source_quote_ids": [
+      "quote_batch_006_010_044"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_006_010_004",
+    "knowledge_type": "event",
+    "accepted_names": [
+      "秦浩轩未来获得奇遇"
+    ],
+    "reason": "只是人物对未来可能性的设想，正文未证实。",
+    "source_quote_ids": [
+      "quote_batch_006_010_045"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_006_010_005",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "麒麟峰老祖宗",
+      "老祖宗"
+    ],
+    "reason": "只有职务与闭关信息，未给姓名，信息不足以建立独立角色卡。",
+    "source_quote_ids": [
+      "quote_batch_006_010_024"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_006_010_006",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "修仙小册子"
+    ],
+    "reason": "普通教材载体，核心知识应沉淀为引气术，不应另建物品卡。",
+    "source_quote_ids": [
+      "quote_batch_006_010_032"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_006_010_007",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "九叶金莲"
+    ],
+    "reason": "正文明确是“一叶金莲”的别名/成熟称呼，应合并到同一物品卡，不能重复建卡。",
+    "source_quote_ids": [
+      "quote_batch_006_010_030"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_006_010_008",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "身子主人"
+    ],
+    "reason": "不死巫魔正式身份揭示前的临时指代，应与不死巫魔合并。",
+    "source_quote_ids": [
+      "quote_batch_006_010_046"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_006_010_009",
+    "knowledge_type": "rule",
+    "accepted_names": [
+      "张狂未来必成掌教"
+    ],
+    "reason": "人物和旁观者的主观推断，不是已经成立的世界规则。",
+    "source_quote_ids": [
+      "quote_batch_006_010_047"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_006_010_010",
+    "knowledge_type": "event",
+    "accepted_names": [
+      "三个月后拜入四堂"
+    ],
+    "reason": "条件性未来结果尚未发生，不应作为已发生事件。",
+    "source_quote_ids": [
+      "quote_batch_006_010_016"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_006_010_011",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "灵气",
+      "仙灵之气"
+    ],
+    "reason": "能量概念，不属于当前知识类型中的物品。",
+    "source_quote_ids": [
+      "quote_batch_006_010_048"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_006_010_012",
+    "knowledge_type": "location",
+    "accepted_names": [
+      "学堂",
+      "宿舍",
+      "食堂"
+    ],
+    "reason": "普通功能空间，无正式专名；应作为灵田谷内部场景，不单独建卡。",
+    "source_quote_ids": [
+      "quote_batch_006_010_049"
+    ]
+  }
+]

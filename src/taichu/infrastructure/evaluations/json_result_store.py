@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import re
 import shutil
+from time import sleep
 from typing import Any
 
 from taichu.application.evaluations.knowledge_extraction.models import (
@@ -489,4 +490,11 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
-    temporary.replace(path)
+    for attempt in range(5):
+        try:
+            temporary.replace(path)
+            return
+        except PermissionError:
+            if attempt == 4:
+                raise
+            sleep(0.01 * (attempt + 1))

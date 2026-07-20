@@ -364,7 +364,7 @@ class UpdateConfirmedKnowledgeInput(ToolModel):
     card_id: str = Field(min_length=1)
     expected_updated_at: str = Field(min_length=1)
     updates: dict[str, object]
-    merge_mode: Literal["append", "overwrite"] = "overwrite"
+    merge_mode: Literal["merge", "overwrite"] = "overwrite"
     source_refs: list[str] = Field(min_length=1, max_length=100)
     author_grant_id: str = Field(min_length=1, max_length=128)
     idempotency_key: str = Field(min_length=8, max_length=128)

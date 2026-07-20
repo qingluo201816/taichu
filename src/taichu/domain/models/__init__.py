@@ -13,6 +13,7 @@ from taichu.domain.models.chapter import (
     Volume,
 )
 from taichu.domain.models.mvp_inbox import (
+    MVPInboxEntryType,
     MVPInboxIdea,
     MVPInboxIssue,
     MVPInboxPendingFact,
@@ -50,6 +51,7 @@ from taichu.domain.models.knowledge import (
 )
 from taichu.domain.models.structured_knowledge import (
     KnowledgeFieldOption,
+    KnowledgeFieldMergeStrategy,
     KnowledgeFieldSchema,
     KnowledgeSchemaFieldType,
     KnowledgeTypeSchema,
@@ -60,6 +62,7 @@ from taichu.domain.models.structured_knowledge import (
     all_knowledge_card_field_keys,
     all_knowledge_type_schemas,
     knowledge_type_field_keys,
+    knowledge_field_merge_strategy,
     knowledge_type_label,
     knowledge_type_schema,
     type_specific_field_keys,
@@ -105,6 +108,7 @@ __all__ = [
     "WritingOutline",
     "SourceReference",
     "SourceReferenceType",
+    "MVPInboxEntryType",
     "MVPInboxIdea",
     "MVPInboxIssue",
     "MVPInboxPendingFact",
@@ -125,6 +129,7 @@ __all__ = [
     "KnowledgeCardLifecycle",
     "KnowledgeCardType",
     "KnowledgeFieldOption",
+    "KnowledgeFieldMergeStrategy",
     "KnowledgeFieldSchema",
     "KnowledgeSchemaFieldType",
     "KnowledgeTypeSchema",
@@ -135,6 +140,7 @@ __all__ = [
     "all_knowledge_card_field_keys",
     "all_knowledge_type_schemas",
     "knowledge_type_field_keys",
+    "knowledge_field_merge_strategy",
     "knowledge_type_label",
     "knowledge_type_schema",
     "type_specific_field_keys",

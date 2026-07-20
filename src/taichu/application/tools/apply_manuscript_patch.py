@@ -18,6 +18,8 @@ from taichu.application.tools.contract import (
     ToolAuthorizationPolicy,
     ToolIdempotencyPolicy,
     ToolManifest,
+    ToolReconciliationResult,
+    ToolReconciliationStatus,
     ToolSideEffect,
 )
 from taichu.application.tools.models import (
@@ -71,4 +73,52 @@ async def run(
         unified_diff=manuscript_diff(chapter.markdown, updated, saved.chapter.id),
         audit_ref=audit_ref,
         source_refs=[f"manuscript:{saved.chapter.id}"],
+    )
+
+
+async def reconcile(
+    input_data: BaseModel,
+    invocation: InvocationContext,
+    context: CapabilityContext,
+) -> ToolReconciliationResult:
+    """通过当前 Markdown 哈希判断补丁是否已经真实落盘。"""
+    del invocation
+    tool_input = ApplyManuscriptPatchInput.model_validate(input_data)
+    chapter = await context.require("chapter_service", ChapterService).read_chapter(
+        tool_input.chapter_id
+    )
+    actual_hash = sha256_text(chapter.markdown)
+    evidence = {
+        "chapter_id": chapter.chapter.id,
+        "actual_content_sha256": actual_hash,
+        "expected_content_sha256": tool_input.expected_content_sha256,
+        "base_content_sha256": tool_input.base_content_sha256,
+    }
+    if actual_hash == tool_input.expected_content_sha256:
+        output = ApplyManuscriptPatchOutput(
+            chapter_id=chapter.chapter.id,
+            content_sha256=actual_hash,
+            word_count=chapter.chapter.word_count,
+            unified_diff="",
+            audit_ref=(
+                f"manuscript_write:{sha256_text(tool_input.idempotency_key)[:24]}"
+            ),
+            source_refs=[f"manuscript:{chapter.chapter.id}"],
+        )
+        return ToolReconciliationResult(
+            status=ToolReconciliationStatus.SUCCEEDED,
+            output=output.model_dump(mode="json"),
+            evidence=evidence,
+            reason="章节正文哈希与授权后的预期哈希一致。",
+        )
+    if actual_hash == tool_input.base_content_sha256:
+        return ToolReconciliationResult(
+            status=ToolReconciliationStatus.NOT_APPLIED,
+            evidence=evidence,
+            reason="章节正文仍是写入前版本。",
+        )
+    return ToolReconciliationResult(
+        status=ToolReconciliationStatus.UNKNOWN,
+        evidence=evidence,
+        reason="章节正文既不是写入前版本，也不是授权后的预期版本。",
     )

@@ -10,6 +10,7 @@ from taichu.api.deps import provide_knowledge_extraction_service
 from taichu.api.schemas.agent_workbench import (
     CreateBatchKnowledgeExtractionRunRequest,
     CreateKnowledgeExtractionRunRequest,
+    CreateSummaryRepairRunRequest,
     EditConfirmCandidateRequest,
     KnowledgeExtractionCandidateActionResponse,
     KnowledgeExtractionCandidateListResponse,
@@ -52,9 +53,7 @@ async def api_get_knowledge_sedimentation_progress(
 @router.post("/runs", response_model=KnowledgeExtractionRunCreateResponse)
 async def api_create_knowledge_extraction_run(
     request: CreateKnowledgeExtractionRunRequest,
-    service: KnowledgeExtractionService = Depends(
-        provide_knowledge_extraction_service
-    ),
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
 ) -> KnowledgeExtractionRunCreateResponse:
     """Create one synchronous current-chapter knowledge extraction run."""
     try:
@@ -70,12 +69,31 @@ async def api_create_knowledge_extraction_run(
     return KnowledgeExtractionRunCreateResponse(run=_run_summary(run))
 
 
+@router.post(
+    "/summary-repair-runs/start",
+    response_model=KnowledgeExtractionRunCreateResponse,
+)
+async def api_start_summary_repair_run(
+    request: CreateSummaryRepairRunRequest,
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
+) -> KnowledgeExtractionRunCreateResponse:
+    """Generate review-only candidates for suspicious historical summaries."""
+    try:
+        run = await service.create_summary_repair_run(
+            card_ids=request.card_ids,
+            model_name=request.model_id,
+        )
+    except KnowledgeExtractionModelSelectionError as error:
+        raise _unsupported_model(str(error)) from error
+    except (KnowledgeExtractionError, KnowledgeCardNotFoundError) as error:
+        raise _bad_request(str(error)) from error
+    return KnowledgeExtractionRunCreateResponse(run=_run_summary(run))
+
+
 @router.post("/runs/stream")
 async def api_stream_knowledge_extraction_run(
     request: CreateKnowledgeExtractionRunRequest,
-    service: KnowledgeExtractionService = Depends(
-        provide_knowledge_extraction_service
-    ),
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
 ) -> StreamingResponse:
     """Create one current-chapter knowledge extraction run and stream node events."""
     try:
@@ -100,9 +118,7 @@ async def api_stream_knowledge_extraction_run(
 @router.post("/runs/start", response_model=KnowledgeExtractionRunCreateResponse)
 async def api_start_knowledge_extraction_run(
     request: CreateKnowledgeExtractionRunRequest,
-    service: KnowledgeExtractionService = Depends(
-        provide_knowledge_extraction_service
-    ),
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
 ) -> KnowledgeExtractionRunCreateResponse:
     """Start one current-chapter knowledge extraction task without blocking."""
     try:
@@ -121,9 +137,7 @@ async def api_start_knowledge_extraction_run(
 @router.post("/batch-runs/stream")
 async def api_stream_batch_knowledge_extraction_run(
     request: CreateBatchKnowledgeExtractionRunRequest,
-    service: KnowledgeExtractionService = Depends(
-        provide_knowledge_extraction_service
-    ),
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
 ) -> StreamingResponse:
     """Create one batch knowledge extraction run and stream task events."""
     try:
@@ -148,9 +162,7 @@ async def api_stream_batch_knowledge_extraction_run(
 @router.post("/batch-runs/start", response_model=KnowledgeExtractionRunCreateResponse)
 async def api_start_batch_knowledge_extraction_run(
     request: CreateBatchKnowledgeExtractionRunRequest,
-    service: KnowledgeExtractionService = Depends(
-        provide_knowledge_extraction_service
-    ),
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
 ) -> KnowledgeExtractionRunCreateResponse:
     """Start one batch knowledge extraction task without blocking."""
     try:
@@ -171,9 +183,7 @@ async def api_list_knowledge_extraction_runs(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     status: str = "all",
-    service: KnowledgeExtractionService = Depends(
-        provide_knowledge_extraction_service
-    ),
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
 ) -> KnowledgeExtractionRunListResponse:
     """List persisted knowledge extraction runs."""
     try:
@@ -195,9 +205,7 @@ async def api_list_knowledge_extraction_runs(
 @router.get("/runs/{run_id}", response_model=KnowledgeExtractionRunDetailResponse)
 async def api_get_knowledge_extraction_run(
     run_id: str,
-    service: KnowledgeExtractionService = Depends(
-        provide_knowledge_extraction_service
-    ),
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
 ) -> KnowledgeExtractionRunDetailResponse:
     """Return one full run detail."""
     try:
@@ -210,9 +218,7 @@ async def api_get_knowledge_extraction_run(
 @router.delete("/runs/{run_id}", response_model=KnowledgeExtractionRunDeleteResponse)
 async def api_delete_knowledge_extraction_run(
     run_id: str,
-    service: KnowledgeExtractionService = Depends(
-        provide_knowledge_extraction_service
-    ),
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
 ) -> KnowledgeExtractionRunDeleteResponse:
     """Delete one persisted extraction run record."""
     try:
@@ -224,12 +230,14 @@ async def api_delete_knowledge_extraction_run(
     return KnowledgeExtractionRunDeleteResponse(run_id=run_id, deleted=True)
 
 
-@router.post("/runs/{run_id}/accept", response_model=KnowledgeSedimentationProgressResponse)
+@router.post(
+    "/runs/{run_id}/accept", response_model=KnowledgeSedimentationProgressResponse
+)
 async def api_accept_knowledge_extraction_run(
     run_id: str,
     service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
 ) -> KnowledgeSedimentationProgressResponse:
-    """Mark one fully reviewed continuous run as the accepted knowledge frontier."""
+    """Confirm pending candidates with merge semantics and accept the run."""
     try:
         progress = await service.accept_run(run_id)
     except KnowledgeExtractionError as error:
@@ -248,9 +256,7 @@ async def api_list_knowledge_extraction_candidates(
     run_id: str,
     status: str = "pending",
     action: str = "all",
-    service: KnowledgeExtractionService = Depends(
-        provide_knowledge_extraction_service
-    ),
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
 ) -> KnowledgeExtractionCandidateListResponse:
     """List review candidates for one run."""
     try:
@@ -273,9 +279,7 @@ async def api_list_knowledge_extraction_candidates(
 async def api_confirm_knowledge_extraction_candidate_in_run(
     run_id: str,
     candidate_id: str,
-    service: KnowledgeExtractionService = Depends(
-        provide_knowledge_extraction_service
-    ),
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
 ) -> KnowledgeExtractionCandidateActionResponse:
     """Confirm one candidate inside a specific run."""
     return await _confirm_candidate(
@@ -291,9 +295,7 @@ async def api_confirm_knowledge_extraction_candidate_in_run(
 )
 async def api_confirm_knowledge_extraction_candidate(
     candidate_id: str,
-    service: KnowledgeExtractionService = Depends(
-        provide_knowledge_extraction_service
-    ),
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
 ) -> KnowledgeExtractionCandidateActionResponse:
     """Confirm one create_card or update_card candidate."""
     return await _confirm_candidate(service, candidate_id, run_id=None)
@@ -307,9 +309,7 @@ async def api_edit_confirm_knowledge_extraction_candidate_in_run(
     run_id: str,
     candidate_id: str,
     request: EditConfirmCandidateRequest,
-    service: KnowledgeExtractionService = Depends(
-        provide_knowledge_extraction_service
-    ),
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
 ) -> KnowledgeExtractionCandidateActionResponse:
     """Confirm one edited candidate inside a specific run."""
     return await _edit_confirm_candidate(
@@ -327,9 +327,7 @@ async def api_edit_confirm_knowledge_extraction_candidate_in_run(
 async def api_edit_confirm_knowledge_extraction_candidate(
     candidate_id: str,
     request: EditConfirmCandidateRequest,
-    service: KnowledgeExtractionService = Depends(
-        provide_knowledge_extraction_service
-    ),
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
 ) -> KnowledgeExtractionCandidateActionResponse:
     """Confirm one candidate after author edits."""
     return await _edit_confirm_candidate(
@@ -347,9 +345,7 @@ async def api_edit_confirm_knowledge_extraction_candidate(
 async def api_reject_knowledge_extraction_candidate_in_run(
     run_id: str,
     candidate_id: str,
-    service: KnowledgeExtractionService = Depends(
-        provide_knowledge_extraction_service
-    ),
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
 ) -> KnowledgeExtractionCandidateActionResponse:
     """Reject one candidate inside a specific run."""
     return await _reject_candidate(service, candidate_id, run_id=run_id)
@@ -361,9 +357,7 @@ async def api_reject_knowledge_extraction_candidate_in_run(
 )
 async def api_reject_knowledge_extraction_candidate(
     candidate_id: str,
-    service: KnowledgeExtractionService = Depends(
-        provide_knowledge_extraction_service
-    ),
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
 ) -> KnowledgeExtractionCandidateActionResponse:
     """Reject one candidate."""
     return await _reject_candidate(service, candidate_id, run_id=None)

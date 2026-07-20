@@ -1,6 +1,7 @@
 """MVP creative inbox contracts."""
 
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import Field
 
@@ -23,10 +24,20 @@ class MVPInboxPriority(StrEnum):
     HIGH = "high"
 
 
+class MVPInboxEntryType(StrEnum):
+    """Stable discriminator for the three Inbox record shapes."""
+
+    IDEA = "idea"
+    PENDING_FACT = "pending_fact"
+    ISSUE = "issue"
+
+
 class MVPInboxIdea(DomainModel):
     """Manual inspiration item."""
 
     id: str = Field(min_length=1)
+    entry_type: Literal[MVPInboxEntryType.IDEA] = MVPInboxEntryType.IDEA
+    title: str = ""
     content: str = Field(min_length=1)
     source_chapter_id: str | None = None
     priority: MVPInboxPriority = MVPInboxPriority.NORMAL
@@ -39,6 +50,9 @@ class MVPInboxPendingFact(DomainModel):
     """Manual fact candidate waiting for author confirmation."""
 
     id: str = Field(min_length=1)
+    entry_type: Literal[MVPInboxEntryType.PENDING_FACT] = (
+        MVPInboxEntryType.PENDING_FACT
+    )
     title: str = ""
     content: str = Field(min_length=1)
     source_chapter_id: str | None = None
@@ -54,6 +68,7 @@ class MVPInboxIssue(DomainModel):
     """Manual writing issue item."""
 
     id: str = Field(min_length=1)
+    entry_type: Literal[MVPInboxEntryType.ISSUE] = MVPInboxEntryType.ISSUE
     title: str = Field(min_length=1)
     content: str = Field(min_length=1)
     source_chapter_id: str | None = None

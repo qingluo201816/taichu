@@ -90,6 +90,7 @@ def discover_tools(package_name: str) -> list[ToolPlugin]:
             tool_module = import_module(module_name)
             manifest = tool_module.manifest
             run = tool_module.run
+            reconcile = getattr(tool_module, "reconcile", None)
         except Exception as error:
             raise PluginDiscoveryError(
                 f"Unable to load Tool plugin '{module_info.name}'"
@@ -103,8 +104,12 @@ def discover_tools(package_name: str) -> list[ToolPlugin]:
             raise PluginDiscoveryError(
                 f"Tool '{module_info.name}' exports a non-callable run"
             )
+        if reconcile is not None and not callable(reconcile):
+            raise PluginDiscoveryError(
+                f"Tool '{module_info.name}' exports a non-callable reconcile"
+            )
 
-        plugins.append(ToolPlugin(manifest=manifest, run=run))
+        plugins.append(ToolPlugin(manifest=manifest, run=run, reconcile=reconcile))
 
     return plugins
 

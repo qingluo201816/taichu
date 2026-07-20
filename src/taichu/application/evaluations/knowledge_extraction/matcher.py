@@ -118,10 +118,7 @@ def _evidence_edge(
     expected: ExpectedCard,
     evidence_by_id: dict[str, str],
 ) -> _Edge | None:
-    if (
-        actual.knowledge_type is not StructuredKnowledgeType.EVENT
-        or not _chapter_scopes_overlap(actual.card, expected.card)
-    ):
+    if not _chapter_scopes_overlap(actual.card, expected.card):
         return None
     actual_evidence = [
         normalized

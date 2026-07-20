@@ -1,6 +1,6 @@
 # 太初仓库地图
 
-> 更新日期：2026-07-18
+> 更新日期：2026-07-20
 
 太初是面向个人作者的单本玄幻长篇 AI 写作工作台。本文件只回答两件事：仓库每个区域负责什么，以及想找某类资料应该去哪里。
 
@@ -18,9 +18,11 @@
 | 启动规格驱动开发 | `$codex-sdd`，规则位于 `.agents/skills/codex-sdd/` |
 | 查看后端和系统架构设想 | `docs/临时架构/7-10太初系统架构图.md` |
 | 查看通用写作助手 Agent 的已确认架构决策 | `docs/已讨论功能/7-13通用写作助手智能体架构与能力演进决策.md` |
+| 查看子 Agent 结构化执行器形态与升级评测决策 | `docs/已讨论功能/7-20子Agent结构化执行器与升级评测决策.md` |
 | 查看已实现的第一版 Tool、子 Agent 能力边界与后续调优项 | `docs/临时架构/7-13工具与子智能体能力层技术设计.md` |
 | 查看通用写作助手能力层实现与验证报告 | `docs/历史/7-13通用写作助手能力层实现报告.md` |
 | 查看通用 Agent Runtime 已实现后端边界与后续技术设计 | `docs/临时架构/7-13通用智能体运行时编排技术设计.md` |
+| 查看通用 Agent 全链路、上下文、能力调用、恢复与纠偏排查地图 | `docs/临时架构/7-20通用Agent运行链路上下文与能力调用排查地图.md` |
 | 查看通用 Agent Runtime 实现与验证报告 | `docs/历史/7-14通用写作助手运行时实现报告.md` |
 | 查看通用写作助手作者工作台实现与验证报告 | `docs/历史/7-14通用写作助手工作台实现报告.md` |
 | 查看通用写作助手节点监控实现与验证报告 | `docs/历史/7-14通用写作助手节点监控实现报告.md` |
@@ -29,6 +31,8 @@
 | 查看统一知识召回策略、独立评测与词法基线 | `docs/历史/7-18统一知识召回评测基线报告.md` |
 | 查看通用 Agent 后续阶段任务包 | `docs/任务包/太初-通用Agent后续推进任务包-20260717/` |
 | 查看 Qdrant 与本地 Qwen 向量能力设计和实机记录 | `docs/临时架构/7-18向量知识召回技术设计.md` |
+| 查看独立向量召回三次评测与融合 HOLD 结论 | `docs/历史/7-19向量知识召回实验报告.md` |
+| 查看通用写作助手运行时记忆、上下文压缩与多轮评测报告 | `docs/历史/7-19通用写作助手运行时记忆与上下文压缩报告.md` |
 | 查看知识沉淀智能体效果评估设计 | `docs/临时架构/7-11知识沉淀智能体效果评估方案.md` |
 | 查看知识沉淀智能体效果评估的使用报告 | `docs/历史/7-11知识沉淀智能体效果评估使用报告.md` |
 | 核对真实后端代码分层 | `src/taichu/api/`、`src/taichu/application/`、`src/taichu/domain/`、`src/taichu/infrastructure/` |
@@ -42,6 +46,7 @@
 | 查看历史快照 | `docs/历史/` |
 | 查看测试与评测样本 | `tests/`、`tests/fixtures/evaluations/` |
 | 安全探测 Right Code 模型名称与协议 | `.agents/scripts/probe_rightcode_models.py` |
+| 探测、重建和评测独立知识向量能力 | `scripts/probe_embedding_models.py`、`scripts/rebuild_knowledge_vector_index.py`、`python -m taichu.application.evaluations.retrieval.cli` |
 
 `docs/临时架构/` 和 `docs/临时产品文档/` 可能包含未实现、只实现一部分或已经被代码超越的内容。开发前必须以当前代码、`AGENTS.md` 和数据目录说明复核，不得把临时文档直接当作已落地事实。
 
@@ -63,6 +68,7 @@ Taichu/
 ├── .sdd/                     # 按需生成的 codex-sdd 规格、状态与验证证据
 ├── docs/                     # 文档规则、临时资料、参考资料和历史快照
 ├── project_assets/           # 当前单本小说的数据态资产
+├── scripts/                  # 可显式运行的向量探测与索引维护命令
 ├── src/                      # FastAPI 后端代码
 ├── tests/                    # 后端测试和评测夹具
 └── web/                      # Next.js 前端代码
@@ -91,12 +97,13 @@ npm install
 
 ## 阶段 02 独立向量基础设施
 
-当前已经把两项能力真实安装到本机：
+当前已经把基础设施和独立业务链路真实落到本机：
 
 - **Qdrant** 是向量数据库，负责保存和检索可重建的知识向量索引。
 - **Qwen3-Embedding-4B** 是本地向量模型，负责把中文查询和知识片段转换为 2560 维向量；由 llama.cpp 在 RTX 4080 SUPER 上运行，不调用官方云端 API，也不需要模型 API Key。
+- **knowledge_vector** 是只供召回专项评测显式调用的独立向量后端；它不会注册到生产 `retrieval_service`。
 
-这不代表向量已经替换词法召回。当前生产默认仍是 `mongo_lexical`；阶段 02 下一步会建立独立 `knowledge_vector` 链路，并用同一套 60 条专项评测题与词法召回对比。词法与向量融合属于阶段 03。若首轮向量效果不理想，保留能力并继续优化，不删除向量链路。
+这不代表向量已经替换或融合词法召回。当前生产默认仍是 `mongo_lexical`；独立 `knowledge_vector` 已用同一套60条专项题完成三次稳定对比。由于任务包要求“语义改写 Recall@5 比词法提升至少8个百分点”，而词法基线已经是100%，融合结论为 `HOLD_HYBRID_QUALITY`，阶段03暂不接入。独立向量能力、索引和评测入口继续保留。
 
 ### 已安装版本和位置
 
@@ -114,7 +121,15 @@ npm install
 2b0cf8f17b4c723c27303015383c27ec4bf2d8314bb677d05e920dd70bb0f16b
 ```
 
-Qdrant 的集合名预留为 `taichu_knowledge_vectors`，但当前集合尚未创建。等知识卡投影、快照校验和全量重建命令实现后再显式建库，避免写入不可追溯的临时向量。
+Qdrant active alias 为 `taichu_knowledge_vectors`。当前索引由57张 MongoDB confirmed 卡投影为161个片段，active alias 指向校验通过的物理集合；清单位于 `project_assets/generated/vector_indexes/knowledge_cards/`。Qdrant 载荷不保存完整知识卡，命中后必须回读 MongoDB 当前 confirmed 卡。
+
+## 阶段 04 运行时记忆与上下文压缩
+
+通用写作助手以一个侧栏“新对话”窗口对应一个 `conversation_id（会话标识）`；窗口内每次用户请求各自产生一个 `run_id（运行标识）` 和递增的 `request_index（请求序号）`。只要用户没有点击“新对话”，后续请求始终续接同一会话。旧运行会按共同 `task_id（任务标识）` 归并，避免把同一窗口错误拆成多条最近对话。
+
+`ContextAssembler（上下文组装器）` 从第一次请求开始生成“稳定背景、工作记忆、相关记忆、过程历史、当前请求”五层上下文。运行记忆保存在 `project_assets/derived/general_agent_memory/`，由 Runtime 自动写入和按请求序号过期，不设作者确认生命周期；章节和长资源只保存摘要与来源引用。总预算不足时按“相关记忆 → 过程历史 → 工作记忆 → 稳定背景”收缩，当前请求完整保留，无法容纳时明确拒绝而不是静默截断。
+
+外层运行图使用 LangGraph 节点检查点，持久化在 `project_assets/derived/general_agent_graph_checkpoints/`；异常或重启后以同一 `run_id` 恢复待执行节点，不重跑已成功图节点。工作台可查看和删除自动运行记忆，任务监控可查看本次记忆数量、压缩状态、Token 估算和恢复差异。完整实现与验证证据见 `docs/历史/7-19通用写作助手运行时记忆与上下文压缩报告.md`。
 
 ### 日常检查
 
@@ -125,7 +140,24 @@ Invoke-WebRequest http://127.0.0.1:6333/healthz -UseBasicParsing
 Invoke-RestMethod http://127.0.0.1:8011/health
 Invoke-RestMethod http://127.0.0.1:8011/v1/models
 docker ps --filter name=taichu-qdrant
+uv run python scripts/probe_embedding_models.py
+uv run python scripts/rebuild_knowledge_vector_index.py --verify-only
 ```
+
+### 索引重建与专项评测
+
+```powershell
+# 只核对待构建卡片数、片段数和快照，不写 Qdrant
+uv run python scripts/rebuild_knowledge_vector_index.py --dry-run
+
+# 全量构建新物理集合，校验成功后原子切换 active alias
+uv run python scripts/rebuild_knowledge_vector_index.py
+
+# 同一60题分别运行词法和独立向量，并重复三次
+uv run python -m taichu.application.evaluations.retrieval.cli --strategy both --repeat 3
+```
+
+重建失败不会切换 active alias；清单写入失败会回滚到旧集合。专项向量评测禁止把回退到词法的结果当成向量效果证据。
 
 ### 全新机器的下载方式
 

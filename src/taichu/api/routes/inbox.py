@@ -116,7 +116,7 @@ async def api_create_mvp_idea(
     """Create a manual inspiration item."""
     try:
         item = await service.create_idea(request.data)
-    except ValidationError as error:
+    except (InboxValidationError, ValidationError) as error:
         raise _bad_request(_validation_message(error)) from error
     return MVPInboxIdeaResponse(item=item)
 
@@ -132,7 +132,7 @@ async def api_patch_mvp_idea(
         item = await service.patch_idea(item_id, request.updates)
     except InboxItemNotFoundError as error:
         raise _not_found(str(error)) from error
-    except ValidationError as error:
+    except (InboxValidationError, ValidationError) as error:
         raise _bad_request(_validation_message(error)) from error
     return MVPInboxIdeaResponse(item=item)
 

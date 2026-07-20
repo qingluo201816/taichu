@@ -1,6 +1,9 @@
 {
   "run_id": "general_run_20260718_080855_455333",
   "task_id": "general_conversation_20260718_080855_cec285",
+  "conversation_id": "general_conversation_20260718_080855_cec285",
+  "request_index": 1,
+  "parent_run_id": null,
   "agent_name": "general_writing_assistant",
   "user_goal": "你好,你是谁",
   "scope": {

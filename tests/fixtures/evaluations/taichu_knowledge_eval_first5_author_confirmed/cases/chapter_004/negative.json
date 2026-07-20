@@ -36,7 +36,8 @@
     "negative_case_id": "negative_chapter_004_004",
     "knowledge_type": "character",
     "accepted_names": [
-      "引路师兄、引路道人"
+      "引路师兄",
+      "引路道人"
     ],
     "reason": "只有职务式临时称呼，未给姓名，主要承担引路功能。",
     "source_quote_ids": [
@@ -91,7 +92,9 @@
     "negative_case_id": "negative_chapter_004_009",
     "knowledge_type": "technique",
     "accepted_names": [
-      "上古灵法、魔术、法宝"
+      "上古灵法",
+      "魔术",
+      "法宝"
     ],
     "reason": "宝物与传承类别泛称，没有具体名称、功能或唯一对象。",
     "source_quote_ids": [

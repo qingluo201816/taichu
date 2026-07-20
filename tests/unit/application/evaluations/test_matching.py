@@ -251,6 +251,40 @@ def test_event_evidence_anchor_matches_different_titles_one_to_one() -> None:
     assert result.matches[0].kind is MatchKind.EVIDENCE_ANCHOR
 
 
+def test_same_type_rule_evidence_anchor_matches_different_names() -> None:
+    chapter_id = "chapter-008"
+    quote_id = "quote-initial-training"
+    actual = _actual(
+        "actual-rule",
+        "三个月出苗规则",
+        knowledge_type=StructuredKnowledgeType.RULE,
+        card_fields={"chapter_id": chapter_id},
+        evidence_excerpts=[
+            "这三个月中能成功破种出苗突破仙苗境的弟子，将被宗门重点培养"
+        ],
+    )
+    expected = _expected(
+        "expected-rule",
+        "灵田谷三个月初训规则",
+        knowledge_type=StructuredKnowledgeType.RULE,
+        card_fields={"chapter_id": chapter_id},
+        source_quote_ids=[quote_id],
+    )
+    evidence = SourceEvidence(
+        quote_id=quote_id,
+        chapter_id=chapter_id,
+        text="这三个月中能成功破种出苗突破仙苗境的弟子，将被宗门重点培养",
+        start_offset=0,
+        end_offset=30,
+        source_hash="0" * 64,
+    )
+
+    result = match_candidates([actual], [expected], [evidence])
+
+    assert result.true_positive_count == 1
+    assert result.matches[0].kind is MatchKind.EVIDENCE_ANCHOR
+
+
 def test_event_semantic_content_matches_unique_paraphrase_without_evidence() -> None:
     chapter_id = "chapter-001"
     actual = _actual(
@@ -259,9 +293,7 @@ def test_event_semantic_content_matches_unique_paraphrase_without_evidence() -> 
         knowledge_type=StructuredKnowledgeType.EVENT,
         card_fields={
             "chapter_id": chapter_id,
-            "summary": (
-                "张狂因保险费殴打少年，秦浩轩出言警告后，张狂收回了脚。"
-            ),
+            "summary": ("张狂因保险费殴打少年，秦浩轩出言警告后，张狂收回了脚。"),
             "description": "秦浩轩以威胁迫使张狂停止踢打少年。",
         },
     )

@@ -1,0 +1,134 @@
+[
+  {
+    "negative_case_id": "negative_batch_011_015_001",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "宗门老祖宗级别人物"
+    ],
+    "reason": "群体或不明确个体泛称，没有可解析的稳定身份。",
+    "source_quote_ids": [
+      "quote_batch_011_015_033"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_011_015_002",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "玉盒子"
+    ],
+    "reason": "普通保存容器，无品阶、专名或持续超凡功能。",
+    "source_quote_ids": [
+      "quote_batch_011_015_034"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_011_015_003",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "光着膀子的秦浩轩"
+    ],
+    "reason": "临时穿着与身体状态，不是别名或新实体。",
+    "source_quote_ids": [
+      "quote_batch_011_015_035"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_011_015_004",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "孤独冷傲的络腮胡子"
+    ],
+    "reason": "截至第15章仍无姓名，信息不足，不能倒灌未来身份。",
+    "source_quote_ids": [
+      "quote_batch_011_015_036"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_011_015_005",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "冰罗刹"
+    ],
+    "reason": "黄鹂的稳定外号，应作为黄鹂别名，不得重复建角色卡。",
+    "source_quote_ids": [
+      "quote_batch_011_015_015"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_011_015_006",
+    "knowledge_type": "event",
+    "accepted_names": [
+      "秦浩轩是妖怪所化"
+    ],
+    "reason": "角色因异常表现产生的主观判断，正文未证实。",
+    "source_quote_ids": [
+      "quote_batch_011_015_037"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_011_015_007",
+    "knowledge_type": "event",
+    "accepted_names": [
+      "袁山虎必被执法堂处死"
+    ],
+    "reason": "执法长老对假设情形的处置判断，不是已经发生的判决结果。",
+    "source_quote_ids": [
+      "quote_batch_011_015_038"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_011_015_008",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "红白相间的执法棒"
+    ],
+    "reason": "普通执法装备，缺少专名、品阶和独立功能。",
+    "source_quote_ids": [
+      "quote_batch_011_015_039"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_011_015_009",
+    "knowledge_type": "character",
+    "accepted_names": [
+      "二十多名执法弟子"
+    ],
+    "reason": "无个人姓名的群体，不是单一角色。",
+    "source_quote_ids": [
+      "quote_batch_011_015_039"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_011_015_010",
+    "knowledge_type": "rule",
+    "accepted_names": [
+      "紫种弟子一定不受惩罚"
+    ],
+    "reason": "执法者的现实权衡和偏袒，不是明文宗门规则。",
+    "source_quote_ids": [
+      "quote_batch_011_015_040"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_011_015_011",
+    "knowledge_type": "item",
+    "accepted_names": [
+      "一叶金莲可直接助老祖宗突破法相境"
+    ],
+    "reason": "秦浩轩的个人推想，未被正文直接证实为确定药效。",
+    "source_quote_ids": [
+      "quote_batch_011_015_041"
+    ]
+  },
+  {
+    "negative_case_id": "negative_batch_011_015_012",
+    "knowledge_type": "event",
+    "accepted_names": [
+      "李靖未来必登上太初教掌教宝座"
+    ],
+    "reason": "李靖的主观设想和政治判断，属于未发生的未来结果。",
+    "source_quote_ids": [
+      "quote_batch_011_015_042"
+    ]
+  }
+]

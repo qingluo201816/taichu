@@ -1,6 +1,9 @@
 {
   "run_id": "general_run_20260718_141937_2287e7",
   "task_id": "general_conversation_20260718_080855_cec285",
+  "conversation_id": "general_conversation_20260718_080855_cec285",
+  "request_index": 4,
+  "parent_run_id": "general_run_20260718_081023_573c5b",
   "agent_name": "general_writing_assistant",
   "user_goal": "正文第7章讲的是",
   "scope": {

@@ -1,0 +1,23 @@
+{
+  "memory_id": "memory_20260719_144655_d57a74f2",
+  "kind": "unresolved_issue",
+  "content": "节点输出截断问题已在历史中记录，不影响本次判断。",
+  "source_refs": [
+    "run:general_run_20260719_144520_0f9f81:verification_issue"
+  ],
+  "artifact_refs": [],
+  "run_ids": [
+    "general_run_20260719_144520_0f9f81"
+  ],
+  "conversation_id": "general_conversation_20260718_080855_cec285",
+  "created_request_index": 8,
+  "expires_after_request_index": 13,
+  "retention_priority": 90,
+  "created_at": "2026-07-19T14:46:55.363395Z",
+  "updated_at": "2026-07-19T14:46:55.363395Z",
+  "expires_at": null,
+  "supersedes_memory_id": null,
+  "content_sha256": "461ef7fb0d3aaa8d33c473772fc6c37ad0087f9f64ed8f71b0c9fec3d944d41c",
+  "sensitivity": "normal",
+  "deleted_at": null
+}

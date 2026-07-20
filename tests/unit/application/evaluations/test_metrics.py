@@ -267,6 +267,45 @@ def test_occurrence_count_does_not_affect_evaluation() -> None:
     assert metrics.diffs == []
 
 
+def test_update_without_frozen_merge_preview_skips_merge_dependent_fields() -> None:
+    actual = ActualCandidate(
+        actual_candidate_id="a",
+        knowledge_type=StructuredKnowledgeType.CHARACTER,
+        candidate_action=CandidateAction.UPDATE_CARD,
+        card={
+            "type": "character",
+            "name": "秦浩轩",
+            "aliases": ["新别名"],
+            "role_type": "antagonist",
+            "last_seen_chapter_id": "chapter-010",
+        },
+    )
+    expected = _expected(
+        "e",
+        "秦浩轩",
+        aliases=["旧别名", "新别名"],
+        card_fields={
+            "role_type": "protagonist",
+            "last_seen_chapter_id": "chapter-010",
+        },
+        exact_fields=["role_type", "last_seen_chapter_id"],
+        set_fields=["aliases"],
+    )
+
+    metrics = compare_structured_fields(
+        match_candidates([actual], [expected]),
+        [actual],
+        [expected],
+        EvaluationRules(),
+    )
+
+    comparable = {diff.field_name: diff for diff in metrics.diffs}
+    assert comparable["role_type"].comparable is False
+    assert comparable["role_type"].reason == "merge_preview_unavailable"
+    assert comparable["aliases"].comparable is False
+    assert comparable["last_seen_chapter_id"].score == 1
+
+
 def test_exact_boolean_field_does_not_equal_numeric_one() -> None:
     actual = _actual("a", "规则", card_fields={"enabled": 1})
     expected = _expected(

@@ -1,0 +1,23 @@
+{
+  "memory_id": "memory_20260719_144655_3bb16771",
+  "kind": "task_summary",
+  "content": "请求：正文第8章讲的什么 结果：抱歉，目前无法为您总结第8章的内容。 我调用了检索正文和知识卡的能力，但所有授权来源均未返回与第8章相关的稿件或事实记录。根据目录结构，第8章确实存在于第一卷（共100章，均为 active 状态），但该章的标题和正文信息均未能获取，可能是正文尚未起草，或稿件索引尚未更新。 如果您需要，我可以为您重新查询其他章节，或帮您查看当前所有章节的标题列表。",
+  "source_refs": [
+    "run:general_run_20260719_144520_0f9f81:verification"
+  ],
+  "artifact_refs": [],
+  "run_ids": [
+    "general_run_20260719_144520_0f9f81"
+  ],
+  "conversation_id": "general_conversation_20260718_080855_cec285",
+  "created_request_index": 8,
+  "expires_after_request_index": null,
+  "retention_priority": 75,
+  "created_at": "2026-07-19T14:46:55.351038Z",
+  "updated_at": "2026-07-19T14:46:55.351038Z",
+  "expires_at": null,
+  "supersedes_memory_id": null,
+  "content_sha256": "8cb5573ba3e5fc6d81685ff60a7680f573ae3119202f10755e186b94a0a8b33e",
+  "sensitivity": "normal",
+  "deleted_at": null
+}

@@ -1,0 +1,23 @@
+{
+  "memory_id": "memory_20260719_142128_c163a61f",
+  "kind": "task_summary",
+  "content": "请求：帮我看看目前有哪些卷和章节 结果：当前小说结构如下： - 卷数：1 卷（第一卷） - 章节总数：100 章（已返回 100 章，均为 active 状态） 以下列出已成功获取的部分章节（完整列表因展示限制被截断）： 1. 第1章 大田金鳞元神出（4005字） 2. 第2章 山中神仙选仙苗（3028字） 3. 第3章 至上仙尊真乙太初教（3998字） 4. 第4章 太初山中绝毒谷（4381字） 5. 第5章 显灵台上鉴仙眼（3370字） 6. 第6章 紫气东来惊仙鉴（字数未截取） ……（后续 94 章已确认存在，但标题未完整反馈） 如需查看特定章节或完整的章节列表，我可以为你单独提取。",
+  "source_refs": [
+    "run:general_run_20260719_142031_640dcd:verification"
+  ],
+  "artifact_refs": [],
+  "run_ids": [
+    "general_run_20260719_142031_640dcd"
+  ],
+  "conversation_id": "general_conversation_20260718_080855_cec285",
+  "created_request_index": 7,
+  "expires_after_request_index": null,
+  "retention_priority": 75,
+  "created_at": "2026-07-19T14:21:28.195387Z",
+  "updated_at": "2026-07-19T14:21:28.195387Z",
+  "expires_at": null,
+  "supersedes_memory_id": null,
+  "content_sha256": "33028f305d7a2de69ad602ce12905eb628e9fa59d7a5676e0dac0364b92550b7",
+  "sensitivity": "normal",
+  "deleted_at": null
+}

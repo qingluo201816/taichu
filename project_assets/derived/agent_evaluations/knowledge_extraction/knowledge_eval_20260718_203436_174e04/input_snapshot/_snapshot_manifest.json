@@ -1,0 +1,65 @@
+{
+  "files": [
+    {
+      "path": "cases/batch_006_010.json",
+      "size": 119678,
+      "sha256": "d3c9e1d28128ade59e7a5ff2d9d0a54e01298cee813d529163b40a30dd50def6"
+    },
+    {
+      "path": "chapters/chapter-1542b22d9c214d2baf67c3a5175e2e90.md",
+      "size": 13135,
+      "sha256": "0be9db5a1aec30916034d5e76acc4aaf3e2dcd445d254e94db82af9f244c12a4"
+    },
+    {
+      "path": "chapters/chapter-71d9db70aabb4de2a050c9d6beb9a984.md",
+      "size": 10611,
+      "sha256": "da47f45267a1e716ae2437c5644a881cf733386a82ee04b2f7eb5f56918a7b8a"
+    },
+    {
+      "path": "chapters/chapter-a7731db47da6476aa3ed62030d28bc6a.md",
+      "size": 11361,
+      "sha256": "9d5f7fc89c7fa5d0be1c504cc170f73a954354468188e9e09498f6fb45e0ac1c"
+    },
+    {
+      "path": "chapters/chapter-cd8b61413cc94cd98316fe59afb5dcb2.md",
+      "size": 10491,
+      "sha256": "f0bea100bc90fa07c4a4f98539d27040ea401ef27f71512624414786a3c1f6c2"
+    },
+    {
+      "path": "chapters/chapter-cdb5c3ef2e564affb249aedd5f14d311.md",
+      "size": 10905,
+      "sha256": "0e5498cee491ccd742eef2b475326a70a664c2bd12f057f119a2dcf816255d29"
+    },
+    {
+      "path": "dataset_manifest.json",
+      "size": 4183,
+      "sha256": "c201a0f2f492a751d3aa5bfd2f2144ca6d6ffcc68269ac2521a5d523cb098204"
+    },
+    {
+      "path": "evaluation_schema.json",
+      "size": 5238,
+      "sha256": "66771d79a941ed711056652d4d6b9ebc7c5be20a379d2a8fc5f94760e1e812f8"
+    },
+    {
+      "path": "judge_contract.json",
+      "size": 11047,
+      "sha256": "12be28fbb7697ba1d0fdc6506da2e93944e134b4de657837f240b83204817d37"
+    },
+    {
+      "path": "metric_profile.json",
+      "size": 807,
+      "sha256": "228d7773761bd7a22a6cb6811e0a29b1e9890be325e05dc4e96388bfaf019739"
+    },
+    {
+      "path": "request.json",
+      "size": 473,
+      "sha256": "8c7bc5d871e524b101ec35a2996dc942a0189fd87ae09e1ca224447535a29ef3"
+    },
+    {
+      "path": "runs/extract_run_20260718_145223_53667e.json",
+      "size": 1510265,
+      "sha256": "968f9694a7228329f293e6d748c3e87bc2da17cd0ec45812add11974f4f570ea"
+    }
+  ],
+  "snapshot_root_hash": "bfb823a161cd4be9b9329b1773a23cb716a9f77d079e0a19f29f7cf2601ec23e"
+}

@@ -8,16 +8,21 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
 from taichu.api.deps import (
+    provide_agent_memory_service,
     provide_general_agent_event_center,
     provide_general_agent_runtime_service,
     provide_invocation_trace_reader,
 )
 from taichu.api.schemas.general_agent import (
+    AgentMemoryDeleteResponse,
+    AgentMemoryListResponse,
+    AgentMemoryResponse,
     GeneralAgentConversationDeleteResponse,
     GeneralAgentConversationListResponse,
     GeneralAgentConversationResponse,
     GeneralAgentDeleteResponse,
     GeneralAgentResumeRequest,
+    GeneralAgentRecoveryResponse,
     GeneralAgentRunListResponse,
     GeneralAgentRunRequest,
     GeneralAgentRunResponse,
@@ -35,6 +40,10 @@ from taichu.application.general_agent.service import (
     GeneralAgentRunNotFoundError,
     GeneralAgentRuntimeError,
     GeneralAgentRuntimeService,
+)
+from taichu.application.services.agent_memory_service import (
+    AgentMemoryNotFoundError,
+    AgentMemoryService,
 )
 
 router = APIRouter(prefix="/api/agent-workbench/general-assistant")
@@ -138,6 +147,35 @@ async def api_get_general_agent_conversation(
     )
 
 
+@router.get(
+    "/conversations/{conversation_id}/memories",
+    response_model=AgentMemoryListResponse,
+)
+async def api_list_general_agent_memories(
+    conversation_id: str,
+    include_deleted: bool = False,
+    service: GeneralAgentRuntimeService = Depends(
+        provide_general_agent_runtime_service
+    ),
+    memory_service: AgentMemoryService = Depends(provide_agent_memory_service),
+) -> AgentMemoryListResponse:
+    """查看对话运行记忆；这些内容不属于小说事实源。"""
+
+    try:
+        await service.get_conversation(conversation_id)
+    except GeneralAgentConversationNotFoundError as error:
+        raise _not_found(str(error)) from error
+    memories = await memory_service.list_for_conversation(
+        conversation_id,
+        include_deleted=include_deleted,
+    )
+    return AgentMemoryListResponse(
+        conversation_id=conversation_id,
+        memories=memories,
+        total=len(memories),
+    )
+
+
 @router.delete(
     "/conversations/{conversation_id}",
     response_model=GeneralAgentConversationDeleteResponse,
@@ -186,6 +224,25 @@ async def api_get_general_agent_run(
     except GeneralAgentRunNotFoundError as error:
         raise _not_found(str(error)) from error
     return GeneralAgentRunResponse(run=run)
+
+
+@router.get(
+    "/runs/{run_id}/recovery",
+    response_model=GeneralAgentRecoveryResponse,
+)
+async def api_get_general_agent_recovery(
+    run_id: str,
+    service: GeneralAgentRuntimeService = Depends(
+        provide_general_agent_runtime_service
+    ),
+) -> GeneralAgentRecoveryResponse:
+    """读取脱敏的检查点完整性和写入对账状态。"""
+
+    try:
+        recovery = await service.recovery_snapshot(run_id)
+    except GeneralAgentRunNotFoundError as error:
+        raise _not_found(str(error)) from error
+    return GeneralAgentRecoveryResponse(recovery=recovery)
 
 
 @router.get(
@@ -256,12 +313,37 @@ async def api_delete_general_agent_run(
     return GeneralAgentDeleteResponse(run_id=run_id, deleted=True)
 
 
+@router.get("/memories/{memory_id}", response_model=AgentMemoryResponse)
+async def api_get_general_agent_memory(
+    memory_id: str,
+    memory_service: AgentMemoryService = Depends(provide_agent_memory_service),
+) -> AgentMemoryResponse:
+    memory = await memory_service.get(memory_id)
+    if memory is None:
+        raise _not_found(f"运行记忆“{memory_id}”不存在。")
+    return AgentMemoryResponse(memory=memory)
+
+
+@router.delete("/memories/{memory_id}", response_model=AgentMemoryDeleteResponse)
+async def api_delete_general_agent_memory(
+    memory_id: str,
+    memory_service: AgentMemoryService = Depends(provide_agent_memory_service),
+) -> AgentMemoryDeleteResponse:
+    try:
+        await memory_service.delete(memory_id)
+    except AgentMemoryNotFoundError as error:
+        raise _not_found(str(error)) from error
+    return AgentMemoryDeleteResponse(memory_id=memory_id, deleted=True)
+
+
 def _summary(run: GeneralAgentRun) -> GeneralAgentRunSummary:
     current = [
         item for item in run.node_runs if item.plan_revision == run.plan_revision
     ]
     return GeneralAgentRunSummary(
         run_id=run.run_id,
+        conversation_id=run.conversation_id,
+        request_index=run.request_index,
         agent_name=run.agent_name,
         user_goal=run.user_goal,
         status=run.status.value,
@@ -279,6 +361,10 @@ def _summary(run: GeneralAgentRun) -> GeneralAgentRunSummary:
             run.pending_human_request.kind if run.pending_human_request else None
         ),
         final_answer_preview=run.final_answer[:300],
+        memory_count=len(run.memory_refs),
+        context_snapshot_id=run.context_snapshot_id,
+        context_compressed=run.compression_stats.compressed,
+        estimated_context_tokens=run.compression_stats.estimated_token_count,
         created_at=run.created_at,
         updated_at=run.updated_at,
         finished_at=run.finished_at,

@@ -1,0 +1,76 @@
+{
+  "agent_name": "knowledge_extraction",
+  "cases": [
+    {
+      "case_id": "batch_006_010",
+      "chapter_ids": [
+        "chapter-71d9db70aabb4de2a050c9d6beb9a984",
+        "chapter-1542b22d9c214d2baf67c3a5175e2e90",
+        "chapter-a7731db47da6476aa3ed62030d28bc6a",
+        "chapter-cd8b61413cc94cd98316fe59afb5dcb2",
+        "chapter-cdb5c3ef2e564affb249aedd5f14d311"
+      ],
+      "evaluation_rules_path": "cases/batch_006_010/rules.json",
+      "expected_cards_path": "cases/batch_006_010/expected.json",
+      "negative_cases_path": "cases/batch_006_010/negative.json",
+      "scope_type": "chapter_batch",
+      "source_chapter_hashes": {
+        "chapter-1542b22d9c214d2baf67c3a5175e2e90": "0be9db5a1aec30916034d5e76acc4aaf3e2dcd445d254e94db82af9f244c12a4",
+        "chapter-71d9db70aabb4de2a050c9d6beb9a984": "da47f45267a1e716ae2437c5644a881cf733386a82ee04b2f7eb5f56918a7b8a",
+        "chapter-a7731db47da6476aa3ed62030d28bc6a": "9d5f7fc89c7fa5d0be1c504cc170f73a954354468188e9e09498f6fb45e0ac1c",
+        "chapter-cd8b61413cc94cd98316fe59afb5dcb2": "f0bea100bc90fa07c4a4f98539d27040ea401ef27f71512624414786a3c1f6c2",
+        "chapter-cdb5c3ef2e564affb249aedd5f14d311": "0e5498cee491ccd742eef2b475326a70a664c2bd12f057f119a2dcf816255d29"
+      },
+      "source_evidence_path": "cases/batch_006_010/evidence.json"
+    },
+    {
+      "case_id": "batch_011_015",
+      "chapter_ids": [
+        "chapter-e2b56ac1801e40c6b31bf77e8c558efd",
+        "chapter-a1a2d3ec95b24b62a193b1cee2563ea9",
+        "chapter-3fb65d89870445169cbf29917c0aadf9",
+        "chapter-f5dae65c0ee144ec9db1ca55f7316cd6",
+        "chapter-bcaa446ac74c4cee9d3cc2aad1f21838"
+      ],
+      "evaluation_rules_path": "cases/batch_011_015/rules.json",
+      "expected_cards_path": "cases/batch_011_015/expected.json",
+      "negative_cases_path": "cases/batch_011_015/negative.json",
+      "scope_type": "chapter_batch",
+      "source_chapter_hashes": {
+        "chapter-3fb65d89870445169cbf29917c0aadf9": "55a431f2ab064c4a55e31416d201a5b6865a6d9dab16505e47c8801b9677b184",
+        "chapter-a1a2d3ec95b24b62a193b1cee2563ea9": "2fa16f43d5a124871b48d09c65cacdf91511b3a873dfa999dedea8c40460561c",
+        "chapter-bcaa446ac74c4cee9d3cc2aad1f21838": "e3109950fe442002a4fc0321337c772412319eab0940b044a53f1f73f904f0ee",
+        "chapter-e2b56ac1801e40c6b31bf77e8c558efd": "efe0a964cbc60c17557e253825816e6f27ea6dcb20d08187bcbac7733c13f488",
+        "chapter-f5dae65c0ee144ec9db1ca55f7316cd6": "ff581018a31ebd2ee5d81425b84dd7d33a0e8c01cfdf82e03b544849b99471f5"
+      },
+      "source_evidence_path": "cases/batch_011_015/evidence.json"
+    },
+    {
+      "case_id": "batch_016_020",
+      "chapter_ids": [
+        "chapter-1fe535fec6344ae894a73bf961da97df",
+        "chapter-935b8c9e880e41399f4f32c1616d5a72",
+        "chapter-1692b7a5c347465b8383e59e9d64aa3e",
+        "chapter-3c172caecc6b4f0c991c122ec5d189dc",
+        "chapter-6829374be0494020b4a9302d08b23e72"
+      ],
+      "evaluation_rules_path": "cases/batch_016_020/rules.json",
+      "expected_cards_path": "cases/batch_016_020/expected.json",
+      "negative_cases_path": "cases/batch_016_020/negative.json",
+      "scope_type": "chapter_batch",
+      "source_chapter_hashes": {
+        "chapter-1692b7a5c347465b8383e59e9d64aa3e": "c1d70fd6f87ce2c82a20ef0cac01352a2cf93ebad93565cfc3d68a423ed25480",
+        "chapter-1fe535fec6344ae894a73bf961da97df": "4d7013c54eb80e27f8c7d741b46cca0f644b5a5aa9d9873e350966fba4eb45e8",
+        "chapter-3c172caecc6b4f0c991c122ec5d189dc": "11918623f7f21322b66fe44efab27e0d6214fb59f2b297e9d666d6e020f43eb5",
+        "chapter-6829374be0494020b4a9302d08b23e72": "4d38f7273652146be624605bc79b9e119ede7baee181544e9d1ec737a3b36fb4",
+        "chapter-935b8c9e880e41399f4f32c1616d5a72": "50d0fba2f69234e30197ea7821bb0a9e73a4b18d6e7bd88d077a8f9af5030e51"
+      },
+      "source_evidence_path": "cases/batch_016_020/evidence.json"
+    }
+  ],
+  "checksum_manifest_path": "_metadata/checksums.sha256.json",
+  "dataset_id": "taichu_knowledge_eval_006_020_author_confirmed",
+  "label": "太初第6—20章知识沉淀评测集（作者确认标注）",
+  "lifecycle": "confirmed",
+  "schema_snapshot_path": "_metadata/schema.json"
+}

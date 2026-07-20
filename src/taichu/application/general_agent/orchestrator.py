@@ -18,11 +18,17 @@ from taichu.application.contracts.llm import (
     response_text,
 )
 from taichu.application.general_agent.models import (
+    GeneralAgentContextEnvelope,
     GeneralAgentExecutionPlan,
     GeneralAgentNodeKind,
     GeneralAgentPlanDraft,
+    GeneralAgentPlanSelection,
     GeneralAgentRun,
     GeneralAgentVerification,
+)
+from taichu.application.general_agent.request_analysis import (
+    explicit_chapter_orders,
+    is_explicit_chapter_content_request,
 )
 from taichu.application.invocations.models import (
     InvocationStatus,
@@ -36,8 +42,8 @@ from taichu.application.tools.registry import ToolRegistry
 
 _OutputModel = TypeVar("_OutputModel", bound=BaseModel)
 
-_PLAN_SYSTEM_PROMPT = """你是太初通用写作助手的高层编排 Agent。
-你的职责是理解目标、选择最小充分执行路径、维护依赖和全局收敛；你不是设定、写作或审校专家。
+_PLAN_SYSTEM_PROMPT = """你是太初通用写作助手的高层编排 Agent，当前只负责选择能力和形成依赖骨架。
+你的职责是理解目标、从完整轻量能力目录选择最小充分路径、维护依赖和全局收敛；你不是设定、写作或审校专家。
 
 硬性规则：
 1. 只能使用能力目录中真实存在的 Tool 和专业子 Agent，不得创造能力名称。
@@ -45,13 +51,30 @@ _PLAN_SYSTEM_PROMPT = """你是太初通用写作助手的高层编排 Agent。
 3. 涉及小说事实时必须安排取证能力，不能靠自身猜测。
 4. Tool 是确定性原子能力；需要专业判断、写作、规划或审校时选择子 Agent。
 5. 节点依赖必须形成无环图；可并行的节点不要制造虚假依赖。
-6. 下游需要上游输出字段时，使用 input_bindings。source_path 已经以上游能力的 output 对象为根，不得自行添加 result、节点 ID 等包装层；字段必须来自上游 output_schema，数组下标使用点号数字，例如 chunks.0.content。target_path 已经以当前能力的输入对象为根，必须来自当前能力 input_schema，例如 source_request.direct_context。不得编造 text 等不存在的字段。
-7. 专业子 Agent 可通过 source_request.upstream_artifact_refs 消费兼容的上游中间产物，Runtime 会根据依赖自动补充引用。
-8. 未经用户明确允许，不得安排外部研究能力。
-9. 写 Tool 可以出现在计划中，但 Runtime 会在执行前暂停并请求作者授权。
-10. 信息缺口会实质改变结果时才澄清；不要询问可以从小说正文或知识库取得的事实。
-11. 所有面向作者的内容使用中文。
-12. 只输出符合给定 Schema 的 JSON 对象，不要输出 Markdown。
+6. 本阶段不得填写能力的精确 input_data 或 input_bindings；应用层会在选定能力后加载精确 Schema 并进入参数物化阶段。
+7. 已知明确章节序号且用户要求读取、概括或总结正文时，必须选择 read_manuscript 直接读取；search_manuscript 只用于原文位置未知的关键词搜索。
+8. 专业子 Agent 可消费兼容的上游中间产物；此阶段只声明依赖，不猜测字段路径。
+9. 未经用户明确允许，不得安排外部研究能力。
+10. 写 Tool 可以出现在计划中，但 Runtime 会在执行前暂停并请求作者授权。
+11. 信息缺口会实质改变结果时才澄清；不要询问可以从小说正文或知识库取得的事实。
+12. 所有面向作者的内容使用中文。
+13. 运行记忆不是小说事实；fact_reference 只能提示你安排正文或统一召回重新取证。
+14. 你不能直接写入、确认或删除运行记忆。
+15. 完整轻量能力目录中的所有能力都是真实注册能力；不得声称目录中存在但“候选契约未加载”。
+16. 只输出符合给定 Schema 的 JSON 对象，不要输出 Markdown。
+"""
+
+_MATERIALIZE_SYSTEM_PROMPT = """你是太初通用写作助手的高层编排 Agent，当前负责把已确认的计划骨架物化为可执行 DAG。
+
+硬性规则：
+1. 节点 ID、能力类型、能力名称、目标、依赖和 continue_on_failure 必须与计划骨架完全一致，不得增加、删除、替换或重排能力。
+2. 只能依据“已选能力精确契约”填写 input_data 和 input_bindings。
+3. source_path 已经以上游能力的 output 对象为根，不得添加 result 或节点 ID 前缀；数组下标使用点号数字，例如 chunks.0.content。
+4. target_path 已经以当前能力输入对象为根，必须来自当前能力 input_schema，例如 source_request.direct_context。
+5. 专业子 Agent 可通过 source_request.upstream_artifact_refs 消费依赖节点中兼容的中间产物；Runtime 会自动补充这些引用。
+6. 明确章节序号必须转换为 read_manuscript 的 start_order/end_order 或稳定 chapter_ids，不得降级为关键词搜索。
+7. 不得编造精确契约中不存在的输入或输出字段。
+8. 只输出符合给定 Schema 的 JSON 对象，不要输出 Markdown。
 """
 
 _VERIFY_SYSTEM_PROMPT = """你是太初通用写作助手的高层编排 Agent，当前负责结果校验与最终收敛。
@@ -62,7 +85,8 @@ _VERIFY_SYSTEM_PROMPT = """你是太初通用写作助手的高层编排 Agent�
 2. satisfied 表示目标已满足；partial 表示可以交付但存在明确缺口；failed 表示没有可用结果。
 3. 只有存在可由已注册能力修复的实质缺口时才请求重规划。
 4. 最终回答直接面向作者，使用中文，清楚区分事实、建议、草稿与不确定项。
-5. 只输出符合给定 Schema 的 JSON 对象，不要输出 Markdown。
+5. 运行记忆不是小说事实；没有重新取证的事实引用不能写成确定事实。
+6. 只输出符合给定 Schema 的 JSON 对象，不要输出 Markdown。
 """
 
 
@@ -77,79 +101,99 @@ class OrchestratorAgent:
         tool_registry: ToolRegistry,
         subagent_registry: SubagentRegistry,
         trace_repository: InvocationTraceRepository | None = None,
+        capability_catalog_char_budget: int = 80_000,
     ) -> None:
         self._llm = llm
         self._model_router = model_router
         self._tool_registry = tool_registry
         self._subagent_registry = subagent_registry
         self._trace_repository = trace_repository
+        self._capability_catalog_char_budget = max(
+            10_000,
+            capability_catalog_char_budget,
+        )
 
     async def plan(
         self,
         run: GeneralAgentRun,
         *,
+        context: GeneralAgentContextEnvelope,
         replan_guidance: str = "",
     ) -> GeneralAgentExecutionPlan:
-        """根据当前请求和真实能力目录生成一次动态 DAG。"""
-        contract_error = ""
-        invalid_plan: dict[str, Any] | None = None
-        for contract_attempt in range(2):
+        """先从完整轻量目录选择能力，再按需加载精确契约物化 DAG。"""
+        phase = "replan" if replan_guidance else "plan"
+        capability_catalog = self._capability_catalog()
+        chapter_orders = explicit_chapter_orders(context.current_goal)
+        selection_error = ""
+        selection: GeneralAgentPlanSelection | None = None
+        for selection_attempt in range(2):
             payload = {
-                "用户目标": run.user_goal,
-                "对话": [message.model_dump(mode="json") for message in run.messages],
-                "当前范围": run.scope.model_dump(mode="json"),
-                "作者约束": run.author_constraints,
+                "固定预算上下文": context.model_dump(mode="json"),
                 "允许外部研究": run.external_access_allowed,
                 "最大计划节点数": run.limits.max_plan_nodes,
                 "当前重规划次数": run.replan_count,
-                "重规划指导": replan_guidance,
-                "上一版计划": (
-                    run.plan.model_dump(mode="json") if run.plan is not None else None
-                ),
-                "上一版执行结果": _node_result_payload(run),
-                "能力目录": self._capability_catalog(),
-                "输出Schema": GeneralAgentPlanDraft.model_json_schema(),
+                "完整轻量能力目录": capability_catalog,
+                "已解析的明确章节顺序": chapter_orders,
+                "输出Schema": GeneralAgentPlanSelection.model_json_schema(),
             }
-            if contract_error:
-                payload["本次计划契约校验错误"] = contract_error
-                payload["需要修复的本次计划"] = invalid_plan
-                payload["修复要求"] = (
-                    "只修复未知能力、权限或计划规模问题，不要执行这份错误计划。"
-                )
-            draft = await self._complete_json(
+            if selection_error:
+                payload["上一版能力选择错误"] = selection_error
+                payload["修复要求"] = "重新选择能力骨架，不要重复上一版错误。"
+            candidate = await self._complete_json(
                 run=run,
-                phase="plan" if not replan_guidance else "replan",
+                phase=phase,
                 system_prompt=_PLAN_SYSTEM_PROMPT,
                 payload=payload,
-                output_schema=GeneralAgentPlanDraft,
-            )
-            plan = GeneralAgentExecutionPlan.model_validate(
-                draft.model_dump(mode="json")
+                output_schema=GeneralAgentPlanSelection,
             )
             try:
-                self._validate_capabilities(plan, run)
-                if len(plan.nodes) > run.limits.max_plan_nodes:
-                    raise OrchestratorPlanError("编排计划超过本次任务允许的节点数量。")
+                self._validate_selection(candidate, run, context=context)
             except OrchestratorPlanError as error:
-                if contract_attempt:
+                if selection_attempt:
                     raise
-                contract_error = str(error)
-                invalid_plan = plan.model_dump(mode="json")
+                selection_error = str(error)
                 continue
-            return plan
-        raise OrchestratorPlanError("编排计划未通过能力契约校验。")
+            selection = candidate
+            break
+        if selection is None:
+            raise OrchestratorPlanError("能力选择未通过完整目录校验。")
+        if not selection.nodes:
+            return GeneralAgentExecutionPlan.model_validate(
+                selection.model_dump(mode="json")
+            )
 
-    async def verify(self, run: GeneralAgentRun) -> GeneralAgentVerification:
+        selected_names = {node.capability_name for node in selection.nodes}
+        exact_contracts = self._capability_contracts(selected_names)
+        materialized = await self._complete_json(
+            run=run,
+            phase=f"{phase}.materialize",
+            system_prompt=_MATERIALIZE_SYSTEM_PROMPT,
+            payload={
+                "固定预算上下文": context.model_dump(mode="json"),
+                "已解析的明确章节顺序": chapter_orders,
+                "计划骨架": selection.model_dump(mode="json"),
+                "已选能力精确契约": exact_contracts,
+                "输出Schema": GeneralAgentPlanDraft.model_json_schema(),
+            },
+            output_schema=GeneralAgentPlanDraft,
+        )
+        plan = GeneralAgentExecutionPlan.model_validate(
+            materialized.model_dump(mode="json")
+        )
+        _validate_materialized_plan(selection, plan)
+        self._validate_capabilities(plan, run)
+        return plan
+
+    async def verify(
+        self,
+        run: GeneralAgentRun,
+        *,
+        context: GeneralAgentContextEnvelope,
+    ) -> GeneralAgentVerification:
         """检查真实执行结果并生成最终回答或有限重规划决定。"""
         payload = {
-            "用户目标": run.user_goal,
-            "作者约束": run.author_constraints,
-            "当前范围": run.scope.model_dump(mode="json"),
-            "执行计划": run.plan.model_dump(mode="json") if run.plan else None,
+            "固定预算上下文": context.model_dump(mode="json"),
             "计划修订号": run.plan_revision,
-            "节点结果": _node_result_payload(run),
-            "直接回答草稿": run.plan.direct_response if run.plan else "",
-            "最终回答指导": run.plan.final_response_guidance if run.plan else "",
             "剩余重规划次数": max(0, run.limits.max_replans - run.replan_count),
             "输出Schema": GeneralAgentVerification.model_json_schema(),
         }
@@ -164,39 +208,131 @@ class OrchestratorAgent:
             decision = decision.model_copy(update={"should_replan": False})
         return decision
 
-    def _capability_catalog(self) -> dict[str, list[dict[str, Any]]]:
-        tools: list[dict[str, Any]] = []
+    def _capability_catalog(
+        self,
+    ) -> dict[str, Any]:
+        index, _, _ = self._capability_definitions()
+        return _complete_capability_index(
+            index=index,
+            char_budget=self._capability_catalog_char_budget,
+        )
+
+    def _capability_contracts(
+        self,
+        selected_names: set[str],
+    ) -> dict[str, Any]:
+        index, tool_contracts, subagent_contracts = self._capability_definitions()
+        return _selected_capability_contracts(
+            selected_names=selected_names,
+            index=index,
+            tool_contracts=tool_contracts,
+            subagent_contracts=subagent_contracts,
+            char_budget=self._capability_catalog_char_budget,
+        )
+
+    def _capability_definitions(
+        self,
+    ) -> tuple[
+        list[dict[str, Any]],
+        dict[str, dict[str, Any]],
+        dict[str, dict[str, Any]],
+    ]:
+        tool_contracts: dict[str, dict[str, Any]] = {}
+        index: list[dict[str, Any]] = []
         for tool_manifest in self._tool_registry.list_manifests():
-            tools.append(
-                {
-                    "name": tool_manifest.name,
-                    "description": tool_manifest.description,
-                    "side_effect": tool_manifest.side_effect.value,
-                    "requires_external_access": tool_manifest.requires_external_access,
-                    "input_schema": tool_manifest.input_schema.model_json_schema(),
-                    "output_schema": tool_manifest.output_schema.model_json_schema(),
-                }
-            )
-        subagents: list[dict[str, Any]] = []
+            summary = {
+                "name": tool_manifest.name,
+                "type": "tool",
+                "description": tool_manifest.description,
+                "side_effect": tool_manifest.side_effect.value,
+                "requires_external_access": tool_manifest.requires_external_access,
+                "authorization_policy": tool_manifest.authorization_policy.value,
+            }
+            index.append(summary)
+            tool_contracts[tool_manifest.name] = {
+                **summary,
+                "input_schema": tool_manifest.input_schema.model_json_schema(),
+                "output_schema": tool_manifest.output_schema.model_json_schema(),
+            }
+        subagent_contracts: dict[str, dict[str, Any]] = {}
         for subagent_manifest in self._subagent_registry.list_manifests():
-            subagents.append(
-                {
-                    "name": subagent_manifest.name,
-                    "label": subagent_manifest.label,
-                    "description": subagent_manifest.description,
-                    "non_responsibilities": list(
-                        subagent_manifest.non_responsibilities
-                    ),
-                    "accepted_artifact_types": sorted(
-                        subagent_manifest.accepted_artifact_types
-                    ),
-                    "input_schema": subagent_manifest.input_schema.model_json_schema(),
-                    "output_schema": (
-                        subagent_manifest.output_schema.model_json_schema()
-                    ),
-                }
+            summary = {
+                "name": subagent_manifest.name,
+                "type": "subagent",
+                "label": subagent_manifest.label,
+                "description": subagent_manifest.description,
+                "non_responsibilities": list(
+                    subagent_manifest.non_responsibilities
+                ),
+                "allowed_tools": sorted(subagent_manifest.allowed_tools),
+                "accepted_artifact_types": sorted(
+                    subagent_manifest.accepted_artifact_types
+                ),
+                "produced_artifact_types": sorted(
+                    subagent_manifest.artifact_types
+                ),
+            }
+            index.append(summary)
+            subagent_contracts[subagent_manifest.name] = {
+                **summary,
+                "input_schema": subagent_manifest.input_schema.model_json_schema(),
+                "output_schema": subagent_manifest.output_schema.model_json_schema(),
+            }
+        return index, tool_contracts, subagent_contracts
+
+    def _validate_selection(
+        self,
+        selection: GeneralAgentPlanSelection,
+        run: GeneralAgentRun,
+        *,
+        context: GeneralAgentContextEnvelope,
+    ) -> None:
+        tools = {item.name: item for item in self._tool_registry.list_manifests()}
+        subagents = {
+            item.name: item for item in self._subagent_registry.list_manifests()
+        }
+        if len(selection.nodes) > run.limits.max_plan_nodes:
+            raise OrchestratorPlanError("编排计划超过本次任务允许的节点数量。")
+        for node in selection.nodes:
+            if node.kind is GeneralAgentNodeKind.TOOL:
+                manifest = tools.get(node.capability_name)
+                if manifest is None:
+                    raise OrchestratorPlanError(
+                        f"编排计划引用了未知工具“{node.capability_name}”。"
+                    )
+                if manifest.requires_external_access and not run.external_access_allowed:
+                    raise OrchestratorPlanError(
+                        "用户未允许外部研究，计划却安排了外部工具。"
+                    )
+                continue
+            if node.capability_name not in subagents:
+                raise OrchestratorPlanError(
+                    f"编排计划引用了未知专业子智能体“{node.capability_name}”。"
+                )
+            if (
+                node.capability_name == "external_research"
+                and not run.external_access_allowed
+            ):
+                raise OrchestratorPlanError(
+                    "用户未允许外部研究，计划却安排了外部研究。"
+                )
+
+        if not is_explicit_chapter_content_request(context.current_goal):
+            return
+        if "read_manuscript" not in tools:
+            return
+        if not selection.nodes:
+            raise OrchestratorPlanError(
+                "明确章节内容请求不能直接回答，必须先用 read_manuscript 读取正文。"
             )
-        return {"tools": tools, "subagents": subagents}
+        selected_names = {node.capability_name for node in selection.nodes}
+        if "read_manuscript" not in selected_names:
+            orders = explicit_chapter_orders(context.current_goal)
+            raise OrchestratorPlanError(
+                "请求已明确指定章节顺序"
+                f"{orders}，必须选择 read_manuscript 直接读取正文，"
+                "不得降级为 search_manuscript 或只调用事实证据子智能体。"
+            )
 
     def _validate_capabilities(
         self,
@@ -387,21 +523,93 @@ class OrchestratorAgent:
             return
 
 
-def _node_result_payload(run: GeneralAgentRun) -> list[dict[str, Any]]:
-    return [
-        {
-            "node_id": item.node_id,
-            "plan_revision": item.plan_revision,
-            "kind": item.kind.value,
-            "capability_name": item.capability_name,
-            "status": item.status.value,
-            "output": item.output,
-            "source_refs": item.source_refs,
-            "artifact_refs": item.artifact_refs,
-            "error": item.error_message,
-        }
-        for item in run.node_runs
+def _complete_capability_index(
+    *,
+    index: list[dict[str, Any]],
+    char_budget: int,
+) -> dict[str, Any]:
+    catalog = {
+        "能力总数": len(index),
+        "能力索引": sorted(index, key=lambda item: str(item["name"])),
+        "目录字符预算": char_budget,
+    }
+    actual_chars = _json_char_count(catalog)
+    if actual_chars > char_budget:
+        raise OrchestratorPlanError(
+            "完整轻量能力目录超过字符预算；系统不会静默省略已注册能力。"
+        )
+    catalog["实际字符数"] = actual_chars
+    return catalog
+
+
+def _selected_capability_contracts(
+    *,
+    selected_names: set[str],
+    index: list[dict[str, Any]],
+    tool_contracts: dict[str, dict[str, Any]],
+    subagent_contracts: dict[str, dict[str, Any]],
+    char_budget: int,
+) -> dict[str, Any]:
+    known_names = {str(item["name"]) for item in index}
+    unknown_names = selected_names - known_names
+    if unknown_names:
+        raise OrchestratorPlanError(
+            "计划选择了未注册能力：" + "、".join(sorted(unknown_names))
+        )
+    payload = {
+        "已选Tool精确契约": [
+            tool_contracts[name]
+            for name in sorted(selected_names & tool_contracts.keys())
+        ],
+        "已选子Agent精确契约": [
+            subagent_contracts[name]
+            for name in sorted(selected_names & subagent_contracts.keys())
+        ],
+        "精确契约字符预算": char_budget,
+    }
+    actual_chars = _json_char_count(payload)
+    if actual_chars > char_budget:
+        raise OrchestratorPlanError(
+            "已选能力的精确契约超过字符预算；系统不会删除节点或省略 Schema。"
+        )
+    payload["实际字符数"] = actual_chars
+    return payload
+
+
+def _validate_materialized_plan(
+    selection: GeneralAgentPlanSelection,
+    plan: GeneralAgentExecutionPlan,
+) -> None:
+    expected = [
+        (
+            node.node_id,
+            node.kind,
+            node.capability_name,
+            node.objective,
+            tuple(node.dependencies),
+            node.continue_on_failure,
+        )
+        for node in selection.nodes
     ]
+    actual = [
+        (
+            node.node_id,
+            node.kind,
+            node.capability_name,
+            node.objective,
+            tuple(node.dependencies),
+            node.continue_on_failure,
+        )
+        for node in plan.nodes
+    ]
+    if actual != expected:
+        raise OrchestratorPlanError(
+            "精确契约阶段只能填写参数和字段绑定，不得改变能力选择或依赖骨架。"
+        )
+
+
+def _json_char_count(value: dict[str, Any]) -> int:
+    return len(json.dumps(value, ensure_ascii=False, separators=(",", ":")))
 
 
 def _extract_json(text: str) -> dict[str, Any]:

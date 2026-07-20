@@ -69,7 +69,8 @@
     "negative_case_id": "negative_batch_001_005_007",
     "knowledge_type": "location",
     "accepted_names": [
-      "秦浩轩的房间、西头院落"
+      "秦浩轩的房间",
+      "西头院落"
     ],
     "reason": "普通居住空间，没有专名、特殊规则或独立世界观价值。",
     "source_quote_ids": [
@@ -80,7 +81,9 @@
     "negative_case_id": "negative_batch_001_005_008",
     "knowledge_type": "character",
     "accepted_names": [
-      "獐子、豹子、饿狼"
+      "獐子",
+      "豹子",
+      "饿狼"
     ],
     "reason": "普通动物或动物类别，没有独立姓名和稳定身份。",
     "source_quote_ids": [
@@ -91,7 +94,8 @@
     "negative_case_id": "negative_batch_001_005_009",
     "knowledge_type": "item",
     "accepted_names": [
-      "银钱、衣衫"
+      "银钱",
+      "衣衫"
     ],
     "reason": "普通货币和日用品，没有特殊功能、专名或持续设定价值。",
     "source_quote_ids": [
@@ -102,7 +106,8 @@
     "negative_case_id": "negative_batch_001_005_010",
     "knowledge_type": "item",
     "accepted_names": [
-      "珍稀药材、灵药异草"
+      "珍稀药材",
+      "灵药异草"
     ],
     "reason": "药材类别泛称，未指向单一种类或唯一物件；黄精已有明确名称，应单独抽取。",
     "source_quote_ids": [
@@ -146,7 +151,8 @@
     "negative_case_id": "negative_batch_001_005_014",
     "knowledge_type": "character",
     "accepted_names": [
-      "小山羊胡子、穿青衫的男子"
+      "小山羊胡子",
+      "穿青衫的男子"
     ],
     "reason": "外貌式临时称呼，本章未给出正式姓名。",
     "source_quote_ids": [
@@ -179,7 +185,8 @@
     "negative_case_id": "negative_batch_001_005_017",
     "knowledge_type": "character",
     "accepted_names": [
-      "受伤的猎户、零散采药人"
+      "受伤的猎户",
+      "零散采药人"
     ],
     "reason": "普通顾客群体泛称，不是稳定角色实体。",
     "source_quote_ids": [
@@ -201,7 +208,8 @@
     "negative_case_id": "negative_batch_001_005_019",
     "knowledge_type": "location",
     "accepted_names": [
-      "陈家药铺门口、药店内院"
+      "陈家药铺门口",
+      "药店内院"
     ],
     "reason": "属于陈家药铺内部或相邻普通空间，应并入药铺来源，不另建卡。",
     "source_quote_ids": [
@@ -234,7 +242,8 @@
     "negative_case_id": "negative_batch_001_005_022",
     "knowledge_type": "item",
     "accepted_names": [
-      "银锭、一百两白银"
+      "银锭",
+      "一百两白银"
     ],
     "reason": "普通货币，仅是交易价格，不应形成物品卡。",
     "source_quote_ids": [
@@ -333,7 +342,8 @@
     "negative_case_id": "negative_batch_001_005_031",
     "knowledge_type": "item",
     "accepted_names": [
-      "仙剑、飞剑"
+      "仙剑",
+      "飞剑"
     ],
     "reason": "本章主要用于徐吞虎、赵嘉龙的登场和能力展示；作者确认不将玄幻开头的通用飞剑介绍建为物品卡。",
     "source_quote_ids": [
@@ -377,7 +387,8 @@
     "negative_case_id": "negative_batch_001_005_036",
     "knowledge_type": "character",
     "accepted_names": [
-      "引路师兄、引路道人"
+      "引路师兄",
+      "引路道人"
     ],
     "reason": "只有职务式临时称呼，未给姓名，主要承担引路功能。",
     "source_quote_ids": [
@@ -432,7 +443,9 @@
     "negative_case_id": "negative_batch_001_005_041",
     "knowledge_type": "technique",
     "accepted_names": [
-      "上古灵法、魔术、法宝"
+      "上古灵法",
+      "魔术",
+      "法宝"
     ],
     "reason": "宝物与传承类别泛称，没有具体名称、功能或唯一对象。",
     "source_quote_ids": [
@@ -487,7 +500,8 @@
     "negative_case_id": "negative_batch_001_005_046",
     "knowledge_type": "item",
     "accepted_names": [
-      "被子、大通铺"
+      "被子",
+      "大通铺"
     ],
     "reason": "普通生活用品和宿舍设施，价值在于触发事件而非独立知识。",
     "source_quote_ids": [
@@ -553,7 +567,9 @@
     "negative_case_id": "negative_batch_001_005_052",
     "knowledge_type": "event",
     "accepted_names": [
-      "钟声、焚香、仙乐"
+      "钟声",
+      "焚香",
+      "仙乐"
     ],
     "reason": "测试仪式氛围和普通动作，不构成独立事件、物品或规则。",
     "source_quote_ids": [

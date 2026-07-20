@@ -21,6 +21,15 @@ export type GeneralAgentNodeStatus =
 
 export type GeneralAgentNodeKind = "tool" | "subagent";
 
+export type GeneralAgentEffectStatus =
+  | "prepared"
+  | "started"
+  | "succeeded"
+  | "failed"
+  | "unknown"
+  | "reconciled"
+  | "requires_human";
+
 export type GeneralAgentScopeType =
   | "none"
   | "selection"
@@ -49,6 +58,7 @@ export type GeneralAgentPlanNode = {
   objective: string;
   input_data: Record<string, unknown>;
   dependencies: string[];
+  attempt_id?: string | null;
   input_bindings: GeneralAgentInputBinding[];
   continue_on_failure: boolean;
 };
@@ -79,6 +89,10 @@ export type GeneralAgentNodeRun = {
   authorization_approved: boolean;
   authorization_second_confirmation: boolean;
   authorization_resource_scopes: string[];
+  effect_id?: string | null;
+  effect_status?: GeneralAgentEffectStatus | null;
+  reconciliation_reason?: string;
+  duplicate_execution_protected?: boolean;
   started_at?: string | null;
   finished_at?: string | null;
   duration_ms: number;
@@ -88,7 +102,7 @@ export type GeneralAgentNodeRun = {
 
 export type GeneralAgentHumanRequest = {
   request_id: string;
-  kind: "clarification" | "write_authorization";
+  kind: "clarification" | "write_authorization" | "effect_reconciliation";
   prompt: string;
   node_id?: string | null;
   tool_name?: string | null;
@@ -99,9 +113,52 @@ export type GeneralAgentHumanRequest = {
   created_at: string;
 };
 
+export type AgentMemoryKind =
+  | "user_instruction"
+  | "task_summary"
+  | "resource_summary"
+  | "work_note"
+  | "unresolved_issue"
+  | "fact_reference";
+
+export type AgentMemoryEntry = {
+  memory_id: string;
+  kind: AgentMemoryKind;
+  content: string;
+  source_refs: string[];
+  artifact_refs: string[];
+  run_ids: string[];
+  conversation_id: string;
+  created_request_index: number;
+  expires_after_request_index?: number | null;
+  request_index: number;
+  retention_priority: number;
+  created_at: string;
+  updated_at: string;
+  expires_at?: string | null;
+  supersedes_memory_id?: string | null;
+  content_sha256: string;
+  sensitivity: "normal" | "private" | "restricted";
+  deleted_at?: string | null;
+};
+
+export type GeneralAgentCompressionStats = {
+  compressed: boolean;
+  fallback_used: boolean;
+  input_char_count: number;
+  output_char_count: number;
+  estimated_token_count: number;
+  omitted_message_count: number;
+  omitted_node_count: number;
+  selected_memory_count: number;
+};
+
 export type GeneralAgentRun = {
   run_id: string;
   task_id: string;
+  conversation_id: string;
+  request_index: number;
+  parent_run_id?: string | null;
   agent_name: "general_writing_assistant";
   user_goal: string;
   scope: GeneralAgentScope;
@@ -127,6 +184,10 @@ export type GeneralAgentRun = {
   pending_human_request?: GeneralAgentHumanRequest | null;
   final_answer: string;
   verification_issues: string[];
+  memory_refs: string[];
+  context_snapshot_id?: string | null;
+  compression_stats: GeneralAgentCompressionStats;
+  context_resume_differences: string[];
   lifecycle_events: Array<{
     status: GeneralAgentRunStatus;
     reason: string;
@@ -143,6 +204,8 @@ export type GeneralAgentRun = {
 
 export type GeneralAgentRunSummary = {
   run_id: string;
+  conversation_id: string;
+  request_index: number;
   agent_name: string;
   user_goal: string;
   status: GeneralAgentRunStatus;
@@ -154,6 +217,10 @@ export type GeneralAgentRunSummary = {
   total_node_count: number;
   waiting_human_kind?: string | null;
   final_answer_preview: string;
+  memory_count: number;
+  context_snapshot_id?: string | null;
+  context_compressed: boolean;
+  estimated_context_tokens: number;
   created_at: string;
   updated_at: string;
   finished_at?: string | null;
@@ -162,6 +229,7 @@ export type GeneralAgentRunSummary = {
 export type GeneralAgentRunRequest = {
   user_goal: string;
   conversation_id?: string | null;
+  start_new_conversation: boolean;
   scope: GeneralAgentScope;
   author_constraints: string[];
   external_access_allowed: boolean;
@@ -186,7 +254,7 @@ export type GeneralAgentConversationSummary = {
   conversation_id: string;
   title: string;
   status: GeneralAgentRunStatus;
-  turn_count: number;
+  request_count: number;
   latest_run_id: string;
   created_at: string;
   updated_at: string;
@@ -207,6 +275,19 @@ export type GeneralAgentConversationResponse = {
 export type GeneralAgentConversationDeleteResponse = {
   conversation_id: string;
   deleted_count: number;
+};
+
+export type AgentMemoryListResponse = {
+  conversation_id: string;
+  memories: AgentMemoryEntry[];
+  total: number;
+};
+
+export type AgentMemoryResponse = { memory: AgentMemoryEntry };
+
+export type AgentMemoryDeleteResponse = {
+  memory_id: string;
+  deleted: boolean;
 };
 
 export type GeneralAgentInvocationType = "tool" | "subagent" | "llm";
@@ -245,4 +326,31 @@ export type GeneralAgentInvocationTrace = {
 export type GeneralAgentTraceListResponse = {
   traces: GeneralAgentInvocationTrace[];
   total: number;
+};
+
+export type GeneralAgentRecoverySnapshot = {
+  run_id: string;
+  checkpoint: {
+    current_revision: number;
+    available_revisions: number[];
+    integrity_status: string;
+    recovered_from_revision?: number | null;
+    damage_warnings: string[];
+    legacy_migrated: boolean;
+  };
+  effects: Array<{
+    effect_id: string;
+    node_id: string;
+    tool_name: string;
+    status: GeneralAgentEffectStatus;
+    resource_scopes: string[];
+    authorization_bound: boolean;
+    duplicate_execution_protected: boolean;
+    reason: string;
+    updated_at: string;
+  }>;
+};
+
+export type GeneralAgentRecoveryResponse = {
+  recovery: GeneralAgentRecoverySnapshot;
 };

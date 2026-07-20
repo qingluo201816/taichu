@@ -30,12 +30,22 @@ class CreateBatchKnowledgeExtractionRunRequest(BaseModel):
     force: bool = False
 
 
+class CreateSummaryRepairRunRequest(BaseModel):
+    """Create one review-only historical summary repair run."""
+
+    card_ids: list[str] = Field(default_factory=list)
+    model_id: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("model_id", "model_name"),
+    )
+
+
 class EditConfirmCandidateRequest(BaseModel):
     """Confirm a candidate after author edits."""
 
     card_updates: dict[str, Any] = Field(default_factory=dict)
     target_card_id: str | None = None
-    merge_mode: AuthorMergeMode = "append"
+    merge_mode: AuthorMergeMode = "merge"
 
 
 class KnowledgeExtractionRunSummary(BaseModel):

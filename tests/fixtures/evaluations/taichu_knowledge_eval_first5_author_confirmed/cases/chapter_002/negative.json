@@ -14,7 +14,8 @@
     "negative_case_id": "negative_chapter_002_002",
     "knowledge_type": "character",
     "accepted_names": [
-      "小山羊胡子、穿青衫的男子"
+      "小山羊胡子",
+      "穿青衫的男子"
     ],
     "reason": "外貌式临时称呼，本章未给出正式姓名。",
     "source_quote_ids": [
@@ -47,7 +48,8 @@
     "negative_case_id": "negative_chapter_002_005",
     "knowledge_type": "character",
     "accepted_names": [
-      "受伤的猎户、零散采药人"
+      "受伤的猎户",
+      "零散采药人"
     ],
     "reason": "普通顾客群体泛称，不是稳定角色实体。",
     "source_quote_ids": [
@@ -69,7 +71,8 @@
     "negative_case_id": "negative_chapter_002_007",
     "knowledge_type": "location",
     "accepted_names": [
-      "陈家药铺门口、药店内院"
+      "陈家药铺门口",
+      "药店内院"
     ],
     "reason": "属于陈家药铺内部或相邻普通空间，应并入药铺来源，不另建卡。",
     "source_quote_ids": [
@@ -102,7 +105,8 @@
     "negative_case_id": "negative_chapter_002_010",
     "knowledge_type": "item",
     "accepted_names": [
-      "银锭、一百两白银"
+      "银锭",
+      "一百两白银"
     ],
     "reason": "普通货币，仅是交易价格，不应形成物品卡。",
     "source_quote_ids": [

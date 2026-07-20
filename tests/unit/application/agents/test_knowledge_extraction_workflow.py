@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -19,11 +20,22 @@ from taichu.application.services.knowledge_extraction_service import (
     _aggregate_batch_candidates,
 )
 from taichu.application.agents.knowledge_extraction.workflow import (
+    KnowledgeExtractionDependencies,
     _candidate_validation_errors,
+    _ground_candidates_from_entity_groups,
+    _item_quality_decision,
+    _match_existing,
+    _technique_quality_decision,
+    dedupe_candidates_by_target,
+    initial_knowledge_extraction_state,
+    mark_cross_type_projection_conflicts,
+    merge_overlapping_event_candidates,
+    synthesize_candidate_summaries,
 )
 from taichu.application.services.knowledge_service import KnowledgeService
 from taichu.application.services.retrieval_service import RetrievalService
 from taichu.application.agents.models.agent_run import AgentRunStatus
+from taichu.domain.models.structured_knowledge import StructuredKnowledgeType
 from taichu.infrastructure.agent_runs import JsonAgentRunStore
 from taichu.infrastructure.storage.markdown_backend import ProjectAssetStorageBackend
 from taichu.infrastructure.retrieval import (
@@ -41,7 +53,16 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.assets_root = Path(self._temporary_directory.name)
         self.storage = ProjectAssetStorageBackend(self.assets_root)
         await ImportService(self.storage).import_text(
-            "第一章 山门\n秦阳握着青铜令牌走入太初教山门。",
+            (
+                "第一章 山门\n"
+                "秦阳握着青铜令牌走入太初教山门。\n"
+                "秦阳在山门前确认太初教规。\n"
+                "秦阳仍在炼气一层。\n"
+                "秦阳默诵太初引气诀。\n"
+                "太初教规矩，持青铜令牌方可入山。\n"
+                "小山羊胡子在旁边看了一眼。\n"
+                "少年们围在药铺门口。"
+            ),
             source_name="workflow_fixture.txt",
         )
         self.chapter_service = ChapterService(self.storage)
@@ -106,10 +127,33 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(
             all("importance" not in call.input_prompt for call in run.llm_calls)
         )
+        prompts_by_node = {call.node_name: call.input_prompt for call in run.llm_calls}
+        general_prompt = prompts_by_node["GeneralExtractionNode"]
+        self.assertIn("朴素常识、社会经验、人物观点", general_prompt)
+        self.assertIn("每个 mention 只能对应一个独立对象", general_prompt)
+        self.assertIn("所属对象＋称谓", general_prompt)
+        self.assertIn("修饰语＋类别词", general_prompt)
+        self.assertIn("禁止把两个地点", general_prompt)
+        self.assertIn(
+            "同一泛称可能指向多人时必须省略",
+            prompts_by_node["CharacterExpertNode"],
+        )
+        self.assertIn(
+            "禁止创建复合新卡",
+            prompts_by_node["EntityExpertNode"],
+        )
+        self.assertIn(
+            "已有 active 卡的 aliases 与 name 具有同等身份约束",
+            prompts_by_node["EntityExpertNode"],
+        )
+        event_rule_prompt = prompts_by_node["EventRuleExpertNode"]
+        self.assertIn("同一设定主题和事实集合", event_rule_prompt)
+        self.assertIn("同一连续行动链", event_rule_prompt)
+        self.assertIn("已有 active 规则卡摘要：\n[]", event_rule_prompt)
         self.assertCountEqual(
             [call.prompt_version for call in run.llm_calls],
             [
-                "general_extraction_v3",
+                "general_extraction_v4",
                 "character_expert_v3",
                 "entity_expert_v3",
                 "event_rule_expert_v1",
@@ -122,6 +166,49 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.assertGreater(run.metrics.technique_candidate_count, 0)
         self.assertGreater(run.metrics.event_candidate_count, 0)
         self.assertGreater(run.metrics.rule_candidate_count, 0)
+
+    async def test_event_rule_prompt_can_reuse_semantically_same_active_rule(
+        self,
+    ) -> None:
+        draft = await self.knowledge_service.create_card(
+            StructuredKnowledgeType.RULE,
+            {
+                "name": "太初教山门通行规则",
+                "aliases": [],
+                "summary": "进入太初教山门需要符合门禁要求。",
+                "source_origin": "manual",
+                "source_note": "作者确认的山门规则。",
+                "exceptions": None,
+            },
+        )
+        confirmed = await self.knowledge_service.confirm_card(draft.id)
+        service = KnowledgeExtractionService(
+            chapter_service=self.chapter_service,
+            llm=_PromptAwareRuleReuseLLM(),
+            retrieval_service=self.retrieval_service,
+            knowledge_service=self.knowledge_service,
+            run_store=self.run_store,
+        )
+
+        run = await service.create_run(chapter_id="chapter_001")
+        candidate = next(
+            item
+            for item in run.review_items
+            if item.display_title == "太初教山门通行规则"
+        )
+        event_rule_call = next(
+            call for call in run.llm_calls if call.node_name == "EventRuleExpertNode"
+        )
+
+        self.assertEqual(candidate.candidate_action.value, "update_card")
+        self.assertEqual(candidate.target_card_id, confirmed.id)
+        self.assertEqual(candidate.matched_card_name, "太初教山门通行规则")
+        self.assertIn('"name": "太初教山门通行规则"', event_rule_call.input_prompt)
+        self.assertIn(
+            '"summary": "进入太初教山门需要符合门禁要求。"',
+            event_rule_call.input_prompt,
+        )
+        self.assertNotIn("{{active_rule_index}}", event_rule_call.input_prompt)
 
     async def test_non_json_llm_response_marks_run_failed(self) -> None:
         service = KnowledgeExtractionService(
@@ -140,6 +227,174 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(run.llm_calls), 3)
         self.assertEqual(run.llm_calls[0].error is not None, True)
 
+    async def test_existing_card_summary_is_synthesized_as_one_fact_snapshot(
+        self,
+    ) -> None:
+        draft = await self.knowledge_service.create_card(
+            StructuredKnowledgeType.CHARACTER,
+            {
+                "name": "秦阳",
+                "aliases": [],
+                "summary": "秦阳原本是太初教弟子。",
+                "source_origin": "manual",
+                "source_note": "第一章之前的作者设定。",
+                "identity": "太初教弟子",
+            },
+        )
+        await self.knowledge_service.confirm_card(draft.id)
+        service = KnowledgeExtractionService(
+            chapter_service=self.chapter_service,
+            llm=_PromptAwareLLM(),
+            retrieval_service=self.retrieval_service,
+            knowledge_service=self.knowledge_service,
+            run_store=self.run_store,
+        )
+
+        run = await service.create_run(chapter_id="chapter_001")
+        candidate = next(
+            item for item in run.review_items if item.display_title == "秦阳"
+        )
+
+        self.assertEqual(candidate.candidate_action.value, "update_card")
+        self.assertEqual(
+            candidate.suggested_card["summary"],
+            "秦阳是太初教弟子，本章手持青铜令牌走入太初教山门。",
+        )
+        self.assertNotIn("\n", str(candidate.suggested_card["summary"]))
+        synthesis_calls = [
+            call
+            for call in run.llm_calls
+            if call.node_name == "SynthesizeCandidateSummariesNode"
+        ]
+        self.assertEqual(len(synthesis_calls), 1)
+        self.assertIn("秦阳原本是太初教弟子", synthesis_calls[0].input_prompt)
+
+    async def test_summary_synthesis_failure_requires_author_edit(self) -> None:
+        draft = await self.knowledge_service.create_card(
+            StructuredKnowledgeType.CHARACTER,
+            {
+                "name": "秦阳",
+                "aliases": [],
+                "summary": "秦阳原本是太初教弟子。",
+                "source_origin": "manual",
+                "source_note": "作者设定。",
+            },
+        )
+        await self.knowledge_service.confirm_card(draft.id)
+        service = KnowledgeExtractionService(
+            chapter_service=self.chapter_service,
+            llm=_PromptAwareSummaryFailureLLM(),
+            retrieval_service=self.retrieval_service,
+            knowledge_service=self.knowledge_service,
+            run_store=self.run_store,
+        )
+
+        run = await service.create_run(chapter_id="chapter_001")
+        candidate = next(
+            item for item in run.review_items if item.display_title == "秦阳"
+        )
+
+        self.assertEqual(candidate.candidate_action.value, "conflict")
+        self.assertEqual(
+            candidate.suggested_card["summary"],
+            "秦阳原本是太初教弟子。",
+        )
+        self.assertFalse(candidate.schema_validation.passed)
+        self.assertIn("摘要综合失败", candidate.schema_validation.errors[-1])
+
+    async def test_summary_synthesis_limits_each_call_to_five_candidates(
+        self,
+    ) -> None:
+        llm = _MultiModelLLM()
+        state = initial_knowledge_extraction_state(
+            chapter_id="chapter_001",
+            model_name="test-model",
+            model_id="test-model",
+        )
+        dependencies = KnowledgeExtractionDependencies(
+            chapter_service=self.chapter_service,
+            llm=llm,
+            retrieval_service=self.retrieval_service,
+            run_store=self.run_store,
+        )
+        candidates = [
+            {
+                "type": "character",
+                "name": f"候选{i}",
+                "aliases": [],
+                "summary": f"候选{i}的新事实。",
+                "source_origin": "agent_extract",
+                "source_note": f"第{i}章来源。",
+                "evidence_excerpt": f"候选{i}出现。",
+                "evidence_excerpts": [f"候选{i}出现。"],
+            }
+            for i in range(1, 7)
+        ]
+
+        result = await synthesize_candidate_summaries(
+            state,
+            dependencies,
+            candidates,
+            include_new=True,
+            node_name="BatchSynthesizeCandidateSummariesNode",
+        )
+        summary_requests = [
+            request
+            for request in llm.requests
+            if '"candidate_id"' in _prompt_text(request)
+        ]
+
+        self.assertEqual(len(result), 6)
+        self.assertEqual(len(summary_requests), 2)
+        self.assertEqual(
+            [
+                len(
+                    re.findall(
+                        r'"candidate_id":\s*"summary_candidate_', _prompt_text(request)
+                    )
+                )
+                for request in summary_requests
+            ],
+            [5, 1],
+        )
+
+    async def test_summary_synthesis_rejects_unexpected_output_fields(self) -> None:
+        state = initial_knowledge_extraction_state(
+            chapter_id="chapter_001",
+            model_name="test-model",
+            model_id="test-model",
+        )
+        dependencies = KnowledgeExtractionDependencies(
+            chapter_service=self.chapter_service,
+            llm=_UnexpectedSummaryFieldLLM(),
+            retrieval_service=self.retrieval_service,
+            run_store=self.run_store,
+        )
+        candidates = [
+            {
+                "type": "character",
+                "name": "秦阳",
+                "aliases": [],
+                "summary": "秦阳本轮出现。",
+                "source_origin": "agent_extract",
+                "source_note": "第一章来源。",
+                "evidence_excerpt": "秦阳走入山门。",
+                "evidence_excerpts": ["秦阳走入山门。"],
+            }
+        ]
+
+        result = await synthesize_candidate_summaries(
+            state,
+            dependencies,
+            candidates,
+            include_new=True,
+            node_name="BatchSynthesizeCandidateSummariesNode",
+        )
+
+        self.assertEqual(result[0]["summary"], "秦阳本轮出现。")
+        self.assertIn("_summary_synthesis_error", result[0])
+        self.assertFalse(result[0]["schema_validation"]["passed"])
+
     def test_retired_importance_field_fails_candidate_validation(self) -> None:
         errors = _candidate_validation_errors(
             {
@@ -155,6 +410,222 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertTrue(any("importance" in error for error in errors))
+
+    def test_named_item_and_technique_use_grounded_function_evidence(self) -> None:
+        self.assertEqual(
+            _item_quality_decision(
+                "明鉴仙眼",
+                ["明鉴仙眼能够洞悉弟子的身体并检验仙种资质。"],
+            )[0],
+            "accepted",
+        )
+        self.assertEqual(
+            _item_quality_decision(
+                "窗户",
+                ["弟子推开窗户。"],
+            )[0],
+            "rejected",
+        )
+        self.assertEqual(
+            _technique_quality_decision(
+                "六爻卦",
+                ["六爻卦乃上古绝学，可预知福祸并制敌于无形。"],
+            )[0],
+            "accepted",
+        )
+        self.assertEqual(
+            _technique_quality_decision(
+                "神识冲击",
+                ["神识冲击是修炼灵魂衍生的攻击法。"],
+            )[0],
+            "accepted",
+        )
+
+    def test_expert_evidence_is_replaced_by_grounded_entity_group_quotes(self) -> None:
+        state = initial_knowledge_extraction_state(
+            chapter_id="chapter_001",
+            model_name="test-model",
+        )
+        state["markdown_text"] = "秦阳握着青铜令牌走入山门。"
+        state["entity_groups"] = [
+            {
+                "entity_group_id": "entity_group_001",
+                "evidence_excerpts": ["秦阳握着青铜令牌走入山门。"],
+            }
+        ]
+        candidates = [
+            {
+                "entity_group_id": "entity_group_001",
+                "type": "character",
+                "name": "秦阳",
+                "evidence_excerpt": "秦阳走进了山门……",
+                "evidence_excerpts": ["秦阳走进了山门……"],
+            }
+        ]
+
+        grounded = _ground_candidates_from_entity_groups(state, candidates)
+
+        self.assertEqual(
+            grounded[0]["evidence_excerpts"],
+            ["秦阳握着青铜令牌走入山门。"],
+        )
+        self.assertEqual(
+            grounded[0]["evidence_excerpt"],
+            "秦阳握着青铜令牌走入山门。",
+        )
+
+    def test_candidates_matching_same_confirmed_card_are_merged_once(self) -> None:
+        candidates = [
+            {
+                "type": "faction",
+                "name": "至上仙尊真乙太初教",
+                "aliases": [],
+                "target_card_id": "faction-1",
+                "matched_card_name": "至上仙尊真乙太初教",
+                "chapter_ids": ["chapter_006"],
+                "evidence_excerpts": ["太初教传承数千年。"],
+            },
+            {
+                "type": "faction",
+                "name": "太初教",
+                "aliases": ["至上仙尊真乙太初教"],
+                "target_card_id": "faction-1",
+                "matched_card_name": "至上仙尊真乙太初教",
+                "chapter_ids": ["chapter_007"],
+                "evidence_excerpts": ["太初教出现三名紫种弟子。"],
+            },
+        ]
+
+        merged = dedupe_candidates_by_target(candidates)
+
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0]["name"], "至上仙尊真乙太初教")
+        self.assertEqual(merged[0]["chapter_ids"], ["chapter_006", "chapter_007"])
+        self.assertIn("太初教", merged[0]["aliases"])
+
+    def test_cross_type_projection_is_marked_for_author_review(self) -> None:
+        evidence = "神识冲击是修炼灵魂衍生的攻击法。"
+        candidates = [
+            {
+                "type": "technique",
+                "name": "神识冲击",
+                "evidence_excerpts": [evidence],
+            },
+            {
+                "type": "rule",
+                "name": "神识冲击修炼限制",
+                "evidence_excerpts": [evidence],
+            },
+        ]
+
+        marked = mark_cross_type_projection_conflicts(candidates)
+
+        self.assertNotIn("internal_conflicts", marked[0])
+        self.assertIn("重复类型投影", marked[1]["internal_conflicts"][0])
+
+    async def test_unique_cross_type_alias_match_reuses_existing_card(self) -> None:
+        draft = await self.knowledge_service.create_card(
+            StructuredKnowledgeType.CHARACTER,
+            {
+                "name": "五彩灵兽",
+                "aliases": ["小灵兽"],
+                "summary": "五彩灵兽可以承载修炼者的神识。",
+                "source_origin": "manual",
+                "source_note": "作者确认设定。",
+                "identity": "灵兽",
+            },
+        )
+        confirmed = await self.knowledge_service.confirm_card(draft.id)
+        state = initial_knowledge_extraction_state(
+            chapter_id="chapter_001",
+            model_name="test-model",
+        )
+        state["typed_candidates"] = [
+            {
+                "type": "item",
+                "name": "小灵兽",
+                "aliases": [],
+                "summary": "小灵兽本章表现出承载神识的能力。",
+                "source_origin": "agent_extract",
+                "source_note": "第一章关键原文。",
+                "evidence_excerpt": "修炼者将神识附在小灵兽身上。",
+                "evidence_excerpts": ["修炼者将神识附在小灵兽身上。"],
+                "item_type": "灵兽",
+            }
+        ]
+        dependencies = KnowledgeExtractionDependencies(
+            chapter_service=self.chapter_service,
+            llm=_PromptAwareLLM(),
+            retrieval_service=self.retrieval_service,
+            run_store=self.run_store,
+        )
+
+        matched_state = await _match_existing(dependencies)(state)
+        candidate = matched_state["typed_candidates"][0]
+
+        self.assertEqual(candidate["target_card_id"], confirmed.id)
+        self.assertEqual(candidate["matched_card_name"], "五彩灵兽")
+        self.assertEqual(candidate["type"], "character")
+        self.assertEqual(candidate["name"], "五彩灵兽")
+        self.assertIn("小灵兽", candidate["aliases"])
+        self.assertNotIn("item_type", candidate)
+        self.assertIn("按已有卡类型对齐", candidate["match_reason"])
+        self.assertTrue(candidate["schema_validation"]["passed"])
+
+    def test_same_chapter_event_with_contained_evidence_is_merged(self) -> None:
+        candidates = [
+            {
+                "type": "event",
+                "name": "林青采得月华草",
+                "aliases": [],
+                "summary": "林青采得月华草，并决定当夜立即服下。",
+                "source_note": "第十章来源一。",
+                "chapter_id": "chapter_010",
+                "evidence_excerpt": "采得月华草的林青决定当夜立即服下它。",
+                "evidence_excerpts": [
+                    "采得月华草的林青决定当夜立即服下它。",
+                    "林青将月华草收入怀中。",
+                ],
+            },
+            {
+                "type": "event",
+                "name": "林青服下月华草",
+                "aliases": [],
+                "summary": "林青决定当夜立即服下月华草。",
+                "source_note": "第十章来源二。",
+                "chapter_id": "chapter_010",
+                "evidence_excerpt": "林青决定当夜立即服下它。",
+                "evidence_excerpts": ["林青决定当夜立即服下它。"],
+            },
+        ]
+
+        merged = merge_overlapping_event_candidates(candidates)
+
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0]["name"], "林青采得月华草")
+        self.assertIn("林青服下月华草", merged[0]["aliases"])
+        self.assertEqual(len(merged[0]["evidence_excerpts"]), 3)
+        self.assertIn("第十章来源一", merged[0]["source_note"])
+        self.assertIn("第十章来源二", merged[0]["source_note"])
+
+    def test_batch_aggregation_reconciles_first_and_last_seen_chapters(self) -> None:
+        states = [
+            {
+                "chapter_id": "chapter_006",
+                "chapter_title": "第6章",
+                "typed_candidates": [_batch_character_candidate("chapter_006")],
+            },
+            {
+                "chapter_id": "chapter_010",
+                "chapter_title": "第10章",
+                "typed_candidates": [_batch_character_candidate("chapter_010")],
+            },
+        ]
+
+        aggregated = _aggregate_batch_candidates(states)
+
+        self.assertEqual(aggregated[0]["first_seen_chapter_id"], "chapter_006")
+        self.assertEqual(aggregated[0]["last_seen_chapter_id"], "chapter_010")
 
     async def test_invalid_expert_json_retries_and_recovers(self) -> None:
         service = KnowledgeExtractionService(
@@ -236,10 +707,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(run["model_id"], "alternate-model")
         self.assertEqual(run["upstream_model"], "upstream-alternate")
         self.assertTrue(
-            all(
-                call["model_id"] == "alternate-model"
-                for call in run["llm_calls"]
-            )
+            all(call["model_id"] == "alternate-model" for call in run["llm_calls"])
         )
 
     def test_batch_aggregation_keeps_one_source_block_per_chapter(self) -> None:
@@ -310,13 +778,63 @@ class _SequenceLLM(_TestLLM):
 
 class _PromptAwareLLM(_TestLLM):
     async def complete(self, prompt: str) -> str:
-        if "事件与规则 entity_groups" in prompt:
+        prompt_text = _prompt_text(prompt)
+        if '"candidate_id"' in prompt_text:
+            return _summary_response(prompt_text)
+        if "事件与规则 entity_groups" in prompt_text:
             return _event_rule_response()
-        if "实体 entity_groups" in prompt:
+        if "实体 entity_groups" in prompt_text:
             return _entity_response()
-        if "角色 entity_groups" in prompt:
+        if "角色 entity_groups" in prompt_text:
             return _character_response()
         return _general_response()
+
+
+class _PromptAwareRuleReuseLLM(_PromptAwareLLM):
+    async def complete(self, prompt: str) -> str:
+        prompt_text = _prompt_text(prompt)
+        if '"candidate_id"' in prompt_text:
+            candidate_ids = list(
+                dict.fromkeys(re.findall(r'"candidate_id":\s*"([^"]+)"', prompt_text))
+            )
+            return json.dumps(
+                {
+                    "summaries": [
+                        {
+                            "candidate_id": candidate_id,
+                            "summary": "进入太初教山门需要持有青铜令牌。",
+                        }
+                        for candidate_id in candidate_ids
+                    ]
+                },
+                ensure_ascii=False,
+            )
+        if "事件与规则 entity_groups" in prompt_text:
+            return _event_rule_reuse_response()
+        return await super().complete(prompt)
+
+
+class _PromptAwareSummaryFailureLLM(_PromptAwareLLM):
+    async def complete(self, prompt: str) -> str:
+        if '"candidate_id"' in _prompt_text(prompt):
+            return "不是有效 JSON"
+        return await super().complete(prompt)
+
+
+class _UnexpectedSummaryFieldLLM(_TestLLM):
+    async def complete(self, prompt: str) -> str:
+        return json.dumps(
+            {
+                "summaries": [
+                    {
+                        "candidate_id": "summary_candidate_001",
+                        "summary": "秦阳走入太初教山门。",
+                        "source_note": "不允许模型返回来源字段。",
+                    }
+                ]
+            },
+            ensure_ascii=False,
+        )
 
 
 class _PromptAwareRepairLLM(_TestLLM):
@@ -344,13 +862,59 @@ class _MultiModelLLM:
 
     async def complete(self, request: LLMRequest) -> str:
         self.requests.append(request)
-        if "事件与规则 entity_groups" in request:
+        prompt_text = _prompt_text(request)
+        if '"candidate_id"' in prompt_text:
+            return _summary_response(prompt_text)
+        if "事件与规则 entity_groups" in prompt_text:
             return _event_rule_response()
-        if "实体 entity_groups" in request:
+        if "实体 entity_groups" in prompt_text:
             return _entity_response()
-        if "角色 entity_groups" in request:
+        if "角色 entity_groups" in prompt_text:
             return _character_response()
         return _general_response()
+
+
+def _prompt_text(request: object) -> str:
+    if isinstance(request, LLMRequest):
+        return "\n".join(message.content for message in request.messages)
+    return str(request)
+
+
+def _summary_response(prompt: str) -> str:
+    candidate_ids = list(
+        dict.fromkeys(re.findall(r'"candidate_id":\s*"([^"]+)"', prompt))
+    )
+    return json.dumps(
+        {
+            "summaries": [
+                {
+                    "candidate_id": candidate_id,
+                    "summary": (
+                        "秦阳是太初教弟子，本章手持青铜令牌走入太初教山门。"
+                        if candidate_id == "summary_candidate_001"
+                        else "综合后的统一事实摘要。"
+                    ),
+                }
+                for candidate_id in candidate_ids
+            ]
+        },
+        ensure_ascii=False,
+    )
+
+
+def _batch_character_candidate(chapter_id: str) -> dict[str, object]:
+    return {
+        "type": "character",
+        "name": "秦阳",
+        "aliases": [],
+        "summary": "秦阳本章出现。",
+        "source_origin": "agent_extract",
+        "source_note": f"{chapter_id} 来源。",
+        "evidence_excerpt": "秦阳本章出现。",
+        "evidence_excerpts": ["秦阳本章出现。"],
+        "first_seen_chapter_id": chapter_id,
+        "last_seen_chapter_id": chapter_id,
+    }
 
 
 def _profile(
@@ -585,6 +1149,15 @@ def _event_rule_response() -> str:
         },
         ensure_ascii=False,
     )
+
+
+def _event_rule_reuse_response() -> str:
+    payload = json.loads(_event_rule_response())
+    rule = payload["rules"][0]
+    rule["name"] = "太初教山门通行规则"
+    rule["aliases"] = ["持令牌方可入山"]
+    rule["summary"] = "进入太初教山门需要持有青铜令牌。"
+    return json.dumps(payload, ensure_ascii=False)
 
 
 def _broken_event_rule_response() -> str:

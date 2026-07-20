@@ -36,7 +36,8 @@
     "negative_case_id": "negative_chapter_005_004",
     "knowledge_type": "item",
     "accepted_names": [
-      "被子、大通铺"
+      "被子",
+      "大通铺"
     ],
     "reason": "普通生活用品和宿舍设施，价值在于触发事件而非独立知识。",
     "source_quote_ids": [
@@ -102,7 +103,9 @@
     "negative_case_id": "negative_chapter_005_010",
     "knowledge_type": "event",
     "accepted_names": [
-      "钟声、焚香、仙乐"
+      "钟声",
+      "焚香",
+      "仙乐"
     ],
     "reason": "测试仪式氛围和普通动作，不构成独立事件、物品或规则。",
     "source_quote_ids": [

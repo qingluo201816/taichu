@@ -1,23 +1,32 @@
 "use client";
 
+import { Dialog } from "@base-ui/react/dialog";
+import { Popover } from "@base-ui/react/popover";
 import {
   Activity,
   Bot,
+  Check,
   ChevronLeft,
-  CircleDot,
+  ChevronsUpDown,
+  Database,
+  ListTree,
+  PanelRightOpen,
   RefreshCw,
   ShieldCheck,
+  Wrench,
+  X,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { GeneralAgentFlowGraph } from "@/components/agent-task-monitor/general-agent-flow-graph";
 import { GeneralAgentMonitorNav } from "@/components/agent-task-monitor/general-agent-monitor-nav";
 import { Button } from "@/components/ui/button";
 import {
-  getGeneralAgentRun,
-  listGeneralAgentRuns,
+  getGeneralAgentConversation,
+  getGeneralAgentRecovery,
+  listGeneralAgentConversations,
   listGeneralAgentTraces,
 } from "@/lib/api/general-agent";
 import {
@@ -34,15 +43,18 @@ import {
   tracesForGeneralAgentNode,
 } from "@/lib/general-agent-monitor";
 import type {
+  GeneralAgentConversationSummary,
+  GeneralAgentEffectStatus,
   GeneralAgentInvocationTrace,
   GeneralAgentNodeRun,
+  GeneralAgentRecoverySnapshot,
   GeneralAgentRun,
   GeneralAgentRunStatus,
-  GeneralAgentRunSummary,
 } from "@/lib/types/general-agent";
 import { cn } from "@/lib/utils";
 
 type StatusFilter = "all" | "active" | "waiting_human" | "completed" | "failed";
+type DetailPanel = "node" | "run" | null;
 
 const filters: Array<{ value: StatusFilter; label: string }> = [
   { value: "all", label: "全部" },
@@ -53,59 +65,94 @@ const filters: Array<{ value: StatusFilter; label: string }> = [
 ];
 
 export function GeneralAgentMonitorShell() {
-  const [runs, setRuns] = useState<GeneralAgentRunSummary[]>([]);
+  const [conversations, setConversations] = useState<GeneralAgentConversationSummary[]>([]);
+  const [conversationRuns, setConversationRuns] = useState<GeneralAgentRun[]>([]);
   const [currentRun, setCurrentRun] = useState<GeneralAgentRun | null>(null);
   const [traces, setTraces] = useState<GeneralAgentInvocationTrace[]>([]);
   const [traceTotal, setTraceTotal] = useState(0);
-  const [selectedRunId, setSelectedRunId] = useState("");
+  const [recovery, setRecovery] = useState<GeneralAgentRecoverySnapshot | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState("");
   const [selectedNodeId, setSelectedNodeId] = useState("");
   const [selectedRevision, setSelectedRevision] = useState(0);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [detailPanel, setDetailPanel] = useState<DetailPanel>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const selectedConversationRef = useRef("");
   const selectedRunRef = useRef("");
 
-  const openRun = useCallback(async (runId: string) => {
-    const [detail, traceResponse] = await Promise.all([
-      getGeneralAgentRun(runId),
-      listGeneralAgentTraces(runId),
+  const openRun = useCallback(async (run: GeneralAgentRun) => {
+    const [traceResponse, recoveryResponse] = await Promise.all([
+      listGeneralAgentTraces(run.run_id),
+      getGeneralAgentRecovery(run.run_id),
     ]);
-    setCurrentRun(detail.run);
+    setCurrentRun(run);
     setTraces(traceResponse.traces);
     setTraceTotal(traceResponse.total);
-    setSelectedRunId(runId);
-    selectedRunRef.current = runId;
+    setRecovery(recoveryResponse.recovery);
+    selectedRunRef.current = run.run_id;
     setSelectedRevision(current =>
-      generalAgentPlanRevisions(detail.run.node_runs).includes(current)
+      generalAgentPlanRevisions(run.node_runs).includes(current)
         ? current
-        : detail.run.plan_revision,
+        : run.plan_revision,
     );
     setSelectedNodeId(current => {
-      const currentPlanNodes = detail.run.node_runs.filter(
-        node => node.plan_revision === detail.run.plan_revision,
+      const currentPlanNodes = run.node_runs.filter(
+        node => node.plan_revision === run.plan_revision,
       );
-      return detail.run.node_runs.some(node => node.node_id === current)
+      return run.node_runs.some(node => node.node_id === current)
         ? current
         : (currentPlanNodes[0]?.node_id ?? "");
     });
   }, []);
 
+  const openConversation = useCallback(async (
+    conversationId: string,
+    preferredRunId = "",
+  ) => {
+    const response = await getGeneralAgentConversation(conversationId);
+    setConversationRuns(response.runs);
+    setSelectedConversationId(conversationId);
+    selectedConversationRef.current = conversationId;
+    const target =
+      response.runs.find(run => run.run_id === preferredRunId) ??
+      response.runs.at(-1) ??
+      null;
+    if (target) {
+      await openRun(target);
+      return;
+    }
+    setCurrentRun(null);
+    setTraces([]);
+    setTraceTotal(0);
+    setRecovery(null);
+    selectedRunRef.current = "";
+  }, [openRun]);
+
   const reload = useCallback(async () => {
-    const response = await listGeneralAgentRuns({ pageSize: 100 });
-    setRuns(response.runs);
-    const preferred = selectedRunRef.current;
-    if (preferred && response.runs.some(run => run.run_id === preferred)) {
-      await openRun(preferred);
-    } else if (response.runs[0]) {
-      await openRun(response.runs[0].run_id);
+    const response = await listGeneralAgentConversations({ pageSize: 100 });
+    setConversations(response.conversations);
+    const candidates = response.conversations.filter(conversation =>
+      matchesFilter(conversation.status, statusFilter),
+    );
+    const preferredConversation = selectedConversationRef.current;
+    const conversation =
+      candidates.find(
+        item => item.conversation_id === preferredConversation,
+      ) ?? candidates[0];
+    if (conversation) {
+      await openConversation(conversation.conversation_id, selectedRunRef.current);
     } else {
+      setConversationRuns([]);
       setCurrentRun(null);
       setTraces([]);
       setTraceTotal(0);
-      setSelectedRunId("");
+      setRecovery(null);
+      setSelectedConversationId("");
+      selectedConversationRef.current = "";
       selectedRunRef.current = "";
     }
-  }, [openRun]);
+  }, [openConversation, statusFilter]);
 
   useEffect(() => {
     let ignore = false;
@@ -138,9 +185,19 @@ export function GeneralAgentMonitorShell() {
     return () => window.clearInterval(timer);
   }, [reload]);
 
-  const visibleRuns = useMemo(
-    () => runs.filter(run => matchesFilter(run.status, statusFilter)),
-    [runs, statusFilter],
+  const visibleConversations = useMemo(
+    () => conversations.filter(item => matchesFilter(item.status, statusFilter)),
+    [conversations, statusFilter],
+  );
+  const displayedRuns = useMemo(() => [...conversationRuns].reverse(), [conversationRuns]);
+  const childRoundByParent = useMemo(
+    () =>
+      new Map(
+        conversationRuns
+          .filter(run => run.parent_run_id)
+          .map(run => [run.parent_run_id as string, run.request_index]),
+      ),
+    [conversationRuns],
   );
   const revisions = useMemo(
     () => (currentRun ? generalAgentPlanRevisions(currentRun.node_runs) : []),
@@ -158,18 +215,15 @@ export function GeneralAgentMonitorShell() {
 
   return (
     <AppShell activePath="/task-monitor" viewportLocked>
-      <section className="mx-auto grid h-full min-h-0 max-w-[1540px] grid-rows-[auto_minmax(0,1fr)] gap-4 px-4 py-4 xl:grid-cols-[286px_minmax(0,1fr)]">
+      <section className="mx-auto grid h-full min-h-0 max-w-[1640px] grid-rows-[auto_minmax(0,1fr)] gap-4 px-4 py-4 xl:grid-cols-[340px_minmax(0,1fr)]">
         <div className="xl:col-span-2">
           <GeneralAgentMonitorNav active="monitor" />
         </div>
         <aside className="flex min-h-0 flex-col overflow-hidden rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-3">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs text-[var(--tc-text-muted)]">任务监控</p>
-              <h1 className="text-lg font-semibold text-[var(--tc-text-primary)]">
-                通用写作助手
-              </h1>
-            </div>
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-base font-semibold text-[var(--tc-text-primary)]">
+              通用写作助手
+            </h1>
             <Button
               type="button"
               variant="ghost"
@@ -187,55 +241,80 @@ export function GeneralAgentMonitorShell() {
             <ChevronLeft className="size-3" />
             返回任务入口
           </Link>
-          <div className="mt-3 flex flex-wrap gap-1.5">
+          <div className="mt-3 flex flex-wrap gap-1">
             {filters.map(filter => (
               <button
                 key={filter.value}
                 type="button"
                 className={cn(
-                  "rounded-[var(--tc-radius-pill)] border px-2.5 py-1 text-xs",
+                  "rounded-[var(--tc-radius-control)] px-2 py-1.5 text-xs transition-colors duration-150 motion-reduce:transition-none",
                   statusFilter === filter.value
-                    ? "border-[var(--tc-border-strong)] bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
-                    : "border-[var(--tc-border-subtle)] text-[var(--tc-text-muted)]",
+                    ? "bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
+                    : "text-[var(--tc-text-muted)] hover:bg-[var(--tc-surface-muted)] hover:text-[var(--tc-text-primary)]",
                 )}
-                onClick={() => setStatusFilter(filter.value)}
+                  onClick={() => {
+                    setStatusFilter(filter.value);
+                  }}
               >
                 {filter.label}
               </button>
             ))}
           </div>
-          <div className="mt-3 min-h-0 flex-1 overflow-y-auto border-t border-[var(--tc-border-subtle)] pt-3">
-            {loading ? (
-              <p className="py-4 text-sm text-[var(--tc-text-muted)]">正在读取任务</p>
-            ) : visibleRuns.length === 0 ? (
-              <p className="py-4 text-sm text-[var(--tc-text-muted)]">暂无符合条件的任务</p>
-            ) : (
-              <div className="grid gap-1">
-                {visibleRuns.map(run => (
-                  <button
-                    key={run.run_id}
-                    type="button"
-                    className={cn(
-                      "rounded-[var(--tc-radius-control)] px-3 py-2 text-left",
-                      selectedRunId === run.run_id
-                        ? "bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
-                        : "text-[var(--tc-text-secondary)] hover:bg-[var(--tc-surface-muted)]",
-                    )}
-                    onClick={() => void openRun(run.run_id)}
-                  >
-                    <span className="line-clamp-2 text-sm font-medium">{run.user_goal}</span>
-                    <span className="mt-1 flex items-center justify-between gap-2 text-xs text-[var(--tc-text-muted)]">
-                      <span>{generalRunStatusLabels[run.status]}</span>
-                      <span>
-                        {isGeneralAgentRunActive(run.status)
-                          ? "正在内部处理"
-                          : `${run.completed_node_count}/${run.total_node_count} 节点`}
-                      </span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
+          <div className="mt-4 flex min-h-0 flex-1 flex-col">
+            <div className="flex items-center justify-between px-2 pb-1.5 text-xs text-[var(--tc-text-muted)]">
+              <span>对话</span>
+              <span>{visibleConversations.length} 个</span>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {loading ? (
+                <p className="px-2 py-3 text-xs text-[var(--tc-text-muted)]">正在读取对话</p>
+              ) : visibleConversations.length === 0 ? (
+                <p className="px-2 py-3 text-xs text-[var(--tc-text-muted)]">暂无符合条件的对话</p>
+              ) : (
+                <div className="grid gap-1">
+                  {visibleConversations.map(conversation => {
+                    const selected = selectedConversationId === conversation.conversation_id;
+                    return (
+                      <button
+                        key={conversation.conversation_id}
+                        type="button"
+                        aria-pressed={selected}
+                        className={cn(
+                          "rounded-[var(--tc-radius-control)] px-3 py-2.5 text-left transition-colors duration-150 motion-reduce:transition-none",
+                          selected
+                            ? "bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
+                            : "text-[var(--tc-text-secondary)] hover:bg-[var(--tc-surface-muted)]",
+                        )}
+                        onClick={() => {
+                          setDetailPanel(null);
+                          selectedRunRef.current = "";
+                          void openConversation(conversation.conversation_id);
+                        }}
+                      >
+                        <span className="flex items-center justify-between gap-2">
+                          <span className={cn("truncate text-sm", selected && "font-medium")}>
+                            {conversation.title}
+                          </span>
+                          {selected ? (
+                            <span className="inline-flex shrink-0 items-center gap-1 text-[11px] text-[var(--tc-text-secondary)]">
+                              <Check className="size-3" />
+                              当前
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="mt-1 flex items-center gap-2 text-xs text-[var(--tc-text-muted)]">
+                          <span>{generalRunStatusLabels[conversation.status]}</span>
+                          <span>·</span>
+                          <span>{conversation.request_count} 次</span>
+                          <span>·</span>
+                          <span>{formatTime(conversation.updated_at)}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </aside>
 
@@ -247,9 +326,19 @@ export function GeneralAgentMonitorShell() {
           ) : null}
           {currentRun ? (
             <>
-              <RunHeader run={currentRun} traceTotal={traceTotal} />
-              <section className="grid min-h-0 flex-1 gap-3 overflow-hidden 2xl:grid-cols-[minmax(0,1fr)_370px]">
-                <div className="flex min-h-0 flex-col rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-3">
+              <RoundToolbar
+                run={currentRun}
+                runs={displayedRuns}
+                childRoundByParent={childRoundByParent}
+                nodeDetailDisabled={!selectedNode}
+                onSelectRun={run => {
+                  setDetailPanel(null);
+                  void openRun(run);
+                }}
+                onOpenNodeDetail={() => setDetailPanel("node")}
+                onOpenRunDetail={() => setDetailPanel("run")}
+              />
+              <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[var(--tc-radius-card)] bg-[var(--tc-surface-card)] p-3">
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-wrap gap-1.5">
                       {revisions.length === 0 ? (
@@ -280,22 +369,43 @@ export function GeneralAgentMonitorShell() {
                     nodes={visibleNodes}
                     runStatus={currentRun.status}
                     selectedNodeId={selectedNode?.node_id ?? ""}
-                    onSelectNode={setSelectedNodeId}
+                    onSelectNode={(nodeId, role) => {
+                      if (role === "capability") {
+                        setSelectedNodeId(nodeId);
+                        setDetailPanel("node");
+                        return;
+                      }
+                      setDetailPanel("run");
+                    }}
                   />
-                </div>
-                <div className="min-h-0 overflow-y-auto rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-3">
-                  {selectedNode ? (
-                    <NodeDetail
-                      node={selectedNode}
-                      runStatus={currentRun.status}
-                      traces={nodeTraces}
-                    />
-                  ) : (
-                    <DirectRunDetail run={currentRun} traces={plannerTraces} />
-                  )}
-                </div>
               </section>
-              <LifecycleStrip run={currentRun} plannerTraces={plannerTraces} />
+              <MonitorDetailDialog
+                open={detailPanel === "node" && selectedNode !== null}
+                title={selectedNode ? generalCapabilityLabel(selectedNode.capability_name) : "节点详情"}
+                description="查看所选智能体或工具节点的目标、状态与实际动作。"
+                onOpenChange={open => setDetailPanel(open ? "node" : null)}
+              >
+                {selectedNode ? (
+                  <NodeDetail
+                    node={selectedNode}
+                    runStatus={currentRun.status}
+                    traces={nodeTraces}
+                  />
+                ) : null}
+              </MonitorDetailDialog>
+              <MonitorDetailDialog
+                open={detailPanel === "run"}
+                title="本次请求详情"
+                description="查看本次请求的上下文压缩、生命周期与高层编排调用。"
+                onOpenChange={open => setDetailPanel(open ? "run" : null)}
+              >
+                <RunDetail
+                  run={currentRun}
+                  traceTotal={traceTotal}
+                  plannerTraces={plannerTraces}
+                  recovery={recovery}
+                />
+              </MonitorDetailDialog>
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] text-sm text-[var(--tc-text-muted)]">
@@ -308,25 +418,109 @@ export function GeneralAgentMonitorShell() {
   );
 }
 
-function RunHeader({ run, traceTotal }: { run: GeneralAgentRun; traceTotal: number }) {
+function RoundToolbar({
+  run,
+  runs,
+  childRoundByParent,
+  nodeDetailDisabled,
+  onSelectRun,
+  onOpenNodeDetail,
+  onOpenRunDetail,
+}: {
+  run: GeneralAgentRun;
+  runs: GeneralAgentRun[];
+  childRoundByParent: Map<string, number>;
+  nodeDetailDisabled: boolean;
+  onSelectRun: (run: GeneralAgentRun) => void;
+  onOpenNodeDetail: () => void;
+  onOpenRunDetail: () => void;
+}) {
+  const [roundsOpen, setRoundsOpen] = useState(false);
   return (
-    <section className="shrink-0 rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-4 py-3">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="flex items-center gap-1.5 text-xs text-[var(--tc-text-muted)]">
-            <CircleDot className={cn("size-3", isGeneralAgentRunActive(run.status) && "animate-pulse text-blue-400")} />
-            {generalRunStatusLabels[run.status]}
-          </p>
-          <h2 className="mt-1 line-clamp-2 text-lg font-semibold text-[var(--tc-text-primary)]">
-            {run.user_goal}
-          </h2>
-          <p className="mt-1 text-xs text-[var(--tc-text-muted)]">
-            {generalRunProgressSummary(run)} · {traceTotal} 条脱敏调用记录 · 更新于 {formatTime(run.updated_at)}
-          </p>
-        </div>
+    <section className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-[var(--tc-radius-card)] bg-[var(--tc-surface-card)] px-3 py-2.5">
+      <Popover.Root open={roundsOpen} onOpenChange={setRoundsOpen}>
+        <Popover.Trigger
+          aria-label="选择监控请求"
+          className="flex h-9 min-w-0 max-w-[720px] flex-1 items-center gap-2 rounded-[var(--tc-radius-pill)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-left text-sm text-[var(--tc-text-primary)] outline-none hover:border-[var(--tc-border-strong)] focus-visible:border-[var(--tc-border-strong)]"
+        >
+          <span className="shrink-0 font-medium">第 {run.request_index} 次</span>
+          <span aria-hidden="true" className="text-[var(--tc-text-muted)]">·</span>
+          <span className="truncate text-[var(--tc-text-secondary)]">{run.user_goal}</span>
+          <ChevronsUpDown className="ml-auto size-4 shrink-0 text-[var(--tc-text-muted)]" />
+        </Popover.Trigger>
+        <Popover.Portal>
+          <Popover.Positioner side="bottom" align="start" sideOffset={8} className="z-50">
+            <Popover.Popup className="w-[min(620px,calc(100vw-32px))] overflow-hidden rounded-[var(--tc-radius-card)] border border-[var(--tc-border-strong)] bg-[var(--tc-surface-card)] p-2 text-[var(--tc-text-primary)] outline-none data-[starting-style]:translate-y-1 data-[starting-style]:opacity-0 data-[ending-style]:translate-y-1 data-[ending-style]:opacity-0 motion-safe:transition-[opacity,transform] motion-safe:duration-150 motion-reduce:transition-none">
+              <Popover.Title className="px-2 pt-1 text-sm font-medium">选择请求</Popover.Title>
+              <Popover.Description className="px-2 pb-2 text-xs text-[var(--tc-text-muted)]">
+                当前对话共 {runs.length} 次请求，只展示所选请求的状态图。
+              </Popover.Description>
+              <div className="max-h-[420px] overflow-y-auto">
+                {runs.map(item => {
+                  const selected = item.run_id === run.run_id;
+                  const continuedByRound = childRoundByParent.get(item.run_id);
+                  return (
+                    <button
+                      key={item.run_id}
+                      type="button"
+                      aria-pressed={selected}
+                      className={cn(
+                        "grid w-full grid-cols-[minmax(0,1fr)_auto] gap-x-3 rounded-[var(--tc-radius-control)] px-3 py-2.5 text-left",
+                        selected
+                          ? "bg-[var(--tc-surface-muted)]"
+                          : "hover:bg-[var(--tc-surface-muted)]",
+                      )}
+                      onClick={() => {
+                        setRoundsOpen(false);
+                        onSelectRun(item);
+                      }}
+                    >
+                      <span className="min-w-0">
+                        <span className="flex items-center gap-2 text-xs text-[var(--tc-text-muted)]">
+                          <strong className="font-medium text-[var(--tc-text-primary)]">
+                            第 {item.request_index} 次
+                          </strong>
+                          <span>
+                            {continuedByRound
+                              ? `已由第 ${continuedByRound} 次请求接续`
+                              : generalRunStatusLabels[item.status]}
+                          </span>
+                        </span>
+                        <span className="mt-1 block truncate text-sm text-[var(--tc-text-secondary)]">
+                          {item.user_goal}
+                        </span>
+                        <span className="mt-1 block text-xs text-[var(--tc-text-muted)]">
+                          {generalRunProgressSummary(item)} · {formatTime(item.updated_at)}
+                        </span>
+                      </span>
+                      {selected ? (
+                        <Check className="mt-1 size-4 text-[var(--tc-text-primary)]" />
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </Popover.Popup>
+          </Popover.Positioner>
+        </Popover.Portal>
+      </Popover.Root>
+      <div className="flex shrink-0 flex-wrap justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onOpenRunDetail}>
+          <PanelRightOpen className="size-4" />
+          本次请求详情
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={nodeDetailDisabled}
+          onClick={onOpenNodeDetail}
+        >
+          <ListTree className="size-4" />
+          节点详情
+        </Button>
         <Link
           href="/agent-workbench"
-          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[var(--tc-radius-pill)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm font-medium text-[var(--tc-text-primary)]"
+          className="inline-flex h-8 items-center gap-1.5 rounded-[var(--tc-radius-pill)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm font-medium text-[var(--tc-text-primary)]"
         >
           <Bot className="size-4" />
           返回工作台
@@ -349,13 +543,10 @@ function NodeDetail({
     node.error_message,
     runStatus,
   );
+  const actionTraces = traces.filter(trace => trace.trace_id !== node.trace_id);
   return (
     <div>
-      <p className="text-xs text-[var(--tc-text-muted)]">节点详情</p>
-      <h3 className="mt-1 text-base font-semibold text-[var(--tc-text-primary)]">
-        {generalCapabilityLabel(node.capability_name)}
-      </h3>
-      <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-border-subtle)] text-xs">
+      <div className="grid grid-cols-2 gap-2 text-xs">
         <Metric label="节点类型" value={node.kind === "tool" ? "工具" : "专业智能体"} />
         <Metric
           label="节点状态"
@@ -379,6 +570,21 @@ function NodeDetail({
           <p className="mt-1">{node.authorization_approved ? "作者已授权该节点的确定输入。" : "该节点正在等待作者授权。"}</p>
         </div>
       ) : null}
+      {node.effect_status ? (
+        <div className="mt-3 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] p-3 text-xs text-[var(--tc-text-secondary)]">
+          <p className="flex items-center gap-1.5 font-medium text-[var(--tc-text-primary)]">
+            <ShieldCheck className="size-4" />
+            重复写入保护
+          </p>
+          <p className="mt-1">
+            副作用状态：{effectStatusLabel(node.effect_status)}；
+            {node.duplicate_execution_protected ? "已启用对账保护。" : "未记录对账保护。"}
+          </p>
+          {node.reconciliation_reason ? (
+            <p className="mt-1 text-[var(--tc-text-muted)]">{node.reconciliation_reason}</p>
+          ) : null}
+        </div>
+      ) : null}
       {visibleErrorMessage ? (
         <div className="mt-3 rounded-[var(--tc-radius-control)] border border-red-700/60 bg-red-950/20 p-3 text-xs text-red-100">
           <p className="font-medium">节点异常</p>
@@ -386,34 +592,67 @@ function NodeDetail({
           {node.error_type ? <p className="mt-1 text-red-200/65">技术错误类型：{node.error_type}</p> : null}
         </div>
       ) : null}
-      <div className="mt-4 border-t border-[var(--tc-border-subtle)] pt-3">
-        <h4 className="text-sm font-medium text-[var(--tc-text-primary)]">节点内调用</h4>
+      <div className="mt-5">
+        <h4 className="text-sm font-medium text-[var(--tc-text-primary)]">实际动作</h4>
         <p className="mt-0.5 text-xs text-[var(--tc-text-muted)]">
-          工具和模型调用折叠在所属节点下，只展示脱敏技术记录。
+          展示这个节点继续调用的工具、专业智能体和模型动作。
         </p>
-        <TraceList traces={traces} />
+        <NodeActionList traces={actionTraces} />
       </div>
+      <details className="mt-4 text-xs text-[var(--tc-text-secondary)]">
+        <summary className="cursor-pointer text-[var(--tc-text-muted)] hover:text-[var(--tc-text-primary)]">
+          技术调用记录（{traces.length}）
+        </summary>
+        <TraceList traces={traces} />
+      </details>
     </div>
   );
 }
 
-function DirectRunDetail({
-  run,
-  traces,
-}: {
-  run: GeneralAgentRun;
-  traces: GeneralAgentInvocationTrace[];
-}) {
+function NodeActionList({ traces }: { traces: GeneralAgentInvocationTrace[] }) {
+  if (traces.length === 0) {
+    return (
+      <p className="mt-2 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] px-3 py-2.5 text-xs text-[var(--tc-text-muted)]">
+        该节点没有继续调用其他工具、智能体或模型。
+      </p>
+    );
+  }
   return (
-    <div>
-      <p className="text-xs text-[var(--tc-text-muted)]">直接回答任务</p>
-      <h3 className="mt-1 text-base font-semibold text-[var(--tc-text-primary)]">没有创建能力节点</h3>
-      <DetailBlock title="计划依据" text={run.plan?.rationale || "未记录计划依据"} />
-      <DetailBlock title="最终结果" text={run.final_answer || "结果尚未生成"} />
-      <div className="mt-4 border-t border-[var(--tc-border-subtle)] pt-3">
-        <h4 className="text-sm font-medium text-[var(--tc-text-primary)]">高层编排调用</h4>
-        <TraceList traces={traces} />
-      </div>
+    <div className="mt-2 grid gap-1.5">
+      {traces.map(trace => (
+        <div
+          key={trace.trace_id}
+          className="flex items-center gap-2.5 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] px-3 py-2.5 text-xs"
+        >
+          <span className={cn(
+            "flex size-7 shrink-0 items-center justify-center rounded-full",
+            trace.capability_type === "tool"
+              ? "bg-cyan-400/10 text-cyan-300"
+              : trace.capability_type === "subagent"
+                ? "bg-violet-400/10 text-violet-300"
+                : "bg-amber-400/10 text-amber-300",
+          )}>
+            {trace.capability_type === "tool" ? (
+              <Wrench className="size-3.5" />
+            ) : trace.capability_type === "subagent" ? (
+              <Bot className="size-3.5" />
+            ) : (
+              <Activity className="size-3.5" />
+            )}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[var(--tc-text-primary)]">
+              {invocationTypeLabel(trace.capability_type)} · {generalCapabilityLabel(trace.capability_name)}
+            </span>
+            <span className="mt-0.5 block text-[var(--tc-text-muted)]">
+              {durationLabel(trace.duration_ms)}
+            </span>
+          </span>
+          <span className={trace.status === "completed" ? "text-emerald-300" : "text-red-300"}>
+            {invocationStatusLabel(trace.status)}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -439,7 +678,7 @@ function TraceList({ traces }: { traces: GeneralAgentInvocationTrace[] }) {
               </span>
             </span>
           </summary>
-          <dl className="mt-2 grid gap-1 border-t border-[var(--tc-border-subtle)] pt-2 text-[var(--tc-text-muted)]">
+          <dl className="mt-2 grid gap-1 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-card)] p-2 text-[var(--tc-text-muted)]">
             <div className="flex justify-between gap-2"><dt>耗时</dt><dd>{durationLabel(trace.duration_ms)}</dd></div>
             <div className="flex justify-between gap-2"><dt>输入/输出字符</dt><dd>{trace.input_char_count}/{trace.output_char_count}</dd></div>
             {trace.input_tokens != null || trace.output_tokens != null ? (
@@ -452,40 +691,178 @@ function TraceList({ traces }: { traces: GeneralAgentInvocationTrace[] }) {
           </dl>
         </details>
       ))}
-    </div>
+      </div>
   );
 }
 
-function LifecycleStrip({
+function RunDetail({
   run,
+  traceTotal,
   plannerTraces,
+  recovery,
 }: {
   run: GeneralAgentRun;
+  traceTotal: number;
   plannerTraces: GeneralAgentInvocationTrace[];
+  recovery: GeneralAgentRecoverySnapshot | null;
 }) {
   return (
-    <details className="shrink-0 rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 text-xs">
-      <summary className="cursor-pointer py-2.5 text-[var(--tc-text-muted)] hover:text-[var(--tc-text-primary)]">
-        生命周期与高层编排 · {run.lifecycle_events.length} 次状态变化 · {plannerTraces.length} 次模型调用
-      </summary>
-      <div className="grid max-h-52 gap-3 overflow-y-auto border-t border-[var(--tc-border-subtle)] py-3 lg:grid-cols-2">
+    <div>
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <Metric label="本次状态" value={generalRunStatusLabels[run.status]} />
+        <Metric label="能力进度" value={generalRunProgressSummary(run)} />
+        <Metric label="调用记录" value={`${traceTotal} 条`} />
+        <Metric label="关联记忆" value={`${run.memory_refs.length} 条`} />
+      </div>
+
+      {recovery ? (
+        <div className="mt-4 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] p-3 text-xs text-[var(--tc-text-secondary)]">
+          <p className="flex items-center gap-1.5 font-medium text-[var(--tc-text-primary)]">
+            <ShieldCheck className="size-4" />
+            恢复与重复写入保护
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <Metric
+              label="检查点完整性"
+              value={checkpointIntegrityLabel(recovery.checkpoint.integrity_status)}
+            />
+            <Metric
+              label="可用历史修订"
+              value={`${recovery.checkpoint.available_revisions.length} 个`}
+            />
+          </div>
+          {recovery.checkpoint.recovered_from_revision ? (
+            <p className="mt-2 text-amber-200">
+              已从第 {recovery.checkpoint.recovered_from_revision} 个有效修订恢复。
+            </p>
+          ) : null}
+          {recovery.checkpoint.damage_warnings.map(warning => (
+            <p key={warning} className="mt-1 text-red-200">检查点告警：{warning}</p>
+          ))}
+          {recovery.effects.length ? (
+            <div className="mt-3 grid gap-1.5">
+              {recovery.effects.map(effect => (
+                <div
+                  key={effect.effect_id}
+                  className="flex items-start gap-2 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-card)] px-2.5 py-2"
+                >
+                  <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-cyan-300" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[var(--tc-text-primary)]">
+                      工具 · {generalCapabilityLabel(effect.tool_name)}
+                    </span>
+                    <span className="mt-0.5 block text-[var(--tc-text-muted)]">
+                      {effect.reason || "已记录真实资源对账状态。"}
+                    </span>
+                  </span>
+                  <span className={effect.status === "requires_human" || effect.status === "unknown" ? "text-amber-300" : effect.status === "failed" ? "text-red-300" : "text-emerald-300"}>
+                    {effectStatusLabel(effect.status)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-2 text-[var(--tc-text-muted)]">本次请求没有真实写入副作用。</p>
+          )}
+        </div>
+      ) : null}
+
+      <div className="mt-4 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] p-3 text-xs text-[var(--tc-text-secondary)]">
+        <p className="flex items-center gap-1.5 font-medium text-[var(--tc-text-primary)]">
+          <Database className="size-4" />
+          上下文与记忆
+        </p>
+        <p className="mt-2">
+          上下文{run.compression_stats.compressed ? "已压缩" : "未压缩"}，估算约
+          {" "}{run.compression_stats.estimated_token_count.toLocaleString("zh-CN")} Token。
+        </p>
+        <p className="mt-1 text-[var(--tc-text-muted)]">
+          省略 {run.compression_stats.omitted_message_count} 条消息、
+          {run.compression_stats.omitted_node_count} 个节点输出。
+        </p>
+        {run.context_resume_differences.length ? (
+          <div className="mt-3">
+            <p className="font-medium text-[var(--tc-text-primary)]">恢复时的上下文差异</p>
+            <ul className="mt-1 grid gap-1 text-[var(--tc-text-muted)]">
+              {run.context_resume_differences.map(item => (
+                <li key={item}>· {item}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+
+      <DetailBlock title="计划依据" text={run.plan?.rationale || "未记录计划依据"} />
+      {run.final_answer ? <DetailBlock title="最终结果" text={run.final_answer} /> : null}
+
+      <div className="mt-5">
+        <h4 className="flex items-center gap-1.5 text-sm font-medium text-[var(--tc-text-primary)]">
+          <Activity className="size-4" />
+          生命周期
+        </h4>
         <div className="grid gap-1.5">
           {run.lifecycle_events.map((event, index) => (
-            <div key={`${event.created_at}-${index}`} className="flex gap-2 text-[var(--tc-text-secondary)]">
+            <div key={`${event.created_at}-${index}`} className="mt-2 flex gap-2 text-xs text-[var(--tc-text-secondary)]">
               <Activity className="mt-0.5 size-3 shrink-0 text-[var(--tc-text-muted)]" />
               <span><strong className="font-medium text-[var(--tc-text-primary)]">{generalRunStatusLabels[event.status]}</strong> · {event.reason || "状态已更新"} · {formatTime(event.created_at)}</span>
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="mt-5">
+        <h4 className="text-sm font-medium text-[var(--tc-text-primary)]">高层编排调用</h4>
         <TraceList traces={plannerTraces} />
       </div>
-    </details>
+    </div>
+  );
+}
+
+function MonitorDetailDialog({
+  open,
+  title,
+  description,
+  onOpenChange,
+  children,
+}: {
+  open: boolean;
+  title: string;
+  description: string;
+  onOpenChange: (open: boolean) => void;
+  children: ReactNode;
+}) {
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className="fixed inset-0 z-40 bg-black/45 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0 motion-safe:transition-opacity motion-safe:duration-150 motion-reduce:transition-none" />
+        <Dialog.Viewport className="fixed inset-0 z-50 flex justify-end p-3">
+          <Dialog.Popup className="flex h-full w-full max-w-[560px] flex-col overflow-hidden rounded-[var(--tc-radius-card)] border border-[var(--tc-border-strong)] bg-[var(--tc-surface-card)] text-[var(--tc-text-primary)] outline-none data-[starting-style]:translate-x-3 data-[starting-style]:opacity-0 data-[ending-style]:translate-x-3 data-[ending-style]:opacity-0 motion-safe:transition-[opacity,transform] motion-safe:duration-150 motion-reduce:transition-none">
+            <header className="flex shrink-0 items-start justify-between gap-3 bg-[var(--tc-surface-muted)] px-4 py-3">
+              <div className="min-w-0">
+                <Dialog.Title className="truncate text-base font-semibold">{title}</Dialog.Title>
+                <Dialog.Description className="mt-1 text-xs text-[var(--tc-text-muted)]">
+                  {description}
+                </Dialog.Description>
+              </div>
+              <Dialog.Close
+                type="button"
+                aria-label="关闭详情"
+                className="flex size-7 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] text-[var(--tc-text-muted)] hover:text-[var(--tc-text-primary)]"
+              >
+                <X className="size-4" />
+              </Dialog.Close>
+            </header>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">{children}</div>
+          </Dialog.Popup>
+        </Dialog.Viewport>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-[var(--tc-surface-muted)] px-2.5 py-2">
+    <div className="rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] px-2.5 py-2">
       <p className="text-[var(--tc-text-muted)]">{label}</p>
       <p className="mt-0.5 text-[var(--tc-text-primary)]">{value}</p>
     </div>
@@ -520,6 +897,27 @@ function matchesFilter(status: GeneralAgentRunStatus, filter: StatusFilter): boo
 
 function invocationTypeLabel(type: GeneralAgentInvocationTrace["capability_type"]): string {
   return { tool: "工具", subagent: "专业智能体", llm: "模型" }[type];
+}
+
+function effectStatusLabel(status: GeneralAgentEffectStatus): string {
+  return {
+    prepared: "已准备",
+    started: "写入中",
+    succeeded: "已生效",
+    failed: "未生效",
+    unknown: "结果待核对",
+    reconciled: "对账确认生效",
+    requires_human: "需作者核对",
+  }[status];
+}
+
+function checkpointIntegrityLabel(status: string): string {
+  return {
+    valid: "完整",
+    recovered: "已回退到有效修订",
+    invalid: "损坏，无法自动恢复",
+    missing: "暂无检查点",
+  }[status] ?? "状态未知";
 }
 
 function invocationStatusLabel(status: GeneralAgentInvocationTrace["status"]): string {

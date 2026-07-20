@@ -9,6 +9,7 @@ from taichu.domain.models import (
     EditorBackground,
     EditorFontStyle,
     EditorPreferences,
+    MVPInboxEntryType,
     MVPInboxIdea,
     MVPInboxIssue,
     MVPInboxPendingFact,
@@ -143,6 +144,7 @@ class MVPContractTest(unittest.TestCase):
     def test_inbox_records_use_three_common_statuses(self) -> None:
         idea = MVPInboxIdea(
             id="idea-001",
+            title="山门伏笔",
             content="灵感内容",
             source_chapter_id="chapter-001",
             priority=MVPInboxPriority.NORMAL,
@@ -172,8 +174,21 @@ class MVPContractTest(unittest.TestCase):
         )
 
         self.assertEqual(idea.status, MVPInboxStatus.TODO)
+        self.assertEqual(idea.title, "山门伏笔")
+        self.assertEqual(idea.entry_type, MVPInboxEntryType.IDEA)
+        self.assertEqual(
+            pending_fact.entry_type,
+            MVPInboxEntryType.PENDING_FACT,
+        )
+        self.assertEqual(issue.entry_type, MVPInboxEntryType.ISSUE)
         self.assertEqual(pending_fact.confirmed_knowledge_card_id, "character-qin-yang")
         self.assertEqual(issue.status, MVPInboxStatus.DEPRECATED)
+
+        legacy_idea = MVPInboxIdea.model_validate(
+            idea.model_dump(exclude={"entry_type", "title"})
+        )
+        self.assertEqual(legacy_idea.title, "")
+        self.assertEqual(legacy_idea.entry_type, MVPInboxEntryType.IDEA)
 
     def test_writing_ai_run_saves_prompt_retrieval_and_output(self) -> None:
         run = WritingAIRun(

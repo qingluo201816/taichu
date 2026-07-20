@@ -35,6 +35,7 @@ _DATASET_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{2,63}$")
 _CASE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9_-]{2,63}$")
 _CHAPTER_ID_PATTERN = re.compile(r"^chapter-[a-z0-9][a-z0-9_-]{5,127}$")
 _SHA256_PATTERN = re.compile(r"^[a-f0-9]{64}$")
+_JOINED_NEGATIVE_NAME_PATTERN = re.compile(r"、")
 
 
 class JsonEvaluationDatasetRepository:
@@ -457,6 +458,20 @@ def _validate_case_content(
         )
     for item in negative_cases:
         _require_quote_ids(item.source_quote_ids, known_quotes)
+        normalized_names: set[str] = set()
+        for name in item.accepted_names:
+            normalized = normalize_identity(name)
+            if not normalized or _JOINED_NEGATIVE_NAME_PATTERN.search(name):
+                raise EvaluationDatasetRepositoryError(
+                    "EVALUATION_DATASET_INVALID",
+                    "负样本的每个可接受名称必须单独填写，不能用顿号合写。",
+                )
+            if normalized in normalized_names:
+                raise EvaluationDatasetRepositoryError(
+                    "EVALUATION_DATASET_INVALID",
+                    "同一负样本中存在重复的可接受名称。",
+                )
+            normalized_names.add(normalized)
 
 
 def _require_quote_ids(values: list[str], known_quotes: set[str]) -> None:

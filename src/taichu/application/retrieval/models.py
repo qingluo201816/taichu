@@ -125,6 +125,16 @@ class RetrievalBackendCandidate(RetrievalModel):
     estimated_content_chars: int = Field(default=0, ge=0)
 
 
+class RetrievalBackendMetrics(RetrievalModel):
+    """可选的后端细分耗时与 Embedding 用量，不保存输入或向量。"""
+
+    embedding_call_id: str | None = Field(default=None, max_length=128)
+    embedding_duration_ms: int | None = Field(default=None, ge=0)
+    embedding_input_tokens: int | None = Field(default=None, ge=0)
+    embedding_cost_amount: float = Field(default=0, ge=0)
+    index_search_duration_ms: int | None = Field(default=None, ge=0)
+
+
 class RetrievalBackendResult(RetrievalModel):
     """一个召回后端的候选结果。"""
 
@@ -132,6 +142,7 @@ class RetrievalBackendResult(RetrievalModel):
     candidate_count: int = Field(ge=0)
     candidates: list[RetrievalBackendCandidate] = Field(default_factory=list)
     index_snapshot_id: str | None = Field(default=None, max_length=128)
+    metrics: RetrievalBackendMetrics = Field(default_factory=RetrievalBackendMetrics)
 
 
 class RetrievalItem(RetrievalModel):
@@ -177,6 +188,9 @@ class RetrievalResult(RetrievalModel):
     backend_duration_ms: int = Field(default=0, ge=0)
     post_filter_duration_ms: int = Field(default=0, ge=0)
     index_snapshot_id: str | None = Field(default=None, max_length=128)
+    backend_metrics: RetrievalBackendMetrics = Field(
+        default_factory=RetrievalBackendMetrics
+    )
     strategy_snapshot: dict[str, str | int | bool | None] = Field(
         default_factory=dict
     )
@@ -241,3 +255,6 @@ class RetrievalTraceRecord(RetrievalModel):
     )
     index_snapshot_id: str | None = Field(default=None, max_length=128)
     branches: list[RetrievalTraceBranch] = Field(default_factory=list)
+    backend_metrics: RetrievalBackendMetrics = Field(
+        default_factory=RetrievalBackendMetrics
+    )

@@ -193,5 +193,6 @@ class JudgeCallRecord(EvaluationModel):
     finished_at: str | None = None
     duration_ms: int | None = Field(default=None, ge=0)
     retry_of: str | None = None
+    error_code: str | None = None
     error: str | None = None
     token_usage: dict[str, int] | None = None

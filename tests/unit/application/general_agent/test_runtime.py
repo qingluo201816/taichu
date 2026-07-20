@@ -11,7 +11,10 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
+import pytest
+
 from taichu.application.capabilities import CapabilityContext
+from taichu.application.agent_memory.models import AgentMemoryKind, memory_now_iso
 from taichu.application.contracts.llm import (
     LLMCost,
     LLMModelProfile,
@@ -21,7 +24,9 @@ from taichu.application.contracts.llm import (
     LLMUsage,
 )
 from taichu.application.general_agent.events import GeneralAgentEventCenter
+from taichu.application.general_agent.context import ContextAssembler
 from taichu.application.general_agent.executor import DynamicDagExecutor
+from taichu.application.general_agent.executor import InjectedProcessTermination
 from taichu.application.general_agent.models import (
     GeneralAgentNodeStatus,
     GeneralAgentRunLimits,
@@ -30,6 +35,7 @@ from taichu.application.general_agent.models import (
 from taichu.application.general_agent.orchestrator import OrchestratorAgent
 from taichu.application.general_agent.service import GeneralAgentRuntimeService
 from taichu.application.services.chapter_service import ChapterService
+from taichu.application.services.agent_memory_service import AgentMemoryService
 from taichu.application.services.invocation_policy_service import (
     InvocationPolicyService,
 )
@@ -58,7 +64,15 @@ from taichu.application.tools.contract import ToolPlugin
 from taichu.application.tools.knowledge_retrieval import tool as retrieve_knowledge
 from taichu.application.tools.registry import ToolRegistry
 from taichu.infrastructure.artifacts import JsonIntermediateArtifactRepository
-from taichu.infrastructure.general_agent_runs import JsonGeneralAgentRunRepository
+from taichu.infrastructure.agent_memory import (
+    JsonAgentMemoryLexicalIndex,
+    JsonAgentMemoryRepository,
+)
+from taichu.infrastructure.general_agent_runs import (
+    JsonGeneralAgentEffectRepository,
+    JsonGeneralAgentRunRepository,
+    JsonLangGraphCheckpointSaver,
+)
 from taichu.infrastructure.retrieval import (
     JsonlRetrievalTraceRepository,
     MongoLexicalRetrievalBackend,
@@ -86,6 +100,10 @@ class _TraceRepository:
         self.records.append(record)
 
 
+class _InjectedProcessCrash(InjectedProcessTermination):
+    """模拟验证节点执行期间进程被强制终止。"""
+
+
 class _ScriptedGateway:
     def __init__(
         self,
@@ -100,6 +118,7 @@ class _ScriptedGateway:
         )
         self._subagent_outputs = subagent_outputs or {}
         self.requests: list[LLMRequest] = []
+        self._pending_materialized_plan: dict[str, Any] | None = None
 
     async def complete(self, request: LLMRequest) -> LLMResponse:
         self.requests.append(request)
@@ -107,7 +126,16 @@ class _ScriptedGateway:
             "general_writing_orchestrator.plan",
             "general_writing_orchestrator.replan",
         }:
-            payload = self._plans.pop(0)
+            self._pending_materialized_plan = self._plans.pop(0)
+            payload = _selection_payload(self._pending_materialized_plan)
+        elif request.task_name in {
+            "general_writing_orchestrator.plan.materialize",
+            "general_writing_orchestrator.replan.materialize",
+        }:
+            if self._pending_materialized_plan is None:
+                raise AssertionError("缺少待物化的计划脚本。")
+            payload = self._pending_materialized_plan
+            self._pending_materialized_plan = None
         elif request.task_name == "general_writing_orchestrator.verify":
             payload = self._verifications.pop(0)
         else:
@@ -127,6 +155,35 @@ class _ScriptedGateway:
 
     def list_models(self) -> list[LLMModelProfile]:
         return []
+
+
+class _CrashOnceDuringVerificationGateway(_ScriptedGateway):
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.crash_verification = True
+
+    async def complete(self, request: LLMRequest) -> LLMResponse:
+        if (
+            request.task_name == "general_writing_orchestrator.verify"
+            and self.crash_verification
+        ):
+            self.requests.append(request)
+            self.crash_verification = False
+            raise _InjectedProcessCrash()
+        return await super().complete(request)
+
+
+def _selection_payload(plan: dict[str, Any]) -> dict[str, Any]:
+    payload = dict(plan)
+    payload["nodes"] = [
+        {
+            key: value
+            for key, value in node.items()
+            if key not in {"input_data", "input_bindings"}
+        }
+        for node in plan.get("nodes", [])
+    ]
+    return payload
 
 
 @_async_test
@@ -253,6 +310,149 @@ async def test_runtime_plans_and_executes_real_subagent_with_real_retrieval_tool
         "planning-model",
         "fact-model",
     }
+
+
+@_async_test
+async def test_explicit_chapter_summary_selects_direct_read_before_materialization(
+    tmp_path: Path,
+) -> None:
+    storage = ProjectAssetStorageBackend(tmp_path)
+    chapter_service = ChapterService(storage)
+    outline_service = OutlineService(storage)
+    outline = await outline_service.create_volume("第一卷")
+    chapter_id = ""
+    for order in range(1, 9):
+        outline = await outline_service.create_chapter(
+            outline.volumes[0].volume_id,
+            f"第{order}章测试标题",
+        )
+        chapter_id = outline.current_chapter_id or ""
+        await chapter_service.save_chapter(chapter_id, f"第{order}章正文内容。")
+    assert chapter_id
+
+    missing_direct_read = {
+        "rationale": "先让摘要助手自行搜索第8章。",
+        "nodes": [
+            {
+                "node_id": "summarize_chapter",
+                "kind": "subagent",
+                "capability_name": "narrative_summary",
+                "objective": "概括第8章。",
+                "input_data": {
+                    "summary_goal": "概括第8章。",
+                    "source_request": {"auto_collect": True},
+                },
+            }
+        ],
+    }
+    direct_read_plan = {
+        "rationale": "明确章节顺序应先直接读取正文，再交给摘要助手。",
+        "nodes": [
+            {
+                "node_id": "read_chapter",
+                "kind": "tool",
+                "capability_name": "read_manuscript",
+                "objective": "直接读取第8章正文。",
+                "input_data": {"start_order": 8, "end_order": 8},
+            },
+            {
+                "node_id": "summarize_chapter",
+                "kind": "subagent",
+                "capability_name": "narrative_summary",
+                "objective": "忠实概括第8章。",
+                "dependencies": ["read_chapter"],
+                "input_data": {
+                    "summary_goal": "概括第8章主要内容。",
+                    "source_request": {"auto_collect": False},
+                },
+                "input_bindings": [
+                    {
+                        "source_node_id": "read_chapter",
+                        "source_path": "chunks.0.content",
+                        "target_path": "source_request.direct_context",
+                    }
+                ],
+            },
+        ],
+    }
+    policy = InvocationPolicyService()
+    traces = _TraceRepository()
+    tool_context = CapabilityContext(
+        capabilities={
+            "chapter_service": chapter_service,
+            "outline_service": outline_service,
+            "invocation_policy_service": policy,
+        }
+    )
+    tool_registry = ToolRegistry(tool_context, traces)
+    _register_tools(tool_registry, [read_manuscript])
+    gateway = _ScriptedGateway(
+        plans=[missing_direct_read, direct_read_plan],
+        verification={
+            "outcome": "satisfied",
+            "final_answer": "第8章主要写第8章正文内容。",
+            "issues": [],
+            "should_replan": False,
+        },
+        subagent_outputs={
+            "narrative_summary": {
+                "summary": "第8章正文内容。",
+                "key_events": ["第8章正文内容"],
+                "character_changes": [],
+                "unresolved_items": [],
+                "source_refs": [],
+                "warnings": [],
+            }
+        },
+    )
+    subagent_context = CapabilityContext(
+        capabilities={
+            **tool_context.capabilities,
+            "llm": gateway,
+            "model_role_router": ModelRoleRouter("default-model"),
+            "tool_registry": tool_registry,
+            "artifact_repository": JsonIntermediateArtifactRepository(tmp_path),
+            "invocation_trace_repository": traces,
+        }
+    )
+    subagent_registry = SubagentRegistry(subagent_context, traces)
+    subagent_registry.register(
+        SubagentPlugin(
+            manifest=narrative_summary_agent.manifest.model_copy(
+                update={"allowed_tools": frozenset({"read_manuscript"})}
+            ),
+            run=narrative_summary_agent.run,
+        )
+    )
+    runtime = _runtime(
+        tmp_path,
+        gateway,
+        tool_registry,
+        subagent_registry,
+        policy,
+        traces,
+    )
+
+    run = await runtime.run(user_goal="正文第8章讲的什么")
+
+    assert run.status is GeneralAgentRunStatus.COMPLETED
+    assert run.plan is not None
+    assert [node.capability_name for node in run.plan.nodes] == [
+        "read_manuscript",
+        "narrative_summary",
+    ]
+    assert run.plan.nodes[0].input_data == {"start_order": 8, "end_order": 8}
+    assert [request.task_name for request in gateway.requests].count(
+        "general_writing_orchestrator.plan"
+    ) == 2
+    assert [request.task_name for request in gateway.requests].count(
+        "general_writing_orchestrator.plan.materialize"
+    ) == 1
+    assert any(
+        source_ref.startswith("manuscript:")
+        for node in run.node_runs
+        for source_ref in node.source_refs
+    )
 
 
 @_async_test
@@ -413,10 +613,21 @@ async def test_runtime_recovers_invalid_data_handoff_after_runtime_failure(
             "general_writing_orchestrator.replan",
         }
     ]
+    materialization_requests = [
+        request
+        for request in gateway.requests
+        if request.task_name
+        in {
+            "general_writing_orchestrator.plan.materialize",
+            "general_writing_orchestrator.replan.materialize",
+        }
+    ]
     assert len(planning_requests) == 2
-    assert '"output_schema"' in planning_requests[0].messages[-1].content
+    assert len(materialization_requests) == 2
+    assert '"input_schema"' not in planning_requests[0].messages[-1].content
+    assert '"output_schema"' in materialization_requests[0].messages[-1].content
     assert "result.content" in planning_requests[1].messages[-1].content
-    assert "text" in planning_requests[1].messages[-1].content
+    assert "direct_context" in materialization_requests[1].messages[-1].content
     assert [request.task_name for request in planning_requests] == [
         "general_writing_orchestrator.plan",
         "general_writing_orchestrator.replan",
@@ -491,54 +702,53 @@ async def test_runtime_pauses_for_bound_write_and_resumes_from_checkpoint(
         tool_registry,
         [preview_manuscript_patch, apply_manuscript_patch],
     )
-    gateway = _ScriptedGateway(
-        plans=[
+    write_plan = {
+        "rationale": "先生成确定性差异，再请求作者授权并应用同一补丁。",
+        "nodes": [
             {
-                "rationale": "先生成确定性差异，再请求作者授权并应用同一补丁。",
-                "nodes": [
+                "node_id": "preview_patch",
+                "kind": "tool",
+                "capability_name": "preview_manuscript_patch",
+                "objective": "预览正文修改。",
+                "input_data": {
+                    "chapter_id": chapter_id,
+                    "base_content_sha256": base_hash,
+                    "operations": operations,
+                },
+            },
+            {
+                "node_id": "apply_patch",
+                "kind": "tool",
+                "capability_name": "apply_manuscript_patch",
+                "objective": "作者授权后写入正文。",
+                "dependencies": ["preview_patch"],
+                "input_data": {
+                    "chapter_id": chapter_id,
+                    "base_content_sha256": base_hash,
+                    "operations": operations,
+                },
+                "input_bindings": [
                     {
-                        "node_id": "preview_patch",
-                        "kind": "tool",
-                        "capability_name": "preview_manuscript_patch",
-                        "objective": "预览正文修改。",
-                        "input_data": {
-                            "chapter_id": chapter_id,
-                            "base_content_sha256": base_hash,
-                            "operations": operations,
-                        },
+                        "source_node_id": "preview_patch",
+                        "source_path": "patch_id",
+                        "target_path": "patch_id",
                     },
                     {
-                        "node_id": "apply_patch",
-                        "kind": "tool",
-                        "capability_name": "apply_manuscript_patch",
-                        "objective": "作者授权后写入正文。",
-                        "dependencies": ["preview_patch"],
-                        "input_data": {
-                            "chapter_id": chapter_id,
-                            "base_content_sha256": base_hash,
-                            "operations": operations,
-                        },
-                        "input_bindings": [
-                            {
-                                "source_node_id": "preview_patch",
-                                "source_path": "patch_id",
-                                "target_path": "patch_id",
-                            },
-                            {
-                                "source_node_id": "preview_patch",
-                                "source_path": "expected_content_sha256",
-                                "target_path": "expected_content_sha256",
-                            },
-                            {
-                                "source_node_id": "preview_patch",
-                                "source_path": "normalized_operations",
-                                "target_path": "operations",
-                            },
-                        ],
+                        "source_node_id": "preview_patch",
+                        "source_path": "expected_content_sha256",
+                        "target_path": "expected_content_sha256",
+                    },
+                    {
+                        "source_node_id": "preview_patch",
+                        "source_path": "normalized_operations",
+                        "target_path": "operations",
                     },
                 ],
-            }
+            },
         ],
+    }
+    gateway = _ScriptedGateway(
+        plans=[write_plan, write_plan],
         verification={
             "outcome": "satisfied",
             "final_answer": "正文修改已经按预览结果写入。",
@@ -565,7 +775,10 @@ async def test_runtime_pauses_for_bound_write_and_resumes_from_checkpoint(
         traces,
     )
 
-    waiting = await runtime.run(user_goal="把本章开头的旧内容改成新内容。")
+    waiting = await runtime.run(
+        user_goal="把本章开头的旧内容改成新内容。",
+        author_constraints=["不得修改章节中的秦阳姓名。"],
+    )
 
     assert waiting.status is GeneralAgentRunStatus.WAITING_HUMAN
     assert waiting.pending_human_request is not None
@@ -577,8 +790,26 @@ async def test_runtime_pauses_for_bound_write_and_resumes_from_checkpoint(
     )
     assert preview_node.status is GeneralAgentNodeStatus.SUCCESS
 
+    memory_repository = JsonAgentMemoryRepository(tmp_path)
+    automatic_memories = await memory_repository.query(
+        conversation_id=waiting.conversation_id
+    )
+    author_memory = next(
+        memory
+        for memory in automatic_memories
+        if memory.kind is AgentMemoryKind.USER_INSTRUCTION
+    )
+    await memory_repository.delete(author_memory.memory_id, deleted_at=memory_now_iso())
+
     completed = await runtime.resume(waiting.run_id, approve=True)
 
+    preserved_waiting = await runtime.get(waiting.run_id)
+    assert completed.run_id != waiting.run_id
+    assert completed.parent_run_id == waiting.run_id
+    assert completed.conversation_id == waiting.conversation_id
+    assert completed.request_index == waiting.request_index + 1
+    assert preserved_waiting.status is GeneralAgentRunStatus.WAITING_HUMAN
+    assert preserved_waiting.pending_human_request == waiting.pending_human_request
     assert completed.status is GeneralAgentRunStatus.COMPLETED
     assert (await chapter_service.read_chapter(chapter_id)).markdown.startswith(
         "新内容"
@@ -592,6 +823,27 @@ async def test_runtime_pauses_for_bound_write_and_resumes_from_checkpoint(
     assert apply_node.status is GeneralAgentNodeStatus.SUCCESS
     assert apply_node.authorization_grant_id is not None
     assert apply_node.resolved_input["patch_id"] == preview_node.output["patch_id"]
+    assert author_memory.memory_id not in {
+        reference.memory_id for reference in completed.context_snapshot.memory_refs
+    }
+
+    await chapter_service.save_chapter(chapter_id, original)
+    rejected_waiting = await runtime.run(
+        user_goal="再次预览同一修改，但这次不要写入。",
+    )
+    assert rejected_waiting.status is GeneralAgentRunStatus.WAITING_HUMAN
+
+    rejected = await runtime.resume(rejected_waiting.run_id, approve=False)
+
+    preserved_rejected_waiting = await runtime.get(rejected_waiting.run_id)
+    assert rejected.run_id != rejected_waiting.run_id
+    assert rejected.parent_run_id == rejected_waiting.run_id
+    assert rejected.request_index == rejected_waiting.request_index + 1
+    assert rejected.status is GeneralAgentRunStatus.COMPLETED
+    assert rejected.node_runs == []
+    assert "拒绝写入" in rejected.final_answer
+    assert preserved_rejected_waiting.status is GeneralAgentRunStatus.WAITING_HUMAN
+    assert (await chapter_service.read_chapter(chapter_id)).markdown == original
 
 
 @_async_test
@@ -664,6 +916,13 @@ async def test_runtime_clarifies_and_performs_one_bounded_replan(
 
     completed = await runtime.resume(waiting.run_id, answer="第三人称限知。")
 
+    preserved_waiting = await runtime.get(waiting.run_id)
+    assert completed.run_id != waiting.run_id
+    assert completed.parent_run_id == waiting.run_id
+    assert completed.conversation_id == waiting.conversation_id
+    assert completed.request_index == waiting.request_index + 1
+    assert preserved_waiting.status is GeneralAgentRunStatus.WAITING_HUMAN
+    assert preserved_waiting.pending_human_request == waiting.pending_human_request
     assert completed.status is GeneralAgentRunStatus.COMPLETED
     assert completed.replan_count == 1
     assert completed.plan_revision == 2
@@ -672,6 +931,104 @@ async def test_runtime_clarifies_and_performs_one_bounded_replan(
     assert [request.task_name for request in gateway.requests].count(
         "general_writing_orchestrator.verify"
     ) == 2
+
+
+@_async_test
+async def test_runtime_startup_resumes_same_langgraph_run_after_process_crash(
+    tmp_path: Path,
+) -> None:
+    policy = InvocationPolicyService()
+    traces = _TraceRepository()
+    tool_registry = ToolRegistry(
+        CapabilityContext(capabilities={"invocation_policy_service": policy}),
+        traces,
+    )
+    gateway = _CrashOnceDuringVerificationGateway(
+        plans=[
+            {
+                "rationale": "无需调用额外能力，可以直接回答。",
+                "direct_response": "先给出一条可执行建议。",
+                "nodes": [],
+            }
+        ],
+        verification={
+            "outcome": "satisfied",
+            "final_answer": "已从原 LangGraph 检查点恢复并完成。",
+            "issues": [],
+            "should_replan": False,
+        },
+    )
+    subagent_registry = SubagentRegistry(
+        CapabilityContext(
+            capabilities={
+                "llm": gateway,
+                "model_role_router": ModelRoleRouter("default-model"),
+                "tool_registry": tool_registry,
+                "artifact_repository": JsonIntermediateArtifactRepository(tmp_path),
+            }
+        ),
+        traces,
+    )
+    first_runtime = _runtime(
+        tmp_path,
+        gateway,
+        tool_registry,
+        subagent_registry,
+        policy,
+        traces,
+    )
+
+    with pytest.raises(_InjectedProcessCrash):
+        await first_runtime.run(user_goal="给我一条章节收尾建议。")
+
+    runs, _ = await JsonGeneralAgentRunRepository(tmp_path).list_runs(
+        page=1,
+        page_size=10,
+        status="all",
+    )
+    interrupted = runs[0]
+    assert interrupted.status is GeneralAgentRunStatus.VERIFYING
+
+    restarted_policy = InvocationPolicyService()
+    restarted_tools = ToolRegistry(
+        CapabilityContext(capabilities={"invocation_policy_service": restarted_policy}),
+        traces,
+    )
+    restarted_subagents = SubagentRegistry(
+        CapabilityContext(
+            capabilities={
+                "llm": gateway,
+                "model_role_router": ModelRoleRouter("default-model"),
+                "tool_registry": restarted_tools,
+                "artifact_repository": JsonIntermediateArtifactRepository(tmp_path),
+            }
+        ),
+        traces,
+    )
+    restarted_runtime = _runtime(
+        tmp_path,
+        gateway,
+        restarted_tools,
+        restarted_subagents,
+        restarted_policy,
+        traces,
+    )
+
+    assert await restarted_runtime.recover_interrupted() == 1
+    completed = interrupted
+    for _ in range(100):
+        await asyncio.sleep(0.01)
+        completed = await restarted_runtime.get(interrupted.run_id)
+        if completed.status is GeneralAgentRunStatus.COMPLETED:
+            break
+
+    assert completed.run_id == interrupted.run_id
+    assert completed.status is GeneralAgentRunStatus.COMPLETED
+    assert completed.final_answer == "已从原 LangGraph 检查点恢复并完成。"
+    assert [request.task_name for request in gateway.requests].count(
+        "general_writing_orchestrator.plan"
+    ) == 1
+    await restarted_runtime.shutdown()
 
 
 def _runtime(
@@ -686,6 +1043,12 @@ def _runtime(
         "default-model",
         {"orchestrator": "planning-model", "canon_evidence": "fact-model"},
     )
+    memory_service = AgentMemoryService(
+        repository=JsonAgentMemoryRepository(root),
+        lexical_index=JsonAgentMemoryLexicalIndex(root),
+    )
+    graph_checkpointer = JsonLangGraphCheckpointSaver(root)
+    effect_repository = JsonGeneralAgentEffectRepository(root)
     return GeneralAgentRuntimeService(
         repository=JsonGeneralAgentRunRepository(root),
         event_center=GeneralAgentEventCenter(),
@@ -700,14 +1063,26 @@ def _runtime(
             tool_registry=tool_registry,
             subagent_registry=subagent_registry,
             policy_service=policy,
+            graph_checkpointer=graph_checkpointer,
+            effect_repository=effect_repository,
         ),
         policy_service=policy,
+        memory_service=memory_service,
+        context_assembler=ContextAssembler(memory_service=memory_service),
+        graph_checkpointer=graph_checkpointer,
+        effect_repository=effect_repository,
     )
 
 
 def _register_tools(registry: ToolRegistry, modules: list[ModuleType]) -> None:
     for module in modules:
-        registry.register(ToolPlugin(manifest=module.manifest, run=module.run))
+        registry.register(
+            ToolPlugin(
+                manifest=module.manifest,
+                run=module.run,
+                reconcile=getattr(module, "reconcile", None),
+            )
+        )
 
 
 def _read_tool_modules() -> list[ModuleType]:

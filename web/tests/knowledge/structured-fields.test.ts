@@ -13,6 +13,10 @@ import {
   validateKnowledgeForm,
   type KnowledgeReferenceOptions,
 } from "../../src/lib/knowledge/structured-fields";
+import {
+  buildCandidateReviewPreview,
+  changedKnowledgeFieldKeys,
+} from "../../src/lib/knowledge/candidate-review-preview";
 import type {
   KnowledgeFieldSchema,
   KnowledgeTypeSchema,
@@ -103,6 +107,62 @@ const draftErrors = validateKnowledgeForm(
 assert.equal(draftErrors.name, undefined);
 assert.equal(draftErrors.source_note, undefined);
 
+const currentCard = {
+  aliases: ["旧别名"],
+  summary: "旧摘要。",
+  source_note: "旧来源。",
+  appearance_chapter_count: 3,
+  level_order: 1,
+  first_seen_chapter_id: "chapter-1",
+};
+const candidateCard = {
+  aliases: ["新别名"],
+  summary: "新摘要。",
+  source_note: "旧来源。\n\n新来源。",
+  appearance_chapter_count: 2,
+  level_order: 2,
+  first_seen_chapter_id: "chapter-2",
+};
+const mergePreview = buildCandidateReviewPreview(
+  currentCard,
+  candidateCard,
+  schema,
+  "merge",
+);
+assert.deepEqual(mergePreview.aliases, ["旧别名", "新别名"]);
+assert.equal(mergePreview.summary, "新摘要。");
+assert.equal(mergePreview.source_note, "旧来源。\n\n新来源。");
+assert.equal(mergePreview.appearance_chapter_count, 5);
+assert.equal(mergePreview.level_order, 1);
+assert.equal(mergePreview.first_seen_chapter_id, "chapter-1");
+
+const overwritePreview = buildCandidateReviewPreview(
+  currentCard,
+  candidateCard,
+  schema,
+  "overwrite",
+);
+assert.deepEqual(overwritePreview.aliases, ["新别名"]);
+assert.equal(overwritePreview.summary, "新摘要。");
+assert.equal(overwritePreview.source_note, "旧来源。\n\n新来源。");
+assert.equal(overwritePreview.appearance_chapter_count, 5);
+assert.equal(overwritePreview.level_order, 2);
+assert.equal(overwritePreview.first_seen_chapter_id, "chapter-2");
+
+const changedFields = changedKnowledgeFieldKeys(
+  schema,
+  currentCard,
+  mergePreview,
+);
+assert.deepEqual(
+  [...changedFields].sort(),
+  ["aliases", "appearance_chapter_count", "source_note", "summary"].sort(),
+);
+assert.deepEqual(
+  buildCandidateReviewPreview(null, candidateCard, schema, "merge"),
+  candidateCard,
+);
+
 assert.equal(
   humanReadableListItem({ title: "血脉觉醒", body: "力量增强" }),
   "血脉觉醒；力量增强",
@@ -133,5 +193,17 @@ function field(
     display_group: "基础信息",
     list_display: true,
     ai_usage: "",
+    merge_strategy:
+      fieldKey === "summary"
+        ? "replace"
+        : fieldKey === "source_note"
+          ? "append_unique"
+          : fieldKey === "aliases"
+            ? "union"
+            : fieldKey === "appearance_chapter_count"
+              ? "sum"
+              : fieldKey === "last_seen_chapter_id"
+                ? "latest"
+                : "preserve_existing",
   };
 }

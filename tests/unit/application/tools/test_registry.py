@@ -20,6 +20,8 @@ from taichu.application.tools.contract import (
     ToolIdempotencyPolicy,
     ToolManifest,
     ToolPlugin,
+    ToolReconciliationResult,
+    ToolReconciliationStatus,
     ToolSideEffect,
 )
 from taichu.application.tools.registry import (
@@ -72,6 +74,13 @@ async def test_registry_enforces_caller_and_external_grant() -> None:
         del invocation, capabilities
         return _Output(value=input_data.value)
 
+    async def reconcile(input_data, invocation, capabilities):
+        del invocation, capabilities
+        return ToolReconciliationResult(
+            status=ToolReconciliationStatus.SUCCEEDED,
+            output={"value": input_data.value},
+        )
+
     registry.register(
         ToolPlugin(
             manifest=ToolManifest(
@@ -83,6 +92,7 @@ async def test_registry_enforces_caller_and_external_grant() -> None:
                 requires_external_access=True,
             ),
             run=run,
+            reconcile=reconcile,
         )
     )
     invocation = _invocation(caller_name="external_research")
@@ -123,6 +133,13 @@ async def test_registry_binds_write_grant_and_idempotency_to_input() -> None:
         calls += 1
         return _Output(value=input_data.value)
 
+    async def reconcile(input_data, invocation, capabilities):
+        del invocation, capabilities
+        return ToolReconciliationResult(
+            status=ToolReconciliationStatus.SUCCEEDED,
+            output={"value": input_data.value},
+        )
+
     registry.register(
         ToolPlugin(
             manifest=ToolManifest(
@@ -136,6 +153,7 @@ async def test_registry_binds_write_grant_and_idempotency_to_input() -> None:
                 idempotency_policy=ToolIdempotencyPolicy.REQUIRED,
             ),
             run=run,
+            reconcile=reconcile,
         )
     )
     invocation = _invocation(caller_name="orchestrator", caller_type="orchestrator")

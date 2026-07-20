@@ -9,8 +9,8 @@ import {
   ChevronRight,
   CirclePause,
   Clipboard,
+  Database,
   Globe,
-  ListTree,
   LoaderCircle,
   Plus,
   RefreshCw,
@@ -31,10 +31,12 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   cancelGeneralAgentRun,
+  deleteGeneralAgentMemory,
   deleteGeneralAgentConversation,
   getGeneralAgentConversation,
   getGeneralAgentRun,
   listGeneralAgentConversations,
+  listGeneralAgentMemories,
   resumeGeneralAgentRun,
   startGeneralAgentRun,
 } from "@/lib/api/general-agent";
@@ -51,6 +53,7 @@ import {
 import { shouldSubmitGeneralAgentComposer } from "@/lib/general-agent-composer";
 import type { ChapterInfo } from "@/lib/types/chapters";
 import type {
+  AgentMemoryEntry,
   GeneralAgentConversationSummary,
   GeneralAgentNodeRun,
   GeneralAgentRun,
@@ -85,6 +88,7 @@ export function GeneralAgentWorkbench({
   const [scopeType, setScopeType] = useState<GeneralAgentScopeType>("none");
   const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([]);
   const [selectionText, setSelectionText] = useState("");
+  const [authorConstraintsText, setAuthorConstraintsText] = useState("");
   const [externalAccessAllowed, setExternalAccessAllowed] = useState(false);
   const [clarificationAnswer, setClarificationAnswer] = useState("");
   const [secondConfirmation, setSecondConfirmation] = useState(false);
@@ -93,8 +97,20 @@ export function GeneralAgentWorkbench({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copiedRunId, setCopiedRunId] = useState("");
+  const [memories, setMemories] = useState<AgentMemoryEntry[]>([]);
+  const [memoryPanelOpen, setMemoryPanelOpen] = useState(false);
+  const [memoryBusyId, setMemoryBusyId] = useState("");
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const goalInputRef = useRef<HTMLTextAreaElement>(null);
+
+  const reloadMemories = useCallback(async (conversationId: string) => {
+    if (!conversationId) {
+      setMemories([]);
+      return;
+    }
+    const response = await listGeneralAgentMemories(conversationId);
+    setMemories(response.memories);
+  }, []);
 
   const reloadConversations = useCallback(async (preferredConversationId = "") => {
     const [listResponse, detailResponse] = await Promise.all([
@@ -104,12 +120,22 @@ export function GeneralAgentWorkbench({
         : Promise.resolve(null),
     ]);
     setConversations(listResponse.conversations);
-    if (!detailResponse) {
+    if (detailResponse) {
+      setSelectedConversationId(detailResponse.conversation_id);
+      setConversationRuns(detailResponse.runs);
+      await reloadMemories(detailResponse.conversation_id);
       return;
     }
-    setSelectedConversationId(detailResponse.conversation_id);
-    setConversationRuns(detailResponse.runs);
-  }, []);
+    const latest = listResponse.conversations[0];
+    if (latest) {
+      const latestDetail = await getGeneralAgentConversation(latest.conversation_id);
+      setSelectedConversationId(latestDetail.conversation_id);
+      setConversationRuns(latestDetail.runs);
+      await reloadMemories(latestDetail.conversation_id);
+      return;
+    }
+    setMemories([]);
+  }, [reloadMemories]);
 
   useEffect(() => {
     let cancelled = false;
@@ -160,13 +186,22 @@ export function GeneralAgentWorkbench({
             ),
           );
           if (!isGeneralAgentRunActive(response.run.status)) {
-            void reloadConversations(response.run.task_id);
+            void reloadConversations(response.run.conversation_id);
+            if (memoryPanelOpen) {
+              void reloadMemories(response.run.conversation_id);
+            }
           }
         })
         .catch(pollError => setError(errorMessage(pollError)));
     }, 900);
     return () => window.clearInterval(timer);
-  }, [activeRunId, activeRunStatus, reloadConversations]);
+  }, [
+    activeRunId,
+    activeRunStatus,
+    memoryPanelOpen,
+    reloadConversations,
+    reloadMemories,
+  ]);
   const scopeSummary = (() => {
     const label =
       scopeOptions.find(option => option.value === scopeType)?.label ??
@@ -241,6 +276,7 @@ export function GeneralAgentWorkbench({
       const response = await startGeneralAgentRun({
         user_goal: trimmedGoal,
         conversation_id: selectedConversationId || undefined,
+        start_new_conversation: !selectedConversationId,
         scope: {
           scope_type: scopeType,
           current_chapter_id: selectedChapterIds[0] ?? null,
@@ -251,12 +287,15 @@ export function GeneralAgentWorkbench({
           selection_text: scopeType === "selection" ? selectionText.trim() : "",
           direct_context: "",
         },
-        author_constraints: [],
+        author_constraints: authorConstraintsText
+          .split("\n")
+          .map(item => item.trim())
+          .filter(Boolean),
         external_access_allowed: externalAccessAllowed,
       });
-      setSelectedConversationId(response.run.task_id);
+      setSelectedConversationId(response.run.conversation_id);
       setConversationRuns(current =>
-        selectedConversationId === response.run.task_id
+        selectedConversationId === response.run.conversation_id
           ? [
               ...current.filter(run => run.run_id !== response.run.run_id),
               response.run,
@@ -264,9 +303,13 @@ export function GeneralAgentWorkbench({
           : [response.run],
       );
       setGoal("");
+      setAuthorConstraintsText("");
       setClarificationAnswer("");
       setSecondConfirmation(false);
-      await reloadConversations(response.run.task_id);
+      await reloadConversations(response.run.conversation_id);
+      if (memoryPanelOpen) {
+        await reloadMemories(response.run.conversation_id);
+      }
     } catch (startError) {
       setError(errorMessage(startError));
     } finally {
@@ -280,6 +323,9 @@ export function GeneralAgentWorkbench({
     try {
       const response = await getGeneralAgentConversation(conversationId);
       setConversationRuns(response.runs);
+      if (memoryPanelOpen) {
+        await reloadMemories(conversationId);
+      }
     } catch (openError) {
       setError(errorMessage(openError));
     }
@@ -292,11 +338,14 @@ export function GeneralAgentWorkbench({
     setScopeType("none");
     setSelectedChapterIds([]);
     setSelectionText("");
+    setAuthorConstraintsText("");
     setExternalAccessAllowed(false);
     setClarificationAnswer("");
     setSecondConfirmation(false);
     setSettingsOpen(false);
     setCopiedRunId("");
+    setMemories([]);
+    setMemoryPanelOpen(false);
     setError("");
   }
 
@@ -337,14 +386,20 @@ export function GeneralAgentWorkbench({
     setError("");
     try {
       const response = await resumeGeneralAgentRun(currentRun.run_id, request);
-      setConversationRuns(current =>
-        current.map(run =>
-          run.run_id === response.run.run_id ? response.run : run,
-        ),
-      );
+      setConversationRuns(current => {
+        const existing = current.some(run => run.run_id === response.run.run_id);
+        return existing
+          ? current.map(run =>
+              run.run_id === response.run.run_id ? response.run : run,
+            )
+          : [...current, response.run];
+      });
       setClarificationAnswer("");
       setSecondConfirmation(false);
-      await reloadConversations(response.run.task_id);
+      await reloadConversations(response.run.conversation_id);
+      if (memoryPanelOpen) {
+        await reloadMemories(response.run.conversation_id);
+      }
     } catch (resumeError) {
       setError(errorMessage(resumeError));
     } finally {
@@ -365,7 +420,10 @@ export function GeneralAgentWorkbench({
           run.run_id === response.run.run_id ? response.run : run,
         ),
       );
-      await reloadConversations(response.run.task_id);
+      await reloadConversations(response.run.conversation_id);
+      if (memoryPanelOpen) {
+        await reloadMemories(response.run.conversation_id);
+      }
     } catch (cancelError) {
       setError(errorMessage(cancelError));
     } finally {
@@ -386,6 +444,36 @@ export function GeneralAgentWorkbench({
       );
     } catch {
       setError("复制失败，请手动选择结果文本。");
+    }
+  }
+
+  async function handleToggleMemories() {
+    const nextOpen = !memoryPanelOpen;
+    setMemoryPanelOpen(nextOpen);
+    if (!nextOpen || !selectedConversationId) {
+      return;
+    }
+    setError("");
+    try {
+      await reloadMemories(selectedConversationId);
+    } catch (memoryError) {
+      setError(errorMessage(memoryError));
+    }
+  }
+
+  async function handleDeleteMemory(memory: AgentMemoryEntry) {
+    if (!window.confirm("确认删除这条运行记忆吗？删除后后续任务不会再使用它。")) {
+      return;
+    }
+    setMemoryBusyId(memory.memory_id);
+    setError("");
+    try {
+      await deleteGeneralAgentMemory(memory.memory_id);
+      await reloadMemories(memory.conversation_id);
+    } catch (memoryError) {
+      setError(errorMessage(memoryError));
+    } finally {
+      setMemoryBusyId("");
     }
   }
 
@@ -415,10 +503,10 @@ export function GeneralAgentWorkbench({
                   variant="ghost"
                   size="xs"
                   onClick={handleNewConversation}
-                  title="开启新对话"
+                  title="新对话"
                 >
                   <Plus className="size-3.5" />
-                  开启新对话
+                  新对话
                 </Button>
                 <Button
                   type="button"
@@ -450,15 +538,46 @@ export function GeneralAgentWorkbench({
           </div>
         </aside>
 
-        <section className="flex min-h-0 min-w-0 flex-col">
+        <section className="flex min-h-0 min-w-0 flex-col bg-[var(--tc-surface-muted)]">
           <header className="shrink-0 px-8 pb-2 pt-5">
             <div className="mx-auto w-full max-w-[900px]">
-              <h2 className="text-sm font-semibold text-[var(--tc-text-primary)]">
-                通用写作助手
-              </h2>
-              <p className="mt-0.5 text-xs text-[var(--tc-text-muted)]">
-                问答、规划、续写与检查
-              </p>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-sm font-semibold text-[var(--tc-text-primary)]">
+                    通用写作助手
+                  </h2>
+                  <p className="mt-0.5 text-xs text-[var(--tc-text-muted)]">
+                    问答、规划、续写与检查
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={!selectedConversationId}
+                    aria-expanded={memoryPanelOpen}
+                    onClick={() => void handleToggleMemories()}
+                    className="rounded-full bg-[var(--tc-surface-card)] text-[var(--tc-text-secondary)]"
+                  >
+                    <Database className="size-3.5" />
+                    运行记忆 {memories.length || currentRun?.memory_refs.length || 0}
+                    <ChevronDown
+                      className={cn(
+                        "size-3.5 transition-transform duration-150 motion-reduce:transition-none",
+                        memoryPanelOpen && "rotate-180",
+                      )}
+                    />
+                  </Button>
+                </div>
+              </div>
+              {memoryPanelOpen && selectedConversationId ? (
+                <GeneralMemoryPanel
+                  memories={memories}
+                  busyMemoryId={memoryBusyId}
+                  onDelete={memory => void handleDeleteMemory(memory)}
+                />
+              ) : null}
             </div>
           </header>
 
@@ -470,6 +589,10 @@ export function GeneralAgentWorkbench({
                     key={run.run_id}
                     run={run}
                     nodes={currentGeneralAgentNodes(run)}
+                    continuedByRequestIndex={
+                      conversationRuns.find(item => item.parent_run_id === run.run_id)
+                        ?.request_index
+                    }
                     busy={busy}
                     clarificationAnswer={clarificationAnswer}
                     secondConfirmation={secondConfirmation}
@@ -496,7 +619,7 @@ export function GeneralAgentWorkbench({
             </div>
           </div>
 
-          <div className="shrink-0 bg-[var(--tc-surface-page)] px-8 pb-5 pt-2">
+          <div className="shrink-0 bg-[var(--tc-surface-muted)] px-8 pb-5 pt-2">
             <div className="mx-auto w-full max-w-[900px]">
               {error ? (
                 <div
@@ -508,7 +631,7 @@ export function GeneralAgentWorkbench({
                 </div>
               ) : null}
 
-              <section className="rounded-[20px] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] p-2 shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-colors duration-150 focus-within:border-[var(--tc-border-strong)]">
+              <section className="rounded-[20px] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-page)] p-2 shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-colors duration-150 focus-within:border-[var(--tc-border-strong)]">
                 <label htmlFor="general-agent-goal" className="sr-only">
                   任务内容
                 </label>
@@ -637,6 +760,20 @@ export function GeneralAgentWorkbench({
                       </div>
                     ) : null}
 
+                    <label className="grid gap-1 text-xs text-[var(--tc-text-muted)]">
+                      作者硬约束（每行一条）
+                      <textarea
+                        value={authorConstraintsText}
+                        onChange={event => setAuthorConstraintsText(event.target.value)}
+                        rows={3}
+                        placeholder="例如：不得改变主角姓名"
+                        className="w-full resize-y rounded-xl border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-page)] px-3 py-2 text-sm leading-6 text-[var(--tc-text-primary)] outline-none placeholder:text-[var(--tc-text-muted)] focus:border-[var(--tc-border-strong)]"
+                      />
+                      <span className="leading-5">
+                        这些约束会由运行时自动加入当前对话的工作记忆，但不会写入小说知识库。
+                      </span>
+                    </label>
+
                   </div>
                 ) : null}
 
@@ -727,6 +864,97 @@ export function GeneralAgentWorkbench({
   );
 }
 
+function GeneralMemoryPanel({
+  memories,
+  busyMemoryId,
+  onDelete,
+}: {
+  memories: AgentMemoryEntry[];
+  busyMemoryId: string;
+  onDelete: (memory: AgentMemoryEntry) => void;
+}) {
+  return (
+    <section className="mt-3 rounded-2xl bg-[var(--tc-surface-card)] p-3">
+      <div className="flex items-start gap-2 rounded-xl bg-[var(--tc-surface-muted)] px-3 py-2">
+        <Database className="mt-0.5 size-4 shrink-0 text-[var(--tc-text-secondary)]" />
+        <div>
+          <p className="text-xs font-medium text-[var(--tc-text-primary)]">
+            当前对话运行记忆
+          </p>
+          <p className="mt-0.5 text-xs leading-5 text-[var(--tc-text-muted)]">
+            运行记忆只用于延续任务上下文，不是小说知识库事实；涉及人物、设定和情节事实时仍会重新取证。
+          </p>
+        </div>
+      </div>
+      <div className="tc-editor-scrollbar mt-2 grid max-h-72 gap-2 overflow-y-auto pr-1">
+        {memories.length ? (
+          memories.map(memory => {
+            const itemBusy = busyMemoryId === memory.memory_id;
+            return (
+              <article
+                key={memory.memory_id}
+                className="rounded-xl bg-[var(--tc-surface-muted)] p-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="font-medium text-[var(--tc-text-secondary)]">
+                        {memoryKindLabels[memory.kind]}
+                      </span>
+                      <span className="rounded-full bg-[var(--tc-surface-page)] px-2 py-0.5 text-[var(--tc-text-muted)]">
+                        第 {memory.created_request_index} 次请求自动记录
+                      </span>
+                      {memory.expires_after_request_index ? (
+                        <span className="text-[var(--tc-text-muted)]">
+                          第 {memory.expires_after_request_index} 次请求后自动退出上下文
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--tc-text-primary)]">
+                      {memory.content}
+                    </p>
+                    {memory.source_refs.length || memory.artifact_refs.length ? (
+                      <details className="group mt-2">
+                        <summary className="cursor-pointer list-none text-xs text-[var(--tc-text-muted)] [&::-webkit-details-marker]:hidden">
+                          查看来源引用
+                        </summary>
+                        <p className="mt-1 break-all text-xs leading-5 text-[var(--tc-text-muted)]">
+                          {[...memory.source_refs, ...memory.artifact_refs].join("、")}
+                        </p>
+                      </details>
+                    ) : null}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      disabled={itemBusy}
+                      aria-label="删除运行记忆"
+                      title="删除运行记忆"
+                      onClick={() => onDelete(memory)}
+                    >
+                      {itemBusy ? (
+                        <LoaderCircle className="size-3.5 animate-spin motion-reduce:animate-none" />
+                      ) : (
+                        <Trash2 className="size-3.5" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </article>
+            );
+          })
+        ) : (
+          <p className="rounded-xl bg-[var(--tc-surface-muted)] px-3 py-4 text-center text-xs text-[var(--tc-text-muted)]">
+            当前对话还没有运行记忆。
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function GeneralConversationList({
   conversations,
   selectedConversationId,
@@ -765,7 +993,7 @@ function GeneralConversationList({
             </span>
             <span className="mt-0.5 flex items-center gap-2 text-xs text-[var(--tc-text-muted)]">
               <span>{generalRunStatusLabels[conversation.status]}</span>
-              <span>{conversation.turn_count} 轮</span>
+              <span>{conversation.request_count} 次</span>
               <span>{formatTime(conversation.updated_at)}</span>
             </span>
           </button>
@@ -787,9 +1015,19 @@ function GeneralConversationList({
   );
 }
 
+const memoryKindLabels: Record<AgentMemoryEntry["kind"], string> = {
+  user_instruction: "用户指令",
+  task_summary: "任务摘要",
+  resource_summary: "资源摘要",
+  work_note: "过程笔记",
+  unresolved_issue: "未解决问题",
+  fact_reference: "事实来源引用",
+};
+
 function GeneralRunPanel({
   run,
   nodes,
+  continuedByRequestIndex,
   busy,
   clarificationAnswer,
   secondConfirmation,
@@ -801,6 +1039,7 @@ function GeneralRunPanel({
 }: {
   run: GeneralAgentRun;
   nodes: GeneralAgentNodeRun[];
+  continuedByRequestIndex?: number;
   busy: boolean;
   clarificationAnswer: string;
   secondConfirmation: boolean;
@@ -815,18 +1054,19 @@ function GeneralRunPanel({
   onCopy: () => void;
 }) {
   const [planOpen, setPlanOpen] = useState(false);
-  const request = run.pending_human_request;
+  const request = continuedByRequestIndex ? null : run.pending_human_request;
   const hasLongGoal = run.user_goal.length > 180;
   const progressSummary = generalRunProgressSummary(run);
+  const durationSummary = generalRunDurationLabel(run);
   return (
     <section className="w-full pb-5">
       <div className="flex justify-end">
         <div className="max-w-[72%]">
-          <div className="rounded-2xl bg-[var(--tc-surface-muted)] px-4 py-3">
+          <div className="rounded-2xl bg-[var(--tc-surface-page)] px-4 py-3">
             {hasLongGoal ? (
               <details className="group">
                 <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-                  <span className="line-clamp-4 whitespace-pre-wrap text-[15px] leading-7 text-[var(--tc-text-primary)] group-open:line-clamp-none">
+                  <span className="line-clamp-4 cursor-text select-text whitespace-pre-wrap text-[15px] leading-7 text-[var(--tc-text-primary)] selection:bg-[var(--tc-text-primary)] selection:text-[var(--tc-surface-page)] group-open:line-clamp-none">
                     {run.user_goal}
                   </span>
                   <span className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--tc-text-muted)]">
@@ -837,7 +1077,7 @@ function GeneralRunPanel({
                 </summary>
               </details>
             ) : (
-              <p className="whitespace-pre-wrap text-[15px] leading-7 text-[var(--tc-text-primary)]">
+              <p className="cursor-text select-text whitespace-pre-wrap text-[15px] leading-7 text-[var(--tc-text-primary)] selection:bg-[var(--tc-text-primary)] selection:text-[var(--tc-surface-page)]">
                 {run.user_goal}
               </p>
             )}
@@ -849,15 +1089,23 @@ function GeneralRunPanel({
       </div>
 
       <div className="mt-5 flex justify-center">
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full bg-[var(--tc-surface-muted)] px-4 py-2 text-xs text-[var(--tc-text-muted)]">
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full bg-[var(--tc-surface-page)] px-4 py-2 text-xs text-[var(--tc-text-muted)]">
           <span className="flex items-center gap-1.5 text-[var(--tc-text-secondary)]">
             <RunStatusIcon status={run.status} />
-            {generalRunStatusLabels[run.status]}
+            {continuedByRequestIndex
+              ? `已由第 ${continuedByRequestIndex} 次请求接续`
+              : generalRunStatusLabels[run.status]}
           </span>
           <span aria-hidden="true">·</span>
           <span>{progressSummary}</span>
         </div>
       </div>
+
+      {continuedByRequestIndex ? (
+        <p className="mt-3 text-center text-xs text-[var(--tc-text-muted)]">
+          本次请求停在待确认状态，后续输入已作为第 {continuedByRequestIndex} 次请求独立执行。
+        </p>
+      ) : null}
 
       {request?.kind === "clarification" ? (
         <div className="mt-6 mr-auto max-w-[760px] rounded-2xl bg-[var(--tc-surface-card)] p-4">
@@ -973,7 +1221,7 @@ function GeneralRunPanel({
         <article className="mt-8 flex items-start gap-3">
           <span
             aria-hidden="true"
-            className="tc-display-font flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--tc-surface-muted)] text-sm text-[var(--tc-text-primary)]"
+            className="tc-display-font flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--tc-surface-page)] text-sm text-[var(--tc-text-primary)]"
           >
             初
           </span>
@@ -985,22 +1233,29 @@ function GeneralRunPanel({
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-xs"
-                aria-label="查看计划与能力进度"
-                title="查看计划与能力进度"
-                aria-pressed={planOpen}
+                size="xs"
+                aria-label={`${planOpen ? "收起" : "查看"}本次处理详情，${durationSummary}`}
+                title={planOpen ? "收起本次处理详情" : "查看本次处理详情"}
+                aria-expanded={planOpen}
                 onClick={() => setPlanOpen(current => !current)}
+                className="text-[var(--tc-text-muted)] hover:text-[var(--tc-text-primary)]"
               >
-                <ListTree className="size-3.5" />
+                {durationSummary}
+                <ChevronRight
+                  className={cn(
+                    "size-3.5 transition-transform duration-150 motion-reduce:transition-none",
+                    planOpen && "rotate-90",
+                  )}
+                />
               </Button>
             </div>
             {run.final_answer ? (
-              <div className="rounded-2xl bg-[var(--tc-surface-card)] px-5 py-4">
+              <div className="cursor-text select-text px-1 py-1 selection:bg-[var(--tc-text-primary)] selection:text-[var(--tc-surface-page)]">
                 <div className="whitespace-pre-wrap text-sm leading-7 text-[var(--tc-text-primary)]">
                   {run.final_answer}
                 </div>
                 {run.verification_issues.length ? (
-                  <div className="mt-3 rounded-xl bg-[var(--tc-surface-muted)] p-3 text-xs leading-5 text-[var(--tc-text-muted)]">
+                  <div className="mt-3 rounded-xl bg-[var(--tc-surface-page)] p-3 text-xs leading-5 text-[var(--tc-text-muted)]">
                     未完全解决：{run.verification_issues.join("；")}
                   </div>
                 ) : null}
@@ -1026,6 +1281,15 @@ function GeneralRunPanel({
             ) : null}
             {planOpen ? (
               <div className="mt-2 rounded-2xl bg-[var(--tc-surface-card)] p-4">
+                <div className="mb-3 flex flex-wrap gap-2 text-xs text-[var(--tc-text-muted)]">
+                  <span className="rounded-full bg-[var(--tc-surface-muted)] px-2.5 py-1">
+                    本次使用 {run.compression_stats.selected_memory_count} 条自动运行记忆
+                  </span>
+                  <span className="rounded-full bg-[var(--tc-surface-muted)] px-2.5 py-1">
+                    上下文{run.compression_stats.compressed ? "已压缩" : "未压缩"} ·
+                    约 {run.compression_stats.estimated_token_count.toLocaleString("zh-CN")} Token
+                  </span>
+                </div>
                 {run.plan ? (
                   <>
                     <p className="text-xs leading-5 text-[var(--tc-text-muted)]">
@@ -1165,6 +1429,18 @@ function formatTime(value: string): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+function generalRunDurationLabel(run: GeneralAgentRun): string {
+  const startedAt = new Date(run.started_at).getTime();
+  const finishedAt = new Date(run.finished_at || run.updated_at).getTime();
+  if (!Number.isFinite(startedAt) || !Number.isFinite(finishedAt)) {
+    return "已处理：时间未知";
+  }
+  const totalSeconds = Math.max(0, Math.floor((finishedAt - startedAt) / 1_000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `已处理：${minutes}分${seconds}秒`;
 }
 
 function errorMessage(value: unknown): string {

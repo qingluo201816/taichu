@@ -36,6 +36,19 @@ class KnowledgeServiceTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(card.lifecycle, StructuredKnowledgeLifecycle.DRAFT)
         self.assertEqual(card.name, "秦阳")
 
+    async def test_schema_exposes_field_merge_strategies(self) -> None:
+        schema = self.service.get_schema(StructuredKnowledgeType.CHARACTER)
+        strategies = {
+            field.field_key: field.merge_strategy.value for field in schema.fields
+        }
+
+        self.assertEqual(strategies["summary"], "replace")
+        self.assertEqual(strategies["source_note"], "append_unique")
+        self.assertEqual(strategies["aliases"], "union")
+        self.assertEqual(strategies["appearance_chapter_count"], "sum")
+        self.assertEqual(strategies["last_seen_chapter_id"], "latest")
+        self.assertEqual(strategies["identity"], "preserve_existing")
+
     async def test_create_and_patch_reject_system_managed_fields(self) -> None:
         with self.assertRaisesRegex(KnowledgeCardValidationError, "系统字段"):
             await self.service.create_card(
@@ -156,6 +169,58 @@ class KnowledgeServiceTest(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(first.appearance_chapter_count, 2)
         self.assertEqual(second.appearance_chapter_count, 5)
+
+    async def test_schema_merge_strategies_drive_confirmed_updates(self) -> None:
+        draft = await self.service.create_card(
+            StructuredKnowledgeType.CHARACTER,
+            {
+                **_complete_character_data("秦浩轩"),
+                "aliases": ["浩轩"],
+                "summary": "大田镇少年，靠采药补贴家用。",
+                "source_note": "第1章\n关键原文：旧证据",
+                "identity": "大田镇少年",
+                "last_seen_chapter_id": "chapter_001",
+            },
+        )
+        confirmed = await self.service.confirm_card(draft.id)
+
+        updated = await self.service.apply_author_confirmed_updates(
+            confirmed.id,
+            {
+                "aliases": ["小浩", "浩轩"],
+                "summary": "秦浩轩是大田镇少年，靠采药补贴家用，并参加太初教入门测试。",
+                "source_note": (
+                    "第1章\n关键原文：旧证据\n\n"
+                    "第2章\n关键原文：新证据"
+                ),
+                "identity": "不应覆盖已有身份",
+                "last_seen_chapter_id": "chapter_002",
+                "appearance_chapter_count": 2,
+            },
+            merge_mode="merge",
+            allow_appearance_count_update=True,
+        )
+
+        self.assertEqual(
+            updated.summary,
+            "秦浩轩是大田镇少年，靠采药补贴家用，并参加太初教入门测试。",
+        )
+        self.assertEqual(updated.summary.count("大田镇少年"), 1)
+        self.assertEqual(updated.aliases, ["浩轩", "小浩"])
+        self.assertEqual(
+            updated.source_note,
+            "第1章\n关键原文：旧证据\n\n第2章\n关键原文：新证据",
+        )
+        self.assertEqual(updated.identity, "大田镇少年")
+        self.assertEqual(updated.last_seen_chapter_id, "chapter_002")
+        self.assertEqual(updated.appearance_chapter_count, 2)
+
+        with self.assertRaisesRegex(KnowledgeCardValidationError, "方式不支持"):
+            await self.service.apply_author_confirmed_updates(
+                updated.id,
+                {"summary": "旧协议"},
+                merge_mode="append",  # type: ignore[arg-type]
+            )
 
 
 class _ConcurrentUpdateRepository(InMemoryKnowledgeRepository):

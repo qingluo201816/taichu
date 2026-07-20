@@ -1,0 +1,38 @@
+{
+  "field_weights": {
+    "type": 3.0,
+    "lifecycle": 0.5,
+    "source_origin": 0.5,
+    "aliases": 1.0,
+    "summary": 4.0,
+    "source_note": 1.5,
+    "role_type": 1.5,
+    "identity": 2.5,
+    "relationship_summary": 2.0,
+    "death_chapter_id": 2.5,
+    "current_realm_text": 2.0,
+    "first_seen_chapter_id": 1.5,
+    "last_seen_chapter_id": 1.5,
+    "system": 2.0,
+    "level_order": 2.0,
+    "technique_type": 2.0,
+    "grade": 1.5,
+    "practice_condition": 2.0,
+    "owner_faction_id": 2.0,
+    "controlling_faction_id": 2.0,
+    "faction_type": 2.0,
+    "leader_id": 2.0,
+    "item_type": 2.0,
+    "current_holder_id": 2.0,
+    "exceptions": 3.0,
+    "chapter_id": 2.5,
+    "description": 4.0
+  },
+  "reference_identity_map": {},
+  "reference_fields": [
+    "owner_faction_id",
+    "controlling_faction_id",
+    "leader_id",
+    "current_holder_id"
+  ]
+}

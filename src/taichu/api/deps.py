@@ -16,6 +16,7 @@ from taichu.application.contracts.storage import StorageBackend
 from taichu.application.contracts.llm import LLMGatewayContract
 from taichu.application.contracts.llm_usage import LLMUsageRepository
 from taichu.application.services.ai_card_service import AICardService
+from taichu.application.services.agent_memory_service import AgentMemoryService
 from taichu.application.services.chapter_summary_service import (
     ChapterSummaryService,
 )
@@ -52,6 +53,12 @@ def provide_general_agent_runtime_service(
 def provide_general_agent_event_center(request: Request) -> GeneralAgentEventCenter:
     """返回通用 Runtime 独立事件中心。"""
     return request.app.state.general_agent_event_center
+
+
+def provide_agent_memory_service(request: Request) -> AgentMemoryService:
+    """返回通用写作助手受控运行记忆服务。"""
+
+    return request.app.state.agent_memory_service
 
 
 def provide_general_agent_evaluation_service(

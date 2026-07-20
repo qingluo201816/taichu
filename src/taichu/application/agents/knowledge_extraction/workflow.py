@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -25,6 +26,8 @@ from taichu.application.agents.knowledge_extraction.prompts import (
     GENERAL_EXTRACTION_PROMPT,
     GENERAL_EXTRACTION_PROMPT_VERSION,
     KNOWLEDGE_EXTRACTION_PROMPT_VERSION,
+    SUMMARY_SYNTHESIS_PROMPT,
+    SUMMARY_SYNTHESIS_PROMPT_VERSION,
 )
 from taichu.application.contracts.agent_run_repository import AgentRunRepository
 from taichu.application.contracts.llm import (
@@ -205,6 +208,37 @@ _TECHNIQUE_NAME_MARKERS = (
     "阵",
     "丹",
 )
+_ITEM_FUNCTION_MARKERS = (
+    "用于",
+    "能够",
+    "可以",
+    "洞悉",
+    "检验",
+    "检测",
+    "药效",
+    "炼制",
+    "材料",
+    "飞行",
+    "行驶",
+    "全封闭",
+    "通体",
+    "生于",
+    "每一",
+    "最多",
+)
+_TECHNIQUE_FUNCTION_MARKERS = (
+    "功法",
+    "绝学",
+    "攻击法",
+    "修炼",
+    "施展",
+    "传承",
+    "预知",
+    "制敌",
+    "法诀",
+    "神通",
+    "境界",
+)
 _AGENT_FORBIDDEN_FIELDS = FORBIDDEN_KNOWLEDGE_FIELD_KEYS | {
     "current_goal",
     "secret",
@@ -315,6 +349,11 @@ KNOWLEDGE_EXTRACTION_GRAPH_NODES: list[dict[str, str]] = [
         "label": "匹配有效知识",
         "lane": "后处理",
     },
+    {
+        "node_name": "SynthesizeCandidateSummariesNode",
+        "label": "综合候选摘要",
+        "lane": "后处理",
+    },
     {"node_name": "BuildReviewItemsNode", "label": "生成审核项", "lane": "后处理"},
     {"node_name": "WriteIntermediateJsonNode", "label": "写入中间态", "lane": "写入"},
 ]
@@ -341,7 +380,14 @@ KNOWLEDGE_EXTRACTION_GRAPH_EDGES: list[dict[str, str]] = [
         "source": "RunInternalConflictCheckNode",
         "target": "MatchExistingKnowledgeNode",
     },
-    {"source": "MatchExistingKnowledgeNode", "target": "BuildReviewItemsNode"},
+    {
+        "source": "MatchExistingKnowledgeNode",
+        "target": "SynthesizeCandidateSummariesNode",
+    },
+    {
+        "source": "SynthesizeCandidateSummariesNode",
+        "target": "BuildReviewItemsNode",
+    },
     {"source": "BuildReviewItemsNode", "target": "WriteIntermediateJsonNode"},
 ]
 
@@ -367,6 +413,11 @@ BATCH_KNOWLEDGE_EXTRACTION_GRAPH_NODES: list[dict[str, str]] = [
         "lane": "统一后处理",
     },
     {
+        "node_name": "BatchSynthesizeCandidateSummariesNode",
+        "label": "综合候选摘要",
+        "lane": "统一后处理",
+    },
+    {
         "node_name": "BatchBuildReviewItemsNode",
         "label": "生成审核项",
         "lane": "统一后处理",
@@ -380,6 +431,10 @@ BATCH_KNOWLEDGE_EXTRACTION_GRAPH_EDGES: list[dict[str, str]] = [
     {"source": "BatchConflictCheckNode", "target": "BatchMatchExistingKnowledgeNode"},
     {
         "source": "BatchMatchExistingKnowledgeNode",
+        "target": "BatchSynthesizeCandidateSummariesNode",
+    },
+    {
+        "source": "BatchSynthesizeCandidateSummariesNode",
         "target": "BatchBuildReviewItemsNode",
     },
     {"source": "BatchBuildReviewItemsNode", "target": "BatchWriteRunNode"},
@@ -492,6 +547,17 @@ def build_knowledge_extraction_graph(
         ),
     )
     graph.add_node(
+        "SynthesizeCandidateSummariesNode",
+        cast(
+            Any,
+            _node(
+                "SynthesizeCandidateSummariesNode",
+                _synthesize_candidate_summaries(dependencies),
+                dependencies,
+            ),
+        ),
+    )
+    graph.add_node(
         "BuildReviewItemsNode",
         cast(Any, _node("BuildReviewItemsNode", _build_review_items(), dependencies)),
     )
@@ -523,7 +589,8 @@ def build_knowledge_extraction_graph(
     graph.add_edge("MergeExpertCandidatesNode", "NormalizeAndValidateNode")
     graph.add_edge("NormalizeAndValidateNode", "RunInternalConflictCheckNode")
     graph.add_edge("RunInternalConflictCheckNode", "MatchExistingKnowledgeNode")
-    graph.add_edge("MatchExistingKnowledgeNode", "BuildReviewItemsNode")
+    graph.add_edge("MatchExistingKnowledgeNode", "SynthesizeCandidateSummariesNode")
+    graph.add_edge("SynthesizeCandidateSummariesNode", "BuildReviewItemsNode")
     graph.add_edge("BuildReviewItemsNode", "WriteIntermediateJsonNode")
     graph.add_edge("WriteIntermediateJsonNode", END)
     return graph.compile()
@@ -950,6 +1017,7 @@ def _normalize_mentions() -> Callable[
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
         normalized: list[dict[str, Any]] = []
         ignored = list(state.get("ignored", []))
+        markdown = state.get("markdown_text", "")
         for mention in state.get("raw_mentions", []):
             knowledge_type = str(mention.get("knowledge_type") or "")
             name = _first_non_empty(mention.get("name"))
@@ -962,15 +1030,19 @@ def _normalize_mentions() -> Callable[
                     }
                 )
                 continue
-            evidence_excerpts = [
+            requested_evidence = [
                 excerpt[:300]
                 for excerpt in _list_strings(mention.get("evidence_excerpts"))
             ][:_MAX_MENTION_EVIDENCE_COUNT]
+            evidence_excerpts = _grounded_evidence_excerpts(
+                requested_evidence,
+                markdown,
+            )
             if not evidence_excerpts:
                 ignored.append(
                     {
                         "text": name,
-                        "reason": "mention 缺少原文证据。",
+                        "reason": "mention 缺少可在正文精确定位的原文证据。",
                         "segment_index": mention.get("segment_index"),
                     }
                 )
@@ -1207,6 +1279,27 @@ def _event_rule_expert(
         entity_groups = state.get("event_rule_entity_groups", [])
         if not entity_groups:
             return state
+        retrieval = await dependencies.retrieval_service.retrieve(
+            RetrievalRequest(
+                mode=RetrievalMode.CATALOG,
+                top_k=200,
+                consumer=RetrievalConsumerContext(
+                    consumer_type="knowledge_workflow",
+                    run_id=state.get("run_id"),
+                    stage="EventRuleExpertNode",
+                ),
+            )
+        )
+        active_rule_index = [
+            {
+                "id": card.id,
+                "name": card.name,
+                "aliases": card.aliases,
+                "summary": card.summary,
+            }
+            for card in (item.knowledge_card for item in retrieval.items)
+            if card.type == StructuredKnowledgeType.RULE
+        ]
         event_rule_schemas = [
             knowledge_type_schema(knowledge_type).model_dump(mode="json")
             for knowledge_type in (
@@ -1217,6 +1310,7 @@ def _event_rule_expert(
         prompt = _render_prompt(
             EVENT_RULE_EXPERT_PROMPT,
             event_rule_schemas=_json_dump(event_rule_schemas),
+            active_rule_index=_json_dump(active_rule_index),
             chapter_id=state["chapter_id"],
             chapter_title=state.get("chapter_title", ""),
             event_rule_entity_groups=_json_dump(entity_groups),
@@ -1249,11 +1343,19 @@ def _merge_expert_candidates() -> Callable[
     [KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]
 ]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
-        state["typed_candidates"] = [
+        candidates = [
             *state.get("character_typed_candidates", []),
             *state.get("entity_typed_candidates", []),
             *state.get("event_rule_typed_candidates", []),
         ]
+        state["typed_candidates"] = mark_cross_type_projection_conflicts(
+            merge_overlapping_event_candidates(
+                _ground_candidates_from_entity_groups(
+                    state,
+                    candidates,
+                )
+            )
+        )
         return state
 
     return run
@@ -1309,6 +1411,20 @@ def _match_existing(
     dependencies: KnowledgeExtractionDependencies,
 ) -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
+        catalog = await dependencies.retrieval_service.retrieve(
+            RetrievalRequest(
+                mode=RetrievalMode.CATALOG,
+                top_k=200,
+                max_content_chars=50_000,
+                consumer=RetrievalConsumerContext(
+                    consumer_type="knowledge_workflow",
+                    run_id=state.get("run_id"),
+                    stage="MatchExistingKnowledgeCatalogNode",
+                ),
+            )
+        )
+        catalog_cards = [item.knowledge_card for item in catalog.items]
+        catalog_identity_index = _build_card_identity_index(catalog_cards)
         for candidate in state.get("typed_candidates", []):
             try:
                 knowledge_type = StructuredKnowledgeType(
@@ -1335,18 +1451,175 @@ def _match_existing(
                 )
             )
             matches = [item.knowledge_card for item in retrieval.items]
-            if not matches:
+            if matches:
+                _bind_candidate_to_existing_card(
+                    candidate,
+                    matches[0],
+                    align_type=False,
+                )
                 continue
-            match = matches[0]
-            candidate["target_card_id"] = match.id
-            candidate["matched_card_name"] = match.name
-            candidate["match_reason"] = "命中已有有效知识卡的名称或别名。"
-            conflicts = _external_conflicts(candidate, match)
-            if conflicts:
-                candidate["external_conflicts"] = conflicts
+
+            cross_type_matches = _catalog_identity_matches(
+                candidate,
+                catalog_identity_index,
+            )
+            if len(cross_type_matches) == 1:
+                _bind_candidate_to_existing_card(
+                    candidate,
+                    cross_type_matches[0],
+                    align_type=cross_type_matches[0].type is not knowledge_type,
+                )
+                continue
+            if len(cross_type_matches) > 1:
+                candidate["internal_conflicts"] = _append_unique_strings(
+                    _list_strings(candidate.get("internal_conflicts")),
+                    ["候选名称或别名命中多张已有知识卡，无法自动确定归属。"],
+                )
+        state["typed_candidates"] = dedupe_candidates_by_target(
+            state.get("typed_candidates", [])
+        )
         return state
 
     return run
+
+
+def _synthesize_candidate_summaries(
+    dependencies: KnowledgeExtractionDependencies,
+) -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
+    async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
+        state["typed_candidates"] = await synthesize_candidate_summaries(
+            state,
+            dependencies,
+            state.get("typed_candidates", []),
+            include_new=False,
+            node_name="SynthesizeCandidateSummariesNode",
+        )
+        return state
+
+    return run
+
+
+async def synthesize_candidate_summaries(
+    state: KnowledgeExtractionState,
+    dependencies: KnowledgeExtractionDependencies,
+    candidates: list[dict[str, Any]],
+    *,
+    include_new: bool,
+    node_name: str,
+) -> list[dict[str, Any]]:
+    """Rewrite summaries as fact snapshots and preserve auditable LLM calls."""
+    selected = [
+        candidate
+        for candidate in candidates
+        if include_new or str(candidate.get("target_card_id") or "").strip()
+    ]
+    if not selected:
+        return candidates
+
+    indexed = list(enumerate(selected, start=1))
+    chunks = [indexed[index : index + 5] for index in range(0, len(indexed), 5)]
+    semaphore = asyncio.Semaphore(5)
+
+    async def synthesize_chunk(
+        chunk: list[tuple[int, dict[str, Any]]],
+    ) -> tuple[dict[str, str], list[dict[str, Any]], list[str]]:
+        chunk_state = cast(KnowledgeExtractionState, dict(state))
+        chunk_state["llm_calls"] = []
+        chunk_state["errors"] = []
+        prompt_candidates: list[dict[str, Any]] = []
+        for candidate_index, candidate in chunk:
+            existing = candidate.get("_existing_card")
+            existing_card = existing if isinstance(existing, dict) else {}
+            prompt_candidates.append(
+                {
+                    "candidate_id": f"summary_candidate_{candidate_index:03d}",
+                    "knowledge_type": str(candidate.get("type") or ""),
+                    "name": str(candidate.get("name") or ""),
+                    "old_summary": str(existing_card.get("summary") or ""),
+                    "current_candidate_summary": str(candidate.get("summary") or ""),
+                    "new_evidence": _list_strings(candidate.get("evidence_excerpts")),
+                    "source_chapters": _list_strings(candidate.get("chapter_titles"))
+                    or _list_strings(candidate.get("chapter_ids")),
+                    "source_note": str(candidate.get("source_note") or ""),
+                }
+            )
+        prompt = _render_prompt(
+            SUMMARY_SYNTHESIS_PROMPT,
+            candidates_json=_json_dump(prompt_candidates),
+        )
+        async with semaphore:
+            payload = await _complete_json(
+                chunk_state,
+                dependencies,
+                node_name=node_name,
+                prompt_version=SUMMARY_SYNTHESIS_PROMPT_VERSION,
+                prompt=prompt,
+            )
+        summaries: dict[str, str] = {}
+        raw_summaries = (
+            payload.get("summaries")
+            if isinstance(payload, dict) and set(payload) == {"summaries"}
+            else None
+        )
+        if isinstance(raw_summaries, list):
+            for item in raw_summaries:
+                if not isinstance(item, dict) or set(item) != {
+                    "candidate_id",
+                    "summary",
+                }:
+                    continue
+                candidate_id = str(item.get("candidate_id") or "").strip()
+                summary = _normalize_synthesized_summary(item.get("summary"))
+                if candidate_id and summary:
+                    summaries[candidate_id] = summary
+        return (
+            summaries,
+            chunk_state.get("llm_calls", []),
+            chunk_state.get("errors", []),
+        )
+
+    results = await asyncio.gather(*(synthesize_chunk(chunk) for chunk in chunks))
+    synthesized: dict[str, str] = {}
+    for summaries, llm_calls, errors in results:
+        synthesized.update(summaries)
+        state.setdefault("llm_calls", []).extend(llm_calls)
+        state.setdefault("errors", []).extend(errors)
+
+    for candidate_index, candidate in indexed:
+        candidate_id = f"summary_candidate_{candidate_index:03d}"
+        existing = candidate.get("_existing_card")
+        existing_card = existing if isinstance(existing, dict) else {}
+        fallback = str(existing_card.get("summary") or candidate.get("summary") or "")
+        summary = synthesized.get(candidate_id)
+        if summary:
+            candidate["summary"] = summary
+            candidate.pop("_summary_synthesis_error", None)
+        else:
+            candidate["summary"] = fallback
+            candidate["_summary_synthesis_error"] = "摘要综合失败，请编辑摘要后再确认。"
+        validation_errors = _candidate_validation_errors(candidate)
+        candidate["schema_validation"] = {
+            "passed": not validation_errors,
+            "errors": validation_errors,
+        }
+    return candidates
+
+
+def _normalize_synthesized_summary(value: object) -> str:
+    summary = " ".join(str(value or "").split()).strip()
+    if not summary:
+        return ""
+    sentences = re.split(r"(?<=[。！？!?])", summary)
+    seen: set[str] = set()
+    result: list[str] = []
+    for sentence in sentences:
+        cleaned = sentence.strip()
+        normalized = re.sub(r"[\s，。；：、！？!?]", "", cleaned).casefold()
+        if not cleaned or normalized in seen:
+            continue
+        seen.add(normalized)
+        result.append(cleaned)
+    return "".join(result)
 
 
 def _build_review_items() -> Callable[
@@ -1464,7 +1737,8 @@ async def _complete_json(
                     task_type="knowledge_extraction",
                     task_name=_node_label(node_name),
                     run_id=state.get("run_id"),
-                    chapter_ids=(state.get("chapter_id", ""),),
+                    chapter_ids=tuple(_list_strings(state.get("chapter_ids")))
+                    or (state.get("chapter_id", ""),),
                     response_mode="json",
                     max_output_tokens=_KNOWLEDGE_EXTRACTION_MAX_OUTPUT_TOKENS,
                     feature="知识沉淀",
@@ -1557,9 +1831,13 @@ async def _record_llm_completion(
             else f"llm_call_{node_name}_{uuid4().hex[:8]}"
         ),
         "node_name": node_name,
-        "model_name": state.get("model_display_name") or state.get("model_name") or "默认模型",
+        "model_name": state.get("model_display_name")
+        or state.get("model_name")
+        or "默认模型",
         "model_id": state.get("model_id") or state.get("model_name") or "",
-        "model_display_name": state.get("model_display_name") or state.get("model_name") or "",
+        "model_display_name": state.get("model_display_name")
+        or state.get("model_name")
+        or "",
         "upstream_model": state.get("upstream_model") or state.get("model_name") or "",
         "wire_protocol": state.get("wire_protocol") or "openai_responses",
         "prompt_version": prompt_version,
@@ -1774,11 +2052,11 @@ async def _quality_decision(
     if knowledge_type == "faction":
         return _faction_quality_decision(name)
     if knowledge_type == "item":
-        return _item_quality_decision(name)
+        return _item_quality_decision(name, evidence_excerpts)
     if knowledge_type == "realm":
         return _realm_quality_decision(name)
     if knowledge_type == "technique":
-        return _technique_quality_decision(name)
+        return _technique_quality_decision(name, evidence_excerpts)
     if knowledge_type == "event":
         return _event_quality_decision(name, evidence_excerpts)
     if knowledge_type == "rule":
@@ -1828,13 +2106,18 @@ def _faction_quality_decision(name: str) -> tuple[str, str]:
     return "rejected", "缺少稳定组织名称。"
 
 
-def _item_quality_decision(name: str) -> tuple[str, str]:
+def _item_quality_decision(
+    name: str,
+    evidence_excerpts: list[str],
+) -> tuple[str, str]:
     if _normalize_identity(name) in {
         _normalize_identity(value) for value in _REJECT_ITEM_NAMES
     }:
         return "rejected", "普通消耗品、银两、衣物或器具。"
     if any(marker in name for marker in _SPECIAL_ITEM_MARKERS) and len(name) >= 2:
         return "accepted", "有明确名称且具备设定价值或可追踪属性。"
+    if _named_evidence_has_marker(name, evidence_excerpts, _ITEM_FUNCTION_MARKERS):
+        return "accepted", "具备原文直接命名及可复用功能或属性证据。"
     return "rejected", "缺少设定价值、稀有性或可追踪归属。"
 
 
@@ -1844,10 +2127,30 @@ def _realm_quality_decision(name: str) -> tuple[str, str]:
     return "rejected", "缺少稳定境界或修炼阶段名称。"
 
 
-def _technique_quality_decision(name: str) -> tuple[str, str]:
+def _technique_quality_decision(
+    name: str,
+    evidence_excerpts: list[str],
+) -> tuple[str, str]:
     if any(marker in name for marker in _TECHNIQUE_NAME_MARKERS) and len(name) >= 2:
         return "accepted", "具备明确功法、术法或神通名称。"
+    if _named_evidence_has_marker(
+        name,
+        evidence_excerpts,
+        _TECHNIQUE_FUNCTION_MARKERS,
+    ):
+        return "accepted", "具备原文直接命名及可复用修炼或施展机制。"
     return "rejected", "缺少稳定功法、术法或可复用设定名称。"
+
+
+def _named_evidence_has_marker(
+    name: str,
+    evidence_excerpts: list[str],
+    markers: tuple[str, ...],
+) -> bool:
+    return len(name) >= 2 and any(
+        name in excerpt and any(marker in excerpt for marker in markers)
+        for excerpt in evidence_excerpts
+    )
 
 
 def _event_quality_decision(
@@ -1898,6 +2201,423 @@ def _cards_with_type(cards: list[Any], knowledge_type: str) -> list[dict[str, An
     return typed
 
 
+def _ground_candidates_from_entity_groups(
+    state: KnowledgeExtractionState,
+    candidates: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Replace model-written evidence with exact quotes from accepted groups."""
+    markdown = state.get("markdown_text", "")
+    evidence_by_group = {
+        str(group.get("entity_group_id") or ""): _grounded_evidence_excerpts(
+            _list_strings(group.get("evidence_excerpts")),
+            markdown,
+        )
+        for group in state.get("entity_groups", [])
+        if str(group.get("entity_group_id") or "").strip()
+    }
+    grounded: list[dict[str, Any]] = []
+    for candidate in candidates:
+        payload = dict(candidate)
+        group_id = str(payload.get("entity_group_id") or "")
+        evidence = evidence_by_group.get(group_id)
+        if evidence is None:
+            evidence = _grounded_evidence_excerpts(
+                _list_strings(payload.get("evidence_excerpts")),
+                markdown,
+            )
+        payload["evidence_excerpts"] = evidence
+        payload["evidence_excerpt"] = evidence[0][:300] if evidence else ""
+        if evidence:
+            chapter_title = str(
+                state.get("chapter_title") or state.get("chapter_id") or "当前章节"
+            )
+            quoted = "；".join(f"“{excerpt}”" for excerpt in evidence[:3])
+            payload["source_note"] = f"{chapter_title}\n关键原文：{quoted}"
+        grounded.append(payload)
+    return grounded
+
+
+def _grounded_evidence_excerpts(values: list[str], markdown: str) -> list[str]:
+    if not markdown:
+        return []
+    return _append_unique_strings(
+        [],
+        [
+            value.strip()
+            for value in values
+            if value.strip() and value.strip() in markdown
+        ],
+    )
+
+
+def merge_overlapping_event_candidates(
+    candidates: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Merge high-confidence duplicate event candidates from the same chapter."""
+    merged: list[dict[str, Any]] = []
+    for candidate in candidates:
+        payload = dict(candidate)
+        if str(payload.get("type") or "") != StructuredKnowledgeType.EVENT.value:
+            merged.append(payload)
+            continue
+
+        duplicate_index = next(
+            (
+                index
+                for index, current in enumerate(merged)
+                if str(current.get("type") or "") == StructuredKnowledgeType.EVENT.value
+                and _event_candidates_overlap(current, payload)
+            ),
+            None,
+        )
+        if duplicate_index is None:
+            merged.append(payload)
+            continue
+
+        current = merged[duplicate_index]
+        if _event_candidate_richness(payload) > _event_candidate_richness(current):
+            primary, secondary = payload, current
+        else:
+            primary, secondary = current, payload
+        merged[duplicate_index] = _merge_event_candidate_pair(primary, secondary)
+    return merged
+
+
+def _event_candidates_overlap(
+    left: dict[str, Any],
+    right: dict[str, Any],
+) -> bool:
+    left_chapters = _candidate_chapter_ids(left)
+    right_chapters = _candidate_chapter_ids(right)
+    if left_chapters and right_chapters and left_chapters.isdisjoint(right_chapters):
+        return False
+
+    left_name = _normalize_comparison_text(left.get("name"))
+    right_name = _normalize_comparison_text(right.get("name"))
+    if not left_name or not right_name:
+        return False
+    if _longest_common_substring_length(left_name, right_name) < 3:
+        return False
+
+    left_evidence = _normalized_evidence(left)
+    right_evidence = _normalized_evidence(right)
+    if not left_evidence or not right_evidence:
+        return False
+    return _evidence_set_is_contained(left_evidence, right_evidence) or (
+        _evidence_set_is_contained(right_evidence, left_evidence)
+    )
+
+
+def _candidate_chapter_ids(candidate: dict[str, Any]) -> set[str]:
+    chapter_ids = set(_list_strings(candidate.get("chapter_ids")))
+    chapter_id = str(candidate.get("chapter_id") or "").strip()
+    if chapter_id:
+        chapter_ids.add(chapter_id)
+    return chapter_ids
+
+
+def _normalized_evidence(candidate: dict[str, Any]) -> list[str]:
+    return [
+        normalized
+        for value in _list_strings(candidate.get("evidence_excerpts"))
+        if len(normalized := _normalize_comparison_text(value)) >= 10
+    ]
+
+
+def _evidence_set_is_contained(
+    needles: list[str],
+    haystacks: list[str],
+) -> bool:
+    return bool(needles) and all(
+        any(needle in haystack for haystack in haystacks) for needle in needles
+    )
+
+
+def _event_candidate_richness(candidate: dict[str, Any]) -> tuple[int, int, int]:
+    evidence = _list_strings(candidate.get("evidence_excerpts"))
+    narrative_length = len(str(candidate.get("summary") or "")) + len(
+        str(candidate.get("description") or "")
+    )
+    return len(evidence), sum(len(value) for value in evidence), narrative_length
+
+
+def _merge_event_candidate_pair(
+    primary: dict[str, Any],
+    secondary: dict[str, Any],
+) -> dict[str, Any]:
+    result = dict(primary)
+    primary_name = str(result.get("name") or "").strip()
+    secondary_name = str(secondary.get("name") or "").strip()
+    aliases = _append_unique_strings(
+        _list_strings(result.get("aliases")),
+        [secondary_name, *_list_strings(secondary.get("aliases"))],
+    )
+    result["aliases"] = [
+        alias
+        for alias in aliases
+        if _normalize_identity(alias) != _normalize_identity(primary_name)
+    ]
+    evidence = _append_unique_strings(
+        _list_strings(result.get("evidence_excerpts")),
+        _list_strings(secondary.get("evidence_excerpts")),
+    )
+    result["evidence_excerpts"] = evidence[:20]
+    if evidence:
+        result["evidence_excerpt"] = evidence[0][:300]
+    result["source_note"] = _dedupe_text_blocks(
+        [
+            str(result.get("source_note") or ""),
+            str(secondary.get("source_note") or ""),
+        ]
+    )
+    for key in ("summary", "description"):
+        if len(str(secondary.get(key) or "")) > len(str(result.get(key) or "")):
+            result[key] = secondary.get(key)
+    for key in ("chapter_ids", "chapter_titles", "internal_conflicts"):
+        combined = _append_unique_strings(
+            _list_strings(result.get(key)),
+            _list_strings(secondary.get(key)),
+        )
+        if combined:
+            result[key] = combined
+    counts = [
+        value
+        for value in (
+            result.get("appearance_chapter_count"),
+            secondary.get("appearance_chapter_count"),
+        )
+        if isinstance(value, int)
+    ]
+    if counts:
+        result["appearance_chapter_count"] = max(counts)
+    if not str(result.get("chapter_id") or "").strip():
+        result["chapter_id"] = secondary.get("chapter_id")
+    return result
+
+
+def _normalize_comparison_text(value: object) -> str:
+    if not isinstance(value, str):
+        return ""
+    return re.sub(r"[\W_]+", "", value, flags=re.UNICODE).casefold()
+
+
+def _longest_common_substring_length(left: str, right: str) -> int:
+    if not left or not right:
+        return 0
+    previous = [0] * (len(right) + 1)
+    longest = 0
+    for left_character in left:
+        current = [0]
+        for index, right_character in enumerate(right, start=1):
+            length = previous[index - 1] + 1 if left_character == right_character else 0
+            current.append(length)
+            longest = max(longest, length)
+        previous = current
+    return longest
+
+
+def _build_card_identity_index(
+    cards: list[StructuredKnowledgeCard],
+) -> dict[str, list[StructuredKnowledgeCard]]:
+    index: dict[str, list[StructuredKnowledgeCard]] = {}
+    for card in cards:
+        terms = [card.name, *card.aliases]
+        for term in terms:
+            normalized = _normalize_identity(term)
+            if not normalized:
+                continue
+            indexed_cards = index.setdefault(normalized, [])
+            if all(existing.id != card.id for existing in indexed_cards):
+                indexed_cards.append(card)
+    return index
+
+
+def _catalog_identity_matches(
+    candidate: dict[str, Any],
+    identity_index: dict[str, list[StructuredKnowledgeCard]],
+) -> list[StructuredKnowledgeCard]:
+    matches: dict[str, StructuredKnowledgeCard] = {}
+    for term in [
+        str(candidate.get("name") or ""),
+        *_list_strings(candidate.get("aliases")),
+    ]:
+        normalized = _normalize_identity(term)
+        for card in identity_index.get(normalized, []):
+            matches[card.id] = card
+    return list(matches.values())
+
+
+def _bind_candidate_to_existing_card(
+    candidate: dict[str, Any],
+    match: StructuredKnowledgeCard,
+    *,
+    align_type: bool,
+) -> None:
+    original_name = str(candidate.get("name") or "").strip()
+    try:
+        original_type = StructuredKnowledgeType(str(candidate.get("type") or ""))
+    except ValueError:
+        original_type = None
+
+    if align_type and original_type is not None:
+        stale_fields = type_specific_field_keys(
+            original_type
+        ) - type_specific_field_keys(match.type)
+        for field_key in stale_fields:
+            candidate.pop(field_key, None)
+        candidate["type"] = match.type.value
+        candidate["name"] = match.name
+        candidate["aliases"] = [
+            alias
+            for alias in _append_unique_strings(
+                _list_strings(candidate.get("aliases")),
+                [original_name],
+            )
+            if _normalize_identity(alias) != _normalize_identity(match.name)
+        ]
+
+    candidate["target_card_id"] = match.id
+    candidate["matched_card_name"] = match.name
+    candidate["match_reason"] = (
+        "候选名称或别名唯一命中已有知识卡，已按已有卡类型对齐。"
+        if align_type
+        else "命中已有有效知识卡的名称或别名。"
+    )
+    candidate["_existing_card"] = match.model_dump(mode="json")
+    conflicts = _external_conflicts(candidate, match)
+    if conflicts:
+        candidate["external_conflicts"] = conflicts
+    else:
+        candidate.pop("external_conflicts", None)
+    validation_errors = _candidate_validation_errors(candidate)
+    candidate["schema_validation"] = {
+        "passed": not validation_errors,
+        "errors": validation_errors,
+    }
+
+
+def dedupe_candidates_by_target(
+    candidates: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Merge aliases that resolve to the same confirmed knowledge card."""
+    groups: dict[str, list[dict[str, Any]]] = {}
+    order: list[str] = []
+    passthrough: list[tuple[int, dict[str, Any]]] = []
+    for index, candidate in enumerate(candidates):
+        target_id = str(candidate.get("target_card_id") or "").strip()
+        if not target_id:
+            passthrough.append((index, candidate))
+            continue
+        if target_id not in groups:
+            groups[target_id] = []
+            order.append(target_id)
+        groups[target_id].append(candidate)
+
+    merged_positions: list[tuple[int, dict[str, Any]]] = list(passthrough)
+    for target_id in order:
+        group = groups[target_id]
+        matched_name = str(group[0].get("matched_card_name") or "")
+        primary = max(
+            group,
+            key=lambda item: int(
+                bool(matched_name)
+                and _normalize_identity(item.get("name"))
+                == _normalize_identity(matched_name)
+            ),
+        )
+        merged = dict(primary)
+        aliases = _list_strings(merged.get("aliases"))
+        chapter_ids = _list_strings(merged.get("chapter_ids"))
+        chapter_titles = _list_strings(merged.get("chapter_titles"))
+        evidence = _list_strings(merged.get("evidence_excerpts"))
+        conflicts = _list_strings(merged.get("internal_conflicts"))
+        source_notes = [str(merged.get("source_note") or "").strip()]
+        for candidate in group:
+            if candidate is primary:
+                continue
+            candidate_name = str(candidate.get("name") or "").strip()
+            aliases = _append_unique_strings(
+                aliases,
+                [candidate_name, *_list_strings(candidate.get("aliases"))],
+            )
+            chapter_ids = _append_unique_strings(
+                chapter_ids,
+                _list_strings(candidate.get("chapter_ids")),
+            )
+            chapter_titles = _append_unique_strings(
+                chapter_titles,
+                _list_strings(candidate.get("chapter_titles")),
+            )
+            evidence = _append_unique_strings(
+                evidence,
+                _list_strings(candidate.get("evidence_excerpts")),
+            )
+            conflicts = _append_unique_strings(
+                conflicts,
+                _list_strings(candidate.get("internal_conflicts")),
+            )
+            source_notes.append(str(candidate.get("source_note") or "").strip())
+        primary_name = str(merged.get("name") or "").strip()
+        merged["aliases"] = [
+            alias for alias in aliases if alias and alias != primary_name
+        ]
+        merged["chapter_ids"] = chapter_ids
+        merged["chapter_titles"] = chapter_titles
+        merged["evidence_excerpts"] = evidence[:20]
+        if evidence:
+            merged["evidence_excerpt"] = evidence[0][:300]
+        merged["source_note"] = _dedupe_text_blocks(source_notes)
+        if conflicts:
+            merged["internal_conflicts"] = conflicts
+        first_index = min(candidates.index(candidate) for candidate in group)
+        merged_positions.append((first_index, merged))
+    return [item for _, item in sorted(merged_positions, key=lambda pair: pair[0])]
+
+
+def mark_cross_type_projection_conflicts(
+    candidates: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Require review when named objects are projected again as events or rules."""
+    concrete_types = {"item", "technique"}
+    projection_types = {"event", "rule"}
+    for concrete in candidates:
+        if str(concrete.get("type") or "") not in concrete_types:
+            continue
+        concrete_evidence = set(_list_strings(concrete.get("evidence_excerpts")))
+        if not concrete_evidence:
+            continue
+        for projected in candidates:
+            if str(projected.get("type") or "") not in projection_types:
+                continue
+            projected_evidence = set(_list_strings(projected.get("evidence_excerpts")))
+            if not concrete_evidence.intersection(projected_evidence):
+                continue
+            concrete_name = _normalize_identity(concrete.get("name"))
+            projected_name = _normalize_identity(projected.get("name"))
+            if concrete_name and concrete_name not in projected_name:
+                continue
+            projected.setdefault("internal_conflicts", [])
+            projected["internal_conflicts"] = _append_unique_strings(
+                _list_strings(projected.get("internal_conflicts")),
+                ["候选与具名物品或功法共享核心证据，请确认是否属于重复类型投影。"],
+            )
+    return candidates
+
+
+def _dedupe_text_blocks(values: list[str]) -> str:
+    blocks: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        for block in re.split(r"(?:\r?\n)\s*(?:\r?\n)+", value.strip()):
+            cleaned = block.strip()
+            normalized = " ".join(cleaned.split())
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            blocks.append(cleaned)
+    return "\n\n".join(blocks)
+
+
 def _candidate_validation_errors(card: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     forbidden = _AGENT_FORBIDDEN_FIELDS & set(card)
@@ -1939,10 +2659,17 @@ def _candidate_validation_errors(card: dict[str, Any]) -> list[str]:
         "target_card_id",
         "matched_card_name",
         "match_reason",
+        "chapter_ids",
+        "chapter_titles",
+        "_existing_card",
+        "_summary_synthesis_error",
     }
     unknown = set(card) - allowed_keys
     if unknown:
         errors.append(f"包含未知字段：{', '.join(sorted(unknown))}")
+    synthesis_error = str(card.get("_summary_synthesis_error") or "").strip()
+    if synthesis_error:
+        errors.append(synthesis_error)
     return errors
 
 
@@ -1961,30 +2688,6 @@ def _external_conflicts(
         ):
             conflicts.append(f"字段“{key}”与已有有效知识卡存在互斥事实。")
     return conflicts
-    for key, value in candidate.items():
-        if key in {
-            "source_note",
-            "entity_group_id",
-            "evidence_excerpt",
-            "evidence_excerpts",
-            "lifecycle",
-            "source_origin",
-            "last_seen_chapter_id",
-        }:
-            continue
-        if key not in knowledge_type_schema(existing.type).model_fields and not hasattr(
-            existing,
-            key,
-        ):
-            continue
-        current_value = getattr(existing, key, None)
-        if (
-            _is_non_empty(current_value)
-            and _is_non_empty(value)
-            and current_value != value
-        ):
-            conflicts.append(f"字段“{key}”与已有有效知识卡不一致。")
-    return conflicts
 
 
 def _strict_conflict_fields(knowledge_type: StructuredKnowledgeType) -> set[str]:
@@ -2002,6 +2705,8 @@ def _candidate_action(
     validation: dict[str, Any],
 ) -> AgentReviewCandidateAction:
     if not validation.get("passed"):
+        if candidate.get("_summary_synthesis_error"):
+            return AgentReviewCandidateAction.CONFLICT
         return AgentReviewCandidateAction.IGNORE
     if candidate.get("external_conflicts") or candidate.get("internal_conflicts"):
         return AgentReviewCandidateAction.CONFLICT
@@ -2021,6 +2726,8 @@ def _strip_internal_candidate_fields(candidate: dict[str, Any]) -> dict[str, Any
         "source_excerpt",
         "chapter_ids",
         "chapter_titles",
+        "_existing_card",
+        "_summary_synthesis_error",
     }
     return {key: value for key, value in candidate.items() if key not in excluded}
 
@@ -2304,6 +3011,13 @@ def _node_output_summary(node_name: str, state: KnowledgeExtractionState) -> str
         return f"合并为 {len(state.get('typed_candidates', []))} 个候选草稿。"
     if node_name == "NormalizeAndValidateNode":
         return f"完成 {len(state.get('typed_candidates', []))} 个候选结构校验。"
+    if node_name == "SynthesizeCandidateSummariesNode":
+        count = sum(
+            1
+            for candidate in state.get("typed_candidates", [])
+            if candidate.get("target_card_id")
+        )
+        return f"完成 {count} 个已有知识更新候选的摘要综合。"
     if node_name == "BuildReviewItemsNode":
         return f"生成 {len(state.get('review_items', []))} 个审核项。"
     return ""

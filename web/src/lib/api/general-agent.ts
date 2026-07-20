@@ -1,9 +1,12 @@
 import { apiRequest } from "@/lib/api-client";
 import type {
+  AgentMemoryDeleteResponse,
+  AgentMemoryListResponse,
   GeneralAgentConversationDeleteResponse,
   GeneralAgentConversationListResponse,
   GeneralAgentConversationResponse,
   GeneralAgentResumeRequest,
+  GeneralAgentRecoveryResponse,
   GeneralAgentRunListResponse,
   GeneralAgentRunRequest,
   GeneralAgentRunResponse,
@@ -54,6 +57,27 @@ export async function getGeneralAgentConversation(
 ): Promise<GeneralAgentConversationResponse> {
   return apiRequest<GeneralAgentConversationResponse>(
     `${PREFIX}/conversations/${encodeURIComponent(conversationId)}`,
+  );
+}
+
+export async function listGeneralAgentMemories(
+  conversationId: string,
+  options?: { includeDeleted?: boolean },
+): Promise<AgentMemoryListResponse> {
+  const params = new URLSearchParams({
+    include_deleted: String(options?.includeDeleted ?? false),
+  });
+  return apiRequest<AgentMemoryListResponse>(
+    `${PREFIX}/conversations/${encodeURIComponent(conversationId)}/memories?${params.toString()}`,
+  );
+}
+
+export async function deleteGeneralAgentMemory(
+  memoryId: string,
+): Promise<AgentMemoryDeleteResponse> {
+  return apiRequest<AgentMemoryDeleteResponse>(
+    `${PREFIX}/memories/${encodeURIComponent(memoryId)}`,
+    { method: "DELETE" },
   );
 }
 
@@ -109,5 +133,13 @@ export async function listGeneralAgentTraces(
   const params = new URLSearchParams({ limit: String(limit) });
   return apiRequest<GeneralAgentTraceListResponse>(
     `${PREFIX}/runs/${encodeURIComponent(runId)}/traces?${params.toString()}`,
+  );
+}
+
+export async function getGeneralAgentRecovery(
+  runId: string,
+): Promise<GeneralAgentRecoveryResponse> {
+  return apiRequest<GeneralAgentRecoveryResponse>(
+    `${PREFIX}/runs/${encodeURIComponent(runId)}/recovery`,
   );
 }

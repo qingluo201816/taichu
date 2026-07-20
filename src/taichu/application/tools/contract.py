@@ -34,6 +34,25 @@ class ToolIdempotencyPolicy(StrEnum):
     REQUIRED = "required"
 
 
+class ToolReconciliationStatus(StrEnum):
+    """进程中断后对真实副作用的确定性核对结果。"""
+
+    NOT_APPLIED = "not_applied"
+    SUCCEEDED = "succeeded"
+    UNKNOWN = "unknown"
+
+
+class ToolReconciliationResult(BaseModel):
+    """Tool 自己根据真实资源状态给出的对账证据。"""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    status: ToolReconciliationStatus
+    output: dict[str, object] = Field(default_factory=dict)
+    evidence: dict[str, object] = Field(default_factory=dict)
+    reason: str = ""
+
+
 class ToolManifest(BaseModel):
     """Tool 注册与调用所需的稳定元信息。"""
 
@@ -60,6 +79,11 @@ ToolHandler = Callable[
     Awaitable[BaseModel],
 ]
 
+ToolReconciler = Callable[
+    [BaseModel, InvocationContext, CapabilityContext],
+    Awaitable[ToolReconciliationResult],
+]
+
 
 @dataclass(frozen=True)
 class ToolPlugin:
@@ -67,3 +91,4 @@ class ToolPlugin:
 
     manifest: ToolManifest
     run: ToolHandler
+    reconcile: ToolReconciler | None = None

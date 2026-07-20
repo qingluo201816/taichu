@@ -46,7 +46,11 @@ from taichu.application.evaluations.knowledge_extraction.profiles import (
     KNOWLEDGE_EXTRACTION_BALANCED,
     MetricProfile,
 )
-from taichu.domain.models.structured_knowledge import StructuredKnowledgeType
+from taichu.domain.models.structured_knowledge import (
+    KnowledgeFieldMergeStrategy,
+    StructuredKnowledgeType,
+    knowledge_field_merge_strategy,
+)
 
 
 # 作者人工判断的出现频率不参与模型提取质量的对错评测。
@@ -202,6 +206,26 @@ def compare_structured_fields(
             actual_value = actual.card.get(field_name)
             expected_value = expected.card.get(field_name)
             weight = rules.field_weights.get(field_name, 1.0)
+            unavailable_reason = _merge_preview_unavailable_reason(
+                actual,
+                field_name,
+            )
+            if unavailable_reason:
+                diffs.append(
+                    FieldDiff(
+                        actual_candidate_id=actual.actual_candidate_id,
+                        expected_card_id=expected.expected_card_id,
+                        field_name=field_name,
+                        kind=FieldComparisonKind.EXACT,
+                        expected_value=expected_value,
+                        actual_value=actual_value,
+                        score=None,
+                        weight=weight,
+                        comparable=False,
+                        reason=unavailable_reason,
+                    )
+                )
+                continue
             if field_name in reference_fields:
                 kind = FieldComparisonKind.REFERENCE
                 score, reason = _reference_score(
@@ -238,6 +262,26 @@ def compare_structured_fields(
             actual_value = actual.card.get(field_name)
             expected_value = expected.card.get(field_name)
             weight = rules.field_weights.get(field_name, 1.0)
+            unavailable_reason = _merge_preview_unavailable_reason(
+                actual,
+                field_name,
+            )
+            if unavailable_reason:
+                diffs.append(
+                    FieldDiff(
+                        actual_candidate_id=actual.actual_candidate_id,
+                        expected_card_id=expected.expected_card_id,
+                        field_name=field_name,
+                        kind=FieldComparisonKind.SET,
+                        expected_value=expected_value,
+                        actual_value=actual_value,
+                        score=None,
+                        weight=weight,
+                        comparable=False,
+                        reason=unavailable_reason,
+                    )
+                )
+                continue
             set_score = compute_set_score(actual_value, expected_value)
             comparable = set_score.f1 is not None
             reason = None if comparable else "empty_set_not_applicable"
@@ -265,6 +309,32 @@ def compare_structured_fields(
         weighted_total=weighted_total,
         diffs=diffs,
     )
+
+
+def _merge_preview_unavailable_reason(
+    actual: ActualCandidate,
+    field_name: str,
+) -> str | None:
+    if (
+        actual.candidate_action is not CandidateAction.UPDATE_CARD
+        or actual.merge_preview_applied
+    ):
+        return None
+    try:
+        strategy = knowledge_field_merge_strategy(
+            actual.knowledge_type,
+            field_name,
+        )
+    except KeyError:
+        return None
+    if strategy in {
+        KnowledgeFieldMergeStrategy.PRESERVE_EXISTING,
+        KnowledgeFieldMergeStrategy.UNION,
+        KnowledgeFieldMergeStrategy.SUM,
+        KnowledgeFieldMergeStrategy.APPEND_UNIQUE,
+    }:
+        return "merge_preview_unavailable"
+    return None
 
 
 def compute_evidence_metrics(
