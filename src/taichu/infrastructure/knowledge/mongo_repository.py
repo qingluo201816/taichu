@@ -20,6 +20,7 @@ from pymongo.errors import (
 from taichu.application.contracts.knowledge_repository import (
     KnowledgeCardPage,
     KnowledgeCardQuery,
+    KnowledgeCardSort,
     KnowledgeRepositoryConcurrentUpdateError,
     KnowledgeRepositoryConflictError,
     KnowledgeRepositoryNotFoundError,
@@ -95,16 +96,53 @@ class MongoKnowledgeRepository:
             await self._client.close()
 
     async def list_cards(self, query: KnowledgeCardQuery) -> KnowledgeCardPage:
-        """Return a filtered page ordered by newest update and stable id."""
+        """Return a filtered page using the application-selected ordering."""
         mongo_filter = _query_filter(query)
         try:
             total = await self._collection.count_documents(mongo_filter)
-            cursor = (
-                self._collection.find(mongo_filter)
-                .sort([("updated_at", DESCENDING), ("_id", ASCENDING)])
-                .skip(query.offset)
-                .limit(query.limit)
-            )
+            if query.sort is KnowledgeCardSort.REALM_LEVEL:
+                cursor = await self._collection.aggregate(
+                    [
+                        {"$match": mongo_filter},
+                        {
+                            "$set": {
+                                "__missing_level_order": {
+                                    "$cond": [
+                                        {
+                                            "$eq": [
+                                                {"$ifNull": ["$level_order", None]},
+                                                None,
+                                            ]
+                                        },
+                                        1,
+                                        0,
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            "$sort": {
+                                "__missing_level_order": ASCENDING,
+                                "level_order": ASCENDING,
+                                "updated_at": DESCENDING,
+                                "_id": ASCENDING,
+                            }
+                        },
+                        {"$skip": query.offset},
+                        {"$limit": query.limit},
+                        {"$unset": "__missing_level_order"},
+                    ]
+                )
+            else:
+                sort_fields = [("updated_at", DESCENDING), ("_id", ASCENDING)]
+                if query.sort is KnowledgeCardSort.APPEARANCE_COUNT:
+                    sort_fields.insert(0, ("appearance_chapter_count", DESCENDING))
+                cursor = (
+                    self._collection.find(mongo_filter)
+                    .sort(sort_fields)
+                    .skip(query.offset)
+                    .limit(query.limit)
+                )
             documents = await cursor.to_list(length=query.limit)
         except PyMongoError as error:
             raise _translate_mongo_error(error) from error
@@ -126,9 +164,7 @@ class MongoKnowledgeRepository:
             page = await self.list_cards(
                 KnowledgeCardQuery(
                     type=type,
-                    lifecycles=frozenset(
-                        {StructuredKnowledgeLifecycle.CONFIRMED}
-                    ),
+                    lifecycles=frozenset({StructuredKnowledgeLifecycle.CONFIRMED}),
                     offset=offset,
                     limit=200,
                 )
@@ -234,15 +270,11 @@ class MongoKnowledgeRepository:
         expected_updated_at: str | None,
     ) -> NoReturn:
         try:
-            exists = await self._collection.count_documents(
-                {"_id": card_id}, limit=1
-            )
+            exists = await self._collection.count_documents({"_id": card_id}, limit=1)
         except PyMongoError as error:
             raise _translate_mongo_error(error) from error
         if not exists:
-            raise KnowledgeRepositoryNotFoundError(
-                f"知识卡“{card_id}”不存在。"
-            )
+            raise KnowledgeRepositoryNotFoundError(f"知识卡“{card_id}”不存在。")
         if expected_updated_at is not None:
             raise KnowledgeRepositoryConcurrentUpdateError(
                 "知识卡已被其他操作更新，请刷新后重试。"
@@ -267,13 +299,9 @@ def knowledge_collection_validator() -> dict[str, Any]:
         "summary": {"bsonType": "string"},
         "appearance_chapter_count": {"bsonType": ["int", "long", "null"], "minimum": 0},
         "lifecycle": {
-            "enum": [
-                lifecycle.value for lifecycle in StructuredKnowledgeLifecycle
-            ]
+            "enum": [lifecycle.value for lifecycle in StructuredKnowledgeLifecycle]
         },
-        "source_origin": {
-            "enum": [None, "inbox_fact", "agent_extract", "manual"]
-        },
+        "source_origin": {"enum": [None, "inbox_fact", "agent_extract", "manual"]},
         "source_note": {"bsonType": "string"},
         "role_type": nullable_string,
         "identity": nullable_string,
@@ -283,9 +311,7 @@ def knowledge_collection_validator() -> dict[str, Any]:
         "first_seen_chapter_id": nullable_string,
         "last_seen_chapter_id": nullable_string,
         "system": nullable_string,
-        "level_order": {
-            "bsonType": ["double", "int", "long", "decimal", "null"]
-        },
+        "level_order": {"bsonType": ["double", "int", "long", "decimal", "null"]},
         "technique_type": nullable_string,
         "grade": nullable_string,
         "practice_condition": nullable_string,
@@ -405,9 +431,7 @@ def bson_datetime_to_iso(value: datetime) -> str:
 
 def _query_filter(query: KnowledgeCardQuery) -> dict[str, Any]:
     mongo_filter: dict[str, Any] = {
-        "lifecycle": {
-            "$in": sorted(lifecycle.value for lifecycle in query.lifecycles)
-        }
+        "lifecycle": {"$in": sorted(lifecycle.value for lifecycle in query.lifecycles)}
     }
     if query.type is not None:
         mongo_filter["type"] = query.type.value
@@ -423,13 +447,9 @@ def _query_filter(query: KnowledgeCardQuery) -> dict[str, Any]:
 
 def _translate_mongo_error(error: PyMongoError) -> Exception:
     if isinstance(error, DuplicateKeyError):
-        return KnowledgeRepositoryConflictError(
-            "同类型知识卡的名称或别名已存在。"
-        )
+        return KnowledgeRepositoryConflictError("同类型知识卡的名称或别名已存在。")
     if isinstance(error, OperationFailure) and error.code == 121:
-        return KnowledgeRepositoryValidationError(
-            "知识卡未通过 MongoDB 字段校验。"
-        )
+        return KnowledgeRepositoryValidationError("知识卡未通过 MongoDB 字段校验。")
     if isinstance(
         error,
         (

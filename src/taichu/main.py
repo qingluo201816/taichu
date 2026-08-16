@@ -606,10 +606,12 @@ def create_app(
                 ) from error
         await knowledge_extraction_evaluation_service.recover_interrupted()
         await general_agent_runtime_service.recover_interrupted()
+        await knowledge_extraction_service.recover_interrupted()
         knowledge_extraction_evaluation_service.start_watchdog()
         try:
             yield
         finally:
+            await knowledge_extraction_service.shutdown()
             await general_agent_runtime_service.shutdown()
             await knowledge_extraction_evaluation_service.shutdown()
             await vector_graph_backend.close()

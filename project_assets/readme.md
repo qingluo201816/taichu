@@ -84,7 +84,7 @@ project_assets/
 │       └── interactive-runtime/                 # 网页发起评测的运行状态与终态证据持久化
 └── generated/                                   # 按需创建的临时生成物根目录
     ├── pytest-workspaces/                       # pytest 临时隔离工作区，不属于项目运行数据
-    ├── milvus_vector_graph/                     # 当前多跳图索引的 active 构建摘要
+    ├── milvus_vector_graph/                     # 多跳图索引的运行摘要与逐来源增量清单
     ├── agent_memory_indexes/                    # 从运行记忆记录重建的词法索引
     └── temp/                                    # 前后端运行日志等临时输出
 ```
@@ -159,7 +159,7 @@ LangGraph 节点级检查点保存在 `derived/general_agent_graph_checkpoints/`
 
 ### generated
 
-`generated/` 是按需创建的临时生成物层。`generated/milvus_vector_graph/active_manifest.json` 保存最近一次正文与知识卡联合建模的快照哈希、来源数量、实体数、关系数和 passage 数；它不保存向量、正文或完整知识卡。删除 Milvus collections 和该清单后，可以从 Markdown 与 MongoDB confirmed 卡全量重建。
+`generated/` 是按需创建的临时生成物层。`generated/milvus_vector_graph/active_manifest.json` 保存最近一次正文与知识卡联合更新的语料快照、来源数量、配置指纹、实体数、关系数和 passage 数；`source_manifest.json` 保存每个正文章节或已确认知识卡最近一次成功写入的来源哈希、文档数量与索引配置指纹，用于跳过未变化来源、同步删除和失败续跑；`build_status.json` 只保存当前或最近一次更新的阶段、来源进度与错误。三者都不保存向量、正文或完整知识卡，也不得成为事实源；日常语料变化只做来源级增量更新，只有派生索引丢失或发生不兼容 Schema 迁移时才从 Markdown 与 MongoDB confirmed 卡重新生成。
 
 `generated/agent_memory_indexes/lexical_index.json` 是运行记忆的可重建词法索引，只保存记忆标识、内容哈希和词项，不保存唯一内容副本。索引缺失、过期或损坏时会从 `derived/general_agent_memory/` 自动重建；它不得与知识库向量索引混用。
 

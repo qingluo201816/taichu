@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
 from taichu.domain.models.structured_knowledge import (
@@ -10,6 +11,14 @@ from taichu.domain.models.structured_knowledge import (
     StructuredKnowledgeLifecycle,
     StructuredKnowledgeType,
 )
+
+
+class KnowledgeCardSort(StrEnum):
+    """Application-selected ordering for a knowledge-card page."""
+
+    RECENT = "recent"
+    REALM_LEVEL = "realm_level"
+    APPEARANCE_COUNT = "appearance_count"
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,6 +35,7 @@ class KnowledgeCardQuery:
         )
     )
     q: str | None = None
+    sort: KnowledgeCardSort = KnowledgeCardSort.RECENT
     offset: int = 0
     limit: int = 50
 

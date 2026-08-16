@@ -43,6 +43,7 @@ import {
   listKnowledgeExtractionRuns,
   getKnowledgeSedimentationProgress,
   rejectKnowledgeExtractionCandidate,
+  retryFailedKnowledgeExtractionSummaries,
   startBatchKnowledgeExtractionRun,
   startKnowledgeExtractionRun,
 } from "@/lib/api/agent-workbench";
@@ -92,7 +93,7 @@ import type {
 import { cn } from "@/lib/utils";
 
 type WorkbenchSection = "run" | "candidates" | "detail" | "metrics";
-type CandidateStatusFilter = ReviewCandidateStatus | "all";
+type CandidateStatusFilter = ReviewCandidateStatus | "needs_attention" | "all";
 type RunNotice = {
   message: string;
   runId?: string;
@@ -157,6 +158,7 @@ const candidateStatusFilters: Array<{
   label: string;
 }> = [
   { value: "pending", label: "待处理" },
+  { value: "needs_attention", label: "需处理" },
   { value: "confirmed", label: "已确认" },
   { value: "rejected", label: "已废弃" },
   { value: "all", label: "全部" },
@@ -561,7 +563,7 @@ function KnowledgeExtractionWorkbench({
   }, [selectedCandidate?.target_card_id, targetCards]);
 
   useEffect(() => {
-    if (!selectedCandidate?.target_card_id) {
+    if (!selectedCandidate) {
       queueMicrotask(() => setMergeCandidates([]));
       return;
     }
@@ -590,7 +592,10 @@ function KnowledgeExtractionWorkbench({
           const hasIdentityOverlap =
             hasExactKnowledgeIdentityOverlap(candidateIdentity, card) ||
             hasExactKnowledgeIdentityOverlap(targetIdentity, card);
-          if (card.id !== selectedCandidate.target_card_id && hasIdentityOverlap) {
+          if (
+            card.id !== selectedCandidate.target_card_id &&
+            hasIdentityOverlap
+          ) {
             cards.set(card.id, card);
           }
         });
@@ -601,7 +606,68 @@ function KnowledgeExtractionWorkbench({
   }, [selectedCandidate, selectedTargetCard]);
 
   async function handleMergeExistingCard(mergedCard: StructuredKnowledgeCard) {
-    if (!selectedCandidate?.target_card_id) return;
+    if (!selectedCandidate) return;
+    if (!selectedCandidate.target_card_id) {
+      if (!window.confirm(
+        `将候选“${selectedCandidate.display_title}”的新增信息合并到已有知识卡“${mergedCard.name}”？合并后只保留“${mergedCard.name}”这一张知识卡。`,
+      )) return;
+      let cardUpdates: Record<string, unknown> = {};
+      if (editingCandidateId === selectedCandidate.review_item_id) {
+        const schema = knowledgeSchemaByType.get(selectedCandidate.knowledge_type);
+        if (!schema) {
+          setError("知识字段配置尚未加载完成，请稍后重试。");
+          return;
+        }
+        const formErrors = validateKnowledgeForm(
+          schema,
+          selectedCandidateDraft,
+          CANDIDATE_LOCKED_FIELD_KEYS,
+        );
+        setCandidateFormErrors(current => ({
+          ...current,
+          [selectedCandidate.review_item_id]: formErrors,
+        }));
+        if (Object.keys(formErrors).length) {
+          setError("请先补全必填字段后再合并。");
+          return;
+        }
+        cardUpdates = knowledgePayloadFromForm(
+          schema,
+          selectedCandidateDraft,
+          CANDIDATE_LOCKED_FIELD_KEYS,
+        );
+      }
+      setActionBusyKey(`retarget:${mergedCard.id}`);
+      setError("");
+      try {
+        const response = await editConfirmKnowledgeExtractionCandidate(
+          selectedCandidate.run_id,
+          selectedCandidate.review_item_id,
+          {
+            card_updates: cardUpdates,
+            target_card_id: mergedCard.id,
+            merge_mode: "merge",
+          },
+        );
+        setCurrentRun(response.run);
+        setEditingCandidateId("");
+        const nextCandidateId = pickNextPendingCandidateId(
+          response.run,
+          candidateStatusFilter,
+          selectedCandidate.review_item_id,
+        );
+        setSelectedCandidateId(nextCandidateId);
+        setCandidateDialogOpen(Boolean(nextCandidateId));
+        setMergeCandidates([]);
+        setError(`已将候选“${selectedCandidate.display_title}”合并更新到“${mergedCard.name}”。`);
+        await reloadRuns();
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : "候选合并失败");
+      } finally {
+        setActionBusyKey("");
+      }
+      return;
+    }
     const primaryName = selectedTargetCard?.name || selectedCandidate.matched_card_name || "当前知识卡";
     if (!window.confirm(`将“${mergedCard.name}”合并到“${primaryName}”？合并后前者不再作为有效知识卡展示。`)) return;
     setActionBusyKey(`merge:${mergedCard.id}`);
@@ -818,8 +884,48 @@ function KnowledgeExtractionWorkbench({
         );
         void reloadRuns();
       } else {
-        setError(caught instanceof Error ? caught.message : "采纳本次沉淀失败");
+        const blocked = currentRun.review_items.filter(candidateNeedsAttention);
+        if (blocked.length > 0) {
+          setCandidateStatusFilter("needs_attention");
+          setActiveSection("candidates");
+          setSelectedCandidateId(blocked[0].review_item_id);
+          setCandidateDialogOpen(true);
+          setError(
+            `一键采纳未执行：还有 ${blocked.length} 张候选需要先处理。已切换到“需处理”列表并打开第一张。`,
+          );
+        } else {
+          setError(caught instanceof Error ? caught.message : "采纳本次沉淀失败");
+        }
       }
+    } finally {
+      setActionBusyKey("");
+    }
+  }
+
+  async function handleRetryFailedSummaries() {
+    if (!currentRun) return;
+    setError("");
+    setActionBusyKey("retry-summaries");
+    try {
+      const response = await retryFailedKnowledgeExtractionSummaries(
+        currentRun.run_id,
+      );
+      const remaining = response.run.review_items.filter(candidateHasSummaryFailure);
+      setCurrentRun(response.run);
+      setCandidateStatusFilter(remaining.length > 0 ? "needs_attention" : "pending");
+      setSelectedCandidateId(
+        remaining[0]?.review_item_id ??
+          pickVisibleCandidateId(response.run, "pending", ""),
+      );
+      setCandidateDialogOpen(false);
+      setError(
+        remaining.length > 0
+          ? `摘要已重试，仍有 ${remaining.length} 张失败，请在“需处理”列表中核对。`
+          : "失败摘要已全部重新生成，可以继续一键采纳。",
+      );
+      await reloadRuns();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "重试摘要失败");
     } finally {
       setActionBusyKey("");
     }
@@ -862,7 +968,7 @@ function KnowledgeExtractionWorkbench({
           void handleAcceptRun();
         }}
       />
-      <section className="mx-auto grid max-w-[1440px] gap-4 px-4 py-4 xl:grid-cols-[270px_minmax(0,1fr)]">
+      <section className="mx-auto grid max-w-[1440px] gap-4 px-4 py-4 xl:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="min-w-0 overflow-hidden rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] p-2">
           <AgentWorkbenchSwitcher
             activeAgent="knowledge"
@@ -962,6 +1068,7 @@ function KnowledgeExtractionWorkbench({
                   statusFilter={candidateStatusFilter}
                   actionBusyKey={actionBusyKey}
                   onAcceptRun={() => setBulkAcceptConfirmationStep("first")}
+                  onRetryFailedSummaries={() => void handleRetryFailedSummaries()}
                   onSelectCandidate={candidateId => {
                     setSelectedCandidateId(candidateId);
                     setCandidateDialogOpen(true);
@@ -1445,6 +1552,7 @@ function CandidatePanel({
   statusFilter,
   actionBusyKey,
   onAcceptRun,
+  onRetryFailedSummaries,
   onSelectCandidate,
   onDialogOpenChange,
   onStatusFilterChange,
@@ -1470,6 +1578,7 @@ function CandidatePanel({
   statusFilter: CandidateStatusFilter;
   actionBusyKey: string;
   onAcceptRun: () => void;
+  onRetryFailedSummaries: () => void;
   onSelectCandidate: (candidateId: string) => void;
   onDialogOpenChange: (open: boolean) => void;
   onStatusFilterChange: (filter: CandidateStatusFilter) => void;
@@ -1484,6 +1593,24 @@ function CandidatePanel({
   ) => void;
   onMergeExistingCard: (card: StructuredKnowledgeCard) => void;
 }) {
+  const [retryElapsedSeconds, setRetryElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    if (actionBusyKey !== "retry-summaries") {
+      return;
+    }
+    const startedAt = Date.now();
+    const updateElapsedSeconds = () => {
+      setRetryElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    };
+    const initialUpdate = window.setTimeout(updateElapsedSeconds, 0);
+    const timer = window.setInterval(updateElapsedSeconds, 1000);
+    return () => {
+      window.clearTimeout(initialUpdate);
+      window.clearInterval(timer);
+    };
+  }, [actionBusyKey]);
+
   if (!run) {
     return <EmptyPanel text="请选择或创建一次运行。" />;
   }
@@ -1492,6 +1619,9 @@ function CandidatePanel({
   }
 
   const candidates = filterCandidates(run.review_items, statusFilter);
+  const summaryFailureCount = run.review_items.filter(
+    candidateHasSummaryFailure,
+  ).length;
   return (
     <div className="grid max-w-[980px] gap-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -1516,15 +1646,36 @@ function CandidatePanel({
         <p className="text-xs text-[var(--tc-text-muted)]">
           可逐条审核，也可一键按合并更新采纳全部待处理候选；已废弃项保持不变。
         </p>
-        <Button
-          type="button"
-          size="sm"
-          disabled={actionBusyKey !== ""}
-          onClick={onAcceptRun}
-        >
-          <Check className="size-4" />
-          {actionBusyKey === "accept-run" ? "正在采纳..." : "采纳本次沉淀"}
-        </Button>
+        <span className="flex flex-wrap items-center gap-2">
+          {summaryFailureCount > 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={actionBusyKey !== ""}
+              onClick={onRetryFailedSummaries}
+            >
+              <RefreshCw
+                className={cn(
+                  "size-4",
+                  actionBusyKey === "retry-summaries" && "animate-spin",
+                )}
+              />
+              {actionBusyKey === "retry-summaries"
+                ? `正在重试 · ${retryElapsedSeconds} 秒`
+                : `重试失败摘要 ${summaryFailureCount}`}
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            disabled={actionBusyKey !== ""}
+            onClick={onAcceptRun}
+          >
+            <Check className="size-4" />
+            {actionBusyKey === "accept-run" ? "正在采纳..." : "采纳本次沉淀"}
+          </Button>
+        </span>
       </div>
 
       {candidates.length === 0 ? (
@@ -1533,6 +1684,7 @@ function CandidatePanel({
 
       <div className="grid gap-1">
         {candidates.map(candidate => {
+          const needsAttention = candidateNeedsAttention(candidate);
           return (
             <button
               key={candidate.review_item_id}
@@ -1562,8 +1714,18 @@ function CandidatePanel({
                   {candidateStatusLabel[candidate.candidate_status]}
                 </CandidateTag>
               </span>
-              <span className="whitespace-nowrap text-xs text-[var(--tc-text-muted)]">
-                {candidate.schema_validation.passed ? "校验通过" : "校验失败"}
+              <span
+                className={cn(
+                  "whitespace-nowrap text-xs",
+                  needsAttention
+                    ? "text-amber-300"
+                    : "text-[var(--tc-text-muted)]",
+                )}
+              >
+                {candidateSummaryFailureLabel(candidate) ??
+                  (candidate.schema_validation.passed
+                    ? "校验通过"
+                    : "需要处理")}
               </span>
             </button>
           );
@@ -2252,7 +2414,45 @@ function filterCandidates(
   if (filter === "all") {
     return candidates;
   }
+  if (filter === "needs_attention") {
+    return candidates.filter(candidateNeedsAttention);
+  }
   return candidates.filter(candidate => candidate.candidate_status === filter);
+}
+
+function candidateNeedsAttention(candidate: AgentReviewItem): boolean {
+  return (
+    candidate.candidate_status === "pending" &&
+    (!candidate.schema_validation.passed || candidate.candidate_action === "ignore")
+  );
+}
+
+function candidateHasSummaryFailure(candidate: AgentReviewItem): boolean {
+  return candidateSummaryFailureLabel(candidate) !== null;
+}
+
+function candidateSummaryFailureLabel(candidate: AgentReviewItem): string | null {
+  const errorText = candidate.schema_validation.errors.join("\n");
+  if (errorText.includes("摘要超时")) {
+    return "超时";
+  }
+  if (errorText.includes("摘要输出截断")) {
+    return "输出截断";
+  }
+  if (errorText.includes("摘要输出格式错误")) {
+    return "摘要格式错误";
+  }
+  if (errorText.includes("摘要返回不完整")) {
+    return "摘要返回不完整";
+  }
+  if (
+    errorText.includes("摘要调用失败") ||
+    errorText.includes("摘要综合失败") ||
+    errorText.includes("摘要失败")
+  ) {
+    return "摘要失败";
+  }
+  return null;
 }
 
 function countCandidates(

@@ -10,6 +10,7 @@ from uuid import uuid4
 from taichu.application.contracts.knowledge_repository import (
     KnowledgeCardPage,
     KnowledgeCardQuery,
+    KnowledgeCardSort,
     KnowledgeRepositoryConcurrentUpdateError,
     KnowledgeRepositoryConflictError,
     KnowledgeRepositoryError,
@@ -127,6 +128,11 @@ class KnowledgeService:
             type=knowledge_type,
             lifecycles=lifecycles,
             q=q.strip() if q and q.strip() else None,
+            sort=(
+                KnowledgeCardSort.REALM_LEVEL
+                if knowledge_type is StructuredKnowledgeType.REALM
+                else KnowledgeCardSort.APPEARANCE_COUNT
+            ),
             offset=(page - 1) * page_size,
             limit=page_size,
         )
@@ -310,9 +316,7 @@ class KnowledgeService:
             merged_primary.aliases,
         )
         other_conflicts = [
-            card
-            for card in matches
-            if card.id not in {primary.id, merged.id}
+            card for card in matches if card.id not in {primary.id, merged.id}
         ]
         if other_conflicts:
             names = "、".join(card.name for card in other_conflicts[:3])

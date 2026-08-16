@@ -153,6 +153,69 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(runs_response.json()["total"], 0)
 
+    async def test_restart_marks_orphaned_running_extraction_as_failed(self) -> None:
+        running = AgentRun(
+            run_id="extract_run_20260816_051109_abc123",
+            model_name="test-model",
+            status=AgentRunStatus.RUNNING,
+            scope=AgentRunScope(
+                scope_type="chapter_batch",
+                chapter_ids=["chapter_001"],
+                chapter_titles=["第一章 山门"],
+            ),
+            started_at="2026-08-16T05:11:09+00:00",
+            nodes=[
+                AgentRunNode(
+                    node_name="ReadChapterNode",
+                    status=AgentRunNodeStatus.RUNNING,
+                    started_at="2026-08-16T05:11:10+00:00",
+                )
+            ],
+            total_chapter_count=1,
+        )
+        await self.app.state.knowledge_run_store.write_run(running)
+
+        recovered_count = (
+            await self.app.state.knowledge_extraction_service.recover_interrupted()
+        )
+        recovered = await self.app.state.knowledge_run_store.get_run(running.run_id)
+
+        self.assertEqual(recovered_count, 1)
+        self.assertIsNotNone(recovered)
+        assert recovered is not None
+        self.assertEqual(recovered.status, AgentRunStatus.FAILED)
+        self.assertEqual(recovered.nodes[0].status, AgentRunNodeStatus.FAILED)
+        self.assertEqual(recovered.current_concurrency, 0)
+        self.assertIn("后端服务重启", recovered.errors[0])
+
+    async def test_shutdown_cancels_background_extraction_without_hanging(self) -> None:
+        running = AgentRun(
+            run_id="extract_run_20260816_052300_def456",
+            model_name="test-model",
+            status=AgentRunStatus.RUNNING,
+            scope=AgentRunScope(
+                scope_type="chapter_batch",
+                chapter_ids=["chapter_001"],
+                chapter_titles=["第一章 山门"],
+            ),
+            started_at="2026-08-16T05:23:00+00:00",
+            total_chapter_count=1,
+        )
+        await self.app.state.knowledge_run_store.write_run(running)
+        task = asyncio.create_task(asyncio.Event().wait())
+        service = self.app.state.knowledge_extraction_service
+        service._track_background_task(task)  # noqa: SLF001
+        service._track_run_task(running.run_id, task)  # noqa: SLF001
+
+        await asyncio.wait_for(service.shutdown(), timeout=1)
+        recovered = await self.app.state.knowledge_run_store.get_run(running.run_id)
+
+        self.assertTrue(task.cancelled())
+        self.assertIsNotNone(recovered)
+        assert recovered is not None
+        self.assertEqual(recovered.status, AgentRunStatus.FAILED)
+        self.assertIn("后端服务停止", recovered.errors[0])
+
     async def test_matching_requested_model_records_runtime_identity(self) -> None:
         response = await self.client.post(
             "/api/agent-workbench/knowledge-extraction/runs",
@@ -1048,6 +1111,48 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(card.identity, "太初教弟子")
         self.assertEqual(card.last_seen_chapter_id, "chapter_002")
 
+    async def test_create_candidate_can_be_retargeted_to_exact_alias_match(
+        self,
+    ) -> None:
+        await self.app.state.knowledge_service.create_confirmed_card(
+            _confirmed_character_card(
+                "character-qin-retarget",
+                summary="秦阳原本是太初教弟子。",
+                source_note="第1章旧来源。",
+                aliases=["阿阳"],
+                identity="太初教弟子",
+            )
+        )
+        await self.app.state.knowledge_run_store.write_run(
+            _retargetable_create_run()
+        )
+
+        response = await self.client.post(
+            "/api/agent-workbench/knowledge-extraction/candidates/review_item_retarget/edit-confirm",
+            json={
+                "target_card_id": "character-qin-retarget",
+                "merge_mode": "merge",
+                "card_updates": {},
+            },
+        )
+        card = await self.app.state.knowledge_repository.get_card(
+            "character-qin-retarget"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNotNone(card)
+        assert card is not None
+        self.assertEqual(card.name, "秦阳")
+        self.assertIn("阿阳", card.aliases)
+        self.assertEqual(card.summary, "新章补充了秦阳的信息。")
+        self.assertIn("第1章旧来源。", card.source_note)
+        self.assertIn("第2章新来源。", card.source_note)
+        item = response.json()["run"]["review_items"][0]
+        self.assertEqual(item["candidate_action"], "update_card")
+        self.assertEqual(item["target_card_id"], "character-qin-retarget")
+        self.assertEqual(item["matched_card_name"], "秦阳")
+        self.assertEqual(item["updated_knowledge_card_id"], "character-qin-retarget")
+
     async def test_edit_confirm_rejects_retired_append_mode(self) -> None:
         response = await self.client.post(
             "/api/agent-workbench/knowledge-extraction/candidates/missing/edit-confirm",
@@ -1393,6 +1498,40 @@ def _targeted_conflict_run(review_item_id: str, target_card_id: str) -> AgentRun
                 match_reason="名称相同",
                 schema_validation=AgentSchemaValidation(passed=True),
                 suggested_action_label="存在冲突，建议编辑后确认",
+                created_at=now,
+                updated_at=now,
+            )
+        ],
+    )
+
+
+def _retargetable_create_run() -> AgentRun:
+    now = "2026-07-04T15:30:22Z"
+    run_id = "extract_run_20260704_153026_retarg"
+    return AgentRun(
+        run_id=run_id,
+        status=AgentRunStatus.COMPLETED,
+        scope=AgentRunScope(chapter_id="chapter_002", chapter_title="第二章 入门"),
+        started_at=now,
+        finished_at=now,
+        review_items=[
+            AgentReviewItem(
+                review_item_id="review_item_retarget",
+                run_id=run_id,
+                candidate_action=AgentReviewCandidateAction.CREATE_CARD,
+                knowledge_type=StructuredKnowledgeType.CHARACTER,
+                candidate_status=AgentReviewCandidateStatus.PENDING,
+                display_title="阿阳",
+                suggested_card={
+                    "type": "character",
+                    "name": "阿阳",
+                    "aliases": [],
+                    "summary": "新章补充了秦阳的信息。",
+                    "source_note": "第2章新来源。",
+                    "identity": "太初教弟子",
+                },
+                schema_validation=AgentSchemaValidation(passed=True),
+                suggested_action_label="建议创建新知识卡",
                 created_at=now,
                 updated_at=now,
             )

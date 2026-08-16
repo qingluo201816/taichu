@@ -1,6 +1,6 @@
 # 太初仓库地图
 
-> 更新日期：2026-08-15
+> 更新日期：2026-08-16
 
 太初是面向个人作者的单本玄幻长篇 AI 写作工作台。本文件只回答两件事：仓库每个区域负责什么，以及想找某类资料应该去哪里。
 
@@ -48,7 +48,7 @@
 | 查看历史快照 | `docs/历史/` |
 | 查看测试与评测样本 | `tests/`、`tests/fixtures/evaluations/` |
 | 安全探测 Right Code 模型名称与协议 | `.agents/scripts/probe_rightcode_models.py` |
-| 探测本地嵌入并重建 Milvus 多跳图索引 | `scripts/probe_embedding_models.py`、`scripts/rebuild_vector_graph_index.py` |
+| 探测本地嵌入并增量更新 Milvus 多跳图索引 | `scripts/probe_embedding_models.py`、`scripts/update_vector_graph_index.py` |
 
 `docs/临时架构/` 和 `docs/临时产品文档/` 可能包含未实现、只实现一部分或已经被代码超越的内容。开发前必须以当前代码、`AGENTS.md` 和数据目录说明复核，不得把临时文档直接当作已落地事实。
 
@@ -105,7 +105,9 @@ npm install
 - 每张 MongoDB `lifecycle=confirmed` 知识卡形成一个完整 passage，不再拆成身份、摘要和类型字段三个向量。
 - 两类 passage 一起抽取实体和关系，因此可以沿“正文事实 → 桥接实体 → 知识卡设定”或反向路径完成多跳召回。
 - `retrieve_story_graph` 是生产只读 Tool，只返回关系链与可追溯证据，最终答案仍由高层编排 Agent 生成。
-- Milvus 仍是可删除、可重建的派生层；Markdown 与 MongoDB 的事实源地位不变。
+- Milvus 仍是可删除、可重建的派生层；Markdown 与 MongoDB 的事实源地位不变。日常语料维护按稳定来源键增量同步，不执行集合级全量重建。
+- 正文章节和知识卡分别形成稳定来源；新增或内容变化的来源执行整源替换，事实源中消失的来源同步删除，内容哈希未变化的来源直接跳过。
+- 每个来源成功后立即推进来源清单；中断后重跑只处理尚未成功或已经变化的来源，不重复处理已完成来源。
 
 生产查询由 Milvus 单库完成第一阶段混合检索：中文 BM25 Top 30 与经 Vector Graph 多跳关系增强的 HNSW Dense Top 30，通过 Milvus 原生 `RRFRanker(k=60)` 融合为 30 条候选，再由 `BAAI/bge-reranker-v2-m3` 重排到 Top 10。HNSW 参数固定为 `M=24`、`efConstruction=300`、`efSearch=150`。
 
@@ -142,21 +144,23 @@ Invoke-RestMethod http://127.0.0.1:8011/v1/models
 docker ps --filter name=taichu-milvus
 Invoke-RestMethod http://127.0.0.1:8012/health
 uv run python scripts/probe_embedding_models.py
-uv run python scripts/rebuild_vector_graph_index.py --dry-run
+uv run python scripts/update_vector_graph_index.py --dry-run
 ```
 
-### 索引重建与专项评测
+### 索引增量更新与专项评测
 
 ```powershell
-# 只核对章节数、正文片段数、知识卡数和快照，不写 Milvus
-uv run python scripts/rebuild_vector_graph_index.py --dry-run
+# 只核对章节数、正文片段数、知识卡数和当前语料快照，不写 Milvus
+uv run python scripts/update_vector_graph_index.py --dry-run
 
-# 全量重建实体、关系和 passage 集合
-uv run python scripts/rebuild_vector_graph_index.py
+# 按来源增量更新实体、关系和 passage
+uv run python scripts/update_vector_graph_index.py
 
 ```
 
-全量重建会从当前正文 Markdown 和 MongoDB 已确认知识卡重新生成派生图索引。构建完成后，摘要清单写入 `project_assets/generated/milvus_vector_graph/active_manifest.json`；清单不保存正文、知识卡或向量。
+增量更新以正文章节和已确认知识卡的稳定 `source_key` 为同步边界。来源新增或内容哈希变化时整源替换，来源消失时删除其 passage 及无引用图数据，未变化来源跳过。每个来源成功后立即写入 `project_assets/generated/milvus_vector_graph/source_manifest.json`，因此失败重试只继续未完成来源；整次运行摘要仍写入 `active_manifest.json`。两份清单都不保存正文、知识卡或向量。
+
+只有集合 Schema、嵌入维度或索引协议发生不兼容变化时，才通过专门迁移执行一次性集合重建；普通正文和知识卡更新不得 `drop` Milvus collections。
 
 ### 全新机器的下载方式
 
@@ -212,7 +216,7 @@ llama.cpp 依赖最新 Microsoft Visual C++ x64 运行库。本机已升级为 `
 |---|---|---|
 | MongoDB 数据 | `E:\Taichu\MongoDB\data\db` | 当前唯一结构事实存储位置 |
 | MongoDB 日志 | `E:\Taichu\MongoDB\log` | MongoDB 本地运行日志 |
-| Milvus 多跳图索引 | Docker 命名卷 `taichu_milvus_data`、`taichu_milvus_etcd`、`taichu_milvus_minio` | 可从正文 Markdown 与 MongoDB confirmed 卡重建的派生索引 |
+| Milvus 多跳图索引 | Docker 命名卷 `taichu_milvus_data`、`taichu_milvus_etcd`、`taichu_milvus_minio` | 可从正文 Markdown 与 MongoDB confirmed 卡按来源增量恢复的派生索引 |
 | BGE Reranker 模型 | `E:\Taichu\Models\bge-reranker-v2-m3` | 本地重排模型权重，不是小说事实源 |
 | Qwen Embedding 模型 | `E:\Taichu\Models\Qwen3-Embedding-4B` | 本地 GGUF 模型，不是小说事实源 |
 | llama.cpp 运行时 | `E:\Taichu\Runtime\llama.cpp\b10066` | 本地模型服务程序 |

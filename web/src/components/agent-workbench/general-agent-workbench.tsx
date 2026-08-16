@@ -522,7 +522,7 @@ export function GeneralAgentWorkbench({
       viewportLocked
       workspaceStyle={{ backgroundImage: "none" }}
     >
-      <section className="grid h-full min-h-0 grid-cols-[252px_minmax(0,1fr)]">
+      <section className="grid h-full min-h-0 grid-cols-[280px_minmax(0,1fr)]">
         <aside className="flex min-h-0 min-w-0 flex-col bg-[var(--tc-surface-card)]">
           <div className="shrink-0 px-3 py-4">
             <AgentWorkbenchSwitcher

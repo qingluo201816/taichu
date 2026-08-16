@@ -140,6 +140,72 @@ class KnowledgeExtractionService:
         self._background_tasks_by_run_id: dict[str, asyncio.Task[None]] = {}
         self._review_locks: dict[str, asyncio.Lock] = {}
 
+    async def recover_interrupted(self) -> int:
+        """Fail persisted running tasks that cannot survive a process restart."""
+        runs, _ = await self._run_store.list_runs(
+            page=1,
+            page_size=10_000,
+            status=AgentRunStatus.RUNNING.value,
+        )
+        for run in runs:
+            await self._fail_interrupted_run(
+                run.run_id,
+                "任务因后端服务重启而中断，请重新运行本次知识沉淀。",
+            )
+        return len(runs)
+
+    async def shutdown(self) -> None:
+        """Cancel extraction tasks so application shutdown cannot hang indefinitely."""
+        run_ids = list(self._background_tasks_by_run_id)
+        tasks = list(self._background_tasks)
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+        self._background_tasks.clear()
+        self._background_tasks_by_run_id.clear()
+        for run_id in run_ids:
+            await self._fail_interrupted_run(
+                run_id,
+                "任务因后端服务停止而中断，请重新运行本次知识沉淀。",
+            )
+
+    async def _fail_interrupted_run(self, run_id: str, message: str) -> None:
+        run = await self._run_store.get_run(run_id)
+        if run is None or run.status is not AgentRunStatus.RUNNING:
+            return
+        progress = [
+            item.model_copy(
+                update={
+                    "status": AgentRunNodeStatus.FAILED,
+                    "finished_at": item.finished_at or _now_iso(),
+                    "error": item.error or message,
+                }
+            )
+            if item.status is AgentRunNodeStatus.RUNNING
+            else item
+            for item in run.batch_chapter_progress
+        ]
+        failed = run.model_copy(
+            update={
+                "status": AgentRunStatus.FAILED,
+                "finished_at": _now_iso(),
+                "nodes": _mark_running_nodes_failed(run.nodes, message),
+                "batch_chapter_progress": progress,
+                "current_concurrency": 0,
+                "failed_chapter_count": sum(
+                    1
+                    for item in progress
+                    if item.status is AgentRunNodeStatus.FAILED
+                ),
+                "errors": [*run.errors, message]
+                if message not in run.errors
+                else run.errors,
+            }
+        )
+        await self._run_store.write_run(failed)
+
     def validate_model_selection(self, model_name: str | None) -> None:
         """Reject request-only model switching before an Agent run is created."""
         self._resolve_model_selection(model_name)
@@ -195,6 +261,127 @@ class KnowledgeExtractionService:
             return await self._sedimentation_progress_repository.advance_to(
                 chapter_ids[-1]
             )
+
+    async def retry_failed_summaries(self, run_id: str) -> AgentRun:
+        """Retry only candidates blocked by a failed summary-model call."""
+        async with self._review_lock(run_id):
+            run = await self.get_run(run_id)
+            if run.status is not AgentRunStatus.COMPLETED:
+                raise KnowledgeExtractionError("只能重试已完成任务中的失败摘要。")
+
+            candidates = [dict(candidate) for candidate in run.typed_candidates]
+            failed_candidates = [
+                candidate
+                for candidate in candidates
+                if candidate.get("_summary_synthesis_error")
+            ]
+            if not failed_candidates:
+                return run
+
+            state = cast(
+                KnowledgeExtractionState,
+                {
+                    "run_id": run.run_id,
+                    "model_name": run.model_name,
+                    "requested_model_name": run.requested_model_name,
+                    "model_id": run.model_id,
+                    "model_display_name": run.model_display_name,
+                    "upstream_model": run.upstream_model,
+                    "wire_protocol": run.wire_protocol,
+                    "chapter_id": run.scope.chapter_id,
+                    "chapter_ids": run.scope.chapter_ids,
+                    "llm_calls": [],
+                    "errors": [],
+                },
+            )
+            dependencies = KnowledgeExtractionDependencies(
+                chapter_service=self._chapter_service,
+                llm=self._llm,
+                retrieval_service=self._retrieval_service,
+                run_store=self._run_store,
+            )
+            retry_started_at = _now_iso()
+            await synthesize_candidate_summaries(
+                state,
+                dependencies,
+                failed_candidates,
+                include_new=True,
+                node_name="BatchSynthesizeCandidateSummariesNode",
+            )
+            retry_finished_at = _now_iso()
+
+            rebuilt_items = _build_batch_review_items(run.run_id, candidates)
+            previous_items = {item.review_item_id: item for item in run.review_items}
+            review_items = [
+                item.model_copy(
+                    update={
+                        "candidate_status": previous.candidate_status,
+                        "author_action": previous.author_action,
+                        "created_knowledge_card_id": previous.created_knowledge_card_id,
+                        "updated_knowledge_card_id": previous.updated_knowledge_card_id,
+                        "created_at": previous.created_at,
+                    }
+                )
+                if (previous := previous_items.get(item.review_item_id)) is not None
+                else item
+                for item in rebuilt_items
+            ]
+            llm_calls = [
+                *run.llm_calls,
+                *[
+                    AgentLLMCall.model_validate(call)
+                    for call in state.get("llm_calls", [])
+                ],
+            ]
+            summary_node = next(
+                (
+                    node
+                    for node in run.nodes
+                    if node.node_name == "BatchSynthesizeCandidateSummariesNode"
+                ),
+                None,
+            )
+            nodes = list(run.nodes)
+            if summary_node is not None:
+                nodes = _upsert_node(
+                    nodes,
+                    summary_node.model_copy(
+                        update={
+                            "duration_ms": summary_node.duration_ms
+                            + _iso_duration_ms(retry_started_at, retry_finished_at),
+                            "output_summary": _batch_node_output(
+                                "BatchSynthesizeCandidateSummariesNode",
+                                candidates,
+                            ),
+                        }
+                    ),
+                )
+            summary_errors = [
+                error
+                for error in run.errors
+                if not error.startswith(
+                    "BatchSynthesizeCandidateSummariesNode 的 LLM 调用失败"
+                )
+            ]
+            errors = [*summary_errors, *state.get("errors", [])]
+            updated = run.model_copy(
+                update={
+                    "nodes": nodes,
+                    "llm_calls": llm_calls,
+                    "typed_candidates": candidates,
+                    "review_items": review_items,
+                    "metrics": _metrics_for_items(
+                        review_items=review_items,
+                        nodes=nodes,
+                        llm_calls=llm_calls,
+                        started_at=run.started_at,
+                        finished_at=run.finished_at or retry_finished_at,
+                    ),
+                    "errors": errors,
+                }
+            )
+            await self._run_store.write_run(updated)
+            return updated
 
     async def _preflight_accept_candidate(
         self,
@@ -1238,7 +1425,7 @@ class KnowledgeExtractionService:
                 summary_state,
                 summary_dependencies,
                 typed_candidates,
-                include_new=True,
+                include_new=False,
                 node_name="BatchSynthesizeCandidateSummariesNode",
             )
             for call in summary_state.get("llm_calls", []):
@@ -1632,9 +1819,29 @@ class KnowledgeExtractionService:
         )
         target_id = target_card_id or item.target_card_id
         if target_id:
+            update_payload = _patch_updates_from_payload(
+                item.knowledge_type,
+                merged_payload,
+            )
+            if item.target_card_id is None and merge_mode == "merge":
+                target_card = await self._knowledge_service.get_card(target_id)
+                if target_card.type is not item.knowledge_type:
+                    raise KnowledgeExtractionError(
+                        "只能把候选合并到相同类型的已有知识卡。"
+                    )
+                candidate_name = str(update_payload.get("name") or "").strip()
+                aliases = _list_strings(update_payload.get("aliases"))
+                if (
+                    candidate_name
+                    and _normalize_identity(candidate_name)
+                    != _normalize_identity(target_card.name)
+                ):
+                    aliases.append(candidate_name)
+                update_payload["name"] = target_card.name
+                update_payload["aliases"] = _dedupe_strings(aliases)
             written = await self._knowledge_service.apply_author_confirmed_updates(
                 target_id,
-                _patch_updates_from_payload(item.knowledge_type, merged_payload),
+                update_payload,
                 merge_mode=merge_mode,
                 allow_appearance_count_update=True,
             )
@@ -1642,6 +1849,17 @@ class KnowledgeExtractionService:
                 item,
                 author_action="edit_confirm",
                 updated_card_id=written.id,
+            ).model_copy(
+                update={
+                    "candidate_action": AgentReviewCandidateAction.UPDATE_CARD,
+                    "target_card_id": written.id,
+                    "matched_card_name": written.name,
+                    "match_reason": (
+                        item.match_reason
+                        or "作者选择将候选合并到已有知识卡。"
+                    ),
+                    "suggested_action_label": "已合并更新已有知识卡",
+                }
             )
         else:
             card = _card_from_payload(
@@ -2363,6 +2581,17 @@ def _batch_node_output(node_name: str, result: object) -> str:
         if node_name == "BatchCardAggregationNode":
             return f"聚合为 {len(result)} 个跨章节候选。"
         if node_name == "BatchSynthesizeCandidateSummariesNode":
+            failed_count = sum(
+                1
+                for candidate in result
+                if isinstance(candidate, dict)
+                and candidate.get("_summary_synthesis_error")
+            )
+            if failed_count:
+                return (
+                    f"摘要综合成功 {len(result) - failed_count} 个，"
+                    f"失败 {failed_count} 个；失败项需重试或编辑。"
+                )
             return f"完成 {len(result)} 个候选的摘要综合。"
         if node_name == "BatchBuildReviewItemsNode":
             return f"生成 {len(result)} 个审核项。"

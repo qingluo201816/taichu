@@ -258,6 +258,24 @@ async def api_accept_knowledge_extraction_run(
     )
 
 
+@router.post(
+    "/runs/{run_id}/summaries/retry",
+    response_model=KnowledgeExtractionCandidateActionResponse,
+)
+async def api_retry_failed_knowledge_extraction_summaries(
+    run_id: str,
+    service: KnowledgeExtractionService = Depends(provide_knowledge_extraction_service),
+) -> KnowledgeExtractionCandidateActionResponse:
+    """Retry summary synthesis only for candidates blocked by model-call failures."""
+    try:
+        run = await service.retry_failed_summaries(run_id)
+    except KnowledgeExtractionNotFoundError as error:
+        raise _not_found(str(error)) from error
+    except KnowledgeExtractionError as error:
+        raise _bad_request(str(error)) from error
+    return KnowledgeExtractionCandidateActionResponse(run=run)
+
+
 @router.get(
     "/runs/{run_id}/candidates",
     response_model=KnowledgeExtractionCandidateListResponse,

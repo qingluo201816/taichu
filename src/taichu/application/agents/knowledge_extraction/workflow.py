@@ -104,6 +104,8 @@ _MAX_MENTION_EVIDENCE_COUNT = 5
 _MAX_GROUP_EVIDENCE_COUNT = 12
 _JSON_REPAIR_MAX_RETRIES = 2
 _KNOWLEDGE_EXTRACTION_MAX_OUTPUT_TOKENS = 100_000
+_SUMMARY_SYNTHESIS_MAX_OUTPUT_TOKENS = 100_000
+_SUMMARY_SYNTHESIS_TIMEOUT_SECONDS = 300.0
 _REJECT_CHARACTER_NAMES = frozenset(
     {
         "另一生面孔",
@@ -1076,7 +1078,8 @@ def _aggregate_entities() -> Callable[
         order: list[tuple[str, str]] = []
         for mention in state.get("raw_mentions", []):
             knowledge_type = str(mention.get("knowledge_type") or "")
-            canonical_name = _first_non_empty(mention.get("name"))
+            raw_name = _first_non_empty(mention.get("name"))
+            canonical_name = _canonical_entity_name(knowledge_type, raw_name)
             normalized_name = _normalize_identity(canonical_name)
             if not normalized_name:
                 continue
@@ -1095,8 +1098,8 @@ def _aggregate_entities() -> Callable[
                 order.append(key)
             group = groups[key]
             raw_names = group.setdefault("raw_names", [])
-            if canonical_name not in raw_names:
-                raw_names.append(canonical_name)
+            if raw_name not in raw_names:
+                raw_names.append(raw_name)
             group["mention_count"] = int(group.get("mention_count") or 0) + 1
             group["evidence_excerpts"] = _append_unique_strings(
                 _list_strings(group.get("evidence_excerpts")),
@@ -1349,10 +1352,12 @@ def _merge_expert_candidates() -> Callable[
             *state.get("event_rule_typed_candidates", []),
         ]
         state["typed_candidates"] = mark_cross_type_projection_conflicts(
-            merge_overlapping_event_candidates(
-                _ground_candidates_from_entity_groups(
-                    state,
-                    candidates,
+            mark_epistemic_fact_conflicts(
+                merge_overlapping_event_candidates(
+                    _ground_candidates_from_entity_groups(
+                        state,
+                        candidates,
+                    )
                 )
             )
         )
@@ -1368,6 +1373,19 @@ def _normalize_and_validate() -> Callable[
         normalized: list[dict[str, Any]] = []
         for candidate in state.get("typed_candidates", []):
             card = dict(candidate)
+            knowledge_type = str(card.get("type") or "")
+            raw_name = _first_non_empty(card.get("name"))
+            canonical_name = _canonical_entity_name(knowledge_type, raw_name)
+            if canonical_name and canonical_name != raw_name:
+                card["name"] = canonical_name
+                card["aliases"] = [
+                    alias
+                    for alias in _append_unique_strings(
+                        _list_strings(card.get("aliases")),
+                        [raw_name],
+                    )
+                    if alias != canonical_name
+                ]
             validation_errors = _candidate_validation_errors(card)
             card["schema_validation"] = {
                 "passed": not validation_errors,
@@ -1522,10 +1540,12 @@ async def synthesize_candidate_summaries(
 
     async def synthesize_chunk(
         chunk: list[tuple[int, dict[str, Any]]],
-    ) -> tuple[dict[str, str], list[dict[str, Any]], list[str]]:
-        chunk_state = cast(KnowledgeExtractionState, dict(state))
-        chunk_state["llm_calls"] = []
-        chunk_state["errors"] = []
+    ) -> tuple[
+        dict[str, str],
+        dict[str, str],
+        list[dict[str, Any]],
+        list[str],
+    ]:
         prompt_candidates: list[dict[str, Any]] = []
         for candidate_index, candidate in chunk:
             existing = candidate.get("_existing_card")
@@ -1547,6 +1567,9 @@ async def synthesize_candidate_summaries(
             SUMMARY_SYNTHESIS_PROMPT,
             candidates_json=_json_dump(prompt_candidates),
         )
+        chunk_state = cast(KnowledgeExtractionState, dict(state))
+        chunk_state["llm_calls"] = []
+        chunk_state["errors"] = []
         async with semaphore:
             payload = await _complete_json(
                 chunk_state,
@@ -1554,6 +1577,8 @@ async def synthesize_candidate_summaries(
                 node_name=node_name,
                 prompt_version=SUMMARY_SYNTHESIS_PROMPT_VERSION,
                 prompt=prompt,
+                max_output_tokens=_SUMMARY_SYNTHESIS_MAX_OUTPUT_TOKENS,
+                timeout_seconds=_SUMMARY_SYNTHESIS_TIMEOUT_SECONDS,
             )
         summaries: dict[str, str] = {}
         raw_summaries = (
@@ -1572,16 +1597,28 @@ async def synthesize_candidate_summaries(
                 summary = _normalize_synthesized_summary(item.get("summary"))
                 if candidate_id and summary:
                     summaries[candidate_id] = summary
+        failure_message = _summary_synthesis_failure_message(
+            chunk_state.get("llm_calls", []),
+            chunk_state.get("errors", []),
+        )
+        failures = {
+            item["candidate_id"]: failure_message
+            for item in prompt_candidates
+            if item["candidate_id"] not in summaries
+        }
         return (
             summaries,
+            failures,
             chunk_state.get("llm_calls", []),
             chunk_state.get("errors", []),
         )
 
     results = await asyncio.gather(*(synthesize_chunk(chunk) for chunk in chunks))
     synthesized: dict[str, str] = {}
-    for summaries, llm_calls, errors in results:
+    synthesis_failures: dict[str, str] = {}
+    for summaries, failures, llm_calls, errors in results:
         synthesized.update(summaries)
+        synthesis_failures.update(failures)
         state.setdefault("llm_calls", []).extend(llm_calls)
         state.setdefault("errors", []).extend(errors)
 
@@ -1596,13 +1633,54 @@ async def synthesize_candidate_summaries(
             candidate.pop("_summary_synthesis_error", None)
         else:
             candidate["summary"] = fallback
-            candidate["_summary_synthesis_error"] = "摘要综合失败，请编辑摘要后再确认。"
+            candidate["_summary_synthesis_error"] = synthesis_failures.get(
+                candidate_id,
+                "摘要失败，请重试或编辑摘要后再确认。",
+            )
         validation_errors = _candidate_validation_errors(candidate)
         candidate["schema_validation"] = {
             "passed": not validation_errors,
             "errors": validation_errors,
         }
     return candidates
+
+
+def _summary_synthesis_failure_message(
+    llm_calls: list[dict[str, Any]],
+    errors: list[str],
+) -> str:
+    call_errors = [
+        str(call.get("error") or "").strip()
+        for call in llm_calls
+        if str(call.get("error") or "").strip()
+    ]
+    error_text = "\n".join([*errors, *call_errors])
+    if "已停止等待" in error_text or "调用超过" in error_text:
+        return "摘要超时，请重试或编辑摘要后再确认。"
+
+    initial_calls = [
+        call
+        for call in llm_calls
+        if not str(call.get("prompt_version") or "").endswith("_json_repair_v1")
+    ]
+    output_limit_reached = any(
+        isinstance(call.get("output_tokens"), int)
+        and call["output_tokens"] >= _SUMMARY_SYNTHESIS_MAX_OUTPUT_TOKENS
+        for call in initial_calls
+    )
+    provider_reported_truncation = any(
+        str(call.get("finish_reason") or "").casefold()
+        in {"length", "max_tokens", "max_output_tokens", "incomplete"}
+        for call in initial_calls
+    )
+    response_ended_mid_json = "Unterminated string" in error_text
+    if output_limit_reached or provider_reported_truncation or response_ended_mid_json:
+        return "摘要输出截断，请重试或编辑摘要后再确认。"
+    if "响应不是有效 JSON" in error_text:
+        return "摘要输出格式错误，请重试或编辑摘要后再确认。"
+    if error_text:
+        return "摘要调用失败，请重试或编辑摘要后再确认。"
+    return "摘要返回不完整，请重试或编辑摘要后再确认。"
 
 
 def _normalize_synthesized_summary(value: object) -> str:
@@ -1707,6 +1785,8 @@ async def _complete_json(
     node_name: str,
     prompt_version: str,
     prompt: str,
+    max_output_tokens: int = _KNOWLEDGE_EXTRACTION_MAX_OUTPUT_TOKENS,
+    timeout_seconds: float | None = None,
 ) -> dict[str, Any] | None:
     current_prompt = prompt
     current_prompt_version = prompt_version
@@ -1722,28 +1802,29 @@ async def _complete_json(
         llm_response: LLMResponse | None = None
 
         try:
-            response = await dependencies.llm.complete(
-                LLMRequest(
-                    model_id=state.get("model_id") or state.get("model_name") or "",
-                    messages=(
-                        LLMMessage(
-                            role="system",
-                            content=(
-                                "你是太初知识沉淀工作流节点，必须严格返回合法 JSON。"
-                            ),
-                        ),
-                        LLMMessage(role="user", content=current_prompt),
+            request = LLMRequest(
+                model_id=state.get("model_id") or state.get("model_name") or "",
+                messages=(
+                    LLMMessage(
+                        role="system",
+                        content="你是太初知识沉淀工作流节点，必须严格返回合法 JSON。",
                     ),
-                    task_type="knowledge_extraction",
-                    task_name=_node_label(node_name),
-                    run_id=state.get("run_id"),
-                    chapter_ids=tuple(_list_strings(state.get("chapter_ids")))
-                    or (state.get("chapter_id", ""),),
-                    response_mode="json",
-                    max_output_tokens=_KNOWLEDGE_EXTRACTION_MAX_OUTPUT_TOKENS,
-                    feature="知识沉淀",
-                )
+                    LLMMessage(role="user", content=current_prompt),
+                ),
+                task_type="knowledge_extraction",
+                task_name=_node_label(node_name),
+                run_id=state.get("run_id"),
+                chapter_ids=tuple(_list_strings(state.get("chapter_ids")))
+                or (state.get("chapter_id", ""),),
+                response_mode="json",
+                max_output_tokens=max_output_tokens,
+                feature="知识沉淀",
             )
+            if timeout_seconds is None:
+                response = await dependencies.llm.complete(request)
+            else:
+                async with asyncio.timeout(timeout_seconds):
+                    response = await dependencies.llm.complete(request)
             llm_response = response if isinstance(response, LLMResponse) else None
             raw_response = response_text(response)
             parsed_value = json.loads(raw_response)
@@ -1755,7 +1836,12 @@ async def _complete_json(
             last_parse_error = caught
             call_error = f"{node_name} 的 LLM 响应不是有效 JSON：{caught}"
         except Exception as caught:  # noqa: BLE001
-            call_error = f"{node_name} 的 LLM 调用失败：{caught}"
+            if isinstance(caught, TimeoutError) and timeout_seconds is not None:
+                call_error = (
+                    f"{node_name} 的 LLM 调用超过 {timeout_seconds:g} 秒，已停止等待。"
+                )
+            else:
+                call_error = f"{node_name} 的 LLM 调用失败：{caught}"
             await _record_llm_completion(
                 state,
                 dependencies,
@@ -1856,6 +1942,7 @@ async def _record_llm_completion(
         "cost_currency": cost.currency if cost else "CNY",
         "cost_kind": cost.kind if cost else "unavailable",
         "provider_request_id": response.provider_request_id if response else None,
+        "finish_reason": response.finish_reason if response else None,
         "error": error,
     }
     state.setdefault("llm_calls", []).append(call)
@@ -2709,6 +2796,110 @@ def mark_cross_type_projection_conflicts(
     return candidates
 
 
+_EPISTEMIC_EVIDENCE_MARKERS = (
+    "以为",
+    "认为",
+    "认定",
+    "猜测",
+    "猜想",
+    "听说",
+    "据说",
+    "传闻",
+    "传言",
+    "声称",
+    "宣称",
+    "自称",
+    "谎称",
+    "误以为",
+    "恐怕",
+    "可能",
+    "或许",
+    "应该",
+    "想必",
+    "看来",
+    "仿佛",
+    "似乎",
+    "必死无疑",
+    "凶多吉少",
+    "将会",
+    "要让",
+    "定要",
+    "定叫",
+    "如果",
+    "若是",
+)
+_EPISTEMIC_CANDIDATE_MARKERS = (
+    "以为",
+    "认为",
+    "认定",
+    "猜测",
+    "听说",
+    "据说",
+    "传闻",
+    "声称",
+    "误以为",
+    "误判",
+)
+_DEATH_CLAIM_MARKERS = (
+    "死亡",
+    "身亡",
+    "已死",
+    "死去",
+    "丧命",
+    "毙命",
+    "陨落",
+    "殒命",
+)
+_DIRECT_DEATH_CONFIRMATION_MARKERS = (
+    "确认死亡",
+    "当场死亡",
+    "当场身亡",
+    "当场毙命",
+    "气息全无",
+    "已经断气",
+    "停止呼吸",
+    "发现尸体",
+    "确认尸体",
+    "尸体冰冷",
+    "尸体僵硬",
+    "发现遗体",
+    "神魂俱灭",
+    "魂飞魄散",
+)
+
+
+def mark_epistemic_fact_conflicts(
+    candidates: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Block candidates that promote beliefs or predictions to objective facts."""
+    for candidate in candidates:
+        if str(candidate.get("type") or "") != StructuredKnowledgeType.EVENT.value:
+            continue
+        claim = " ".join(
+            str(candidate.get(key) or "") for key in ("name", "summary", "description")
+        )
+        if any(marker in claim for marker in _EPISTEMIC_CANDIDATE_MARKERS):
+            continue
+        evidence = "\n".join(_list_strings(candidate.get("evidence_excerpts")))
+        reasons: list[str] = []
+        if any(marker in evidence for marker in _EPISTEMIC_EVIDENCE_MARKERS):
+            reasons.append(
+                "原文表达的是人物判断、传闻或预测，候选却写成了客观事实；请保留认知主体和“认为/误以为/声称”等限定。"
+            )
+        if any(marker in claim for marker in _DEATH_CLAIM_MARKERS) and not any(
+            marker in evidence for marker in _DIRECT_DEATH_CONFIRMATION_MARKERS
+        ):
+            reasons.append(
+                "候选断言角色已经死亡，但证据没有直接死亡确认；坠崖、重伤、失联或“必死无疑”不能推导为死亡。"
+            )
+        if reasons:
+            candidate["internal_conflicts"] = _append_unique_strings(
+                _list_strings(candidate.get("internal_conflicts")),
+                reasons,
+            )
+    return candidates
+
+
 def _dedupe_text_blocks(values: list[str]) -> str:
     blocks: list[str] = []
     seen: set[str] = set()
@@ -3184,6 +3375,21 @@ def _normalize_identity(value: object) -> str:
     if not isinstance(value, str):
         return ""
     return "".join(value.split()).casefold()
+
+
+_IMMORTAL_SEED_INTERNAL_LEVEL_PATTERN = re.compile(
+    r"^仙苗境(?:第)?[零〇一二三四五六七八九十百两\d多几至到、]+(?:片)?叶(?:境|层|层次)?$"
+)
+
+
+def _canonical_entity_name(knowledge_type: str, name: str) -> str:
+    """Fold immortal-seed leaf counts into their parent realm identity."""
+    compact_name = "".join(name.split())
+    if knowledge_type == "realm" and _IMMORTAL_SEED_INTERNAL_LEVEL_PATTERN.fullmatch(
+        compact_name
+    ):
+        return "仙苗境"
+    return name
 
 
 def _first_non_empty(*values: object) -> str:

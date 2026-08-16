@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from taichu.application.contracts.knowledge_repository import (
     KnowledgeCardPage,
     KnowledgeCardQuery,
+    KnowledgeCardSort,
     KnowledgeRepositoryConcurrentUpdateError,
     KnowledgeRepositoryConflictError,
     KnowledgeRepositoryNotFoundError,
@@ -33,8 +34,7 @@ class InMemoryKnowledgeRepository:
             and (query.type is None or card.type is query.type)
             and _matches_text(card, query.q)
         ]
-        cards.sort(key=lambda card: card.id)
-        cards.sort(key=lambda card: card.updated_at, reverse=True)
+        _sort_cards(cards, query.sort)
         return KnowledgeCardPage(
             cards=cards[query.offset : query.offset + query.limit],
             total=len(cards),
@@ -122,6 +122,27 @@ class InMemoryKnowledgeRepository:
         return card
 
 
+def _sort_cards(
+    cards: list[StructuredKnowledgeCard],
+    sort: KnowledgeCardSort,
+) -> None:
+    """Apply the same stable ordering exposed by the Mongo repository."""
+    cards.sort(key=lambda card: card.id)
+    cards.sort(key=lambda card: card.updated_at, reverse=True)
+    if sort is KnowledgeCardSort.REALM_LEVEL:
+        cards.sort(
+            key=lambda card: (
+                card.level_order is None,
+                card.level_order if card.level_order is not None else 0,
+            )
+        )
+    elif sort is KnowledgeCardSort.APPEARANCE_COUNT:
+        cards.sort(
+            key=lambda card: card.appearance_chapter_count or 0,
+            reverse=True,
+        )
+
+
 def _matches_text(card: StructuredKnowledgeCard, query: str | None) -> bool:
     if query is None:
         return True
@@ -129,8 +150,7 @@ def _matches_text(card: StructuredKnowledgeCard, query: str | None) -> bool:
     if not needle:
         return True
     return any(
-        needle in value.casefold()
-        for value in (card.name, card.summary, *card.aliases)
+        needle in value.casefold() for value in (card.name, card.summary, *card.aliases)
     )
 
 

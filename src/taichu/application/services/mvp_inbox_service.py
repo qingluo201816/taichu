@@ -94,7 +94,7 @@ class MVPInboxService:
                     *await self._list_ideas(),
                     *await self._list_pending_facts(),
                     *await self._list_issues(),
-                    *await self._list_decisions(),
+                    *await self._list_visible_decisions(),
                 ],
                 status,
                 priority,
@@ -106,7 +106,7 @@ class MVPInboxService:
         if tab == "issues":
             return _filter_items(await self._list_issues(), status, priority)
         if tab == "decisions":
-            return _filter_items(await self._list_decisions(), status, priority)
+            return _filter_items(await self._list_visible_decisions(), status, priority)
         raise InboxValidationError("未知的收件箱分类")
 
     async def create_idea(self, data: dict[str, Any]) -> MVPInboxIdea:
@@ -332,6 +332,14 @@ class MVPInboxService:
             for record in await self._storage.list_workspace_records(
                 INBOX_DECISIONS_FILE
             )
+        ]
+
+    async def _list_visible_decisions(self) -> list[MVPInboxDecision]:
+        """List decisions shown in ordinary views while retaining deletion tombstones."""
+        return [
+            item
+            for item in await self._list_decisions()
+            if item.status is not MVPInboxStatus.DEPRECATED
         ]
 
     async def _find_pending_fact(self, item_id: str) -> MVPInboxPendingFact:

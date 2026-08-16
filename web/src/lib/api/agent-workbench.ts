@@ -139,6 +139,15 @@ export async function acceptKnowledgeExtractionRun(
   );
 }
 
+export async function retryFailedKnowledgeExtractionSummaries(
+  runId: string,
+): Promise<KnowledgeExtractionCandidateActionResponse> {
+  return apiRequest<KnowledgeExtractionCandidateActionResponse>(
+    `${PREFIX}/runs/${encodeURIComponent(runId)}/summaries/retry`,
+    { method: "POST" },
+  );
+}
+
 export async function listKnowledgeExtractionRuns(): Promise<KnowledgeExtractionRunListResponse> {
   return apiRequest<KnowledgeExtractionRunListResponse>(
     `${PREFIX}/runs?page=1&page_size=20&status=all`,

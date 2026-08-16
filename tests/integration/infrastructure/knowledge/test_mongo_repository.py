@@ -10,6 +10,7 @@ from pymongo.errors import PyMongoError
 
 from taichu.application.contracts.knowledge_repository import (
     KnowledgeCardQuery,
+    KnowledgeCardSort,
     KnowledgeRepositoryConcurrentUpdateError,
     KnowledgeRepositoryConflictError,
 )
@@ -17,6 +18,7 @@ from taichu.config import settings
 from taichu.domain.models.structured_knowledge import (
     StructuredKnowledgeCard,
     StructuredKnowledgeLifecycle,
+    StructuredKnowledgeType,
 )
 from taichu.infrastructure.knowledge.mongo_repository import (
     CONFIRMED_IDENTITY_INDEX_NAME,
@@ -70,7 +72,9 @@ class MongoKnowledgeRepositoryIntegrationTest(unittest.IsolatedAsyncioTestCase):
             % 1000,
             0,
         )
-        self.assertEqual((await self.repository.list_cards(KnowledgeCardQuery())).total, 1)
+        self.assertEqual(
+            (await self.repository.list_cards(KnowledgeCardQuery())).total, 1
+        )
         self.assertEqual(await self.repository.list_confirmed_cards(), [])
 
         confirmed = await self.repository.set_lifecycle(
@@ -114,7 +118,82 @@ class MongoKnowledgeRepositoryIntegrationTest(unittest.IsolatedAsyncioTestCase):
             expected_updated_at=updated.updated_at,
         )
         self.assertEqual(rejected.lifecycle.value, "rejected")
-        self.assertEqual((await self.repository.list_cards(KnowledgeCardQuery())).total, 0)
+        self.assertEqual(
+            (await self.repository.list_cards(KnowledgeCardQuery())).total, 0
+        )
+
+    async def test_list_sorting_is_applied_before_pagination(self) -> None:
+        for card in (
+            _card(
+                "realm-3",
+                "三阶",
+                "confirmed",
+                knowledge_type=StructuredKnowledgeType.REALM,
+                level_order=3,
+            ),
+            _card(
+                "realm-1",
+                "一阶",
+                "confirmed",
+                knowledge_type=StructuredKnowledgeType.REALM,
+                level_order=1,
+            ),
+            _card(
+                "realm-none",
+                "待定境界",
+                "confirmed",
+                knowledge_type=StructuredKnowledgeType.REALM,
+            ),
+            _card(
+                "character-2",
+                "少见角色",
+                "confirmed",
+                appearance_chapter_count=2,
+            ),
+            _card(
+                "character-8",
+                "常见角色",
+                "confirmed",
+                appearance_chapter_count=8,
+            ),
+        ):
+            await self.repository.create_card(card)
+
+        first_realm_page = await self.repository.list_cards(
+            KnowledgeCardQuery(
+                type=StructuredKnowledgeType.REALM,
+                sort=KnowledgeCardSort.REALM_LEVEL,
+                limit=2,
+            )
+        )
+        last_realm_page = await self.repository.list_cards(
+            KnowledgeCardQuery(
+                type=StructuredKnowledgeType.REALM,
+                sort=KnowledgeCardSort.REALM_LEVEL,
+                offset=2,
+                limit=2,
+            )
+        )
+        characters = await self.repository.list_cards(
+            KnowledgeCardQuery(
+                type=StructuredKnowledgeType.CHARACTER,
+                sort=KnowledgeCardSort.APPEARANCE_COUNT,
+            )
+        )
+
+        self.assertEqual(
+            [card.id for card in first_realm_page.cards],
+            ["realm-1", "realm-3"],
+        )
+        self.assertEqual(
+            [card.id for card in last_realm_page.cards],
+            ["realm-none"],
+        )
+        self.assertEqual(
+            [card.id for card in characters.cards],
+            ["character-8", "character-2"],
+        )
+
 
 def _card(
     card_id: str,
@@ -122,15 +201,20 @@ def _card(
     lifecycle: str,
     *,
     aliases: list[str] | None = None,
+    knowledge_type: StructuredKnowledgeType = StructuredKnowledgeType.CHARACTER,
+    appearance_chapter_count: int | None = None,
+    level_order: float | None = None,
 ) -> StructuredKnowledgeCard:
     now = _now_iso()
     return StructuredKnowledgeCard.model_validate(
         {
             "id": card_id,
-            "type": "character",
+            "type": knowledge_type,
             "name": name,
             "aliases": aliases or [],
             "summary": "测试摘要",
+            "appearance_chapter_count": appearance_chapter_count,
+            "level_order": level_order,
             "lifecycle": lifecycle,
             "source_origin": "manual",
             "source_note": "作者确认",

@@ -327,6 +327,50 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("source_refs", confirm_response.json()["knowledge_card"])
         self.assertEqual(pending_list_response.json()["items"], [])
 
+    async def test_deleted_decision_stays_in_audit_file_but_not_in_lists(self) -> None:
+        created = await self.client.post(
+            "/api/inbox/decisions",
+            json={
+                "data": {
+                    "title": "来源级增量更新",
+                    "content": "按稳定来源键替换发生变化的索引来源。",
+                }
+            },
+        )
+        decision_id = created.json()["item"]["id"]
+
+        deleted = await self.client.patch(
+            f"/api/inbox/decisions/{decision_id}",
+            json={"updates": {"status": "deprecated"}},
+        )
+        decision_list = await self.client.get("/api/inbox/decisions?status=all")
+        combined_list = await self.client.get("/api/inbox?tab=all&status=all")
+        audit_records = [
+            json.loads(line)
+            for line in (
+                self.assets_root / "source" / "workspace" / "inbox_decisions.jsonl"
+            )
+            .read_text(encoding="utf-8")
+            .splitlines()
+            if line.strip()
+        ]
+
+        self.assertEqual(created.status_code, 200)
+        self.assertEqual(deleted.status_code, 200)
+        self.assertEqual(deleted.json()["item"]["status"], "deprecated")
+        self.assertNotIn(
+            decision_id,
+            [item["id"] for item in decision_list.json()["items"]],
+        )
+        self.assertNotIn(
+            decision_id,
+            [item["id"] for item in combined_list.json()["items"]],
+        )
+        self.assertEqual(
+            next(item for item in audit_records if item["id"] == decision_id)["status"],
+            "deprecated",
+        )
+
     async def test_mvp_issue_rejects_noncanonical_detail_format(self) -> None:
         canonical_content = "\n".join(
             [

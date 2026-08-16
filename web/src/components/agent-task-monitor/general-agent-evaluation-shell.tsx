@@ -55,8 +55,14 @@ type EvidenceBundle = BenchmarkSuiteArtifact["evidence_bundles"][number];
 type EvidenceDetails = NonNullable<EvidenceBundle["details"]>;
 type EvidenceGate = EvidenceDetails["gates"][number];
 type EvidenceAction = EvidenceDetails["normalization_actions"][number];
+type EvidenceGateKind = EvidenceGate["gate_kind"];
 
-const proofGroups = [
+const proofGroups: ReadonlyArray<{
+  id: string;
+  title: string;
+  summary: string;
+  gateKinds: readonly EvidenceGateKind[];
+}> = [
   {
     id: "behavior",
     title: "执行路径符合要求",
@@ -81,7 +87,7 @@ const proofGroups = [
     summary: "核对每项结论都来自同一次运行的有效证据。",
     gateKinds: ["evidence"],
   },
-] as const;
+];
 
 export function GeneralAgentEvaluationShell() {
   const [suite, setSuite] = useState<BenchmarkSuiteDetail | null>(null);
@@ -618,9 +624,7 @@ function ContractProof({
                   title={group.title}
                   summary={group.summary}
                   gates={gates.filter(gate =>
-                    group.gateKinds.includes(
-                      gate.gate_kind as (typeof group.gateKinds)[number],
-                    ),
+                    group.gateKinds.includes(gate.gate_kind),
                   )}
                   actualAnswer={actualAnswer?.text ?? null}
                   synthetic={details?.track === "synthetic" || run?.track === "synthetic"}
@@ -635,7 +639,7 @@ function ContractProof({
 }
 
 function executionSummary(
-  details: EvidenceDetails | undefined,
+  details: EvidenceDetails | null | undefined,
   passed: boolean,
 ): string {
   const actions = details?.normalization_actions ?? [];

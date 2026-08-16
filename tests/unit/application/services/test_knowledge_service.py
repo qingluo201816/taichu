@@ -87,15 +87,56 @@ class KnowledgeServiceTest(unittest.IsolatedAsyncioTestCase):
 
         rejected = await self.service.reject_card(draft.id)
         self.assertEqual(rejected.lifecycle, StructuredKnowledgeLifecycle.REJECTED)
-        default_page = await self.service.list_cards(
-            StructuredKnowledgeType.CHARACTER
-        )
+        default_page = await self.service.list_cards(StructuredKnowledgeType.CHARACTER)
         rejected_page = await self.service.list_cards(
             StructuredKnowledgeType.CHARACTER,
             lifecycle="rejected",
         )
         self.assertEqual(default_page.cards, [])
         self.assertEqual([card.id for card in rejected_page.cards], [draft.id])
+
+    async def test_list_uses_realm_order_and_other_types_use_appearance_count(
+        self,
+    ) -> None:
+        repository = InMemoryKnowledgeRepository(
+            [
+                _stored_card("realm-3", StructuredKnowledgeType.REALM, level_order=3),
+                _stored_card("realm-1", StructuredKnowledgeType.REALM, level_order=1),
+                _stored_card("realm-none", StructuredKnowledgeType.REALM),
+                _stored_card(
+                    "character-2",
+                    StructuredKnowledgeType.CHARACTER,
+                    appearance_chapter_count=2,
+                ),
+                _stored_card(
+                    "character-8",
+                    StructuredKnowledgeType.CHARACTER,
+                    appearance_chapter_count=8,
+                ),
+                _stored_card("character-none", StructuredKnowledgeType.CHARACTER),
+            ]
+        )
+        service = KnowledgeService(repository)
+
+        realm_page = await service.list_cards(
+            StructuredKnowledgeType.REALM,
+            page_size=2,
+        )
+        realm_last_page = await service.list_cards(
+            StructuredKnowledgeType.REALM,
+            page=2,
+            page_size=2,
+        )
+        character_page = await service.list_cards(
+            StructuredKnowledgeType.CHARACTER,
+        )
+
+        self.assertEqual([card.id for card in realm_page.cards], ["realm-1", "realm-3"])
+        self.assertEqual([card.id for card in realm_last_page.cards], ["realm-none"])
+        self.assertEqual(
+            [card.id for card in character_page.cards],
+            ["character-8", "character-2", "character-none"],
+        )
 
     async def test_incomplete_draft_cannot_be_confirmed(self) -> None:
         draft = await self.service.create_card(
@@ -130,7 +171,9 @@ class KnowledgeServiceTest(unittest.IsolatedAsyncioTestCase):
         persisted = await self.service.get_card(second.id)
         self.assertEqual(persisted.lifecycle, StructuredKnowledgeLifecycle.DRAFT)
 
-    async def test_merge_confirmed_cards_keeps_primary_and_retires_duplicate(self) -> None:
+    async def test_merge_confirmed_cards_keeps_primary_and_retires_duplicate(
+        self,
+    ) -> None:
         primary = await self.service.create_card(
             StructuredKnowledgeType.CHARACTER,
             {
@@ -157,7 +200,9 @@ class KnowledgeServiceTest(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(merged_primary.id, primary.id)
-        self.assertEqual(merged_primary.lifecycle, StructuredKnowledgeLifecycle.CONFIRMED)
+        self.assertEqual(
+            merged_primary.lifecycle, StructuredKnowledgeLifecycle.CONFIRMED
+        )
         self.assertIn("太初教掌教", merged_primary.aliases)
         self.assertIn("黄龙真人是太初教掌教。", merged_primary.summary)
         self.assertIn("太初教掌教重视灰种弟子。", merged_primary.summary)
@@ -227,10 +272,7 @@ class KnowledgeServiceTest(unittest.IsolatedAsyncioTestCase):
             {
                 "aliases": ["小浩", "浩轩"],
                 "summary": "秦浩轩是大田镇少年，靠采药补贴家用，并参加太初教入门测试。",
-                "source_note": (
-                    "第1章\n关键原文：旧证据\n\n"
-                    "第2章\n关键原文：新证据"
-                ),
+                "source_note": ("第1章\n关键原文：旧证据\n\n第2章\n关键原文：新证据"),
                 "identity": "不应覆盖已有身份",
                 "last_seen_chapter_id": "chapter_002",
                 "appearance_chapter_count": 2,
@@ -289,3 +331,23 @@ def _complete_character_data(name: str) -> dict[str, object]:
         "source_note": "作者手动确认。",
         "role_type": "protagonist",
     }
+
+
+def _stored_card(
+    card_id: str,
+    knowledge_type: StructuredKnowledgeType,
+    *,
+    appearance_chapter_count: int | None = None,
+    level_order: float | None = None,
+) -> StructuredKnowledgeCard:
+    return StructuredKnowledgeCard(
+        id=card_id,
+        type=knowledge_type,
+        name=card_id,
+        appearance_chapter_count=appearance_chapter_count,
+        level_order=level_order,
+        lifecycle=StructuredKnowledgeLifecycle.CONFIRMED,
+        source_origin="manual",
+        created_at="2026-08-16T00:00:00Z",
+        updated_at="2026-08-16T00:00:00Z",
+    )

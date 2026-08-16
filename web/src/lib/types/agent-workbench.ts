@@ -116,6 +116,7 @@ export type AgentLLMCall = {
   cost_currency: string;
   cost_kind: string;
   provider_request_id?: string | null;
+  finish_reason?: string | null;
   error?: string | null;
 };
 

@@ -22,6 +22,7 @@ import {
 
 import { AppShell } from "@/components/app-shell";
 import {
+  DecisionDetailContent,
   IssueDetailContent,
   issueStatusToneClass,
 } from "@/components/inbox/issue-detail-content";
@@ -434,6 +435,19 @@ export function InboxBoard() {
     }
   }
 
+  function removeItem(item: InboxEntry) {
+    const itemTab = entryTab(item);
+    if (
+      itemTab === "decisions" &&
+      !window.confirm(
+        `确认删除决策“${itemTitle(itemTab, item)}”吗？删除后将不再出现在决策列表中。`,
+      )
+    ) {
+      return;
+    }
+    void patchItem(item, { status: "deprecated" });
+  }
+
   async function confirmPendingFact(item: MVPInboxPendingFact) {
     setBusy(true);
     setError(null);
@@ -618,8 +632,8 @@ export function InboxBoard() {
             </p>
           ) : null}
 
-          <div className="flex min-h-0 max-w-[980px] flex-1 flex-col">
-            <div className="min-h-0 flex-1">
+          <div className="flex min-h-0 max-w-[980px] flex-1 flex-col overflow-hidden">
+            <div className="tc-editor-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain pr-2 [scrollbar-gutter:stable]">
               {loading ? (
                 <div className="flex h-28 items-center justify-center text-sm text-[var(--tc-text-muted)]">
                   <Loader2 className="mr-2 size-4 animate-spin" />
@@ -643,9 +657,7 @@ export function InboxBoard() {
                       onProcessed={() =>
                         void patchItem(item, { status: "processed" })
                       }
-                      onDeprecated={() =>
-                        void patchItem(item, { status: "deprecated" })
-                      }
+                      onRemove={() => removeItem(item)}
                       onConfirm={
                         entryTab(item) === "pending-facts" && isPendingFact(item)
                           ? () => void confirmPendingFact(item)
@@ -710,7 +722,7 @@ function InboxRow({
   onToggle,
   onPatch,
   onProcessed,
-  onDeprecated,
+  onRemove,
   onConfirm,
   onConfirmTypeChange,
   onConfirmNameChange,
@@ -728,7 +740,7 @@ function InboxRow({
   onToggle: () => void;
   onPatch: (updates: Record<string, unknown>) => void;
   onProcessed: () => void;
-  onDeprecated: () => void;
+  onRemove: () => void;
   onConfirm?: () => void;
   onConfirmTypeChange: (value: KnowledgeTypeValue) => void;
   onConfirmNameChange: (value: string) => void;
@@ -763,41 +775,62 @@ function InboxRow({
           : "hover:bg-[var(--tc-surface-muted)]",
       )}
     >
-      <button
-        type="button"
-        onClick={onToggle}
-        className="group flex min-h-12 w-full items-center gap-3 px-1 py-2 text-left focus-visible:outline-none"
-      >
-        <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-[var(--tc-text-muted)] transition-colors group-focus-visible:bg-[var(--tc-action-primary-bg)] group-focus-visible:text-[var(--tc-action-primary-text)]">
-          {expanded ? (
-            <ChevronDown className="size-4" />
-          ) : (
-            <ChevronRight className="size-4" />
-          )}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium text-[var(--tc-text-primary)]">
-            {itemTitle(tab, item)}
+      <div className="flex min-h-12 items-center gap-2">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="group flex min-w-0 flex-1 items-center gap-3 px-1 py-2 text-left focus-visible:outline-none"
+        >
+          <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-[var(--tc-text-muted)] transition-colors group-focus-visible:bg-[var(--tc-action-primary-bg)] group-focus-visible:text-[var(--tc-action-primary-text)]">
+            {expanded ? (
+              <ChevronDown className="size-4" />
+            ) : (
+              <ChevronRight className="size-4" />
+            )}
           </span>
-          <span className="block truncate text-xs text-[var(--tc-text-muted)]">
-            {tab !== "decisions" ? `${priorityLabel(item.priority)} · ` : ""}
-            <span
-              className={cn(
-                tab === "issues" && issueStatusToneClass(item.status),
-              )}
-            >
-              {statusLabel(item.status)}
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-medium text-[var(--tc-text-primary)]">
+              {itemTitle(tab, item)}
+            </span>
+            <span className="block truncate text-xs text-[var(--tc-text-muted)]">
+              {tab !== "decisions"
+                ? `${priorityLabel(item.priority)} · `
+                : ""}
+              <span
+                className={cn(
+                  (tab === "issues" || tab === "decisions") &&
+                    issueStatusToneClass(item.status),
+                )}
+              >
+                {statusLabel(item.status)}
+              </span>
             </span>
           </span>
-        </span>
-      </button>
+        </button>
+        {tab === "decisions" && item.status !== "deprecated" ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="mr-2 shrink-0"
+            onClick={onRemove}
+            disabled={busy}
+            aria-label={`删除决策“${itemTitle(tab, item)}”`}
+          >
+            <Trash2 className="size-4" />
+            删除
+          </Button>
+        ) : null}
+      </div>
 
       {expanded ? (
         <div className="pb-5 pl-10 pr-2">
           {tab === "issues" ? (
             <IssueDetailContent content={item.content} status={item.status} />
+          ) : tab === "decisions" ? (
+            <DecisionDetailContent content={item.content} status={item.status} />
           ) : (
-            <p className="max-w-[860px] select-text whitespace-pre-wrap text-sm leading-7 text-[var(--tc-text-secondary)]">
+            <p className="max-w-[860px] select-text whitespace-pre-wrap break-words text-sm leading-7 text-[var(--tc-text-secondary)] [overflow-wrap:anywhere]">
               {item.content}
             </p>
           )}
@@ -911,7 +944,7 @@ function InboxRow({
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={onDeprecated}
+                onClick={onRemove}
                 disabled={busy}
               >
                 <Trash2 className="size-4" />
@@ -1038,7 +1071,7 @@ function PaginationControls({
   }
 
   return (
-    <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4 text-sm text-[var(--tc-text-muted)]">
+    <div className="mt-auto flex shrink-0 flex-wrap items-center justify-between gap-3 pt-4 text-sm text-[var(--tc-text-muted)]">
       <span className="shrink-0">
         第 {page}/{totalPages} 页 · 共 {total} 条
       </span>

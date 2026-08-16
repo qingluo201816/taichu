@@ -8,13 +8,17 @@ import re
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from taichu.application.services.import_service import ImportService
 from taichu.application.services.chapter_service import ChapterService
 from taichu.application.contracts.llm import (
+    LLMCost,
     LLMModelIdentity,
     LLMModelProfile,
     LLMRequest,
+    LLMResponse,
+    LLMUsage,
 )
 from taichu.application.services.knowledge_extraction_service import (
     KnowledgeExtractionService,
@@ -22,7 +26,9 @@ from taichu.application.services.knowledge_extraction_service import (
 )
 from taichu.application.agents.knowledge_extraction.workflow import (
     KnowledgeExtractionDependencies,
+    _aggregate_entities,
     _candidate_validation_errors,
+    _canonical_entity_name,
     _ground_candidates_from_entity_groups,
     _item_quality_decision,
     _match_existing,
@@ -30,6 +36,7 @@ from taichu.application.agents.knowledge_extraction.workflow import (
     dedupe_candidates_by_target,
     initial_knowledge_extraction_state,
     mark_cross_type_projection_conflicts,
+    mark_epistemic_fact_conflicts,
     merge_overlapping_event_candidates,
     synthesize_candidate_summaries,
 )
@@ -77,6 +84,44 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self) -> None:
         self._temporary_directory.cleanup()
+
+    async def test_immortal_seed_leaf_levels_share_one_realm_group(self) -> None:
+        state = initial_knowledge_extraction_state(
+            chapter_id="chapter_001",
+            chapter_title="第一章 山门",
+            model_name="test-model",
+        )
+        state["markdown_text"] = "秦阳突破仙苗境一叶，随后抵达仙苗境三叶。"
+        state["raw_mentions"] = [
+            {
+                "name": "仙苗境一叶",
+                "knowledge_type": "realm",
+                "evidence_excerpts": ["秦阳突破仙苗境一叶"],
+            },
+            {
+                "name": "仙苗境三叶",
+                "knowledge_type": "realm",
+                "evidence_excerpts": ["随后抵达仙苗境三叶"],
+            },
+        ]
+
+        aggregated = await _aggregate_entities()(state)
+
+        self.assertEqual(len(aggregated["entity_groups"]), 1)
+        group = aggregated["entity_groups"][0]
+        self.assertEqual(group["canonical_name"], "仙苗境")
+        self.assertEqual(group["raw_names"], ["仙苗境一叶", "仙苗境三叶"])
+        self.assertEqual(group["mention_count"], 2)
+
+    def test_only_immortal_seed_leaf_levels_are_folded(self) -> None:
+        self.assertEqual(_canonical_entity_name("realm", "仙苗境三十五叶"), "仙苗境")
+        self.assertEqual(
+            _canonical_entity_name("realm", "仙苗境四十五至四十九叶"), "仙苗境"
+        )
+        self.assertEqual(_canonical_entity_name("realm", "仙树境"), "仙树境")
+        self.assertEqual(
+            _canonical_entity_name("character", "仙苗境三叶"), "仙苗境三叶"
+        )
 
     async def test_workflow_writes_completed_run_with_prompt_and_review_items(
         self,
@@ -150,6 +195,8 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         event_rule_prompt = prompts_by_node["EventRuleExpertNode"]
         self.assertIn("同一设定主题和事实集合", event_rule_prompt)
         self.assertIn("同一连续行动链", event_rule_prompt)
+        self.assertIn("必须保留事件的认知层级", event_rule_prompt)
+        self.assertIn("坠崖、重伤、失联", event_rule_prompt)
         self.assertIn("已有 active 规则卡摘要：\n[]", event_rule_prompt)
         self.assertCountEqual(
             [call.prompt_version for call in run.llm_calls],
@@ -301,7 +348,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             "秦阳原本是太初教弟子。",
         )
         self.assertFalse(candidate.schema_validation.passed)
-        self.assertIn("摘要综合失败", candidate.schema_validation.errors[-1])
+        self.assertIn("摘要输出格式错误", candidate.schema_validation.errors[-1])
 
     async def test_summary_synthesis_limits_each_call_to_five_candidates(
         self,
@@ -358,6 +405,138 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             ],
             [5, 1],
         )
+        self.assertTrue(
+            all(request.max_output_tokens == 100_000 for request in summary_requests)
+        )
+
+    async def test_summary_synthesis_does_not_stack_transport_retries(
+        self,
+    ) -> None:
+        llm = _TransientSummaryFailureLLM()
+        state = initial_knowledge_extraction_state(
+            chapter_id="chapter_001",
+            model_name="test-model",
+            model_id="test-model",
+        )
+        dependencies = KnowledgeExtractionDependencies(
+            chapter_service=self.chapter_service,
+            llm=llm,
+            retrieval_service=self.retrieval_service,
+            run_store=self.run_store,
+        )
+        candidates = [
+            {
+                "type": "character",
+                "name": "秦阳",
+                "aliases": [],
+                "summary": "秦阳本轮出现。",
+                "source_origin": "agent_extract",
+                "source_note": "第一章来源。",
+                "evidence_excerpt": "秦阳走入山门。",
+                "evidence_excerpts": ["秦阳走入山门。"],
+            }
+        ]
+
+        result = await synthesize_candidate_summaries(
+            state,
+            dependencies,
+            candidates,
+            include_new=True,
+            node_name="BatchSynthesizeCandidateSummariesNode",
+        )
+
+        self.assertEqual(result[0]["summary"], "秦阳本轮出现。")
+        self.assertIn("_summary_synthesis_error", result[0])
+        self.assertFalse(result[0]["schema_validation"]["passed"])
+        self.assertEqual(llm.summary_attempts, 1)
+        self.assertEqual(len(state["llm_calls"]), 1)
+        self.assertTrue(state["llm_calls"][0]["error"])
+        self.assertTrue(state["errors"])
+
+    async def test_summary_synthesis_stops_waiting_after_its_deadline(self) -> None:
+        llm = _BlockingLLM()
+        state = initial_knowledge_extraction_state(
+            chapter_id="chapter_001",
+            model_name="test-model",
+            model_id="test-model",
+        )
+        dependencies = KnowledgeExtractionDependencies(
+            chapter_service=self.chapter_service,
+            llm=llm,
+            retrieval_service=self.retrieval_service,
+            run_store=self.run_store,
+        )
+        candidates = [
+            {
+                "type": "character",
+                "name": "秦阳",
+                "aliases": [],
+                "summary": "秦阳本轮出现。",
+                "source_origin": "agent_extract",
+                "source_note": "第一章来源。",
+                "evidence_excerpt": "秦阳走入山门。",
+                "evidence_excerpts": ["秦阳走入山门。"],
+            }
+        ]
+
+        with patch(
+            "taichu.application.agents.knowledge_extraction.workflow."
+            "_SUMMARY_SYNTHESIS_TIMEOUT_SECONDS",
+            0.01,
+        ):
+            result = await synthesize_candidate_summaries(
+                state,
+                dependencies,
+                candidates,
+                include_new=True,
+                node_name="BatchSynthesizeCandidateSummariesNode",
+            )
+
+        self.assertTrue(llm.cancelled.is_set())
+        self.assertIn("_summary_synthesis_error", result[0])
+        self.assertIn("摘要超时", result[0]["_summary_synthesis_error"])
+        self.assertIn("超过 0.01 秒", state["errors"][0])
+        self.assertIn("超过 0.01 秒", state["llm_calls"][0]["error"])
+
+    async def test_summary_synthesis_marks_missing_items_as_output_truncated(
+        self,
+    ) -> None:
+        state = initial_knowledge_extraction_state(
+            chapter_id="chapter_001",
+            model_name="test-model",
+            model_id="test-model",
+        )
+        dependencies = KnowledgeExtractionDependencies(
+            chapter_service=self.chapter_service,
+            llm=_TruncatedSummaryLLM(),
+            retrieval_service=self.retrieval_service,
+            run_store=self.run_store,
+        )
+        candidates = [
+            {
+                "type": "character",
+                "name": name,
+                "aliases": [],
+                "summary": f"{name}本轮出现。",
+                "source_origin": "agent_extract",
+                "source_note": "第一章来源。",
+                "evidence_excerpt": f"{name}走入山门。",
+                "evidence_excerpts": [f"{name}走入山门。"],
+            }
+            for name in ("秦阳", "徐羽")
+        ]
+
+        result = await synthesize_candidate_summaries(
+            state,
+            dependencies,
+            candidates,
+            include_new=True,
+            node_name="BatchSynthesizeCandidateSummariesNode",
+        )
+
+        self.assertNotIn("_summary_synthesis_error", result[0])
+        self.assertIn("摘要输出截断", result[1]["_summary_synthesis_error"])
+        self.assertFalse(result[1]["schema_validation"]["passed"])
 
     async def test_summary_synthesis_ignores_unexpected_output_fields(self) -> None:
         state = initial_knowledge_extraction_state(
@@ -420,6 +599,45 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             )[0],
             "accepted",
         )
+
+    def test_epistemic_guard_blocks_inferred_death_but_keeps_belief_event(self) -> None:
+        candidates = [
+            {
+                "type": "event",
+                "name": "张狂跌落悬崖身亡",
+                "summary": "张狂跌落悬崖后已经死亡。",
+                "description": "张狂死亡。",
+                "evidence_excerpts": [
+                    "千丈悬崖掉下去必定粉身碎骨，众人认定张狂必死无疑。"
+                ],
+            },
+            {
+                "type": "event",
+                "name": "众人误以为张狂已经死亡",
+                "summary": "众人因张狂坠崖而误以为他已经死亡。",
+                "description": "这是众人的判断，不是死亡事实。",
+                "evidence_excerpts": ["众人认定张狂必死无疑。"],
+            },
+        ]
+
+        guarded = mark_epistemic_fact_conflicts(candidates)
+
+        self.assertTrue(guarded[0].get("internal_conflicts"))
+        self.assertIn("不能推导为死亡", guarded[0]["internal_conflicts"][1])
+        self.assertNotIn("internal_conflicts", guarded[1])
+
+    def test_epistemic_guard_accepts_directly_confirmed_death(self) -> None:
+        candidate = {
+            "type": "event",
+            "name": "守卫当场身亡",
+            "summary": "守卫遭到攻击后当场身亡。",
+            "description": "守卫死亡。",
+            "evidence_excerpts": ["守卫遭到一击，当场身亡，随后被人抬走。"],
+        }
+
+        guarded = mark_epistemic_fact_conflicts([candidate])
+
+        self.assertNotIn("internal_conflicts", guarded[0])
         self.assertEqual(
             _item_quality_decision(
                 "窗户",
@@ -740,13 +958,21 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(
             all(request.max_output_tokens == 100_000 for request in llm.requests)
         )
+        self.assertFalse(
+            any(
+                call["node_name"] == "BatchSynthesizeCandidateSummariesNode"
+                for call in run["llm_calls"]
+            )
+        )
         self.assertEqual(run["model_id"], "alternate-model")
         self.assertEqual(run["upstream_model"], "upstream-alternate")
         self.assertTrue(
             all(call["model_id"] == "alternate-model" for call in run["llm_calls"])
         )
 
-    async def test_batch_run_is_failed_when_every_chapter_extraction_fails(self) -> None:
+    async def test_batch_run_is_failed_when_every_chapter_extraction_fails(
+        self,
+    ) -> None:
         service = KnowledgeExtractionService(
             chapter_service=self.chapter_service,
             llm=_AlwaysFailLLM(),
@@ -924,6 +1150,20 @@ class _PromptAwareSummaryFailureLLM(_PromptAwareLLM):
         return await super().complete(prompt)
 
 
+class _TransientSummaryFailureLLM(_TestLLM):
+    def __init__(self) -> None:
+        self.summary_attempts = 0
+
+    async def complete(self, prompt: str) -> str:
+        prompt_text = _prompt_text(prompt)
+        if '"candidate_id"' in prompt_text:
+            self.summary_attempts += 1
+            if self.summary_attempts == 1:
+                raise RuntimeError("模型调用失败，请稍后重试。")
+            return _summary_response(prompt_text)
+        return _general_response()
+
+
 class _UnexpectedSummaryFieldLLM(_TestLLM):
     async def complete(self, prompt: str) -> str:
         return json.dumps(
@@ -937,6 +1177,35 @@ class _UnexpectedSummaryFieldLLM(_TestLLM):
                 ]
             },
             ensure_ascii=False,
+        )
+
+
+class _TruncatedSummaryLLM(_TestLLM):
+    async def complete(self, prompt: str) -> LLMResponse:
+        prompt_text = _prompt_text(prompt)
+        if "只把下面的模型输出修复为合法 JSON" in prompt_text:
+            text = json.dumps(
+                {
+                    "summaries": [
+                        {
+                            "candidate_id": "summary_candidate_001",
+                            "summary": "秦阳走入太初教山门。",
+                        }
+                    ]
+                },
+                ensure_ascii=False,
+            )
+            output_tokens = 100
+        else:
+            text = '{"summaries":[{"candidate_id":"summary_candidate_001","summary":"未结束'
+            output_tokens = 100_000
+        return LLMResponse(
+            text=text,
+            model_id="test-model",
+            upstream_model="test-model",
+            usage=LLMUsage(output_tokens=output_tokens),
+            cost=LLMCost(),
+            finish_reason="length" if output_tokens == 100_000 else "stop",
         )
 
 

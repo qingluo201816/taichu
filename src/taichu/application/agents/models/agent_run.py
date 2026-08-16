@@ -133,6 +133,7 @@ class AgentLLMCall(AgentModel):
     cost_currency: str = "CNY"
     cost_kind: str = "unavailable"
     provider_request_id: str | None = None
+    finish_reason: str | None = None
     error: str | None = None
 
 
@@ -183,9 +184,7 @@ class AgentReviewItem(AgentModel):
     run_id: str = Field(min_length=1)
     candidate_action: AgentReviewCandidateAction
     knowledge_type: StructuredKnowledgeType
-    candidate_status: AgentReviewCandidateStatus = (
-        AgentReviewCandidateStatus.PENDING
-    )
+    candidate_status: AgentReviewCandidateStatus = AgentReviewCandidateStatus.PENDING
     display_title: str = ""
     suggested_card: dict[str, Any] = Field(default_factory=dict)
     appearance_chapter_ids: list[str] = Field(default_factory=list)

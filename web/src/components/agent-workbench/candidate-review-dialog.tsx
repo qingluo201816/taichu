@@ -154,6 +154,7 @@ export function CandidateReviewDialog({
         ? "edit"
         : "preview";
   const hasTarget = Boolean(candidate.target_card_id);
+  const requiresMergeTarget = !hasTarget && mergeCandidates.length > 0;
   const processed = candidate.candidate_status !== "pending";
   const canConfirm = candidate.candidate_action !== "ignore";
   const requiresEditedConfirm =
@@ -216,6 +217,8 @@ export function CandidateReviewDialog({
                 <Dialog.Description className="mt-1 text-xs text-[var(--tc-text-muted)]">
                   {hasTarget
                     ? "对照现有知识卡与本次入库结果，确认无误后再处理。"
+                    : requiresMergeTarget
+                      ? "名称或别名已命中已有知识卡，请选择合并目标。"
                     : "检查候选新卡的完整字段，确认无误后再入库。"}
                 </Dialog.Description>
               </div>
@@ -234,15 +237,28 @@ export function CandidateReviewDialog({
                 candidate={currentCandidate}
                 relatedCandidates={relatedCandidates}
               />
-              {hasTarget && mergeCandidates.length ? (
+              {mergeCandidates.length ? (
                 <section className="mb-3 rounded-[var(--tc-radius-card)] bg-[var(--tc-surface-muted)] px-3 py-2.5">
-                  <p className="text-sm font-medium text-[var(--tc-text-primary)]">可合并的已有知识卡</p>
-                  <p className="mt-1 text-xs text-[var(--tc-text-secondary)]">合并后保留当前对照的知识卡，另一张不再参与检索。</p>
+                  <p className="text-sm font-medium text-[var(--tc-text-primary)]">
+                    {hasTarget ? "可合并的已有知识卡" : "名称或别名相同的已有知识卡"}
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--tc-text-secondary)]">
+                    {hasTarget
+                      ? "合并后保留当前对照的知识卡，另一张不再参与检索。"
+                      : "选择一张已有卡承接本候选的新增信息，最终只保留一张知识卡。"}
+                  </p>
                   <div className="mt-2 grid gap-2">
                     {mergeCandidates.map(card => (
                       <div key={card.id} className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-card)] px-2.5 py-2">
-                        <div className="min-w-0"><p className="truncate text-xs font-medium">{card.name}</p><p className="line-clamp-1 text-xs text-[var(--tc-text-muted)]">{card.summary || "无摘要"}</p></div>
-                        <Button type="button" variant="outline" size="xs" disabled={busy} onClick={() => onMergeExistingCard(card)}>合并到当前卡</Button>
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-medium">{card.name}</p>
+                          <p className="line-clamp-1 text-xs text-[var(--tc-text-muted)]">
+                            {card.aliases.length ? `别名：${card.aliases.join("、")} · ` : ""}{card.summary || "无摘要"}
+                          </p>
+                        </div>
+                        <Button type="button" variant={hasTarget ? "outline" : "default"} size="xs" disabled={busy} onClick={() => onMergeExistingCard(card)}>
+                          {hasTarget ? "合并到当前卡" : "合并候选到此卡"}
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -445,7 +461,7 @@ export function CandidateReviewDialog({
                     <Button
                       type="button"
                       size="sm"
-                      disabled={busy || !schema}
+                      disabled={busy || !schema || requiresMergeTarget}
                       onClick={() =>
                         onAction(
                           candidate,
@@ -457,7 +473,11 @@ export function CandidateReviewDialog({
                       }
                     >
                       <Check className="size-4" />
-                      {isEditing ? "保存并确认" : "确认入库"}
+                      {requiresMergeTarget
+                        ? "请先选择合并目标"
+                        : isEditing
+                          ? "保存并确认"
+                          : "确认入库"}
                     </Button>
                   ) : null}
                 </div>

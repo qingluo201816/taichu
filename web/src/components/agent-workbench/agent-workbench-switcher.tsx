@@ -66,24 +66,27 @@ export function AgentWorkbenchSwitcher({
           return (
             <div
               key={agent.key}
-              className="grid grid-cols-[minmax(0,1fr)_32px] items-stretch gap-1"
+              className="grid h-14 grid-cols-[minmax(0,1fr)_36px] items-stretch gap-1"
             >
               <button
                 type="button"
                 aria-pressed={active}
                 onClick={() => onAgentChange(agent.key)}
                 className={cn(
-                  "min-w-0 rounded-[var(--tc-radius-control)] px-2.5 py-2 text-left text-sm transition-colors duration-150",
+                  "grid h-14 min-w-0 grid-cols-[16px_minmax(0,1fr)] grid-rows-2 content-center items-center gap-x-2 rounded-[var(--tc-radius-control)] px-2.5 py-2 text-left transition-colors duration-150",
                   active
                     ? "bg-[var(--tc-surface-muted)] text-[var(--tc-text-primary)]"
                     : "text-[var(--tc-text-secondary)] hover:bg-[var(--tc-surface-muted)] hover:text-[var(--tc-text-primary)]",
                 )}
               >
-                <span className="flex items-center gap-2 font-medium">
-                  <Icon className={cn("size-3.5", agent.iconClassName)} />
+                <Icon
+                  aria-hidden="true"
+                  className={cn("row-span-2 size-3.5", agent.iconClassName)}
+                />
+                <span className="min-w-0 truncate text-[13px] font-medium leading-5">
                   {agent.label}
                 </span>
-                <span className="mt-0.5 block truncate pl-[22px] text-[11px] text-[var(--tc-text-muted)]">
+                <span className="min-w-0 truncate text-[11px] leading-4 text-[var(--tc-text-muted)]">
                   {agent.description}
                 </span>
               </button>
@@ -91,7 +94,7 @@ export function AgentWorkbenchSwitcher({
                 href={agent.monitorHref}
                 aria-label={agent.monitorLabel}
                 title={agent.monitorLabel}
-                className="flex min-h-12 w-8 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] transition-colors duration-150 hover:bg-[var(--tc-surface-card)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tc-workspace-focus)]"
+                className="flex h-14 w-9 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] transition-colors duration-150 hover:bg-[var(--tc-surface-card)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--tc-workspace-focus)]"
               >
                 <MonitorIcon
                   aria-hidden="true"
