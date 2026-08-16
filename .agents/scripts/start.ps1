@@ -16,11 +16,9 @@ function Import-TaichuEnvironment {
         "MONGODB_URI",
         "MONGODB_DATABASE",
         "PROJECT_ASSETS_DIR",
-        "QDRANT_IMAGE",
-        "QDRANT_CONTAINER_NAME",
-        "QDRANT_VOLUME_NAME",
-        "QDRANT_URL",
-        "QDRANT_GRPC_PORT",
+        "MILVUS_URI",
+        "RERANKER_BASE_URL",
+        "RERANKER_MODEL_PATH",
         "EMBEDDING_SERVER_HOME",
         "EMBEDDING_MODEL_PATH",
         "EMBEDDING_LOG_DIR",
@@ -69,15 +67,48 @@ function Get-ListenerProcessIds([int]$port) {
     )
 }
 
+function Get-DescendantProcessIds(
+    [int]$parentProcessId,
+    [object[]]$processSnapshot
+) {
+    foreach ($process in $processSnapshot) {
+        if ([int]$process.ParentProcessId -ne $parentProcessId) {
+            continue
+        }
+        Get-DescendantProcessIds `
+            -parentProcessId ([int]$process.ProcessId) `
+            -processSnapshot $processSnapshot
+        [int]$process.ProcessId
+    }
+}
+
+function Stop-ProcessTree([int]$rootProcessId) {
+    $processSnapshot = @(Get-CimInstance Win32_Process)
+    $processIds = @(
+        Get-DescendantProcessIds `
+            -parentProcessId $rootProcessId `
+            -processSnapshot $processSnapshot
+        $rootProcessId
+    ) | Select-Object -Unique
+
+    foreach ($processId in $processIds) {
+        Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Stop-PortListener([int]$port) {
     foreach ($processId in (Get-ListenerProcessIds $port)) {
-        Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
+        Stop-ProcessTree $processId
     }
 
     $deadline = (Get-Date).AddSeconds(10)
     while ((Get-Date) -lt $deadline) {
-        if ((Get-ListenerProcessIds $port).Count -eq 0) {
+        $listenerProcessIds = @(Get-ListenerProcessIds $port)
+        if ($listenerProcessIds.Count -eq 0) {
             return
+        }
+        foreach ($processId in $listenerProcessIds) {
+            Stop-ProcessTree $processId
         }
         Start-Sleep -Milliseconds 200
     }
@@ -161,90 +192,80 @@ function Ensure-DockerReady([int]$timeoutSeconds) {
     throw "Docker Desktop 未能在 $timeoutSeconds 秒内就绪。"
 }
 
-function Ensure-QdrantService(
-    [string]$image,
-    [string]$containerName,
-    [string]$volumeName,
-    [string]$baseUrl,
-    [int]$grpcPort
-) {
-    $qdrantUri = [Uri]$baseUrl
+function Ensure-MilvusService([string]$baseUrl) {
+    $milvusUri = [Uri]$baseUrl
     if (
-        $qdrantUri.Scheme -ne "http" -or
-        $qdrantUri.Host -notin @("127.0.0.1", "localhost")
+        $milvusUri.Scheme -ne "http" -or
+        $milvusUri.Host -notin @("127.0.0.1", "localhost") -or
+        $milvusUri.Port -ne 19530
     ) {
-        throw "QDRANT_URL 必须是本机 HTTP 地址，当前值：$baseUrl"
+        throw "MILVUS_URI 必须指向本机 19530 端口，当前值：$baseUrl"
     }
-    $restPort = $qdrantUri.Port
-    $healthUrl = "$($baseUrl.TrimEnd('/'))/healthz"
+    $healthUrl = "http://127.0.0.1:9091/healthz"
     if (Test-HttpHealth $healthUrl) {
-        Write-Host "  已复用正在运行的 Qdrant：$baseUrl"
+        Write-Host "  已复用正在运行的 Milvus：$baseUrl"
         return
     }
-    if ((Get-ListenerProcessIds $restPort).Count -gt 0) {
-        throw "端口 $restPort 已被占用，但 Qdrant 健康检查失败。"
+    if ((Get-ListenerProcessIds 19530).Count -gt 0) {
+        throw "端口 19530 已被占用，但 Milvus 健康检查失败。"
     }
-    if ((Get-ListenerProcessIds $grpcPort).Count -gt 0) {
-        throw "Qdrant gRPC 端口 $grpcPort 已被其他进程占用。"
+    if ((Get-ListenerProcessIds 9091).Count -gt 0) {
+        throw "Milvus 健康检查端口 9091 已被其他进程占用。"
     }
 
     Ensure-DockerReady 120
-    [void](& docker.exe image inspect $image 2>$null)
+    $composeFile = Join-Path $repoRoot "infra\milvus\docker-compose.yml"
+    & docker.exe compose -f $composeFile up -d
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "  首次使用，正在拉取 Qdrant 镜像：$image"
-        & docker.exe pull $image
-        if ($LASTEXITCODE -ne 0) {
-            throw "Qdrant 镜像拉取失败：$image"
-        }
+        throw "Milvus Docker Compose 启动失败。"
     }
 
-    [void](& docker.exe container inspect $containerName 2>$null)
-    if ($LASTEXITCODE -eq 0) {
-        $configuredImage = (
-            & docker.exe container inspect `
-                --format "{{.Config.Image}}" `
-                $containerName
-        ).Trim()
-        if ($configuredImage -ne $image) {
-            throw "Qdrant 容器镜像为 $configuredImage，与配置 $image 不一致。"
-        }
-        $running = (
-            & docker.exe container inspect `
+    if (-not (Wait-ForHttpHealth $healthUrl 180)) {
+        throw "Milvus 启动失败，请运行 docker logs taichu-milvus 查看日志。"
+    }
+    Write-Host "  Milvus 已启动：$baseUrl"
+}
+
+function Ensure-RerankerService([string]$rerankerUrl) {
+    $rerankerUri = [Uri]$rerankerUrl
+    if (
+        $rerankerUri.Host -notin @("127.0.0.1", "localhost") -or
+        $rerankerUri.Port -ne 8012
+    ) {
+        throw "RERANKER_BASE_URL 必须指向本机 8012 端口。"
+    }
+    $rerankerHealth = "$($rerankerUrl.TrimEnd('/'))/health"
+    if (Test-HttpHealth $rerankerHealth) {
+        Write-Host "  已复用 BGE 重排服务。"
+        return
+    }
+    if ((Get-ListenerProcessIds 8012).Count -gt 0) {
+        $containerRunning = (
+            & docker.exe inspect `
                 --format "{{.State.Running}}" `
-                $containerName
-        ).Trim()
-        if ($running -ne "true") {
-            [void](& docker.exe start $containerName)
-            if ($LASTEXITCODE -ne 0) {
-                throw "Qdrant 容器启动失败：$containerName"
-            }
+                taichu-bge-reranker `
+                2>$null
+        ) -eq "true"
+        if (-not $containerRunning) {
+            throw "端口 8012 已被占用，但不是正在启动的 BGE 容器。"
         }
-    }
-    else {
-        [void](& docker.exe volume inspect $volumeName 2>$null)
-        if ($LASTEXITCODE -ne 0) {
-            [void](& docker.exe volume create $volumeName)
-            if ($LASTEXITCODE -ne 0) {
-                throw "Qdrant 数据卷创建失败：$volumeName"
-            }
+        Write-Host "  BGE 容器正在预热，等待健康检查..."
+        if (-not (Wait-ForHttpHealth $rerankerHealth 600)) {
+            throw "BGE 重排服务预热失败，请运行 docker logs taichu-bge-reranker。"
         }
-        $containerId = & docker.exe run `
-            -d `
-            --name $containerName `
-            --restart unless-stopped `
-            -p "127.0.0.1:${restPort}:6333" `
-            -p "127.0.0.1:${grpcPort}:6334" `
-            -v "${volumeName}:/qdrant/storage" `
-            $image
-        if ($LASTEXITCODE -ne 0 -or -not $containerId) {
-            throw "Qdrant 容器创建失败：$containerName"
-        }
+        Write-Host "  BGE 重排服务已就绪。"
+        return
     }
-
-    if (-not (Wait-ForHttpHealth $healthUrl 60)) {
-        throw "Qdrant 启动失败，请运行 docker logs $containerName 查看日志。"
+    Ensure-DockerReady 120
+    $composeFile = Join-Path $repoRoot "infra\reranker\docker-compose.yml"
+    & docker.exe compose -f $composeFile up -d
+    if ($LASTEXITCODE -ne 0) {
+        throw "BGE Docker Compose 启动失败。"
     }
-    Write-Host "  Qdrant 已启动：$baseUrl"
+    if (-not (Wait-ForHttpHealth $rerankerHealth 600)) {
+        throw "BGE 重排服务启动失败，请运行 docker logs taichu-bge-reranker。"
+    }
+    Write-Host "  BGE 重排服务已启动。"
 }
 
 function Ensure-EmbeddingService(
@@ -351,11 +372,9 @@ try {
     $mongoLogDir = Require-TaichuEnvironment "MONGODB_LOG_DIR"
     $mongoUri = Require-TaichuEnvironment "MONGODB_URI"
     [void](Require-TaichuEnvironment "MONGODB_DATABASE")
-    $qdrantImage = Require-TaichuEnvironment "QDRANT_IMAGE"
-    $qdrantContainerName = Require-TaichuEnvironment "QDRANT_CONTAINER_NAME"
-    $qdrantVolumeName = Require-TaichuEnvironment "QDRANT_VOLUME_NAME"
-    $qdrantUrl = Require-TaichuEnvironment "QDRANT_URL"
-    $qdrantGrpcPort = [int](Require-TaichuEnvironment "QDRANT_GRPC_PORT")
+    $milvusUri = Require-TaichuEnvironment "MILVUS_URI"
+    $rerankerUrl = Require-TaichuEnvironment "RERANKER_BASE_URL"
+    $rerankerModelPath = Require-TaichuEnvironment "RERANKER_MODEL_PATH"
     $embeddingServerHome = Require-TaichuEnvironment "EMBEDDING_SERVER_HOME"
     $embeddingModelPath = Require-TaichuEnvironment "EMBEDDING_MODEL_PATH"
     $embeddingLogDir = Require-TaichuEnvironment "EMBEDDING_LOG_DIR"
@@ -379,6 +398,9 @@ try {
     ) {
         throw "EMBEDDING_BASE_URL 与 EMBEDDING_SERVER_PORT 必须指向同一本机服务。"
     }
+    if (-not (Test-Path -LiteralPath $rerankerModelPath -PathType Container)) {
+        throw "找不到本地 BGE 重排模型目录：$rerankerModelPath"
+    }
 
     $mongod = Join-Path $mongoHome "bin\mongod.exe"
     if (-not (Test-Path -LiteralPath $mongod -PathType Leaf)) {
@@ -387,7 +409,7 @@ try {
     [void](New-Item -ItemType Directory -Path $mongoDataDir -Force)
     [void](New-Item -ItemType Directory -Path $mongoLogDir -Force)
 
-    Write-Host "[1/5] 检查 MongoDB 服务..."
+    Write-Host "[1/6] 检查 MongoDB 服务..."
     $mongoListeners = Get-ListenerProcessIds 27017
     if ($mongoListeners.Count -gt 0) {
         if ($mongoListeners.Count -ne 1) {
@@ -413,15 +435,13 @@ try {
         Write-Host "  MongoDB 已启动，数据目录：$mongoDataDir"
     }
 
-    Write-Host "[2/5] 检查 Qdrant 向量数据库..."
-    Ensure-QdrantService `
-        $qdrantImage `
-        $qdrantContainerName `
-        $qdrantVolumeName `
-        $qdrantUrl `
-        $qdrantGrpcPort
+    Write-Host "[2/6] 检查 Milvus 向量数据库..."
+    Ensure-MilvusService $milvusUri
 
-    Write-Host "[3/5] 检查本地嵌入模型服务..."
+    Write-Host "[3/6] 检查 BGE 重排服务..."
+    Ensure-RerankerService $rerankerUrl
+
+    Write-Host "[4/6] 检查本地嵌入模型服务..."
     Ensure-EmbeddingService `
         $embeddingServerHome `
         $embeddingModelPath `
@@ -432,12 +452,12 @@ try {
         $embeddingBatchSize `
         $embeddingGpuLayers
 
-    Write-Host "[4/5] 清理后端 8000 和前端 3000 端口..."
+    Write-Host "[5/6] 清理后端 8000 和前端 3000 端口..."
     Stop-PortListener 8000
     Stop-PortListener 3000
     Write-Host "  固定端口清理完成。"
 
-    Write-Host "[5/5] 启动后端和前端..."
+    Write-Host "[6/6] 启动后端和前端..."
     [void](Start-Process `
         -FilePath "cmd.exe" `
         -ArgumentList @("/k", "uv run taichu") `
@@ -460,7 +480,8 @@ try {
     Write-Host "  前端：http://localhost:3000"
     Write-Host "  后端：http://127.0.0.1:8000"
     Write-Host "  MongoDB：$mongoUri"
-    Write-Host "  Qdrant：$qdrantUrl（控制台：$qdrantUrl/dashboard）"
+    Write-Host "  Milvus：$milvusUri"
+    Write-Host "  BGE 重排：$rerankerUrl"
     Write-Host "  本地嵌入：$embeddingBaseUrl（$embeddingModelId）"
     Write-Host "  关闭对应命令窗口即可停止前后端服务。"
     exit 0

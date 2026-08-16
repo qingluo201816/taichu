@@ -1,4 +1,4 @@
-import type { AgentRunSummary } from "@/lib/types/agent-workbench";
+import type { AgentRun, AgentRunSummary } from "@/lib/types/agent-workbench";
 
 type BatchRunScope = Pick<
   AgentRunSummary,
@@ -26,6 +26,45 @@ export function formatBatchRunTitle(scope: BatchRunScope): string {
 
   const chapterCount = scope.total_chapter_count || scope.chapter_ids.length;
   return `批量任务：${chapterCount}章`;
+}
+
+type FailureDisplayRun = Pick<
+  AgentRun,
+  | "status"
+  | "failed_chapter_count"
+  | "model_display_name"
+  | "model_name"
+  | "batch_chapter_progress"
+  | "nodes"
+  | "llm_calls"
+  | "errors"
+>;
+
+/**
+ * 把运行轨迹中的底层错误整理成可直接处理的中文提示。
+ */
+export function formatAgentRunFailure(run: FailureDisplayRun): string | null {
+  if (run.status !== "failed" && run.failed_chapter_count === 0) {
+    return null;
+  }
+
+  const errors = [
+    ...run.batch_chapter_progress.map(item => item.error),
+    ...run.nodes.map(node => node.error),
+    ...run.llm_calls.map(call => call.error),
+    ...run.errors,
+  ].filter((error): error is string => Boolean(error?.trim()));
+  const permissionError = errors.find(error => error.includes("无权调用该模型"));
+
+  if (permissionError) {
+    const modelName = run.model_display_name || run.model_name || "当前模型";
+    return `模型调用失败：${modelName} 无调用权限。请检查当前密钥权限，或更换可用模型后重新运行。`;
+  }
+
+  const firstError = errors[0]?.trim();
+  return firstError
+    ? `任务失败：${firstError}`
+    : "任务运行失败，请查看红色节点中的具体原因后重新运行。";
 }
 
 function extractChapterNumber(value: string): string | null {

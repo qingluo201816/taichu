@@ -5,6 +5,14 @@ from typing import Protocol, TypeAlias, runtime_checkable
 StorageData: TypeAlias = dict[str, object]
 
 
+class WorkspaceRecordRevisionConflictError(RuntimeError):
+    """JSONL 主记录的 expected revision 已陈旧。"""
+
+    def __init__(self, current_revision: int) -> None:
+        self.current_revision = current_revision
+        super().__init__(f"当前修订为 {current_revision}。")
+
+
 @runtime_checkable
 class StorageContract(Protocol):
     """定义应用层所需的源数据存储能力。"""
@@ -107,6 +115,16 @@ class ProjectAssetStorageContract(Protocol):
         records: list[StorageData],
     ) -> None:
         """原子重写 source/workspace 下的 JSONL 主记录。"""
+        ...
+
+    async def compare_and_swap_workspace_record(
+        self,
+        filename: str,
+        item_id: str,
+        expected_revision: int,
+        updates: StorageData,
+    ) -> StorageData:
+        """在同一临界区按 revision 更新一条 JSONL 主记录。"""
         ...
 
     async def read_preferences(self) -> StorageData:

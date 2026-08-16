@@ -154,7 +154,7 @@ async def test_identity_and_catalog_share_result_contract(tmp_path: Path) -> Non
 
 
 @_async_test
-async def test_budget_and_top_k_mark_result_as_truncated(tmp_path: Path) -> None:
+async def test_top_k_selection_is_not_content_truncation(tmp_path: Path) -> None:
     repository = InMemoryKnowledgeRepository(
         [
             _card(f"character-{index}", f"秦阳{index}", summary="秦阳相关设定。")
@@ -168,7 +168,32 @@ async def test_budget_and_top_k_mark_result_as_truncated(tmp_path: Path) -> None
     )
 
     assert result.hit_count == 1
+    assert result.candidate_count == 3
+    assert result.truncated is False
+    assert result.budget_limited is False
+
+
+@_async_test
+async def test_content_budget_marks_result_as_truncated(tmp_path: Path) -> None:
+    repository = InMemoryKnowledgeRepository(
+        [
+            _card(
+                "character-qin-yang",
+                "秦阳",
+                summary="秦阳相关设定。" * 100,
+            )
+        ]
+    )
+    service = _service(repository, tmp_path)
+
+    result = await service.retrieve(
+        RetrievalRequest(query_text="秦阳", top_k=12, max_content_chars=500)
+    )
+
+    assert result.candidate_count == 1
+    assert result.hit_count == 0
     assert result.truncated is True
+    assert result.budget_limited is True
 
 
 @_async_test

@@ -23,18 +23,9 @@ from taichu.infrastructure.evaluations.retrieval import (
     JsonRetrievalEvaluationResultRepository,
 )
 from taichu.infrastructure.knowledge import MongoKnowledgeRepository
-from taichu.infrastructure.embedding import (
-    JsonlEmbeddingUsageRepository,
-    LlamaCppEmbeddingGateway,
-)
 from taichu.infrastructure.retrieval import (
     JsonlRetrievalTraceRepository,
-    KnowledgeVectorRetrievalBackend,
     MongoLexicalRetrievalBackend,
-)
-from taichu.infrastructure.retrieval.vector_index import (
-    JsonVectorIndexManifestRepository,
-    QdrantVectorIndexBackend,
 )
 
 
@@ -48,8 +39,8 @@ def main() -> None:
     parser.add_argument(
         "--strategy",
         default="mongo_lexical",
-        choices=("mongo_lexical", "knowledge_vector", "both"),
-        help="请求词法、独立向量或两种策略。",
+        choices=("mongo_lexical",),
+        help="运行确定性知识卡词法基线；多跳图召回使用独立评测集。",
     )
     parser.add_argument(
         "--repeat",
@@ -75,8 +66,6 @@ async def _run(*, dataset_id: str, strategy: str, repeat: int) -> None:
         settings.mongodb_uri,
         settings.mongodb_database,
     )
-    embedding_gateway: LlamaCppEmbeddingGateway | None = None
-    vector_index_backend: QdrantVectorIndexBackend | None = None
     try:
         await knowledge_repository.initialize()
         resolver = RetrievalPolicyResolver.from_json(
@@ -85,39 +74,10 @@ async def _run(*, dataset_id: str, strategy: str, repeat: int) -> None:
                 settings.retrieval_default_relevance_strategy
             ),
         )
-        additional_backends = {}
-        manifests = JsonVectorIndexManifestRepository(settings.project_assets_dir)
-        if strategy in {"knowledge_vector", "both"}:
-            embedding_gateway = LlamaCppEmbeddingGateway(
-                base_url=settings.embedding_base_url,
-                model_id=settings.embedding_model_id,
-                dimensions=settings.embedding_dimensions,
-                timeout_seconds=settings.embedding_request_timeout_seconds,
-                usage_repository=JsonlEmbeddingUsageRepository(
-                    settings.project_assets_dir
-                ),
-                max_input_tokens=settings.embedding_max_input_tokens,
-            )
-            vector_index_backend = QdrantVectorIndexBackend(
-                url=settings.qdrant_url,
-                api_key=settings.qdrant_api_key.get_secret_value(),
-            )
-            vector_backend = KnowledgeVectorRetrievalBackend(
-                knowledge_repository=knowledge_repository,
-                embedding_gateway=embedding_gateway,
-                vector_index=vector_index_backend,
-                manifests=manifests,
-                query_char_budget=settings.vector_query_char_budget,
-                candidate_multiplier=settings.vector_candidate_multiplier,
-                score_threshold=settings.vector_score_threshold,
-                coverage_bonus=settings.vector_coverage_bonus,
-            )
-            additional_backends[vector_backend.strategy_name] = vector_backend
         retrieval = RetrievalService(
             MongoLexicalRetrievalBackend(knowledge_repository),
             JsonlRetrievalTraceRepository(settings.project_assets_dir),
             policy_resolver=resolver,
-            additional_backends=additional_backends,
         )
         service = RetrievalEvaluationService(
             datasets=JsonRetrievalEvaluationDatasetRepository(
@@ -133,22 +93,7 @@ async def _run(*, dataset_id: str, strategy: str, repeat: int) -> None:
             "platform": platform.platform(),
             "executable": Path(sys.executable).name,
         }
-        manifest = await manifests.load_active()
-        if manifest is not None:
-            environment.update(
-                {
-                    "vector_index_id": manifest.index_id,
-                    "vector_build_duration_ms": str(manifest.build_duration_ms),
-                    "vector_estimated_bytes": str(manifest.estimated_vector_bytes),
-                    "embedding_model_id": manifest.embedding_model_id,
-                    "embedding_dimensions": str(manifest.vector_dimensions),
-                }
-            )
-        strategies = (
-            ["mongo_lexical", "knowledge_vector"]
-            if strategy == "both"
-            else [strategy]
-        )
+        strategies = [strategy]
         outputs = []
         for selected_strategy in strategies:
             for repetition in range(1, repeat + 1):
@@ -163,10 +108,6 @@ async def _run(*, dataset_id: str, strategy: str, repeat: int) -> None:
                 outputs.append(_output(record, repetition=repetition))
         print(json.dumps(outputs, ensure_ascii=False, indent=2))
     finally:
-        if embedding_gateway is not None:
-            await embedding_gateway.close()
-        if vector_index_backend is not None:
-            await vector_index_backend.close()
         await knowledge_repository.close()
 
 

@@ -5,8 +5,8 @@ from fastapi import Request
 from taichu.application.agents.registry import AgentRegistry
 from taichu.application.general_agent.events import GeneralAgentEventCenter
 from taichu.application.general_agent.service import GeneralAgentRuntimeService
-from taichu.application.evaluations.general_agent.service import (
-    GeneralAgentEvaluationService,
+from taichu.application.evaluations.general_agent_benchmark.container import (
+    GeneralAgentBenchmarkServices,
 )
 from taichu.application.evaluations.retrieval.service import (
     RetrievalEvaluationService,
@@ -36,6 +36,7 @@ from taichu.application.services.outline_service import OutlineService
 from taichu.application.services.selection_ai_service import SelectionAIService
 from taichu.application.services.settings_service import SettingsPreferenceService
 from taichu.application.services.writing_ai_service import WritingAIService
+from taichu.application.vector_graph import VectorGraphRAGService
 
 
 def provide_agent_registry(request: Request) -> AgentRegistry:
@@ -61,12 +62,12 @@ def provide_agent_memory_service(request: Request) -> AgentMemoryService:
     return request.app.state.agent_memory_service
 
 
-def provide_general_agent_evaluation_service(
+def provide_general_agent_benchmark_services(
     request: Request,
-) -> GeneralAgentEvaluationService:
-    """返回通用写作助手独立效果评测服务。"""
+) -> GeneralAgentBenchmarkServices:
+    """返回与正常 Runtime 隔离的固定基准评测服务集合。"""
 
-    return request.app.state.general_agent_evaluation_service
+    return request.app.state.general_agent_benchmark_services
 
 
 def provide_retrieval_evaluation_service(
@@ -171,3 +172,9 @@ def provide_llm_gateway(request: Request) -> LLMGatewayContract:
 def provide_llm_usage_repository(request: Request) -> LLMUsageRepository:
     """返回模型调用遥测仓储。"""
     return request.app.state.llm_usage_repository
+
+
+def provide_vector_graph_rag_service(request: Request) -> VectorGraphRAGService:
+    """返回 Milvus Vector Graph RAG 建模与状态服务。"""
+
+    return request.app.state.vector_graph_rag_service

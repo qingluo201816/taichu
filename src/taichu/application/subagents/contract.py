@@ -14,7 +14,7 @@ class SubagentResourceLimits(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    timeout_seconds: float = Field(default=180, gt=0, le=600)
+    timeout_seconds: float = Field(default=600, gt=0, le=900)
     max_tool_calls: int = Field(default=10, ge=0, le=50)
     max_output_chars: int = Field(default=50_000, ge=100, le=200_000)
     max_output_tokens: int = Field(default=8_000, ge=128, le=100_000)

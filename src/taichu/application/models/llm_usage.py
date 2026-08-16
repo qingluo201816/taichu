@@ -25,6 +25,8 @@ class LLMCallRecord(BaseModel):
     chapter_ids: list[str] = Field(default_factory=list)
     model_id: str = Field(min_length=1)
     model_display_name: str = Field(min_length=1)
+    provider: str = "rightcode"
+    fallback_from_provider: str | None = None
     upstream_model: str = Field(min_length=1)
     wire_protocol: str = Field(min_length=1)
     status: LLMCallStatus

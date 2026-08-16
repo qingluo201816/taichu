@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Forward-test the codex-sdd state contract through design validation."""
+"""Forward-test the codex-sdd state contract through downstream revalidation."""
 
 from __future__ import annotations
 
@@ -105,6 +105,61 @@ def main() -> int:
             "independent-validation-report-requirements.md",
         )
 
+        original_requirements = (spec_directory / "requirements.md").read_text(encoding="utf-8")
+        write(
+            spec_directory / "requirements.md",
+            original_requirements + "\n校验后按新反馈修订。\n",
+        )
+        write(
+            spec_directory / "validation-discovery-requirements.md",
+            "# 需求独立发现\n\n已在全新上下文中重新发现当前需求边界。\n",
+        )
+        write(
+            spec_directory / "independent-validation-report-requirements.md",
+            "# 需求独立校验报告\n\n结论：FAIL\n\n"
+            f"目标 SHA-256：`{sha256(spec_directory / 'requirements.md')}`\n\n"
+            "发现需要继续修正的主要问题。\n",
+        )
+        failed_revalidation = run(
+            root,
+            "validation",
+            "--spec",
+            SPEC_ID,
+            "--mode",
+            "requirements",
+            "--status",
+            "fail",
+            "--report",
+            "independent-validation-report-requirements.md",
+        )
+        assert failed_revalidation["spec"]["phase"] == "requirements_ready"
+        assert failed_revalidation["validation"]["attempts"] == 2
+
+        write(
+            spec_directory / "validation-discovery-requirements.md",
+            "# 需求独立发现\n\n已重新发现并核对修正后的当前需求边界。\n",
+        )
+        write(
+            spec_directory / "independent-validation-report-requirements.md",
+            "# 需求独立校验报告\n\n结论：PASS\n\n"
+            f"目标 SHA-256：`{sha256(spec_directory / 'requirements.md')}`\n\n"
+            "修正后的需求完整且可验证。\n",
+        )
+        passed_revalidation = run(
+            root,
+            "validation",
+            "--spec",
+            SPEC_ID,
+            "--mode",
+            "requirements",
+            "--status",
+            "pass",
+            "--report",
+            "independent-validation-report-requirements.md",
+        )
+        assert passed_revalidation["spec"]["phase"] == "requirements_validated"
+        assert passed_revalidation["validation"]["attempts"] == 3
+
         write(spec_directory / "research.md", "# 设计调查\n\n已核对状态契约。\n")
         write(
             spec_directory / "design.md",
@@ -154,11 +209,100 @@ def main() -> int:
         assert shown["spec"]["target_phase"] == "design_validated"
         assert len((spec_directory / "progress.log").read_text(encoding="utf-8").splitlines()) >= 5
 
+        write(spec_directory / "tasks.md", "# 实现任务\n\n- [ ] 1.1 验证下游重验状态回退\n")
+        run(
+            root,
+            "advance",
+            "--spec",
+            SPEC_ID,
+            "--to",
+            "tasks_ready",
+            "--artifact",
+            "tasks=tasks.md",
+        )
+        run(
+            root,
+            "task-set",
+            "--spec",
+            SPEC_ID,
+            "--task-id",
+            "1.1",
+            "--status",
+            "in_progress",
+        )
+        run(root, "advance", "--spec", SPEC_ID, "--to", "implementing")
+
         original_design = (spec_directory / "design.md").read_text(encoding="utf-8")
-        write(spec_directory / "design.md", original_design + "\n校验后篡改。\n")
+        write(spec_directory / "design.md", original_design + "\n校验后按新证据修订。\n")
         stale = run(root, "validate", "--spec", SPEC_ID, expected=1)
         assert any("PASS 后发生变化" in item for item in stale["errors"])
-        write(spec_directory / "design.md", original_design)
+
+        write(
+            spec_directory / "validation-discovery-design.md",
+            "# 设计独立发现\n\n已在全新上下文中发现实施期间变更后的设计边界。\n",
+        )
+        write(
+            spec_directory / "independent-validation-report-design.md",
+            "# 设计独立校验报告\n\n结论：FAIL\n\n"
+            f"目标 SHA-256：`{sha256(spec_directory / 'design.md')}`\n\n"
+            "下游实施暴露出需要继续修正的设计问题。\n",
+        )
+        failed_downstream_revalidation = run(
+            root,
+            "validation",
+            "--spec",
+            SPEC_ID,
+            "--mode",
+            "design",
+            "--status",
+            "fail",
+            "--report",
+            "independent-validation-report-design.md",
+        )
+        assert failed_downstream_revalidation["spec"]["phase"] == "design_ready"
+        assert failed_downstream_revalidation["spec"]["status"] == "active"
+
+        task_state_before = json.loads(
+            (spec_directory / "tasks-status.json").read_text(encoding="utf-8")
+        )
+        write(
+            spec_directory / "validation-discovery-design.md",
+            "# 设计独立发现\n\n已重新发现并核对修正后的当前设计边界。\n",
+        )
+        write(
+            spec_directory / "independent-validation-report-design.md",
+            "# 设计独立校验报告\n\n结论：PASS\n\n"
+            f"目标 SHA-256：`{sha256(spec_directory / 'design.md')}`\n\n"
+            "修正后的设计可以继续实施。\n",
+        )
+        passed_downstream_revalidation = run(
+            root,
+            "validation",
+            "--spec",
+            SPEC_ID,
+            "--mode",
+            "design",
+            "--status",
+            "pass",
+            "--report",
+            "independent-validation-report-design.md",
+        )
+        assert passed_downstream_revalidation["spec"]["phase"] == "design_validated"
+        run(
+            root,
+            "advance",
+            "--spec",
+            SPEC_ID,
+            "--to",
+            "tasks_ready",
+            "--artifact",
+            "tasks=tasks.md",
+        )
+        task_state_after = json.loads(
+            (spec_directory / "tasks-status.json").read_text(encoding="utf-8")
+        )
+        assert task_state_after == task_state_before
+        run(root, "advance", "--spec", SPEC_ID, "--to", "implementing")
         assert run(root, "validate", "--spec", SPEC_ID)["ok"] is True
 
         write(root / ".sdd" / "state.json", "{损坏的索引")

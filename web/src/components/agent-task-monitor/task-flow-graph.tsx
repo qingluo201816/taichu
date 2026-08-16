@@ -39,6 +39,11 @@ const defaultSingleGraphNodes: AgentRunGraphNode[] = [
     lane: "后处理",
   },
   { node_name: "MatchExistingKnowledgeNode", label: "匹配有效知识", lane: "后处理" },
+  {
+    node_name: "SynthesizeCandidateSummariesNode",
+    label: "综合候选摘要",
+    lane: "后处理",
+  },
   { node_name: "BuildReviewItemsNode", label: "生成审核项", lane: "后处理" },
   { node_name: "WriteIntermediateJsonNode", label: "写入中间态", lane: "写入" },
 ];
@@ -59,7 +64,14 @@ const defaultSingleGraphEdges: AgentRunGraphEdge[] = [
   { source: "MergeExpertCandidatesNode", target: "NormalizeAndValidateNode" },
   { source: "NormalizeAndValidateNode", target: "RunInternalConflictCheckNode" },
   { source: "RunInternalConflictCheckNode", target: "MatchExistingKnowledgeNode" },
-  { source: "MatchExistingKnowledgeNode", target: "BuildReviewItemsNode" },
+  {
+    source: "MatchExistingKnowledgeNode",
+    target: "SynthesizeCandidateSummariesNode",
+  },
+  {
+    source: "SynthesizeCandidateSummariesNode",
+    target: "BuildReviewItemsNode",
+  },
   { source: "BuildReviewItemsNode", target: "WriteIntermediateJsonNode" },
 ];
 
@@ -71,6 +83,11 @@ const batchPostNodes: AgentRunGraphNode[] = [
   {
     node_name: "BatchMatchExistingKnowledgeNode",
     label: "匹配知识",
+    lane: "统一后处理",
+  },
+  {
+    node_name: "BatchSynthesizeCandidateSummariesNode",
+    label: "综合候选摘要",
     lane: "统一后处理",
   },
   { node_name: "BatchBuildReviewItemsNode", label: "生成审核", lane: "统一后处理" },
@@ -122,8 +139,9 @@ const singlePositions: Record<
   NormalizeAndValidateNode: { x: 684, y: 316 },
   RunInternalConflictCheckNode: { x: 574, y: 316 },
   MatchExistingKnowledgeNode: { x: 464, y: 316 },
-  BuildReviewItemsNode: { x: 354, y: 316 },
-  WriteIntermediateJsonNode: { x: 244, y: 316 },
+  SynthesizeCandidateSummariesNode: { x: 354, y: 316 },
+  BuildReviewItemsNode: { x: 244, y: 316 },
+  WriteIntermediateJsonNode: { x: 134, y: 316 },
 };
 
 const SINGLE_NODE_WIDTH = 96;
@@ -506,10 +524,11 @@ function layeredPostStages(): LayeredStage[] {
     index: 12 + index,
     label: node.label,
     nodeName: node.node_name,
-    x: 940 - index * 210,
+    x: 972 - index * 180,
     y: 470,
     width: 156,
     height: 64,
+    llmHeavy: node.node_name === "BatchSynthesizeCandidateSummariesNode",
   }));
 }
 
@@ -721,6 +740,17 @@ function PostStageNode({
       >
         {stage.label}
       </text>
+      {stage.llmHeavy ? (
+        <text
+          x={stage.width - 30}
+          y="16"
+          fill="rgba(251,191,36,0.84)"
+          fontFamily="var(--tc-font-mono)"
+          fontSize="7.5"
+        >
+          LLM
+        </text>
+      ) : null}
       <text
         x="12"
         y="54"

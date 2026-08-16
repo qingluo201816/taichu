@@ -11,6 +11,7 @@ import {
   Clipboard,
   Database,
   Globe,
+  Layers3,
   LoaderCircle,
   Plus,
   RefreshCw,
@@ -20,7 +21,13 @@ import {
   Square,
   Trash2,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { AppShell } from "@/components/app-shell";
 import {
@@ -31,11 +38,11 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   cancelGeneralAgentRun,
-  deleteGeneralAgentMemory,
   deleteGeneralAgentConversation,
   getGeneralAgentConversation,
   getGeneralAgentRun,
   listGeneralAgentConversations,
+  listGeneralAgentContextSnapshots,
   listGeneralAgentMemories,
   resumeGeneralAgentRun,
   startGeneralAgentRun,
@@ -43,6 +50,7 @@ import {
 import { listChapters } from "@/lib/api/chapters";
 import {
   currentGeneralAgentNodes,
+  generalAgentContinuationRequestIndex,
   generalCapabilityLabel,
   generalNodeErrorMessage,
   generalNodeStatusLabel,
@@ -51,9 +59,11 @@ import {
   isGeneralAgentRunActive,
 } from "@/lib/general-agent-display";
 import { shouldSubmitGeneralAgentComposer } from "@/lib/general-agent-composer";
+import { readableEntries, splitReadableContent } from "@/lib/general-agent-memory-trace";
 import type { ChapterInfo } from "@/lib/types/chapters";
 import type {
   AgentMemoryEntry,
+  GeneralAgentContextSnapshot,
   GeneralAgentConversationSummary,
   GeneralAgentNodeRun,
   GeneralAgentRun,
@@ -99,7 +109,12 @@ export function GeneralAgentWorkbench({
   const [copiedRunId, setCopiedRunId] = useState("");
   const [memories, setMemories] = useState<AgentMemoryEntry[]>([]);
   const [memoryPanelOpen, setMemoryPanelOpen] = useState(false);
-  const [memoryBusyId, setMemoryBusyId] = useState("");
+  const [contextPanelOpen, setContextPanelOpen] = useState(false);
+  const [selectedContextRunId, setSelectedContextRunId] = useState("");
+  const [contextSnapshots, setContextSnapshots] = useState<
+    GeneralAgentContextSnapshot[]
+  >([]);
+  const [contextSnapshotsRunId, setContextSnapshotsRunId] = useState("");
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const goalInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -166,8 +181,36 @@ export function GeneralAgentWorkbench({
   }, [reloadConversations]);
 
   const currentRun = conversationRuns.at(-1) ?? null;
+  const selectedContextRun =
+    conversationRuns.find(run => run.run_id === selectedContextRunId) ?? currentRun;
   const activeRunId = currentRun?.run_id ?? "";
   const activeRunStatus = currentRun?.status;
+  const contextRunId = selectedContextRun?.run_id ?? "";
+  const latestContextSnapshotId = selectedContextRun?.context_snapshot_id ?? "";
+
+  useEffect(() => {
+    if (!contextPanelOpen || !contextRunId) {
+      return;
+    }
+    let cancelled = false;
+    void listGeneralAgentContextSnapshots(contextRunId)
+      .then(response => {
+        if (!cancelled) {
+          setContextSnapshots(response.snapshots);
+          setContextSnapshotsRunId(response.run_id);
+        }
+      })
+      .catch(contextError => {
+        if (!cancelled) {
+          setContextSnapshots([]);
+          setContextSnapshotsRunId(contextRunId);
+          setError(errorMessage(contextError));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [contextPanelOpen, contextRunId, latestContextSnapshotId]);
 
   useEffect(() => {
     if (
@@ -274,7 +317,7 @@ export function GeneralAgentWorkbench({
     setError("");
     try {
       const response = await startGeneralAgentRun({
-        user_goal: trimmedGoal,
+        user_goal: goal,
         conversation_id: selectedConversationId || undefined,
         start_new_conversation: !selectedConversationId,
         scope: {
@@ -284,7 +327,7 @@ export function GeneralAgentWorkbench({
             scopeType === "novel"
               ? chapters.map(chapter => chapter.id)
               : selectedChapterIds,
-          selection_text: scopeType === "selection" ? selectionText.trim() : "",
+          selection_text: scopeType === "selection" ? selectionText : "",
           direct_context: "",
         },
         author_constraints: authorConstraintsText
@@ -450,6 +493,9 @@ export function GeneralAgentWorkbench({
   async function handleToggleMemories() {
     const nextOpen = !memoryPanelOpen;
     setMemoryPanelOpen(nextOpen);
+    if (nextOpen) {
+      setContextPanelOpen(false);
+    }
     if (!nextOpen || !selectedConversationId) {
       return;
     }
@@ -461,19 +507,12 @@ export function GeneralAgentWorkbench({
     }
   }
 
-  async function handleDeleteMemory(memory: AgentMemoryEntry) {
-    if (!window.confirm("确认删除这条运行记忆吗？删除后后续任务不会再使用它。")) {
-      return;
-    }
-    setMemoryBusyId(memory.memory_id);
-    setError("");
-    try {
-      await deleteGeneralAgentMemory(memory.memory_id);
-      await reloadMemories(memory.conversation_id);
-    } catch (memoryError) {
-      setError(errorMessage(memoryError));
-    } finally {
-      setMemoryBusyId("");
+  function handleToggleContext() {
+    const nextOpen = !contextPanelOpen;
+    setContextPanelOpen(nextOpen);
+    if (nextOpen) {
+      setMemoryPanelOpen(false);
+      setSelectedContextRunId(currentRun?.run_id ?? "");
     }
   }
 
@@ -556,6 +595,24 @@ export function GeneralAgentWorkbench({
                     variant="ghost"
                     size="sm"
                     disabled={!selectedConversationId}
+                    aria-expanded={contextPanelOpen}
+                    onClick={handleToggleContext}
+                    className="rounded-full bg-[var(--tc-surface-card)] text-[var(--tc-text-secondary)]"
+                  >
+                    <Layers3 className="size-3.5" />
+                    上下文快照
+                    <ChevronDown
+                      className={cn(
+                        "size-3.5 transition-transform duration-150 motion-reduce:transition-none",
+                        contextPanelOpen && "rotate-180",
+                      )}
+                    />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={!selectedConversationId}
                     aria-expanded={memoryPanelOpen}
                     onClick={() => void handleToggleMemories()}
                     className="rounded-full bg-[var(--tc-surface-card)] text-[var(--tc-text-secondary)]"
@@ -572,10 +629,19 @@ export function GeneralAgentWorkbench({
                 </div>
               </div>
               {memoryPanelOpen && selectedConversationId ? (
-                <GeneralMemoryPanel
-                  memories={memories}
-                  busyMemoryId={memoryBusyId}
-                  onDelete={memory => void handleDeleteMemory(memory)}
+                <GeneralMemoryPanel memories={memories} />
+              ) : null}
+              {contextPanelOpen && selectedConversationId ? (
+                <GeneralContextPanel
+                  runs={conversationRuns}
+                  selectedRun={selectedContextRun}
+                  snapshots={
+                    contextSnapshotsRunId === contextRunId
+                      ? contextSnapshots
+                      : []
+                  }
+                  loading={contextSnapshotsRunId !== contextRunId}
+                  onSelectRun={setSelectedContextRunId}
                 />
               ) : null}
             </div>
@@ -590,8 +656,7 @@ export function GeneralAgentWorkbench({
                     run={run}
                     nodes={currentGeneralAgentNodes(run)}
                     continuedByRequestIndex={
-                      conversationRuns.find(item => item.parent_run_id === run.run_id)
-                        ?.request_index
+                      generalAgentContinuationRequestIndex(run, conversationRuns)
                     }
                     busy={busy}
                     clarificationAnswer={clarificationAnswer}
@@ -866,12 +931,8 @@ export function GeneralAgentWorkbench({
 
 function GeneralMemoryPanel({
   memories,
-  busyMemoryId,
-  onDelete,
 }: {
   memories: AgentMemoryEntry[];
-  busyMemoryId: string;
-  onDelete: (memory: AgentMemoryEntry) => void;
 }) {
   return (
     <section className="mt-3 rounded-2xl bg-[var(--tc-surface-card)] p-3">
@@ -882,69 +943,55 @@ function GeneralMemoryPanel({
             当前对话运行记忆
           </p>
           <p className="mt-0.5 text-xs leading-5 text-[var(--tc-text-muted)]">
-            运行记忆只用于延续任务上下文，不是小说知识库事实；涉及人物、设定和情节事实时仍会重新取证。
+            系统自动维护的只读运行状态，不是小说知识库事实；涉及人物、设定和情节事实时仍会重新取证。
           </p>
         </div>
       </div>
-      <div className="tc-editor-scrollbar mt-2 grid max-h-72 gap-2 overflow-y-auto pr-1">
+      <div className="tc-editor-scrollbar mt-2 grid max-h-72 gap-1 overflow-y-auto pr-1">
         {memories.length ? (
-          memories.map(memory => {
-            const itemBusy = busyMemoryId === memory.memory_id;
-            return (
-              <article
-                key={memory.memory_id}
-                className="rounded-xl bg-[var(--tc-surface-muted)] p-3"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="font-medium text-[var(--tc-text-secondary)]">
-                        {memoryKindLabels[memory.kind]}
-                      </span>
-                      <span className="rounded-full bg-[var(--tc-surface-page)] px-2 py-0.5 text-[var(--tc-text-muted)]">
-                        第 {memory.created_request_index} 次请求自动记录
-                      </span>
-                      {memory.expires_after_request_index ? (
-                        <span className="text-[var(--tc-text-muted)]">
-                          第 {memory.expires_after_request_index} 次请求后自动退出上下文
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--tc-text-primary)]">
-                      {memory.content}
-                    </p>
-                    {memory.source_refs.length || memory.artifact_refs.length ? (
-                      <details className="group mt-2">
-                        <summary className="cursor-pointer list-none text-xs text-[var(--tc-text-muted)] [&::-webkit-details-marker]:hidden">
-                          查看来源引用
-                        </summary>
-                        <p className="mt-1 break-all text-xs leading-5 text-[var(--tc-text-muted)]">
-                          {[...memory.source_refs, ...memory.artifact_refs].join("、")}
-                        </p>
-                      </details>
-                    ) : null}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      disabled={itemBusy}
-                      aria-label="删除运行记忆"
-                      title="删除运行记忆"
-                      onClick={() => onDelete(memory)}
-                    >
-                      {itemBusy ? (
-                        <LoaderCircle className="size-3.5 animate-spin motion-reduce:animate-none" />
-                      ) : (
-                        <Trash2 className="size-3.5" />
-                      )}
-                    </Button>
-                  </div>
+          memories.map(memory => (
+            <article
+              key={memory.memory_id}
+              className={cn(
+                "rounded-[var(--tc-radius-control)] border px-2.5 py-2.5",
+                memory.validity === "active"
+                  ? "border-transparent odd:bg-[var(--tc-surface-muted)]"
+                  : "border-[var(--tc-border-subtle)] bg-[var(--tc-surface-page)]",
+              )}
+            >
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="font-medium text-[var(--tc-text-secondary)]">
+                    {memoryKindLabels[memory.kind]}
+                  </span>
+                  <span className="text-[var(--tc-text-muted)]">
+                    {memoryValidityLabels[memory.validity]}
+                  </span>
+                  <span className="text-[var(--tc-text-muted)]">
+                    运行时在第 {memory.created_request_index} 次请求后生成
+                  </span>
+                  {memory.expires_after_request_index ? (
+                    <span className="text-[var(--tc-text-muted)]">
+                      第 {memory.expires_after_request_index} 次请求后由运行时自动退出
+                    </span>
+                  ) : null}
                 </div>
-              </article>
-            );
-          })
+                <div className="mt-2 text-sm leading-6 text-[var(--tc-text-primary)]">
+                  <MemoryReadableContent content={memory.content} />
+                </div>
+                {memory.validity !== "active" && memory.invalidation_reason ? (
+                  <p className="mt-2 border-l border-[var(--tc-border-strong)] pl-2 text-xs leading-5 text-[var(--tc-text-secondary)]">
+                    {memory.invalidation_reason}
+                  </p>
+                ) : null}
+                {memory.source_refs.length || memory.artifact_refs.length ? (
+                  <p className="mt-1 text-xs leading-5 text-[var(--tc-text-muted)]">
+                    引用 {memory.source_refs.length} 个来源标识{memory.artifact_refs.length ? `，关联 ${memory.artifact_refs.length} 份运行产物` : ""}。
+                  </p>
+                ) : null}
+              </div>
+            </article>
+          ))
         ) : (
           <p className="rounded-xl bg-[var(--tc-surface-muted)] px-3 py-4 text-center text-xs text-[var(--tc-text-muted)]">
             当前对话还没有运行记忆。
@@ -952,6 +999,307 @@ function GeneralMemoryPanel({
         )}
       </div>
     </section>
+  );
+}
+
+function MemoryReadableContent({ content }: { content: string }) {
+  return (
+    <div className="grid gap-2">
+      {splitReadableContent(content).map((part, index) =>
+        part.kind === "text" ? (
+          <p key={index} className="whitespace-pre-wrap break-words">{part.text}</p>
+        ) : (
+          <MemoryReadableValue key={index} value={part.value} />
+        ),
+      )}
+    </div>
+  );
+}
+
+function MemoryReadableValue({ value }: { value: unknown }) {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "string") return <MemoryReadableContent content={value} />;
+  if (typeof value === "number") return <span>{value.toLocaleString("zh-CN")}</span>;
+  if (typeof value === "boolean") return <span>{value ? "是" : "否"}</span>;
+  if (Array.isArray(value)) {
+    return (
+      <ul className="grid gap-1">
+        {value.map((item, index) => <li key={index}>· <MemoryReadableValue value={item} /></li>)}
+      </ul>
+    );
+  }
+  const entries = readableEntries(value);
+  return (
+    <dl className="grid gap-1.5 text-xs leading-5">
+      {entries.map(entry => (
+        <div key={entry.key} className="grid grid-cols-[96px_minmax(0,1fr)] gap-2">
+          <dt className="text-[var(--tc-text-muted)]">{entry.label}</dt>
+          <dd className="min-w-0 text-[var(--tc-text-secondary)]"><MemoryReadableValue value={entry.value} /></dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function GeneralContextPanel({
+  runs,
+  selectedRun,
+  snapshots,
+  loading,
+  onSelectRun,
+}: {
+  runs: GeneralAgentRun[];
+  selectedRun: GeneralAgentRun | null;
+  snapshots: GeneralAgentContextSnapshot[];
+  loading: boolean;
+  onSelectRun: (runId: string) => void;
+}) {
+  const [selectedSnapshotId, setSelectedSnapshotId] = useState("");
+  const snapshot =
+    snapshots.find(item => item.snapshot_id === selectedSnapshotId) ??
+    snapshots.at(-1) ??
+    selectedRun?.context_snapshot ??
+    null;
+  return (
+    <section className="mt-3 rounded-2xl bg-[var(--tc-surface-card)] p-3">
+      <div className="flex items-start justify-between gap-3 rounded-xl bg-[var(--tc-surface-muted)] px-3 py-2">
+        <div className="flex min-w-0 items-start gap-2">
+          <Layers3 className="mt-0.5 size-4 shrink-0 text-[var(--tc-text-secondary)]" />
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-[var(--tc-text-primary)]">
+              编排模型五层上下文
+            </p>
+            <p className="mt-0.5 text-xs leading-5 text-[var(--tc-text-muted)]">
+              只读展示该次请求各编排阶段实际组装的快照，不代表子智能体输入或完整调用原文。
+            </p>
+          </div>
+        </div>
+        <label className="shrink-0 text-xs text-[var(--tc-text-muted)]">
+          <span className="sr-only">选择请求</span>
+          <select
+            value={selectedRun?.run_id ?? ""}
+            onChange={event => onSelectRun(event.target.value)}
+            className="h-8 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-page)] px-2 text-xs text-[var(--tc-text-primary)] outline-none focus:ring-1 focus:ring-[var(--tc-text-primary)]"
+          >
+            {[...runs].reverse().map(run => (
+              <option key={run.run_id} value={run.run_id}>
+                第 {run.request_index} 次请求 · {formatTime(run.created_at)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {loading ? (
+        <p className="mt-2 rounded-xl bg-[var(--tc-surface-muted)] px-3 py-4 text-center text-xs text-[var(--tc-text-muted)]">
+          正在读取上下文快照…
+        </p>
+      ) : snapshot ? (
+        <div className="mt-2">
+          <div className="flex flex-wrap items-center gap-2 px-1 py-1 text-xs text-[var(--tc-text-muted)]">
+            {snapshots.length > 1 ? (
+              <label>
+                <span className="sr-only">选择编排阶段</span>
+                <select
+                  value={snapshot.snapshot_id}
+                  onChange={event => setSelectedSnapshotId(event.target.value)}
+                  className="h-7 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-page)] px-2 text-xs text-[var(--tc-text-primary)] outline-none focus:ring-1 focus:ring-[var(--tc-text-primary)]"
+                >
+                  {snapshots.map((item, index) => (
+                    <option key={item.snapshot_id} value={item.snapshot_id}>
+                      第 {index + 1} 份 · {contextPhaseLabels[item.phase]} · {formatTime(item.created_at)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <span>{contextPhaseLabels[snapshot.phase]}</span>
+            )}
+            <span>约 {snapshot.envelope.estimated_token_count.toLocaleString("zh-CN")} Token</span>
+            <span>{snapshot.envelope.compressed ? "已压缩" : "未压缩"}</span>
+            <span>{formatTime(snapshot.created_at)}</span>
+          </div>
+          <div className="tc-editor-scrollbar mt-1 grid max-h-[420px] gap-2 overflow-y-auto pr-1">
+            <ContextLayer
+              title="稳定记忆"
+              summary={`${snapshot.envelope.stable_memory.length} 条规则`}
+            >
+              <ContextTextList items={snapshot.envelope.stable_memory} />
+            </ContextLayer>
+            <ContextLayer
+              title="工作记忆"
+              summary={`${snapshot.envelope.working_memory.memories.length} 条记忆 · ${snapshot.envelope.working_memory.node_summaries.length} 个节点摘要`}
+            >
+              <ContextMemoryList
+                memories={snapshot.envelope.working_memory.memories}
+                emptyText="没有选入工作记忆。"
+              />
+              {snapshot.envelope.working_memory.plan_summary ? (
+                <ContextJson
+                  label="当前计划摘要"
+                  value={snapshot.envelope.working_memory.plan_summary}
+                />
+              ) : null}
+              {snapshot.envelope.working_memory.node_summaries.length ? (
+                <ContextJson
+                  label="节点摘要"
+                  value={snapshot.envelope.working_memory.node_summaries}
+                />
+              ) : null}
+              <ContextTextList
+                label="未解决问题"
+                items={snapshot.envelope.working_memory.unresolved_issues}
+              />
+              {snapshot.envelope.working_memory.digest ? (
+                <ContextJson label="工作记忆摘要" value={snapshot.envelope.working_memory.digest} />
+              ) : null}
+            </ContextLayer>
+            <ContextLayer
+              title="长期记忆"
+              summary={`${snapshot.envelope.long_term_memory.length} 条偏好记忆`}
+            >
+              <ContextMemoryList
+                memories={snapshot.envelope.long_term_memory}
+                emptyText="当前尚未沉淀可用的用户偏好长期记忆。"
+              />
+            </ContextLayer>
+            <ContextLayer
+              title="历史记忆"
+              summary={`${snapshot.envelope.history_memory.messages.length} 条近期原文 · ${snapshot.envelope.history_memory.omitted_message_count} 条已摘要`}
+            >
+              {snapshot.envelope.history_memory.summary ? (
+                <p className="mb-2 whitespace-pre-wrap text-xs leading-5 text-[var(--tc-text-secondary)]">
+                  {snapshot.envelope.history_memory.summary}
+                </p>
+              ) : null}
+              {snapshot.envelope.history_memory.messages.length ? (
+                <div className="grid gap-2">
+                  {snapshot.envelope.history_memory.messages.map((message, index) => (
+                    <div
+                      key={`${message.created_at}-${index}`}
+                      className="rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-page)] px-3 py-2"
+                    >
+                      <p className="text-xs text-[var(--tc-text-muted)]">
+                        {messageRoleLabels[message.role]} · {formatTime(message.created_at)}
+                      </p>
+                      <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-[var(--tc-text-secondary)]">
+                        {message.content}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-[var(--tc-text-muted)]">本次没有选入历史对话。</p>
+              )}
+            </ContextLayer>
+            <ContextLayer title="当前请求" summary="完整保留" defaultOpen>
+              <p className="whitespace-pre-wrap text-xs leading-5 text-[var(--tc-text-primary)]">
+                {snapshot.envelope.current_request.content}
+              </p>
+              <ContextTextList
+                label="用户约束"
+                items={snapshot.envelope.current_request.user_constraints}
+              />
+              <ContextJson label="正文范围" value={snapshot.envelope.current_request.scope} />
+            </ContextLayer>
+          </div>
+        </div>
+      ) : (
+        <p className="mt-2 rounded-xl bg-[var(--tc-surface-muted)] px-3 py-4 text-center text-xs text-[var(--tc-text-muted)]">
+          该次请求没有保存可查看的五层上下文快照。
+        </p>
+      )}
+    </section>
+  );
+}
+
+function ContextLayer({
+  title,
+  summary,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  summary: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <details
+      open={defaultOpen || undefined}
+      className="group rounded-xl bg-[var(--tc-surface-muted)] px-3 py-2"
+    >
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs [&::-webkit-details-marker]:hidden">
+        <span className="font-medium text-[var(--tc-text-primary)]">{title}</span>
+        <span className="flex items-center gap-1 text-[var(--tc-text-muted)]">
+          {summary}
+          <ChevronRight className="size-3.5 transition-transform duration-150 group-open:rotate-90 motion-reduce:transition-none" />
+        </span>
+      </summary>
+      <div className="mt-2 text-xs text-[var(--tc-text-secondary)]">{children}</div>
+    </details>
+  );
+}
+
+function ContextMemoryList({
+  memories,
+  emptyText,
+}: {
+  memories: GeneralAgentContextSnapshot["envelope"]["long_term_memory"];
+  emptyText: string;
+}) {
+  if (!memories.length) {
+    return <p className="text-[var(--tc-text-muted)]">{emptyText}</p>;
+  }
+  return (
+    <div className="grid gap-2">
+      {memories.map(memory => (
+        <div
+          key={memory.memory_id}
+          className="rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-page)] px-3 py-2"
+        >
+          <p className="text-[var(--tc-text-muted)]">
+            {memoryKindLabels[memory.kind as AgentMemoryEntry["kind"]] ?? memory.kind}
+          </p>
+          <p className="mt-1 whitespace-pre-wrap leading-5">{memory.content}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ContextTextList({
+  items,
+  label,
+}: {
+  items: string[];
+  label?: string;
+}) {
+  if (!items.length) {
+    return null;
+  }
+  return (
+    <div className={label ? "mt-3" : ""}>
+      {label ? <p className="mb-1 text-[var(--tc-text-muted)]">{label}</p> : null}
+      <ul className="grid gap-1 leading-5">
+        {items.map((item, index) => (
+          <li key={`${index}-${item}`}>· {item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function ContextJson({ label, value }: { label: string; value: unknown }) {
+  return (
+    <details className="group mt-3">
+      <summary className="cursor-pointer list-none text-[var(--tc-text-muted)] [&::-webkit-details-marker]:hidden">
+        {label}
+      </summary>
+      <pre className="mt-1 max-h-52 overflow-auto whitespace-pre-wrap break-words rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-page)] p-2 font-mono text-[11px] leading-5 text-[var(--tc-text-secondary)]">
+        {JSON.stringify(value, null, 2)}
+      </pre>
+    </details>
   );
 }
 
@@ -1016,12 +1364,33 @@ function GeneralConversationList({
 }
 
 const memoryKindLabels: Record<AgentMemoryEntry["kind"], string> = {
-  user_instruction: "用户指令",
+  user_instruction: "作者约束",
   task_summary: "任务摘要",
-  resource_summary: "资源摘要",
-  work_note: "过程笔记",
-  unresolved_issue: "未解决问题",
-  fact_reference: "事实来源引用",
+  resource_summary: "资料摘要",
+  work_note: "过程记录",
+  unresolved_issue: "未解决事项",
+  fact_reference: "事实来源提示",
+};
+
+const memoryValidityLabels: Record<AgentMemoryEntry["validity"], string> = {
+  active: "当前有效",
+  stale: "来源已变化",
+  rejected: "审查未通过",
+  superseded: "已被新版本替代",
+};
+
+const contextPhaseLabels: Record<GeneralAgentContextSnapshot["phase"], string> = {
+  plan: "规划阶段",
+  replan: "重规划阶段",
+  verify: "结果校验阶段",
+};
+
+const messageRoleLabels: Record<
+  GeneralAgentContextSnapshot["envelope"]["history_memory"]["messages"][number]["role"],
+  string
+> = {
+  user: "作者",
+  assistant: "太初",
 };
 
 function GeneralRunPanel({

@@ -28,15 +28,19 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   confirmInboxPendingFact,
+  createInboxDecision,
   createInboxIdea,
   createInboxIssue,
   createInboxPendingFact,
   listInboxItems,
   listKnowledgeTypes,
+  patchInboxDecision,
   patchInboxIdea,
   patchInboxIssue,
   patchInboxPendingFact,
 } from "@/lib/api/mvp";
+import { ApiError } from "@/lib/api-client";
+import { inboxCasConflictNotice } from "@/lib/general-agent-benchmark-interactions";
 import { inboxIdeaDisplayTitle } from "@/lib/inbox-idea-title";
 import { createInboxIssueTemplate } from "@/lib/inbox-issue-format";
 import type {
@@ -44,6 +48,7 @@ import type {
   InboxTab,
   KnowledgeTypeInfo,
   KnowledgeTypeValue,
+  MVPInboxDecision,
   MVPInboxIdea,
   MVPInboxIssue,
   MVPInboxPendingFact,
@@ -55,9 +60,14 @@ const tabs: Array<{ value: InboxTab; label: string }> = [
   { value: "ideas", label: "灵感" },
   { value: "pending-facts", label: "待确认事实" },
   { value: "issues", label: "系统问题与改进项记录" },
+  { value: "decisions", label: "决策" },
 ];
 
-type InboxEntry = MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue;
+type InboxEntry =
+  | MVPInboxIdea
+  | MVPInboxPendingFact
+  | MVPInboxIssue
+  | MVPInboxDecision;
 type InboxEntryTab = Exclude<InboxTab, "all">;
 type InboxStatusFilter = "all" | "todo" | "processed" | "deprecated";
 type InboxPriorityFilter = InboxPriority | "all";
@@ -66,30 +76,39 @@ type InboxToastState = {
   message: string;
 };
 
-const INBOX_PAGE_SIZE = 6;
+// 一页只保留可完整展示的条目；剩余内容通过分页查看，不在列表区产生滚动条。
+const INBOX_PAGE_SIZE = 8;
 const defaultTabPages: Record<InboxTab, number> = {
   all: 1,
   ideas: 1,
   "pending-facts": 1,
   issues: 1,
+  decisions: 1,
 };
 const defaultTabTotals: Record<InboxTab, number> = {
   all: 0,
   ideas: 0,
   "pending-facts": 0,
   issues: 0,
+  decisions: 0,
 };
 const defaultStatusFilters: Record<InboxTab, InboxStatusFilter> = {
   all: "todo",
   ideas: "todo",
   "pending-facts": "todo",
   issues: "all",
+  decisions: "todo",
 };
 const statusFilters: Array<{ value: InboxStatusFilter; label: string }> = [
   { value: "all", label: "全部状态" },
   { value: "todo", label: "待处理" },
   { value: "processed", label: "已处理" },
   { value: "deprecated", label: "已废弃" },
+];
+const decisionStatusFilters: Array<{ value: InboxStatusFilter; label: string }> = [
+  { value: "all", label: "全部状态" },
+  { value: "todo", label: "未处理" },
+  { value: "processed", label: "已处理" },
 ];
 const priorityFilters: Array<{ value: InboxPriorityFilter; label: string }> = [
   { value: "all", label: "全部优先级" },
@@ -104,6 +123,7 @@ export function InboxBoard() {
   const [ideas, setIdeas] = useState<MVPInboxIdea[]>([]);
   const [pendingFacts, setPendingFacts] = useState<MVPInboxPendingFact[]>([]);
   const [issues, setIssues] = useState<MVPInboxIssue[]>([]);
+  const [decisions, setDecisions] = useState<MVPInboxDecision[]>([]);
   const [knowledgeTypes, setKnowledgeTypes] = useState<KnowledgeTypeInfo[]>([]);
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
@@ -138,13 +158,18 @@ export function InboxBoard() {
     if (activeTab === "pending-facts") {
       return pendingFacts;
     }
+    if (activeTab === "decisions") {
+      return decisions;
+    }
     return issues;
-  }, [activeTab, allItems, ideas, issues, pendingFacts]);
+  }, [activeTab, allItems, decisions, ideas, issues, pendingFacts]);
 
   const activePage = pageByTab[activeTab];
   const activeTotal = totalByTab[activeTab];
   const activeStatusFilter = statusFilterByTab[activeTab];
   const activeTabLabel = tabs.find(tab => tab.value === activeTab)?.label ?? "灵感";
+  const visibleStatusFilters =
+    activeTab === "decisions" ? decisionStatusFilters : statusFilters;
 
   useEffect(() => {
     return () => {
@@ -225,6 +250,11 @@ export function InboxBoard() {
         setIssues(response.items);
         setTotalByTab(current => ({ ...current, issues: response.total }));
       }
+      if (tab === "decisions") {
+        const response = await listInboxItems("decisions", params);
+        setDecisions(response.items);
+        setTotalByTab(current => ({ ...current, decisions: response.total }));
+      }
       setExpandedItemId(preferredExpandedId ?? null);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "收件箱加载失败");
@@ -285,6 +315,13 @@ export function InboxBoard() {
             setTotalByTab(current => ({ ...current, issues: response.total }));
           }
         }
+        if (activeTab === "decisions") {
+          const response = await listInboxItems("decisions", params);
+          if (!cancelled) {
+            setDecisions(response.items);
+            setTotalByTab(current => ({ ...current, decisions: response.total }));
+          }
+        }
       } catch (caught) {
         if (!cancelled) {
           setError(caught instanceof Error ? caught.message : "收件箱加载失败");
@@ -339,6 +376,12 @@ export function InboxBoard() {
           priority,
         });
       }
+      if (activeTab === "decisions") {
+        await createInboxDecision({
+          title: newTitle,
+          content: newContent,
+        });
+      }
       setNewTitle("");
       setNewContent("");
       setCreateOpen(false);
@@ -366,13 +409,25 @@ export function InboxBoard() {
       if (itemTab === "pending-facts") {
         await patchInboxPendingFact(item.id, updates);
       }
-      if (itemTab === "issues") {
-        await patchInboxIssue(item.id, updates);
+      if (itemTab === "issues" && isIssue(item)) {
+        await patchInboxIssue(item.id, item.revision, updates);
+      }
+      if (itemTab === "decisions") {
+        await patchInboxDecision(item.id, updates);
       }
       const deleted = updates.status === "deprecated";
       await reloadTab(activeTab, deleted ? null : item.id);
       showInboxToast(deleted ? "已删除条目" : "已更新收件箱");
     } catch (caught) {
+      if (
+        entryTab(item) === "issues" &&
+        caught instanceof ApiError &&
+        caught.status === 409
+      ) {
+        await reloadTab(activeTab, item.id);
+        setError(inboxCasConflictNotice(caught));
+        return;
+      }
       setError(caught instanceof Error ? caught.message : "更新失败");
     } finally {
       setBusy(false);
@@ -479,27 +534,29 @@ export function InboxBoard() {
               className="h-9 min-w-32 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)]"
               aria-label="状态筛选"
             >
-              {statusFilters.map(filter => (
+              {visibleStatusFilters.map(filter => (
                 <option key={filter.value} value={filter.value}>
                   {filter.label}
                 </option>
               ))}
             </select>
-            <select
-              value={priorityFilter}
-              onChange={event => {
-                setPriorityFilter(event.target.value as InboxPriorityFilter);
-                setPageByTab(current => ({ ...current, [activeTab]: 1 }));
-              }}
-              className="h-9 min-w-36 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)]"
-              aria-label="优先级筛选"
-            >
-              {priorityFilters.map(filter => (
-                <option key={filter.value} value={filter.value}>
-                  {filter.label}
-                </option>
-              ))}
-            </select>
+            {activeTab !== "decisions" ? (
+              <select
+                value={priorityFilter}
+                onChange={event => {
+                  setPriorityFilter(event.target.value as InboxPriorityFilter);
+                  setPageByTab(current => ({ ...current, [activeTab]: 1 }));
+                }}
+                className="h-9 min-w-36 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)]"
+                aria-label="优先级筛选"
+              >
+                {priorityFilters.map(filter => (
+                  <option key={filter.value} value={filter.value}>
+                    {filter.label}
+                  </option>
+                ))}
+              </select>
+            ) : null}
           </div>
 
           {isCreateOpen ? (
@@ -519,18 +576,20 @@ export function InboxBoard() {
                   className="min-h-20 resize-y rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 text-sm leading-6 text-[var(--tc-text-primary)] outline-none"
                 />
                 <div className="flex flex-wrap items-center gap-2">
-                  <select
-                    value={priority}
-                    onChange={event =>
-                      setPriority(event.target.value as InboxPriority)
-                    }
-                    className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)]"
-                    aria-label="优先级"
-                  >
-                    <option value="low">低</option>
-                    <option value="normal">普通</option>
-                    <option value="high">高</option>
-                  </select>
+                  {activeTab !== "decisions" ? (
+                    <select
+                      value={priority}
+                      onChange={event =>
+                        setPriority(event.target.value as InboxPriority)
+                      }
+                      className="h-9 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm text-[var(--tc-text-primary)]"
+                      aria-label="优先级"
+                    >
+                      <option value="low">低</option>
+                      <option value="normal">普通</option>
+                      <option value="high">高</option>
+                    </select>
+                  ) : null}
                   <Button
                     type="button"
                     onClick={createItem}
@@ -559,8 +618,8 @@ export function InboxBoard() {
             </p>
           ) : null}
 
-          <div className="flex min-h-0 max-w-[980px] flex-1 flex-col overflow-hidden">
-            <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="flex min-h-0 max-w-[980px] flex-1 flex-col">
+            <div className="min-h-0 flex-1">
               {loading ? (
                 <div className="flex h-28 items-center justify-center text-sm text-[var(--tc-text-muted)]">
                   <Loader2 className="mr-2 size-4 animate-spin" />
@@ -721,7 +780,7 @@ function InboxRow({
             {itemTitle(tab, item)}
           </span>
           <span className="block truncate text-xs text-[var(--tc-text-muted)]">
-            {priorityLabel(item.priority)} ·{" "}
+            {tab !== "decisions" ? `${priorityLabel(item.priority)} · ` : ""}
             <span
               className={cn(
                 tab === "issues" && issueStatusToneClass(item.status),
@@ -847,7 +906,7 @@ function InboxRow({
                 标记已处理
               </Button>
             ) : null}
-            {item.status !== "deprecated" ? (
+            {tab !== "decisions" && item.status !== "deprecated" ? (
               <Button
                 type="button"
                 size="sm"
@@ -913,10 +972,17 @@ function entryTab(item: InboxEntry): InboxEntryTab {
   if (item.entry_type === "issue") {
     return "issues";
   }
+  if (item.entry_type === "decision") {
+    return "decisions";
+  }
   if (isPendingFact(item)) {
     return "pending-facts";
   }
   return "title" in item ? "issues" : "ideas";
+}
+
+function isIssue(item: InboxEntry): item is MVPInboxIssue {
+  return item.entry_type === "issue" || "revision" in item;
 }
 
 function itemTitle(tab: InboxEntryTab, item: InboxEntry): string {
@@ -974,7 +1040,7 @@ function PaginationControls({
   return (
     <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4 text-sm text-[var(--tc-text-muted)]">
       <span className="shrink-0">
-        第 {page} / {totalPages} 页
+        第 {page}/{totalPages} 页 · 共 {total} 条
       </span>
       <form
         className="flex items-center gap-2"

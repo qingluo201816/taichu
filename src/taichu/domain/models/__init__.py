@@ -14,8 +14,11 @@ from taichu.domain.models.chapter import (
 )
 from taichu.domain.models.mvp_inbox import (
     MVPInboxEntryType,
+    MVPInboxDecision,
     MVPInboxIdea,
     MVPInboxIssue,
+    MVPInboxIssueLink,
+    MVPInboxIssueRelationKind,
     MVPInboxPendingFact,
     MVPInboxPriority,
     MVPInboxStatus,
@@ -109,8 +112,11 @@ __all__ = [
     "SourceReference",
     "SourceReferenceType",
     "MVPInboxEntryType",
+    "MVPInboxDecision",
     "MVPInboxIdea",
     "MVPInboxIssue",
+    "MVPInboxIssueLink",
+    "MVPInboxIssueRelationKind",
     "MVPInboxPendingFact",
     "MVPInboxPriority",
     "MVPInboxStatus",

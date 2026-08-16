@@ -161,12 +161,13 @@ def _load_payload(
     snapshot = migrated.get("context_snapshot")
     if isinstance(snapshot, dict):
         envelope = snapshot.get("envelope")
-        if not isinstance(envelope, dict) or "current_request" not in envelope:
+        if not isinstance(envelope, dict) or "stable_memory" not in envelope:
             migrated["context_snapshot_id"] = None
             migrated["context_snapshot"] = None
             migrated["context_resume_differences"] = [
                 *migrated.get("context_resume_differences", []),
-                "旧版上下文快照已按五层上下文设计失效，恢复时将自动重建。",
+                "旧版上下文快照未采用稳定、工作、长期、历史和当前请求五层字段，"
+                "恢复时将自动重建。",
             ]
             return GeneralAgentRun.model_validate(migrated)
         migrated_snapshot = dict(snapshot)

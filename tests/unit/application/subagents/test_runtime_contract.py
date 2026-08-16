@@ -31,9 +31,14 @@ from taichu.application.services.model_role_router import ModelRoleRouter
 from taichu.application.services.outline_service import OutlineService
 from taichu.application.services.retrieval_service import RetrievalService
 from taichu.application.subagents.contract import SubagentPlugin
+from taichu.application.subagents.consistency_reviewer import (
+    agent as consistency_reviewer_agent,
+)
 from taichu.application.subagents.drafting import agent as drafting_agent
-from taichu.application.subagents.models import DraftingOutput
+from taichu.application.subagents.models import ConsistencyReviewInput, DraftingOutput
+from taichu.application.subagents.prompts import PROMPTS
 from taichu.application.subagents.registry import SubagentRegistry
+from taichu.application.subagents.runner import _collect_sources
 from taichu.application.tools import (
     get_novel_structure,
     list_knowledge_catalog,
@@ -51,6 +56,12 @@ from taichu.infrastructure.retrieval import (
 )
 from taichu.infrastructure.artifacts import JsonIntermediateArtifactRepository
 from taichu.infrastructure.storage.markdown_backend import ProjectAssetStorageBackend
+from taichu.domain.models.structured_knowledge import (
+    StructuredKnowledgeCard,
+    StructuredKnowledgeLifecycle,
+    StructuredKnowledgeSourceOrigin,
+    StructuredKnowledgeType,
+)
 from tests.fakes import InMemoryKnowledgeRepository
 
 
@@ -192,14 +203,17 @@ async def test_drafting_uses_independent_model_role_and_repairs_schema(
     assert output.lifecycle == "draft"
     assert output.artifact_type == "manuscript_candidate"
     assert "秦阳" in output.text
+    assert upstream_artifact.artifact_id in output.source_refs
     assert len(result.artifact_refs) == 1
     saved_artifact = await artifacts.get(result.artifact_refs[0])
     assert saved_artifact is not None
     assert saved_artifact.artifact_type == "manuscript_candidate"
+    assert upstream_artifact.artifact_id in saved_artifact.source_refs
     assert len(gateway.requests) == 2
     assert all(
         request.model_id == "drafting-quality-model" for request in gateway.requests
     )
+    assert all(request.run_id == invocation.run_id for request in gateway.requests)
     assert "场景目标是让秦阳回到山门" in str(gateway.requests[-1])
     assert drafting_agent.manifest.model_role == "drafting"
     assert not any(
@@ -210,6 +224,76 @@ async def test_drafting_uses_independent_model_role_and_repairs_schema(
         "llm",
         "subagent",
     }
+
+
+@_async_test
+async def test_consistency_review_uses_review_text_for_knowledge_retrieval(
+    tmp_path: Path,
+) -> None:
+    storage = ProjectAssetStorageBackend(tmp_path)
+    repository = InMemoryKnowledgeRepository(
+        [
+            StructuredKnowledgeCard(
+                id="item-nine-leaf-lotus",
+                type=StructuredKnowledgeType.ITEM,
+                name="九叶金莲",
+                aliases=["一叶金莲"],
+                summary="九叶金莲与一叶金莲是同一种灵药的不同称呼。",
+                lifecycle=StructuredKnowledgeLifecycle.CONFIRMED,
+                source_origin=StructuredKnowledgeSourceOrigin.MANUAL,
+                source_note="作者确认。",
+                created_at="2026-07-26T00:00:00Z",
+                updated_at="2026-07-26T00:00:00Z",
+            )
+        ]
+    )
+    tool_context = CapabilityContext(
+        capabilities={
+            "chapter_service": ChapterService(storage),
+            "outline_service": OutlineService(storage),
+            "knowledge_service": KnowledgeService(repository),
+            "retrieval_service": RetrievalService(
+                MongoLexicalRetrievalBackend(repository),
+                JsonlRetrievalTraceRepository(tmp_path),
+            ),
+            "invocation_policy_service": InvocationPolicyService(),
+        }
+    )
+    traces = _TraceRepository()
+    tool_registry = ToolRegistry(tool_context, traces)
+    for module in _read_tool_modules():
+        tool_registry.register(ToolPlugin(manifest=module.manifest, run=module.run))
+    context = CapabilityContext(
+        capabilities={
+            **tool_context.capabilities,
+            "tool_registry": tool_registry,
+        }
+    )
+    input_data = ConsistencyReviewInput(
+        text="不死巫魔取出九叶金莲，秦浩轩认出这是先前的一叶金莲。",
+        review_goal="检查这一章与已确认设定是否冲突",
+    )
+    invocation = InvocationContext(
+        task_id="task-consistency",
+        run_id="run-consistency",
+        caller_type="orchestrator",
+        caller_name="orchestrator",
+    )
+
+    source_context, source_refs = await _collect_sources(
+        consistency_reviewer_agent.manifest,
+        input_data,
+        invocation,
+        context,
+    )
+
+    assert "[retrieve_knowledge]" in source_context
+    assert "[search_manuscript]" not in source_context
+    assert "九叶金莲" in source_context
+    assert len(source_refs) == 1
+    assert source_refs[0].startswith("retrieval_")
+    assert "没有第二侧证据时不得判为冲突" in PROMPTS["consistency_reviewer"]
+    assert "别名差异判为冲突" in PROMPTS["consistency_reviewer"]
 
 
 def _read_tool_modules() -> list[ModuleType]:

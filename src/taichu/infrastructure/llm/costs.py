@@ -27,7 +27,11 @@ def calculate_cost(
         )
 
     regular_input = usage.input_tokens
-    if regular_input is not None and usage.cached_input_tokens is not None:
+    if (
+        profile.wire_protocol != "anthropic_messages"
+        and regular_input is not None
+        and usage.cached_input_tokens is not None
+    ):
         regular_input = max(0, regular_input - usage.cached_input_tokens)
     regular_output = usage.output_tokens
     if regular_output is not None and usage.reasoning_tokens is not None:

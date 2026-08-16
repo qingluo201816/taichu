@@ -5,13 +5,16 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from httpx import ASGITransport, AsyncClient
+import httpx
+from httpx import ASGITransport, AsyncClient, MockTransport, Request, Response
 from pydantic import SecretStr
 
 from taichu.application.models.llm_usage import LLMCallRecord
 from taichu.application.services.import_service import ImportService
 from taichu.config import Settings
+from taichu.infrastructure.llm.catalog import LLMModelCatalog
 from taichu.infrastructure.llm.mock import MVPNoRealLLMChatModel
+from taichu.infrastructure.llm.rightcode import RightCodeLLMGateway
 from taichu.infrastructure.storage.markdown_backend import ProjectAssetStorageBackend
 from taichu.main import create_app
 from tests.fakes import InMemoryKnowledgeRepository
@@ -24,6 +27,7 @@ class LLMApiTest(unittest.IsolatedAsyncioTestCase):
                 Settings(
                     project_assets_dir=Path(temporary_directory),
                     rightcode_api_key=SecretStr(""),
+                    deepseek_api_key=SecretStr(""),
                 ),
                 knowledge_repository=InMemoryKnowledgeRepository(),
             )
@@ -52,6 +56,74 @@ class LLMApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("token", serialized)
         self.assertEqual(unknown.status_code, 422)
         self.assertEqual(unknown.json()["error"]["code"], "LLM_MODEL_UNKNOWN")
+
+    async def test_probe_response_exposes_requested_provider_without_fallback(
+        self,
+    ) -> None:
+        requested_hosts: list[str] = []
+
+        def upstream_handler(request: Request) -> Response:
+            requested_hosts.append(request.url.host)
+            if request.url.host == "rightapi.ai":
+                raise httpx.ConnectError("RightCode 不可达", request=request)
+            return Response(
+                200,
+                json={
+                    "id": "official-must-not-be-used",
+                    "content": [{"type": "text", "text": "官方可用"}],
+                    "usage": {"input_tokens": 3, "output_tokens": 1},
+                },
+            )
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            settings = Settings(
+                project_assets_dir=Path(temporary_directory),
+                rightcode_api_key=SecretStr("rightcode-key"),
+                deepseek_api_key=SecretStr("deepseek-key"),
+                rightcode_max_retries=0,
+            )
+            app = create_app(
+                settings,
+                knowledge_repository=InMemoryKnowledgeRepository(),
+            )
+            upstream = AsyncClient(transport=MockTransport(upstream_handler))
+            app.state.llm_gateway = RightCodeLLMGateway(
+                settings,
+                LLMModelCatalog(settings),
+                app.state.llm_usage_repository,
+                client=upstream,
+                replay_repository=app.state.llm_replay_repository,
+            )
+            try:
+                async with AsyncClient(
+                    transport=ASGITransport(app=app),
+                    base_url="http://test",
+                ) as client:
+                    response = await client.post(
+                        "/api/llm/models/deepseek-v4-pro/probe"
+                    )
+            finally:
+                await upstream.aclose()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(requested_hosts, ["rightapi.ai"])
+        self.assertEqual(
+            response.json(),
+            {
+                "model_id": "deepseek-v4-pro",
+                "availability": "unavailable",
+                "last_probed_at": response.json()["last_probed_at"],
+                "requested_provider": "rightcode",
+                "requested_model_id": "deepseek-v4-pro",
+                "actual_provider": "rightcode",
+                "actual_model_id": "deepseek-v4-pro",
+                "fallback_used": False,
+                "fallback_from_provider": None,
+                "wire_protocol": "anthropic_messages",
+                "provider_request_id": None,
+                "message": "模型检测失败：请求的 RightCode 提供商不可用。",
+            },
+        )
 
     async def test_usage_calls_detail_and_summary_do_not_return_prompts(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

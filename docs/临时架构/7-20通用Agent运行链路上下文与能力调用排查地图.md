@@ -1,6 +1,6 @@
 # 通用 Agent 运行链路、上下文与能力调用排查地图
 
-> 更新日期：2026-07-20  
+> 更新日期：2026-08-15
 > 状态：基于当前代码的排查地图；用于理解、排错与后续改造，不替代已确认产品决策  
 > 适用范围：通用写作助手从网页请求进入，到上下文组装、动态规划、工具与子 Agent 调用、写入授权、恢复、校验和最终回答的完整链路  
 > 精确事实源：当前源码与自动测试；历史报告只用于解释演进，不得反向覆盖当前代码
@@ -60,7 +60,7 @@
 
 - `effect_reconciliation`（副作用人工对账）已经能被执行器提出，却没有完整的后端恢复分支和前端处理闭环。
 - 统一召回的 60 题评测只证明知识召回层，不证明通用 Agent 从理解请求到最终回答的完整链路。
-- 通用 Agent 核心评测当前只有 8 个样例，而且主要是确定性规则评分；真正的语义裁判与长期运行经验闭环仍属于阶段 07。
+- 通用 Agent 当前固定基准包含 23 个作者场景并覆盖 29 项能力；完整真实合成运行、语义裁判校准与长期运行经验闭环仍需按规格形成可复验证据。
 - 阶段 07 原任务包把阶段 05 作为依赖之一，但阶段 05 已被用户明确暂缓；进入阶段 07 前必须修订依赖口径，不能把“暂缓”误写成“已完成”。
 - 阶段 06 是“有限通过”：本地确定性恢复矩阵通过，但真实模型、网络超时、混合故障和长时间付费运行尚未完成同等级验证。
 
@@ -145,15 +145,18 @@ flowchart TD
 
 ---
 
-## 4. 先分清三套容易混淆的系统
+## 4. 先分清六类容易混淆的数据
 
-通用 Agent 运行中同时出现“记忆”“知识”“检查点”，但它们不是同一种数据。
+通用 Agent 运行中同时出现“消息”“记忆”“上下文”“模型回放”“知识”“检查点”，但它们不是同一种数据。
 
-| 系统 | 它回答的问题 | 数据范围 | 会不会直接作为小说事实 | 主要位置 |
+| 数据 | 它回答的问题 | 数据范围 | 会不会直接作为小说事实 | 主要位置 |
 |---|---|---|---|---|
+| 会话消息与业务运行投影 | 用户和助手此前说过什么，这次请求产生了什么计划、节点与最终回答 | 单个 `conversation_id`（会话标识）与各次 `run_id`（运行标识） | 不会 | [`general_agent_runs/`（业务运行仓储）](../../src/taichu/infrastructure/general_agent_runs/) |
 | 运行记忆 | 这一轮对话正在做什么、用户有哪些约束、前一步得到什么 | 单个 `conversation_id`（会话标识） | 不会；事实引用必须重新取证 | [`agent_memory/`（运行记忆应用层）](../../src/taichu/application/agent_memory/)、[`agent_memory/`（运行记忆基础设施）](../../src/taichu/infrastructure/agent_memory/) |
+| 五层上下文快照历史 | 某次规划、重规划或校验时，编排模型实际获得了哪五层受预算输入 | 单个 `run_id`（运行标识）内的多个阶段 | 不会 | [`context_snapshot_repository.py`（上下文快照历史仓储）](../../src/taichu/infrastructure/general_agent_runs/context_snapshot_repository.py) |
+| LLM 调用回放 | 主编排或子 Agent 某一次模型调用实际发送了哪些角色消息、收到什么规范化回答 | 单个 `run_id`（运行标识）内的多个 `call_id`（调用标识） | 不会 | [`llm_replays/`（模型调用回放仓储）](../../src/taichu/infrastructure/llm_replays/) |
 | 小说知识与正文 | 小说里什么是真的、原文具体写了什么 | 当前唯一小说 | 会；Markdown 正文和 MongoDB 已确认知识卡才是事实源 | [`project_assets/source/`（正式源数据）](../../project_assets/source/)、[`knowledge_retrieval/`（知识召回工具）](../../src/taichu/application/tools/knowledge_retrieval/) |
-| 图检查点与运行记录 | 一次任务执行到了哪个节点、怎样安全恢复 | 单个 `run_id`（运行标识） | 不会；只属于运行态与审计态 | [`general_agent_runs/`（运行持久化基础设施）](../../src/taichu/infrastructure/general_agent_runs/) |
+| LangGraph 图检查点与副作用证据 | 一次任务执行到了哪个节点、怎样安全恢复、写操作是否已发生 | 单个 `run_id`（运行标识） | 不会；只属于运行态与审计态 | [`general_agent_runs/`（运行持久化基础设施）](../../src/taichu/infrastructure/general_agent_runs/) |
 
 ### 4.1 运行记忆不是知识库
 
@@ -162,14 +165,20 @@ flowchart TD
 ### 4.2 图检查点不是上下文快照
 
 - `checkpoint`（图检查点）保存图执行位置、节点结果和恢复所需状态。
-- `context_snapshot_id`（上下文快照标识）对应某次规划或校验实际使用的五层上下文快照。
-- 业务运行 JSON 保存前端展示和审计投影。
+- `context_snapshot_id`（上下文快照标识）指向业务运行当前最新的一份五层上下文；完整的规划、重规划、校验快照历史独立追加保存。
+- 业务运行 JSON 保存前端展示和审计投影，其中保留最新上下文快照以支持恢复时判断是否可以复用。
 
 三者会互相引用，但不能相互替代。尤其不能只读取业务运行 JSON 就宣称可以恢复 `LangGraph`（图运行框架）。
 
 ### 4.3 子 Agent 产物不是正文
 
 子 Agent 输出会保存为带来源和哈希的派生 `artifact`（任务产物），默认 `lifecycle=draft`（生命周期为草稿）。它可以被后续节点引用，但只有经过专门写入工具、作者授权和校验后，才可能进入 Markdown 正文或 MongoDB 已确认知识。
+
+### 4.4 模型调用回放不是模型记忆
+
+每次 LLM API 调用仍是独立请求。生产统一网关会为带 `run_id`（运行标识）的调用保存脱敏后的角色消息和规范化响应，供评测和回放；它不会让模型在下一次调用中自动拥有记忆。下一次模型实际看到什么，仍由应用层重新组装 `LLMRequest.messages`（模型请求消息）决定。
+
+回放仓储不保存 HTTP 鉴权头、API Key 或供应商原始响应包。通用调用追踪只保存哈希、字符数、Token 和耗时；需要核对实际模型输入输出时，应读取独立回放资产，不能从技术追踪反推出原文。
 
 ---
 
@@ -197,7 +206,7 @@ flowchart TB
 | `parent_run_id`（父运行标识） | 同一会话中前一次运行 | 从第 2 次请求开始通常指向上一次运行 | 追踪连续请求与恢复差异 |
 | `task_id`（任务标识） | 当前实现中用于兼容和关联的任务标识 | 新实现中与会话标识保持同一归组语义 | 兼容旧运行和授权范围 |
 | `node_id`（节点标识） | 动态任务图中的一步 | 每次规划生成 | 依赖、状态、输入绑定、结果定位 |
-| `call_id`（调用标识） | 一次工具或子 Agent 调用 | 每次能力调用生成 | 调用追踪与审计 |
+| `call_id`（调用标识） | 一次工具、子 Agent 或模型调用 | 每次调用生成 | 调用追踪、模型回放与审计 |
 | `trace_id`（追踪标识） | 串联能力调用证据的追踪标识 | 调用时生成或传递 | 调用链排查 |
 
 这些字段定义集中在 [`models.py`（运行领域模型）](../../src/taichu/application/general_agent/models.py) 和能力调用模型中。
@@ -394,7 +403,11 @@ stateDiagram-v2
 - 被引用的运行记忆未删除、未变化；
 - 快照属于同一个运行和会话。
 
-如果记忆被删除、拒绝或内容哈希变化，系统会重建上下文并记录差异。快照不能跨会话复用，也不能把“上一请求快照”直接当成“整个会话永不变化的上下文”。
+每次组装完成后，规划、每次重规划和校验快照都会追加保存到 `project_assets/derived/general_agent_context_snapshots/{run_id}/`（按运行保存的上下文快照历史目录）。业务运行 JSON 和 LangGraph 状态只保留当前最新快照，避免把整段历史复制进每个检查点并持续放大存储。
+
+同一阶段可以出现多份快照。例如校验模型调用期间进程中断，恢复后会重新组装并再次调用校验模型；中断前和恢复后的两次真实尝试都应保留，不能因为阶段名称相同就覆盖或去重。
+
+如果被引用记忆已经由 Runtime 替换、过期、软删除或内容哈希变化，系统会重建上下文并记录差异。快照不能跨会话复用，也不能把“上一请求快照”直接当成“整个会话永不变化的上下文”。
 
 ---
 
@@ -421,7 +434,7 @@ stateDiagram-v2
 
 | 事件 | 自动写入内容 | 大致有效范围 |
 |---|---|---|
-| 创建请求并识别到作者硬约束 | `user_instruction`（用户指令记忆），优先级 100 | 默认持续到会话结束或用户删除 |
+| 创建请求并识别到作者硬约束 | `user_instruction`（用户指令记忆），优先级 100 | 默认持续到会话结束或由 Runtime 替换、过期 |
 | 用户回答澄清问题 | `user_instruction`（用户指令记忆），优先级 95 | 默认持续有效 |
 | 系统提出澄清问题 | `unresolved_issue`（未决问题记忆） | 约 3 次请求后自动失效 |
 | 节点成功且有来源或任务产物 | `resource_summary`（资源摘要记忆），优先级 60 | 约 5 次请求 |
@@ -439,7 +452,7 @@ stateDiagram-v2
 - 不要求作者逐条确认；
 - 可以由运行服务在受控事件中自动写入；
 - 可以按请求序号自动失效；
-- 可以被用户删除，删除后不得再进入后续上下文。
+- 只能由 Runtime 根据替代、过期、冲突和会话清理策略改变有效性，用户不能新增、修改或逐条删除。
 
 这与“AI 不得直接写入 MongoDB 已确认知识”没有冲突。一个约束运行行为，一个约束小说事实。
 
@@ -533,7 +546,7 @@ flowchart LR
 2. 写入事件是否真的触发；
 3. 记忆是否属于正确会话；
 4. 是否已按请求序号或时间过期；
-5. 是否被用户删除；
+5. 是否已被 Runtime 替代、过期或软删除；
 6. 是否在相关选择中因低相关度未入选；
 7. 是否在预算裁剪中被省略；
 8. 当前请求是否表达了相反约束；
@@ -813,7 +826,7 @@ flowchart LR
 - `artifact_refs`（任务产物引用）；
 - 调用追踪。
 
-任务产物保存于 `project_assets/derived/capability_artifacts/`（能力任务产物目录），能力调用追踪保存于 `project_assets/derived/capability_invocations/calls.jsonl`（能力调用追踪文件）。调用追踪只保留哈希、数量、状态、模型、Token 计量和错误等审计信息，不把完整输入输出重复写入追踪文件。
+任务产物保存于 `project_assets/derived/capability_artifacts/`（能力任务产物目录），能力调用追踪保存于 `project_assets/derived/capability_invocations/calls.jsonl`（能力调用追踪文件）。调用追踪只保留哈希、数量、状态、模型、Token 计量和错误等审计信息，不把完整输入输出重复写入追踪文件。主编排与子 Agent 的实际模型角色消息和规范化响应由统一网关另存到 `project_assets/derived/llm_call_replays/`（模型调用回放目录），两类记录通过 `run_id`（运行标识）关联但职责不同。
 
 ### 15.4 任务产物怎样传给下一节点
 
@@ -1017,8 +1030,9 @@ flowchart LR
 - 前端运行详情；
 - 消息、计划、节点状态和最终结果展示；
 - 审计与事件投影；
+- 保存当前最新上下文快照引用与正文，供恢复时判断是否可复用；
 
-它**不是**图执行位置的权威存储。阶段 06 后，恢复已经由 `LangGraph`（图运行框架）检查点主导；旧历史报告中“依靠业务 JSON 跳过成功节点”的表述已经过时，不能继续当当前实现解释。
+它**不是**图执行位置的权威存储，也不保存完整的多阶段快照历史或逐次模型调用原文。阶段 06 后，恢复已经由 `LangGraph`（图运行框架）检查点主导；旧历史报告中“依靠业务 JSON 跳过成功节点”的表述已经过时，不能继续当当前实现解释。
 
 ### 18.5 启动恢复
 
@@ -1041,9 +1055,11 @@ flowchart LR
 | Markdown 正文 | 唯一文本事实源 | 能 | 否，必须保护原文 | `project_assets/source/`（正式源数据目录） |
 | MongoDB 已确认知识卡 | 唯一结构事实源 | 能 | 不能从索引反向恢复为权威事实 | `taichu.knowledge_cards`（太初知识卡集合） |
 | 运行记忆 | 自动运行状态 | 不能，事实线索需重新取证 | 可局部重建 | `project_assets/derived/general_agent_memory/`（通用 Agent 运行记忆目录） |
+| 五层上下文快照历史 | 编排输入审计 | 不能 | 可由当时运行重新组装但不能保证逐字一致 | `project_assets/derived/general_agent_context_snapshots/`（上下文快照历史目录） |
+| LLM 调用回放 | 脱敏后的模型输入输出审计 | 不能 | 上游调用结束后不能可靠重建 | `project_assets/derived/llm_call_replays/`（模型调用回放目录） |
 | 子 Agent 任务产物 | 草稿派生物 | 不能直接当已确认事实 | 可重跑生成 | `project_assets/derived/capability_artifacts/`（能力产物目录） |
 | 运行投影、追踪、评测 | 审计与回放数据 | 不能 | 可由运行部分重建 | `project_assets/derived/`（派生运行数据目录） |
-| Qdrant 向量索引 | 可重建检索索引 | 不能；命中后回读权威对象 | 能 | `project_assets/generated/vector_indexes/`（向量索引生成记录目录）及 Qdrant |
+| Milvus Vector Graph RAG 混合索引 | 可重建的实体、关系、来源 passage、Dense 向量与 BM25 稀疏索引 | 不能；命中必须携带权威来源引用 | 能 | `project_assets/generated/milvus_vector_graph/`（构建摘要）及 Milvus |
 | 运行记忆词法索引 | 可重建运行记忆索引 | 不能 | 能 | `project_assets/derived/general_agent_memory/`（运行记忆目录） |
 
 目录职责以 [`project_assets/readme.md`（项目数据目录说明）](../../project_assets/readme.md) 为准。
@@ -1067,6 +1083,28 @@ flowchart LR
 - 不能因为子 Agent 输出了设定方案，就直接标记为 `confirmed`（已确认）；
 - 不能因为业务运行 JSON 中保存过一段正文，就让它替代 Markdown。
 
+### 19.3 正文子块与三子块邻域上下文
+
+正文索引子块默认目标长度为 1000 字符、目标 overlap 为 200 字符。切片结束优先使用 Markdown 标题或段落边界；下一子块起点在目标 overlap 的 70%～130% 范围内优先对齐段落，其次对齐完整句首，无可用边界时才按固定字符位置回退。每个子块保存自身 `start_char/end_char`，并保存章节内前中后三块形成的 `parent_start_char/parent_end_char/parent_chunk_indexes`；章节首尾只记录实际存在的两个子块。
+
+父级区间只是 Top 10 之后的工作记忆扩展契约，不是第四类索引或向量：
+
+```mermaid
+flowchart LR
+    A["Milvus 中文 BM25 Top 30"] --> C["Milvus 原生 RRF(k=60)"]
+    B["Vector Graph 增强 Dense Top 30"] --> C
+    C --> D["BGE 重排 Top 10"]
+    D --> E["按 parent_chunk_indexes 读取前中后三块"]
+    E --> F["按 Markdown 字符区间去除 overlap 重复"]
+    F --> G["命中子块证据 + 邻域补充上下文进入工作记忆"]
+```
+
+- BM25、ANN、图关系抽取和 BGE 只消费命中子块正文，不消费父级邻域正文。
+- 邻域扩展不得跨章节；多个邻域相交时按字符区间合并，禁止重复投影相同原文。
+- `content/source_ref` 表示直接命中的证据，`context_content/context_source_ref/context_chunk_indexes` 表示 Top 10 后补充的上下文，两者不得混写。
+- 父级正文从 Markdown 事实源对应字符区间读取或由同快照派生子块无损合并；任何索引副本都不能反向成为正文事实源。
+- 知识卡是一卡一 passage，不应用正文邻块规则。
+
 ### 19.3 写入知识的门禁
 
 AI 产生的知识候选先是 JSON 中间态，必须经过结构、来源、冲突和生命周期校验，并由作者批准，才允许应用服务通过写工具进入 MongoDB 已确认知识卡。已废弃字段如 `importance`（知识卡中禁止使用的重要性字段）必须校验失败，不能静默删除后继续写入。
@@ -1079,7 +1117,7 @@ AI 产生的知识候选先是 JSON 中间态，必须经过结构、来源、�
 
 当前生产 `RetrievalService`（统一召回服务）只装配 `mongo_lexical`（MongoDB 词法召回后端）。通用 Agent 通过 `retrieve_knowledge`（召回知识工具）进入这条唯一只读召回路径。
 
-独立向量实验运行时另外装配 `knowledge_vector`（知识向量召回后端），用于对比评测和索引实验。它目前没有取代生产词法召回，也没有进入生产融合路径。
+旧 `knowledge_vector` 独立向量实验后端已经移除。生产能力目录现注册 `retrieve_story_graph`，在 Milvus 中对正文片段和已确认知识卡执行实体/关系种子检索、子图扩展和单次重排；词法知识召回仍保留给单一事实和确定性身份查询。
 
 装配事实可从 [`main.py`（应用装配入口）](../../src/taichu/main.py) 和 [`knowledge_retrieval/`（知识召回工具实现）](../../src/taichu/application/tools/knowledge_retrieval/) 核对。
 
@@ -1108,7 +1146,7 @@ AI 产生的知识候选先是 JSON 中间态，必须经过结构、来源、�
 - 去重和结果追踪；
 - 记录实际后端与回退原因。
 
-这意味着子 Agent 不应绕过 `retrieve_knowledge`（召回知识工具）直接查询 MongoDB 或 Qdrant。否则评测、权限、预算、事实过滤和追踪都会失效。
+这意味着子 Agent 不应绕过 `retrieve_knowledge` 或 `retrieve_story_graph` 直接查询 MongoDB 或 Milvus。否则权限、来源边界、预算和调用追踪都会失效。
 
 ---
 
@@ -1118,7 +1156,7 @@ AI 产生的知识候选先是 JSON 中间态，必须经过结构、来源、�
 
 | 页面 | 中文职责 | 关键代码 |
 |---|---|---|
-| 通用 Agent 工作台 | 发起请求、继续会话、查看消息、处理澄清和授权、查看或删除运行记忆 | [`general-agent-workbench.tsx`（通用 Agent 工作台）](../../web/src/components/agent-workbench/general-agent-workbench.tsx) |
+| 通用 Agent 工作台 | 发起请求、继续会话、查看消息、处理澄清和授权、只读查看运行记忆，以及按请求和阶段查看五层上下文 | [`general-agent-workbench.tsx`（通用 Agent 工作台）](../../web/src/components/agent-workbench/general-agent-workbench.tsx) |
 | 通用 Agent 任务监控 | 按会话和第 N 次请求查看运行、节点、追踪、上下文、压缩、恢复和副作用 | [`general-agent-monitor-shell.tsx`（通用 Agent 任务监控）](../../web/src/components/agent-task-monitor/general-agent-monitor-shell.tsx) |
 | 工作台页面路由 | 装载通用 Agent 工作台 | [`page.tsx`（智能体工作台页面）](../../web/src/app/agent-workbench/page.tsx) |
 | 任务监控页面路由 | 装载通用 Agent 监控页 | [`page.tsx`（通用 Agent 任务监控页面）](../../web/src/app/task-monitor/general-agent/page.tsx) |
@@ -1130,7 +1168,9 @@ AI 产生的知识候选先是 JSON 中间态，必须经过结构、来源、�
 - 创建运行；
 - 运行列表与详情；
 - 会话列表、详情和删除；
-- 运行记忆列表、详情和删除；
+- 运行记忆列表与详情，只读且没有单条新增、修改、删除接口；
+- 按运行读取规划、重规划和校验阶段的五层上下文历史；
+- 按运行读取脱敏后的逐次模型调用回放；
 - 人工请求恢复；
 - 取消与删除运行；
 - 能力调用追踪；
@@ -1148,7 +1188,7 @@ AI 产生的知识候选先是 JSON 中间态，必须经过结构、来源、�
 | 一条消息 | 某次运行中的用户或助手消息 |
 | 一个任务节点 | 执行计划中的 `GeneralAgentNode`（通用 Agent 节点） |
 | 运行详情 | 一个 `run_id`（运行标识）的业务投影 |
-| 上下文快照 | 某个阶段冻结的 `GeneralAgentContextEnvelope`（通用 Agent 上下文封装） |
+| 上下文快照 | 所选请求、所选规划/重规划/校验阶段冻结的 `GeneralAgentContextEnvelope`（通用 Agent 上下文封装）；默认最新请求的最后阶段 |
 | 恢复差异 | 快照重建或图恢复记录的差异 |
 | 记忆数量 | 当前会话内活跃且未删除的运行记忆数量 |
 
@@ -1177,21 +1217,13 @@ AI 产生的知识候选先是 JSON 中间态，必须经过结构、来源、�
 |---|---|---|---|
 | 单元与集成测试 | 代码契约、状态转移、校验与恢复是否按预期 | [`tests/`（自动测试目录）](../../tests/) | 不能证明模型回答质量稳定 |
 | 统一召回评测 | 给定查询能否召回正确知识、预算和回退是否正确 | [`retrieval_knowledge_core/manifest.json`（60 题统一召回评测清单）](../../tests/fixtures/evaluations/retrieval_knowledge_core/manifest.json) | 不能证明规划、子 Agent、上下文和最终回答正确 |
-| 通用 Agent 核心评测 | 基础任务完成、路由、安全、执行和回答覆盖 | [`general_writing_assistant_core/manifest.json`（通用 Agent 核心评测清单）](../../tests/fixtures/evaluations/general_writing_assistant_core/manifest.json) | 当前只有 8 题，不能代表长期真实语义表现 |
+| 通用 Agent 固定基准 | 从作者场景、能力覆盖到预检、硬门禁、逐案证据和冻结清单是否完整 | [`general_writing_agent_benchmark/suite.json`（通用写作智能体固定评测基准）](../../tests/fixtures/evaluations/general_writing_agent_benchmark/suite.json) | 不能单独证明真实模型长期语义表现稳定 |
 
 ### 22.2 通用 Agent 当前评分口径
 
-确定性评测大致权重：
+当前评测不再使用五个维度的加权总分。固定基准先校验套件和能力覆盖，再执行预检与硬门禁，并以逐案确定性证据、需要人工或语义裁判复核的质量证据、冻结清单和迭代比较形成结论；任一关键门禁失败都不能被平均分掩盖。
 
-- 任务完成度：25%；
-- 能力路由：25%；
-- 安全边界：20%；
-- 执行健康：15%；
-- 回答覆盖：15%。
-
-总分通常要求至少 80，且不能出现关键失败。涉及创作质量的用例可标记 `deterministic_with_human_review`（确定性检查并辅以人工评审），但这仍不等于已实现独立语义裁判。
-
-评测服务位于 [`evaluations/general_agent/`（通用 Agent 评测应用层）](../../src/taichu/application/evaluations/general_agent/)，接口位于 [`general_agent_evaluations.py`（通用 Agent 评测路由）](../../src/taichu/api/routes/general_agent_evaluations.py)。
+评测服务位于 [`general_agent_benchmark/`（通用写作智能体固定基准应用层）](../../src/taichu/application/evaluations/general_agent_benchmark/)，接口位于 [`general_agent_benchmarks.py`（通用写作智能体固定基准路由）](../../src/taichu/api/routes/general_agent_benchmarks.py)，统一 API 前缀为 `/api/general-agent-benchmarks`。
 
 ### 22.3 关键自动测试覆盖
 
@@ -1523,7 +1555,7 @@ AI 产生的知识候选先是 JSON 中间态，必须经过结构、来源、�
 | 知识召回 | [`knowledge_retrieval/`（知识召回工具）](../../src/taichu/application/tools/knowledge_retrieval/)、[`main.py`（应用装配入口）](../../src/taichu/main.py) | 后端策略、追踪、评测集、确认态过滤、向量索引回读 |
 | 工作台 | [`general-agent-workbench.tsx`（通用 Agent 工作台）](../../web/src/components/agent-workbench/general-agent-workbench.tsx) | 前端接口封装、后端数据结构、会话身份、人工请求 |
 | 任务监控 | [`general-agent-monitor-shell.tsx`（通用 Agent 任务监控）](../../web/src/components/agent-task-monitor/general-agent-monitor-shell.tsx) | 运行详情、追踪、上下文、恢复、效果日志 |
-| 通用 Agent 评测 | [`evaluations/general_agent/`（通用 Agent 评测应用层）](../../src/taichu/application/evaluations/general_agent/) | 评测接口、前端入口、数据集、结果仓储、裁判模型 |
+| 通用 Agent 评测 | [`general_agent_benchmark/`（通用写作智能体固定基准应用层）](../../src/taichu/application/evaluations/general_agent_benchmark/) | 固定基准、预检、硬门禁、逐案证据、前端工作台与合成运行接入 |
 
 ### 26.2 运行存储路径总览
 
@@ -1535,8 +1567,8 @@ AI 产生的知识候选先是 JSON 中间态，必须经过结构、来源、�
 | `project_assets/derived/capability_artifacts/`（能力任务产物目录） | 子 Agent 和能力任务产物 | 可重跑但会影响历史回放 |
 | `project_assets/derived/capability_invocations/calls.jsonl`（能力调用追踪文件） | 能力调用审计追踪 | 可重新运行生成新记录，旧审计不可反推 |
 | `project_assets/derived/retrieval/calls.jsonl`（统一召回追踪文件） | 统一召回调用追踪 | 派生审计数据 |
-| `project_assets/derived/agent_evaluations/general_agent/`（通用 Agent 评测目录） | 通用 Agent 评测结果 | 可重跑，但应保留历史对比 |
-| `project_assets/generated/vector_indexes/`（向量索引记录目录） | 向量索引生成清单与可重建记录 | 可以从事实源重建 |
+| `project_assets/derived/general_agent_benchmarks/`（通用写作智能体固定基准目录） | 运行、实验、迭代、比较、幂等记录、租约与隔离工作区 | 当前已登记目录职责；完整持久化装配与真实合成运行器按后续规格任务接入 |
+| `project_assets/generated/milvus_vector_graph/`（多跳图索引摘要目录） | 最近一次联合建模快照与计数 | 可以从正文 Markdown 与 MongoDB confirmed 卡重建 |
 
 ### 26.3 装配入口为什么必须检查
 
@@ -1577,8 +1609,11 @@ AI 产生的知识候选先是 JSON 中间态，必须经过结构、来源、�
 - [ ] 过程历史先压缩再删除，且保留目标与硬约束。
 - [ ] 裁剪顺序有自动测试防回归。
 - [ ] 运行记忆严格按会话隔离。
-- [ ] 请求序号过期、时间过期和用户删除都能阻止后续召回。
+- [ ] 请求序号过期、时间过期和 Runtime 软删除都能阻止后续召回。
 - [ ] 快照引用记忆变化后会重建并记录差异。
+- [ ] 规划、每次重规划和校验阶段都追加独立快照，业务运行只保留最新快照。
+- [ ] 主编排与子 Agent 的模型请求都携带同一运行标识并生成脱敏回放。
+- [ ] 删除运行会清理该运行的上下文快照历史和模型调用回放。
 - [ ] 事实引用只能作为重新取证线索。
 - [ ] 前端能看到选择数量、省略原因、压缩状态和恢复差异。
 
@@ -1719,8 +1754,8 @@ AI 产生的知识候选先是 JSON 中间态，必须经过结构、来源、�
 | `reconciler`（副作用对账器） | 查询真实资源判断写入是否发生 | 出故障后查账 |
 | `effect_reconciliation`（副作用人工对账） | 系统无法判断写入结果时请求人工裁定 | 必须人工确认到底写没写 |
 | `mongo_lexical`（MongoDB 词法召回） | 按文字匹配召回知识卡的生产后端 | 当前生产默认检索 |
-| `knowledge_vector`（知识向量召回） | 按语义向量相似度召回知识卡的实验后端 | 独立向量实验能力 |
-| `Qdrant`（向量数据库） | 保存和搜索向量索引的服务 | 可重建的语义索引库 |
+| `retrieve_story_graph`（故事图谱多跳召回） | 跨正文片段与已确认知识卡扩展关系子图并返回可追溯证据 | 生产多跳检索能力 |
+| `Milvus`（向量数据库） | 保存和搜索实体、关系与来源 passage | 可重建的向量图谱索引库 |
 | `NDJSON`（逐行 JSON） | 每行一个 JSON 对象的流式格式 | 方便持续追加事件 |
 | `ModelRoleRouter`（模型角色路由器） | 按固定角色选择模型的当前路由器 | 目前不是自适应路由 |
 | `PASS_WITH_LIMITS`（有限条件下通过） | 核心验证通过但仍有明确未覆盖项 | 可以继续，但不能宣称全量成熟 |

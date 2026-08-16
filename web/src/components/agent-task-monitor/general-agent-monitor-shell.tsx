@@ -22,6 +22,10 @@ import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } fro
 import { AppShell } from "@/components/app-shell";
 import { GeneralAgentFlowGraph } from "@/components/agent-task-monitor/general-agent-flow-graph";
 import { GeneralAgentMonitorNav } from "@/components/agent-task-monitor/general-agent-monitor-nav";
+import {
+  GeneralAgentSubagentResult,
+  hasGeneralAgentResult,
+} from "@/components/agent-task-monitor/general-agent-subagent-result";
 import { Button } from "@/components/ui/button";
 import {
   getGeneralAgentConversation,
@@ -30,6 +34,7 @@ import {
   listGeneralAgentTraces,
 } from "@/lib/api/general-agent";
 import {
+  generalAgentContinuationRequestIndex,
   generalCapabilityLabel,
   generalNodeErrorMessage,
   generalNodeStatusLabel,
@@ -194,8 +199,11 @@ export function GeneralAgentMonitorShell() {
     () =>
       new Map(
         conversationRuns
-          .filter(run => run.parent_run_id)
-          .map(run => [run.parent_run_id as string, run.request_index]),
+          .map(run => [
+            run.run_id,
+            generalAgentContinuationRequestIndex(run, conversationRuns),
+          ] as const)
+          .filter((entry): entry is readonly [string, number] => entry[1] !== undefined),
       ),
     [conversationRuns],
   );
@@ -382,12 +390,12 @@ export function GeneralAgentMonitorShell() {
               <MonitorDetailDialog
                 open={detailPanel === "node" && selectedNode !== null}
                 title={selectedNode ? generalCapabilityLabel(selectedNode.capability_name) : "节点详情"}
-                description="查看所选智能体或工具节点的目标、状态与实际动作。"
                 onOpenChange={open => setDetailPanel(open ? "node" : null)}
               >
                 {selectedNode ? (
                   <NodeDetail
                     node={selectedNode}
+                    nodes={currentRun.node_runs}
                     runStatus={currentRun.status}
                     traces={nodeTraces}
                   />
@@ -396,7 +404,6 @@ export function GeneralAgentMonitorShell() {
               <MonitorDetailDialog
                 open={detailPanel === "run"}
                 title="本次请求详情"
-                description="查看本次请求的上下文压缩、生命周期与高层编排调用。"
                 onOpenChange={open => setDetailPanel(open ? "run" : null)}
               >
                 <RunDetail
@@ -451,10 +458,9 @@ function RoundToolbar({
         <Popover.Portal>
           <Popover.Positioner side="bottom" align="start" sideOffset={8} className="z-50">
             <Popover.Popup className="w-[min(620px,calc(100vw-32px))] overflow-hidden rounded-[var(--tc-radius-card)] border border-[var(--tc-border-strong)] bg-[var(--tc-surface-card)] p-2 text-[var(--tc-text-primary)] outline-none data-[starting-style]:translate-y-1 data-[starting-style]:opacity-0 data-[ending-style]:translate-y-1 data-[ending-style]:opacity-0 motion-safe:transition-[opacity,transform] motion-safe:duration-150 motion-reduce:transition-none">
-              <Popover.Title className="px-2 pt-1 text-sm font-medium">选择请求</Popover.Title>
-              <Popover.Description className="px-2 pb-2 text-xs text-[var(--tc-text-muted)]">
-                当前对话共 {runs.length} 次请求，只展示所选请求的状态图。
-              </Popover.Description>
+              <Popover.Title className="px-2 pt-1 pb-2 text-sm font-medium">
+                请求（{runs.length}）
+              </Popover.Title>
               <div className="max-h-[420px] overflow-y-auto">
                 {runs.map(item => {
                   const selected = item.run_id === run.run_id;
@@ -532,10 +538,12 @@ function RoundToolbar({
 
 function NodeDetail({
   node,
+  nodes,
   runStatus,
   traces,
 }: {
   node: GeneralAgentNodeRun;
+  nodes: GeneralAgentNodeRun[];
   runStatus: GeneralAgentRunStatus;
   traces: GeneralAgentInvocationTrace[];
 }) {
@@ -556,10 +564,26 @@ function NodeDetail({
         <Metric label="来源数量" value={`${node.source_refs.length} 个`} />
       </div>
       <DetailBlock title="任务目标" text={node.objective} />
+      {node.kind === "subagent" && hasGeneralAgentResult(node.output) ? (
+        <div className="mt-5">
+          <h4 className="mb-2 text-sm font-medium text-[var(--tc-text-primary)]">
+            执行结果
+          </h4>
+          <GeneralAgentSubagentResult
+            capabilityName={node.capability_name}
+            value={node.output}
+          />
+        </div>
+      ) : null}
       <DetailBlock
         title="依赖节点"
-        text={node.dependencies.length > 0 ? node.dependencies.join("、") : "无上游依赖"}
-        technical
+        text={
+          node.dependencies.length > 0
+            ? node.dependencies
+                .map(dependencyId => dependencyLabel(dependencyId, nodes))
+                .join("、")
+            : "无上游依赖"
+        }
       />
       {node.authorization_approved || node.authorization_resource_scopes.length > 0 ? (
         <div className="mt-3 rounded-[var(--tc-radius-control)] border border-amber-700/50 bg-amber-950/15 p-3 text-xs text-[var(--tc-text-secondary)]">
@@ -594,9 +618,6 @@ function NodeDetail({
       ) : null}
       <div className="mt-5">
         <h4 className="text-sm font-medium text-[var(--tc-text-primary)]">实际动作</h4>
-        <p className="mt-0.5 text-xs text-[var(--tc-text-muted)]">
-          展示这个节点继续调用的工具、专业智能体和模型动作。
-        </p>
         <NodeActionList traces={actionTraces} />
       </div>
       <details className="mt-4 text-xs text-[var(--tc-text-secondary)]">
@@ -708,11 +729,10 @@ function RunDetail({
 }) {
   return (
     <div>
-      <div className="grid grid-cols-2 gap-2 text-xs">
+      <div className="grid grid-cols-3 gap-2 text-xs">
         <Metric label="本次状态" value={generalRunStatusLabels[run.status]} />
         <Metric label="能力进度" value={generalRunProgressSummary(run)} />
         <Metric label="调用记录" value={`${traceTotal} 条`} />
-        <Metric label="关联记忆" value={`${run.memory_refs.length} 条`} />
       </div>
 
       {recovery ? (
@@ -796,21 +816,6 @@ function RunDetail({
       {run.final_answer ? <DetailBlock title="最终结果" text={run.final_answer} /> : null}
 
       <div className="mt-5">
-        <h4 className="flex items-center gap-1.5 text-sm font-medium text-[var(--tc-text-primary)]">
-          <Activity className="size-4" />
-          生命周期
-        </h4>
-        <div className="grid gap-1.5">
-          {run.lifecycle_events.map((event, index) => (
-            <div key={`${event.created_at}-${index}`} className="mt-2 flex gap-2 text-xs text-[var(--tc-text-secondary)]">
-              <Activity className="mt-0.5 size-3 shrink-0 text-[var(--tc-text-muted)]" />
-              <span><strong className="font-medium text-[var(--tc-text-primary)]">{generalRunStatusLabels[event.status]}</strong> · {event.reason || "状态已更新"} · {formatTime(event.created_at)}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-5">
         <h4 className="text-sm font-medium text-[var(--tc-text-primary)]">高层编排调用</h4>
         <TraceList traces={plannerTraces} />
       </div>
@@ -821,13 +826,11 @@ function RunDetail({
 function MonitorDetailDialog({
   open,
   title,
-  description,
   onOpenChange,
   children,
 }: {
   open: boolean;
   title: string;
-  description: string;
   onOpenChange: (open: boolean) => void;
   children: ReactNode;
 }) {
@@ -840,8 +843,8 @@ function MonitorDetailDialog({
             <header className="flex shrink-0 items-start justify-between gap-3 bg-[var(--tc-surface-muted)] px-4 py-3">
               <div className="min-w-0">
                 <Dialog.Title className="truncate text-base font-semibold">{title}</Dialog.Title>
-                <Dialog.Description className="mt-1 text-xs text-[var(--tc-text-muted)]">
-                  {description}
+                <Dialog.Description className="sr-only">
+                  {title}
                 </Dialog.Description>
               </div>
               <Dialog.Close
@@ -872,16 +875,14 @@ function Metric({ label, value }: { label: string; value: string }) {
 function DetailBlock({
   title,
   text,
-  technical = false,
 }: {
   title: string;
   text: string;
-  technical?: boolean;
 }) {
   return (
     <div className="mt-3">
       <p className="text-xs font-medium text-[var(--tc-text-primary)]">{title}</p>
-      <p className={cn("mt-1 whitespace-pre-wrap text-xs leading-5 text-[var(--tc-text-secondary)]", technical && "font-mono")}>
+      <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-[var(--tc-text-secondary)]">
         {text}
       </p>
     </div>
@@ -897,6 +898,15 @@ function matchesFilter(status: GeneralAgentRunStatus, filter: StatusFilter): boo
 
 function invocationTypeLabel(type: GeneralAgentInvocationTrace["capability_type"]): string {
   return { tool: "工具", subagent: "专业智能体", llm: "模型" }[type];
+}
+
+function dependencyLabel(
+  dependencyId: string,
+  nodes: GeneralAgentNodeRun[],
+): string {
+  const dependency = nodes.find(node => node.node_id === dependencyId);
+  if (!dependency) return dependencyId;
+  return `${dependency.kind === "tool" ? "工具" : "专业智能体"} · ${generalCapabilityLabel(dependency.capability_name)}`;
 }
 
 function effectStatusLabel(status: GeneralAgentEffectStatus): string {

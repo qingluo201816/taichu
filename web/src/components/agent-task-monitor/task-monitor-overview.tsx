@@ -6,6 +6,7 @@ import {
   Bot,
   ChevronRight,
   GitBranch,
+  Network,
   RefreshCw,
   Scale,
   Search,
@@ -122,7 +123,7 @@ export function TaskMonitorOverview() {
               className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
             >
               <span className="flex min-w-0 items-center gap-3">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-agent-knowledge)]">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-monitor-knowledge)]">
                   <Bot className="size-4" />
                 </span>
                 <span className="min-w-0">
@@ -143,7 +144,7 @@ export function TaskMonitorOverview() {
               className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
             >
               <span className="flex min-w-0 items-center gap-3">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-agent-writing)]">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-monitor-general-agent)]">
                   <GitBranch className="size-4" />
                 </span>
                 <span className="min-w-0">
@@ -153,6 +154,24 @@ export function TaskMonitorOverview() {
                     {loading
                       ? "正在读取任务"
                       : `共 ${generalTasks.length} 个任务，${generalRunningCount > 0 ? `${generalRunningCount} 个运行中` : "当前无运行中任务"}`}
+                  </span>
+                </span>
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-[var(--tc-text-muted)]" />
+            </Link>
+
+            <Link
+              href="/task-monitor/rag"
+              className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-monitor-rag)]">
+                  <Network className="size-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block font-medium">RAG 建模监控</span>
+                  <span className="mt-0.5 block text-xs text-[var(--tc-text-muted)]">
+                    查看正文片段、知识卡、实体、关系与 Milvus 集合状态
                   </span>
                 </span>
               </span>
@@ -168,7 +187,7 @@ export function TaskMonitorOverview() {
               className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
             >
               <span className="flex min-w-0 items-center gap-3">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-agent-knowledge)]">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-monitor-knowledge)]">
                   <Scale className="size-4" />
                 </span>
                 <span className="min-w-0">
@@ -186,7 +205,7 @@ export function TaskMonitorOverview() {
               className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
             >
               <span className="flex min-w-0 items-center gap-3">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-agent-writing)]">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-monitor-general-agent)]">
                   <Scale className="size-4" />
                 </span>
                 <span className="min-w-0">
@@ -204,7 +223,7 @@ export function TaskMonitorOverview() {
               className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
             >
               <span className="flex min-w-0 items-center gap-3">
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-agent-knowledge)]">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-monitor-rag)]">
                   <Search className="size-4" />
                 </span>
                 <span className="min-w-0">

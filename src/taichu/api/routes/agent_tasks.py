@@ -43,6 +43,12 @@ async def api_list_agent_tasks(
     active = await event_center.list_active_tasks()
     by_id = {run.run_id: run for run in persisted}
     for run in active:
+        persisted_run = by_id.get(run.run_id)
+        if persisted_run is not None and persisted_run.status in {
+            AgentRunStatus.COMPLETED,
+            AgentRunStatus.FAILED,
+        }:
+            continue
         if run.status not in {AgentRunStatus.COMPLETED, AgentRunStatus.FAILED}:
             by_id[run.run_id] = run
         elif run.run_id not in by_id:
@@ -86,17 +92,19 @@ async def api_get_agent_task(
 ) -> KnowledgeExtractionRunDetailResponse:
     """Return one active or persisted Agent task."""
     active = await event_center.get_active_task(task_id)
-    if active is not None and active.status not in {
-        AgentRunStatus.COMPLETED,
-        AgentRunStatus.FAILED,
-    }:
-        return KnowledgeExtractionRunDetailResponse(run=active)
     try:
         run = await service.get_run(task_id)
     except (KnowledgeExtractionNotFoundError, AgentRunStoreError) as error:
         if active is not None:
             return KnowledgeExtractionRunDetailResponse(run=active)
         raise HTTPException(status_code=404, detail=str(error)) from error
+    if run.status in {AgentRunStatus.COMPLETED, AgentRunStatus.FAILED}:
+        return KnowledgeExtractionRunDetailResponse(run=run)
+    if active is not None and active.status not in {
+        AgentRunStatus.COMPLETED,
+        AgentRunStatus.FAILED,
+    }:
+        return KnowledgeExtractionRunDetailResponse(run=active)
     return KnowledgeExtractionRunDetailResponse(run=run)
 
 

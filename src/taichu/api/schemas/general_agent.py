@@ -5,12 +5,14 @@ from pydantic import BaseModel, Field, model_validator
 from taichu.application.agent_memory.models import AgentMemoryEntry
 from taichu.application.general_agent.models import (
     GeneralAgentConversation,
+    GeneralAgentContextSnapshot,
     GeneralAgentRun,
     GeneralAgentRunLimits,
     GeneralAgentScope,
 )
 from taichu.application.general_agent.recovery import GeneralAgentRecoverySnapshot
 from taichu.application.invocations.models import InvocationTraceRecord
+from taichu.application.models.llm_replay import LLMCallReplayRecord
 
 
 class GeneralAgentRunRequest(BaseModel):
@@ -108,6 +110,18 @@ class GeneralAgentTraceListResponse(BaseModel):
     total: int = Field(ge=0)
 
 
+class GeneralAgentContextSnapshotListResponse(BaseModel):
+    run_id: str
+    snapshots: list[GeneralAgentContextSnapshot] = Field(default_factory=list)
+    total: int = Field(ge=0)
+
+
+class GeneralAgentLLMReplayListResponse(BaseModel):
+    run_id: str
+    calls: list[LLMCallReplayRecord] = Field(default_factory=list)
+    total: int = Field(ge=0)
+
+
 class AgentMemoryListResponse(BaseModel):
     conversation_id: str
     memories: list[AgentMemoryEntry] = Field(default_factory=list)
@@ -116,8 +130,3 @@ class AgentMemoryListResponse(BaseModel):
 
 class AgentMemoryResponse(BaseModel):
     memory: AgentMemoryEntry
-
-
-class AgentMemoryDeleteResponse(BaseModel):
-    memory_id: str
-    deleted: bool

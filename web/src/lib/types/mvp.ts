@@ -158,9 +158,14 @@ export type KnowledgeCardResponse = {
   card: StructuredKnowledgeCard;
 };
 
+export type KnowledgeCardMergeResponse = {
+  primary_card: StructuredKnowledgeCard;
+  merged_card: StructuredKnowledgeCard;
+};
+
 export type InboxStatus = "todo" | "processed" | "deprecated";
 export type InboxPriority = "low" | "normal" | "high";
-export type MVPInboxEntryType = "idea" | "pending_fact" | "issue";
+export type MVPInboxEntryType = "idea" | "pending_fact" | "issue" | "decision";
 
 export type MVPInboxIdea = {
   id: string;
@@ -196,11 +201,33 @@ export type MVPInboxIssue = {
   source_chapter_id?: string | null;
   priority: InboxPriority;
   status: InboxStatus;
+  revision: number;
+  links: MVPInboxIssueLink[];
   created_at: string;
   updated_at: string;
 };
 
-export type InboxTab = "all" | "ideas" | "pending-facts" | "issues";
+export type MVPInboxIssueLink = {
+  namespace: string;
+  relation_id: string;
+  subject_id: string;
+  relation_kind: "documents" | "caused_by" | "observed_in" | "closes";
+  subject_content_sha256: string;
+};
+
+export type MVPInboxDecision = {
+  id: string;
+  entry_type?: "decision";
+  title: string;
+  content: string;
+  source_chapter_id?: string | null;
+  priority: InboxPriority;
+  status: InboxStatus;
+  created_at: string;
+  updated_at: string;
+};
+
+export type InboxTab = "all" | "ideas" | "pending-facts" | "issues" | "decisions";
 
 export type MVPInboxListResponse<T> = {
   items: T[];
@@ -219,6 +246,10 @@ export type MVPInboxPendingFactResponse = {
 
 export type MVPInboxIssueResponse = {
   item: MVPInboxIssue;
+};
+
+export type MVPInboxDecisionResponse = {
+  item: MVPInboxDecision;
 };
 
 export type ConfirmPendingFactResponse = {

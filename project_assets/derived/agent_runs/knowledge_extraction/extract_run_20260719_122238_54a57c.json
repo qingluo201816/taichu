@@ -11314,7 +11314,7 @@
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "character",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "虚云子",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_001",
@@ -11352,18 +11352,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "character-95eb015ee7879dbd141e1c5696478e41",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:10.525608Z"
     },
     {
       "review_item_id": "review_item_002",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "character",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "楚云子",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_002",
@@ -11402,18 +11402,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "character-d8a10391aeaedf94bc076538bc4e78fe",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:10.560275Z"
     },
     {
       "review_item_id": "review_item_003",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "character",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "李靖",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_003",
@@ -11451,18 +11451,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "character-498cd95d5c99422bb9ec6374cd4cd907",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:10.592653Z"
     },
     {
       "review_item_id": "review_item_004",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "character",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "秦浩轩",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_004",
@@ -11516,18 +11516,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "character-15ea01664af34da395391a0f43e116c4",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:10.622358Z"
     },
     {
       "review_item_id": "review_item_005",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "character",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "张狂",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_005",
@@ -11570,18 +11570,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "character-0c41e0e6711143ad9cdc5edc7c77f508",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:10.656374Z"
     },
     {
       "review_item_id": "review_item_006",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "character",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "徐羽",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_006",
@@ -11625,18 +11625,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "character-f25ddfbd97874ee8bf8dc57761ea4868",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:10.685396Z"
     },
     {
       "review_item_id": "review_item_007",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "character",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "袁山虎",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_007",
@@ -11679,18 +11679,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "character-e15050b80edfaa6c71c166890ee6046b",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:10.715692Z"
     },
     {
       "review_item_id": "review_item_008",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "character",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "张伞",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_008",
@@ -11729,18 +11729,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "character-ddaeec0d6560c7c004be4537643260c1",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:10.746224Z"
     },
     {
       "review_item_id": "review_item_009",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "character",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "李斯",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_009",
@@ -11779,18 +11779,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "character-09d28ef697ce34954c10be2b4e440022",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:10.775531Z"
     },
     {
       "review_item_id": "review_item_010",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "character",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "太初教掌教",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_010",
@@ -11830,18 +11830,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "character-4f7484d4f2e285127a72249292a3457c",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:10.802123Z"
     },
     {
       "review_item_id": "review_item_011",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "realm",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "仙苗境",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_011",
@@ -11882,18 +11882,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "realm-fc086ffc3b8c4e06830d89866e1c7cd9",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:10.833843Z"
     },
     {
       "review_item_id": "review_item_012",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "location",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "灵田谷",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_012",
@@ -11927,18 +11927,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "location-ae34b329fb1c8373393b61e093d62e4c",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:10.863478Z"
     },
     {
       "review_item_id": "review_item_013",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "location",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "小屿山",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_013",
@@ -11970,18 +11970,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "location-0dea0d4f51ff4606a511e05acdb5f927",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:10.891449Z"
     },
     {
       "review_item_id": "review_item_014",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "faction",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "至上仙尊真乙太初教",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_014",
@@ -12023,18 +12023,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "faction-50197cb535794630b4471328478fbc7e",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:10.920471Z"
     },
     {
       "review_item_id": "review_item_015",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "faction",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "李家皇朝",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_015",
@@ -12066,18 +12066,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "faction-a66098a58fef33141f1a41734af1ee4e",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:10.947108Z"
     },
     {
       "review_item_id": "review_item_016",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "rule",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "太初教私斗门规",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_016",
@@ -12108,18 +12108,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "rule-e6ac48573c453ed0eb7428a29c1beb1c",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:10.973854Z"
     },
     {
       "review_item_id": "review_item_017",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "character",
-      "candidate_status": "pending",
+      "candidate_status": "rejected",
       "display_title": "老叶",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_017",
@@ -12159,18 +12159,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
+      "author_action": "reject",
       "created_knowledge_card_id": null,
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:00:29.658877Z"
     },
     {
       "review_item_id": "review_item_018",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "realm",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "出仙根境",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_018",
@@ -12202,18 +12202,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "realm-261b8e0b623347d91659fe0431c0f577",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.096112Z"
     },
     {
       "review_item_id": "review_item_019",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "technique",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "道心种魔大法",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_019",
@@ -12245,18 +12245,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "technique-0c9642a3266ee75bad3c753715c3fa1f",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.125904Z"
     },
     {
       "review_item_id": "review_item_020",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "technique",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "爆炎术",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_020",
@@ -12287,18 +12287,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "technique-b1d17d7f4b1ff988c377fe348b42124e",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.151632Z"
     },
     {
       "review_item_id": "review_item_021",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "location",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "思过峰",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_021",
@@ -12330,18 +12330,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "location-3776c0c467b38d0a4d62cb88604d21b0",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.176008Z"
     },
     {
       "review_item_id": "review_item_022",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "location",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "刀山窟",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_022",
@@ -12373,18 +12373,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "location-909854c43d15e21d522c20181a42bd57",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.200299Z"
     },
     {
       "review_item_id": "review_item_023",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "location",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "风刃谷",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_023",
@@ -12415,18 +12415,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "location-81e5adfa4f2e8e858062235f2233edf3",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.221886Z"
     },
     {
       "review_item_id": "review_item_024",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "location",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "大屿山",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_024",
@@ -12456,18 +12456,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "location-39a9f7baf0c3476f8fcbfd3895cc1393",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.249171Z"
     },
     {
       "review_item_id": "review_item_025",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "item",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "一叶金莲",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_025",
@@ -12502,18 +12502,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "item-32331390427e2d26f2de8db3f666e384",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.275292Z"
     },
     {
       "review_item_id": "review_item_026",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "event",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "秦浩轩在岩浆地窖遭受群殴及灵法轰击",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_026",
@@ -12546,18 +12546,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "event-a3d95946293416d160d8d7d2b97cbd15",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.300154Z"
     },
     {
       "review_item_id": "review_item_027",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "rule",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "太初教禁闭管理制度",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_027",
@@ -12587,18 +12587,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "rule-eba9a413f7ef428e0688914b3e743513",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.325341Z"
     },
     {
       "review_item_id": "review_item_028",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "rule",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "禁闭地新人餐规则",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_028",
@@ -12629,18 +12629,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "rule-bbb91f1c8c7c55deeaab84689e0c5d16",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.351075Z"
     },
     {
       "review_item_id": "review_item_029",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "rule",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "思过峰山腹小道行进危险规则",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_029",
@@ -12670,18 +12670,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "rule-c57cd446489a2f1a430d3a96bbf2c995",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.375159Z"
     },
     {
       "review_item_id": "review_item_030",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "realm",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "种植仙根境",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_030",
@@ -12713,18 +12713,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "realm-24103221b80945438a7469029603cf80",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.401495Z"
     },
     {
       "review_item_id": "review_item_031",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "event",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "秦浩轩禁闭室殴打囚犯",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_031",
@@ -12756,18 +12756,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "event-0f5bffe4a6b6f7ad8c4053843dc95442",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.426032Z"
     },
     {
       "review_item_id": "review_item_032",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "event",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "张狂招募杂役弟子对付秦浩轩",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_032",
@@ -12801,18 +12801,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "event-a48e32d7bfad75dfc9f8988d868692cf",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.450285Z"
     },
     {
       "review_item_id": "review_item_033",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "event",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "徐羽探视秦浩轩",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_033",
@@ -12844,18 +12844,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "event-3ec77c24eae2988d32740e0cbaf006c9",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.474253Z"
     },
     {
       "review_item_id": "review_item_034",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "rule",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "禁闭山新人餐定律",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_034",
@@ -12885,18 +12885,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "rule-b098ebe06e7978565b311869ca8816dd",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.498409Z"
     },
     {
       "review_item_id": "review_item_035",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "rule",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "太初教饭食补充体力特性",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_035",
@@ -12927,18 +12927,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "rule-a2c71a97fa96e35f7541a3154f8cd65e",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.521842Z"
     },
     {
       "review_item_id": "review_item_036",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "rule",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "岩浆暴躁灵力剔除规则",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_036",
@@ -12968,18 +12968,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "rule-82b6a3d616ad9b5c74528312dd768e1d",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.546348Z"
     },
     {
       "review_item_id": "review_item_037",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "rule",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "武道先天无法修仙规则",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_037",
@@ -13009,18 +13009,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "rule-68e4515f993e4a2800474803fc86a55c",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.571406Z"
     },
     {
       "review_item_id": "review_item_038",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "rule",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "仙苗境叶数与实力关系",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_038",
@@ -13050,18 +13050,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "rule-6e39176cbc8cc12f4bb084004c19995a",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.599233Z"
     },
     {
       "review_item_id": "review_item_039",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "character",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "虚云子长老",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_039",
@@ -13098,18 +13098,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "character-60dc7a243f2b1e5e78b6fcc60a7a2bf3",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.634712Z"
     },
     {
       "review_item_id": "review_item_040",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "character",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "楚长老",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_040",
@@ -13145,18 +13145,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "character-b79a117eed3860d501e997b83570edf4",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.662830Z"
     },
     {
       "review_item_id": "review_item_041",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "location",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "绝仙毒谷",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_041",
@@ -13187,18 +13187,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "location-707eb7979eeb4de2bbe25d1a9d2d9763",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.690625Z"
     },
     {
       "review_item_id": "review_item_042",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "item",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "仙元丹",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_042",
@@ -13232,18 +13232,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "item-0aaf3bd747070b6b3da1c7765f6e9f2e",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.719873Z"
     },
     {
       "review_item_id": "review_item_043",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "item",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "聚灵符",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_043",
@@ -13277,18 +13277,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "item-1dddf72ed8a3379b7368961e1ec29cdf",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.749622Z"
     },
     {
       "review_item_id": "review_item_044",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "item",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "神行符",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_044",
@@ -13322,18 +13322,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "item-d90348ffc0c110313d22d7030d14ec7d",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.784680Z"
     },
     {
       "review_item_id": "review_item_045",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "item",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "遁地符",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_045",
@@ -13367,18 +13367,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "item-43dc5b80e6d91f2bf49e00320cf5b3bb",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.816132Z"
     },
     {
       "review_item_id": "review_item_046",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "event",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "徐羽探访岩浆地窖并传递笔记与灵药",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_046",
@@ -13411,18 +13411,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "event-fe54097327c118b871f0d77df1d9bd99",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.849642Z"
     },
     {
       "review_item_id": "review_item_047",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "rule",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "修仙境界划分规则",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_047",
@@ -13454,18 +13454,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "rule-5748d4ce031664a07b5e9b09dbb9dba8",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.882841Z"
     },
     {
       "review_item_id": "review_item_048",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "rule",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "太初教贡献与袍制规则",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_048",
@@ -13496,18 +13496,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "rule-6a128130a83a4c99c94f386620a6d7cc",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.915127Z"
     },
     {
       "review_item_id": "review_item_049",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "rule",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "修仙者口粮与丹药规则",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_049",
@@ -13538,18 +13538,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "rule-efaa3108f92f842a88f33db42f83184b",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.944220Z"
     },
     {
       "review_item_id": "review_item_050",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "rule",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "灵符制作与类型规则",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_050",
@@ -13579,18 +13579,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "rule-3845b08085ba1e33b05d73e1f3486ae7",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:11.972250Z"
     },
     {
       "review_item_id": "review_item_051",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "update_card",
       "knowledge_type": "rule",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "巫修修炼之法",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_051",
@@ -13620,18 +13620,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议补充已有知识卡",
-      "author_action": null,
+      "author_action": "confirm",
       "created_knowledge_card_id": null,
-      "updated_knowledge_card_id": null,
+      "updated_knowledge_card_id": "rule-5cc34fc1f82e434aa0ed4dd86284004c",
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:12.127383Z"
     },
     {
       "review_item_id": "review_item_052",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "rule",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "修炼辅助技巧规则",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_052",
@@ -13662,18 +13662,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "rule-6803563fb353d4a87765ff6dc0f6f0e5",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:12.165759Z"
     },
     {
       "review_item_id": "review_item_053",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "character",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "袁山象",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_053",
@@ -13710,18 +13710,18 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "character-3caff7fec615128ad5f06c82a77d3239",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:12.200764Z"
     },
     {
       "review_item_id": "review_item_054",
       "run_id": "extract_run_20260719_122238_54a57c",
       "candidate_action": "create_card",
       "knowledge_type": "event",
-      "candidate_status": "pending",
+      "candidate_status": "confirmed",
       "display_title": "袁山象袭击秦浩轩",
       "suggested_card": {
         "entity_group_id": "batch_entity_group_054",
@@ -13753,11 +13753,11 @@
       "internal_conflicts": [],
       "external_conflicts": [],
       "suggested_action_label": "建议创建新知识卡",
-      "author_action": null,
-      "created_knowledge_card_id": null,
+      "author_action": "confirm",
+      "created_knowledge_card_id": "event-daf6369bc2eeb88b80e3674fbe7e3c51",
       "updated_knowledge_card_id": null,
       "created_at": "2026-07-19T12:27:45.384677Z",
-      "updated_at": "2026-07-19T12:27:45.384677Z"
+      "updated_at": "2026-07-26T02:01:12.235259Z"
     }
   ],
   "ignored": [
@@ -13952,9 +13952,9 @@
     "conflict_count": 0,
     "schema_passed_count": 54,
     "schema_failed_count": 0,
-    "confirmed_count": 0,
-    "rejected_count": 0,
-    "pending_count": 54,
+    "confirmed_count": 53,
+    "rejected_count": 1,
+    "pending_count": 0,
     "total_duration_ms": 306557,
     "llm_call_count": 31,
     "node_duration_ms": {

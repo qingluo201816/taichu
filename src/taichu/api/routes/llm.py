@@ -54,10 +54,18 @@ async def api_probe_llm_model(
         model_id=model_id,
         availability=state.availability,
         last_probed_at=state.last_probed_at,
+        requested_provider=state.requested_provider or "rightcode",
+        requested_model_id=state.requested_model_id or model_id,
+        actual_provider=state.actual_provider,
+        actual_model_id=state.actual_model_id,
+        fallback_used=state.fallback_used,
+        fallback_from_provider=state.fallback_from_provider,
+        wire_protocol=state.wire_protocol or "anthropic_messages",
+        provider_request_id=state.provider_request_id,
         message=(
-            "模型检测成功。"
+            "模型检测成功：请求的 RightCode 提供商可用。"
             if state.availability == "available"
-            else state.error or "模型检测失败。"
+            else "模型检测失败：请求的 RightCode 提供商不可用。"
         ),
     )
 

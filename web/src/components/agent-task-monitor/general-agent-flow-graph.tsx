@@ -47,7 +47,7 @@ export function GeneralAgentFlowGraph({
           本次请求执行流
         </h3>
         <span className="text-xs text-[var(--tc-text-muted)]">
-          规划编排 → {nodes.length > 0 ? `${nodes.length} 个能力节点 → ` : ""}最终回答 · 点击节点查看详情
+          规划编排 → {nodes.length > 0 ? `${nodes.length} 个能力节点 → ` : ""}最终回答
         </span>
       </div>
       <div className="min-h-[260px] flex-1 overflow-auto rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[linear-gradient(rgba(255,255,255,.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.025)_1px,transparent_1px),var(--tc-surface-muted)] bg-[size:32px_32px]">

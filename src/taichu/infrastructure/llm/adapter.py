@@ -6,7 +6,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 
 from taichu.application.contracts.llm import (
     LLMCost,
@@ -16,6 +16,7 @@ from taichu.application.contracts.llm import (
     LLMRequest,
     LLMResponse,
     LLMStreamEvent,
+    LLMToolCall,
     LLMUsage,
 )
 
@@ -54,14 +55,40 @@ class LangChainLLMAdapter(LLMGatewayContract):
         return [self._profile]
 
     async def complete(self, request: LLMRequest) -> LLMResponse:
-        message = await self._chat_model.ainvoke(_messages(request))
+        model: Any = self._chat_model
+        if request.tools:
+            model = model.bind_tools(
+                [
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": tool.name,
+                            "description": tool.description,
+                            "parameters": tool.parameters,
+                        },
+                    }
+                    for tool in request.tools
+                ],
+                tool_choice=request.tool_choice,
+            )
+        message = await model.ainvoke(_messages(request))
         text = _stringify_content(message.content)
+        tool_calls = tuple(
+            LLMToolCall(
+                call_id=str(item.get("id") or ""),
+                name=str(item.get("name") or ""),
+                arguments_json=_arguments_json(item.get("args")),
+            )
+            for item in getattr(message, "tool_calls", [])
+            if item.get("id") and item.get("name")
+        )
         return LLMResponse(
             text=text,
             model_id=self._profile.id,
             upstream_model=self._profile.upstream_model,
             usage=LLMUsage(),
             cost=LLMCost(),
+            tool_calls=tool_calls,
         )
 
     async def stream(self, request: LLMRequest) -> AsyncIterator[LLMStreamEvent]:
@@ -75,10 +102,32 @@ class LangChainLLMAdapter(LLMGatewayContract):
 def _messages(request: LLMRequest) -> list[Any]:
     result: list[Any] = []
     for item in request.messages:
-        if item.role == "system":
+        if item.role in {"system", "developer"}:
             result.append(SystemMessage(content=item.content))
         elif item.role == "assistant":
-            result.append(AIMessage(content=item.content))
+            result.append(
+                AIMessage(
+                    content=item.content,
+                    tool_calls=[
+                        {
+                            "id": call.call_id,
+                            "name": call.name,
+                            "args": _arguments(call.arguments_json),
+                            "type": "tool_call",
+                        }
+                        for call in item.tool_calls
+                    ],
+                )
+            )
+        elif item.role == "tool":
+            result.append(
+                ToolMessage(
+                    content=item.content,
+                    tool_call_id=item.tool_call_id or "",
+                    name=item.tool_name,
+                    status="error" if item.is_error else "success",
+                )
+            )
         else:
             result.append(HumanMessage(content=item.content))
     return result
@@ -100,3 +149,23 @@ def _stringify_content(content: Any) -> str:
                 parts.append(str(item))
         return "".join(parts)
     return str(content)
+
+
+def _arguments(value: str) -> dict[str, Any]:
+    import json
+
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _arguments_json(value: Any) -> str:
+    import json
+
+    if isinstance(value, dict):
+        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    if isinstance(value, str):
+        return value
+    return "{}"

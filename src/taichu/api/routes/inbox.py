@@ -1,5 +1,7 @@
 """Creative inbox endpoints."""
 
+from uuid import uuid4
+
 from pydantic import ValidationError
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -18,11 +20,13 @@ from taichu.api.schemas.mvp import (
     ConfirmPendingFactRequest,
     ConfirmPendingFactResponse,
     CreateInboxItemRequest,
+    MVPInboxDecisionResponse,
     MVPInboxIdeaResponse,
     MVPInboxIssueResponse,
     MVPInboxListResponse,
     MVPInboxPendingFactResponse,
     PatchInboxItemRequest,
+    PatchInboxIssueRequest,
 )
 from taichu.application.services.ai_card_service import (
     AICardNotFoundError,
@@ -38,6 +42,7 @@ from taichu.application.services.knowledge_service import (
 )
 from taichu.application.services.mvp_inbox_service import (
     InboxItemNotFoundError,
+    InboxRevisionConflictError,
     InboxValidationError,
     MVPInboxService,
 )
@@ -234,20 +239,92 @@ async def api_create_mvp_issue(
     return MVPInboxIssueResponse(item=item)
 
 
+@router.get("/inbox/issues/{item_id}", response_model=MVPInboxIssueResponse)
+async def api_get_mvp_issue(
+    item_id: str,
+    service: MVPInboxService = Depends(provide_mvp_inbox_service),
+) -> MVPInboxIssueResponse:
+    """按稳定 ID 读取系统问题记录。"""
+    try:
+        item = await service.get_issue(item_id)
+    except InboxItemNotFoundError as error:
+        raise _not_found(str(error)) from error
+    except InboxValidationError as error:
+        raise _bad_request(str(error)) from error
+    return MVPInboxIssueResponse(item=item)
+
+
 @router.patch("/inbox/issues/{item_id}", response_model=MVPInboxIssueResponse)
 async def api_patch_mvp_issue(
     item_id: str,
-    request: PatchInboxItemRequest,
+    request: PatchInboxIssueRequest,
     service: MVPInboxService = Depends(provide_mvp_inbox_service),
 ) -> MVPInboxIssueResponse:
     """Patch a manual issue item."""
     try:
-        item = await service.patch_issue(item_id, request.updates)
+        item = await service.patch_issue(
+            item_id,
+            request.updates.model_dump(mode="json", exclude_unset=True),
+            expected_revision=request.expected_revision,
+        )
+    except InboxItemNotFoundError as error:
+        raise _not_found(str(error)) from error
+    except InboxRevisionConflictError as error:
+        raise _revision_conflict(error) from error
+    except (InboxValidationError, ValidationError) as error:
+        raise _bad_request(_validation_message(error)) from error
+    return MVPInboxIssueResponse(item=item)
+
+
+@router.get("/inbox/decisions", response_model=MVPInboxListResponse)
+async def api_list_mvp_decisions(
+    status: str = Query(default="todo"),
+    priority: str | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
+    service: MVPInboxService = Depends(provide_mvp_inbox_service),
+) -> MVPInboxListResponse:
+    """List manual decision items."""
+    try:
+        return await _mvp_inbox_list_response(
+            service,
+            "decisions",
+            status=status,
+            priority=priority,
+            page=page,
+            page_size=page_size,
+        )
+    except InboxValidationError as error:
+        raise _bad_request(str(error)) from error
+
+
+@router.post("/inbox/decisions", response_model=MVPInboxDecisionResponse)
+async def api_create_mvp_decision(
+    request: CreateInboxItemRequest,
+    service: MVPInboxService = Depends(provide_mvp_inbox_service),
+) -> MVPInboxDecisionResponse:
+    """Create a manual decision item."""
+    try:
+        item = await service.create_decision(request.data)
+    except (InboxValidationError, ValidationError) as error:
+        raise _bad_request(_validation_message(error)) from error
+    return MVPInboxDecisionResponse(item=item)
+
+
+@router.patch("/inbox/decisions/{item_id}", response_model=MVPInboxDecisionResponse)
+async def api_patch_mvp_decision(
+    item_id: str,
+    request: PatchInboxItemRequest,
+    service: MVPInboxService = Depends(provide_mvp_inbox_service),
+) -> MVPInboxDecisionResponse:
+    """Patch a manual decision item."""
+    try:
+        item = await service.patch_decision(item_id, request.updates)
     except InboxItemNotFoundError as error:
         raise _not_found(str(error)) from error
     except (InboxValidationError, ValidationError) as error:
         raise _bad_request(_validation_message(error)) from error
-    return MVPInboxIssueResponse(item=item)
+    return MVPInboxDecisionResponse(item=item)
 
 
 @router.post(
@@ -365,6 +442,20 @@ def _conflict(message: str) -> HTTPException:
     return HTTPException(
         status_code=409,
         detail={"error": {"code": "KNOWLEDGE_CONFLICT", "message": message}},
+    )
+
+
+def _revision_conflict(error: InboxRevisionConflictError) -> HTTPException:
+    return HTTPException(
+        status_code=409,
+        detail={
+            "error": {
+                "code": "REVISION_CONFLICT",
+                "message": str(error),
+                "current_revision": error.current_revision,
+                "request_id": f"request_{uuid4().hex}",
+            }
+        },
     )
 
 

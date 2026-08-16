@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bot, ChevronLeft, RefreshCw, Trash2 } from "lucide-react";
+import { AlertTriangle, Bot, ChevronLeft, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
@@ -15,7 +15,10 @@ import {
   listAgentTasks,
   streamAgentTaskEvents,
 } from "@/lib/api/agent-workbench";
-import { formatBatchRunTitle } from "@/lib/agent-run-display";
+import {
+  formatAgentRunFailure,
+  formatBatchRunTitle,
+} from "@/lib/agent-run-display";
 import type {
   AgentBatchChapterProgress,
   AgentLLMCall,
@@ -81,6 +84,9 @@ export function TaskMonitorShell() {
       ),
     [currentTaskPage, visibleTasks],
   );
+  const currentTaskFailure = currentTask
+    ? formatAgentRunFailure(currentTask)
+    : null;
 
   const openTask = useCallback(async (taskId: string) => {
     setSelectedTaskId(taskId);
@@ -97,6 +103,9 @@ export function TaskMonitorShell() {
     );
     if ((!selectedTaskId || !selectedStillExists) && response.runs[0]) {
       await openTask(response.runs[0].run_id);
+    } else if (selectedTaskId && selectedStillExists) {
+      const detail = await getAgentTask(selectedTaskId);
+      setCurrentTask(detail.run);
     } else if (!selectedStillExists) {
       selectedTaskIdRef.current = "";
       setSelectedTaskId("");
@@ -223,9 +232,9 @@ export function TaskMonitorShell() {
             : current,
         );
       }
-    }, controller.signal).catch(caught => {
+    }, controller.signal).catch(() => {
       if (!controller.signal.aborted) {
-        setError(caught instanceof Error ? caught.message : "任务监控流连接失败");
+        setError("实时监控连接中断，已自动改用定时刷新。任务结果不会丢失。");
       }
     });
     return () => {
@@ -345,7 +354,7 @@ export function TaskMonitorShell() {
 
         <main className="flex min-h-0 flex-col gap-4">
           {error ? (
-            <div className="rounded-[var(--tc-radius-card)] border border-red-700/70 bg-red-950/20 px-4 py-3 text-sm text-[var(--tc-text-primary)]">
+            <div className="rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-4 py-3 text-sm text-[var(--tc-text-primary)]">
               {error}
             </div>
           ) : null}
@@ -367,7 +376,7 @@ export function TaskMonitorShell() {
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <Link
-                      href="/agent-workbench"
+                      href="/agent-workbench?assistant=knowledge"
                       className="inline-flex h-8 items-center gap-1.5 rounded-[var(--tc-radius-pill)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 text-sm font-medium text-[var(--tc-text-primary)]"
                     >
                       <Bot className="size-4" />
@@ -385,6 +394,12 @@ export function TaskMonitorShell() {
                     </Button>
                   </div>
                 </div>
+                {currentTaskFailure ? (
+                  <div className="flex shrink-0 items-start gap-2 rounded-[var(--tc-radius-card)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 py-2 text-sm text-[var(--tc-text-primary)]">
+                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-[var(--tc-danger-text)]" />
+                    <p>{currentTaskFailure}</p>
+                  </div>
+                ) : null}
                 <TaskFlowGraph run={currentTask} />
                 <TaskModelSummary run={currentTask} />
               </div>

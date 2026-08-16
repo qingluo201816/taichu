@@ -23,17 +23,35 @@ from taichu.application.contracts.llm import (
     LLMStreamEvent,
     LLMUsage,
 )
+from taichu.application.contracts.general_agent_capability_results import (
+    CapabilityResultOwner,
+    ResultIdentityPayload,
+    build_capability_result_record,
+)
+from taichu.application.evaluations.general_agent_benchmark.faults import (
+    FaultPoint,
+    FaultPressureAdapter,
+    FaultStep,
+    JsonFaultTriggerStore,
+)
 from taichu.application.general_agent.events import GeneralAgentEventCenter
 from taichu.application.general_agent.context import ContextAssembler
 from taichu.application.general_agent.executor import DynamicDagExecutor
 from taichu.application.general_agent.executor import InjectedProcessTermination
+from taichu.application.general_agent.faults import GeneralAgentFaultHook
 from taichu.application.general_agent.models import (
     GeneralAgentNodeStatus,
     GeneralAgentRunLimits,
     GeneralAgentRunStatus,
 )
-from taichu.application.general_agent.orchestrator import OrchestratorAgent
-from taichu.application.general_agent.service import GeneralAgentRuntimeService
+from taichu.application.general_agent.orchestrator import (
+    OrchestratorAgent,
+    _extract_json,
+)
+from taichu.application.general_agent.service import (
+    GeneralAgentRuntimeError,
+    GeneralAgentRuntimeService,
+)
 from taichu.application.services.chapter_service import ChapterService
 from taichu.application.services.agent_memory_service import AgentMemoryService
 from taichu.application.services.invocation_policy_service import (
@@ -69,9 +87,15 @@ from taichu.infrastructure.agent_memory import (
     JsonAgentMemoryRepository,
 )
 from taichu.infrastructure.general_agent_runs import (
+    JsonGeneralAgentCapabilityResultRepository,
+    JsonGeneralAgentContextSnapshotRepository,
     JsonGeneralAgentEffectRepository,
     JsonGeneralAgentRunRepository,
     JsonLangGraphCheckpointSaver,
+)
+from taichu.infrastructure.llm_replays import JsonLLMCallReplayRepository
+from taichu.infrastructure.evaluations.general_agent_benchmark.recovery_harness import (
+    GeneralAgentRecoveryHarness,
 )
 from taichu.infrastructure.retrieval import (
     JsonlRetrievalTraceRepository,
@@ -118,7 +142,6 @@ class _ScriptedGateway:
         )
         self._subagent_outputs = subagent_outputs or {}
         self.requests: list[LLMRequest] = []
-        self._pending_materialized_plan: dict[str, Any] | None = None
 
     async def complete(self, request: LLMRequest) -> LLMResponse:
         self.requests.append(request)
@@ -126,16 +149,7 @@ class _ScriptedGateway:
             "general_writing_orchestrator.plan",
             "general_writing_orchestrator.replan",
         }:
-            self._pending_materialized_plan = self._plans.pop(0)
-            payload = _selection_payload(self._pending_materialized_plan)
-        elif request.task_name in {
-            "general_writing_orchestrator.plan.materialize",
-            "general_writing_orchestrator.replan.materialize",
-        }:
-            if self._pending_materialized_plan is None:
-                raise AssertionError("缺少待物化的计划脚本。")
-            payload = self._pending_materialized_plan
-            self._pending_materialized_plan = None
+            payload = self._plans.pop(0)
         elif request.task_name == "general_writing_orchestrator.verify":
             payload = self._verifications.pop(0)
         else:
@@ -171,19 +185,6 @@ class _CrashOnceDuringVerificationGateway(_ScriptedGateway):
             self.crash_verification = False
             raise _InjectedProcessCrash()
         return await super().complete(request)
-
-
-def _selection_payload(plan: dict[str, Any]) -> dict[str, Any]:
-    payload = dict(plan)
-    payload["nodes"] = [
-        {
-            key: value
-            for key, value in node.items()
-            if key not in {"input_data", "input_bindings"}
-        }
-        for node in plan.get("nodes", [])
-    ]
-    return payload
 
 
 @_async_test
@@ -300,6 +301,7 @@ async def test_runtime_plans_and_executes_real_subagent_with_real_retrieval_tool
     assert run.plan.nodes[0].capability_name == "canon_evidence"
     assert run.node_runs[-1].status is GeneralAgentNodeStatus.SUCCESS
     assert "绝仙毒谷" in run.final_answer
+    assert run.final_answer_basis_sha256 is not None
     assert run.checkpoint_revision >= 8
     assert {record.capability_type for record in traces.records} >= {
         "tool",
@@ -313,7 +315,7 @@ async def test_runtime_plans_and_executes_real_subagent_with_real_retrieval_tool
 
 
 @_async_test
-async def test_explicit_chapter_summary_selects_direct_read_before_materialization(
+async def test_explicit_chapter_summary_selects_and_fills_parameters_in_one_call(
     tmp_path: Path,
 ) -> None:
     storage = ProjectAssetStorageBackend(tmp_path)
@@ -445,9 +447,7 @@ async def test_explicit_chapter_summary_selects_direct_read_before_materializati
     assert [request.task_name for request in gateway.requests].count(
         "general_writing_orchestrator.plan"
     ) == 2
-    assert [request.task_name for request in gateway.requests].count(
-        "general_writing_orchestrator.plan.materialize"
-    ) == 1
+    assert all(".materialize" not in request.task_name for request in gateway.requests)
     assert any(
         source_ref.startswith("manuscript:")
         for node in run.node_runs
@@ -507,13 +507,16 @@ async def test_runtime_recovers_invalid_data_handoff_after_runtime_failure(
         **invalid_plan,
         "rationale": "按真实输入输出结构修正正文交接地址。",
         "nodes": [
-            invalid_plan["nodes"][0],
+            {
+                **invalid_plan["nodes"][0],
+                "reuse_from_node_id": "read_chapter",
+            },
             {
                 **invalid_plan["nodes"][1],
                 "input_bindings": [
                     {
                         "source_node_id": "read_chapter",
-                        "source_path": "chunks.0.content",
+                        "source_path": "chunks[0].content",
                         "target_path": "source_request.direct_context",
                     }
                 ],
@@ -585,6 +588,13 @@ async def test_runtime_recovers_invalid_data_handoff_after_runtime_failure(
     assert run.plan_revision == 2
     assert run.plan is not None
     assert run.plan.nodes[1].input_bindings[0].source_path == "chunks.0.content"
+    reused_read = next(
+        node
+        for node in run.node_runs
+        if node.node_id == "read_chapter" and node.plan_revision == 2
+    )
+    assert reused_read.status is GeneralAgentNodeStatus.SUCCESS
+    assert "未重复调用能力" in (reused_read.reconciliation_reason or "")
     failed_summary_node = next(
         node
         for node in run.node_runs
@@ -613,21 +623,22 @@ async def test_runtime_recovers_invalid_data_handoff_after_runtime_failure(
             "general_writing_orchestrator.replan",
         }
     ]
-    materialization_requests = [
-        request
-        for request in gateway.requests
-        if request.task_name
-        in {
-            "general_writing_orchestrator.plan.materialize",
-            "general_writing_orchestrator.replan.materialize",
-        }
-    ]
     assert len(planning_requests) == 2
-    assert len(materialization_requests) == 2
-    assert '"input_schema"' not in planning_requests[0].messages[-1].content
-    assert '"output_schema"' in materialization_requests[0].messages[-1].content
-    assert "result.content" in planning_requests[1].messages[-1].content
-    assert "direct_context" in materialization_requests[1].messages[-1].content
+    assert planning_requests[0].messages[-1].role == "user"
+    assert planning_requests[0].messages[-1].content == "这一章讲了什么？"
+    assert '"input_schema"' in planning_requests[0].messages[1].content
+    assert '"output_schema"' in planning_requests[0].messages[1].content
+    assert '"maxItems":24' in planning_requests[0].messages[1].content
+    assert planning_requests[1].messages[-1].content == "这一章讲了什么？"
+    assert any(
+        message.role == "developer" and "result.content" in message.content
+        for message in planning_requests[1].messages
+    )
+    assert any(
+        message.role == "developer" and "direct_context" in message.content
+        for message in planning_requests[1].messages
+    )
+    assert all(".materialize" not in request.task_name for request in gateway.requests)
     assert [request.task_name for request in planning_requests] == [
         "general_writing_orchestrator.plan",
         "general_writing_orchestrator.replan",
@@ -635,6 +646,16 @@ async def test_runtime_recovers_invalid_data_handoff_after_runtime_failure(
     assert [request.task_name for request in gateway.requests].count(
         "general_writing_orchestrator.verify"
     ) == 1
+    assert (
+        len(
+            [
+                record
+                for record in traces.records
+                if getattr(record, "capability_name", "") == "read_manuscript"
+            ]
+        )
+        == 1
+    )
 
     exhausted_gateway = _ScriptedGateway(
         plans=[invalid_plan],
@@ -662,6 +683,97 @@ async def test_runtime_recovers_invalid_data_handoff_after_runtime_failure(
     assert exhausted.status is GeneralAgentRunStatus.FAILED
     assert exhausted.replan_count == 0
     assert exhausted.final_answer == "只读取到了正文，章节概括没有完成。"
+
+
+def test_orchestrator_repairs_common_json_syntax_locally() -> None:
+    assert _extract_json(
+        """```json
+        {'rationale': '本地修复', 'nodes': [], 'direct_response': '完成',}
+        ```"""
+    ) == {
+        "rationale": "本地修复",
+        "nodes": [],
+        "direct_response": "完成",
+    }
+
+
+@_async_test
+async def test_replan_invalidates_intermediate_answer_and_memory(
+    tmp_path: Path,
+) -> None:
+    policy = InvocationPolicyService()
+    traces = _TraceRepository()
+    storage = ProjectAssetStorageBackend(tmp_path)
+    tool_context = CapabilityContext(
+        capabilities={
+            "chapter_service": ChapterService(storage),
+            "outline_service": OutlineService(storage),
+            "invocation_policy_service": policy,
+        }
+    )
+    tools = ToolRegistry(tool_context, traces)
+    _register_tools(tools, [get_novel_structure])
+    subagents = SubagentRegistry(
+        CapabilityContext(capabilities={}),
+        traces,
+    )
+    plan = {
+        "rationale": "读取结构后回答。",
+        "nodes": [
+            {
+                "node_id": "read_structure",
+                "kind": "tool",
+                "capability_name": "get_novel_structure",
+                "objective": "读取小说结构。",
+                "input_data": {},
+            }
+        ],
+    }
+    repaired_plan = {
+        **plan,
+        "rationale": "根据校验意见重新读取并形成最终结论。",
+        "nodes": [
+            {
+                **plan["nodes"][0],
+                "node_id": "read_structure_again",
+            }
+        ],
+    }
+    gateway = _ScriptedGateway(
+        plans=[plan, repaired_plan],
+        verification=[
+            {
+                "outcome": "partial",
+                "final_answer": "这是第一版、已经失效的回答。",
+                "issues": ["需要重新执行。"],
+                "should_replan": True,
+                "replan_guidance": "重新读取结构后回答。",
+            },
+            {
+                "outcome": "satisfied",
+                "final_answer": "这是第二版有效回答。",
+                "issues": [],
+                "should_replan": False,
+            },
+        ],
+    )
+    runtime = _runtime(tmp_path, gateway, tools, subagents, policy, traces)
+
+    run = await runtime.run(user_goal="读取结构并回答")
+
+    assert run.status is GeneralAgentRunStatus.COMPLETED
+    assert run.plan_revision == 2
+    assert run.final_answer == "这是第二版有效回答。"
+    assert run.final_answer_basis_sha256 is not None
+    memories = await JsonAgentMemoryRepository(tmp_path).query(
+        conversation_id=run.conversation_id,
+        kinds=(AgentMemoryKind.TASK_SUMMARY,),
+        include_deleted=False,
+    )
+    assert len(memories) == 1
+    assert "第二版有效回答" in memories[0].content
+    assert "第一版、已经失效" not in memories[0].content
+    assert f"result-basis:{run.final_answer_basis_sha256}" in memories[0].source_refs
 
 
 @_async_test
@@ -847,7 +959,7 @@ async def test_runtime_pauses_for_bound_write_and_resumes_from_checkpoint(
 
 
 @_async_test
-async def test_runtime_clarifies_and_performs_one_bounded_replan(
+async def test_runtime_clarifies_then_completes_direct_response_without_verification(
     tmp_path: Path,
 ) -> None:
     policy = InvocationPolicyService()
@@ -869,27 +981,8 @@ async def test_runtime_clarifies_and_performs_one_bounded_replan(
                 "direct_response": "先统一视角锚点，再逐段清理越界心理描写。",
                 "nodes": [],
             },
-            {
-                "rationale": "根据校验意见补充可执行检查步骤。",
-                "direct_response": "采用第三人称限知，并逐段检查视角越界。",
-                "nodes": [],
-            },
         ],
-        verification=[
-            {
-                "outcome": "partial",
-                "final_answer": "先统一第三人称视角。",
-                "issues": ["缺少逐段检查方法。"],
-                "should_replan": True,
-                "replan_guidance": "补充可执行的视角越界检查步骤。",
-            },
-            {
-                "outcome": "satisfied",
-                "final_answer": "采用第三人称限知，并逐段检查非视点人物的心理描写。",
-                "issues": [],
-                "should_replan": False,
-            },
-        ],
+        verification=[],
     )
     context = CapabilityContext(
         capabilities={
@@ -924,13 +1017,229 @@ async def test_runtime_clarifies_and_performs_one_bounded_replan(
     assert preserved_waiting.status is GeneralAgentRunStatus.WAITING_HUMAN
     assert preserved_waiting.pending_human_request == waiting.pending_human_request
     assert completed.status is GeneralAgentRunStatus.COMPLETED
-    assert completed.replan_count == 1
-    assert completed.plan_revision == 2
+    assert completed.replan_count == 0
+    assert completed.plan_revision == 1
     assert completed.messages[-1].content == "第三人称限知。"
-    assert "非视点人物" in completed.final_answer
+    assert completed.final_answer == "先统一视角锚点，再逐段清理越界心理描写。"
+    assert completed.node_runs == []
     assert [request.task_name for request in gateway.requests].count(
         "general_writing_orchestrator.verify"
-    ) == 2
+    ) == 0
+    snapshots = await runtime.list_context_snapshots(completed.run_id)
+    assert [snapshot.phase for snapshot in snapshots] == ["plan"]
+
+
+@_async_test
+async def test_recovery_case_22_reuses_durable_plan_before_first_node(
+    tmp_path: Path,
+) -> None:
+    traces = _TraceRepository()
+    storage = ProjectAssetStorageBackend(tmp_path)
+    chapter_service = ChapterService(storage)
+    outline_service = OutlineService(storage)
+    gateway = _ScriptedGateway(
+        plans=[
+            {
+                "rationale": "先读取结构，再给出建议。",
+                "nodes": [
+                    {
+                        "node_id": "read_structure",
+                        "kind": "tool",
+                        "capability_name": "get_novel_structure",
+                        "objective": "读取当前结构。",
+                        "input_data": {},
+                    }
+                ],
+            }
+        ],
+        verification={
+            "outcome": "satisfied",
+            "final_answer": "结构读取完成，已给出建议。",
+            "issues": [],
+            "should_replan": False,
+        },
+    )
+
+    def build_runtime(
+        hook: GeneralAgentFaultHook,
+    ) -> GeneralAgentRuntimeService:
+        policy = InvocationPolicyService()
+        tools = ToolRegistry(
+            CapabilityContext(
+                capabilities={
+                    "chapter_service": chapter_service,
+                    "outline_service": outline_service,
+                    "invocation_policy_service": policy,
+                }
+            ),
+            traces,
+        )
+        _register_tools(tools, [get_novel_structure])
+        subagents = SubagentRegistry(CapabilityContext(capabilities={}), traces)
+        return _runtime(
+            tmp_path,
+            gateway,
+            tools,
+            subagents,
+            policy,
+            traces,
+            fault_hook=hook,
+        )
+
+    result = await GeneralAgentRecoveryHarness(
+        runtime_builder=build_runtime,
+        fault_adapter=FaultPressureAdapter(
+            JsonFaultTriggerStore(tmp_path / "fault_pressure")
+        ),
+    ).execute(
+        user_goal="读取结构后给我一条建议。",
+        plan_id="fault_after_plan",
+        steps=(
+            FaultStep(
+                ordinal=1,
+                point=FaultPoint.PLAN_CREATED,
+                once=True,
+            ),
+        ),
+    )
+
+    assert result.triggered_ordinals == (1,)
+    assert result.interrupted_run.status is GeneralAgentRunStatus.EXECUTING
+    assert result.interrupted_run.node_runs == []
+    assert result.recovered_run.status is GeneralAgentRunStatus.COMPLETED
+    assert result.plan_before_sha256 == result.plan_after_sha256
+    assert [request.task_name for request in gateway.requests].count(
+        "general_writing_orchestrator.plan"
+    ) == 1
+    assert sum(
+        record.capability_type == "tool"
+        and record.capability_name == "get_novel_structure"
+        and record.status.value == "completed"
+        for record in traces.records
+    ) == 1
+    current_nodes = [
+        node
+        for node in result.recovered_run.node_runs
+        if node.plan_revision == result.recovered_run.plan_revision
+    ]
+    assert len(current_nodes) == 1
+    assert current_nodes[0].status is GeneralAgentNodeStatus.SUCCESS
+    assert await JsonGeneralAgentEffectRepository(tmp_path).list_effects(
+        result.recovered_run.run_id
+    ) == []
+
+
+@_async_test
+async def test_recovery_case_23_rehydrates_durable_result_for_consumer(
+    tmp_path: Path,
+) -> None:
+    traces = _TraceRepository()
+    storage = ProjectAssetStorageBackend(tmp_path)
+    chapter_service = ChapterService(storage)
+    outline_service = OutlineService(storage)
+    gateway = _ScriptedGateway(
+        plans=[
+            {
+                "rationale": "读取结构结果后形成最终判断。",
+                "nodes": [
+                    {
+                        "node_id": "read_structure",
+                        "kind": "tool",
+                        "capability_name": "get_novel_structure",
+                        "objective": "读取当前结构。",
+                        "input_data": {},
+                    }
+                ],
+            }
+        ],
+        verification={
+            "outcome": "satisfied",
+            "final_answer": "已消费恢复后的同一结构结果。",
+            "issues": [],
+            "should_replan": False,
+        },
+    )
+
+    def build_runtime(
+        hook: GeneralAgentFaultHook,
+    ) -> GeneralAgentRuntimeService:
+        policy = InvocationPolicyService()
+        tools = ToolRegistry(
+            CapabilityContext(
+                capabilities={
+                    "chapter_service": chapter_service,
+                    "outline_service": outline_service,
+                    "invocation_policy_service": policy,
+                }
+            ),
+            traces,
+        )
+        _register_tools(tools, [get_novel_structure])
+        subagents = SubagentRegistry(CapabilityContext(capabilities={}), traces)
+        return _runtime(
+            tmp_path,
+            gateway,
+            tools,
+            subagents,
+            policy,
+            traces,
+            fault_hook=hook,
+        )
+
+    result = await GeneralAgentRecoveryHarness(
+        runtime_builder=build_runtime,
+        fault_adapter=FaultPressureAdapter(
+            JsonFaultTriggerStore(tmp_path / "fault_pressure")
+        ),
+    ).execute(
+        user_goal="读取结构并形成判断。",
+        plan_id="fault_after_tool_result",
+        steps=(
+            FaultStep(
+                ordinal=1,
+                point=FaultPoint.CAPABILITY_RESULT_COMMITTED,
+                once=True,
+            ),
+        ),
+    )
+
+    owner = CapabilityResultOwner(
+        conversation_id=result.recovered_run.conversation_id,
+        run_id=result.recovered_run.run_id,
+    )
+    records = await JsonGeneralAgentCapabilityResultRepository(
+        tmp_path / "general_agent_capability_results"
+    ).list_for_run(owner)
+    assert len(records) == 1
+    record = records[0]
+    index_path = (
+        tmp_path
+        / "general_agent_capability_results"
+        / owner.conversation_id
+        / owner.run_id
+        / "index"
+        / f"{record.result_id}.json"
+    )
+    assert index_path.is_file()
+    assert result.triggered_ordinals == (1,)
+    assert result.recovered_run.status is GeneralAgentRunStatus.COMPLETED
+    assert result.plan_before_sha256 == result.plan_after_sha256
+    assert sum(
+        trace.capability_type == "tool"
+        and trace.capability_name == "get_novel_structure"
+        and trace.status.value == "completed"
+        for trace in traces.records
+    ) == 1
+    current = [
+        node
+        for node in result.recovered_run.node_runs
+        if node.plan_revision == result.recovered_run.plan_revision
+    ]
+    assert len(current) == 1
+    assert current[0].output == record.output
+    assert record.result_id in current[0].reconciliation_reason
+    assert record.content_sha256 in current[0].reconciliation_reason
+    assert "复用" in current[0].reconciliation_reason
 
 
 @_async_test
@@ -939,16 +1248,33 @@ async def test_runtime_startup_resumes_same_langgraph_run_after_process_crash(
 ) -> None:
     policy = InvocationPolicyService()
     traces = _TraceRepository()
+    storage = ProjectAssetStorageBackend(tmp_path)
+    chapter_service = ChapterService(storage)
+    outline_service = OutlineService(storage)
     tool_registry = ToolRegistry(
-        CapabilityContext(capabilities={"invocation_policy_service": policy}),
+        CapabilityContext(
+            capabilities={
+                "chapter_service": chapter_service,
+                "outline_service": outline_service,
+                "invocation_policy_service": policy,
+            }
+        ),
         traces,
     )
+    _register_tools(tool_registry, [get_novel_structure])
     gateway = _CrashOnceDuringVerificationGateway(
         plans=[
             {
-                "rationale": "无需调用额外能力，可以直接回答。",
-                "direct_response": "先给出一条可执行建议。",
-                "nodes": [],
+                "rationale": "先读取当前小说结构，再给出章节收尾建议。",
+                "nodes": [
+                    {
+                        "node_id": "read_structure",
+                        "kind": "tool",
+                        "capability_name": "get_novel_structure",
+                        "objective": "读取当前小说结构。",
+                        "input_data": {},
+                    }
+                ],
             }
         ],
         verification={
@@ -988,12 +1314,23 @@ async def test_runtime_startup_resumes_same_langgraph_run_after_process_crash(
     )
     interrupted = runs[0]
     assert interrupted.status is GeneralAgentRunStatus.VERIFYING
+    interrupted_snapshots = await first_runtime.list_context_snapshots(
+        interrupted.run_id
+    )
+    assert [snapshot.phase for snapshot in interrupted_snapshots] == ["plan", "verify"]
 
     restarted_policy = InvocationPolicyService()
     restarted_tools = ToolRegistry(
-        CapabilityContext(capabilities={"invocation_policy_service": restarted_policy}),
+        CapabilityContext(
+            capabilities={
+                "chapter_service": chapter_service,
+                "outline_service": outline_service,
+                "invocation_policy_service": restarted_policy,
+            }
+        ),
         traces,
     )
+    _register_tools(restarted_tools, [get_novel_structure])
     restarted_subagents = SubagentRegistry(
         CapabilityContext(
             capabilities={
@@ -1028,7 +1365,139 @@ async def test_runtime_startup_resumes_same_langgraph_run_after_process_crash(
     assert [request.task_name for request in gateway.requests].count(
         "general_writing_orchestrator.plan"
     ) == 1
+    snapshots = await restarted_runtime.list_context_snapshots(interrupted.run_id)
+    assert [snapshot.phase for snapshot in snapshots] == ["plan", "verify", "verify"]
+    assert len({snapshot.snapshot_id for snapshot in snapshots}) == 3
     await restarted_runtime.shutdown()
+
+
+@_async_test
+async def test_parent_lifecycle_deletes_capability_results_for_each_run(
+    tmp_path: Path,
+) -> None:
+    policy = InvocationPolicyService()
+    tool_registry = ToolRegistry(
+        CapabilityContext(capabilities={"invocation_policy_service": policy})
+    )
+    runtime = _runtime(
+        tmp_path,
+        _ScriptedGateway(plans=[], verification=[]),
+        tool_registry,
+        SubagentRegistry(CapabilityContext(capabilities={})),
+        policy,
+        _TraceRepository(),
+    )
+    first = await runtime.create_run(user_goal="第一轮。")
+    first = first.model_copy(
+        update={
+            "status": GeneralAgentRunStatus.COMPLETED,
+            "finished_at": first.updated_at,
+        }
+    )
+    await runtime._repository.save(first)
+    second = await runtime.create_run(
+        user_goal="第二轮。",
+        conversation_id=first.conversation_id,
+        start_new_conversation=False,
+    )
+    repository = runtime._capability_result_repository
+    owners = tuple(
+        CapabilityResultOwner(
+            conversation_id=run.conversation_id,
+            run_id=run.run_id,
+        )
+        for run in (first, second)
+    )
+    for index, owner in enumerate(owners, start=1):
+        identity = ResultIdentityPayload(
+            owner=owner,
+            plan_revision=1,
+            node_id=f"read_{index}",
+            attempt_id=f"attempt_{index:032d}",
+            capability_kind="tool",
+            capability_name="read_manuscript",
+            input_sha256=str(index) * 64,
+            handler_identity_sha256="3" * 64,
+            input_schema_sha256="4" * 64,
+            output_schema_sha256="5" * 64,
+        )
+        record = build_capability_result_record(
+            identity=identity,
+            output={"answer": f"结果{index}"},
+            source_refs=(f"chapter_{index:03d}",),
+            committed_at=f"2026-07-31T00:00:0{index}Z",
+        )
+        await repository.commit_completed(owner, record)
+
+    deleted = await runtime.delete_conversation(first.conversation_id)
+
+    assert deleted == 2
+    for owner in owners:
+        assert await repository.list_for_run(owner) == ()
+        assert await runtime._repository.get(owner.run_id) is None
+    await runtime.shutdown()
+
+
+@_async_test
+async def test_capability_result_cleanup_failure_keeps_parent_run(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    policy = InvocationPolicyService()
+    runtime = _runtime(
+        tmp_path,
+        _ScriptedGateway(plans=[], verification=[]),
+        ToolRegistry(
+            CapabilityContext(capabilities={"invocation_policy_service": policy})
+        ),
+        SubagentRegistry(CapabilityContext(capabilities={})),
+        policy,
+        _TraceRepository(),
+    )
+    run = await runtime.create_run(user_goal="验证清理失败。")
+    repository = runtime._capability_result_repository
+
+    async def fail_cleanup(_owner: CapabilityResultOwner) -> object:
+        raise RuntimeError("模拟能力结果仓储不可用")
+
+    monkeypatch.setattr(repository, "delete_run", fail_cleanup)
+
+    with pytest.raises(GeneralAgentRuntimeError, match="能力结果"):
+        await runtime.delete(run.run_id)
+
+    assert await runtime._repository.get(run.run_id) == run
+    await runtime.shutdown()
+
+
+@_async_test
+async def test_capability_result_cleanup_residual_keeps_parent_run(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    policy = InvocationPolicyService()
+    runtime = _runtime(
+        tmp_path,
+        _ScriptedGateway(plans=[], verification=[]),
+        ToolRegistry(
+            CapabilityContext(capabilities={"invocation_policy_service": policy})
+        ),
+        SubagentRegistry(CapabilityContext(capabilities={})),
+        policy,
+        _TraceRepository(),
+    )
+    run = await runtime.create_run(user_goal="验证能力结果残留。")
+    repository = runtime._capability_result_repository
+
+    async def keep_residual(_owner: CapabilityResultOwner) -> tuple[object, ...]:
+        return (object(),)
+
+    monkeypatch.setattr(repository, "list_for_run", keep_residual)
+
+    with pytest.raises(GeneralAgentRuntimeError, match="仍存在运行结果"):
+        await runtime.delete(run.run_id)
+
+    assert await runtime._repository.get(run.run_id) == run
+    await runtime.shutdown()
 
 
 def _runtime(
@@ -1038,6 +1507,8 @@ def _runtime(
     subagent_registry: SubagentRegistry,
     policy: InvocationPolicyService,
     traces: _TraceRepository,
+    *,
+    fault_hook: GeneralAgentFaultHook | None = None,
 ) -> GeneralAgentRuntimeService:
     router = ModelRoleRouter(
         "default-model",
@@ -1049,6 +1520,21 @@ def _runtime(
     )
     graph_checkpointer = JsonLangGraphCheckpointSaver(root)
     effect_repository = JsonGeneralAgentEffectRepository(root)
+    capability_result_repository = (
+        JsonGeneralAgentCapabilityResultRepository(
+            root / "general_agent_capability_results"
+        )
+    )
+    handler_identities = {
+        **{
+            ("tool", manifest.name): f"test:tool:{manifest.name}"
+            for manifest in tool_registry.list_manifests()
+        },
+        **{
+            ("subagent", manifest.name): f"test:subagent:{manifest.name}"
+            for manifest in subagent_registry.list_manifests()
+        },
+    }
     return GeneralAgentRuntimeService(
         repository=JsonGeneralAgentRunRepository(root),
         event_center=GeneralAgentEventCenter(),
@@ -1063,14 +1549,21 @@ def _runtime(
             tool_registry=tool_registry,
             subagent_registry=subagent_registry,
             policy_service=policy,
+            capability_result_repository=capability_result_repository,
+            capability_handler_identities=handler_identities,
             graph_checkpointer=graph_checkpointer,
             effect_repository=effect_repository,
+            fault_hook=fault_hook,
         ),
         policy_service=policy,
         memory_service=memory_service,
         context_assembler=ContextAssembler(memory_service=memory_service),
+        capability_result_repository=capability_result_repository,
         graph_checkpointer=graph_checkpointer,
         effect_repository=effect_repository,
+        context_snapshot_repository=JsonGeneralAgentContextSnapshotRepository(root),
+        llm_replay_repository=JsonLLMCallReplayRepository(root),
+        fault_hook=fault_hook,
     )
 
 

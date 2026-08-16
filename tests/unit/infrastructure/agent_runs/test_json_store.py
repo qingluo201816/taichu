@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from taichu.application.agents.models.agent_run import (
+    AgentBatchChapterProgress,
     AgentEntityGroup,
     AgentIgnoredExtraction,
     AgentRawMention,
@@ -145,3 +146,51 @@ class JsonAgentRunStoreTest(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaisesRegex(ValueError, "运行 ID 格式不正确"):
             await self.store.write_run(run)
+
+    async def test_deleted_run_cannot_be_recreated_by_late_write(self) -> None:
+        run = AgentRun(
+            run_id="extract_run_20260704_153024_c1d2e3",
+            status=AgentRunStatus.RUNNING,
+            scope=AgentRunScope(chapter_id="chapter_001"),
+            started_at="2026-07-04T15:30:22Z",
+        )
+        await self.store.write_run(run)
+
+        self.assertTrue(await self.store.delete_run(run.run_id))
+        await self.store.write_run(
+            run.model_copy(update={"status": AgentRunStatus.COMPLETED})
+        )
+
+        self.assertIsNone(await self.store.get_run(run.run_id))
+
+    async def test_legacy_completed_batch_with_failed_chapter_is_read_as_failed(
+        self,
+    ) -> None:
+        run = AgentRun(
+            run_id="extract_run_20260704_153025_d4e5f6",
+            status=AgentRunStatus.COMPLETED,
+            scope=AgentRunScope(
+                scope_type="chapter_batch",
+                chapter_id="chapter_071",
+                chapter_ids=["chapter_071"],
+            ),
+            started_at="2026-07-04T15:30:22Z",
+            batch_chapter_progress=[
+                AgentBatchChapterProgress(
+                    chapter_id="chapter_071",
+                    chapter_title="第71章",
+                    status="failed",
+                    error="当前密钥无权调用该模型，请检查本机密钥权限。",
+                )
+            ],
+            total_chapter_count=1,
+            failed_chapter_count=1,
+        )
+        await self.store.write_run(run)
+
+        loaded = await self.store.get_run(run.run_id)
+
+        self.assertIsNotNone(loaded)
+        assert loaded is not None
+        self.assertEqual(loaded.status, AgentRunStatus.FAILED)
+        self.assertIn("第71章：当前密钥无权调用该模型", loaded.errors[0])

@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import contextmanager
 import json
+import os
 import re
-from threading import Lock
+from threading import Lock, get_ident
+import time
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
@@ -33,6 +36,7 @@ _WORKSPACE_FILES = (
     "inbox_ideas.jsonl",
     "inbox_pending_facts.jsonl",
     "inbox_issues.jsonl",
+    "inbox_decisions.jsonl",
 )
 
 
@@ -135,6 +139,22 @@ class ProjectAssetStorageBackend:
             self._rewrite_workspace_records_sync,
             filename,
             records,
+        )
+
+    async def compare_and_swap_workspace_record(
+        self,
+        filename: str,
+        item_id: str,
+        expected_revision: int,
+        updates: StorageData,
+    ) -> StorageData:
+        """Atomically compare and swap one revisioned workspace record."""
+        return await asyncio.to_thread(
+            self._compare_and_swap_workspace_record_sync,
+            filename,
+            item_id,
+            expected_revision,
+            updates,
         )
 
     async def read_preferences(self) -> StorageData:
@@ -271,8 +291,9 @@ class ProjectAssetStorageBackend:
         path = self._resolve_safe_workspace_jsonl(filename)
         line = json.dumps(data, ensure_ascii=False) + "\n"
         with self._workspace_locks[filename]:
-            current_text = path.read_text(encoding="utf-8")
-            self._replace_workspace_text(path, current_text + line)
+            with self._workspace_file_lease(path):
+                current_text = path.read_text(encoding="utf-8")
+                self._replace_workspace_text(path, current_text + line)
 
     def _list_workspace_records_sync(
         self,
@@ -306,7 +327,118 @@ class ProjectAssetStorageBackend:
             json.dumps(record, ensure_ascii=False) + "\n" for record in records
         )
         with self._workspace_locks[filename]:
-            self._replace_workspace_text(path, text)
+            with self._workspace_file_lease(path):
+                self._replace_workspace_text(path, text)
+
+    def _compare_and_swap_workspace_record_sync(
+        self,
+        filename: str,
+        item_id: str,
+        expected_revision: int,
+        updates: StorageData,
+    ) -> StorageData:
+        from taichu.application.contracts.storage import (
+            WorkspaceRecordRevisionConflictError,
+        )
+
+        self._ensure_skeleton_sync()
+        path = self._resolve_safe_workspace_jsonl(filename)
+        with self._workspace_locks[filename]:
+            with self._workspace_file_lease(path):
+                records = self._list_workspace_records_sync_unlocked(path, filename)
+                found: StorageData | None = None
+                rewritten: list[StorageData] = []
+                for record in records:
+                    if record.get("id") != item_id:
+                        rewritten.append(record)
+                        continue
+                    if found is not None:
+                        raise ValueError(
+                            f"Workspace record id is not unique: {item_id}"
+                        )
+                    current_revision = int(record.get("revision", 0))
+                    if current_revision != expected_revision:
+                        raise WorkspaceRecordRevisionConflictError(current_revision)
+                    candidate = {
+                        **record,
+                        "links": record.get("links", []),
+                        **updates,
+                        "revision": current_revision + 1,
+                    }
+                    found = candidate
+                    rewritten.append(candidate)
+                if found is None:
+                    raise KeyError(item_id)
+                text = "".join(
+                    json.dumps(record, ensure_ascii=False) + "\n"
+                    for record in rewritten
+                )
+                self._replace_workspace_text(path, text)
+                return found
+
+    @staticmethod
+    def _list_workspace_records_sync_unlocked(
+        path: Path,
+        filename: str,
+    ) -> list[StorageData]:
+        records: list[StorageData] = []
+        for line_number, line in enumerate(
+            path.read_text(encoding="utf-8").splitlines(),
+            start=1,
+        ):
+            if not line.strip():
+                continue
+            data = json.loads(line)
+            if not isinstance(data, dict):
+                raise ValueError(
+                    f"Workspace JSONL line must be an object: {filename}:{line_number}"
+                )
+            records.append(data)
+        return records
+
+    @staticmethod
+    @contextmanager
+    def _workspace_file_lease(path: Path):  # type: ignore[no-untyped-def]
+        """用持久化租约串行化跨进程 JSONL read-modify-write。"""
+        lease_path = path.with_name(f".{path.name}.lease")
+        token = f"{os.getpid()}:{get_ident()}:{time.time_ns()}"
+        deadline = time.monotonic() + 10
+        while True:
+            try:
+                descriptor = os.open(
+                    lease_path,
+                    os.O_CREAT | os.O_EXCL | os.O_WRONLY,
+                )
+            except FileExistsError:
+                try:
+                    stale = time.time() - lease_path.stat().st_mtime > 30
+                except FileNotFoundError:
+                    continue
+                if stale:
+                    try:
+                        lease_path.unlink()
+                    except FileNotFoundError:
+                        pass
+                    continue
+                if time.monotonic() >= deadline:
+                    raise TimeoutError(
+                        f"Workspace file lease acquisition timed out: {path.name}"
+                    )
+                time.sleep(0.01)
+                continue
+            try:
+                os.write(descriptor, token.encode("ascii"))
+            finally:
+                os.close(descriptor)
+            break
+        try:
+            yield
+        finally:
+            try:
+                if lease_path.read_text(encoding="ascii") == token:
+                    lease_path.unlink()
+            except FileNotFoundError:
+                pass
 
     def _read_preferences_sync(self) -> StorageData:
         self._ensure_skeleton_sync()

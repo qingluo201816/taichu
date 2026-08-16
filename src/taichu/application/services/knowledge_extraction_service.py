@@ -137,6 +137,7 @@ class KnowledgeExtractionService:
         self._task_events = task_events
         self._default_model_id = default_model_id
         self._background_tasks: set[asyncio.Task[None]] = set()
+        self._background_tasks_by_run_id: dict[str, asyncio.Task[None]] = {}
         self._review_locks: dict[str, asyncio.Lock] = {}
 
     def validate_model_selection(self, model_name: str | None) -> None:
@@ -148,7 +149,7 @@ class KnowledgeExtractionService:
         return await self._sedimentation_progress_repository.get_progress()
 
     async def accept_run(self, run_id: str) -> KnowledgeSedimentationProgress:
-        """Confirm pending candidates with merge semantics, then advance the frontier."""
+        """Preflight then confirm pending candidates, and advance the frontier."""
         async with self._review_lock(run_id):
             run = await self.get_run(run_id)
             if run.status is not AgentRunStatus.COMPLETED:
@@ -176,6 +177,8 @@ class KnowledgeExtractionService:
             chapter_ids = run.scope.chapter_ids or [run.scope.chapter_id]
             await self._validate_sedimentation_scope(chapter_ids)
             for item in pending:
+                await self._preflight_accept_candidate(item, run_id=run_id)
+            for item in pending:
                 if item.candidate_action is AgentReviewCandidateAction.CONFLICT:
                     run = await self._edit_confirm_candidate_locked(
                         item.review_item_id,
@@ -192,6 +195,59 @@ class KnowledgeExtractionService:
             return await self._sedimentation_progress_repository.advance_to(
                 chapter_ids[-1]
             )
+
+    async def _preflight_accept_candidate(
+        self,
+        item: AgentReviewItem,
+        *,
+        run_id: str,
+    ) -> None:
+        """Check the final card identity before bulk acceptance starts writing cards."""
+        target_card_id = item.target_card_id
+        try:
+            if target_card_id is not None:
+                await self._knowledge_service.preview_author_confirmed_update(
+                    target_card_id,
+                    _patch_updates_from_payload(
+                        item.knowledge_type,
+                        _with_appearance_chapter_count(item.suggested_card, item),
+                    ),
+                    merge_mode="merge",
+                    allow_appearance_count_update=True,
+                )
+                return
+
+            card = _card_from_payload(
+                item.knowledge_type,
+                _with_candidate_card_id(
+                    _with_appearance_chapter_count(item.suggested_card, item),
+                    run_id=run_id,
+                    item=item,
+                ),
+            )
+            matches = await self._knowledge_service.search_confirmed_identity(
+                card.type,
+                card.name,
+                card.aliases,
+            )
+            if any(match.id != card.id for match in matches):
+                summary = "、".join(match.name for match in matches[:3])
+                raise KnowledgeIdentityConflictError(
+                    f"知识卡名称或别名已存在：{summary}"
+                )
+        except KnowledgeIdentityConflictError as error:
+            identity_fields = _candidate_identity_fields(item.suggested_card)
+            field_hint = (
+                f"候选中的名称或别名为“{identity_fields}”。"
+                if identity_fields
+                else ""
+            )
+            raise KnowledgeExtractionError(
+                f"候选“{item.display_title}”无法采纳：{error}。"
+                f"{field_hint}"
+                "请打开该候选，删除或改写重复的名称/别名，"
+                "或改为合并到对应已有知识卡后再确认。"
+            ) from error
 
     def _resolve_model_selection(
         self,
@@ -581,7 +637,13 @@ class KnowledgeExtractionService:
 
         task = asyncio.create_task(execute())
         self._track_background_task(task)
-        return await asyncio.wait_for(first_run, timeout=10)
+        try:
+            run = await asyncio.wait_for(first_run, timeout=10)
+        except BaseException:
+            task.cancel()
+            raise
+        self._track_run_task(run.run_id, task)
+        return run
 
     async def start_batch_run_task(
         self,
@@ -620,7 +682,13 @@ class KnowledgeExtractionService:
 
         task = asyncio.create_task(execute())
         self._track_background_task(task)
-        return await asyncio.wait_for(first_run, timeout=10)
+        try:
+            run = await asyncio.wait_for(first_run, timeout=10)
+        except BaseException:
+            task.cancel()
+            raise
+        self._track_run_task(run.run_id, task)
+        return run
 
     async def _publish_task_event(self, event: dict[str, Any]) -> None:
         if self._task_events is None:
@@ -631,6 +699,25 @@ class KnowledgeExtractionService:
         self._background_tasks.add(task)
         task.add_done_callback(self._background_tasks.discard)
         task.add_done_callback(_consume_background_task_exception)
+
+    def _track_run_task(self, run_id: str, task: asyncio.Task[None]) -> None:
+        self._background_tasks_by_run_id[run_id] = task
+
+        def forget_run_task(completed: asyncio.Task[None]) -> None:
+            if self._background_tasks_by_run_id.get(run_id) is completed:
+                self._background_tasks_by_run_id.pop(run_id, None)
+
+        task.add_done_callback(forget_run_task)
+
+    async def _cancel_run_task(self, run_id: str) -> None:
+        task = self._background_tasks_by_run_id.pop(run_id, None)
+        if task is None or task.done():
+            return
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
 
     async def _run_graph(
         self,
@@ -654,6 +741,11 @@ class KnowledgeExtractionService:
             generation_model_identity=_identity_for_gateway(self._llm, profile),
             force=force,
         )
+        initial_run = run_snapshot_from_state(
+            initial_state,
+            status=AgentRunStatus.RUNNING,
+        )
+        await self._run_store.write_run(initial_run)
         if event_sink is not None:
             await event_sink(
                 {
@@ -661,10 +753,7 @@ class KnowledgeExtractionService:
                     "event_type": "run_started",
                     "run_id": initial_state["run_id"],
                     "message": "正文知识沉淀运行已启动。",
-                    "run": run_snapshot_from_state(
-                        initial_state,
-                        status=AgentRunStatus.RUNNING,
-                    ).model_dump(mode="json"),
+                    "run": initial_run.model_dump(mode="json"),
                 }
             )
         graph = build_knowledge_extraction_graph(
@@ -813,13 +902,15 @@ class KnowledgeExtractionService:
                 prompt_version="knowledge_extraction_batch_prompt_v1",
             )
 
+        initial_run = snapshot()
+        await self._run_store.write_run(initial_run)
         await event_sink(
             {
                 "type": "task_started",
                 "event_type": "task_started",
                 "run_id": run_id,
                 "message": "批量正文知识沉淀任务已启动。",
-                "run": snapshot().model_dump(mode="json"),
+                "run": initial_run.model_dump(mode="json"),
             }
         )
 
@@ -968,6 +1059,10 @@ class KnowledgeExtractionService:
                     error = "; ".join(
                         str(item) for item in branch_state.get("errors", [])
                     )
+                    if error:
+                        errors.append(
+                            f"{chapter_titles.get(chapter_id, chapter_id)}：{error}"
+                        )
                     current_progress = _progress_for(progress_items, chapter_id)
                     state_branch_nodes = _coerce_run_nodes(
                         branch_state.get("nodes", [])
@@ -1058,6 +1153,14 @@ class KnowledgeExtractionService:
                 "output_summary": (
                     f"完成 {sum(1 for item in progress_items if item.status is AgentRunNodeStatus.SUCCESS)} 个章节，"
                     f"失败 {sum(1 for item in progress_items if item.status is AgentRunNodeStatus.FAILED)} 个章节。"
+                ),
+                "error": (
+                    "；".join(
+                        f"{item.chapter_title or item.chapter_id}：{item.error or '章节抽取失败'}"
+                        for item in progress_items
+                        if item.status is AgentRunNodeStatus.FAILED
+                    )
+                    or None
                 ),
             }
         )
@@ -1174,9 +1277,12 @@ class KnowledgeExtractionService:
             output_summary="已写入批量运行 JSON。",
         ).model_copy(update={"finished_at": finished_at})
         nodes = _upsert_node(nodes, write_node)
+        has_failed_chapter = any(
+            item.status is AgentRunNodeStatus.FAILED for item in progress_items
+        )
         status = (
             AgentRunStatus.FAILED
-            if not review_items and errors
+            if has_failed_chapter or (not review_items and errors)
             else AgentRunStatus.COMPLETED
         )
         run = snapshot(
@@ -1393,6 +1499,7 @@ class KnowledgeExtractionService:
 
     async def delete_run(self, run_id: str) -> None:
         """Delete one persisted extraction run record."""
+        await self._cancel_run_task(run_id)
         deleted = await self._run_store.delete_run(run_id)
         if not deleted:
             raise KnowledgeExtractionNotFoundError(f"运行记录“{run_id}”不存在。")
@@ -1783,6 +1890,15 @@ def _with_candidate_card_id(
     digest = sha256(identity.encode("utf-8")).hexdigest()[:32]
     next_payload["id"] = f"{item.knowledge_type.value}-{digest}"
     return next_payload
+
+
+def _candidate_identity_fields(payload: dict[str, Any]) -> str:
+    """Render the candidate's identity fields for a human review message."""
+    values = [str(payload.get("name") or "").strip()]
+    aliases = payload.get("aliases")
+    if isinstance(aliases, list):
+        values.extend(str(alias).strip() for alias in aliases)
+    return "、".join(dict.fromkeys(value for value in values if value))
 
 
 def _allowed_card_keys(knowledge_type: StructuredKnowledgeType) -> set[str]:

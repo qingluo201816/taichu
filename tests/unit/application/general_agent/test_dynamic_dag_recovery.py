@@ -8,8 +8,13 @@ from pathlib import Path
 import pytest
 
 from taichu.application.capabilities import CapabilityContext
-from taichu.application.general_agent.executor import (
-    DynamicDagExecutor,
+from taichu.application.contracts.general_agent_capability_results import (
+    CapabilityResultOwner,
+)
+from taichu.application.general_agent.executor import DynamicDagExecutor
+from taichu.application.general_agent.faults import (
+    GeneralAgentFaultContext,
+    GeneralAgentFaultPoint,
     InjectedProcessTermination,
 )
 from taichu.application.general_agent.models import (
@@ -39,6 +44,7 @@ from taichu.application.tools._shared import sha256_text
 from taichu.application.tools.contract import ToolPlugin
 from taichu.application.tools.registry import ToolRegistry
 from taichu.infrastructure.general_agent_runs import (
+    JsonGeneralAgentCapabilityResultRepository,
     JsonGeneralAgentEffectRepository,
     JsonLangGraphCheckpointSaver,
 )
@@ -193,23 +199,40 @@ def test_real_manuscript_write_is_reconciled_after_crash_without_duplicate(
                 ]
             }
         )
-        crashed = False
+        class ResourceWriteCrashHook:
+            crashed = False
+            context: GeneralAgentFaultContext | None = None
 
-        def inject(point: str, _record) -> None:
-            nonlocal crashed
-            if point == "after_write_before_effect_success" and not crashed:
-                crashed = True
-                raise _InjectedProcessCrash()
+            def on_fault_point(
+                self,
+                *,
+                point: GeneralAgentFaultPoint,
+                context: GeneralAgentFaultContext,
+            ) -> None:
+                if (
+                    point is GeneralAgentFaultPoint.RESOURCE_WRITE_APPLIED
+                    and not self.crashed
+                ):
+                    self.crashed = True
+                    self.context = context
+                    raise _InjectedProcessCrash()
+
+        hook = ResourceWriteCrashHook()
 
         saver = JsonLangGraphCheckpointSaver(tmp_path)
         effects = JsonGeneralAgentEffectRepository(tmp_path)
+        results = JsonGeneralAgentCapabilityResultRepository(
+            tmp_path / "capability_results"
+        )
         first = DynamicDagExecutor(
             tool_registry=registry,
             subagent_registry=_subagents(policy),
             policy_service=policy,
             graph_checkpointer=saver,
             effect_repository=effects,
-            fault_injector=inject,
+            capability_result_repository=results,
+            capability_handler_identities=_handler_identities(registry),
+            fault_hook=hook,
         )
 
         with pytest.raises(_InjectedProcessCrash):
@@ -220,6 +243,10 @@ def test_real_manuscript_write_is_reconciled_after_crash_without_duplicate(
         assert (await effects.list_effects(run.run_id))[
             -1
         ].status is EffectStatus.STARTED
+        assert hook.context is not None
+        assert hook.context.durable_identity == (
+            await effects.list_effects(run.run_id)
+        )[-1].effect_id
 
         restarted_policy = InvocationPolicyService()
         restarted_registry = _write_registry(chapter_service, restarted_policy)
@@ -230,6 +257,14 @@ def test_real_manuscript_write_is_reconciled_after_crash_without_duplicate(
             policy_service=restarted_policy,
             graph_checkpointer=JsonLangGraphCheckpointSaver(tmp_path),
             effect_repository=restarted_effects,
+            capability_result_repository=(
+                JsonGeneralAgentCapabilityResultRepository(
+                    tmp_path / "capability_results"
+                )
+            ),
+            capability_handler_identities=(
+                _handler_identities(restarted_registry)
+            ),
         )
         completed = await restored.execute(run, checkpoint=_checkpoint)
 
@@ -247,6 +282,12 @@ def test_real_manuscript_write_is_reconciled_after_crash_without_duplicate(
             EffectStatus.STARTED,
             EffectStatus.RECONCILED,
         ]
+        assert await results.list_for_run(
+            CapabilityResultOwner(
+                conversation_id=run.conversation_id,
+                run_id=run.run_id,
+            )
+        ) == ()
 
     asyncio.run(scenario())
 
@@ -308,7 +349,22 @@ def _executor(
         policy_service=policy,
         graph_checkpointer=saver,
         effect_repository=JsonGeneralAgentEffectRepository(root),
+        capability_result_repository=(
+            JsonGeneralAgentCapabilityResultRepository(
+                root / "capability_results"
+            )
+        ),
+        capability_handler_identities=_handler_identities(registry),
     )
+
+
+def _handler_identities(
+    registry: ToolRegistry,
+) -> dict[tuple[str, str], str]:
+    return {
+        ("tool", manifest.name): f"test:tool:{manifest.name}"
+        for manifest in registry.list_manifests()
+    }
 
 
 def _subagents(policy: InvocationPolicyService) -> SubagentRegistry:

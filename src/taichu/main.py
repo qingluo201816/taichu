@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 import uvicorn
 from typing import cast
 from fastapi import FastAPI, HTTPException, Request
@@ -23,8 +24,17 @@ from taichu.application.general_agent.executor import DynamicDagExecutor
 from taichu.application.general_agent.memory_policy import AgentMemoryPolicy
 from taichu.application.general_agent.orchestrator import OrchestratorAgent
 from taichu.application.general_agent.service import GeneralAgentRuntimeService
-from taichu.application.evaluations.general_agent.service import (
-    GeneralAgentEvaluationService,
+from taichu.application.evaluations.general_agent_benchmark.container import (
+    build_general_agent_benchmark_services,
+)
+from taichu.application.evaluations.general_agent_benchmark.issue_correlations import (
+    IssueCorrelationRepository,
+)
+from taichu.application.evaluations.general_agent_benchmark.services import (
+    BenchmarkCatalogEntry,
+)
+from taichu.application.evaluations.general_agent_benchmark.suite_loader import (
+    load_authored_suite,
 )
 from taichu.application.evaluations.retrieval.service import (
     RetrievalEvaluationService,
@@ -41,6 +51,9 @@ from taichu.application.contracts.knowledge_sedimentation_progress_repository im
     InMemoryKnowledgeSedimentationProgressRepository,
 )
 from taichu.application.services.ai_card_service import AICardService
+from taichu.application.services.agent_memory_evidence_service import (
+    AgentMemoryEvidenceService,
+)
 from taichu.application.services.agent_memory_service import AgentMemoryService
 from taichu.application.services.chapter_summary_service import (
     ChapterSummaryService,
@@ -65,9 +78,7 @@ from taichu.application.services.selection_ai_service import SelectionAIService
 from taichu.application.services.settings_service import SettingsPreferenceService
 from taichu.application.services.writing_ai_service import WritingAIService
 from taichu.application.services.retrieval_service import RetrievalService
-from taichu.application.services.knowledge_vector_index_service import (
-    KnowledgeVectorIndexService,
-)
+from taichu.application.vector_graph import VectorGraphRAGService
 from taichu.application.retrieval.policy import RetrievalPolicyResolver
 from taichu.application.services.invocation_policy_service import (
     InvocationPolicyService,
@@ -80,18 +91,29 @@ from taichu.infrastructure.llm.adapter import LangChainLLMAdapter
 from taichu.infrastructure.llm.catalog import LLMModelCatalog
 from taichu.infrastructure.llm.rightcode import RightCodeLLMGateway
 from taichu.infrastructure.llm_usage import JsonlLLMUsageRepository
-from taichu.infrastructure.embedding import (
-    JsonlEmbeddingUsageRepository,
-    LlamaCppEmbeddingGateway,
-)
+from taichu.infrastructure.llm_replays import JsonLLMCallReplayRepository
 from taichu.infrastructure.evaluations import (
-    JsonGeneralAgentEvaluationDatasetRepository,
-    JsonGeneralAgentEvaluationResultRepository,
     JsonEvaluationDatasetRepository,
     JsonEvaluationResultStore,
     JsonRetrievalEvaluationDatasetRepository,
     JsonRetrievalEvaluationResultRepository,
     create_evaluation_judge,
+)
+from taichu.infrastructure.evaluations.general_agent_benchmark.runtime_factory import (
+    production_capability_catalog_snapshot,
+)
+from taichu.infrastructure.evaluations.general_agent_benchmark.artifact_hydration import (
+    load_frozen_benchmark_query_snapshot,
+)
+from taichu.infrastructure.evaluations.general_agent_benchmark.artifact_repository import (
+    GeneralAgentBenchmarkArtifactRepository,
+)
+from taichu.infrastructure.evaluations.general_agent_benchmark.interactive_synthetic import (
+    InteractiveSyntheticExecution,
+)
+from taichu.infrastructure.evaluations.general_agent_benchmark.persistent_runtime import (
+    JsonBenchmarkRunResourceService,
+    JsonSuiteRunStore,
 )
 from taichu.infrastructure.plugin_discovery import (
     discover_agents,
@@ -105,12 +127,12 @@ from taichu.infrastructure.knowledge import (
 )
 from taichu.infrastructure.retrieval import (
     JsonlRetrievalTraceRepository,
-    KnowledgeVectorRetrievalBackend,
     MongoLexicalRetrievalBackend,
 )
-from taichu.infrastructure.retrieval.vector_index import (
-    JsonVectorIndexManifestRepository,
-    QdrantVectorIndexBackend,
+from taichu.infrastructure.vector_graph import (
+    BGEReranker,
+    HybridVectorGraphBackend,
+    MilvusVectorGraphBackend,
 )
 from taichu.infrastructure.storage.json_backend import JsonStorageBackend
 from taichu.infrastructure.storage.markdown_backend import (
@@ -122,6 +144,8 @@ from taichu.infrastructure.external_research import (
 from taichu.infrastructure.invocations import JsonlInvocationTraceRepository
 from taichu.infrastructure.artifacts import JsonIntermediateArtifactRepository
 from taichu.infrastructure.general_agent_runs import (
+    JsonGeneralAgentCapabilityResultRepository,
+    JsonGeneralAgentContextSnapshotRepository,
     JsonGeneralAgentEffectRepository,
     JsonGeneralAgentRunRepository,
     JsonLangGraphCheckpointSaver,
@@ -129,6 +153,21 @@ from taichu.infrastructure.general_agent_runs import (
 from taichu.infrastructure.agent_memory import (
     JsonAgentMemoryLexicalIndex,
     JsonAgentMemoryRepository,
+)
+
+_FIXED_GENERAL_AGENT_BENCHMARK_SUITE = (
+    Path(__file__).resolve().parents[2]
+    / "tests"
+    / "fixtures"
+    / "evaluations"
+    / "general_writing_agent_benchmark"
+    / "suite.json"
+)
+_FIXED_GENERAL_AGENT_BENCHMARK_FIXTURE = (
+    _FIXED_GENERAL_AGENT_BENCHMARK_SUITE.parent / "fixtures" / "core_novel"
+)
+_FIXED_GENERAL_AGENT_BENCHMARK_CLAIMS = (
+    _FIXED_GENERAL_AGENT_BENCHMARK_SUITE.parent / "claim-catalog.json"
 )
 
 
@@ -148,6 +187,7 @@ def create_app(
     settings_preference_service = SettingsPreferenceService(project_storage)
     model_catalog = LLMModelCatalog(app_settings)
     llm_usage_repository = JsonlLLMUsageRepository(app_settings.project_assets_dir)
+    llm_replay_repository = JsonLLMCallReplayRepository(app_settings.project_assets_dir)
     if llm_gateway is not None:
         llm_service = llm_gateway
         llm_configured = True
@@ -167,6 +207,7 @@ def create_app(
             app_settings,
             model_catalog,
             llm_usage_repository,
+            replay_repository=llm_replay_repository,
         )
         llm_service = rightcode_gateway
         llm_configured = rightcode_gateway.configured
@@ -182,7 +223,6 @@ def create_app(
             app_settings.mongodb_uri,
             app_settings.mongodb_database,
         )
-    knowledge_service = KnowledgeService(knowledge_repository)
     retrieval_trace_repository = JsonlRetrievalTraceRepository(
         app_settings.project_assets_dir
     )
@@ -195,47 +235,57 @@ def create_app(
         retrieval_trace_repository,
         policy_resolver=retrieval_policy_resolver,
     )
-    embedding_gateway = LlamaCppEmbeddingGateway(
-        base_url=app_settings.embedding_base_url,
-        model_id=app_settings.embedding_model_id,
-        dimensions=app_settings.embedding_dimensions,
-        timeout_seconds=app_settings.embedding_request_timeout_seconds,
-        usage_repository=JsonlEmbeddingUsageRepository(app_settings.project_assets_dir),
-        max_input_tokens=app_settings.embedding_max_input_tokens,
+    knowledge_service = KnowledgeService(
+        knowledge_repository,
+        retrieval_service=retrieval_service,
     )
-    vector_index_backend = QdrantVectorIndexBackend(
-        url=app_settings.qdrant_url,
-        api_key=app_settings.qdrant_api_key.get_secret_value(),
+    milvus_vector_graph_backend = MilvusVectorGraphBackend(
+        milvus_uri=app_settings.milvus_uri,
+        milvus_token=app_settings.milvus_token.get_secret_value(),
+        collection_prefix=app_settings.milvus_collection_prefix,
+        llm=llm_service,
+        llm_model=(app_settings.vector_graph_llm_model or active_default_model),
+        embedding_base_url=app_settings.embedding_base_url,
+        embedding_model=app_settings.embedding_model_id,
+        embedding_dimensions=app_settings.embedding_dimensions,
+        manifest_path=(
+            app_settings.project_assets_dir
+            / "generated"
+            / "milvus_vector_graph"
+            / "active_manifest.json"
+        ),
+        hnsw_m=app_settings.milvus_hnsw_m,
+        hnsw_ef_construction=app_settings.milvus_hnsw_ef_construction,
+        hnsw_ef_search=app_settings.milvus_hnsw_ef_search,
+        rrf_k=app_settings.milvus_rrf_k,
+        entity_top_k=app_settings.vector_graph_entity_top_k,
+        relation_top_k=app_settings.vector_graph_relation_top_k,
+        expansion_degree=app_settings.vector_graph_expansion_degree,
+        final_top_k=app_settings.vector_graph_ann_top_k,
     )
-    vector_manifest_repository = JsonVectorIndexManifestRepository(
-        app_settings.project_assets_dir
+    vector_graph_backend = HybridVectorGraphBackend(
+        milvus=milvus_vector_graph_backend,
+        reranker=BGEReranker(
+            base_url=app_settings.reranker_base_url,
+            model_id=app_settings.reranker_model_id,
+            timeout_seconds=app_settings.reranker_request_timeout_seconds,
+        ),
+        candidate_top_k=app_settings.vector_graph_ann_top_k,
+        final_top_k=app_settings.vector_graph_reranker_top_k,
     )
-    knowledge_vector_index_service = KnowledgeVectorIndexService(
+    vector_graph_rag_service = VectorGraphRAGService(
+        chapter_service=chapter_service,
         knowledge_repository=knowledge_repository,
-        embedding_gateway=embedding_gateway,
-        vector_index=vector_index_backend,
-        manifests=vector_manifest_repository,
-        active_alias=app_settings.qdrant_collection,
-        document_batch_size=app_settings.vector_document_batch_size,
-        embedding_input_char_budget=(app_settings.vector_embedding_input_char_budget),
-    )
-    knowledge_vector_backend = KnowledgeVectorRetrievalBackend(
-        knowledge_repository=knowledge_repository,
-        embedding_gateway=embedding_gateway,
-        vector_index=vector_index_backend,
-        manifests=vector_manifest_repository,
-        query_char_budget=app_settings.vector_query_char_budget,
-        candidate_multiplier=app_settings.vector_candidate_multiplier,
-        score_threshold=app_settings.vector_score_threshold,
-        coverage_bonus=app_settings.vector_coverage_bonus,
+        backend=vector_graph_backend,
+        manuscript_chunk_size=app_settings.vector_graph_manuscript_chunk_size,
+        manuscript_chunk_overlap=(
+            app_settings.vector_graph_manuscript_chunk_overlap
+        ),
     )
     retrieval_evaluation_runtime = RetrievalService(
         MongoLexicalRetrievalBackend(knowledge_repository),
         retrieval_trace_repository,
         policy_resolver=retrieval_policy_resolver,
-        additional_backends={
-            knowledge_vector_backend.strategy_name: knowledge_vector_backend
-        },
     )
     invocation_trace_repository = JsonlInvocationTraceRepository(
         app_settings.project_assets_dir
@@ -252,6 +302,16 @@ def create_app(
     general_agent_effect_repository = JsonGeneralAgentEffectRepository(
         app_settings.project_assets_dir
     )
+    general_agent_capability_result_repository = (
+        JsonGeneralAgentCapabilityResultRepository(
+            app_settings.project_assets_dir
+            / "derived"
+            / "general_agent_capability_results"
+        )
+    )
+    general_agent_context_snapshot_repository = (
+        JsonGeneralAgentContextSnapshotRepository(app_settings.project_assets_dir)
+    )
     agent_memory_repository = JsonAgentMemoryRepository(app_settings.project_assets_dir)
     agent_memory_lexical_index = JsonAgentMemoryLexicalIndex(
         app_settings.project_assets_dir
@@ -259,9 +319,15 @@ def create_app(
     agent_memory_service = AgentMemoryService(
         repository=agent_memory_repository,
         lexical_index=agent_memory_lexical_index,
+        evidence_resolver=AgentMemoryEvidenceService(
+            chapter_service=chapter_service,
+            knowledge_service=knowledge_service,
+            artifact_repository=artifact_repository,
+            project_storage=project_storage,
+        ),
         policy=AgentMemoryPolicy(
-            top_k=app_settings.general_agent_related_memory_top_k,
-            char_budget=app_settings.general_agent_related_memory_char_budget,
+            top_k=app_settings.general_agent_working_memory_retrieval_top_k,
+            char_budget=app_settings.general_agent_working_memory_char_budget,
             age_decay_days=app_settings.general_agent_memory_age_decay_days,
             minimum_relevance=(app_settings.general_agent_memory_minimum_relevance),
         ),
@@ -270,16 +336,18 @@ def create_app(
         memory_service=agent_memory_service,
         policy=GeneralAgentContextPolicy(
             total_char_budget=app_settings.general_agent_context_char_budget,
-            related_memory_top_k=(app_settings.general_agent_related_memory_top_k),
-            related_memory_char_budget=(
-                app_settings.general_agent_related_memory_char_budget
+            working_memory_retrieval_top_k=(
+                app_settings.general_agent_working_memory_retrieval_top_k
             ),
             working_memory_char_budget=(
                 app_settings.general_agent_working_memory_char_budget
             ),
-            process_history_limit=(app_settings.general_agent_process_history_limit),
-            process_history_char_budget=(
-                app_settings.general_agent_process_history_char_budget
+            long_term_memory_char_budget=(
+                app_settings.general_agent_long_term_memory_char_budget
+            ),
+            history_memory_limit=(app_settings.general_agent_history_memory_limit),
+            history_memory_char_budget=(
+                app_settings.general_agent_history_memory_char_budget
             ),
             node_summary_char_budget=(
                 app_settings.general_agent_node_summary_char_budget
@@ -374,6 +442,7 @@ def create_app(
             "knowledge_service": knowledge_service,
             "knowledge_repository": knowledge_repository,
             "retrieval_service": retrieval_service,
+            "vector_graph_rag_service": vector_graph_rag_service,
             "external_research_service": external_research_service,
             "invocation_policy_service": invocation_policy_service,
             "invocation_trace_repository": invocation_trace_repository,
@@ -389,7 +458,8 @@ def create_app(
         capability_context,
         invocation_trace_repository,
     )
-    tool_registry.register_all(discover_tools("taichu.application.tools"))
+    discovered_tools = discover_tools("taichu.application.tools")
+    tool_registry.register_all(discovered_tools)
     subagent_context = CapabilityContext(
         capabilities={
             **capability_context.capabilities,
@@ -400,7 +470,22 @@ def create_app(
         subagent_context,
         invocation_trace_repository,
     )
-    subagent_registry.register_all(discover_subagents("taichu.application.subagents"))
+    discovered_subagents = discover_subagents("taichu.application.subagents")
+    subagent_registry.register_all(discovered_subagents)
+    capability_handler_identities = {
+        **{
+            ("tool", plugin.manifest.name): (
+                f"{plugin.run.__module__}:{plugin.run.__qualname__}"
+            )
+            for plugin in discovered_tools
+        },
+        **{
+            ("subagent", plugin.manifest.name): (
+                f"{plugin.run.__module__}:{plugin.run.__qualname__}"
+            )
+            for plugin in discovered_subagents
+        },
+    }
     orchestrator_agent = OrchestratorAgent(
         llm=llm_service,
         model_router=model_role_router,
@@ -415,6 +500,10 @@ def create_app(
         tool_registry=tool_registry,
         subagent_registry=subagent_registry,
         policy_service=invocation_policy_service,
+        capability_result_repository=(
+            general_agent_capability_result_repository
+        ),
+        capability_handler_identities=capability_handler_identities,
         graph_checkpointer=general_agent_graph_checkpointer,
         effect_repository=general_agent_effect_repository,
     )
@@ -426,18 +515,66 @@ def create_app(
         policy_service=invocation_policy_service,
         memory_service=agent_memory_service,
         context_assembler=general_agent_context_assembler,
+        capability_result_repository=(
+            general_agent_capability_result_repository
+        ),
         graph_checkpointer=general_agent_graph_checkpointer,
         effect_repository=general_agent_effect_repository,
+        context_snapshot_repository=general_agent_context_snapshot_repository,
+        llm_replay_repository=llm_replay_repository,
     )
-    general_agent_evaluation_service = GeneralAgentEvaluationService(
-        datasets=JsonGeneralAgentEvaluationDatasetRepository(
-            app_settings.evaluation_datasets_dir
+    benchmark_capability_catalog = production_capability_catalog_snapshot()
+    benchmark_suite = load_authored_suite(
+        _FIXED_GENERAL_AGENT_BENCHMARK_SUITE,
+        expected_capability_catalog_hash=(
+            benchmark_capability_catalog.canonical_hash
         ),
-        results=JsonGeneralAgentEvaluationResultRepository(
+    )
+    interactive_benchmark_execution = InteractiveSyntheticExecution(
+        suite=benchmark_suite,
+        fixture_root=_FIXED_GENERAL_AGENT_BENCHMARK_FIXTURE,
+        claim_catalog_path=_FIXED_GENERAL_AGENT_BENCHMARK_CLAIMS,
+        workspaces_root=(
             app_settings.project_assets_dir
+            / "derived"
+            / "general_agent_benchmarks"
+            / "interactive-workspaces"
         ),
-        runs=general_agent_run_repository,
-        traces=invocation_trace_repository,
+        mongodb_uri=app_settings.mongodb_uri,
+        capability_catalog=benchmark_capability_catalog,
+    )
+    benchmark_runtime_root = (
+        app_settings.project_assets_dir
+        / "derived"
+        / "general_agent_benchmarks"
+        / "interactive-runtime"
+    )
+    general_agent_benchmark_services = (
+        build_general_agent_benchmark_services(
+            catalog_entries=(
+                BenchmarkCatalogEntry.from_suite(benchmark_suite),
+            ),
+            authored_suites=(benchmark_suite,),
+            suite_run_store=JsonSuiteRunStore(
+                benchmark_runtime_root / "runs"
+            ),
+            execute_case=interactive_benchmark_execution.execute_case,
+            finalize_suite=interactive_benchmark_execution.finalize,
+            issue_correlation_repository=IssueCorrelationRepository(),
+            query_hydration=load_frozen_benchmark_query_snapshot(
+                GeneralAgentBenchmarkArtifactRepository(
+                    app_settings.project_assets_dir
+                    / "derived"
+                    / "general_agent_benchmarks"
+                )
+            ),
+            resources=JsonBenchmarkRunResourceService(
+                benchmark_runtime_root / "artifacts"
+            ),
+        )
+    )
+    interactive_benchmark_execution.bind_resources(
+        general_agent_benchmark_services.resources
     )
     retrieval_evaluation_service = RetrievalEvaluationService(
         datasets=JsonRetrievalEvaluationDatasetRepository(
@@ -459,8 +596,6 @@ def create_app(
                     sedimentation_progress_repository,
                 ).initialize()
             except Exception as error:
-                await embedding_gateway.close()
-                await vector_index_backend.close()
                 await cast(MongoKnowledgeRepository, knowledge_repository).close()
                 await cast(
                     MongoKnowledgeSedimentationProgressRepository,
@@ -477,8 +612,7 @@ def create_app(
         finally:
             await general_agent_runtime_service.shutdown()
             await knowledge_extraction_evaluation_service.shutdown()
-            await embedding_gateway.close()
-            await vector_index_backend.close()
+            await vector_graph_backend.close()
             if managed_knowledge_repository:
                 await cast(MongoKnowledgeRepository, knowledge_repository).close()
                 await cast(
@@ -491,17 +625,28 @@ def create_app(
         description="太初 - 单本玄幻小说个人写作助手",
         lifespan=lifespan,
     )
+
+    @application.get("/health", include_in_schema=False)
+    async def health() -> dict[str, str]:
+        return {"status": "正常"}
+
     application.state.agent_registry = agent_registry
     application.state.tool_registry = tool_registry
     application.state.subagent_registry = subagent_registry
     application.state.general_agent_run_repository = general_agent_run_repository
     application.state.general_agent_event_center = general_agent_event_center
     application.state.general_agent_runtime_service = general_agent_runtime_service
+    application.state.general_agent_context_snapshot_repository = (
+        general_agent_context_snapshot_repository
+    )
+    application.state.general_agent_capability_result_repository = (
+        general_agent_capability_result_repository
+    )
     application.state.agent_memory_service = agent_memory_service
     application.state.agent_memory_repository = agent_memory_repository
     application.state.agent_memory_lexical_index = agent_memory_lexical_index
-    application.state.general_agent_evaluation_service = (
-        general_agent_evaluation_service
+    application.state.general_agent_benchmark_services = (
+        general_agent_benchmark_services
     )
     application.state.retrieval_evaluation_service = retrieval_evaluation_service
     application.state.invocation_policy_service = invocation_policy_service
@@ -521,11 +666,8 @@ def create_app(
     application.state.knowledge_repository = knowledge_repository
     application.state.retrieval_service = retrieval_service
     application.state.retrieval_evaluation_runtime = retrieval_evaluation_runtime
-    application.state.embedding_gateway = embedding_gateway
-    application.state.vector_index_backend = vector_index_backend
-    application.state.vector_manifest_repository = vector_manifest_repository
-    application.state.knowledge_vector_index_service = knowledge_vector_index_service
-    application.state.knowledge_vector_backend = knowledge_vector_backend
+    application.state.vector_graph_backend = vector_graph_backend
+    application.state.vector_graph_rag_service = vector_graph_rag_service
     application.state.retrieval_trace_repository = retrieval_trace_repository
     application.state.sedimentation_progress_repository = (
         sedimentation_progress_repository
@@ -546,6 +688,7 @@ def create_app(
     application.state.llm_gateway = llm_service
     application.state.llm_model_catalog = model_catalog
     application.state.llm_usage_repository = llm_usage_repository
+    application.state.llm_replay_repository = llm_replay_repository
     application.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -623,11 +766,13 @@ app = create_app()
 
 def main() -> None:
     """启动开发服务器。"""
+    reload_directory = str(Path(__file__).resolve().parent)
     uvicorn.run(
         "taichu.main:app",
         host=settings.host,
         port=settings.port,
-        reload=False,
+        reload=settings.backend_reload,
+        reload_dirs=[reload_directory] if settings.backend_reload else None,
     )
 
 

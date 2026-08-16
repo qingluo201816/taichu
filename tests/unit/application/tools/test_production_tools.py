@@ -23,6 +23,7 @@ from taichu.application.tools import (
     create_confirmed_knowledge,
     create_novel_structure_items,
     delete_novel_structure_items,
+    get_knowledge_chapter_coverage,
     get_novel_structure,
     list_knowledge_catalog,
     preview_manuscript_patch,
@@ -45,6 +46,7 @@ from taichu.infrastructure.retrieval import (
 )
 from taichu.infrastructure.storage.markdown_backend import ProjectAssetStorageBackend
 from tests.fakes import InMemoryKnowledgeRepository
+from taichu.domain.models.structured_knowledge import StructuredKnowledgeType
 
 
 def _async_test(
@@ -249,10 +251,13 @@ async def test_four_knowledge_reads_and_confirmed_writes_share_real_services(
     tmp_path: Path,
 ) -> None:
     repository = InMemoryKnowledgeRepository()
-    knowledge_service = KnowledgeService(repository)
     retrieval_service = RetrievalService(
         MongoLexicalRetrievalBackend(repository),
         JsonlRetrievalTraceRepository(tmp_path),
+    )
+    knowledge_service = KnowledgeService(
+        repository,
+        retrieval_service=retrieval_service,
     )
     policy = InvocationPolicyService()
     context = CapabilityContext(
@@ -308,6 +313,7 @@ async def test_four_knowledge_reads_and_confirmed_writes_share_real_services(
         )
     ).status is ToolReconciliationStatus.SUCCEEDED
 
+
     relevance = await registry.invoke(
         "retrieve_knowledge",
         {"query_text": "秦阳是谁"},
@@ -362,6 +368,90 @@ async def test_four_knowledge_reads_and_confirmed_writes_share_real_services(
             invocation,
         )
     ).status is ToolReconciliationStatus.SUCCEEDED
+
+
+@_async_test
+async def test_knowledge_chapter_coverage_scans_all_confirmed_cards(
+    tmp_path: Path,
+) -> None:
+    storage = ProjectAssetStorageBackend(tmp_path)
+    chapter_service = ChapterService(storage)
+    outline_service = OutlineService(storage)
+    outline = await outline_service.create_volume("第一卷")
+    volume_id = outline.volumes[0].volume_id
+    chapter_ids: list[str] = []
+    for title in ("第一章", "第二章", "第三章"):
+        outline = await outline_service.create_chapter(volume_id, title)
+        assert outline.current_chapter_id is not None
+        chapter_ids.append(outline.current_chapter_id)
+
+    repository = InMemoryKnowledgeRepository()
+    retrieval_service = RetrievalService(
+        MongoLexicalRetrievalBackend(repository),
+        JsonlRetrievalTraceRepository(tmp_path),
+    )
+    knowledge_service = KnowledgeService(
+        repository,
+        retrieval_service=retrieval_service,
+    )
+    await knowledge_service.create_confirmed_from_data(
+        knowledge_type=StructuredKnowledgeType.CHARACTER,
+        data={
+            "name": "秦浩轩",
+            "summary": "主角",
+            "source_origin": "manual",
+            "source_note": "测试确认",
+            "first_seen_chapter_id": chapter_ids[0],
+            "last_seen_chapter_id": chapter_ids[2],
+        },
+    )
+    await knowledge_service.create_confirmed_from_data(
+        knowledge_type=StructuredKnowledgeType.EVENT,
+        data={
+            "name": "入门",
+            "summary": "入门事件",
+            "source_origin": "manual",
+            "source_note": "测试确认",
+            "chapter_id": chapter_ids[1],
+        },
+    )
+    draft = await knowledge_service.create_card(
+        StructuredKnowledgeType.EVENT,
+        {
+            "name": "未确认事件",
+            "summary": "不得进入统计",
+            "chapter_id": chapter_ids[2],
+        },
+    )
+    assert draft.lifecycle.value == "draft"
+
+    policy = InvocationPolicyService()
+    registry = ToolRegistry(
+        CapabilityContext(
+            capabilities={
+                "chapter_service": chapter_service,
+                "knowledge_service": knowledge_service,
+                "invocation_policy_service": policy,
+            }
+        )
+    )
+    _register_modules(registry, [get_knowledge_chapter_coverage])
+
+    result = _output(
+        await registry.invoke(
+            "get_knowledge_chapter_coverage",
+            {},
+            _invocation(),
+        )
+    )
+
+    assert result.confirmed_card_count == 2
+    assert result.referenced_card_count == 2
+    assert result.earliest_chapter.chapter_id == chapter_ids[0]
+    assert result.latest_chapter.chapter_id == chapter_ids[2]
+    assert [item.order for item in result.referenced_chapters] == [1, 2, 3]
+    assert result.unknown_chapter_ids == []
+    assert any(ref.startswith("retrieval:retrieval_") for ref in result.source_refs)
 
 
 def _register_modules(registry: ToolRegistry, modules: list[ModuleType]) -> None:

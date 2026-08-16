@@ -11,9 +11,16 @@ from taichu.infrastructure.general_agent_runs.langgraph_checkpoint import (
     LangGraphCheckpointRevisionSummary,
     LangGraphCheckpointSummary,
 )
-
+from taichu.infrastructure.general_agent_runs.context_snapshot_repository import (
+    JsonGeneralAgentContextSnapshotRepository,
+)
+from taichu.infrastructure.general_agent_runs.capability_result_repository import (
+    JsonGeneralAgentCapabilityResultRepository,
+)
 __all__ = [
+    "JsonGeneralAgentCapabilityResultRepository",
     "JsonGeneralAgentEffectRepository",
+    "JsonGeneralAgentContextSnapshotRepository",
     "JsonGeneralAgentRunRepository",
     "JsonLangGraphCheckpointSaver",
     "LangGraphCheckpointRevisionSummary",

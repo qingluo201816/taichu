@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -102,14 +103,19 @@ export function AppShell({
           >
             <span
               className={cn(
-                "tc-display-font inline-flex items-center justify-center rounded-[var(--tc-radius-control)] border",
-                transparentHeader
-                  ? "border-white/30 bg-black/15 text-white"
-                  : "border-[var(--tc-midnight-ink)] bg-[var(--tc-deep-forest-teal)] text-[var(--tc-action-primary-text)]",
-                headerActions ? "size-8 text-base" : "size-10 text-lg",
+                "relative inline-flex shrink-0 overflow-hidden rounded-[var(--tc-radius-control)] bg-[#071017]",
+                headerActions ? "size-8" : "size-10",
               )}
             >
-              初
+              <Image
+                src="/brand/taichu-calligraphy-mark.png"
+                alt=""
+                width={286}
+                height={334}
+                priority
+                aria-hidden="true"
+                className="size-full object-cover object-top"
+              />
             </span>
             <span className="min-w-0">
               <span

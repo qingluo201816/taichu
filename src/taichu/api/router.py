@@ -11,13 +11,14 @@ from taichu.api.routes import (
     chapters,
     export,
     general_agent,
-    general_agent_evaluations,
+    general_agent_benchmarks,
     inbox,
     llm,
     mvp_knowledge,
     outline,
     retrieval_evaluations,
     settings,
+    vector_graph,
     writing_ai,
 )
 
@@ -32,11 +33,12 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(chapters.router)
     app.include_router(export.router)
     app.include_router(general_agent.router)
-    app.include_router(general_agent_evaluations.router)
+    app.include_router(general_agent_benchmarks.router)
     app.include_router(inbox.router)
     app.include_router(llm.router)
     app.include_router(mvp_knowledge.router)
     app.include_router(outline.router)
     app.include_router(retrieval_evaluations.router)
     app.include_router(settings.router)
+    app.include_router(vector_graph.router)
     app.include_router(writing_ai.router)

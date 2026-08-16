@@ -161,6 +161,11 @@ async def _collect_sources(
         return "", []
     calls: list[tuple[str, dict[str, object]]] = []
     goal = _primary_goal(input_data)
+    review_text = (
+        str(getattr(input_data, "text", ""))
+        if manifest.name == "consistency_reviewer"
+        else ""
+    )
     if request.include_structure:
         calls.append(("get_novel_structure", {}))
     if request.chapter_ids:
@@ -174,7 +179,9 @@ async def _collect_sources(
             )
         )
     manuscript_query = request.manuscript_query or (
-        goal if request.auto_collect else ""
+        goal
+        if request.auto_collect and manifest.name != "consistency_reviewer"
+        else ""
     )
     if manuscript_query:
         calls.append(
@@ -185,14 +192,23 @@ async def _collect_sources(
         )
     knowledge_query = request.knowledge_query or (goal if request.auto_collect else "")
     if knowledge_query:
+        retrieval_payload: dict[str, object] = {
+            "query_text": knowledge_query[:20_000],
+            "top_k": 12,
+            "max_content_chars": 12_000,
+        }
+        if manifest.name == "consistency_reviewer":
+            retrieval_payload.update(
+                {
+                    "context_text": review_text[:100_000],
+                    "top_k": 20,
+                    "max_content_chars": 20_000,
+                }
+            )
         calls.append(
             (
                 "retrieve_knowledge",
-                {
-                    "query_text": knowledge_query[:20_000],
-                    "top_k": 12,
-                    "max_content_chars": 12_000,
-                },
+                retrieval_payload,
             )
         )
     for identity in request.knowledge_identities:
@@ -236,6 +252,7 @@ async def _collect_sources(
                 f"[upstream_artifact:{artifact.artifact_type}]\n"
                 f"{json.dumps(artifact.payload, ensure_ascii=False)}"
             )
+            refs.append(artifact_id)
             refs.extend(artifact.source_refs)
     for index, (tool_name, payload) in enumerate(calls):
         if index >= manifest.limits.max_tool_calls:

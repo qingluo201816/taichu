@@ -7,8 +7,12 @@ from pydantic import BaseModel, ConfigDict, Field
 from taichu.domain.models import (
     EditorPreferences,
     KnowledgeTypeSchema,
+    MVPInboxDecision,
     MVPInboxIdea,
     MVPInboxIssue,
+    MVPInboxIssueLink,
+    MVPInboxPriority,
+    MVPInboxStatus,
     MVPInboxPendingFact,
     StructuredKnowledgeCard,
     WritingOutline,
@@ -102,6 +106,19 @@ class KnowledgeCardResponse(BaseModel):
     card: StructuredKnowledgeCard
 
 
+class MergeKnowledgeCardsRequest(BaseModel):
+    """Author-confirmed request to merge one confirmed card into another."""
+
+    merged_card_id: str = Field(min_length=1)
+
+
+class KnowledgeCardMergeResponse(BaseModel):
+    """The retained card and the now-retired duplicate card."""
+
+    primary_card: StructuredKnowledgeCard
+    merged_card: StructuredKnowledgeCard
+
+
 class CreateKnowledgeCardRequest(BaseModel):
     """Create a structured knowledge card."""
 
@@ -136,6 +153,28 @@ class PatchInboxItemRequest(BaseModel):
     updates: dict[str, Any] = Field(default_factory=dict)
 
 
+class PatchInboxIssueUpdates(BaseModel):
+    """系统问题允许通过 CAS 修改的字段。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: str | None = None
+    content: str | None = None
+    source_chapter_id: str | None = None
+    priority: MVPInboxPriority | None = None
+    status: MVPInboxStatus | None = None
+    links: tuple[MVPInboxIssueLink, ...] | None = None
+
+
+class PatchInboxIssueRequest(BaseModel):
+    """系统问题 expected revision CAS 请求。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    expected_revision: int = Field(ge=0)
+    updates: PatchInboxIssueUpdates
+
+
 class MVPInboxIdeaResponse(BaseModel):
     """One inspiration item."""
 
@@ -152,6 +191,12 @@ class MVPInboxIssueResponse(BaseModel):
     """One issue item."""
 
     item: MVPInboxIssue
+
+
+class MVPInboxDecisionResponse(BaseModel):
+    """One decision item."""
+
+    item: MVPInboxDecision
 
 
 class ConfirmPendingFactRequest(BaseModel):

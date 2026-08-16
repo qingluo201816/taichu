@@ -167,7 +167,7 @@
 <path d="M1760 798 L1802 798" fill="none" stroke="#7455C5" stroke-width="2.5" stroke-linecap="round" opacity="1.0" stroke-dasharray="9 7" marker-end="url(#arrow)"/>
 <rect x="1810" y="750" width="260" height="96" rx="13" fill="#F5F1FF" fill-opacity="1.0" stroke="#7455C5" stroke-width="1.7" stroke-dasharray="10 8"/>
 <text x="1940.0" y="794.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="17" font-weight="700" fill="#7455C5" text-anchor="middle" opacity="1.0"><tspan x="1940.0" dy="0">未来可选派生能力</tspan></text>
-<text x="1940.0" y="819.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="12.5" font-weight="400" fill="#52647D" text-anchor="middle" opacity="1.0"><tspan x="1940.0" dy="0">向量 · ES · 图 · 缓存（未启用）</tspan></text>
+<text x="1940.0" y="819.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="12.5" font-weight="400" fill="#52647D" text-anchor="middle" opacity="1.0"><tspan x="1940.0" dy="0">Milvus 向量 · BM25 · 图 · 缓存</tspan></text>
 <path d="M2070 798 L2112 798" fill="none" stroke="#7455C5" stroke-width="2.5" stroke-linecap="round" opacity="1.0" stroke-dasharray="9 7" marker-end="url(#arrow)"/>
 <rect x="2120" y="750" width="200" height="96" rx="13" fill="#EFFAF4" fill-opacity="1.0" stroke="#21875A" stroke-width="1.7"/>
 <text x="2220.0" y="794.0" font-family="Microsoft YaHei, Noto Sans CJK SC, PingFang SC, sans-serif" font-size="17" font-weight="700" fill="#21875A" text-anchor="middle" opacity="1.0"><tspan x="2220.0" dy="0">反哺写作</tspan></text>

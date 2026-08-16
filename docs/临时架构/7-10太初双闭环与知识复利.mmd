@@ -36,7 +36,7 @@ flowchart TB
         Checks[Schema · 来源 · 冲突 · 生命周期]
         Author[作者确认 / 编辑确认 / 拒绝]
         Mongo[(MongoDB knowledge_cards<br/>唯一结构事实源)]
-        Projection[未来可选派生层<br/>向量 · Elasticsearch · 图 · 缓存]
+        Projection[可重建派生层<br/>Milvus 向量 · BM25 · 图 · 缓存]
         Future[下一次写作<br/>更准的证据与一致性上下文]
         Markdown --> Candidate --> Checks --> Author
         Author -->|确认后写入| Mongo

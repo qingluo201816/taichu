@@ -7,11 +7,13 @@ from taichu.api.deps import provide_knowledge_service
 from taichu.api.schemas.mvp import (
     CreateKnowledgeCardRequest,
     KnowledgeCardListResponse,
+    KnowledgeCardMergeResponse,
     KnowledgeCardResponse,
     KnowledgeSchemaResponse,
     KnowledgeSchemasResponse,
     KnowledgeTypeInfo,
     KnowledgeTypesResponse,
+    MergeKnowledgeCardsRequest,
     PatchKnowledgeCardRequest,
 )
 from taichu.application.services.knowledge_service import (
@@ -181,6 +183,35 @@ async def api_reject_knowledge_card(
     except KnowledgeUnavailableError as error:
         raise _unavailable(str(error)) from error
     return KnowledgeCardResponse(card=card)
+
+
+@router.post(
+    "/knowledge/cards/{card_id}/merge",
+    response_model=KnowledgeCardMergeResponse,
+)
+async def api_merge_knowledge_cards(
+    card_id: str,
+    request: MergeKnowledgeCardsRequest,
+    service: KnowledgeService = Depends(provide_knowledge_service),
+) -> KnowledgeCardMergeResponse:
+    """Keep one confirmed card and retire a duplicate after merging its facts."""
+    try:
+        primary_card, merged_card = await service.merge_confirmed_cards(
+            card_id,
+            request.merged_card_id,
+        )
+    except KnowledgeCardNotFoundError as error:
+        raise _not_found(str(error)) from error
+    except (KnowledgeConcurrentUpdateError, KnowledgeIdentityConflictError) as error:
+        raise _conflict(str(error)) from error
+    except KnowledgeUnavailableError as error:
+        raise _unavailable(str(error)) from error
+    except (ValidationError, ValueError) as error:
+        raise _bad_request(_validation_message(error)) from error
+    return KnowledgeCardMergeResponse(
+        primary_card=primary_card,
+        merged_card=merged_card,
+    )
 
 
 def _knowledge_type(value: str) -> StructuredKnowledgeType:

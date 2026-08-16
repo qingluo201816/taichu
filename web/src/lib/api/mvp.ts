@@ -6,12 +6,15 @@ import type {
   InboxPriority,
   InboxStatus,
   KnowledgeCardListResponse,
+  KnowledgeCardMergeResponse,
   KnowledgeCardResponse,
   KnowledgeSchemaResponse,
   KnowledgeSchemasResponse,
   StructuredKnowledgeLifecycle,
   KnowledgeTypeValue,
   KnowledgeTypesResponse,
+  MVPInboxDecision,
+  MVPInboxDecisionResponse,
   MVPInboxIdea,
   MVPInboxIdeaResponse,
   MVPInboxIssue,
@@ -188,12 +191,22 @@ export async function rejectKnowledgeCard(
   );
 }
 
+export async function mergeKnowledgeCards(
+  primaryCardId: string,
+  mergedCardId: string,
+): Promise<KnowledgeCardMergeResponse> {
+  return apiRequest<KnowledgeCardMergeResponse>(
+    `/api/knowledge/cards/${encodeURIComponent(primaryCardId)}/merge`,
+    { method: "POST", body: JSON.stringify({ merged_card_id: mergedCardId }) },
+  );
+}
+
 export async function listInboxItems(
   tab: "all",
   params?: InboxListParams,
 ): Promise<
   MVPInboxListResponse<
-    MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue
+    MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue | MVPInboxDecision
   >
 >;
 export async function listInboxItems(
@@ -208,6 +221,10 @@ export async function listInboxItems(
   tab: "issues",
   params?: InboxListParams,
 ): Promise<MVPInboxListResponse<MVPInboxIssue>>;
+export async function listInboxItems(
+  tab: "decisions",
+  params?: InboxListParams,
+): Promise<MVPInboxListResponse<MVPInboxDecision>>;
 export async function listInboxItems(tab: InboxTab, params: InboxListParams = {}) {
   const search = new URLSearchParams({
     page: String(params.page ?? 1),
@@ -228,6 +245,19 @@ export async function listInboxItems(tab: InboxTab, params: InboxListParams = {}
     return apiRequest<MVPInboxListResponse<MVPInboxIssue>>(
       `/api/inbox/issues?${search.toString()}`,
     );
+  }
+  if (tab === "decisions") {
+    return apiRequest<MVPInboxListResponse<MVPInboxDecision>>(
+      `/api/inbox/decisions?${search.toString()}`,
+    );
+  }
+  if (tab === "all") {
+    search.set("tab", "all");
+    return apiRequest<
+      MVPInboxListResponse<
+        MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue | MVPInboxDecision
+      >
+    >(`/api/inbox?${search.toString()}`);
   }
   search.set("tab", tab);
   return apiRequest<MVPInboxListResponse<MVPInboxIdea>>(
@@ -307,10 +337,44 @@ export async function createInboxIssue(
 
 export async function patchInboxIssue(
   itemId: string,
+  expectedRevision: number,
   updates: Record<string, unknown>,
 ): Promise<MVPInboxIssueResponse> {
   return apiRequest<MVPInboxIssueResponse>(
     `/api/inbox/issues/${encodeURIComponent(itemId)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        expected_revision: expectedRevision,
+        updates,
+      }),
+    },
+  );
+}
+
+export async function getInboxIssue(
+  itemId: string,
+): Promise<MVPInboxIssueResponse> {
+  return apiRequest<MVPInboxIssueResponse>(
+    `/api/inbox/issues/${encodeURIComponent(itemId)}`,
+  );
+}
+
+export async function createInboxDecision(
+  data: Record<string, unknown>,
+): Promise<MVPInboxDecisionResponse> {
+  return apiRequest<MVPInboxDecisionResponse>("/api/inbox/decisions", {
+    method: "POST",
+    body: JSON.stringify({ data }),
+  });
+}
+
+export async function patchInboxDecision(
+  itemId: string,
+  updates: Record<string, unknown>,
+): Promise<MVPInboxDecisionResponse> {
+  return apiRequest<MVPInboxDecisionResponse>(
+    `/api/inbox/decisions/${encodeURIComponent(itemId)}`,
     {
       method: "PATCH",
       body: JSON.stringify({ updates }),

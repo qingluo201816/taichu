@@ -19,6 +19,7 @@ class MainLLMAssemblyTest(unittest.TestCase):
                 Settings(
                     project_assets_dir=Path(temporary_directory),
                     rightcode_api_key=SecretStr(""),
+                    deepseek_api_key=SecretStr(""),
                 ),
                 knowledge_repository=InMemoryKnowledgeRepository(),
             )

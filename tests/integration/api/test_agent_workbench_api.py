@@ -205,6 +205,9 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         )
         run_id = response.json()["run"]["run_id"]
         monitor_response = await self.client.get(f"/api/agent-tasks/{run_id}")
+        persisted_response = await self.client.get(
+            f"/api/agent-workbench/knowledge-extraction/runs/{run_id}"
+        )
 
         completed_detail = None
         for _ in range(20):
@@ -223,6 +226,8 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(monitor_response.status_code, 200)
         self.assertEqual(monitor_response.json()["run"]["run_id"], run_id)
+        self.assertEqual(persisted_response.status_code, 200)
+        self.assertEqual(persisted_response.json()["run"]["run_id"], run_id)
         self.assertEqual(
             monitor_response.json()["run"]["scope"]["chapter_title"],
             "第一章 山门",
@@ -358,6 +363,9 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
             json={"chapter_ids": ["chapter_001"]},
         )
         run_id = response.json()["run"]["run_id"]
+        initial_persisted_response = await self.client.get(
+            f"/api/agent-workbench/knowledge-extraction/runs/{run_id}"
+        )
 
         completed_detail = None
         for _ in range(30):
@@ -373,6 +381,8 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(initial_persisted_response.status_code, 200)
+        self.assertEqual(initial_persisted_response.json()["run"]["run_id"], run_id)
         self.assertIsNotNone(completed_detail)
         assert completed_detail is not None
         self.assertEqual(completed_detail["status"], "completed")
@@ -533,7 +543,7 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(active_delete_response.status_code, 200)
         self.assertEqual(active_detail_response.status_code, 404)
 
-    async def test_agent_task_prefers_persisted_review_state_over_stale_completed_snapshot(
+    async def test_agent_task_prefers_persisted_review_state_over_stale_running_snapshot(
         self,
     ) -> None:
         stale = _manual_review_run()
@@ -564,10 +574,10 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         await self.app.state.knowledge_run_store.write_run(persisted)
         await self.app.state.agent_task_events.publish(
             {
-                "type": "task_completed",
-                "event_type": "task_completed",
+                "type": "task_started",
+                "event_type": "task_started",
                 "run_id": stale.run_id,
-                "message": "旧的任务完成快照。",
+                "message": "滞留的任务运行中快照。",
                 "run": stale.model_dump(mode="json"),
             }
         )
@@ -776,6 +786,70 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.status_code, 422)
         self.assertIn("无法一键采纳", response.json()["error"]["message"])
         self.assertEqual(cards, [])
+        self.assertTrue(
+            all(
+                item["candidate_status"] == "pending"
+                for item in detail.json()["run"]["review_items"]
+            )
+        )
+
+    async def test_accept_run_preflights_identity_conflicts_before_writing(
+        self,
+    ) -> None:
+        await self.app.state.knowledge_service.create_confirmed_card(
+            _confirmed_character_card(
+                "character-qin-preflight",
+                summary="秦阳原本是太初教弟子。",
+                source_note="第1章旧来源。",
+                aliases=["阿阳"],
+                identity="太初教弟子",
+            )
+        )
+        await self.app.state.knowledge_service.create_confirmed_card(
+            _confirmed_character_card(
+                "character-li-preflight",
+                name="李明",
+                summary="李明原本是太初教弟子。",
+                source_note="第1章旧来源。",
+                aliases=[],
+                identity="太初教弟子",
+            )
+        )
+        run = _targeted_update_run(
+            "review_item_preflight_first",
+            "character-qin-preflight",
+            run_id="extract_run_20260719_060000_abcdef",
+        )
+        conflicting = run.review_items[0].model_copy(
+            update={
+                "review_item_id": "review_item_preflight_conflict",
+                "target_card_id": "character-li-preflight",
+                "display_title": "李明",
+                "matched_card_name": "李明",
+                "suggested_card": {
+                    **run.review_items[0].suggested_card,
+                    "name": "李明",
+                    "aliases": ["阿阳"],
+                },
+            }
+        )
+        run = run.model_copy(update={"review_items": [*run.review_items, conflicting]})
+        await self.app.state.knowledge_run_store.write_run(run)
+
+        response = await self.client.post(
+            f"/api/agent-workbench/knowledge-extraction/runs/{run.run_id}/accept"
+        )
+        detail = await self.client.get(f"/api/agent-tasks/{run.run_id}")
+        first_card = await self.app.state.knowledge_repository.get_card(
+            "character-qin-preflight"
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("候选“李明”无法采纳", response.json()["error"]["message"])
+        self.assertIn("阿阳", response.json()["error"]["message"])
+        self.assertIsNotNone(first_card)
+        assert first_card is not None
+        self.assertEqual(first_card.summary, "秦阳原本是太初教弟子。")
         self.assertTrue(
             all(
                 item["candidate_status"] == "pending"

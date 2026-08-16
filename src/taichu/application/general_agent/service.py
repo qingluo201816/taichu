@@ -9,27 +9,42 @@ import json
 from typing import Any, TypedDict
 from uuid import uuid4
 
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.checkpoint.base import BaseCheckpointSaver
-from langgraph.checkpoint.memory import InMemorySaver
 
 from taichu.application.contracts.general_agent_run import GeneralAgentRunRepository
+from taichu.application.contracts.general_agent_capability_results import (
+    CapabilityResultOwner,
+    GeneralAgentCapabilityResultRepository,
+)
+from taichu.application.contracts.general_agent_context_snapshot import (
+    GeneralAgentContextSnapshotRepository,
+)
+from taichu.application.contracts.llm_replay import LLMCallReplayRepository
 from taichu.application.contracts.general_agent_effects import (
     GeneralAgentEffectRepository,
 )
 from taichu.application.general_agent.context import (
     ContextAssembler,
+    ContextAssemblyError,
     ContextAssemblyResult,
     ContextPhase,
 )
 from taichu.application.general_agent.events import GeneralAgentEventCenter
 from taichu.application.general_agent.executor import (
     DynamicDagExecutor,
+)
+from taichu.application.general_agent.faults import (
+    GeneralAgentFaultContext,
+    GeneralAgentFaultHook,
+    GeneralAgentFaultPoint,
     InjectedProcessTermination,
 )
 from taichu.application.general_agent.models import (
     GeneralAgentConversation,
+    GeneralAgentContextSnapshot,
     GeneralAgentContextCategoryStat,
     GeneralAgentCompressionStats,
     GeneralAgentHumanRequest,
@@ -43,6 +58,10 @@ from taichu.application.general_agent.models import (
     GeneralAgentRunLimits,
     GeneralAgentRunStatus,
     GeneralAgentScope,
+    RecoveryAction,
+    RecoveryDecision,
+    recovery_evidence_sha256,
+    result_basis_sha256,
 )
 from taichu.application.general_agent.orchestrator import OrchestratorAgent
 from taichu.application.general_agent.request_analysis import (
@@ -50,12 +69,18 @@ from taichu.application.general_agent.request_analysis import (
     is_explicit_chapter_content_request,
 )
 from taichu.application.general_agent.recovery import (
+    CheckpointRevisionSummary,
     CheckpointIntegritySummary,
     EffectRecord,
+    EffectStatus,
     EffectSummary,
+    GeneralAgentRecoveryCoordinator,
+    GeneralAgentRecoveryIntegrityError,
+    GeneralAgentRecoveryRequiresHumanError,
     GeneralAgentRecoverySnapshot,
 )
 from taichu.application.invocations.models import now_iso
+from taichu.application.models.llm_replay import LLMCallReplayRecord
 from taichu.application.services.invocation_policy_service import (
     InvocationPolicyService,
 )
@@ -73,8 +98,6 @@ _TERMINAL_STATUSES = {
     GeneralAgentRunStatus.COMPLETED,
     GeneralAgentRunStatus.CANCELLED,
 }
-
-
 class _RuntimeGraphState(TypedDict, total=False):
     run: dict[str, Any]
     replan_guidance: str
@@ -93,8 +116,12 @@ class GeneralAgentRuntimeService:
         policy_service: InvocationPolicyService,
         memory_service: AgentMemoryService,
         context_assembler: ContextAssembler,
-        graph_checkpointer: BaseCheckpointSaver[Any] | None = None,
-        effect_repository: GeneralAgentEffectRepository | None = None,
+        capability_result_repository: GeneralAgentCapabilityResultRepository,
+        graph_checkpointer: BaseCheckpointSaver[Any],
+        effect_repository: GeneralAgentEffectRepository,
+        context_snapshot_repository: GeneralAgentContextSnapshotRepository,
+        llm_replay_repository: LLMCallReplayRepository,
+        fault_hook: GeneralAgentFaultHook | None = None,
     ) -> None:
         self._repository = repository
         self._event_center = event_center
@@ -102,9 +129,28 @@ class GeneralAgentRuntimeService:
         self._executor = executor
         self._policy_service = policy_service
         self._memory_service = memory_service
+        self._executor.bind_memory_validity_provider(memory_service)
         self._context_assembler = context_assembler
-        self._graph_checkpointer = graph_checkpointer or InMemorySaver()
+        self._graph_checkpointer = graph_checkpointer
         self._effect_repository = effect_repository
+        self._capability_result_repository = capability_result_repository
+        if (
+            self._executor.capability_result_repository
+            is not capability_result_repository
+        ):
+            raise ValueError(
+                "Run Service 与动态执行器必须使用同一 CapabilityResult 仓储。"
+            )
+        self._context_snapshot_repository = context_snapshot_repository
+        self._llm_replay_repository = llm_replay_repository
+        self._fault_hook = fault_hook
+        self._recovery_coordinator = GeneralAgentRecoveryCoordinator(
+            run_repository=repository,
+            effect_repository=effect_repository,
+            graph_checkpointer=self._graph_checkpointer,
+            capability_result_repository=capability_result_repository,
+            context_snapshot_repository=context_snapshot_repository,
+        )
         self._tasks: dict[str, asyncio.Task[GeneralAgentRun]] = {}
         self._locks: dict[str, asyncio.Lock] = {}
         self._conversation_locks: dict[str, asyncio.Lock] = {}
@@ -122,8 +168,8 @@ class GeneralAgentRuntimeService:
         external_access_allowed: bool = False,
         limits: GeneralAgentRunLimits | None = None,
     ) -> GeneralAgentRun:
-        goal = user_goal.strip()
-        if not goal:
+        goal = user_goal
+        if not goal.strip():
             raise GeneralAgentRuntimeError("任务目标不能为空。")
         timestamp = datetime.now(UTC)
         run_id = f"general_run_{timestamp.strftime('%Y%m%d_%H%M%S')}_{uuid4().hex[:6]}"
@@ -385,18 +431,54 @@ class GeneralAgentRuntimeService:
         task = self._tasks.get(run_id)
         if task is not None and not task.done():
             raise GeneralAgentRuntimeError("运行中的任务不能删除，请先取消。")
+        run = await self._repository.get(run_id)
+        if run is None:
+            return False
+        owner = CapabilityResultOwner(
+            conversation_id=run.conversation_id,
+            run_id=run.run_id,
+        )
+        try:
+            await self._capability_result_repository.delete_run(owner)
+            remaining_results = await self._capability_result_repository.list_for_run(
+                owner
+            )
+        except Exception as error:
+            raise GeneralAgentRuntimeError(
+                f"能力结果清理失败，父运行保持不变：{error}"
+            ) from error
+        if remaining_results:
+            raise GeneralAgentRuntimeError(
+                "能力结果清理后仍存在运行结果，父运行保持不变。"
+            )
         deleted = await self._repository.delete(run_id)
         if deleted:
-            if self._effect_repository is not None:
-                await self._effect_repository.delete_run(run_id)
+            await self._effect_repository.delete_run(run_id)
             await self._graph_checkpointer.adelete_thread(run_id)
+            await self._context_snapshot_repository.delete_run(run_id)
+            await self._llm_replay_repository.delete_run(run_id)
             await self._event_center.delete_snapshot(run_id)
+            await self._memory_service.delete_run_memories(
+                run.conversation_id,
+                run.run_id,
+            )
         return deleted
+
+    async def list_context_snapshots(
+        self, run_id: str
+    ) -> builtins.list[GeneralAgentContextSnapshot]:
+        run = await self._require_run(run_id)
+        snapshots = await self._context_snapshot_repository.list_for_run(run_id)
+        if not snapshots and run.context_snapshot is not None:
+            return [run.context_snapshot]
+        return snapshots
+
+    async def list_llm_replays(self, run_id: str) -> builtins.list[LLMCallReplayRecord]:
+        await self._require_run(run_id)
+        return await self._llm_replay_repository.list_for_run(run_id)
 
     async def list_effects(self, run_id: str) -> builtins.list[EffectRecord]:
         await self._require_run(run_id)
-        if self._effect_repository is None:
-            return []
         return await self._effect_repository.list_effects(run_id)
 
     async def recovery_snapshot(
@@ -405,17 +487,29 @@ class GeneralAgentRuntimeService:
     ) -> GeneralAgentRecoverySnapshot:
         await self._require_run(run_id)
         summary_reader = getattr(self._graph_checkpointer, "inspect_thread", None)
+        revision_reader = getattr(self._graph_checkpointer, "list_revisions", None)
         checkpoint = CheckpointIntegritySummary()
+        revisions: builtins.list[CheckpointRevisionSummary] = []
         if callable(summary_reader):
             summary = summary_reader(run_id)
             checkpoint = CheckpointIntegritySummary(
                 current_revision=summary.current_revision,
                 available_revisions=summary.available_revisions,
+                invalid_revisions=getattr(summary, "invalid_revisions", []),
                 integrity_status=summary.integrity_status,
                 recovered_from_revision=summary.recovered_from_revision,
                 damage_warnings=summary.damage_warnings,
                 legacy_migrated=summary.legacy_migrated,
             )
+        if callable(revision_reader):
+            revisions = [
+                CheckpointRevisionSummary(
+                    revision=item.revision,
+                    event_type=item.event_type,
+                    created_at=item.created_at,
+                )
+                for item in revision_reader(run_id)
+            ]
         events = await self.list_effects(run_id)
         latest: dict[str, EffectRecord] = {}
         for event in events:
@@ -437,6 +531,7 @@ class GeneralAgentRuntimeService:
         return GeneralAgentRecoverySnapshot(
             run_id=run_id,
             checkpoint=checkpoint,
+            revisions=revisions,
             effects=effects,
         )
 
@@ -511,7 +606,19 @@ class GeneralAgentRuntimeService:
         for run in runs:
             if run.status not in _ACTIVE_STATUSES:
                 continue
-            self._start_background(run.run_id, resume_from_graph=True)
+            try:
+                await self._prepare_recovery(run)
+            except GeneralAgentRecoveryRequiresHumanError as error:
+                await self._stop_recovery_for_human(run.run_id, error)
+                continue
+            except GeneralAgentRecoveryIntegrityError as error:
+                await self._stop_unrecoverable_recovery(run.run_id, error)
+                continue
+            self._start_background(
+                run.run_id,
+                resume_from_graph=True,
+                recovery_prepared=True,
+            )
             recovered += 1
         return recovered
 
@@ -676,12 +783,17 @@ class GeneralAgentRuntimeService:
         run_id: str,
         *,
         resume_from_graph: bool = False,
+        recovery_prepared: bool = False,
     ) -> None:
         current = self._tasks.get(run_id)
         if current is not None and not current.done():
             raise GeneralAgentRuntimeError("该任务已经在运行。")
         task = asyncio.create_task(
-            self._execute_run(run_id, resume_from_graph=resume_from_graph)
+            self._execute_run(
+                run_id,
+                resume_from_graph=resume_from_graph,
+                recovery_prepared=recovery_prepared,
+            )
         )
         self._tasks[run_id] = task
         task.add_done_callback(lambda completed: self._task_finished(run_id, completed))
@@ -700,13 +812,18 @@ class GeneralAgentRuntimeService:
         run_id: str,
         *,
         resume_from_graph: bool = False,
+        recovery_prepared: bool = False,
     ) -> GeneralAgentRun:
         lock = self._locks.setdefault(run_id, asyncio.Lock())
         async with lock:
             run = await self._require_run(run_id)
             try:
+                if resume_from_graph and not recovery_prepared:
+                    await self._prepare_recovery(run)
+                else:
+                    await self._recovery_coordinator.validate_owner(run)
                 async with asyncio.timeout(run.limits.max_runtime_seconds):
-                    config = {
+                    config: RunnableConfig = {
                         "recursion_limit": 20,
                         "configurable": {"thread_id": run_id},
                     }
@@ -725,7 +842,17 @@ class GeneralAgentRuntimeService:
                             graph_input,
                             config=config,
                         )
-                return GeneralAgentRun.model_validate(result["run"])
+                completed = GeneralAgentRun.model_validate(result["run"])
+                audited = await self._finalize_effect_recovery_decisions(
+                    completed
+                )
+                if audited != completed:
+                    await self._repository.save(audited)
+                    await self._event_center.publish(
+                        event_type="recovery_decision_finalized",
+                        run=audited,
+                    )
+                return audited
             except asyncio.CancelledError:
                 if self._shutting_down:
                     raise
@@ -744,10 +871,54 @@ class GeneralAgentRuntimeService:
                     latest,
                     GeneralAgentRunStatus.TIMEOUT,
                     "任务超过运行时限。",
-                ).model_copy(update={"finished_at": now_iso(), "resumable": True})
+                ).model_copy(
+                    update={
+                        "final_answer": "",
+                        "final_answer_basis_sha256": None,
+                        "finished_at": now_iso(),
+                        "resumable": True,
+                    }
+                )
                 return await self._checkpoint(latest, "run_timed_out")
             except InjectedProcessTermination:
                 raise
+            except GeneralAgentRecoveryRequiresHumanError as error:
+                return await self._stop_recovery_for_human(run_id, error)
+            except GeneralAgentRecoveryIntegrityError as error:
+                return await self._stop_unrecoverable_recovery(run_id, error)
+            except ContextAssemblyError as error:
+                latest = await self._require_run(run_id)
+                failure_evidence = json.dumps(
+                    {
+                        "current_request_sha256": error.current_request_sha256,
+                        "protected_char_count": error.protected_char_count,
+                        "reason_code": error.reason_code,
+                        "stable_memory_sha256": error.stable_memory_sha256,
+                        "total_char_budget": error.total_char_budget,
+                    },
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                latest = latest.model_copy(
+                    update={
+                        "errors": [*latest.errors, failure_evidence],
+                        "final_answer": str(error),
+                        "final_answer_basis_sha256": None,
+                        "pending_human_request": None,
+                        "finished_at": now_iso(),
+                        "resumable": False,
+                    }
+                )
+                latest = _transition(
+                    latest,
+                    GeneralAgentRunStatus.FAILED,
+                    "上下文无法安全组装，运行已在规划前停止。",
+                )
+                return await self._checkpoint(
+                    latest,
+                    "unsafe_context_rejected",
+                )
             except Exception as error:  # noqa: BLE001
                 latest = await self._require_run(run_id)
                 latest = latest.model_copy(
@@ -813,6 +984,19 @@ class GeneralAgentRuntimeService:
 
     async def _plan_node(self, state: _RuntimeGraphState) -> _RuntimeGraphState:
         run = GeneralAgentRun.model_validate(state["run"])
+        durable = await self._repository.get(run.run_id)
+        if (
+            durable is not None
+            and durable.conversation_id == run.conversation_id
+            and durable.plan is not None
+            and durable.plan_revision > run.plan_revision
+            and durable.status is GeneralAgentRunStatus.EXECUTING
+        ):
+            return {
+                **state,
+                "run": durable.model_dump(mode="json"),
+                "replan_guidance": "",
+            }
         phase: ContextPhase = "replan" if state.get("replan_guidance", "") else "plan"
         assembly = await self._context_assembler.assemble(
             run,
@@ -820,6 +1004,7 @@ class GeneralAgentRuntimeService:
             replan_guidance=state.get("replan_guidance", ""),
         )
         run = _with_context_snapshot(run, assembly)
+        await self._record_context_snapshot(assembly.snapshot)
         run = await self._checkpoint(run, "context_assembled")
         plan = await self._orchestrator.plan(
             run,
@@ -852,8 +1037,34 @@ class GeneralAgentRuntimeService:
                 "plan": plan,
                 "plan_revision": run.plan_revision + 1,
                 "pending_human_request": None,
+                "verification_issues": [],
+                "final_answer": "",
+                "final_answer_basis_sha256": None,
             }
         )
+        if not plan.nodes and plan.direct_response.strip():
+            final_answer = plan.direct_response.strip()
+            memory_ids = await self._memory_service.record_direct_response(
+                run,
+                final_answer=final_answer,
+            )
+            run = _with_memory_refs(run, memory_ids)
+            run = run.model_copy(
+                update={
+                    "verification_issues": [],
+                    "final_answer": final_answer,
+                    "final_answer_basis_sha256": result_basis_sha256(run),
+                    "finished_at": now_iso(),
+                    "resumable": False,
+                }
+            )
+            run = _transition(
+                run,
+                GeneralAgentRunStatus.COMPLETED,
+                "编排 Agent 已生成可直接交付的回答。",
+            )
+            run = await self._checkpoint(run, "direct_response_completed")
+            return {"run": run.model_dump(mode="json"), "replan_guidance": ""}
         run = _transition(run, GeneralAgentRunStatus.EXECUTING, "动态执行计划已生成。")
         run = await self._checkpoint(run, "plan_created")
         return {"run": run.model_dump(mode="json"), "replan_guidance": ""}
@@ -867,6 +1078,7 @@ class GeneralAgentRuntimeService:
         run = _transition(run, GeneralAgentRunStatus.EXECUTING, "执行动态能力图。")
         run = await self._checkpoint(run, "dag_execution_started")
         run = await self._executor.execute(run, checkpoint=self._checkpoint)
+        run = await self._finalize_effect_recovery_decisions(run)
         memory_ids = await self._memory_service.record_node_results(
             run,
             [
@@ -888,6 +1100,14 @@ class GeneralAgentRuntimeService:
 
     async def _verify_node(self, state: _RuntimeGraphState) -> _RuntimeGraphState:
         run = GeneralAgentRun.model_validate(state["run"])
+        run = await self._merge_durable_recovery_audit(run)
+        run = run.model_copy(
+            update={
+                "verification_attempt_count": (
+                    run.verification_attempt_count + 1
+                )
+            }
+        )
         run = _transition(run, GeneralAgentRunStatus.VERIFYING, "校验执行结果。")
         run = await self._checkpoint(run, "verification_started")
         blocking_failures = _blocking_failed_nodes(run)
@@ -900,6 +1120,7 @@ class GeneralAgentRuntimeService:
                     "replan_count": run.replan_count + 1,
                     "verification_issues": recovery_issues,
                     "final_answer": "",
+                    "final_answer_basis_sha256": None,
                 }
             )
             run = _transition(
@@ -914,22 +1135,26 @@ class GeneralAgentRuntimeService:
             }
         assembly = await self._context_assembler.assemble(run, phase="verify")
         run = _with_context_snapshot(run, assembly)
+        await self._record_context_snapshot(assembly.snapshot)
         run = await self._checkpoint(run, "verification_context_assembled")
         verification = await self._orchestrator.verify(
             run,
             context=assembly.snapshot.envelope,
         )
-        memory_ids = await self._memory_service.record_verification(
-            run,
-            verification,
-        )
-        run = _with_memory_refs(run, memory_ids)
         if verification.should_replan and run.replan_count < run.limits.max_replans:
+            rejected_memory_id = (
+                await self._memory_service.record_rejected_verification(
+                    run,
+                    verification,
+                )
+            )
+            run = _with_memory_refs(run, [rejected_memory_id])
             run = run.model_copy(
                 update={
                     "replan_count": run.replan_count + 1,
                     "verification_issues": verification.issues,
-                    "final_answer": verification.final_answer,
+                    "final_answer": "",
+                    "final_answer_basis_sha256": None,
                 }
             )
             run = _transition(
@@ -942,6 +1167,13 @@ class GeneralAgentRuntimeService:
                 "run": run.model_dump(mode="json"),
                 "replan_guidance": verification.replan_guidance,
             }
+        basis_sha256 = result_basis_sha256(run)
+        memory_ids = await self._memory_service.record_verification(
+            run,
+            verification,
+            basis_sha256=basis_sha256,
+        )
+        run = _with_memory_refs(run, memory_ids)
         unresolved_issues = list(
             dict.fromkeys([*source_quality_issues, *verification.issues])
         )
@@ -956,6 +1188,7 @@ class GeneralAgentRuntimeService:
             update={
                 "verification_issues": unresolved_issues,
                 "final_answer": verification.final_answer,
+                "final_answer_basis_sha256": basis_sha256,
                 "finished_at": now_iso(),
                 "resumable": final_status is GeneralAgentRunStatus.FAILED,
             }
@@ -971,6 +1204,9 @@ class GeneralAgentRuntimeService:
     async def _checkpoint(
         self, run: GeneralAgentRun, event_type: str
     ) -> GeneralAgentRun:
+        run = await self._merge_durable_recovery_audit(run)
+        if event_type == "waiting_human_after_capability_checkpoint":
+            run = await self._finalize_effect_recovery_decisions(run)
         updated = run.model_copy(
             update={
                 "checkpoint_revision": run.checkpoint_revision + 1,
@@ -979,7 +1215,272 @@ class GeneralAgentRuntimeService:
         )
         await self._repository.save(updated)
         await self._event_center.publish(event_type=event_type, run=updated)
+        self._emit_checkpoint_fault(updated, event_type)
         return updated
+
+    async def _prepare_recovery(self, run: GeneralAgentRun) -> None:
+        self._emit_fault(
+            GeneralAgentFaultPoint.CHECKPOINT_REVISION_VALIDATION,
+            run,
+        )
+        preparation = await self._recovery_coordinator.prepare(run)
+        await self._persist_recovery_decision(run, preparation.decision)
+
+    async def _stop_recovery_for_human(
+        self,
+        run_id: str,
+        error: GeneralAgentRecoveryRequiresHumanError,
+    ) -> GeneralAgentRun:
+        latest = await self._require_run(run_id)
+        if error.decision is not None:
+            latest = await self._persist_recovery_decision(
+                latest,
+                error.decision,
+            )
+        latest = latest.model_copy(
+            update={
+                "pending_human_request": GeneralAgentHumanRequest(
+                    request_id=f"human_{uuid4().hex}",
+                    kind="effect_reconciliation",
+                    prompt=str(error),
+                    created_at=now_iso(),
+                ),
+                "resumable": True,
+            }
+        )
+        latest = _transition(
+            latest,
+            GeneralAgentRunStatus.WAITING_HUMAN,
+            "写入副作用需要作者核对，恢复已安全停止。",
+        )
+        return await self._checkpoint(
+            latest,
+            "recovery_requires_human",
+        )
+
+    async def _stop_unrecoverable_recovery(
+        self,
+        run_id: str,
+        error: GeneralAgentRecoveryIntegrityError,
+    ) -> GeneralAgentRun:
+        latest = await self._require_run(run_id)
+        if error.decision is not None:
+            latest = await self._persist_recovery_decision(
+                latest,
+                error.decision,
+            )
+        latest = latest.model_copy(
+            update={
+                "errors": [*latest.errors, str(error)[:2_000]],
+                "final_answer": "",
+                "final_answer_basis_sha256": None,
+                "pending_human_request": None,
+                "finished_at": now_iso(),
+                "resumable": False,
+            }
+        )
+        latest = _transition(
+            latest,
+            GeneralAgentRunStatus.FAILED,
+            "检查点不存在可验证的有效修订，恢复已安全停止。",
+        )
+        return await self._checkpoint(
+            latest,
+            "recovery_unrecoverable",
+        )
+
+    async def _persist_recovery_decision(
+        self,
+        run: GeneralAgentRun,
+        decision: RecoveryDecision,
+    ) -> GeneralAgentRun:
+        latest = await self._require_run(run.run_id)
+        if decision.run_id != latest.run_id:
+            raise GeneralAgentRuntimeError("恢复决定不能跨运行持久化。")
+        if any(
+            item.decision_id == decision.decision_id
+            for item in latest.recovery_decisions
+        ):
+            return latest
+        expected_ordinal = len(latest.recovery_decisions) + 1
+        if decision.ordinal != expected_ordinal:
+            decision = decision.model_copy(
+                update={"ordinal": expected_ordinal}
+            )
+        updated = latest.model_copy(
+            update={
+                "recovery_decisions": [
+                    *latest.recovery_decisions,
+                    decision,
+                ],
+                "updated_at": decision.created_at,
+            }
+        )
+        await self._repository.save(updated)
+        await self._event_center.publish(
+            event_type="recovery_decision_recorded",
+            run=updated,
+        )
+        return updated
+
+    async def _merge_durable_recovery_audit(
+        self,
+        run: GeneralAgentRun,
+    ) -> GeneralAgentRun:
+        stored = await self._repository.get(run.run_id)
+        if stored is None:
+            return run
+        durable_by_id = {
+            item.decision_id: item for item in stored.recovery_decisions
+        }
+        for item in run.recovery_decisions:
+            durable = durable_by_id.get(item.decision_id)
+            durable_by_id[item.decision_id] = (
+                item
+                if durable is None
+                else _merge_recovery_decision_versions(durable, item)
+            )
+        ordered_ids = [
+            item.decision_id for item in stored.recovery_decisions
+        ]
+        ordered_ids.extend(
+            item.decision_id
+            for item in run.recovery_decisions
+            if item.decision_id not in set(ordered_ids)
+        )
+        decisions = [durable_by_id[item_id] for item_id in ordered_ids]
+        return run.model_copy(
+            update={
+                "verification_attempt_count": max(
+                    run.verification_attempt_count,
+                    stored.verification_attempt_count,
+                ),
+                "recovery_decisions": decisions,
+            }
+        )
+
+    async def _finalize_effect_recovery_decisions(
+        self,
+        run: GeneralAgentRun,
+    ) -> GeneralAgentRun:
+        run = await self._merge_durable_recovery_audit(run)
+        if self._effect_repository is None or not run.recovery_decisions:
+            return run
+        updated_decisions: list[RecoveryDecision] = []
+        changed = False
+        for decision in run.recovery_decisions:
+            if (
+                decision.action is not RecoveryAction.RECONCILE
+                or decision.reason_code != "effect_reconciliation_started"
+                or decision.effect_id is None
+            ):
+                updated_decisions.append(decision)
+                continue
+            latest = await self._effect_repository.latest(decision.effect_id)
+            if latest is None:
+                updated_decisions.append(decision)
+                continue
+            evidence = {
+                **decision.evidence,
+                "effect_status_after_recovery": latest.status.value,
+            }
+            resource_hash = latest.evidence.get(
+                "actual_content_sha256"
+            ) or latest.output.get("content_sha256")
+            if isinstance(resource_hash, str):
+                evidence["resource_content_sha256"] = resource_hash
+            if latest.status is EffectStatus.RECONCILED:
+                evidence["reconciliation_status"] = "succeeded"
+                updated = decision.model_copy(
+                    update={
+                        "reason_code": "effect_reconciled",
+                        "reason": "真实资源后态已确认原写入成功，恢复未重复写入。",
+                        "evidence": evidence,
+                        "evidence_sha256": recovery_evidence_sha256(
+                            evidence
+                        ),
+                    }
+                )
+            elif latest.status in {
+                EffectStatus.UNKNOWN,
+                EffectStatus.REQUIRES_HUMAN,
+            }:
+                evidence["reconciliation_status"] = "unknown"
+                updated = decision.model_copy(
+                    update={
+                        "action": RecoveryAction.REQUIRES_HUMAN,
+                        "reason_code": (
+                            "effect_reconciliation_requires_human"
+                        ),
+                        "reason": "真实资源后态无法确定原写入结果，恢复已禁止自动重写。",
+                        "evidence": evidence,
+                        "evidence_sha256": recovery_evidence_sha256(
+                            evidence
+                        ),
+                    }
+                )
+            else:
+                updated_decisions.append(decision)
+                continue
+            updated_decisions.append(updated)
+            changed = True
+        if not changed:
+            return run
+        return run.model_copy(
+            update={"recovery_decisions": updated_decisions}
+        )
+
+    def _emit_checkpoint_fault(
+        self,
+        run: GeneralAgentRun,
+        event_type: str,
+    ) -> None:
+        point = {
+            "plan_created": GeneralAgentFaultPoint.PLAN_CREATED,
+            "waiting_human_after_capability_checkpoint": (
+                GeneralAgentFaultPoint.AUTHORIZATION_REQUEST_DURABLE
+            ),
+            "verification_started": GeneralAgentFaultPoint.VERIFICATION_STARTED,
+        }.get(event_type)
+        if point is None:
+            return
+        durable_identity = None
+        if point is GeneralAgentFaultPoint.AUTHORIZATION_REQUEST_DURABLE:
+            request = run.pending_human_request
+            if request is None or request.kind != "write_authorization":
+                return
+            durable_identity = request.request_id
+        self._emit_fault(
+            point,
+            run,
+            durable_identity=durable_identity,
+        )
+
+    def _emit_fault(
+        self,
+        point: GeneralAgentFaultPoint,
+        run: GeneralAgentRun,
+        *,
+        durable_identity: str | None = None,
+    ) -> None:
+        if self._fault_hook is None:
+            return
+        self._fault_hook.on_fault_point(
+            point=point,
+            context=GeneralAgentFaultContext(
+                conversation_id=run.conversation_id,
+                run_id=run.run_id,
+                plan_revision=run.plan_revision,
+                checkpoint_revision=run.checkpoint_revision,
+                durable_identity=durable_identity,
+            ),
+        )
+
+    async def _record_context_snapshot(
+        self, snapshot: GeneralAgentContextSnapshot
+    ) -> None:
+        if self._context_snapshot_repository is not None:
+            await self._context_snapshot_repository.save(snapshot)
 
     async def _require_run(self, run_id: str) -> GeneralAgentRun:
         run = await self._repository.get(run_id)
@@ -1007,6 +1508,30 @@ def _transition(
             "updated_at": event.created_at,
         }
     )
+
+
+def _merge_recovery_decision_versions(
+    durable: RecoveryDecision,
+    candidate: RecoveryDecision,
+) -> RecoveryDecision:
+    if durable == candidate:
+        return durable
+    pending_reason = "effect_reconciliation_started"
+    terminal_reasons = {
+        "effect_reconciled",
+        "effect_reconciliation_requires_human",
+    }
+    if (
+        durable.reason_code == pending_reason
+        and candidate.reason_code in terminal_reasons
+    ):
+        return candidate
+    if (
+        candidate.reason_code == pending_reason
+        and durable.reason_code in terminal_reasons
+    ):
+        return durable
+    raise GeneralAgentRuntimeError("同一恢复决定出现互相冲突的持久版本。")
 
 
 def _find_current_node(run: GeneralAgentRun, node_id: str) -> GeneralAgentNodeRun:
@@ -1101,8 +1626,8 @@ def _with_context_snapshot(
         ),
         estimated_token_count=envelope.estimated_token_count,
         omitted_message_count=stats.get(
-            "process_history",
-            GeneralAgentContextCategoryStat(category="process_history"),
+            "history_memory",
+            GeneralAgentContextCategoryStat(category="history_memory"),
         ).omitted_count,
         omitted_node_count=stats.get(
             "working_memory",

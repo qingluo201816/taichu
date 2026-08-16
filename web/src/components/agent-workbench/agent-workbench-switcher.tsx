@@ -12,6 +12,7 @@ const agents: Array<{
   label: string;
   description: string;
   icon: typeof Bot;
+  iconClassName: string;
   monitorHref: string;
   monitorLabel: string;
   monitorIcon: typeof Bot;
@@ -19,9 +20,10 @@ const agents: Array<{
 }> = [
   {
     key: "general",
-    label: "通用写作助手",
+    label: "通用写作助手 Agent",
     description: "从简短问答到多步骤写作任务",
     icon: Bot,
+    iconClassName: "text-sky-300",
     monitorHref: "/task-monitor/general-agent",
     monitorLabel: "查看通用写作助手监控",
     monitorIcon: GitBranch,
@@ -29,9 +31,10 @@ const agents: Array<{
   },
   {
     key: "knowledge",
-    label: "正文知识沉淀",
+    label: "正文知识沉淀 Workflow",
     description: "章节正文到候选知识卡",
     icon: Workflow,
+    iconClassName: "text-emerald-300",
     monitorHref: "/task-monitor/knowledge-extraction",
     monitorLabel: "查看正文知识沉淀监控",
     monitorIcon: Activity,
@@ -77,7 +80,7 @@ export function AgentWorkbenchSwitcher({
                 )}
               >
                 <span className="flex items-center gap-2 font-medium">
-                  <Icon className="size-3.5" />
+                  <Icon className={cn("size-3.5", agent.iconClassName)} />
                   {agent.label}
                 </span>
                 <span className="mt-0.5 block truncate pl-[22px] text-[11px] text-[var(--tc-text-muted)]">

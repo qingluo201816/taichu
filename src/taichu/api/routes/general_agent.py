@@ -14,12 +14,12 @@ from taichu.api.deps import (
     provide_invocation_trace_reader,
 )
 from taichu.api.schemas.general_agent import (
-    AgentMemoryDeleteResponse,
     AgentMemoryListResponse,
     AgentMemoryResponse,
     GeneralAgentConversationDeleteResponse,
     GeneralAgentConversationListResponse,
     GeneralAgentConversationResponse,
+    GeneralAgentContextSnapshotListResponse,
     GeneralAgentDeleteResponse,
     GeneralAgentResumeRequest,
     GeneralAgentRecoveryResponse,
@@ -27,6 +27,7 @@ from taichu.api.schemas.general_agent import (
     GeneralAgentRunRequest,
     GeneralAgentRunResponse,
     GeneralAgentRunSummary,
+    GeneralAgentLLMReplayListResponse,
     GeneralAgentTraceListResponse,
 )
 from taichu.application.contracts.invocation_trace import InvocationTraceReader
@@ -41,10 +42,7 @@ from taichu.application.general_agent.service import (
     GeneralAgentRuntimeError,
     GeneralAgentRuntimeService,
 )
-from taichu.application.services.agent_memory_service import (
-    AgentMemoryNotFoundError,
-    AgentMemoryService,
-)
+from taichu.application.services.agent_memory_service import AgentMemoryService
 
 router = APIRouter(prefix="/api/agent-workbench/general-assistant")
 
@@ -246,6 +244,52 @@ async def api_get_general_agent_recovery(
 
 
 @router.get(
+    "/runs/{run_id}/context-snapshots",
+    response_model=GeneralAgentContextSnapshotListResponse,
+)
+async def api_list_general_agent_context_snapshots(
+    run_id: str,
+    service: GeneralAgentRuntimeService = Depends(
+        provide_general_agent_runtime_service
+    ),
+) -> GeneralAgentContextSnapshotListResponse:
+    """读取规划、重规划和校验阶段实际组装的五层上下文。"""
+
+    try:
+        snapshots = await service.list_context_snapshots(run_id)
+    except GeneralAgentRunNotFoundError as error:
+        raise _not_found(str(error)) from error
+    return GeneralAgentContextSnapshotListResponse(
+        run_id=run_id,
+        snapshots=snapshots,
+        total=len(snapshots),
+    )
+
+
+@router.get(
+    "/runs/{run_id}/llm-replays",
+    response_model=GeneralAgentLLMReplayListResponse,
+)
+async def api_list_general_agent_llm_replays(
+    run_id: str,
+    service: GeneralAgentRuntimeService = Depends(
+        provide_general_agent_runtime_service
+    ),
+) -> GeneralAgentLLMReplayListResponse:
+    """读取脱敏后的逐次模型消息和规范化响应，用于回放与评测。"""
+
+    try:
+        calls = await service.list_llm_replays(run_id)
+    except GeneralAgentRunNotFoundError as error:
+        raise _not_found(str(error)) from error
+    return GeneralAgentLLMReplayListResponse(
+        run_id=run_id,
+        calls=calls,
+        total=len(calls),
+    )
+
+
+@router.get(
     "/runs/{run_id}/traces",
     response_model=GeneralAgentTraceListResponse,
 )
@@ -322,18 +366,6 @@ async def api_get_general_agent_memory(
     if memory is None:
         raise _not_found(f"运行记忆“{memory_id}”不存在。")
     return AgentMemoryResponse(memory=memory)
-
-
-@router.delete("/memories/{memory_id}", response_model=AgentMemoryDeleteResponse)
-async def api_delete_general_agent_memory(
-    memory_id: str,
-    memory_service: AgentMemoryService = Depends(provide_agent_memory_service),
-) -> AgentMemoryDeleteResponse:
-    try:
-        await memory_service.delete(memory_id)
-    except AgentMemoryNotFoundError as error:
-        raise _not_found(str(error)) from error
-    return AgentMemoryDeleteResponse(memory_id=memory_id, deleted=True)
 
 
 def _summary(run: GeneralAgentRun) -> GeneralAgentRunSummary:

@@ -14,9 +14,9 @@ _FORBIDDEN_IMPORT_PREFIXES = (
 )
 _ALLOWED_APPLICATION_EXCEPTIONS = {
     _APPLICATION / "services" / "knowledge_service.py",
-    # 离线索引维护服务从 MongoDB 事实源生成可删除的派生索引；
-    # 它不处理用户查询，也不向任何 AI 消费方返回知识上下文。
-    _APPLICATION / "services" / "knowledge_vector_index_service.py",
+    # 离线索引维护服务从 MongoDB 事实源生成可删除的 Milvus 派生索引；
+    # 查询侧只通过独立的 Vector Graph RAG 能力返回带来源的证据。
+    _APPLICATION / "vector_graph" / "service.py",
 }
 _ALLOWED_DIRECT_READS = {
     # 写 Tool 的副作用对账必须核对 MongoDB 权威状态，不能使用带排名、

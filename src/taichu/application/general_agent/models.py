@@ -5,9 +5,10 @@ from __future__ import annotations
 from enum import StrEnum
 from hashlib import sha256
 import json
+import re
 from typing import Any, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class GeneralAgentModel(BaseModel):
@@ -46,8 +47,41 @@ class GeneralAgentNodeStatus(StrEnum):
     WAITING_HUMAN = "waiting_human"
 
 
+class RecoveryAction(StrEnum):
+    """Runtime 基于持久证据采取的恢复动作。"""
+
+    REUSE = "reuse"
+    RETRY = "retry"
+    RECONCILE = "reconcile"
+    RESUME = "resume"
+    REQUIRES_HUMAN = "requires_human"
+    STOP = "stop"
+
+
+class RecoveryDecision(GeneralAgentModel):
+    """一次启动恢复根据 Checkpoint、Result 与 Effect 作出的审计决定。"""
+
+    decision_id: str = Field(pattern=r"^recovery_decision_[a-f0-9]{32}$")
+    run_id: str = Field(min_length=1, max_length=128)
+    ordinal: int = Field(ge=1)
+    action: RecoveryAction
+    reason_code: str = Field(pattern=r"^[a-z][a-z0-9_]{0,127}$")
+    reason: str = Field(min_length=1, max_length=2_000)
+    checkpoint_revision: int | None = Field(default=None, ge=1)
+    effect_id: str | None = Field(default=None, max_length=80)
+    evidence: dict[str, Any] = Field(default_factory=dict)
+    evidence_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    created_at: str = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_evidence_hash(self) -> Self:
+        if self.evidence_sha256 != recovery_evidence_sha256(self.evidence):
+            raise ValueError("恢复决定证据哈希不匹配。")
+        return self
+
+
 class GeneralAgentMessage(GeneralAgentModel):
-    role: Literal["user", "assistant", "system"]
+    role: Literal["user", "assistant"]
     content: str = Field(min_length=1, max_length=100_000)
     created_at: str = Field(min_length=1)
 
@@ -63,11 +97,11 @@ class GeneralAgentScope(GeneralAgentModel):
 
 
 class GeneralAgentRunLimits(GeneralAgentModel):
-    max_plan_nodes: int = Field(default=12, ge=1, le=40)
+    max_plan_nodes: int = Field(default=24, ge=1, le=40)
     max_replans: int = Field(default=1, ge=0, le=3)
     max_concurrency: int = Field(default=3, ge=1, le=8)
-    max_total_tool_calls: int = Field(default=40, ge=1, le=100)
-    max_runtime_seconds: int = Field(default=900, ge=30, le=7_200)
+    max_total_tool_calls: int = Field(default=80, ge=1, le=100)
+    max_runtime_seconds: int = Field(default=3_600, ge=30, le=7_200)
 
 
 class GeneralAgentInputBinding(GeneralAgentModel):
@@ -77,54 +111,21 @@ class GeneralAgentInputBinding(GeneralAgentModel):
     source_path: str = Field(min_length=1, max_length=256)
     target_path: str = Field(min_length=1, max_length=256)
 
-
-class GeneralAgentPlanSelectionNode(GeneralAgentModel):
-    """第一阶段只选择能力和依赖，不提前猜测精确参数。"""
-
-    node_id: str = Field(pattern=r"^[a-z][a-z0-9_]{0,63}$")
-    kind: GeneralAgentNodeKind
-    capability_name: str = Field(pattern=r"^[a-z][a-z0-9_]*$")
-    objective: str = Field(min_length=1, max_length=10_000)
-    dependencies: list[str] = Field(default_factory=list, max_length=20)
-    continue_on_failure: bool = False
-
-
-class GeneralAgentPlanSelection(GeneralAgentModel):
-    """全量轻量能力目录上的计划骨架。"""
-
-    rationale: str = Field(min_length=1, max_length=20_000)
-    requires_clarification: bool = False
-    clarification_question: str = Field(default="", max_length=20_000)
-    direct_response: str = Field(default="", max_length=100_000)
-    nodes: list[GeneralAgentPlanSelectionNode] = Field(
-        default_factory=list, max_length=40
-    )
-    final_response_guidance: str = Field(default="", max_length=20_000)
-
-    @model_validator(mode="after")
-    def validate_selection(self) -> Self:
-        if self.requires_clarification:
-            if not self.clarification_question.strip():
-                raise ValueError("需要澄清的计划必须提供澄清问题。")
-            if self.nodes:
-                raise ValueError("等待澄清时不得提前安排执行节点。")
-            return self
-        if not self.nodes and not self.direct_response.strip():
-            raise ValueError("能力选择必须包含节点或可直接回答的内容。")
-        node_ids = [node.node_id for node in self.nodes]
-        if len(node_ids) != len(set(node_ids)):
-            raise ValueError("计划节点 ID 必须唯一。")
-        known = set(node_ids)
-        for node in self.nodes:
-            if node.node_id in node.dependencies:
-                raise ValueError(f"节点“{node.node_id}”不能依赖自身。")
-            unknown = set(node.dependencies) - known
-            if unknown:
-                raise ValueError(
-                    f"节点“{node.node_id}”依赖未知节点：{', '.join(sorted(unknown))}"
-                )
-        _ensure_acyclic(self.nodes)
-        return self
+    @field_validator("source_path", "target_path", mode="before")
+    @classmethod
+    def normalize_path(cls, value: Any) -> Any:
+        if not isinstance(value, str):
+            return value
+        normalized = re.sub(r"\[(\d+)\]", r".\1", value.removeprefix("output."))
+        normalized = normalized.strip(".")
+        if not normalized or not re.fullmatch(
+            r"[A-Za-z_][A-Za-z0-9_]*(?:\.(?:[A-Za-z_][A-Za-z0-9_]*|\d+))*",
+            normalized,
+        ):
+            raise ValueError(
+                "输入绑定路径必须使用字段名和点号数组下标，例如 chunks.0.content。"
+            )
+        return normalized
 
 
 class GeneralAgentPlanNode(GeneralAgentModel):
@@ -139,6 +140,10 @@ class GeneralAgentPlanNode(GeneralAgentModel):
     input_bindings: list[GeneralAgentInputBinding] = Field(
         default_factory=list,
         max_length=30,
+    )
+    reuse_from_node_id: str | None = Field(
+        default=None,
+        pattern=r"^[a-z][a-z0-9_]{0,63}$",
     )
     continue_on_failure: bool = False
 
@@ -212,6 +217,20 @@ class GeneralAgentNodeRun(GeneralAgentModel):
     effect_status: str | None = Field(default=None, max_length=64)
     reconciliation_reason: str = Field(default="", max_length=2_000)
     duplicate_execution_protected: bool = False
+    reused_from_producer_ref: str | None = Field(default=None, max_length=256)
+    producer_validity_proof_sha256: str | None = Field(
+        default=None,
+        pattern=r"^[a-f0-9]{64}$",
+    )
+    reused_source_plan_revision: int | None = Field(default=None, ge=0)
+    reused_source_fingerprint: str | None = Field(
+        default=None,
+        pattern=r"^[a-f0-9]{64}$",
+    )
+    reused_dependency_fingerprint: str | None = Field(
+        default=None,
+        pattern=r"^[a-f0-9]{64}$",
+    )
     started_at: str | None = None
     finished_at: str | None = None
     duration_ms: int = Field(default=0, ge=0)
@@ -258,12 +277,41 @@ class GeneralAgentContextMemory(GeneralAgentModel):
     source_refs: list[str] = Field(default_factory=list, max_length=100)
     artifact_refs: list[str] = Field(default_factory=list, max_length=100)
     content_sha256: str = Field(min_length=64, max_length=64)
+    basis_sha256: str = Field(min_length=64, max_length=64)
+    validity: Literal["active", "stale", "rejected", "superseded"] = "active"
+    previous_validity: Literal[
+        "active", "stale", "rejected", "superseded"
+    ] | None = None
+    invalidation_reason: str = Field(default="", max_length=2_000)
+    invalidated_by_memory_id: str | None = Field(default=None, max_length=128)
+    supersedes_memory_id: str | None = Field(default=None, max_length=128)
+    result_type: str | None = Field(default=None, max_length=128)
+    producer_ref: str | None = Field(default=None, max_length=256)
+    projection_role: Literal["basis", "review_target", "repair_source"] | None = None
+    repair_only: bool = False
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_validity_fields(cls, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        payload = dict(value)
+        payload.setdefault("basis_sha256", payload.get("content_sha256"))
+        payload.setdefault("validity", "active")
+        payload.setdefault("previous_validity", None)
+        payload.setdefault("invalidation_reason", "")
+        payload.setdefault("invalidated_by_memory_id", None)
+        payload.setdefault("supersedes_memory_id", None)
+        payload.setdefault("result_type", None)
+        payload.setdefault("producer_ref", None)
+        payload.setdefault("projection_role", None)
+        payload.setdefault("repair_only", False)
+        return payload
 
 
 class ContextDigest(GeneralAgentModel):
-    """过程历史压缩后的结构化摘要，不承担小说事实职责。"""
+    """工作记忆压缩后的结构化摘要，不承担小说事实职责。"""
 
-    current_request: str = Field(min_length=1, max_length=100_000)
     user_instructions: list[str] = Field(default_factory=list, max_length=100)
     task_summaries: list[str] = Field(default_factory=list, max_length=100)
     completed_nodes: list[str] = Field(default_factory=list, max_length=100)
@@ -283,27 +331,39 @@ class GeneralAgentCurrentRequest(GeneralAgentModel):
 
 
 class GeneralAgentWorkingMemory(GeneralAgentModel):
-    """当前工作面：任务摘要、资源摘要、过程笔记与节点状态。"""
+    """当前工作面：召回资料、运行状态、工具与子 Agent 结果。"""
 
     memories: list[GeneralAgentContextMemory] = Field(default_factory=list)
+    invalidated_memories: list[GeneralAgentContextMemory] = Field(default_factory=list)
     plan_summary: dict[str, Any] | None = None
     node_summaries: list[dict[str, Any]] = Field(default_factory=list)
     unresolved_issues: list[str] = Field(default_factory=list, max_length=100)
+    replan_guidance: str = Field(default="", max_length=20_000)
+    digest: ContextDigest | None = None
+
+
+class GeneralAgentHistoryMemory(GeneralAgentModel):
+    """完整对话历史的受预算投影，不包含任何内部运行记录。"""
+
+    summary: str = Field(default="", max_length=24_000)
+    messages: list[GeneralAgentMessage] = Field(default_factory=list)
+    total_message_count: int = Field(default=0, ge=0)
+    omitted_message_count: int = Field(default=0, ge=0)
 
 
 class GeneralAgentContextEnvelope(GeneralAgentModel):
-    """按稳定背景、工作、相关、过程和当前请求五层组装的上下文。"""
+    """按稳定、工作、长期、历史和当前请求五层组装的上下文。"""
 
     phase: Literal["plan", "replan", "verify"]
-    stable_background: list[str] = Field(default_factory=list, max_length=100)
+    stable_memory: list[str] = Field(default_factory=list, max_length=100)
     working_memory: GeneralAgentWorkingMemory = Field(
         default_factory=GeneralAgentWorkingMemory
     )
-    related_memories: list[GeneralAgentContextMemory] = Field(default_factory=list)
-    process_history: list[GeneralAgentMessage] = Field(default_factory=list)
+    long_term_memory: list[GeneralAgentContextMemory] = Field(default_factory=list)
+    history_memory: GeneralAgentHistoryMemory = Field(
+        default_factory=GeneralAgentHistoryMemory
+    )
     current_request: GeneralAgentCurrentRequest
-    replan_guidance: str = Field(default="", max_length=20_000)
-    digest: ContextDigest | None = None
     category_stats: list[GeneralAgentContextCategoryStat] = Field(default_factory=list)
     total_char_count: int = Field(default=0, ge=0)
     estimated_token_count: int = Field(default=0, ge=0)
@@ -324,11 +384,15 @@ class GeneralAgentContextEnvelope(GeneralAgentModel):
 
     @property
     def recent_messages(self) -> list[GeneralAgentMessage]:
-        return self.process_history
+        return self.history_memory.messages
 
     @property
     def runtime_memories(self) -> list[GeneralAgentContextMemory]:
-        return [*self.working_memory.memories, *self.related_memories]
+        return self.working_memory.memories
+
+    @property
+    def digest(self) -> ContextDigest | None:
+        return self.working_memory.digest
 
     @property
     def plan_summary(self) -> dict[str, Any] | None:
@@ -346,6 +410,171 @@ class GeneralAgentContextEnvelope(GeneralAgentModel):
 class GeneralAgentContextMemoryRef(GeneralAgentModel):
     memory_id: str = Field(min_length=1, max_length=128)
     content_sha256: str = Field(min_length=64, max_length=64)
+    state_sha256: str = Field(min_length=64, max_length=64)
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_state_hash(cls, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        payload = dict(value)
+        payload.setdefault("state_sha256", payload.get("content_sha256"))
+        return payload
+
+
+class GeneralAgentContextLayerTrace(GeneralAgentModel):
+    """单一记忆层在上下文组装前后的确定性计量。"""
+
+    layer: Literal[
+        "stable_memory",
+        "working_memory",
+        "long_term_memory",
+        "history_memory",
+        "current_request",
+    ]
+    pre_count: int = Field(ge=0)
+    pre_char_count: int = Field(ge=0)
+    pre_token_estimate: int = Field(ge=0)
+    post_count: int = Field(ge=0)
+    post_char_count: int = Field(ge=0)
+    post_token_estimate: int = Field(ge=0)
+    omitted_count: int = Field(ge=0)
+    omitted_item_refs: tuple[str, ...] = ()
+    omitted_source_refs: tuple[str, ...] = ()
+    protected_refs: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def validate_pre_post_counts(self) -> Self:
+        if self.post_count > self.pre_count:
+            raise ValueError("上下文层组装后的条目数不得大于组装前。")
+        if self.omitted_count < self.pre_count - self.post_count:
+            raise ValueError("上下文层遗漏数不能小于前后条目差。")
+        return self
+
+
+class GeneralAgentContextProjectionTrace(GeneralAgentModel):
+    """大节点结果进入模型上下文时的契约化投影证据。"""
+
+    node_id: str = Field(min_length=1, max_length=128)
+    original_content_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    projected_content_sha256: str | None = Field(
+        default=None,
+        pattern=r"^[a-f0-9]{64}$",
+    )
+    original_item_count: int = Field(ge=0)
+    projected_item_count: int = Field(ge=0)
+    omitted_item_count: int = Field(ge=0)
+    required_output_paths: tuple[str, ...] = ()
+    source_refs: tuple[str, ...] = ()
+    artifact_refs: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def validate_projection_counts(self) -> Self:
+        if self.projected_item_count > self.original_item_count:
+            raise ValueError("节点结果投影条目数不得超过原始结果。")
+        if (
+            self.omitted_item_count
+            != self.original_item_count - self.projected_item_count
+        ):
+            raise ValueError("节点结果遗漏数必须由原始与投影条目数唯一派生。")
+        return self
+
+
+class GeneralAgentAssemblyTrace(GeneralAgentModel):
+    """新上下文快照的五层输入、收缩、保护与投影证据。"""
+
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+        populate_by_name=True,
+    )
+
+    schema_: Literal["taichu.general_agent.context_assembly_trace@1"] = Field(
+        alias="schema",
+        default="taichu.general_agent.context_assembly_trace@1",
+    )
+    layers: tuple[GeneralAgentContextLayerTrace, ...] = Field(
+        min_length=5,
+        max_length=5,
+    )
+    omitted_item_refs: tuple[str, ...] = ()
+    omitted_source_refs: tuple[str, ...] = ()
+    protected_refs: tuple[str, ...] = Field(min_length=2)
+    digest_used: bool
+    fallback_used: bool
+    digest_source_ids: tuple[str, ...] = ()
+    current_request_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    stable_memory_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+    projections: tuple[GeneralAgentContextProjectionTrace, ...] = ()
+    trace_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+    @model_validator(mode="after")
+    def validate_trace_identity(self) -> Self:
+        expected_layers = (
+            "stable_memory",
+            "working_memory",
+            "long_term_memory",
+            "history_memory",
+            "current_request",
+        )
+        if tuple(item.layer for item in self.layers) != expected_layers:
+            raise ValueError("AssemblyTrace 必须按固定五层顺序记录。")
+        if self.trace_sha256 != context_snapshot_sha256(
+            self.model_dump(
+                mode="json",
+                by_alias=True,
+                exclude={"trace_sha256"},
+            )
+        ):
+            raise ValueError("AssemblyTrace 内容哈希不匹配。")
+        return self
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        layers: tuple[GeneralAgentContextLayerTrace, ...],
+        omitted_item_refs: tuple[str, ...],
+        omitted_source_refs: tuple[str, ...],
+        protected_refs: tuple[str, ...],
+        digest_used: bool,
+        fallback_used: bool,
+        digest_source_ids: tuple[str, ...],
+        current_request_sha256: str,
+        stable_memory_sha256: str,
+        projections: tuple[GeneralAgentContextProjectionTrace, ...],
+    ) -> GeneralAgentAssemblyTrace:
+        payload = {
+            "schema": "taichu.general_agent.context_assembly_trace@1",
+            "layers": layers,
+            "omitted_item_refs": omitted_item_refs,
+            "omitted_source_refs": omitted_source_refs,
+            "protected_refs": protected_refs,
+            "digest_used": digest_used,
+            "fallback_used": fallback_used,
+            "digest_source_ids": digest_source_ids,
+            "current_request_sha256": current_request_sha256,
+            "stable_memory_sha256": stable_memory_sha256,
+            "projections": projections,
+        }
+        return cls(
+            **payload,
+            trace_sha256=context_snapshot_sha256(
+                {
+                    key: (
+                        [
+                            item.model_dump(mode="json")
+                            for item in value
+                        ]
+                        if isinstance(value, tuple)
+                        and value
+                        and isinstance(value[0], GeneralAgentModel)
+                        else value
+                    )
+                    for key, value in payload.items()
+                }
+            ),
+        )
 
 
 class GeneralAgentContextSnapshot(GeneralAgentModel):
@@ -357,12 +586,21 @@ class GeneralAgentContextSnapshot(GeneralAgentModel):
     policy_snapshot: dict[str, Any] = Field(default_factory=dict)
     memory_refs: list[GeneralAgentContextMemoryRef] = Field(default_factory=list)
     envelope: GeneralAgentContextEnvelope
+    assembly_trace: GeneralAgentAssemblyTrace | None = None
     content_sha256: str = Field(min_length=64, max_length=64)
 
     @model_validator(mode="after")
     def validate_snapshot_hash(self) -> Self:
+        current_payload = self.model_dump(mode="json", exclude={"content_sha256"})
+        if self.content_sha256 == context_snapshot_sha256(current_payload):
+            return self
+        pre_trace_payload = dict(current_payload)
+        if pre_trace_payload.pop("assembly_trace", None) is None and (
+            self.content_sha256 == context_snapshot_sha256(pre_trace_payload)
+        ):
+            return self
         if self.content_sha256 != context_snapshot_sha256(
-            self.model_dump(mode="json", exclude={"content_sha256"})
+            _legacy_context_snapshot_payload(pre_trace_payload)
         ):
             raise ValueError("上下文快照校验和不匹配。")
         return self
@@ -401,7 +639,17 @@ class GeneralAgentRun(GeneralAgentModel):
     node_runs: list[GeneralAgentNodeRun] = Field(default_factory=list)
     pending_human_request: GeneralAgentHumanRequest | None = None
     final_answer: str = ""
+    final_answer_basis_sha256: str | None = Field(
+        default=None,
+        min_length=64,
+        max_length=64,
+    )
+    verification_attempt_count: int = Field(default=0, ge=0)
     verification_issues: list[str] = Field(default_factory=list)
+    recovery_decisions: list[RecoveryDecision] = Field(
+        default_factory=list,
+        max_length=100,
+    )
     memory_refs: list[str] = Field(default_factory=list, max_length=500)
     context_snapshot_id: str | None = Field(default=None, max_length=128)
     context_snapshot: GeneralAgentContextSnapshot | None = None
@@ -440,6 +688,9 @@ class GeneralAgentRun(GeneralAgentModel):
         payload.setdefault("request_index", max(1, legacy_request_count))
         payload.setdefault("parent_run_id", None)
         payload.setdefault("memory_refs", [])
+        payload.setdefault("final_answer_basis_sha256", None)
+        payload.setdefault("verification_attempt_count", 0)
+        payload.setdefault("recovery_decisions", [])
         payload.setdefault("context_snapshot_id", None)
         payload.setdefault("context_snapshot", None)
         payload.setdefault("compression_stats", {})
@@ -486,7 +737,7 @@ class GeneralAgentVerification(GeneralAgentModel):
 
 
 def _ensure_acyclic(
-    nodes: list[GeneralAgentPlanNode] | list[GeneralAgentPlanSelectionNode],
+    nodes: list[GeneralAgentPlanNode],
 ) -> None:
     dependencies = {node.node_id: set(node.dependencies) for node in nodes}
     remaining = set(dependencies)
@@ -499,7 +750,78 @@ def _ensure_acyclic(
         remaining -= ready
 
 
+def _legacy_context_snapshot_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    """重建新增细粒度失效字段前的快照形状，仅用于读取旧检查点。"""
+
+    legacy = json.loads(json.dumps(payload, ensure_ascii=False))
+    for reference in legacy.get("memory_refs", []):
+        if isinstance(reference, dict):
+            reference.pop("state_sha256", None)
+    envelope = legacy.get("envelope")
+    if not isinstance(envelope, dict):
+        return legacy
+    working_memory = envelope.get("working_memory")
+    if isinstance(working_memory, dict):
+        working_memory.pop("invalidated_memories", None)
+        memories = working_memory.get("memories", [])
+        if isinstance(memories, list):
+            for memory in memories:
+                _remove_context_memory_validity_fields(memory)
+    long_term_memory = envelope.get("long_term_memory", [])
+    if isinstance(long_term_memory, list):
+        for memory in long_term_memory:
+            _remove_context_memory_validity_fields(memory)
+    return legacy
+
+
+def _remove_context_memory_validity_fields(value: Any) -> None:
+    if not isinstance(value, dict):
+        return
+    for field in (
+        "basis_sha256",
+        "validity",
+        "previous_validity",
+        "invalidation_reason",
+        "invalidated_by_memory_id",
+        "supersedes_memory_id",
+        "result_type",
+        "producer_ref",
+        "projection_role",
+        "repair_only",
+    ):
+        value.pop(field, None)
+
+
 def context_snapshot_sha256(payload: dict[str, Any]) -> str:
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    return sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def recovery_evidence_sha256(payload: dict[str, Any]) -> str:
+    """稳定标识恢复决定所依据的最小审计证据。"""
+
+    return context_snapshot_sha256(payload)
+
+
+def result_basis_sha256(run: GeneralAgentRun) -> str:
+    """标识当前计划修订及其真实节点证据，防止旧结论跨修订复用。"""
+    current_nodes = [
+        node.model_dump(mode="json")
+        for node in run.node_runs
+        if node.plan_revision == run.plan_revision
+    ]
+    payload = {
+        "run_id": run.run_id,
+        "request_index": run.request_index,
+        "plan_revision": run.plan_revision,
+        "plan": run.plan.model_dump(mode="json") if run.plan is not None else None,
+        "node_runs": current_nodes,
+    }
     encoded = json.dumps(
         payload,
         ensure_ascii=False,

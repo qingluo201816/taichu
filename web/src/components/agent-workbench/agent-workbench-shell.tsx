@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { AppShell } from "@/components/app-shell";
 import { CandidateReviewDialog } from "@/components/agent-workbench/candidate-review-dialog";
@@ -49,6 +50,7 @@ import { listChapters } from "@/lib/api/chapters";
 import {
   listKnowledgeCards,
   listKnowledgeSchemas,
+  mergeKnowledgeCards,
   readKnowledgeCard,
 } from "@/lib/api/mvp";
 import {
@@ -61,7 +63,12 @@ import {
   type KnowledgeFormState,
   type KnowledgeReferenceOptions,
 } from "@/lib/knowledge/structured-fields";
+import {
+  hasExactKnowledgeIdentityOverlap,
+  knowledgeIdentityKeys,
+} from "@/lib/knowledge/identity-match";
 import { formatBatchRunTitle } from "@/lib/agent-run-display";
+import { ApiError } from "@/lib/api-client";
 import type {
   AgentEntityGroup,
   AgentIgnoredExtraction,
@@ -199,7 +206,10 @@ const nodeLabel: Record<string, string> = {
 };
 
 export function AgentWorkbenchShell() {
-  const [activeAgent, setActiveAgent] = useState<WorkbenchAgent>("general");
+  const searchParams = useSearchParams();
+  const [activeAgent, setActiveAgent] = useState<WorkbenchAgent>(() =>
+    searchParams.get("assistant") === "knowledge" ? "knowledge" : "general",
+  );
 
   if (activeAgent === "general") {
     return <GeneralAgentWorkbench onAgentChange={setActiveAgent} />;
@@ -246,6 +256,7 @@ function KnowledgeExtractionWorkbench({
   const [targetCardErrors, setTargetCardErrors] = useState<Record<string, string>>(
     {},
   );
+  const [mergeCandidates, setMergeCandidates] = useState<StructuredKnowledgeCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [actionBusyKey, setActionBusyKey] = useState("");
@@ -549,6 +560,64 @@ function KnowledgeExtractionWorkbench({
     };
   }, [selectedCandidate?.target_card_id, targetCards]);
 
+  useEffect(() => {
+    if (!selectedCandidate?.target_card_id) {
+      queueMicrotask(() => setMergeCandidates([]));
+      return;
+    }
+    const candidateIdentity = {
+      name: selectedCandidate.suggested_card.name,
+      aliases: selectedCandidate.suggested_card.aliases,
+    };
+    const targetIdentity = {
+      name: selectedTargetCard?.name,
+      aliases: selectedTargetCard?.aliases,
+    };
+    const terms = Array.from(new Set([
+      ...knowledgeIdentityKeys(candidateIdentity),
+      ...knowledgeIdentityKeys(targetIdentity),
+    ]));
+    if (!terms.length) {
+      queueMicrotask(() => setMergeCandidates([]));
+      return;
+    }
+    let ignore = false;
+    void Promise.all(terms.map(q => listKnowledgeCards({ type: selectedCandidate.knowledge_type, lifecycle: "confirmed", q, page: 1, pageSize: 20 })))
+      .then(results => {
+        if (ignore) return;
+        const cards = new Map<string, StructuredKnowledgeCard>();
+        results.flatMap(result => result.cards).forEach(card => {
+          const hasIdentityOverlap =
+            hasExactKnowledgeIdentityOverlap(candidateIdentity, card) ||
+            hasExactKnowledgeIdentityOverlap(targetIdentity, card);
+          if (card.id !== selectedCandidate.target_card_id && hasIdentityOverlap) {
+            cards.set(card.id, card);
+          }
+        });
+        setMergeCandidates([...cards.values()]);
+      })
+      .catch(() => { if (!ignore) setMergeCandidates([]); });
+    return () => { ignore = true; };
+  }, [selectedCandidate, selectedTargetCard]);
+
+  async function handleMergeExistingCard(mergedCard: StructuredKnowledgeCard) {
+    if (!selectedCandidate?.target_card_id) return;
+    const primaryName = selectedTargetCard?.name || selectedCandidate.matched_card_name || "当前知识卡";
+    if (!window.confirm(`将“${mergedCard.name}”合并到“${primaryName}”？合并后前者不再作为有效知识卡展示。`)) return;
+    setActionBusyKey(`merge:${mergedCard.id}`);
+    setError("");
+    try {
+      const response = await mergeKnowledgeCards(selectedCandidate.target_card_id, mergedCard.id);
+      setTargetCards(current => ({ ...current, [response.primary_card.id]: response.primary_card }));
+      setMergeCandidates(current => current.filter(card => card.id !== mergedCard.id));
+      setError(`已合并“${mergedCard.name}”，请核对左侧主卡与右侧候选后确认入库。`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "合并知识卡失败");
+    } finally {
+      setActionBusyKey("");
+    }
+  }
+
   async function handleCreateRun() {
     if (selectedChapterIds.length === 0) {
       setError("请先勾选至少一个章节。");
@@ -743,7 +812,14 @@ function KnowledgeExtractionWorkbench({
       );
       await reloadRuns();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "采纳本次沉淀失败");
+      if (caught instanceof ApiError && caught.code === "network_error") {
+        setError(
+          "采纳请求连接中断。已经确认的候选会保留；正在重新加载运行结果，请稍后再采纳剩余候选。",
+        );
+        void reloadRuns();
+      } else {
+        setError(caught instanceof Error ? caught.message : "采纳本次沉淀失败");
+      }
     } finally {
       setActionBusyKey("");
     }
@@ -880,6 +956,7 @@ function KnowledgeExtractionWorkbench({
                   editingCandidateId={editingCandidateId}
                   selectedTargetCard={selectedTargetCard}
                   selectedTargetCardError={selectedTargetCardError}
+                  mergeCandidates={mergeCandidates}
                   selectedCandidateMergeMode={selectedCandidateMergeMode}
                   dialogOpen={candidateDialogOpen}
                   statusFilter={candidateStatusFilter}
@@ -960,6 +1037,7 @@ function KnowledgeExtractionWorkbench({
                     setEditingCandidateId("");
                     setError("");
                   }}
+                  onMergeExistingCard={card => void handleMergeExistingCard(card)}
                   onAction={(candidate, action, mergeMode) =>
                     void handleCandidateAction(candidate, action, mergeMode)
                   }
@@ -1361,6 +1439,7 @@ function CandidatePanel({
   editingCandidateId,
   selectedTargetCard,
   selectedTargetCardError,
+  mergeCandidates,
   selectedCandidateMergeMode,
   dialogOpen,
   statusFilter,
@@ -1374,6 +1453,7 @@ function CandidatePanel({
   onStartEdit,
   onCancelEdit,
   onAction,
+  onMergeExistingCard,
 }: {
   run: AgentRun | null;
   selectedCandidate: AgentReviewItem | null;
@@ -1384,6 +1464,7 @@ function CandidatePanel({
   editingCandidateId: string;
   selectedTargetCard?: StructuredKnowledgeCard | null;
   selectedTargetCardError: string;
+  mergeCandidates: StructuredKnowledgeCard[];
   selectedCandidateMergeMode: EditConfirmMergeMode;
   dialogOpen: boolean;
   statusFilter: CandidateStatusFilter;
@@ -1401,6 +1482,7 @@ function CandidatePanel({
     action: "confirm" | "edit-confirm" | "reject",
     mergeMode?: EditConfirmMergeMode,
   ) => void;
+  onMergeExistingCard: (card: StructuredKnowledgeCard) => void;
 }) {
   if (!run) {
     return <EmptyPanel text="请选择或创建一次运行。" />;
@@ -1491,6 +1573,7 @@ function CandidatePanel({
       <CandidateReviewDialog
         open={dialogOpen}
         candidate={selectedCandidate}
+        relatedCandidates={run.review_items}
         schema={selectedCandidateSchema}
         draft={selectedCandidateDraft}
         formErrors={selectedCandidateFormErrors}
@@ -1501,6 +1584,7 @@ function CandidatePanel({
         }
         targetCard={selectedTargetCard}
         targetCardError={selectedTargetCardError}
+        mergeCandidates={mergeCandidates}
         mergeMode={selectedCandidateMergeMode}
         actionBusyKey={actionBusyKey}
         knowledgeTypeText={
@@ -1519,6 +1603,7 @@ function CandidatePanel({
         onStartEdit={onStartEdit}
         onCancelEdit={onCancelEdit}
         onAction={onAction}
+        onMergeExistingCard={onMergeExistingCard}
       />
     </div>
   );

@@ -78,6 +78,10 @@ _TOOL_METRICS: dict[str, tuple[MetricDefinition, ...]] = {
         ("field_accuracy", "结构字段准确率", "higher_is_better"),
         ("stable_order", "稳定排序", "guardrail"),
     ),
+    "get_knowledge_chapter_coverage": (
+        ("coverage_accuracy", "章节覆盖统计准确率", "higher_is_better"),
+        ("confirmed_only", "仅统计已确认知识", "guardrail"),
+    ),
     "read_manuscript": (
         ("range_accuracy", "正文范围准确率", "higher_is_better"),
         ("budget_violation", "字符预算违规率", "lower_is_better"),
@@ -89,6 +93,11 @@ _TOOL_METRICS: dict[str, tuple[MetricDefinition, ...]] = {
     "retrieve_knowledge": (
         ("precision_at_k", "知识召回准确率", "higher_is_better"),
         ("recall_at_k", "知识召回率", "higher_is_better"),
+    ),
+    "retrieve_story_graph": (
+        ("multi_hop_recall", "多跳证据召回率", "higher_is_better"),
+        ("relation_precision", "关系证据准确率", "higher_is_better"),
+        ("unsupported_relation", "无依据关系率", "guardrail"),
     ),
     "resolve_knowledge_identity": (
         ("identity_accuracy", "唯一身份准确率", "higher_is_better"),

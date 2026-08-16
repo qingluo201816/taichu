@@ -33,14 +33,16 @@ class PluginDiscoveryTest(unittest.TestCase):
         plugins = discover_tools("taichu.application.tools")
 
         names = {plugin.manifest.name for plugin in plugins}
-        self.assertEqual(len(names), 16)
+        self.assertEqual(len(names), 18)
         self.assertEqual(
             names,
             {
                 "get_novel_structure",
+                "get_knowledge_chapter_coverage",
                 "read_manuscript",
                 "search_manuscript",
                 "retrieve_knowledge",
+                "retrieve_story_graph",
                 "resolve_knowledge_identity",
                 "list_knowledge_catalog",
                 "read_knowledge_cards",

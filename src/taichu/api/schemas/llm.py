@@ -32,6 +32,14 @@ class LLMModelProbeResponse(BaseModel):
     model_id: str
     availability: str
     last_probed_at: str | None = None
+    requested_provider: str
+    requested_model_id: str
+    actual_provider: str | None = None
+    actual_model_id: str | None = None
+    fallback_used: bool
+    fallback_from_provider: str | None = None
+    wire_protocol: str
+    provider_request_id: str | None = None
     message: str
 
 

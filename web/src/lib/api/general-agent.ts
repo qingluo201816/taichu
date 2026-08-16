@@ -1,10 +1,11 @@
 import { apiRequest } from "@/lib/api-client";
 import type {
-  AgentMemoryDeleteResponse,
   AgentMemoryListResponse,
   GeneralAgentConversationDeleteResponse,
   GeneralAgentConversationListResponse,
   GeneralAgentConversationResponse,
+  GeneralAgentContextSnapshotListResponse,
+  GeneralAgentLLMReplayListResponse,
   GeneralAgentResumeRequest,
   GeneralAgentRecoveryResponse,
   GeneralAgentRunListResponse,
@@ -72,15 +73,6 @@ export async function listGeneralAgentMemories(
   );
 }
 
-export async function deleteGeneralAgentMemory(
-  memoryId: string,
-): Promise<AgentMemoryDeleteResponse> {
-  return apiRequest<AgentMemoryDeleteResponse>(
-    `${PREFIX}/memories/${encodeURIComponent(memoryId)}`,
-    { method: "DELETE" },
-  );
-}
-
 export async function deleteGeneralAgentConversation(
   conversationId: string,
 ): Promise<GeneralAgentConversationDeleteResponse> {
@@ -141,5 +133,21 @@ export async function getGeneralAgentRecovery(
 ): Promise<GeneralAgentRecoveryResponse> {
   return apiRequest<GeneralAgentRecoveryResponse>(
     `${PREFIX}/runs/${encodeURIComponent(runId)}/recovery`,
+  );
+}
+
+export async function listGeneralAgentContextSnapshots(
+  runId: string,
+): Promise<GeneralAgentContextSnapshotListResponse> {
+  return apiRequest<GeneralAgentContextSnapshotListResponse>(
+    `${PREFIX}/runs/${encodeURIComponent(runId)}/context-snapshots`,
+  );
+}
+
+export async function listGeneralAgentLLMReplays(
+  runId: string,
+): Promise<GeneralAgentLLMReplayListResponse> {
+  return apiRequest<GeneralAgentLLMReplayListResponse>(
+    `${PREFIX}/runs/${encodeURIComponent(runId)}/llm-replays`,
   );
 }

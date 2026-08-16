@@ -130,6 +130,44 @@ class KnowledgeServiceTest(unittest.IsolatedAsyncioTestCase):
         persisted = await self.service.get_card(second.id)
         self.assertEqual(persisted.lifecycle, StructuredKnowledgeLifecycle.DRAFT)
 
+    async def test_merge_confirmed_cards_keeps_primary_and_retires_duplicate(self) -> None:
+        primary = await self.service.create_card(
+            StructuredKnowledgeType.CHARACTER,
+            {
+                **_complete_character_data("黄龙真人"),
+                "aliases": ["黄龙"],
+                "summary": "黄龙真人是太初教掌教。",
+                "source_note": "第1章：黄龙真人出现。",
+            },
+        )
+        duplicate = await self.service.create_card(
+            StructuredKnowledgeType.CHARACTER,
+            {
+                **_complete_character_data("太初教掌教"),
+                "summary": "太初教掌教重视灰种弟子。",
+                "source_note": "第2章：掌教关注灰种。",
+            },
+        )
+        primary = await self.service.confirm_card(primary.id)
+        duplicate = await self.service.confirm_card(duplicate.id)
+
+        merged_primary, retired = await self.service.merge_confirmed_cards(
+            primary.id,
+            duplicate.id,
+        )
+
+        self.assertEqual(merged_primary.id, primary.id)
+        self.assertEqual(merged_primary.lifecycle, StructuredKnowledgeLifecycle.CONFIRMED)
+        self.assertIn("太初教掌教", merged_primary.aliases)
+        self.assertIn("黄龙真人是太初教掌教。", merged_primary.summary)
+        self.assertIn("太初教掌教重视灰种弟子。", merged_primary.summary)
+        self.assertEqual(retired.id, duplicate.id)
+        self.assertEqual(retired.lifecycle, StructuredKnowledgeLifecycle.REJECTED)
+        self.assertEqual(
+            [card.id for card in await self.service.list_confirmed_cards()],
+            [primary.id],
+        )
+
     async def test_repository_cas_failure_maps_to_service_error(self) -> None:
         repository = _ConcurrentUpdateRepository()
         service = KnowledgeService(repository)

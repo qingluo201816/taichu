@@ -11,6 +11,7 @@ from taichu.domain.models.structured_knowledge import (
     StructuredKnowledgeCard,
     StructuredKnowledgeType,
 )
+from taichu.application.vector_graph.models import VectorGraphSourceType
 
 
 class ToolModel(BaseModel):
@@ -122,6 +123,40 @@ class SearchManuscriptOutput(ToolModel):
     source_refs: list[str] = Field(default_factory=list)
 
 
+class RetrieveStoryGraphInput(ToolModel):
+    query: str = Field(min_length=1, max_length=20_000)
+    max_passages: int = Field(default=10, ge=1, le=10)
+
+
+class StoryGraphEvidence(ToolModel):
+    source_type: VectorGraphSourceType
+    source_id: str
+    source_ref: str
+    title: str
+    content: str
+    rank: int = Field(ge=1)
+    chunk_index: int = Field(default=0, ge=0)
+    start_char: int | None = Field(default=None, ge=0)
+    end_char: int | None = Field(default=None, ge=0)
+    parent_start_char: int | None = Field(default=None, ge=0)
+    parent_end_char: int | None = Field(default=None, ge=0)
+    parent_chunk_indexes: list[int] = Field(default_factory=list)
+    context_content: str | None = None
+    context_source_ref: str | None = None
+    context_start_char: int | None = Field(default=None, ge=0)
+    context_end_char: int | None = Field(default=None, ge=0)
+    context_chunk_indexes: list[int] = Field(default_factory=list)
+
+
+class RetrieveStoryGraphOutput(ToolModel):
+    query: str
+    evidences: list[StoryGraphEvidence] = Field(default_factory=list)
+    retrieved_relations: list[str] = Field(default_factory=list)
+    expanded_relations: list[str] = Field(default_factory=list)
+    reranked_relations: list[str] = Field(default_factory=list)
+    source_refs: list[str] = Field(default_factory=list)
+
+
 class ResolveKnowledgeIdentityInput(ToolModel):
     knowledge_type: StructuredKnowledgeType
     name: str = Field(min_length=1, max_length=200)
@@ -176,6 +211,29 @@ class ReadKnowledgeCardsOutput(ToolModel):
     cards: list[StructuredKnowledgeCard] = Field(default_factory=list)
     missing_card_ids: list[str] = Field(default_factory=list)
     rejected_card_ids: list[str] = Field(default_factory=list)
+    source_refs: list[str] = Field(default_factory=list)
+
+
+class GetKnowledgeChapterCoverageInput(ToolModel):
+    pass
+
+
+class KnowledgeChapterCoverageItem(ToolModel):
+    chapter_id: str
+    title: str
+    order: int = Field(ge=0)
+    referenced_card_count: int = Field(ge=1)
+
+
+class GetKnowledgeChapterCoverageOutput(ToolModel):
+    confirmed_card_count: int = Field(ge=0)
+    referenced_card_count: int = Field(ge=0)
+    earliest_chapter: KnowledgeChapterCoverageItem | None = None
+    latest_chapter: KnowledgeChapterCoverageItem | None = None
+    referenced_chapters: list[KnowledgeChapterCoverageItem] = Field(
+        default_factory=list
+    )
+    unknown_chapter_ids: list[str] = Field(default_factory=list)
     source_refs: list[str] = Field(default_factory=list)
 
 

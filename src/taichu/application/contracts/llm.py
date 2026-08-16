@@ -5,14 +5,15 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Literal, Protocol, Self, runtime_checkable
+from typing import Any, Literal, Protocol, Self, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
 
-LLMRole = Literal["system", "user", "assistant"]
+LLMRole = Literal["system", "developer", "user", "assistant", "tool"]
 LLMResponseMode = Literal["text", "json"]
 LLMWireProtocol = Literal["openai_responses", "anthropic_messages"]
+LLMToolChoice = Literal["auto", "none", "required"]
 LLMCostKind = Literal["actual", "estimated", "unavailable"]
 LLMStreamEventType = Literal[
     "started", "text_delta", "usage", "completed", "failed"
@@ -20,11 +21,45 @@ LLMStreamEventType = Literal[
 
 
 @dataclass(frozen=True, slots=True)
+class LLMToolDefinition:
+    """一个由应用注册并通过模型 API 暴露的函数工具。"""
+
+    name: str
+    description: str
+    parameters: dict[str, Any]
+    strict: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class LLMToolCall:
+    """模型发起的一次函数工具调用。"""
+
+    call_id: str
+    name: str
+    arguments_json: str
+
+
+@dataclass(frozen=True, slots=True)
 class LLMMessage:
     """一条保留角色边界的应用层消息。"""
 
     role: LLMRole
-    content: str
+    content: str = ""
+    tool_calls: tuple[LLMToolCall, ...] = ()
+    tool_call_id: str | None = None
+    tool_name: str | None = None
+    is_error: bool = False
+
+    def __post_init__(self) -> None:
+        if self.role == "assistant" and self.tool_call_id is not None:
+            raise ValueError("assistant 消息不能声明工具结果关联标识。")
+        if self.role != "assistant" and self.tool_calls:
+            raise ValueError("只有 assistant 消息可以包含工具调用请求。")
+        if self.role == "tool":
+            if not (self.tool_call_id or "").strip():
+                raise ValueError("tool 消息必须声明工具调用关联标识。")
+        elif self.tool_call_id is not None or self.tool_name is not None or self.is_error:
+            raise ValueError("只有 tool 消息可以声明工具结果元数据。")
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,15 +71,22 @@ class LLMRequest:
     task_type: str
     task_name: str
     run_id: str | None = None
+    context_snapshot_id: str | None = None
     chapter_ids: tuple[str, ...] = ()
     response_mode: LLMResponseMode = "text"
     temperature: float | None = None
     max_output_tokens: int | None = None
     feature: str = ""
+    tools: tuple[LLMToolDefinition, ...] = ()
+    tool_choice: LLMToolChoice = "auto"
 
     def __str__(self) -> str:
         """提供便于测试和审计的文本视图，传输层仍保留消息角色。"""
-        return "\n\n".join(message.content for message in self.messages)
+        parts: list[str] = []
+        for message in self.messages:
+            parts.append(message.content)
+            parts.extend(call.arguments_json for call in message.tool_calls)
+        return "\n\n".join(parts)
 
     def __contains__(self, value: str) -> bool:
         """让旧测试替身可以继续按提示词片段选择固定响应。"""
@@ -83,6 +125,7 @@ class LLMResponse:
     finish_reason: str | None = None
     provider_request_id: str | None = None
     call_id: str | None = None
+    tool_calls: tuple[LLMToolCall, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,7 +146,7 @@ class LLMModelProfile:
 
     id: str
     display_name: str
-    provider: Literal["rightcode"]
+    provider: Literal["rightcode", "deepseek_official"]
     upstream_model: str
     wire_protocol: LLMWireProtocol
     base_url_key: str

@@ -1,5 +1,6 @@
 """MVP first-version API integration tests."""
 
+import asyncio
 import json
 import tempfile
 import unittest
@@ -387,6 +388,136 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(created.status_code, 200)
         self.assertEqual(patched.status_code, 422)
 
+    async def test_mvp_issue_revision_links_get_and_cas_conflict(self) -> None:
+        content = "\n".join(
+            [
+                "记录日期：2026-07-27",
+                "状态：待处理",
+                "现象：评测发现相同缺陷被并发处理。",
+                "根因：问题记录缺少可比较的修订身份。",
+                "影响：较旧写入可能覆盖较新闭环证据。",
+                "修复：使用预期修订执行原子比较并交换。",
+                "验证：陈旧修订返回冲突且文件不变。",
+                "相关代码：src/taichu/application/services/mvp_inbox_service.py",
+            ]
+        )
+        created = await self.client.post(
+            "/api/inbox/issues",
+            json={"data": {"id": "issue-cas-test", "title": "CAS 测试", "content": content}},
+        )
+        self.assertEqual(created.status_code, 200)
+        self.assertEqual(created.json()["item"]["revision"], 1)
+        self.assertEqual(created.json()["item"]["links"], [])
+
+        read = await self.client.get("/api/inbox/issues/issue-cas-test")
+        self.assertEqual(read.status_code, 200)
+        self.assertEqual(read.json()["item"]["revision"], 1)
+
+        patched = await self.client.patch(
+            "/api/inbox/issues/issue-cas-test",
+            json={
+                "expected_revision": 1,
+                "updates": {
+                    "priority": "high",
+                    "links": [
+                        {
+                            "namespace": "general_agent_benchmark",
+                            "relation_id": "a" * 64,
+                            "subject_id": "b" * 64,
+                            "relation_kind": "observed_in",
+                            "subject_content_sha256": "c" * 64,
+                        }
+                    ],
+                },
+            },
+        )
+        self.assertEqual(patched.status_code, 200)
+        self.assertEqual(patched.json()["item"]["revision"], 2)
+        self.assertEqual(len(patched.json()["item"]["links"]), 1)
+
+        concurrent = await asyncio.gather(
+            self.client.patch(
+                "/api/inbox/issues/issue-cas-test",
+                json={"expected_revision": 2, "updates": {"priority": "low"}},
+            ),
+            self.client.patch(
+                "/api/inbox/issues/issue-cas-test",
+                json={"expected_revision": 2, "updates": {"title": "并发胜出"}},
+            ),
+        )
+        self.assertEqual(sorted(response.status_code for response in concurrent), [200, 409])
+        conflict = next(response for response in concurrent if response.status_code == 409)
+        self.assertEqual(conflict.json()["error"]["current_revision"], 3)
+        self.assertTrue(conflict.json()["error"]["request_id"].startswith("request_"))
+
+        refreshed = await self.client.get("/api/inbox/issues/issue-cas-test")
+        self.assertEqual(refreshed.status_code, 200)
+        retry_updates = (
+            {"priority": "low"}
+            if refreshed.json()["item"]["priority"] == "high"
+            else {"title": "并发胜出"}
+        )
+        retried = await self.client.patch(
+            "/api/inbox/issues/issue-cas-test",
+            json={"expected_revision": 3, "updates": retry_updates},
+        )
+        self.assertEqual(retried.status_code, 200)
+        self.assertEqual(retried.json()["item"]["revision"], 4)
+
+        stale = await self.client.patch(
+            "/api/inbox/issues/issue-cas-test",
+            json={"expected_revision": 1, "updates": {"priority": "low"}},
+        )
+        self.assertEqual(stale.status_code, 409)
+        self.assertEqual(stale.json()["error"]["current_revision"], 4)
+        self.assertTrue(stale.json()["error"]["request_id"].startswith("request_"))
+
+        reread = await self.client.get("/api/inbox/issues/issue-cas-test")
+        self.assertEqual(reread.json()["item"]["priority"], "low")
+        self.assertEqual(reread.json()["item"]["title"], "并发胜出")
+        self.assertEqual(reread.json()["item"]["revision"], 4)
+
+    async def test_mvp_issue_legacy_shape_projects_revision_zero_without_rewrite(
+        self,
+    ) -> None:
+        content = "\n".join(
+            [
+                "记录日期：2026-07-27",
+                "状态：待处理",
+                "现象：历史问题记录没有修订字段。",
+                "根因：旧存储形状形成于 CAS 契约之前。",
+                "影响：读取端必须明确其初始修订。",
+                "修复：只读正规化为 revision 0 和空 links。",
+                "验证：GET 不触发原文件迁移。",
+                "相关代码：src/taichu/domain/models/mvp_inbox.py",
+            ]
+        )
+        created = await self.client.post(
+            "/api/inbox/issues",
+            json={"data": {"id": "issue-legacy-test", "title": "旧记录", "content": content}},
+        )
+        self.assertEqual(created.status_code, 200)
+        path = self.assets_root / "source" / "workspace" / "inbox_issues.jsonl"
+        records = [
+            json.loads(line)
+            for line in path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        for record in records:
+            if record["id"] == "issue-legacy-test":
+                record.pop("revision")
+                record.pop("links")
+        original = "".join(
+            json.dumps(record, ensure_ascii=False) + "\n" for record in records
+        )
+        path.write_text(original, encoding="utf-8")
+
+        read = await self.client.get("/api/inbox/issues/issue-legacy-test")
+        self.assertEqual(read.status_code, 200)
+        self.assertEqual(read.json()["item"]["revision"], 0)
+        self.assertEqual(read.json()["item"]["links"], [])
+        self.assertEqual(path.read_text(encoding="utf-8"), original)
+
     async def test_writing_ai_run_history_and_replay(self) -> None:
         create_card_response = await self.client.post(
             "/api/knowledge/cards",
@@ -466,6 +597,7 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
                 app_settings=Settings(
                     project_assets_dir=assets_root,
                     rightcode_api_key=SecretStr(""),
+                    deepseek_api_key=SecretStr(""),
                 ),
                 knowledge_repository=InMemoryKnowledgeRepository(),
             )

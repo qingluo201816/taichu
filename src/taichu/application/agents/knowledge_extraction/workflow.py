@@ -1563,10 +1563,10 @@ async def synthesize_candidate_summaries(
         )
         if isinstance(raw_summaries, list):
             for item in raw_summaries:
-                if not isinstance(item, dict) or set(item) != {
+                if not isinstance(item, dict) or not {
                     "candidate_id",
                     "summary",
-                }:
+                }.issubset(item):
                     continue
                 candidate_id = str(item.get("candidate_id") or "").strip()
                 summary = _normalize_synthesized_summary(item.get("summary"))
@@ -2499,7 +2499,7 @@ def _bind_candidate_to_existing_card(
 def dedupe_candidates_by_target(
     candidates: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Merge aliases that resolve to the same confirmed knowledge card."""
+    """Merge candidates that resolve to one card or share an in-batch identity."""
     groups: dict[str, list[dict[str, Any]]] = {}
     order: list[str] = []
     passthrough: list[tuple[int, dict[str, Any]]] = []
@@ -2571,7 +2571,112 @@ def dedupe_candidates_by_target(
             merged["internal_conflicts"] = conflicts
         first_index = min(candidates.index(candidate) for candidate in group)
         merged_positions.append((first_index, merged))
-    return [item for _, item in sorted(merged_positions, key=lambda pair: pair[0])]
+    return _dedupe_unmatched_candidates_by_identity(
+        [item for _, item in sorted(merged_positions, key=lambda pair: pair[0])]
+    )
+
+
+def _dedupe_unmatched_candidates_by_identity(
+    candidates: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Merge same-type new candidates when a name is another candidate's alias."""
+    grouped: list[tuple[set[str], list[dict[str, Any]]]] = []
+    for candidate in candidates:
+        if str(candidate.get("target_card_id") or "").strip():
+            grouped.append((set(), [candidate]))
+            continue
+        identities = _candidate_identity_keys(candidate)
+        if not identities:
+            grouped.append((set(), [candidate]))
+            continue
+        knowledge_type = str(candidate.get("type") or "")
+        matching_indexes = [
+            index
+            for index, (group_identities, group) in enumerate(grouped)
+            if group_identities
+            and str(group[0].get("type") or "") == knowledge_type
+            and group_identities.intersection(identities)
+        ]
+        if not matching_indexes:
+            grouped.append((set(identities), [candidate]))
+            continue
+        first_index = matching_indexes[0]
+        group_identities, group = grouped[first_index]
+        group_identities.update(identities)
+        group.append(candidate)
+        for index in reversed(matching_indexes[1:]):
+            joined_identities, joined_group = grouped.pop(index)
+            group_identities.update(joined_identities)
+            group.extend(joined_group)
+
+    merged: list[dict[str, Any]] = []
+    for _, group in grouped:
+        if len(group) == 1:
+            merged.append(group[0])
+            continue
+        primary = max(
+            group,
+            key=lambda candidate: (
+                len(_candidate_identity_keys(candidate)),
+                len(_list_strings(candidate.get("evidence_excerpts"))),
+            ),
+        )
+        combined = dict(primary)
+        aliases = _list_strings(combined.get("aliases"))
+        chapter_ids = _list_strings(combined.get("chapter_ids"))
+        chapter_titles = _list_strings(combined.get("chapter_titles"))
+        evidence = _list_strings(combined.get("evidence_excerpts"))
+        conflicts = _list_strings(combined.get("internal_conflicts"))
+        source_notes = [str(combined.get("source_note") or "").strip()]
+        for candidate in group:
+            if candidate is primary:
+                continue
+            aliases = _append_unique_strings(
+                aliases,
+                [
+                    str(candidate.get("name") or "").strip(),
+                    *_list_strings(candidate.get("aliases")),
+                ],
+            )
+            chapter_ids = _append_unique_strings(
+                chapter_ids,
+                _list_strings(candidate.get("chapter_ids")),
+            )
+            chapter_titles = _append_unique_strings(
+                chapter_titles,
+                _list_strings(candidate.get("chapter_titles")),
+            )
+            evidence = _append_unique_strings(
+                evidence,
+                _list_strings(candidate.get("evidence_excerpts")),
+            )
+            conflicts = _append_unique_strings(
+                conflicts,
+                _list_strings(candidate.get("internal_conflicts")),
+            )
+            source_notes.append(str(candidate.get("source_note") or "").strip())
+        primary_name = str(combined.get("name") or "").strip()
+        combined["aliases"] = [
+            alias for alias in aliases if alias and alias != primary_name
+        ]
+        combined["chapter_ids"] = chapter_ids
+        combined["chapter_titles"] = chapter_titles
+        combined["evidence_excerpts"] = evidence[:20]
+        if evidence:
+            combined["evidence_excerpt"] = evidence[0][:300]
+        combined["source_note"] = _dedupe_text_blocks(source_notes)
+        if conflicts:
+            combined["internal_conflicts"] = conflicts
+        merged.append(combined)
+    return merged
+
+
+def _candidate_identity_keys(candidate: dict[str, Any]) -> set[str]:
+    return {
+        identity
+        for value in [candidate.get("name"), *_list_strings(candidate.get("aliases"))]
+        if (identity := _normalize_identity(value))
+    }
 
 
 def mark_cross_type_projection_conflicts(

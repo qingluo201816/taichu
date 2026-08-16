@@ -16,19 +16,25 @@ class Settings(BaseSettings):
     }
 
     rightcode_api_key: SecretStr = SecretStr("")
-    rightcode_responses_base_url: str = "https://www.right.codes/codex/v1"
-    rightcode_claude_sale_base_url: str = "https://right.codes/claude-sale"
+    rightcode_responses_base_url: str = "https://www.rightapi.ai/codex/v1"
+    rightcode_claude_sale_base_url: str = "https://www.rightapi.ai/claude"
     rightcode_deepseek_anthropic_base_url: str = (
-        "https://right.codes/deepseek/anthropic"
+        "https://rightapi.ai/deepseek/anthropic"
     )
     rightcode_default_model_id: str = "deepseek-v4-pro"
-    rightcode_request_timeout_seconds: float = 180
+    rightcode_request_timeout_seconds: float = 600
     rightcode_max_retries: int = 2
     rightcode_model_prices_json: str = "{}"
+    deepseek_api_key: SecretStr = SecretStr("")
+    deepseek_anthropic_base_url: str = "https://api.deepseek.com/anthropic"
+    deepseek_fallback_enabled: bool = True
+    deepseek_fallback_model_id: str = "deepseek-v4-pro"
+    deepseek_fallback_max_retries: int = 1
     agent_model_roles_json: str = "{}"
 
     host: str = "127.0.0.1"
     port: int = 8000
+    backend_reload: bool = True
 
     project_assets_dir: Path = Path("project_assets")
     evaluation_datasets_dir: Path = Path("tests/fixtures/evaluations")
@@ -37,9 +43,13 @@ class Settings(BaseSettings):
     retrieval_policies_json: str = "{}"
     retrieval_default_relevance_strategy: str = "mongo_lexical"
 
-    qdrant_url: str = "http://127.0.0.1:6333"
-    qdrant_collection: str = "taichu_knowledge_vectors"
-    qdrant_api_key: SecretStr = SecretStr("")
+    milvus_uri: str = "http://127.0.0.1:19530"
+    milvus_token: SecretStr = SecretStr("")
+    milvus_collection_prefix: str = "taichu_story"
+    milvus_hnsw_m: int = 24
+    milvus_hnsw_ef_construction: int = 300
+    milvus_hnsw_ef_search: int = 150
+    milvus_rrf_k: int = 60
 
     embedding_base_url: str = "http://127.0.0.1:8011/v1"
     embedding_model_id: str = "Qwen3-Embedding-4B-Q4_K_M"
@@ -47,21 +57,27 @@ class Settings(BaseSettings):
     embedding_request_timeout_seconds: float = 120
     embedding_max_input_tokens: int = 8192
 
-    vector_document_batch_size: int = 16
-    vector_embedding_input_char_budget: int = 24_000
-    vector_query_char_budget: int = 12_000
-    vector_candidate_multiplier: int = 4
-    vector_score_threshold: float = 0.50
-    vector_coverage_bonus: float = 0.02
+    vector_graph_llm_model: str = "deepseek-v4-pro"
+    vector_graph_manuscript_chunk_size: int = 1_000
+    vector_graph_manuscript_chunk_overlap: int = 200
+    vector_graph_entity_top_k: int = 30
+    vector_graph_relation_top_k: int = 30
+    vector_graph_expansion_degree: int = 2
+    vector_graph_ann_top_k: int = 30
+    vector_graph_reranker_top_k: int = 10
 
-    general_agent_related_memory_top_k: int = 12
-    general_agent_related_memory_char_budget: int = 12_000
+    reranker_base_url: str = "http://127.0.0.1:8012"
+    reranker_model_id: str = "BAAI/bge-reranker-v2-m3"
+    reranker_request_timeout_seconds: float = 120
+
+    general_agent_working_memory_retrieval_top_k: int = 12
     general_agent_working_memory_char_budget: int = 24_000
+    general_agent_long_term_memory_char_budget: int = 12_000
     general_agent_memory_age_decay_days: int = 30
     general_agent_memory_minimum_relevance: float = 0.01
     general_agent_context_char_budget: int = 180_000
-    general_agent_process_history_limit: int = 10
-    general_agent_process_history_char_budget: int = 24_000
+    general_agent_history_memory_limit: int = 10
+    general_agent_history_memory_char_budget: int = 24_000
     general_agent_node_summary_char_budget: int = 32_000
     general_agent_plan_summary_char_budget: int = 24_000
     general_agent_message_compaction_threshold: int = 20

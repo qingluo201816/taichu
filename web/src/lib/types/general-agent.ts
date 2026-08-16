@@ -121,6 +121,17 @@ export type AgentMemoryKind =
   | "unresolved_issue"
   | "fact_reference";
 
+export type AgentMemoryValidity =
+  | "active"
+  | "stale"
+  | "rejected"
+  | "superseded";
+
+export type AgentMemoryDependencyRelation =
+  | "basis"
+  | "review_target"
+  | "repair_source";
+
 export type AgentMemoryEntry = {
   memory_id: string;
   kind: AgentMemoryKind;
@@ -138,6 +149,21 @@ export type AgentMemoryEntry = {
   expires_at?: string | null;
   supersedes_memory_id?: string | null;
   content_sha256: string;
+  basis_sha256: string;
+  producer_ref?: string | null;
+  result_type?: string | null;
+  evidence_anchors: Array<{
+    reference: string;
+    content_sha256: string;
+  }>;
+  dependencies: Array<{
+    memory_id: string;
+    relation: AgentMemoryDependencyRelation;
+  }>;
+  validity: AgentMemoryValidity;
+  invalidated_at?: string | null;
+  invalidation_reason: string;
+  invalidated_by_memory_id?: string | null;
   sensitivity: "normal" | "private" | "restricted";
   deleted_at?: string | null;
 };
@@ -151,6 +177,78 @@ export type GeneralAgentCompressionStats = {
   omitted_message_count: number;
   omitted_node_count: number;
   selected_memory_count: number;
+};
+
+export type GeneralAgentContextMemory = {
+  memory_id: string;
+  kind: string;
+  content: string;
+  source_refs: string[];
+  artifact_refs: string[];
+  content_sha256: string;
+  basis_sha256: string;
+  validity: AgentMemoryValidity;
+  invalidation_reason: string;
+  invalidated_by_memory_id?: string | null;
+  supersedes_memory_id?: string | null;
+  result_type?: string | null;
+  producer_ref?: string | null;
+};
+
+export type GeneralAgentContextSnapshot = {
+  snapshot_id: string;
+  phase: "plan" | "replan" | "verify";
+  conversation_id: string;
+  run_id: string;
+  created_at: string;
+  policy_snapshot: Record<string, unknown>;
+  memory_refs: Array<{
+    memory_id: string;
+    content_sha256: string;
+    state_sha256: string;
+  }>;
+  envelope: {
+    phase: "plan" | "replan" | "verify";
+    stable_memory: string[];
+    working_memory: {
+      memories: GeneralAgentContextMemory[];
+      invalidated_memories: GeneralAgentContextMemory[];
+      plan_summary?: Record<string, unknown> | null;
+      node_summaries: Array<Record<string, unknown>>;
+      unresolved_issues: string[];
+      replan_guidance: string;
+      digest?: Record<string, unknown> | null;
+    };
+    long_term_memory: GeneralAgentContextMemory[];
+    history_memory: {
+      summary: string;
+      messages: Array<{
+        role: "user" | "assistant";
+        content: string;
+        created_at: string;
+      }>;
+      total_message_count: number;
+      omitted_message_count: number;
+    };
+    current_request: {
+      content: string;
+      user_constraints: string[];
+      scope: Record<string, unknown>;
+    };
+    category_stats: Array<{
+      category: string;
+      selected_count: number;
+      selected_char_count: number;
+      omitted_count: number;
+      compressed: boolean;
+      reason: string;
+    }>;
+    total_char_count: number;
+    estimated_token_count: number;
+    compressed: boolean;
+    fallback_used: boolean;
+  };
+  content_sha256: string;
 };
 
 export type GeneralAgentRun = {
@@ -173,7 +271,7 @@ export type GeneralAgentRun = {
   };
   status: GeneralAgentRunStatus;
   messages: Array<{
-    role: "user" | "assistant" | "system";
+    role: "user" | "assistant";
     content: string;
     created_at: string;
   }>;
@@ -186,6 +284,7 @@ export type GeneralAgentRun = {
   verification_issues: string[];
   memory_refs: string[];
   context_snapshot_id?: string | null;
+  context_snapshot?: GeneralAgentContextSnapshot | null;
   compression_stats: GeneralAgentCompressionStats;
   context_resume_differences: string[];
   lifecycle_events: Array<{
@@ -243,6 +342,77 @@ export type GeneralAgentResumeRequest = {
 
 export type GeneralAgentRunResponse = { run: GeneralAgentRun };
 
+export type GeneralAgentContextSnapshotListResponse = {
+  run_id: string;
+  snapshots: GeneralAgentContextSnapshot[];
+  total: number;
+};
+
+export type GeneralAgentLLMReplayMessage = {
+  role: "system" | "developer" | "user" | "assistant" | "tool";
+  content: string;
+  tool_calls: Array<{
+    call_id: string;
+    name: string;
+    arguments_json: string;
+  }>;
+  tool_call_id?: string | null;
+  tool_name?: string | null;
+  is_error: boolean;
+};
+
+export type GeneralAgentLLMReplay = {
+  call_id: string;
+  run_id: string;
+  context_snapshot_id?: string | null;
+  task_type: string;
+  task_name: string;
+  feature: string;
+  model_id: string;
+  upstream_model: string;
+  wire_protocol: string;
+  status: "completed" | "failed";
+  response_mode: "text" | "json";
+  temperature?: number | null;
+  max_output_tokens?: number | null;
+  wire_request_body?: Record<string, unknown> | null;
+  messages: GeneralAgentLLMReplayMessage[];
+  tools: Array<{
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+    strict: boolean;
+  }>;
+  tool_choice: "auto" | "none" | "required";
+  response_tool_calls: Array<{
+    call_id: string;
+    name: string;
+    arguments_json: string;
+  }>;
+  response_text: string;
+  request_sha256: string;
+  response_sha256: string;
+  redaction_count: number;
+  input_tokens?: number | null;
+  cached_input_tokens?: number | null;
+  output_tokens?: number | null;
+  reasoning_tokens?: number | null;
+  total_tokens?: number | null;
+  finish_reason?: string | null;
+  provider_request_id?: string | null;
+  started_at: string;
+  finished_at: string;
+  duration_ms: number;
+  error_code?: string | null;
+  error_message?: string | null;
+};
+
+export type GeneralAgentLLMReplayListResponse = {
+  run_id: string;
+  calls: GeneralAgentLLMReplay[];
+  total: number;
+};
+
 export type GeneralAgentRunListResponse = {
   runs: GeneralAgentRunSummary[];
   page: number;
@@ -284,11 +454,6 @@ export type AgentMemoryListResponse = {
 };
 
 export type AgentMemoryResponse = { memory: AgentMemoryEntry };
-
-export type AgentMemoryDeleteResponse = {
-  memory_id: string;
-  deleted: boolean;
-};
 
 export type GeneralAgentInvocationType = "tool" | "subagent" | "llm";
 export type GeneralAgentInvocationStatus = "completed" | "failed" | "timed_out";
@@ -338,6 +503,11 @@ export type GeneralAgentRecoverySnapshot = {
     damage_warnings: string[];
     legacy_migrated: boolean;
   };
+  revisions: Array<{
+    revision: number;
+    event_type: string;
+    created_at: string;
+  }>;
   effects: Array<{
     effect_id: string;
     node_id: string;

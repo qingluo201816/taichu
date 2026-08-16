@@ -92,3 +92,10 @@ uv run python .agents/skills/codex-sdd/scripts/state.py repair-index --active-sp
 进程若恰好在两次写入之间中断，`validate` 会报告索引漂移；
 使用 `repair-index` 可从全部 `spec.json` 重建工作区索引。
 `progress.log` 是审计记录，不覆盖 `spec.json` 的状态事实。
+
+当某一目标通过对应独立校验后又发生变化，即使规格已经进入任意下游活动阶段，
+`validation` 也允许为发生漂移的目标重新登记新报告。新报告为 FAIL 时，阶段回到对应的
+`*_ready` 且规格恢复为 `active`；为 PASS 时，阶段回到对应的 `*_validated`（实现校验则回到
+`completed`），并刷新目标、discovery 和报告哈希。重新推进到 `tasks_ready` 时，已有
+`tasks-status.json` 及其任务状态必须保留，不得用任务文档的初始勾选状态覆盖实施进度。
+未发生已登记 PASS 目标漂移的其他阶段，仍不得借此任意回退或跳跃。

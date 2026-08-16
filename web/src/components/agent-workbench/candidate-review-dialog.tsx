@@ -1,7 +1,7 @@
 "use client";
 
 import { Dialog } from "@base-ui/react/dialog";
-import { Ban, Check, Eye, PencilLine, X } from "lucide-react";
+import { Ban, Check, Eye, PencilLine, TriangleAlert, X } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 
 import {
@@ -51,6 +51,7 @@ const candidateStatusLabel: Record<AgentReviewItem["candidate_status"], string> 
 export function CandidateReviewDialog({
   open,
   candidate,
+  relatedCandidates,
   schema,
   draft,
   formErrors,
@@ -58,6 +59,7 @@ export function CandidateReviewDialog({
   isEditing,
   targetCard,
   targetCardError,
+  mergeCandidates,
   mergeMode,
   actionBusyKey,
   knowledgeTypeText,
@@ -68,9 +70,11 @@ export function CandidateReviewDialog({
   onStartEdit,
   onCancelEdit,
   onAction,
+  onMergeExistingCard,
 }: {
   open: boolean;
   candidate: AgentReviewItem | null;
+  relatedCandidates: AgentReviewItem[];
   schema: KnowledgeTypeSchema | null;
   draft: KnowledgeFormState;
   formErrors: KnowledgeFormErrors;
@@ -78,6 +82,7 @@ export function CandidateReviewDialog({
   isEditing: boolean;
   targetCard?: StructuredKnowledgeCard | null;
   targetCardError: string;
+  mergeCandidates: StructuredKnowledgeCard[];
   mergeMode: EditConfirmMergeMode;
   actionBusyKey: string;
   knowledgeTypeText: string;
@@ -92,6 +97,7 @@ export function CandidateReviewDialog({
     action: CandidateReviewAction,
     mergeMode?: EditConfirmMergeMode,
   ) => void;
+  onMergeExistingCard: (card: StructuredKnowledgeCard) => void;
 }) {
   const [contentState, setContentState] = useState<CandidateContentState>({
     candidateId: "",
@@ -224,6 +230,24 @@ export function CandidateReviewDialog({
             </header>
 
             <div className="min-h-0 overflow-y-auto px-4 py-3">
+              <CandidateHandlingNotice
+                candidate={currentCandidate}
+                relatedCandidates={relatedCandidates}
+              />
+              {hasTarget && mergeCandidates.length ? (
+                <section className="mb-3 rounded-[var(--tc-radius-card)] bg-[var(--tc-surface-muted)] px-3 py-2.5">
+                  <p className="text-sm font-medium text-[var(--tc-text-primary)]">可合并的已有知识卡</p>
+                  <p className="mt-1 text-xs text-[var(--tc-text-secondary)]">合并后保留当前对照的知识卡，另一张不再参与检索。</p>
+                  <div className="mt-2 grid gap-2">
+                    {mergeCandidates.map(card => (
+                      <div key={card.id} className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-card)] px-2.5 py-2">
+                        <div className="min-w-0"><p className="truncate text-xs font-medium">{card.name}</p><p className="line-clamp-1 text-xs text-[var(--tc-text-muted)]">{card.summary || "无摘要"}</p></div>
+                        <Button type="button" variant="outline" size="xs" disabled={busy} onClick={() => onMergeExistingCard(card)}>合并到当前卡</Button>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
               {schema ? (
                 hasTarget ? (
                   <div className="grid grid-cols-2 items-start gap-3">
@@ -388,7 +412,9 @@ export function CandidateReviewDialog({
               <p className="text-xs text-[var(--tc-text-muted)]">
                 {processed
                   ? "该候选已经处理，当前仅供阅读。"
-                  : candidate.schema_validation.passed
+                  : needsCandidateHandling(candidate)
+                    ? "请先按上方“需要处理”的说明核对或编辑，再确认入库。"
+                    : candidate.schema_validation.passed
                     ? "结构校验通过，可以确认入库。"
                     : "存在校验提示，建议编辑后再确认。"}
               </p>
@@ -441,6 +467,181 @@ export function CandidateReviewDialog({
         </Dialog.Viewport>
       </Dialog.Portal>
     </Dialog.Root>
+  );
+}
+
+function CandidateHandlingNotice({
+  candidate,
+  relatedCandidates,
+}: {
+  candidate: AgentReviewItem;
+  relatedCandidates: AgentReviewItem[];
+}) {
+  const validationErrors = candidate.schema_validation.errors.filter(Boolean);
+  const internalConflicts = candidate.internal_conflicts.filter(Boolean);
+  const externalConflicts = candidate.external_conflicts.filter(Boolean);
+  const overlappingCandidates = findOverlappingCandidates(
+    candidate,
+    relatedCandidates,
+    internalConflicts,
+  );
+
+  if (!needsCandidateHandling(candidate)) {
+    return null;
+  }
+
+  return (
+    <section className="mb-3 rounded-[var(--tc-radius-card)] bg-[var(--tc-surface-muted)] px-3 py-2.5">
+      <div className="flex items-center gap-2 text-sm font-medium text-[var(--tc-text-primary)]">
+        <TriangleAlert className="size-4 shrink-0 text-[var(--tc-text-secondary)]" />
+        需要处理
+      </div>
+      <div className="mt-2 grid gap-2 text-xs leading-5 text-[var(--tc-text-secondary)]">
+        {validationErrors.length ? (
+          <HandlingReason
+            title="摘要或字段待补全"
+            reasons={validationErrors}
+            advice="点击“编辑字段”，补全或改写上述内容后再确认。此项不是正文事实冲突。"
+          />
+        ) : null}
+        {internalConflicts.length ? (
+          <HandlingReason
+            title="与本次其他候选可能重复"
+            reasons={internalConflicts}
+            relatedCandidates={overlappingCandidates}
+            advice="核对是否在描述同一事实：若是，只保留一个候选；若不是，请把名称和摘要改得能清楚区分后再确认。"
+          />
+        ) : null}
+        {externalConflicts.length ? (
+          <HandlingReason
+            title="与已有知识卡存在冲突"
+            reasons={externalConflicts}
+            advice="对照下方现有知识卡与入库结果，保留正确内容；需要调整时点击“编辑字段”后再确认。"
+          />
+        ) : null}
+        {!validationErrors.length &&
+        !internalConflicts.length &&
+        !externalConflicts.length ? (
+          <HandlingReason
+            title="需要人工确认"
+            reasons={["系统无法自动判断该候选是否可直接入库。"]}
+            advice="请核对候选字段和来源原文，必要时编辑后再确认。"
+          />
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function HandlingReason({
+  title,
+  reasons,
+  relatedCandidates = [],
+  advice,
+}: {
+  title: string;
+  reasons: string[];
+  relatedCandidates?: AgentReviewItem[];
+  advice: string;
+}) {
+  return (
+    <div>
+      <p className="font-medium text-[var(--tc-text-primary)]">{title}</p>
+      <ul className="mt-0.5 list-disc pl-4 text-[var(--tc-text-muted)]">
+        {reasons.map(reason => (
+          <li key={reason}>{reason}</li>
+        ))}
+      </ul>
+      {relatedCandidates.length ? (
+        <p className="mt-1 text-[var(--tc-text-secondary)]">
+          可能重复的候选：
+          {relatedCandidates.map((relatedCandidate, index) => (
+            <span key={relatedCandidate.review_item_id}>
+              {index ? "、" : ""}
+              {relatedCandidate.display_title}（
+              {knowledgeTypeLabel[relatedCandidate.knowledge_type]}）
+            </span>
+          ))}
+        </p>
+      ) : null}
+      <p className="mt-0.5">处理方式：{advice}</p>
+    </div>
+  );
+}
+
+const knowledgeTypeLabel: Record<AgentReviewItem["knowledge_type"], string> = {
+  character: "角色",
+  location: "地点",
+  faction: "势力",
+  item: "物品",
+  realm: "境界",
+  technique: "功法",
+  rule: "规则",
+  event: "事件",
+};
+
+function findOverlappingCandidates(
+  candidate: AgentReviewItem,
+  candidates: AgentReviewItem[],
+  internalConflicts: string[],
+): AgentReviewItem[] {
+  const candidateEvidence = candidateEvidenceTexts(candidate);
+  if (!candidateEvidence.length) {
+    return [];
+  }
+  const allowedTypes = relatedCandidateTypes(internalConflicts);
+  return candidates.filter(otherCandidate => {
+    if (otherCandidate.review_item_id === candidate.review_item_id) {
+      return false;
+    }
+    if (allowedTypes && !allowedTypes.has(otherCandidate.knowledge_type)) {
+      return false;
+    }
+    return candidateEvidence.some(left =>
+      candidateEvidenceTexts(otherCandidate).some(
+        right => left === right || left.includes(right) || right.includes(left),
+      ),
+    );
+  });
+}
+
+function relatedCandidateTypes(
+  internalConflicts: string[],
+): Set<AgentReviewItem["knowledge_type"]> | null {
+  return internalConflicts.some(reason => reason.includes("具名物品或功法"))
+    ? new Set(["item", "technique"])
+    : null;
+}
+
+function candidateEvidenceTexts(candidate: AgentReviewItem): string[] {
+  const excerpts = candidate.suggested_card.evidence_excerpts;
+  const values = [
+    candidate.source_excerpt,
+    ...(Array.isArray(excerpts) ? excerpts.filter(isString) : []),
+  ];
+  return Array.from(
+    new Set(
+      values
+        .map(normalizeEvidenceText)
+        .filter(value => value.length >= 20),
+    ),
+  );
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === "string";
+}
+
+function normalizeEvidenceText(value: string): string {
+  return value.replaceAll(/\s+/g, "").trim();
+}
+
+function needsCandidateHandling(candidate: AgentReviewItem): boolean {
+  return (
+    candidate.candidate_action === "conflict" ||
+    !candidate.schema_validation.passed ||
+    candidate.internal_conflicts.length > 0 ||
+    candidate.external_conflicts.length > 0
   );
 }
 

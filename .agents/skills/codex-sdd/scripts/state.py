@@ -450,18 +450,28 @@ def cmd_validation(args: argparse.Namespace) -> dict[str, Any]:
     if spec["status"] == "blocked":
         raise StateError("规格处于阻塞状态，请先解除阻塞")
     config = VALIDATION_CONFIG[args.mode]
-    if spec["phase"] != config["from"]:
-        raise StateError(f"{args.mode} 校验要求当前阶段为 {config['from']}，实际为 {spec['phase']}")
-    relative, path = safe_artifact(root, spec_id, args.report)
-    actual = report_verdict(path)
-    if actual != args.status:
-        raise StateError(f"报告结论 {actual!r} 与参数 {args.status!r} 不一致")
-
     target_relative = spec["artifacts"].get(config["target_artifact"])
     if not target_relative:
         raise StateError(f"校验缺少目标产物登记：{config['target_artifact']}")
     target_relative, target_path = safe_artifact(root, spec_id, target_relative)
     target_sha256 = file_sha256(target_path)
+
+    previous_validation = spec["validations"][args.mode]
+    stale_pass_revalidation = (
+        PHASE_INDEX[spec["phase"]] >= PHASE_INDEX[config["to"]]
+        and previous_validation.get("status") == "pass"
+        and (
+            previous_validation.get("target") != target_relative
+            or previous_validation.get("target_sha256") != target_sha256
+        )
+    )
+    if spec["phase"] != config["from"] and not stale_pass_revalidation:
+        raise StateError(f"{args.mode} 校验要求当前阶段为 {config['from']}，实际为 {spec['phase']}")
+
+    relative, path = safe_artifact(root, spec_id, args.report)
+    actual = report_verdict(path)
+    if actual != args.status:
+        raise StateError(f"报告结论 {actual!r} 与参数 {args.status!r} 不一致")
     if not report_mentions_hash(path, target_sha256):
         raise StateError("校验报告未包含当前目标产物的 SHA-256，无法证明报告新鲜度")
 
@@ -490,6 +500,9 @@ def cmd_validation(args: argparse.Namespace) -> dict[str, Any]:
         spec["phase"] = config["to"]
         if config["to"] == "completed":
             spec["status"] = "completed"
+    elif stale_pass_revalidation:
+        spec["phase"] = config["from"]
+        spec["status"] = "active"
     save_spec_state(root, spec)
     level = "info" if args.status == "pass" else "warning"
     append_progress(root, spec, "validation", f"{args.mode} 校验结论：{args.status.upper()}", level)

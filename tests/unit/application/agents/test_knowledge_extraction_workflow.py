@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 import tempfile
@@ -358,7 +359,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             [5, 1],
         )
 
-    async def test_summary_synthesis_rejects_unexpected_output_fields(self) -> None:
+    async def test_summary_synthesis_ignores_unexpected_output_fields(self) -> None:
         state = initial_knowledge_extraction_state(
             chapter_id="chapter_001",
             model_name="test-model",
@@ -391,9 +392,9 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             node_name="BatchSynthesizeCandidateSummariesNode",
         )
 
-        self.assertEqual(result[0]["summary"], "秦阳本轮出现。")
-        self.assertIn("_summary_synthesis_error", result[0])
-        self.assertFalse(result[0]["schema_validation"]["passed"])
+        self.assertEqual(result[0]["summary"], "秦阳走入太初教山门。")
+        self.assertNotIn("_summary_synthesis_error", result[0])
+        self.assertTrue(result[0]["schema_validation"]["passed"])
 
     def test_retired_importance_field_fails_candidate_validation(self) -> None:
         errors = _candidate_validation_errors(
@@ -502,6 +503,41 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(merged[0]["name"], "至上仙尊真乙太初教")
         self.assertEqual(merged[0]["chapter_ids"], ["chapter_006", "chapter_007"])
         self.assertIn("太初教", merged[0]["aliases"])
+
+    def test_new_candidates_with_overlapping_name_and_alias_are_merged_once(
+        self,
+    ) -> None:
+        candidates = [
+            {
+                "type": "rule",
+                "name": "太初教灵田种植与灵泉规则",
+                "aliases": ["灵泉灌溉规则", "灵药种植门槛规则"],
+                "chapter_ids": ["chapter_034"],
+                "chapter_titles": ["第34章"],
+                "source_note": "第34章来源。",
+                "evidence_excerpts": ["灵泉极为罕见。"],
+            },
+            {
+                "type": "rule",
+                "name": "灵泉灌溉规则",
+                "aliases": [],
+                "chapter_ids": ["chapter_035"],
+                "chapter_titles": ["第35章"],
+                "source_note": "第35章来源。",
+                "evidence_excerpts": ["灵泉只能在同等努力下带来更多收获。"],
+            },
+        ]
+
+        merged = dedupe_candidates_by_target(candidates)
+
+        self.assertEqual(len(merged), 1)
+        self.assertEqual(merged[0]["name"], "太初教灵田种植与灵泉规则")
+        self.assertIn("灵泉灌溉规则", merged[0]["aliases"])
+        self.assertEqual(merged[0]["chapter_ids"], ["chapter_034", "chapter_035"])
+        self.assertEqual(
+            merged[0]["evidence_excerpts"],
+            ["灵泉极为罕见。", "灵泉只能在同等努力下带来更多收获。"],
+        )
 
     def test_cross_type_projection_is_marked_for_author_review(self) -> None:
         evidence = "神识冲击是修炼灵魂衍生的攻击法。"
@@ -710,6 +746,52 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             all(call["model_id"] == "alternate-model" for call in run["llm_calls"])
         )
 
+    async def test_batch_run_is_failed_when_every_chapter_extraction_fails(self) -> None:
+        service = KnowledgeExtractionService(
+            chapter_service=self.chapter_service,
+            llm=_AlwaysFailLLM(),
+            retrieval_service=self.retrieval_service,
+            knowledge_service=self.knowledge_service,
+            run_store=self.run_store,
+        )
+
+        events = [
+            event
+            async for event in service.stream_batch_run(
+                chapter_ids=["chapter_001"],
+            )
+        ]
+        run = next(
+            event["run"]
+            for event in reversed(events)
+            if isinstance(event.get("run"), dict)
+        )
+
+        self.assertEqual(run["status"], AgentRunStatus.FAILED.value)
+        self.assertEqual(run["failed_chapter_count"], 1)
+        self.assertTrue(run["errors"])
+        self.assertIn("无权调用该模型", run["errors"][0])
+        self.assertEqual(events[-1]["event_type"], "task_failed")
+
+    async def test_deleting_running_batch_cancels_task_and_keeps_record_deleted(
+        self,
+    ) -> None:
+        llm = _BlockingLLM()
+        service = KnowledgeExtractionService(
+            chapter_service=self.chapter_service,
+            llm=llm,
+            retrieval_service=self.retrieval_service,
+            knowledge_service=self.knowledge_service,
+            run_store=self.run_store,
+        )
+
+        run = await service.start_batch_run_task(chapter_ids=["chapter_001"])
+        await asyncio.wait_for(llm.started.wait(), timeout=1)
+        await service.delete_run(run.run_id)
+
+        await asyncio.wait_for(llm.cancelled.wait(), timeout=1)
+        self.assertIsNone(await self.run_store.get_run(run.run_id))
+
     def test_batch_aggregation_keeps_one_source_block_per_chapter(self) -> None:
         candidates = _aggregate_batch_candidates(
             [
@@ -787,6 +869,27 @@ class _PromptAwareLLM(_TestLLM):
             return _entity_response()
         if "角色 entity_groups" in prompt_text:
             return _character_response()
+        return _general_response()
+
+
+class _AlwaysFailLLM(_TestLLM):
+    async def complete(self, prompt: str) -> str:
+        raise RuntimeError("当前密钥无权调用该模型，请检查本机密钥权限。")
+
+
+class _BlockingLLM(_TestLLM):
+    def __init__(self) -> None:
+        self.started = asyncio.Event()
+        self.cancelled = asyncio.Event()
+        self.release = asyncio.Event()
+
+    async def complete(self, prompt: str) -> str:
+        self.started.set()
+        try:
+            await self.release.wait()
+        except asyncio.CancelledError:
+            self.cancelled.set()
+            raise
         return _general_response()
 
 

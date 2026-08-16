@@ -11,7 +11,12 @@ import unittest
 import httpx
 from pydantic import SecretStr
 
-from taichu.application.contracts.llm import LLMMessage, LLMRequest
+from taichu.application.contracts.llm import (
+    LLMMessage,
+    LLMRequest,
+    LLMToolCall,
+    LLMToolDefinition,
+)
 from taichu.application.models.llm_usage import LLMUsageQuery
 from taichu.config import Settings
 from taichu.infrastructure.llm.catalog import (
@@ -23,6 +28,7 @@ from taichu.infrastructure.llm.rightcode import (
     RightCodeLLMGateway,
 )
 from taichu.infrastructure.llm_usage import JsonlLLMUsageRepository
+from taichu.infrastructure.llm_replays import JsonLLMCallReplayRepository
 
 
 class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
@@ -136,6 +142,85 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         assert record is not None
         self.assertEqual(record.provider_request_id, "provider-request")
 
+    async def test_run_call_replay_saves_redacted_messages_and_response(self) -> None:
+        def handler(_: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json={
+                    "id": "provider-request",
+                    "output_text": "Authorization: Bearer response-secret-token",
+                    "usage": {"input_tokens": 8, "output_tokens": 3},
+                },
+            )
+
+        gateway, client, _ = self._gateway(httpx.MockTransport(handler))
+        request = LLMRequest(
+            model_id="gpt-5-6-luna",
+            messages=(
+                LLMMessage(role="system", content="系统约束"),
+                LLMMessage(role="user", content="api_key=sk-request-secret-token"),
+            ),
+            task_type="general_agent",
+            task_name="general_writing_orchestrator.plan",
+            run_id="general_run_20260721_120000_abc123",
+            context_snapshot_id="context_20260721_120000_abc12345",
+        )
+        try:
+            response = await gateway.complete(request)
+        finally:
+            await client.aclose()
+
+        repository = JsonLLMCallReplayRepository(self.assets_root)
+        records = await repository.list_for_run(request.run_id or "")
+        self.assertEqual(len(records), 1)
+        record = records[0]
+        self.assertEqual(record.call_id, response.call_id)
+        self.assertEqual(record.context_snapshot_id, request.context_snapshot_id)
+        self.assertEqual(record.messages[1].content, "api_key=[已脱敏]")
+        self.assertEqual(record.response_text, "Authorization: Bearer [已脱敏]")
+        self.assertEqual(record.redaction_count, 2)
+        self.assertEqual(record.wire_request_body["instructions"], "系统约束")
+        self.assertEqual(
+            record.wire_request_body["input"][0]["content"][0]["text"],
+            "api_key=[已脱敏]",
+        )
+        self.assertFalse(record.wire_request_body["stream"])
+        raw = next(
+            (self.assets_root / "derived" / "llm_call_replays").glob("*.json")
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("request-secret-token", raw)
+        self.assertNotIn("response-secret-token", raw)
+        await repository.delete_run(request.run_id or "")
+        self.assertEqual(await repository.list_for_run(request.run_id or ""), [])
+
+    async def test_gpt_5_6_responses_omits_unsupported_request_options(self) -> None:
+        payloads: list[dict[str, object]] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            payloads.append(json.loads(request.content))
+            return httpx.Response(
+                200,
+                json={
+                    "id": "provider-request",
+                    "output_text": "{}",
+                    "usage": {"input_tokens": 8, "output_tokens": 3},
+                },
+            )
+
+        gateway, client, _ = self._gateway(httpx.MockTransport(handler))
+        request = replace(
+            _request("gpt-5-6-terra"),
+            temperature=0.1,
+            response_mode="json",
+        )
+        try:
+            await gateway.complete(request)
+        finally:
+            await client.aclose()
+
+        self.assertNotIn("temperature", payloads[0])
+        self.assertNotIn("text", payloads[0])
+
     async def test_responses_sse_stream_is_normalized(self) -> None:
         sse = "\n".join(
             [
@@ -204,20 +289,20 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
             await client.aclose()
         payload = captured["payload"]
         assert isinstance(payload, dict)
-        self.assertEqual(captured["path"], "/claude-sale/v1/messages")
+        self.assertEqual(captured["path"], "/claude/v1/messages")
         self.assertTrue(captured["has_anthropic_version"])
         self.assertEqual(payload["system"], "系统约束")
         self.assertEqual(payload["messages"][0]["role"], "user")
         self.assertEqual(response.text, "完成")
         self.assertEqual(response.usage.cached_input_tokens, 3)
-        self.assertEqual(response.usage.total_tokens, 9)
+        self.assertEqual(response.usage.total_tokens, 12)
         self.assertEqual(response.finish_reason, "end_turn")
 
     async def test_claude_messages_sse_stream_is_normalized(self) -> None:
         sse = "\n".join(
             [
                 "event: message_start",
-                'data: {"type":"message_start","message":{"id":"msg-stream","usage":{"input_tokens":4}}}',
+                'data: {"type":"message_start","message":{"id":"msg-stream","usage":{"input_tokens":4,"cache_read_input_tokens":3}}}',
                 "",
                 "event: content_block_delta",
                 'data: {"type":"content_block_delta","delta":{"type":"text_delta","text":"秦浩"}}',
@@ -255,7 +340,7 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         completed = next(item for item in events if item.event_type == "completed")
         assert completed.response is not None
         self.assertEqual(completed.response.provider_request_id, "msg-stream")
-        self.assertEqual(completed.response.usage.total_tokens, 6)
+        self.assertEqual(completed.response.usage.total_tokens, 9)
 
     async def test_json_mode_removes_markdown_fence_after_complete_response(
         self,
@@ -325,6 +410,310 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
             await client.aclose()
         self.assertEqual(captured_max_tokens, 1024)
         self.assertEqual(state.availability, "available")
+        self.assertEqual(state.requested_provider, "rightcode")
+        self.assertEqual(state.requested_model_id, "deepseek-v4-pro")
+        self.assertEqual(state.actual_provider, "rightcode")
+        self.assertEqual(state.actual_model_id, "deepseek-v4-pro")
+        self.assertFalse(state.fallback_used)
+        self.assertIsNone(state.fallback_from_provider)
+        self.assertEqual(state.wire_protocol, "anthropic_messages")
+        self.assertEqual(state.provider_request_id, "deepseek-probe")
+
+    async def test_probe_does_not_use_official_fallback_when_rightcode_fails(
+        self,
+    ) -> None:
+        requested_hosts: list[str] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requested_hosts.append(request.url.host)
+            if request.url.host == "rightapi.ai":
+                raise httpx.ConnectError("RightCode 不可达", request=request)
+            return httpx.Response(
+                200,
+                json={
+                    "id": "deepseek-official-must-not-be-used",
+                    "content": [{"type": "text", "text": "官方可用"}],
+                    "usage": {"input_tokens": 3, "output_tokens": 1},
+                },
+            )
+
+        gateway, client, repository = self._gateway(
+            httpx.MockTransport(handler),
+            fallback_key="test-deepseek-key",
+        )
+        try:
+            state = await gateway.probe_model("deepseek-v4-pro")
+        finally:
+            await client.aclose()
+
+        self.assertEqual(state.availability, "unavailable")
+        self.assertEqual(requested_hosts, ["rightapi.ai"])
+        self.assertEqual(state.requested_provider, "rightcode")
+        self.assertEqual(state.requested_model_id, "deepseek-v4-pro")
+        self.assertEqual(state.actual_provider, "rightcode")
+        self.assertEqual(state.actual_model_id, "deepseek-v4-pro")
+        self.assertFalse(state.fallback_used)
+        self.assertIsNone(state.fallback_from_provider)
+        self.assertEqual(state.wire_protocol, "anthropic_messages")
+        self.assertIsNone(state.provider_request_id)
+        records = await repository.list_calls(LLMUsageQuery())
+        self.assertEqual(records.total, 1)
+        self.assertEqual(records.items[0].provider, "rightcode")
+        self.assertIsNone(records.items[0].fallback_from_provider)
+        self.assertEqual(records.items[0].status, "failed")
+
+    async def test_network_failure_falls_back_to_official_deepseek(self) -> None:
+        requests: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requests.append(request)
+            if request.url.host == "rightapi.ai":
+                raise httpx.ConnectError("RightCode 不可达", request=request)
+            return httpx.Response(
+                200,
+                json={
+                    "id": "deepseek-official-request",
+                    "content": [{"type": "text", "text": "官方降级成功"}],
+                    "usage": {"input_tokens": 6, "output_tokens": 3},
+                },
+            )
+
+        gateway, client, repository = self._gateway(
+            httpx.MockTransport(handler),
+            fallback_key="test-deepseek-key",
+        )
+        request = replace(
+            _request("deepseek-v4-pro"),
+            run_id="general_run_fallback_test",
+        )
+        try:
+            response = await gateway.complete(request)
+        finally:
+            await client.aclose()
+
+        self.assertEqual(response.text, "官方降级成功")
+        self.assertEqual(
+            [request.url.host for request in requests],
+            ["rightapi.ai", "api.deepseek.com"],
+        )
+        self.assertEqual(requests[1].headers["x-api-key"], "test-deepseek-key")
+        payload = json.loads(requests[1].content)
+        self.assertEqual(payload["model"], "deepseek-v4-pro")
+        records = await repository.list_calls(LLMUsageQuery())
+        self.assertEqual(records.total, 1)
+        self.assertEqual(records.items[0].provider, "deepseek_official")
+        self.assertEqual(records.items[0].fallback_from_provider, "rightcode")
+        replays = await JsonLLMCallReplayRepository(
+            self.assets_root
+        ).list_for_run("general_run_fallback_test")
+        self.assertEqual(replays[0].provider, "deepseek_official")
+        self.assertEqual(replays[0].fallback_from_provider, "rightcode")
+
+    async def test_authentication_failure_does_not_fall_back(self) -> None:
+        requested_hosts: list[str] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requested_hosts.append(request.url.host)
+            return httpx.Response(403, text="拒绝访问")
+
+        gateway, client, repository = self._gateway(
+            httpx.MockTransport(handler),
+            fallback_key="test-deepseek-key",
+        )
+        try:
+            with self.assertRaises(RightCodeGatewayError) as context:
+                await gateway.complete(_request("deepseek-v4-pro"))
+        finally:
+            await client.aclose()
+
+        self.assertEqual(context.exception.code, "LLM_MODEL_FORBIDDEN")
+        self.assertEqual(requested_hosts, ["rightapi.ai"])
+        records = await repository.list_calls(LLMUsageQuery())
+        self.assertEqual(records.items[0].provider, "rightcode")
+        self.assertIsNone(records.items[0].fallback_from_provider)
+
+    async def test_stream_network_failure_falls_back_before_output(self) -> None:
+        requested_hosts: list[str] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requested_hosts.append(request.url.host)
+            if request.url.host == "rightapi.ai":
+                raise httpx.ConnectError("RightCode 不可达", request=request)
+            return httpx.Response(
+                200,
+                json={
+                    "id": "deepseek-official-stream-fallback",
+                    "content": [{"type": "text", "text": "降级后的完整回答"}],
+                    "usage": {"input_tokens": 8, "output_tokens": 4},
+                },
+            )
+
+        gateway, client, repository = self._gateway(
+            httpx.MockTransport(handler),
+            fallback_key="test-deepseek-key",
+        )
+        try:
+            events = [
+                event async for event in gateway.stream(_request("deepseek-v4-pro"))
+            ]
+        finally:
+            await client.aclose()
+
+        self.assertEqual(requested_hosts, ["rightapi.ai", "api.deepseek.com"])
+        self.assertEqual(
+            "".join(item.delta for item in events if item.event_type == "text_delta"),
+            "降级后的完整回答",
+        )
+        completed = next(item for item in events if item.event_type == "completed")
+        assert completed.response is not None
+        self.assertEqual(completed.response.text, "降级后的完整回答")
+        records = await repository.list_calls(LLMUsageQuery())
+        self.assertEqual(records.items[0].provider, "deepseek_official")
+        self.assertEqual(records.items[0].fallback_from_provider, "rightcode")
+
+    async def test_responses_native_tool_call_round_trip_uses_call_id(self) -> None:
+        payloads: list[dict[str, object]] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            payloads.append(json.loads(request.content))
+            if len(payloads) == 1:
+                return httpx.Response(
+                    200,
+                    json={
+                        "id": "response-tool-call",
+                        "output": [
+                            {
+                                "type": "function_call",
+                                "call_id": "call-weather-1",
+                                "name": "get_weather",
+                                "arguments": '{"city":"北京"}',
+                            }
+                        ],
+                        "usage": {"input_tokens": 4, "output_tokens": 2},
+                    },
+                )
+            return httpx.Response(
+                200,
+                json={
+                    "id": "response-final",
+                    "output_text": "北京晴。",
+                    "usage": {"input_tokens": 8, "output_tokens": 3},
+                },
+            )
+
+        gateway, client, _ = self._gateway(httpx.MockTransport(handler))
+        definition = LLMToolDefinition(
+            name="get_weather",
+            description="查询天气",
+            parameters={
+                "type": "object",
+                "properties": {"city": {"type": "string"}},
+                "required": ["city"],
+                "additionalProperties": False,
+            },
+        )
+        first_request = replace(
+            _request("gpt-5-6-luna"),
+            tools=(definition,),
+        )
+        try:
+            first = await gateway.complete(first_request)
+            second = await gateway.complete(
+                replace(
+                    first_request,
+                    messages=(
+                        *first_request.messages,
+                        LLMMessage(role="assistant", tool_calls=first.tool_calls),
+                        LLMMessage(
+                            role="tool",
+                            content='{"temperature":26}',
+                            tool_call_id="call-weather-1",
+                            tool_name="get_weather",
+                        ),
+                    ),
+                )
+            )
+        finally:
+            await client.aclose()
+
+        self.assertEqual(first.tool_calls[0].call_id, "call-weather-1")
+        self.assertEqual(second.text, "北京晴。")
+        self.assertEqual(payloads[0]["tools"][0]["name"], "get_weather")
+        self.assertEqual(payloads[0]["tool_choice"], "auto")
+        self.assertIn(
+            {
+                "type": "function_call_output",
+                "call_id": "call-weather-1",
+                "output": '{"temperature":26}',
+            },
+            payloads[1]["input"],
+        )
+
+    async def test_anthropic_native_tool_blocks_are_normalized(self) -> None:
+        payloads: list[dict[str, object]] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            payloads.append(json.loads(request.content))
+            return httpx.Response(
+                200,
+                json={
+                    "id": "message-tool-call",
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "toolu_1",
+                            "name": "get_weather",
+                            "input": {"city": "北京"},
+                        }
+                    ],
+                    "stop_reason": "tool_use",
+                    "usage": {"input_tokens": 4, "output_tokens": 2},
+                },
+            )
+
+        gateway, client, _ = self._gateway(httpx.MockTransport(handler))
+        request = replace(
+            _request("claude-opus-4-6"),
+            tools=(
+                LLMToolDefinition(
+                    name="get_weather",
+                    description="查询天气",
+                    parameters={"type": "object", "properties": {}},
+                ),
+            ),
+            messages=(
+                LLMMessage(role="developer", content="应用约束"),
+                LLMMessage(role="user", content="北京天气"),
+                LLMMessage(
+                    role="assistant",
+                    tool_calls=(
+                        LLMToolCall(
+                            call_id="toolu_prior",
+                            name="get_weather",
+                            arguments_json='{"city":"上海"}',
+                        ),
+                    ),
+                ),
+                LLMMessage(
+                    role="tool",
+                    content='{"temperature":25}',
+                    tool_call_id="toolu_prior",
+                    tool_name="get_weather",
+                ),
+            ),
+        )
+        try:
+            response = await gateway.complete(request)
+        finally:
+            await client.aclose()
+
+        self.assertEqual(response.tool_calls[0].call_id, "toolu_1")
+        self.assertEqual(payloads[0]["system"], "应用约束")
+        self.assertEqual(payloads[0]["tool_choice"], {"type": "auto"})
+        self.assertEqual(
+            payloads[0]["messages"][-1]["content"][0]["type"],
+            "tool_result",
+        )
 
     async def test_empty_response_is_retried_and_recovers(self) -> None:
         request_count = 0
@@ -350,6 +739,42 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
             response = await gateway.complete(_request("deepseek-v4-pro"))
         finally:
             await client.aclose()
+        self.assertEqual(response.text, "重试后可用")
+        self.assertEqual(request_count, 2)
+        records = await repository.list_calls(LLMUsageQuery())
+        self.assertEqual(records.total, 1)
+        self.assertEqual(records.items[0].status, "completed")
+
+    async def test_invalid_json_response_is_retried_and_recovers(self) -> None:
+        request_count = 0
+
+        def handler(_: httpx.Request) -> httpx.Response:
+            nonlocal request_count
+            request_count += 1
+            if request_count == 1:
+                return httpx.Response(
+                    200,
+                    content=b"upstream returned invalid json",
+                    headers={"content-type": "application/json"},
+                )
+            return httpx.Response(
+                200,
+                json={
+                    "id": "deepseek-message-recovered",
+                    "content": [{"type": "text", "text": "重试后可用"}],
+                    "usage": {"input_tokens": 3, "output_tokens": 2},
+                },
+            )
+
+        gateway, client, repository = self._gateway(
+            httpx.MockTransport(handler),
+            max_retries=1,
+        )
+        try:
+            response = await gateway.complete(_request("deepseek-v4-pro"))
+        finally:
+            await client.aclose()
+
         self.assertEqual(response.text, "重试后可用")
         self.assertEqual(request_count, 2)
         records = await repository.list_calls(LLMUsageQuery())
@@ -450,11 +875,13 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         *,
         prices_json: str = "{}",
         key: str = "test-rightcode-key",
+        fallback_key: str = "",
         max_retries: int = 0,
     ) -> tuple[RightCodeLLMGateway, httpx.AsyncClient, JsonlLLMUsageRepository]:
         settings = _settings(
             self.assets_root,
             key=key,
+            fallback_key=fallback_key,
             prices_json=prices_json,
             max_retries=max_retries,
         )
@@ -466,6 +893,7 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
                 LLMModelCatalog(settings),
                 repository,
                 client=client,
+                replay_repository=JsonLLMCallReplayRepository(self.assets_root),
             ),
             client,
             repository,
@@ -476,12 +904,14 @@ def _settings(
     assets_root: Path,
     *,
     key: str = "test-rightcode-key",
+    fallback_key: str = "",
     prices_json: str = "{}",
     max_retries: int = 0,
 ) -> Settings:
     return Settings(
         project_assets_dir=assets_root,
         rightcode_api_key=SecretStr(key),
+        deepseek_api_key=SecretStr(fallback_key),
         rightcode_model_prices_json=prices_json,
         rightcode_max_retries=max_retries,
     )

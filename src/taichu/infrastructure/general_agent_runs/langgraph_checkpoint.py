@@ -120,13 +120,18 @@ class JsonLangGraphCheckpointSaver(InMemorySaver):
                 thread_id=thread_id,
             )
             self.storage.pop(thread_id, None)
-            for key in [key for key in self.writes if key[0] == thread_id]:
-                self.writes.pop(key, None)
-            for key in [key for key in self.blobs if key[0] == thread_id]:
-                self.blobs.pop(key, None)
+            for write_key in [
+                key for key in self.writes if key[0] == thread_id
+            ]:
+                self.writes.pop(write_key, None)
+            for blob_key in [
+                key for key in self.blobs if key[0] == thread_id
+            ]:
+                self.blobs.pop(blob_key, None)
             self._restore_thread(
                 record["state"],
                 path=self._revision_path(thread_id, revision),
+                expected_thread_id=thread_id,
             )
             self._persist_thread(
                 thread_id,
@@ -159,7 +164,17 @@ class JsonLangGraphCheckpointSaver(InMemorySaver):
         _validate_thread_id(thread_id)
         revision_paths = sorted((root / "revisions").glob("*.json"))
         valid: list[tuple[Path, dict[str, Any]]] = []
-        warnings: list[str] = []
+        quarantined_revisions = _quarantined_revision_numbers(root)
+        invalid_revisions = list(quarantined_revisions)
+        warnings: list[str] = (
+            [
+                "存在已隔离的损坏或不兼容检查点修订："
+                + "、".join(str(item) for item in quarantined_revisions)
+                + "。"
+            ]
+            if quarantined_revisions
+            else []
+        )
         previous_hash: str | None = None
         for index, path in enumerate(revision_paths):
             try:
@@ -170,15 +185,21 @@ class JsonLangGraphCheckpointSaver(InMemorySaver):
                     )
             except (OSError, ValueError, json.JSONDecodeError) as error:
                 warnings.append(str(error))
-                self._quarantine_revisions(root, revision_paths[index:])
+                invalid_tail = revision_paths[index:]
+                invalid_revisions.extend(
+                    _revision_number(path) for path in invalid_tail
+                )
+                self._quarantine_revisions(root, invalid_tail)
                 break
             valid.append((path, record))
             previous_hash = str(record["content_sha256"])
+        invalid_revisions = sorted(set(invalid_revisions))
 
         if not valid:
             self._summaries[thread_id] = LangGraphCheckpointSummary(
                 thread_id=thread_id,
                 integrity_status="invalid",
+                invalid_revisions=invalid_revisions,
                 damage_warnings=warnings or ["没有可恢复的 LangGraph 检查点修订。"],
             )
             return
@@ -187,13 +208,18 @@ class JsonLangGraphCheckpointSaver(InMemorySaver):
         pointer_warning = self._latest_pointer_warning(root, latest_record)
         if pointer_warning:
             warnings.append(pointer_warning)
-        self._restore_thread(latest_record["state"], path=valid[-1][0])
+        self._restore_thread(
+            latest_record["state"],
+            path=valid[-1][0],
+            expected_thread_id=thread_id,
+        )
         revision = int(latest_record["revision"])
         status = "recovered" if warnings else "valid"
         summary = LangGraphCheckpointSummary(
             thread_id=thread_id,
             current_revision=revision,
             available_revisions=[int(item[1]["revision"]) for item in valid],
+            invalid_revisions=invalid_revisions,
             integrity_status=status,
             recovered_from_revision=revision if warnings else None,
             latest_checkpoint_id=_latest_checkpoint_id(latest_record["state"]),
@@ -214,7 +240,11 @@ class JsonLangGraphCheckpointSaver(InMemorySaver):
                 raise LangGraphCheckpointStoreError(
                     f"LangGraph 检查点必须是对象：{path.name}"
                 )
-            self._restore_thread(payload, path=path)
+            self._restore_thread(
+                payload,
+                path=path,
+                expected_thread_id=path.stem,
+            )
             thread_id = str(payload.get("thread_id", ""))
             _validate_thread_id(thread_id)
             self._persist_thread(thread_id, event_type="legacy_migrated")
@@ -236,44 +266,28 @@ class JsonLangGraphCheckpointSaver(InMemorySaver):
                 damage_warnings=[str(error)],
             )
 
-    def _restore_thread(self, payload: dict[str, Any], *, path: Path) -> None:
-        if payload.get("format_version") != 1:
-            raise LangGraphCheckpointStoreError(
-                f"LangGraph 检查点格式不受支持：{path.name}"
-            )
-        thread_id = payload.get("thread_id")
-        if not isinstance(thread_id, str) or not thread_id:
-            raise LangGraphCheckpointStoreError(
-                f"LangGraph 检查点缺少运行标识：{path.name}"
-            )
-        storage = payload.get("storage", {})
-        if not isinstance(storage, dict):
-            raise LangGraphCheckpointStoreError(
-                f"LangGraph 检查点节点状态损坏：{path.name}"
-            )
+    def _restore_thread(
+        self,
+        payload: dict[str, Any],
+        *,
+        path: Path,
+        expected_thread_id: str | None = None,
+    ) -> None:
+        thread_id = _validate_thread_state(
+            payload,
+            path=path,
+            expected_thread_id=expected_thread_id,
+        )
+        storage = payload["storage"]
         for namespace, checkpoints in storage.items():
-            if not isinstance(namespace, str) or not isinstance(checkpoints, dict):
-                raise LangGraphCheckpointStoreError(
-                    f"LangGraph 检查点命名空间损坏：{path.name}"
-                )
             for checkpoint_id, record in checkpoints.items():
-                if not isinstance(record, dict):
-                    raise LangGraphCheckpointStoreError(
-                        f"LangGraph 检查点记录损坏：{path.name}"
-                    )
                 self.storage[thread_id][namespace][checkpoint_id] = (
                     _decode_typed(record["checkpoint"]),
                     _decode_typed(record["metadata"]),
                     record.get("parent_checkpoint_id"),
                 )
-        writes = payload.get("writes", [])
-        if not isinstance(writes, list):
-            raise LangGraphCheckpointStoreError(
-                f"LangGraph 检查点中间写入损坏：{path.name}"
-            )
+        writes = payload["writes"]
         for record in writes:
-            if not isinstance(record, dict):
-                continue
             outer_key = (
                 thread_id,
                 str(record["checkpoint_ns"]),
@@ -286,14 +300,8 @@ class JsonLangGraphCheckpointSaver(InMemorySaver):
                 _decode_typed(record["value"]),
                 str(record.get("task_path", "")),
             )
-        blobs = payload.get("blobs", [])
-        if not isinstance(blobs, list):
-            raise LangGraphCheckpointStoreError(
-                f"LangGraph 检查点通道数据损坏：{path.name}"
-            )
+        blobs = payload["blobs"]
         for record in blobs:
-            if not isinstance(record, dict):
-                continue
             version = record.get("version")
             self.blobs[
                 (
@@ -309,7 +317,16 @@ class JsonLangGraphCheckpointSaver(InMemorySaver):
         self._root.mkdir(parents=True, exist_ok=True)
         state = self._thread_state(thread_id)
         previous = self._summaries.get(thread_id)
-        revision = (previous.current_revision if previous is not None else 0) + 1
+        preceding_revisions = (
+            [
+                previous.current_revision,
+                *previous.available_revisions,
+                *previous.invalid_revisions,
+            ]
+            if previous is not None
+            else [0]
+        )
+        revision = max(preceding_revisions, default=0) + 1
         previous_sha256 = self._latest_content_sha256(thread_id)
         record_without_hash = {
             "format_version": 2,
@@ -336,12 +353,30 @@ class JsonLangGraphCheckpointSaver(InMemorySaver):
             content_sha256=content_sha256,
         )
         previous_revisions = previous.available_revisions if previous else []
+        invalid_revisions = previous.invalid_revisions if previous else []
+        damage_warnings = previous.damage_warnings if previous else []
+        recovered_from_revision = (
+            previous.recovered_from_revision if previous else None
+        )
+        integrity_status = (
+            "recovered"
+            if previous is not None
+            and (
+                previous.integrity_status == "recovered"
+                or bool(invalid_revisions)
+                or bool(damage_warnings)
+            )
+            else "valid"
+        )
         self._summaries[thread_id] = LangGraphCheckpointSummary(
             thread_id=thread_id,
             current_revision=revision,
             available_revisions=[*previous_revisions, revision],
-            integrity_status="valid",
+            invalid_revisions=list(invalid_revisions),
+            integrity_status=integrity_status,
+            recovered_from_revision=recovered_from_revision,
             latest_checkpoint_id=_latest_checkpoint_id(state),
+            damage_warnings=list(damage_warnings),
             legacy_migrated=previous.legacy_migrated if previous else False,
         )
 
@@ -513,6 +548,7 @@ class LangGraphCheckpointSummary:
     thread_id: str
     current_revision: int = 0
     available_revisions: list[int] = field(default_factory=list)
+    invalid_revisions: list[int] = field(default_factory=list)
     integrity_status: str = "missing"
     recovered_from_revision: int | None = None
     latest_checkpoint_id: str | None = None
@@ -574,7 +610,116 @@ def _read_revision_record(path: Path, *, thread_id: str) -> dict[str, Any]:
         raise LangGraphCheckpointStoreError(
             f"LangGraph 检查点修订缺少可恢复状态：{path.name}"
         )
+    _validate_thread_state(
+        state,
+        path=path,
+        expected_thread_id=thread_id,
+    )
     return payload
+
+
+def _validate_thread_state(
+    payload: dict[str, Any],
+    *,
+    path: Path,
+    expected_thread_id: str | None,
+) -> str:
+    if payload.get("format_version") != 1:
+        raise LangGraphCheckpointStoreError(
+            f"LangGraph 检查点状态版本不受支持：{path.name}"
+        )
+    thread_id = payload.get("thread_id")
+    if not isinstance(thread_id, str) or not thread_id:
+        raise LangGraphCheckpointStoreError(
+            f"LangGraph 检查点缺少运行标识：{path.name}"
+        )
+    if expected_thread_id is not None and thread_id != expected_thread_id:
+        raise LangGraphCheckpointStoreError(
+            f"LangGraph 检查点状态线程不一致：{path.name}"
+        )
+    storage = payload.get("storage")
+    if not isinstance(storage, dict):
+        raise LangGraphCheckpointStoreError(
+            f"LangGraph 检查点节点状态损坏：{path.name}"
+        )
+    try:
+        for namespace, checkpoints in storage.items():
+            if not isinstance(namespace, str) or not isinstance(
+                checkpoints, dict
+            ):
+                raise LangGraphCheckpointStoreError(
+                    f"LangGraph 检查点命名空间损坏：{path.name}"
+                )
+            for checkpoint_id, record in checkpoints.items():
+                if not isinstance(checkpoint_id, str) or not isinstance(
+                    record, dict
+                ):
+                    raise LangGraphCheckpointStoreError(
+                        f"LangGraph 检查点记录损坏：{path.name}"
+                    )
+                _decode_typed(record["checkpoint"])
+                _decode_typed(record["metadata"])
+
+        writes = payload.get("writes")
+        if not isinstance(writes, list):
+            raise LangGraphCheckpointStoreError(
+                f"LangGraph 检查点中间写入损坏：{path.name}"
+            )
+        for record in writes:
+            if not isinstance(record, dict):
+                raise LangGraphCheckpointStoreError(
+                    f"LangGraph 检查点中间写入损坏：{path.name}"
+                )
+            str(record["checkpoint_ns"])
+            str(record["checkpoint_id"])
+            str(record["task_id"])
+            int(record["write_index"])
+            str(record["stored_task_id"])
+            str(record["channel"])
+            _decode_typed(record["value"])
+
+        blobs = payload.get("blobs")
+        if not isinstance(blobs, list):
+            raise LangGraphCheckpointStoreError(
+                f"LangGraph 检查点通道数据损坏：{path.name}"
+            )
+        for record in blobs:
+            if not isinstance(record, dict):
+                raise LangGraphCheckpointStoreError(
+                    f"LangGraph 检查点通道数据损坏：{path.name}"
+                )
+            str(record["checkpoint_ns"])
+            str(record["channel"])
+            _decode_typed(record["value"])
+    except (KeyError, TypeError, ValueError) as error:
+        if isinstance(error, LangGraphCheckpointStoreError):
+            raise
+        raise LangGraphCheckpointStoreError(
+            f"LangGraph 检查点状态字段不完整：{path.name}"
+        ) from error
+    return thread_id
+
+
+def _revision_number(path: Path) -> int:
+    prefix = path.stem.split("-", 1)[0]
+    try:
+        revision = int(prefix)
+    except ValueError as error:
+        raise LangGraphCheckpointStoreError(
+            f"检查点修订文件名不合法：{path.name}"
+        ) from error
+    if revision < 1:
+        raise LangGraphCheckpointStoreError(
+            f"检查点修订文件名不合法：{path.name}"
+        )
+    return revision
+
+
+def _quarantined_revision_numbers(root: Path) -> list[int]:
+    revisions: list[int] = []
+    for path in sorted((root / "corrupt").glob("*.json")):
+        revisions.append(_revision_number(path))
+    return sorted(set(revisions))
 
 
 def _latest_checkpoint_id(state: dict[str, Any]) -> str | None:

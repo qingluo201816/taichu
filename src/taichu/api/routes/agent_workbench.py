@@ -29,6 +29,7 @@ from taichu.application.services.knowledge_extraction_service import (
 )
 from taichu.application.services.knowledge_service import (
     KnowledgeCardNotFoundError,
+    KnowledgeCardValidationError,
     KnowledgeConcurrentUpdateError,
     KnowledgeIdentityConflictError,
     KnowledgeUnavailableError,
@@ -242,6 +243,15 @@ async def api_accept_knowledge_extraction_run(
         progress = await service.accept_run(run_id)
     except KnowledgeExtractionError as error:
         raise _bad_request(str(error)) from error
+    except KnowledgeCardNotFoundError as error:
+        raise _not_found(str(error)) from error
+    except (
+        KnowledgeCardValidationError,
+        KnowledgeConcurrentUpdateError,
+        KnowledgeUnavailableError,
+        AgentRunStoreError,
+    ) as error:
+        raise _bad_request(_validation_message(error)) from error
     return KnowledgeSedimentationProgressResponse(
         last_accepted_chapter_id=progress.last_accepted_chapter_id,
         updated_at=progress.updated_at,

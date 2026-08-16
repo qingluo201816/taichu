@@ -271,7 +271,6 @@ def _apply_budget(
         if candidate.card.lifecycle is not StructuredKnowledgeLifecycle.CONFIRMED:
             continue
         if len(items) >= top_k:
-            truncated = True
             break
         next_size = candidate.estimated_content_chars
         if used_chars + next_size > max_content_chars:

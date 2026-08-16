@@ -39,6 +39,7 @@ export const generalNodeStatusLabels: Record<GeneralAgentNodeStatus, string> = {
 
 const capabilityLabels: Record<string, string> = {
   get_novel_structure: "读取小说结构",
+  get_knowledge_chapter_coverage: "统计知识库章节覆盖",
   read_manuscript: "读取正文",
   search_manuscript: "搜索正文证据",
   retrieve_knowledge: "相关知识召回",
@@ -120,8 +121,23 @@ export function generalRunProgressSummary(run: GeneralAgentRun): string {
   return `已完成 ${completedNodes}/${nodes.length} 个能力步骤`;
 }
 
+export function generalAgentContinuationRequestIndex(
+  run: GeneralAgentRun,
+  conversationRuns: GeneralAgentRun[],
+): number | undefined {
+  if (run.status !== "waiting_human") {
+    return undefined;
+  }
+  return conversationRuns.find(item => item.parent_run_id === run.run_id)
+    ?.request_index;
+}
+
 export function generalCapabilityLabel(name: string): string {
-  return capabilityLabels[name] ?? "未识别能力";
+  return knownGeneralCapabilityLabel(name) ?? "未识别能力";
+}
+
+export function knownGeneralCapabilityLabel(name: string): string | undefined {
+  return capabilityLabels[name];
 }
 
 export function currentGeneralAgentNodes(run: GeneralAgentRun): GeneralAgentNodeRun[] {

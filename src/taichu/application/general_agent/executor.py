@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Awaitable, Callable, Mapping
+from contextlib import suppress
 from copy import deepcopy
 from time import perf_counter
 from typing import Annotated, Any, TypedDict
@@ -13,6 +15,21 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 from pydantic import ValidationError
 
+from taichu.application.agent_memory.models import (
+    producer_validity_proof_sha256,
+)
+from taichu.application.contracts.agent_memory import (
+    ProducerMemoryValidityProvider,
+)
+from taichu.application.contracts.general_agent_capability_results import (
+    CapabilityResultOwner,
+    CapabilityResultRecord,
+    GeneralAgentCapabilityResultRepository,
+    ResultIdentityPayload,
+    build_capability_result_record,
+    canonical_capability_result_sha256,
+    capability_result_id,
+)
 from taichu.application.contracts.general_agent_effects import (
     GeneralAgentEffectRepository,
 )
@@ -24,6 +41,12 @@ from taichu.application.general_agent.models import (
     GeneralAgentPlanNode,
     GeneralAgentRun,
     GeneralAgentRunStatus,
+)
+from taichu.application.general_agent.faults import (
+    GeneralAgentFaultContext,
+    GeneralAgentFaultHook,
+    GeneralAgentFaultPoint,
+    InjectedProcessTermination,
 )
 from taichu.application.general_agent.checkpoint_namespace import (
     NamespacedCheckpointSaver,
@@ -50,7 +73,6 @@ CheckpointCallback = Callable[
     [GeneralAgentRun, str],
     Awaitable[GeneralAgentRun],
 ]
-FaultInjector = Callable[[str, EffectRecord], None]
 
 
 def _merge_mapping(
@@ -75,16 +97,44 @@ class DynamicDagExecutor:
         tool_registry: ToolRegistry,
         subagent_registry: SubagentRegistry,
         policy_service: InvocationPolicyService,
+        capability_result_repository: GeneralAgentCapabilityResultRepository,
+        capability_handler_identities: Mapping[tuple[str, str], str],
         graph_checkpointer: BaseCheckpointSaver[Any] | None = None,
         effect_repository: GeneralAgentEffectRepository | None = None,
-        fault_injector: FaultInjector | None = None,
+        fault_hook: GeneralAgentFaultHook | None = None,
+        memory_validity_provider: ProducerMemoryValidityProvider | None = None,
     ) -> None:
         self._tool_registry = tool_registry
         self._subagent_registry = subagent_registry
         self._policy_service = policy_service
+        self._capability_result_repository = capability_result_repository
+        self._capability_handler_identities = dict(
+            capability_handler_identities
+        )
         self._graph_checkpointer = graph_checkpointer or InMemorySaver()
         self._effect_repository = effect_repository or _InMemoryEffectRepository()
-        self._fault_injector = fault_injector
+        self._fault_hook = fault_hook
+        self._memory_validity_provider = memory_validity_provider
+
+    @property
+    def capability_result_repository(
+        self,
+    ) -> GeneralAgentCapabilityResultRepository:
+        """暴露组合根身份检查所需的同一 Repository 实例。"""
+
+        return self._capability_result_repository
+
+    @property
+    def fault_hook(self) -> GeneralAgentFaultHook | None:
+        """暴露组合根身份检查所需的同一通用 Hook 实例。"""
+
+        return self._fault_hook
+
+    def bind_memory_validity_provider(
+        self,
+        provider: ProducerMemoryValidityProvider,
+    ) -> None:
+        self._memory_validity_provider = provider
 
     async def execute(
         self,
@@ -94,7 +144,7 @@ class DynamicDagExecutor:
     ) -> GeneralAgentRun:
         if run.plan is None:
             raise DynamicDagExecutionError("通用 Runtime 没有可执行计划。")
-        run = self._ensure_node_runs(run)
+        run = await self._ensure_node_runs(run)
         run = await checkpoint(run, "dag_prepared")
         assert run.plan is not None
         if not run.plan.nodes:
@@ -155,7 +205,7 @@ class DynamicDagExecutor:
             }
         )
 
-    def _ensure_node_runs(self, run: GeneralAgentRun) -> GeneralAgentRun:
+    async def _ensure_node_runs(self, run: GeneralAgentRun) -> GeneralAgentRun:
         if run.plan is None:
             return run
         existing = {(item.plan_revision, item.node_id): item for item in run.node_runs}
@@ -170,6 +220,10 @@ class DynamicDagExecutor:
                     )
                     items[items.index(existing_item)] = replacement
                 continue
+            reused = await self._reused_node_run(run, node)
+            if reused is not None:
+                items.append(reused)
+                continue
             items.append(
                 GeneralAgentNodeRun(
                     node_id=node.node_id,
@@ -182,6 +236,77 @@ class DynamicDagExecutor:
                 )
             )
         return run.model_copy(update={"node_runs": items})
+
+    async def _reused_node_run(
+        self,
+        run: GeneralAgentRun,
+        node: GeneralAgentPlanNode,
+    ) -> GeneralAgentNodeRun | None:
+        if node.reuse_from_node_id is None:
+            return None
+        candidates = [
+            item
+            for item in run.node_runs
+            if item.plan_revision < run.plan_revision
+            and item.node_id == node.reuse_from_node_id
+            and item.status is GeneralAgentNodeStatus.SUCCESS
+        ]
+        if not candidates:
+            raise DynamicDagExecutionError(
+                f"节点“{node.node_id}”要求复用的成功节点"
+                f"“{node.reuse_from_node_id}”不存在。"
+            )
+        source = max(candidates, key=lambda item: item.plan_revision)
+        if source.kind is not node.kind or source.capability_name != node.capability_name:
+            raise DynamicDagExecutionError(
+                f"节点“{node.node_id}”不能复用能力类型或名称不同的"
+                f"节点“{node.reuse_from_node_id}”。"
+            )
+        provider = self._memory_validity_provider
+        if provider is None:
+            raise DynamicDagExecutionError(
+                "节点复用缺少 producer 有效性证明服务。"
+            )
+        producer_ref = (
+            f"node:{run.run_id}:{source.plan_revision}:{source.node_id}"
+        )
+        try:
+            observed = await provider.producer_validity_proof(
+                run.conversation_id,
+                producer_ref,
+                current_request_index=run.request_index,
+            )
+            proof = await provider.require_active_producer(
+                run.conversation_id,
+                producer_ref,
+                expected_source_fingerprint=observed.source_fingerprint,
+                expected_dependency_fingerprint=observed.dependency_fingerprint,
+                current_request_index=run.request_index,
+            )
+        except Exception as error:
+            raise DynamicDagExecutionError(
+                f"节点复用的 producer 有效性证明失败：{error}"
+            ) from error
+        return source.model_copy(
+            update={
+                "node_id": node.node_id,
+                "plan_revision": run.plan_revision,
+                "objective": node.objective,
+                "dependencies": node.dependencies,
+                "attempt_id": _attempt_id(run, node.node_id),
+                "reused_from_producer_ref": producer_ref,
+                "producer_validity_proof_sha256": (
+                    producer_validity_proof_sha256(proof)
+                ),
+                "reused_source_plan_revision": source.plan_revision,
+                "reused_source_fingerprint": proof.source_fingerprint,
+                "reused_dependency_fingerprint": proof.dependency_fingerprint,
+                "reconciliation_reason": (
+                    f"复用计划修订 {source.plan_revision} 的成功节点"
+                    f"“{source.node_id}”，未重复调用能力。"
+                ),
+            }
+        )
 
     def _build_graph(self, run: GeneralAgentRun):
         assert run.plan is not None
@@ -423,29 +548,84 @@ class DynamicDagExecutor:
                         invocation,
                         timer=timer,
                     )
+                result_identity = self._result_identity(
+                    run,
+                    item,
+                    resolved_input,
+                    input_schema=manifest.input_schema,
+                    output_schema=manifest.output_schema,
+                )
+                completed = await self._completed_result(result_identity)
+                if completed is not None:
+                    return (
+                        self._successful_capability_result(
+                            item,
+                            resolved_input,
+                            completed,
+                            action="reuse",
+                            timer=timer,
+                        ),
+                        None,
+                    )
                 envelope = await self._tool_registry.invoke(
                     item.capability_name, resolved_input, invocation
                 )
             else:
-                envelope = await self._subagent_registry.invoke(
-                    item.capability_name,
-                    resolved_input,
-                    invocation,
+                manifest = self._subagent_registry.get_manifest(
+                    item.capability_name
                 )
+                result_identity = self._result_identity(
+                    run,
+                    item,
+                    resolved_input,
+                    input_schema=manifest.input_schema,
+                    output_schema=manifest.output_schema,
+                )
+                completed = await self._completed_result(result_identity)
+                if completed is not None:
+                    return (
+                        self._successful_capability_result(
+                            item,
+                            resolved_input,
+                            completed,
+                            action="reuse",
+                            timer=timer,
+                        ),
+                        None,
+                    )
+                envelope = await self._invoke_subagent(
+                    run=run,
+                    item=item,
+                    resolved_input=resolved_input,
+                    invocation=invocation,
+                    attempt_id=result_identity.attempt_id,
+                )
+            record = build_capability_result_record(
+                identity=result_identity,
+                output=envelope.output.model_dump(mode="json"),
+                source_refs=tuple(envelope.source_refs),
+                artifact_refs=tuple(envelope.artifact_refs),
+                trace_id=envelope.trace_id,
+                committed_at=now_iso(),
+            )
+            committed = await self._capability_result_repository.commit_completed(
+                result_identity.owner,
+                record,
+            )
+            self._emit_fault(
+                point=GeneralAgentFaultPoint.CAPABILITY_RESULT_COMMITTED,
+                run=run,
+                item=item,
+                durable_identity=committed.result_id,
+                attempt_id=result_identity.attempt_id,
+            )
             return (
-                item.model_copy(
-                    update={
-                        "status": GeneralAgentNodeStatus.SUCCESS,
-                        "resolved_input": resolved_input,
-                        "output": envelope.output.model_dump(mode="json"),
-                        "source_refs": envelope.source_refs,
-                        "artifact_refs": envelope.artifact_refs,
-                        "trace_id": envelope.trace_id,
-                        "finished_at": now_iso(),
-                        "duration_ms": max(0, round((perf_counter() - timer) * 1000)),
-                        "error_type": None,
-                        "error_message": None,
-                    }
+                self._successful_capability_result(
+                    item,
+                    resolved_input,
+                    committed,
+                    action="commit",
+                    timer=timer,
                 ),
                 None,
             )
@@ -464,6 +644,89 @@ class DynamicDagExecutor:
                 ),
                 None,
             )
+
+    def _result_identity(
+        self,
+        run: GeneralAgentRun,
+        item: GeneralAgentNodeRun,
+        resolved_input: dict[str, Any],
+        *,
+        input_schema: type[Any],
+        output_schema: type[Any],
+    ) -> ResultIdentityPayload:
+        attempt_id = item.attempt_id or _attempt_id(run, item.node_id)
+        key = (item.kind.value, item.capability_name)
+        handler_identity = self._capability_handler_identities.get(key)
+        if not handler_identity:
+            raise DynamicDagExecutionError(
+                f"能力“{item.capability_name}”缺少稳定 Handler 身份。"
+            )
+        parsed_input = input_schema.model_validate(resolved_input)
+        return ResultIdentityPayload(
+            owner=_capability_result_owner(run),
+            plan_revision=run.plan_revision,
+            node_id=item.node_id,
+            attempt_id=attempt_id,
+            capability_kind=item.kind.value,
+            capability_name=item.capability_name,
+            input_sha256=canonical_input_hash(parsed_input),
+            handler_identity_sha256=canonical_capability_result_sha256(
+                handler_identity
+            ),
+            input_schema_sha256=canonical_capability_result_sha256(
+                input_schema.model_json_schema()
+            ),
+            output_schema_sha256=canonical_capability_result_sha256(
+                output_schema.model_json_schema()
+            ),
+        )
+
+    async def _completed_result(
+        self,
+        identity: ResultIdentityPayload,
+    ) -> CapabilityResultRecord | None:
+        return await self._capability_result_repository.get_completed(
+            identity.owner,
+            capability_result_id(identity),
+        )
+
+    @staticmethod
+    def _successful_capability_result(
+        item: GeneralAgentNodeRun,
+        resolved_input: dict[str, Any],
+        record: CapabilityResultRecord,
+        *,
+        action: str,
+        timer: float,
+    ) -> GeneralAgentNodeRun:
+        action_label = (
+            "复用"
+            if action == "reuse"
+            else "首次调用或安全重试后提交"
+        )
+        return item.model_copy(
+            update={
+                "status": GeneralAgentNodeStatus.SUCCESS,
+                "resolved_input": resolved_input,
+                "output": record.output,
+                "source_refs": list(record.source_refs),
+                "artifact_refs": list(record.artifact_refs),
+                "trace_id": record.trace_id,
+                "reconciliation_reason": (
+                    f"{action_label}已完成能力结果 {record.result_id}；"
+                    f"identity={record.identity_payload_sha256}；"
+                    f"record={record.content_sha256}"
+                ),
+                "duplicate_execution_protected": True,
+                "finished_at": now_iso(),
+                "duration_ms": max(
+                    0,
+                    round((perf_counter() - timer) * 1000),
+                ),
+                "error_type": None,
+                "error_message": None,
+            }
+        )
 
     async def _execute_write_tool(
         self,
@@ -583,8 +846,13 @@ class DynamicDagExecutor:
                 resolved_input,
                 invocation,
             )
-            if self._fault_injector is not None:
-                self._fault_injector("after_write_before_effect_success", started)
+            self._emit_fault(
+                point=GeneralAgentFaultPoint.RESOURCE_WRITE_APPLIED,
+                run=run,
+                item=item,
+                durable_identity=started.effect_id,
+                attempt_id=started.attempt_id,
+            )
             output = envelope.output.model_dump(mode="json")
             record = await self._append_effect(
                 run,
@@ -660,6 +928,75 @@ class DynamicDagExecutor:
                 reason=reconciliation.reason or str(error),
             )
             raise
+
+    async def _invoke_subagent(
+        self,
+        *,
+        run: GeneralAgentRun,
+        item: GeneralAgentNodeRun,
+        resolved_input: dict[str, Any],
+        invocation: InvocationContext,
+        attempt_id: str,
+    ) -> Any:
+        if self._fault_hook is None:
+            return await self._subagent_registry.invoke(
+                item.capability_name,
+                resolved_input,
+                invocation,
+            )
+
+        pending = asyncio.create_task(
+            self._subagent_registry.invoke(
+                item.capability_name,
+                resolved_input,
+                invocation,
+            )
+        )
+        await asyncio.sleep(0)
+        try:
+            self._emit_fault(
+                point=GeneralAgentFaultPoint.SUBAGENT_STARTED,
+                run=run,
+                item=item,
+                durable_identity=attempt_id,
+                attempt_id=attempt_id,
+            )
+        except InjectedProcessTermination:
+            if not pending.done():
+                pending.cancel()
+                with suppress(asyncio.CancelledError):
+                    await pending
+            else:
+                with suppress(asyncio.CancelledError, Exception):
+                    pending.result()
+            raise
+        return await pending
+
+    def _emit_fault(
+        self,
+        *,
+        point: GeneralAgentFaultPoint,
+        run: GeneralAgentRun,
+        item: GeneralAgentNodeRun,
+        durable_identity: str | None = None,
+        attempt_id: str | None = None,
+    ) -> None:
+        if self._fault_hook is None:
+            return
+        self._fault_hook.on_fault_point(
+            point=point,
+            context=GeneralAgentFaultContext(
+                conversation_id=run.conversation_id,
+                run_id=run.run_id,
+                plan_revision=run.plan_revision,
+                checkpoint_revision=run.checkpoint_revision,
+                node_id=item.node_id,
+                attempt_id=attempt_id or item.attempt_id,
+                capability_kind=item.kind.value,
+                capability_name=item.capability_name,
+                durable_identity=durable_identity,
+            ),
+        )
 
     async def _append_effect(
         self,
@@ -806,10 +1143,9 @@ class DynamicDagExecutor:
                 memory.model_dump(mode="json")
                 for memory in context_envelope.runtime_memories
             ]
-            if context_envelope.digest is not None:
-                invocation_scope["context_digest"] = context_envelope.digest.model_dump(
-                    mode="json"
-                )
+            digest = context_envelope.working_memory.digest
+            if digest is not None:
+                invocation_scope["context_digest"] = digest.model_dump(mode="json")
         return InvocationContext(
             task_id=run.task_id,
             run_id=run.run_id,
@@ -937,13 +1273,42 @@ def _read_path(payload: Any, path: str) -> Any:
 
 def _write_path(payload: dict[str, Any], path: str, value: Any) -> None:
     parts = path.split(".")
-    current = payload
-    for part in parts[:-1]:
-        child = current.setdefault(part, {})
-        if not isinstance(child, dict):
-            raise DynamicDagExecutionError(f"无法写入节点输入路径“{path}”。")
-        current = child
-    current[parts[-1]] = value
+    current: Any = payload
+    for index, part in enumerate(parts):
+        last = index == len(parts) - 1
+        next_is_index = not last and parts[index + 1].isdigit()
+        if isinstance(current, dict):
+            if part.isdigit():
+                raise DynamicDagExecutionError(f"无法写入节点输入路径“{path}”。")
+            if last:
+                current[part] = value
+                return
+            child = current.get(part)
+            if child is None:
+                child = [] if next_is_index else {}
+                current[part] = child
+            if not isinstance(child, (dict, list)):
+                raise DynamicDagExecutionError(f"无法写入节点输入路径“{path}”。")
+            current = child
+            continue
+        if isinstance(current, list) and part.isdigit():
+            list_index = int(part)
+            if list_index > len(current):
+                raise DynamicDagExecutionError(f"节点输入数组写入越界：“{path}”。")
+            if last:
+                if list_index == len(current):
+                    current.append(value)
+                else:
+                    current[list_index] = value
+                return
+            if list_index == len(current):
+                current.append([] if next_is_index else {})
+            child = current[list_index]
+            if not isinstance(child, (dict, list)):
+                raise DynamicDagExecutionError(f"无法写入节点输入路径“{path}”。")
+            current = child
+            continue
+        raise DynamicDagExecutionError(f"无法写入节点输入路径“{path}”。")
 
 
 def _runtime_error_message(error: Exception) -> str:
@@ -975,6 +1340,13 @@ def _attempt_id(run: GeneralAgentRun, node_id: str) -> str:
         f"taichu:{run.run_id}:{run.plan_revision}:{node_id}:attempt",
     )
     return f"attempt_{value.hex}"
+
+
+def _capability_result_owner(run: GeneralAgentRun) -> CapabilityResultOwner:
+    return CapabilityResultOwner(
+        conversation_id=run.conversation_id,
+        run_id=run.run_id,
+    )
 
 
 def _effect_id(run: GeneralAgentRun, node_id: str) -> str:
@@ -1009,7 +1381,3 @@ class _InMemoryEffectRepository:
 
 class DynamicDagExecutionError(RuntimeError):
     """动态执行图无法继续推进。"""
-
-
-class InjectedProcessTermination(RuntimeError):
-    """只用于故障注入，要求 Runtime 保留活动状态并模拟进程终止。"""

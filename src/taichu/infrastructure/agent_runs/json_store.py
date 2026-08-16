@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +25,8 @@ class JsonAgentRunStore:
             / "agent_runs"
             / "knowledge_extraction"
         )
+        self._io_lock = threading.RLock()
+        self._deleted_run_ids: set[str] = set()
 
     async def write_run(self, run: AgentRun) -> AgentRun:
         """Write one run JSON atomically."""
@@ -64,38 +68,45 @@ class JsonAgentRunStore:
 
     def _write_run_sync(self, run: AgentRun) -> None:
         _validate_run_id(run.run_id)
-        self._root.mkdir(parents=True, exist_ok=True)
-        path = self._path_for_run(run.run_id)
-        temporary_path = path.with_suffix(".json.tmp")
-        temporary_path.write_text(
-            json.dumps(run.model_dump(mode="json"), ensure_ascii=False, indent=2)
-            + "\n",
-            encoding="utf-8",
-        )
-        temporary_path.replace(path)
+        with self._io_lock:
+            if run.run_id in self._deleted_run_ids:
+                return
+            self._root.mkdir(parents=True, exist_ok=True)
+            path = self._path_for_run(run.run_id)
+            temporary_path = path.with_suffix(".json.tmp")
+            temporary_path.write_text(
+                json.dumps(run.model_dump(mode="json"), ensure_ascii=False, indent=2)
+                + "\n",
+                encoding="utf-8",
+            )
+            temporary_path.replace(path)
 
     def _get_run_sync(self, run_id: str) -> AgentRun | None:
         _validate_run_id(run_id)
-        path = self._path_for_run(run_id)
-        if not path.exists():
-            return None
-        return _load_run(path)
+        with self._io_lock:
+            path = self._path_for_run(run_id)
+            if not path.exists():
+                return None
+            return _load_run(path)
 
     def _delete_run_sync(self, run_id: str) -> bool:
         _validate_run_id(run_id)
-        path = self._path_for_run(run_id)
-        if not path.exists():
-            return False
-        path.unlink()
-        return True
+        with self._io_lock:
+            path = self._path_for_run(run_id)
+            self._deleted_run_ids.add(run_id)
+            if not path.exists():
+                return False
+            path.unlink()
+            return True
 
     def _list_runs_sync(self, status: str) -> list[AgentRun]:
-        self._root.mkdir(parents=True, exist_ok=True)
-        runs = [_load_run(path) for path in sorted(self._root.glob("*.json"))]
-        if status != "all":
-            expected = AgentRunStatus(status)
-            runs = [run for run in runs if run.status is expected]
-        return sorted(runs, key=lambda run: run.started_at, reverse=True)
+        with self._io_lock:
+            self._root.mkdir(parents=True, exist_ok=True)
+            runs = [_load_run(path) for path in sorted(self._root.glob("*.json"))]
+            if status != "all":
+                expected = AgentRunStatus(status)
+                runs = [run for run in runs if run.status is expected]
+            return sorted(runs, key=lambda run: run.started_at, reverse=True)
 
     def _path_for_run(self, run_id: str) -> Path:
         return self._root / f"{run_id}.json"
@@ -106,10 +117,40 @@ class AgentRunStoreError(ValueError):
 
 
 def _load_run(path: Path) -> AgentRun:
-    data: Any = json.loads(path.read_text(encoding="utf-8"))
+    for attempt in range(5):
+        try:
+            content = path.read_text(encoding="utf-8")
+            break
+        except (FileNotFoundError, PermissionError):
+            if attempt == 4:
+                raise
+            time.sleep(0.01)
+    data: Any = json.loads(content)
     if not isinstance(data, dict):
         raise AgentRunStoreError(f"运行 JSON 必须是对象：{path.name}")
-    return AgentRun.model_validate(data)
+    run = AgentRun.model_validate(data)
+    failed_chapters = [
+        item
+        for item in run.batch_chapter_progress
+        if item.status.value == "failed"
+    ]
+    if not failed_chapters or run.status is AgentRunStatus.FAILED:
+        return run
+
+    errors = list(run.errors)
+    for item in failed_chapters:
+        if not item.error:
+            continue
+        chapter_label = item.chapter_title or item.chapter_id
+        error = f"{chapter_label}：{item.error}"
+        if error not in errors:
+            errors.append(error)
+    return run.model_copy(
+        update={
+            "status": AgentRunStatus.FAILED,
+            "errors": errors,
+        }
+    )
 
 
 def _validate_run_id(run_id: str) -> None:

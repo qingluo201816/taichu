@@ -9,9 +9,13 @@ import re
 from typing import Any, TypeAlias
 from uuid import uuid4
 
-from taichu.application.contracts.storage import ProjectAssetStorageContract
+from taichu.application.contracts.storage import (
+    ProjectAssetStorageContract,
+    WorkspaceRecordRevisionConflictError,
+)
 from taichu.application.services.knowledge_service import KnowledgeService
 from taichu.domain.models import (
+    MVPInboxDecision,
     MVPInboxIdea,
     MVPInboxIssue,
     MVPInboxPendingFact,
@@ -24,7 +28,10 @@ from taichu.domain.models import (
 INBOX_IDEAS_FILE = "inbox_ideas.jsonl"
 INBOX_PENDING_FACTS_FILE = "inbox_pending_facts.jsonl"
 INBOX_ISSUES_FILE = "inbox_issues.jsonl"
-MVPInboxItem: TypeAlias = MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue
+INBOX_DECISIONS_FILE = "inbox_decisions.jsonl"
+MVPInboxItem: TypeAlias = (
+    MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue | MVPInboxDecision
+)
 
 _ISSUE_DETAIL_LABELS = (
     "记录日期",
@@ -54,6 +61,14 @@ class PendingFactConfirmResult:
     knowledge_card: StructuredKnowledgeCard
 
 
+class InboxRevisionConflictError(RuntimeError):
+    """问题记录 expected revision 已陈旧。"""
+
+    def __init__(self, current_revision: int) -> None:
+        self.current_revision = current_revision
+        super().__init__(f"问题记录已更新，当前修订为 {current_revision}。")
+
+
 class MVPInboxService:
     """Manage the Inbox categories and their combined view."""
 
@@ -71,7 +86,7 @@ class MVPInboxService:
         *,
         status: str = "todo",
         priority: str | None = None,
-    ) -> list[MVPInboxIdea | MVPInboxPendingFact | MVPInboxIssue]:
+    ) -> list[MVPInboxItem]:
         """List one Inbox category or the combined view with lifecycle filters."""
         if tab == "all":
             return _filter_items(
@@ -79,6 +94,7 @@ class MVPInboxService:
                     *await self._list_ideas(),
                     *await self._list_pending_facts(),
                     *await self._list_issues(),
+                    *await self._list_decisions(),
                 ],
                 status,
                 priority,
@@ -89,6 +105,8 @@ class MVPInboxService:
             return _filter_items(await self._list_pending_facts(), status, priority)
         if tab == "issues":
             return _filter_items(await self._list_issues(), status, priority)
+        if tab == "decisions":
+            return _filter_items(await self._list_decisions(), status, priority)
         raise InboxValidationError("未知的收件箱分类")
 
     async def create_idea(self, data: dict[str, Any]) -> MVPInboxIdea:
@@ -147,12 +165,35 @@ class MVPInboxService:
                 "source_chapter_id": data.get("source_chapter_id"),
                 "priority": data.get("priority", "normal"),
                 "status": "todo",
+                "revision": 1,
+                "links": data.get("links", []),
                 "created_at": data.get("created_at", now),
                 "updated_at": now,
             }
         )
         await self._storage.append_workspace_record(
             INBOX_ISSUES_FILE,
+            item.model_dump(mode="json"),
+        )
+        return item
+
+    async def create_decision(self, data: dict[str, Any]) -> MVPInboxDecision:
+        """Create a manual decision item."""
+        now = _now_iso()
+        item = MVPInboxDecision.model_validate(
+            {
+                "id": data.get("id") or f"decision-{uuid4().hex}",
+                "title": data.get("title", ""),
+                "content": data.get("content", ""),
+                "source_chapter_id": data.get("source_chapter_id"),
+                "priority": data.get("priority", "normal"),
+                "status": "todo",
+                "created_at": data.get("created_at", now),
+                "updated_at": now,
+            }
+        )
+        await self._storage.append_workspace_record(
+            INBOX_DECISIONS_FILE,
             item.model_dump(mode="json"),
         )
         return item
@@ -184,18 +225,53 @@ class MVPInboxService:
             MVPInboxPendingFact,
         )
 
-    async def patch_issue(self, item_id: str, updates: dict[str, Any]) -> MVPInboxIssue:
+    async def get_issue(self, item_id: str) -> MVPInboxIssue:
+        """按稳定 ID 读取问题；legacy shape 只读投影为 revision 0。"""
+        matches = [item for item in await self._list_issues() if item.id == item_id]
+        if not matches:
+            raise InboxItemNotFoundError("未找到对应的问题记录")
+        if len(matches) != 1:
+            raise InboxValidationError("问题记录标识不唯一")
+        return matches[0]
+
+    async def patch_issue(
+        self,
+        item_id: str,
+        updates: dict[str, Any],
+        *,
+        expected_revision: int,
+    ) -> MVPInboxIssue:
         """Patch one issue item."""
         normalized_updates = dict(updates)
         if "content" in normalized_updates:
             normalized_updates["content"] = _canonical_issue_content(
                 normalized_updates["content"]
             )
+        normalized_updates["updated_at"] = _now_iso()
+        try:
+            stored = await self._storage.compare_and_swap_workspace_record(
+                INBOX_ISSUES_FILE,
+                item_id,
+                expected_revision,
+                normalized_updates,
+            )
+        except WorkspaceRecordRevisionConflictError as error:
+            raise InboxRevisionConflictError(error.current_revision) from error
+        except KeyError as error:
+            raise InboxItemNotFoundError("未找到对应的问题记录") from error
+        return MVPInboxIssue.model_validate(stored)
+
+    async def patch_decision(
+        self,
+        item_id: str,
+        updates: dict[str, Any],
+    ) -> MVPInboxDecision:
+        """Patch one decision item."""
         return await self._patch_jsonl_item(
-            INBOX_ISSUES_FILE,
+            INBOX_DECISIONS_FILE,
             item_id,
-            normalized_updates,
-            MVPInboxIssue,
+            updates,
+            MVPInboxDecision,
         )
 
     async def confirm_pending_fact(
@@ -250,6 +326,14 @@ class MVPInboxService:
             for record in await self._storage.list_workspace_records(INBOX_ISSUES_FILE)
         ]
 
+    async def _list_decisions(self) -> list[MVPInboxDecision]:
+        return [
+            MVPInboxDecision.model_validate(record)
+            for record in await self._storage.list_workspace_records(
+                INBOX_DECISIONS_FILE
+            )
+        ]
+
     async def _find_pending_fact(self, item_id: str) -> MVPInboxPendingFact:
         for item in await self._list_pending_facts():
             if item.id == item_id:
@@ -263,7 +347,8 @@ class MVPInboxService:
         updates: dict[str, Any],
         model_type: type[MVPInboxIdea]
         | type[MVPInboxPendingFact]
-        | type[MVPInboxIssue],
+        | type[MVPInboxIssue]
+        | type[MVPInboxDecision],
     ) -> Any:
         records = await self._storage.list_workspace_records(filename)
         rewritten: list[dict[str, object]] = []

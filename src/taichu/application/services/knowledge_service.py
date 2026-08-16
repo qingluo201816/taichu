@@ -17,6 +17,13 @@ from taichu.application.contracts.knowledge_repository import (
     KnowledgeRepositoryUnavailableError,
     StructuredKnowledgeRepository,
 )
+from taichu.application.retrieval.models import (
+    RetrievalConsumerContext,
+    RetrievalMode,
+    RetrievalRequest,
+    RetrievalResult,
+)
+from taichu.application.services.retrieval_service import RetrievalService
 from taichu.domain.models import (
     KnowledgeTypeSchema,
     KnowledgeFieldMergeStrategy,
@@ -50,8 +57,46 @@ _AGENT_FORBIDDEN_FIELDS = FORBIDDEN_KNOWLEDGE_FIELD_KEYS | {
 class KnowledgeService:
     """Own all structured-knowledge validation and lifecycle transitions."""
 
-    def __init__(self, repository: StructuredKnowledgeRepository) -> None:
+    def __init__(
+        self,
+        repository: StructuredKnowledgeRepository,
+        *,
+        retrieval_service: RetrievalService | None = None,
+    ) -> None:
         self._repository = repository
+        self._retrieval_service = retrieval_service
+
+    async def retrieve_complete_confirmed_catalog(
+        self,
+        *,
+        run_id: str | None,
+        stage: str | None,
+    ) -> RetrievalResult:
+        """经统一召回返回完整已确认目录；任何截断都失败关闭。"""
+
+        if self._retrieval_service is None:
+            raise KnowledgeUnavailableError("统一知识召回服务未配置。")
+        result = await self._retrieval_service.retrieve(
+            RetrievalRequest(
+                mode=RetrievalMode.CATALOG,
+                top_k=200,
+                max_content_chars=50_000,
+                consumer=RetrievalConsumerContext(
+                    consumer_type="general_agent_runtime",
+                    run_id=run_id,
+                    stage=stage,
+                ),
+            )
+        )
+        if (
+            result.truncated
+            or result.budget_limited
+            or result.hit_count != result.candidate_count
+        ):
+            raise KnowledgeUnavailableError(
+                "知识目录召回不完整，不能作为全库事实范围。"
+            )
+        return result
 
     def list_types(self) -> list[StructuredKnowledgeType]:
         """Return all supported structured knowledge types."""
@@ -222,6 +267,76 @@ class KnowledgeService:
         )
         return await self._update(rejected, expected_updated_at=current.updated_at)
 
+    async def merge_confirmed_cards(
+        self,
+        primary_card_id: str,
+        merged_card_id: str,
+    ) -> tuple[StructuredKnowledgeCard, StructuredKnowledgeCard]:
+        """Merge duplicate confirmed cards, keeping only the chosen primary effective."""
+        if primary_card_id == merged_card_id:
+            raise KnowledgeCardValidationError("请选择两张不同的知识卡进行合并。")
+        primary = await self.get_card(primary_card_id)
+        merged = await self.get_card(merged_card_id)
+        if primary.lifecycle is not StructuredKnowledgeLifecycle.CONFIRMED:
+            raise KnowledgeCardValidationError("只能保留已确认知识卡作为主卡。")
+        if merged.lifecycle is not StructuredKnowledgeLifecycle.CONFIRMED:
+            raise KnowledgeCardValidationError("只能合并另一张已确认知识卡。")
+        if primary.type is not merged.type:
+            raise KnowledgeCardValidationError("只能合并相同类型的知识卡。")
+
+        payload = merge_knowledge_card_preview(
+            primary.type,
+            primary.model_dump(mode="json"),
+            merged.model_dump(mode="json"),
+        )
+        payload["name"] = primary.name
+        payload["aliases"] = _merge_aliases(
+            primary.aliases,
+            [merged.name, *merged.aliases],
+        )
+        payload["aliases"] = [
+            alias for alias in payload["aliases"] if alias != primary.name
+        ]
+        payload["summary"] = _append_unique_text_blocks(
+            primary.summary,
+            merged.summary,
+        )
+        payload["updated_at"] = _now_iso()
+        merged_primary = StructuredKnowledgeCard.model_validate(payload)
+        _validate_confirmed_card(merged_primary)
+        matches = await self.search_confirmed_identity(
+            merged_primary.type,
+            merged_primary.name,
+            merged_primary.aliases,
+        )
+        other_conflicts = [
+            card
+            for card in matches
+            if card.id not in {primary.id, merged.id}
+        ]
+        if other_conflicts:
+            names = "、".join(card.name for card in other_conflicts[:3])
+            raise KnowledgeIdentityConflictError(
+                f"合并后的名称或别名仍与知识卡“{names}”重复。"
+            )
+
+        retired = await self.reject_card(merged.id)
+        try:
+            saved_primary = await self._update(
+                merged_primary,
+                expected_updated_at=primary.updated_at,
+            )
+        except Exception:
+            restored = retired.model_copy(
+                update={
+                    "lifecycle": StructuredKnowledgeLifecycle.CONFIRMED,
+                    "updated_at": _now_iso(),
+                }
+            )
+            await self._update(restored, expected_updated_at=retired.updated_at)
+            raise
+        return saved_primary, retired
+
     async def search_confirmed_identity(
         self,
         knowledge_type: StructuredKnowledgeType,
@@ -248,6 +363,25 @@ class KnowledgeService:
         expected_updated_at: str | None = None,
     ) -> StructuredKnowledgeCard:
         """Apply explicit author edits to a confirmed card."""
+        card, current = await self.preview_author_confirmed_update(
+            card_id,
+            updates,
+            merge_mode=merge_mode,
+            allow_appearance_count_update=allow_appearance_count_update,
+            expected_updated_at=expected_updated_at,
+        )
+        return await self._update(card, expected_updated_at=current.updated_at)
+
+    async def preview_author_confirmed_update(
+        self,
+        card_id: str,
+        updates: dict[str, Any],
+        *,
+        merge_mode: AuthorMergeMode = "merge",
+        allow_appearance_count_update: bool = False,
+        expected_updated_at: str | None = None,
+    ) -> tuple[StructuredKnowledgeCard, StructuredKnowledgeCard]:
+        """Validate and build an author update without persisting it."""
         if merge_mode not in {"merge", "overwrite"}:
             raise KnowledgeCardValidationError("编辑后确认方式不支持。")
         current = await self.get_card(card_id)
@@ -280,7 +414,7 @@ class KnowledgeService:
         card = StructuredKnowledgeCard.model_validate(payload)
         _validate_confirmed_card(card)
         await self._assert_no_identity_conflict(card, exclude_id=card.id)
-        return await self._update(card, expected_updated_at=current.updated_at)
+        return card, current
 
     async def _assert_no_identity_conflict(
         self,
