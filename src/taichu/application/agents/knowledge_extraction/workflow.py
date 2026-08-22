@@ -39,12 +39,8 @@ from taichu.application.contracts.llm import (
     response_text,
 )
 from taichu.application.services.chapter_service import ChapterService
-from taichu.application.services.retrieval_service import RetrievalService
-from taichu.application.retrieval.models import (
-    RetrievalConsumerContext,
-    RetrievalIdentityQuery,
-    RetrievalMode,
-    RetrievalRequest,
+from taichu.application.contracts.knowledge_repository import (
+    StructuredKnowledgeRepository,
 )
 from taichu.application.agents.models.agent_run import (
     AgentBatchChapterProgress,
@@ -323,7 +319,7 @@ class KnowledgeExtractionDependencies:
 
     chapter_service: ChapterService
     llm: LLMGatewayContract
-    retrieval_service: RetrievalService
+    knowledge_repository: StructuredKnowledgeRepository
     run_store: AgentRunRepository
     event_sink: KnowledgeExtractionEventSink | None = None
 
@@ -1209,17 +1205,7 @@ def _entity_expert(
         entity_groups = state.get("entity_entity_groups", [])
         if not entity_groups:
             return state
-        retrieval = await dependencies.retrieval_service.retrieve(
-            RetrievalRequest(
-                mode=RetrievalMode.CATALOG,
-                top_k=200,
-                consumer=RetrievalConsumerContext(
-                    consumer_type="knowledge_workflow",
-                    run_id=state.get("run_id"),
-                    stage="EntityExpertNode",
-                ),
-            )
-        )
+        cards = await dependencies.knowledge_repository.list_confirmed_cards()
         active_index = [
             {
                 "id": card.id,
@@ -1228,7 +1214,7 @@ def _entity_expert(
                 "aliases": card.aliases,
                 "summary": card.summary,
             }
-            for card in (item.knowledge_card for item in retrieval.items)
+            for card in cards
         ]
         entity_schemas = [
             knowledge_type_schema(knowledge_type).model_dump(mode="json")
@@ -1282,17 +1268,7 @@ def _event_rule_expert(
         entity_groups = state.get("event_rule_entity_groups", [])
         if not entity_groups:
             return state
-        retrieval = await dependencies.retrieval_service.retrieve(
-            RetrievalRequest(
-                mode=RetrievalMode.CATALOG,
-                top_k=200,
-                consumer=RetrievalConsumerContext(
-                    consumer_type="knowledge_workflow",
-                    run_id=state.get("run_id"),
-                    stage="EventRuleExpertNode",
-                ),
-            )
-        )
+        cards = await dependencies.knowledge_repository.list_confirmed_cards()
         active_rule_index = [
             {
                 "id": card.id,
@@ -1300,7 +1276,7 @@ def _event_rule_expert(
                 "aliases": card.aliases,
                 "summary": card.summary,
             }
-            for card in (item.knowledge_card for item in retrieval.items)
+            for card in cards
             if card.type == StructuredKnowledgeType.RULE
         ]
         event_rule_schemas = [
@@ -1429,19 +1405,9 @@ def _match_existing(
     dependencies: KnowledgeExtractionDependencies,
 ) -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
-        catalog = await dependencies.retrieval_service.retrieve(
-            RetrievalRequest(
-                mode=RetrievalMode.CATALOG,
-                top_k=200,
-                max_content_chars=50_000,
-                consumer=RetrievalConsumerContext(
-                    consumer_type="knowledge_workflow",
-                    run_id=state.get("run_id"),
-                    stage="MatchExistingKnowledgeCatalogNode",
-                ),
-            )
+        catalog_cards = (
+            await dependencies.knowledge_repository.list_confirmed_cards()
         )
-        catalog_cards = [item.knowledge_card for item in catalog.items]
         catalog_identity_index = _build_card_identity_index(catalog_cards)
         for candidate in state.get("typed_candidates", []):
             try:
@@ -1453,22 +1419,11 @@ def _match_existing(
             candidate_name = str(candidate.get("name") or "").strip()
             if not candidate_name:
                 continue
-            retrieval = await dependencies.retrieval_service.retrieve(
-                RetrievalRequest(
-                    mode=RetrievalMode.IDENTITY,
-                    identity=RetrievalIdentityQuery(
-                        knowledge_type=knowledge_type,
-                        name=candidate_name,
-                        aliases=_list_strings(candidate.get("aliases")),
-                    ),
-                    consumer=RetrievalConsumerContext(
-                        consumer_type="knowledge_workflow",
-                        run_id=state.get("run_id"),
-                        stage="MatchExistingKnowledgeNode",
-                    ),
-                )
+            matches = await dependencies.knowledge_repository.search_confirmed_identity(
+                knowledge_type,
+                candidate_name,
+                _list_strings(candidate.get("aliases")),
             )
-            matches = [item.knowledge_card for item in retrieval.items]
             if matches:
                 _bind_candidate_to_existing_card(
                     candidate,
@@ -2114,22 +2069,12 @@ async def _quality_decision(
         return "rejected", "缺少稳定名称。"
     if not evidence_excerpts:
         return "rejected", "缺少可回放的原文证据。"
-    retrieval = await dependencies.retrieval_service.retrieve(
-        RetrievalRequest(
-            mode=RetrievalMode.IDENTITY,
-            identity=RetrievalIdentityQuery(
-                knowledge_type=StructuredKnowledgeType(knowledge_type),
-                name=name,
-                aliases=_list_strings(group.get("raw_names")),
-            ),
-            consumer=RetrievalConsumerContext(
-                consumer_type="knowledge_workflow",
-                run_id=run_id,
-                stage="CandidateQualityGateNode",
-            ),
-        )
+    del run_id
+    active_matches = await dependencies.knowledge_repository.search_confirmed_identity(
+        StructuredKnowledgeType(knowledge_type),
+        name,
+        _list_strings(group.get("raw_names")),
     )
-    active_matches = [item.knowledge_card for item in retrieval.items]
     if active_matches:
         return "accepted", "命中已有有效知识卡，可作为更新候选。"
     if knowledge_type == "character":

@@ -1,6 +1,6 @@
 # project_assets 目录说明
 
-> 更新日期：2026-08-15
+> 更新日期：2026-08-19
 
 `project_assets/` 是太初单本小说的本地资产根目录，用于保存正文 Markdown、工作区中间态、AI/Agent 运行记录、评测审计和临时生成文件。MongoDB `taichu.knowledge_cards` 是唯一结构事实源，`project_assets/` 下的 JSON/JSONL 不承担兼容事实源职责。
 
@@ -68,7 +68,6 @@ project_assets/
 │   ├── llm_usage/                               # 跨任务模型调用遥测，按需创建 calls.jsonl
 │   ├── llm_call_replays/                        # 通用 Agent 逐次模型调用脱敏回放资产
 │   ├── embedding_usage/                         # 旧独立向量链路的历史 Embedding 遥测
-│   ├── retrieval/                               # 统一知识召回技术观测，按需创建 calls.jsonl
 │   ├── capability_invocations/                  # Tool、专业子 Agent 与 LLM 的脱敏技术调用记录
 │   ├── capability_artifacts/                    # 专业子 Agent 的有类型 JSON 中间产物
 │   ├── general_agent_runs/                      # 通用写作助手 Runtime 的独立业务检查点
@@ -79,7 +78,7 @@ project_assets/
 │   ├── general_agent_memory/                    # 通用写作助手运行记忆记录，不是小说事实
 │   ├── agent_evaluations/                       # 专项 Agent 效果评估输入快照、结果与审计记录
 │   │   ├── knowledge_extraction/                # 知识沉淀评估报告及裁判校准报告
-│   │   └── retrieval/                           # 统一知识召回离线评测结果
+│   ├── rag_evaluations/                         # Graph RAG 回归、消融与语义评测报告
 │   └── general_agent_benchmarks/                # 通用写作智能体固定基准运行、实验、迭代与比较资产
 │       └── interactive-runtime/                 # 网页发起评测的运行状态与终态证据持久化
 └── generated/                                   # 按需创建的临时生成物根目录
@@ -125,8 +124,6 @@ MongoDB 知识卡统一使用 `lifecycle=draft|confirmed|rejected`；默认列�
 
 `derived/embedding_usage/calls.jsonl` 是被 Milvus Vector Graph RAG 替换前的独立向量链路历史遥测。当前上游库直接调用本地 OpenAI 兼容 Embedding 接口，不再向该文件追加；历史记录仍不是知识事实或向量备份。
 
-统一知识召回技术观测追加保存在 `derived/retrieval/calls.jsonl`。每行保存召回关联 ID、调用方、模式、策略档案、请求与实际策略、回退原因、分支候选数与命中数、后端与过滤耗时、索引快照和脱敏错误；查询与辅助上下文只保存长度和 SHA-256，不重复保存正文或用户完整输入。该记录用于跨消费者排查召回链路，但不替代写作区、知识沉淀 Workflow 或通用 Agent Runtime 各自的业务日志、状态机与评测记录。旧记录不要求补写新增字段，读取时使用兼容默认值。
-
 通用写作助手能力层的 Tool、专业子 Agent 和内部 LLM 技术调用记录追加保存在 `derived/capability_invocations/calls.jsonl`。记录只保存调用树引用、能力名称、状态、输入哈希、字符数、模型角色、耗时、授权引用和脱敏错误，不保存密钥、鉴权头、完整 Prompt、完整模型原文或外部页面全文；通用 Agent 节点监控按运行标识读取这些记录并折叠到所属节点，但它不替代三类执行体系各自的业务日志。
 
 专业子 Agent 的结构化输出保存在 `derived/capability_artifacts/`。每个 JSON 文件显式标记 `lifecycle=draft`，记录产物类型、生产者、输入与内容哈希、来源引用和创建时间，可供后续专业子 Agent 按稳定引用接力消费；这些文件是可审计中间态，不是 Markdown 正文或 MongoDB 结构事实。
@@ -145,9 +142,9 @@ LangGraph 节点级检查点保存在 `derived/general_agent_graph_checkpoints/`
 
 知识沉淀效果评估保存在 `derived/agent_evaluations/knowledge_extraction/`。每次评估独立冻结评测集、实际候选、正文、评分参数和模型身份，并保存确定性结果与裁判调用审计；裁判校准报告位于其 `calibration_reports/` 子目录。评估报告和校准报告都是非事实派生数据，通过 `lifecycle` 区分草稿、已确认和已废弃状态，不得反向成为正文或结构化知识事实源。
 
-通用写作智能体固定基准的派生资产统一归属 `derived/general_agent_benchmarks/`，评测基准位于 `tests/fixtures/evaluations/general_writing_agent_benchmark/suite.json`。该目录按需保存 synthetic 冻结基线、网页发起评测的运行状态与终态证据、真实模型逐案运行、首轮资格工件、多模型比较、问题关联、权威索引、幂等记录、关闭租约和隔离工作区，用于从固定用例、预检门禁、逐案审计、提供商实验和冻结清单回放评测。`interactive-runtime/` 以运行标识逐条原子保存网页运行及其案例、门禁和证据包，服务重启后继续作为最近评测列表的可审计来源；冻结基线仍只从权威索引恢复，不扫描未索引历史。这些资产是可审计派生数据，不成为正文或结构事实。
+Graph RAG 质量评测报告保存在 `derived/rag_evaluations/`。每次运行原子保存 Retriever、权威来源、Graph 关系与完整路径指标、Graph ON/OFF 成对消融、DeepEval 语义评分和 CI 门禁原因；这些 JSON 是可重建的评测审计产物，不是正文或结构事实源。
 
-统一知识召回离线评测结果保存在 `derived/agent_evaluations/retrieval/`。每次结果冻结评测集校验和、已确认知识快照、请求与实际策略、策略预算、Recall/Precision/MRR/nDCG、空结果与禁止卡指标、分组指标、延迟和失败样例；评测基准位于 `tests/fixtures/evaluations/retrieval_knowledge_core/`。结果只保存样例标识、稳定知识卡 ID 和结构化指标，不复制查询正文或完整知识卡，也不得反向成为结构事实。
+通用写作智能体固定基准的派生资产统一归属 `derived/general_agent_benchmarks/`，评测基准位于 `tests/fixtures/evaluations/general_writing_agent_benchmark/suite.json`。该目录按需保存 synthetic 冻结基线、网页发起评测的运行状态与终态证据、真实模型逐案运行、首轮资格工件、多模型比较、问题关联、权威索引、幂等记录、关闭租约和隔离工作区，用于从固定用例、预检门禁、逐案审计、提供商实验和冻结清单回放评测。`interactive-runtime/` 以运行标识逐条原子保存网页运行及其案例、门禁和证据包，服务重启后继续作为最近评测列表的可审计来源；冻结基线仍只从权威索引恢复，不扫描未索引历史。这些资产是可审计派生数据，不成为正文或结构事实。
 
 正文知识沉淀 Agent 的候选卡不单独落到 `source/knowledge/`，而是保存在运行 JSON 的 `review_items[*].suggested_card` 中。只有用户确认并通过 JSON 中间态校验后，才允许由应用层服务写入 MongoDB 成为结构事实。
 

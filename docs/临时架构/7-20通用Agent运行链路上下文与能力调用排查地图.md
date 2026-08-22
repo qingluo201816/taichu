@@ -468,7 +468,7 @@ stateDiagram-v2
 - 绝对时间到期的记忆会由清理逻辑软删除；
 - 所有筛选必须带 `conversation_id`（会话标识），防止跨会话污染。
 
-JSON 持久化位于 [`json_repository.py`（运行记忆 JSON 仓储）](../../src/taichu/infrastructure/agent_memory/json_repository.py)，词法索引位于 [`lexical_index.py`（运行记忆词法索引）](../../src/taichu/infrastructure/agent_memory/lexical_index.py)。这个词法索引只用于找相关运行记忆，与小说知识召回的 `mongo_lexical`（MongoDB 词法召回）不是一套索引。
+JSON 持久化位于 [`json_repository.py`（运行记忆 JSON 仓储）](../../src/taichu/infrastructure/agent_memory/json_repository.py)，词法索引位于 [`lexical_index.py`（运行记忆词法索引）](../../src/taichu/infrastructure/agent_memory/lexical_index.py)。这个词法索引只用于找相关运行记忆，不参与小说正文和知识卡的 Graph RAG 检索。
 
 ### 9.5 相关记忆怎样选择
 
@@ -1113,13 +1113,11 @@ AI 产生的知识候选先是 JSON 中间态，必须经过结构、来源、�
 
 ## 20. 知识召回与向量能力在通用 Agent 中的位置
 
-### 20.1 生产主链当前仍是词法召回
+### 20.1 生产主链是 Vector Graph RAG
 
-当前生产 `RetrievalService`（统一召回服务）只装配 `mongo_lexical`（MongoDB 词法召回后端）。通用 Agent 通过 `retrieve_knowledge`（召回知识工具）进入这条唯一只读召回路径。
+通用 Agent 通过 `retrieve_story_context` 调用 `VectorGraphRAGService`，对正文片段和已确认知识卡执行 Dense、BM25、图关系扩展、融合与重排。命中结果进入模型上下文前，正文必须回读 Markdown 对应区间并校验内容摘要，知识卡必须回读 MongoDB 当前 `lifecycle=confirmed` 记录。
 
-旧 `knowledge_vector` 独立向量实验后端已经移除。生产能力目录现注册 `retrieve_story_graph`，在 Milvus 中对正文片段和已确认知识卡执行实体/关系种子检索、子图扩展和单次重排；词法知识召回仍保留给单一事实和确定性身份查询。
-
-装配事实可从 [`main.py`（应用装配入口）](../../src/taichu/main.py) 和 [`knowledge_retrieval/`（知识召回工具实现）](../../src/taichu/application/tools/knowledge_retrieval/) 核对。
+装配事实可从 [`main.py`（应用装配入口）](../../src/taichu/main.py) 和 [`retrieve_story_context.py`（故事上下文检索工具）](../../src/taichu/application/tools/retrieve_story_context.py) 核对。
 
 ### 20.2 正确的向量定位
 
@@ -1131,8 +1129,6 @@ AI 产生的知识候选先是 JSON 中间态，必须经过结构、来源、�
 4. 对知识卡命中回读 MongoDB 当前已确认卡；
 5. 对正文切片命中回读对应 Markdown 原文范围；
 6. 去重、重排、融合属于后续独立决策，不能把“加向量能力”等同于“替换词法”或“已完成融合”。
-
-向量实验设计见 [`7-18向量知识召回技术设计.md`（向量知识召回设计）](7-18向量知识召回技术设计.md)，实验结论见 [`7-19向量知识召回实验报告.md`（向量召回实验报告）](../历史/7-19向量知识召回实验报告.md)。
 
 ### 20.3 统一召回服务的保护
 
@@ -1216,7 +1212,6 @@ AI 产生的知识候选先是 JSON 中间态，必须经过结构、来源、�
 | 验证类型 | 回答的问题 | 当前代表资产 | 不能证明什么 |
 |---|---|---|---|
 | 单元与集成测试 | 代码契约、状态转移、校验与恢复是否按预期 | [`tests/`（自动测试目录）](../../tests/) | 不能证明模型回答质量稳定 |
-| 统一召回评测 | 给定查询能否召回正确知识、预算和回退是否正确 | [`retrieval_knowledge_core/manifest.json`（60 题统一召回评测清单）](../../tests/fixtures/evaluations/retrieval_knowledge_core/manifest.json) | 不能证明规划、子 Agent、上下文和最终回答正确 |
 | 通用 Agent 固定基准 | 从作者场景、能力覆盖到预检、硬门禁、逐案证据和冻结清单是否完整 | [`general_writing_agent_benchmark/suite.json`（通用写作智能体固定评测基准）](../../tests/fixtures/evaluations/general_writing_agent_benchmark/suite.json) | 不能单独证明真实模型长期语义表现稳定 |
 
 ### 22.2 通用 Agent 当前评分口径
@@ -1566,7 +1561,6 @@ AI 产生的知识候选先是 JSON 中间态，必须经过结构、来源、�
 | `project_assets/derived/general_agent_memory/`（自动运行记忆目录） | 自动运行记忆与索引 | 索引可重建，记忆正文不可随意丢失 |
 | `project_assets/derived/capability_artifacts/`（能力任务产物目录） | 子 Agent 和能力任务产物 | 可重跑但会影响历史回放 |
 | `project_assets/derived/capability_invocations/calls.jsonl`（能力调用追踪文件） | 能力调用审计追踪 | 可重新运行生成新记录，旧审计不可反推 |
-| `project_assets/derived/retrieval/calls.jsonl`（统一召回追踪文件） | 统一召回调用追踪 | 派生审计数据 |
 | `project_assets/derived/general_agent_benchmarks/`（通用写作智能体固定基准目录） | 运行、实验、迭代、比较、幂等记录、租约与隔离工作区 | 当前已登记目录职责；完整持久化装配与真实合成运行器按后续规格任务接入 |
 | `project_assets/generated/milvus_vector_graph/`（多跳图索引摘要目录） | 最近一次联合建模快照与计数 | 可以从正文 Markdown 与 MongoDB confirmed 卡重建 |
 
@@ -1753,7 +1747,6 @@ AI 产生的知识候选先是 JSON 中间态，必须经过结构、来源、�
 | `idempotency_key`（幂等键） | 防止同一动作被重复执行的稳定标识 | 同一写入的防重编号 |
 | `reconciler`（副作用对账器） | 查询真实资源判断写入是否发生 | 出故障后查账 |
 | `effect_reconciliation`（副作用人工对账） | 系统无法判断写入结果时请求人工裁定 | 必须人工确认到底写没写 |
-| `mongo_lexical`（MongoDB 词法召回） | 按文字匹配召回知识卡的生产后端 | 当前生产默认检索 |
 | `retrieve_story_graph`（故事图谱多跳召回） | 跨正文片段与已确认知识卡扩展关系子图并返回可追溯证据 | 生产多跳检索能力 |
 | `Milvus`（向量数据库） | 保存和搜索实体、关系与来源 passage | 可重建的向量图谱索引库 |
 | `NDJSON`（逐行 JSON） | 每行一个 JSON 对象的流式格式 | 方便持续追加事件 |

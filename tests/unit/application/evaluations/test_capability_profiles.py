@@ -21,7 +21,7 @@ def test_every_production_capability_has_one_independent_profile() -> None:
         for plugin in discover_subagents("taichu.application.subagents")
     }
 
-    assert len(profiles) == 30
+    assert len(profiles) == 28
     assert keys == expected
 
 

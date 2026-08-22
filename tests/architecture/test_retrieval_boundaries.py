@@ -1,4 +1,4 @@
-"""防止 AI 消费者绕过统一召回直读知识仓储。"""
+"""锁定相关性检索与确定性 MongoDB 读取的职责边界。"""
 
 from __future__ import annotations
 
@@ -10,10 +10,16 @@ _APPLICATION = _ROOT / "src" / "taichu" / "application"
 _FORBIDDEN_CALLS = {"list_confirmed_cards", "search_confirmed_identity"}
 _FORBIDDEN_IMPORT_PREFIXES = (
     "taichu.infrastructure.knowledge",
-    "taichu.infrastructure.retrieval.mongo_lexical_backend",
 )
 _ALLOWED_APPLICATION_EXCEPTIONS = {
     _APPLICATION / "services" / "knowledge_service.py",
+    # 身份消歧、目录、知识沉淀冲突检查和章节摘要的权威事实投影
+    # 必须读取 MongoDB 当前确认态，不属于相关性排名。
+    _APPLICATION / "tools" / "resolve_knowledge_identity.py",
+    _APPLICATION / "tools" / "list_knowledge_catalog.py",
+    _APPLICATION / "agents" / "knowledge_extraction" / "workflow.py",
+    _APPLICATION / "services" / "knowledge_extraction_service.py",
+    _APPLICATION / "services" / "chapter_summary_service.py",
     # 离线索引维护服务从 MongoDB 事实源生成可删除的 Milvus 派生索引；
     # 查询侧只通过独立的 Vector Graph RAG 能力返回带来源的证据。
     _APPLICATION / "vector_graph" / "service.py",
@@ -27,7 +33,7 @@ _ALLOWED_DIRECT_READS = {
 }
 
 
-def test_ai_consumers_do_not_bypass_unified_retrieval() -> None:
+def test_ai_consumers_keep_semantic_and_authoritative_reads_separate() -> None:
     violations: list[str] = []
     for path in _consumer_files():
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))

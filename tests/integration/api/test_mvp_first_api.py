@@ -606,7 +606,7 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
             "confirmed",
         )
         self.assertEqual(run_response.status_code, 200)
-        self.assertEqual(run["status"], "completed")
+        self.assertEqual(run["status"], "completed", run)
         self.assertEqual(run["button_type"], "continue")
         self.assertEqual(run["prompt_snapshot"]["prompt_id"], "continue_prompt_v1")
         self.assertEqual(run["structured_output"]["output_type"], "text_candidate")
@@ -615,12 +615,14 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
             item["source_type"] for item in run["retrieval_context"]["items"]
         }
         self.assertIn("chapter", source_types)
-        self.assertIn("knowledge", source_types)
-        self.assertTrue(
-            run["retrieval_context"]["retrieval_id"].startswith("retrieval_")
+        self.assertNotIn("knowledge", source_types)
+        self.assertIsNone(run["retrieval_context"]["retrieval_id"])
+        self.assertEqual(
+            run["retrieval_context"]["strategy"],
+            "milvus_hybrid_vector_graph",
         )
-        self.assertEqual(run["retrieval_context"]["strategy"], "mongo_lexical")
-        self.assertGreaterEqual(run["retrieval_context"]["candidate_count"], 1)
+        self.assertEqual(run["retrieval_context"]["candidate_count"], 0)
+        self.assertIn("Milvus", run["retrieval_context"]["empty_reason"])
         self.assertIn("真实续写正文", run["raw_llm_output"])
         self.assertEqual(list_response.json()["runs"][0]["run_id"], run_id)
         self.assertEqual(read_response.json()["run_id"], run_id)

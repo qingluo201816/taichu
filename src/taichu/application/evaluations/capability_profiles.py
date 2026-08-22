@@ -86,15 +86,9 @@ _TOOL_METRICS: dict[str, tuple[MetricDefinition, ...]] = {
         ("range_accuracy", "正文范围准确率", "higher_is_better"),
         ("budget_violation", "字符预算违规率", "lower_is_better"),
     ),
-    "search_manuscript": (
-        ("precision_at_k", "正文命中准确率", "higher_is_better"),
-        ("recall_at_k", "正文命中召回率", "higher_is_better"),
-    ),
-    "retrieve_knowledge": (
-        ("precision_at_k", "知识召回准确率", "higher_is_better"),
-        ("recall_at_k", "知识召回率", "higher_is_better"),
-    ),
-    "retrieve_story_graph": (
+    "retrieve_story_context": (
+        ("precision_at_k", "统一证据准确率", "higher_is_better"),
+        ("recall_at_k", "统一证据召回率", "higher_is_better"),
         ("multi_hop_recall", "多跳证据召回率", "higher_is_better"),
         ("relation_precision", "关系证据准确率", "higher_is_better"),
         ("unsupported_relation", "无依据关系率", "guardrail"),

@@ -13,8 +13,7 @@ INTERNAL_READ_TOOLS = frozenset(
     {
         "get_novel_structure",
         "read_manuscript",
-        "search_manuscript",
-        "retrieve_knowledge",
+        "retrieve_story_context",
         "resolve_knowledge_identity",
         "list_knowledge_catalog",
         "read_knowledge_cards",

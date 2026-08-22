@@ -17,7 +17,6 @@ from taichu.application.services.invocation_policy_service import (
 )
 from taichu.application.services.knowledge_service import KnowledgeService
 from taichu.application.services.outline_service import OutlineService
-from taichu.application.services.retrieval_service import RetrievalService
 from taichu.application.tools import (
     apply_manuscript_patch,
     create_confirmed_knowledge,
@@ -30,7 +29,6 @@ from taichu.application.tools import (
     read_knowledge_cards,
     read_manuscript,
     resolve_knowledge_identity,
-    search_manuscript,
     update_confirmed_knowledge,
     update_novel_structure,
 )
@@ -38,12 +36,7 @@ from taichu.application.tools.contract import (
     ToolPlugin,
     ToolReconciliationStatus,
 )
-from taichu.application.tools.knowledge_retrieval import tool as retrieve_knowledge
 from taichu.application.tools.registry import ToolRegistry
-from taichu.infrastructure.retrieval import (
-    JsonlRetrievalTraceRepository,
-    MongoLexicalRetrievalBackend,
-)
 from taichu.infrastructure.storage.markdown_backend import ProjectAssetStorageBackend
 from tests.fakes import InMemoryKnowledgeRepository
 from taichu.domain.models.structured_knowledge import StructuredKnowledgeType
@@ -87,7 +80,6 @@ async def test_manuscript_patch_and_structure_writes_are_real_and_guarded(
         [
             get_novel_structure,
             read_manuscript,
-            search_manuscript,
             preview_manuscript_patch,
             apply_manuscript_patch,
             create_novel_structure_items,
@@ -103,13 +95,6 @@ async def test_manuscript_patch_and_structure_writes_are_real_and_guarded(
         invocation,
     )
     base_hash = _output(read).chunks[0].content_sha256
-    search = await registry.invoke(
-        "search_manuscript",
-        {"query": "秦阳", "max_hits": 5},
-        invocation,
-    )
-    assert _output(search).hits[0].chapter_id == chapter_id
-
     preview = await registry.invoke(
         "preview_manuscript_patch",
         {
@@ -247,23 +232,16 @@ async def test_manuscript_patch_and_structure_writes_are_real_and_guarded(
 
 
 @_async_test
-async def test_four_knowledge_reads_and_confirmed_writes_share_real_services(
+async def test_three_knowledge_reads_and_confirmed_writes_share_real_services(
     tmp_path: Path,
 ) -> None:
     repository = InMemoryKnowledgeRepository()
-    retrieval_service = RetrievalService(
-        MongoLexicalRetrievalBackend(repository),
-        JsonlRetrievalTraceRepository(tmp_path),
-    )
-    knowledge_service = KnowledgeService(
-        repository,
-        retrieval_service=retrieval_service,
-    )
+    knowledge_service = KnowledgeService(repository)
     policy = InvocationPolicyService()
     context = CapabilityContext(
         capabilities={
             "knowledge_service": knowledge_service,
-            "retrieval_service": retrieval_service,
+            "knowledge_repository": repository,
             "invocation_policy_service": policy,
         }
     )
@@ -271,7 +249,6 @@ async def test_four_knowledge_reads_and_confirmed_writes_share_real_services(
     _register_modules(
         registry,
         [
-            retrieve_knowledge,
             resolve_knowledge_identity,
             list_knowledge_catalog,
             read_knowledge_cards,
@@ -314,11 +291,6 @@ async def test_four_knowledge_reads_and_confirmed_writes_share_real_services(
     ).status is ToolReconciliationStatus.SUCCEEDED
 
 
-    relevance = await registry.invoke(
-        "retrieve_knowledge",
-        {"query_text": "秦阳是谁"},
-        invocation,
-    )
     identity = await registry.invoke(
         "resolve_knowledge_identity",
         {"knowledge_type": "character", "name": "秦师兄"},
@@ -334,7 +306,6 @@ async def test_four_knowledge_reads_and_confirmed_writes_share_real_services(
         {"card_ids": [card.id, "missing-card"]},
         invocation,
     )
-    assert _output(relevance).items[0].source_id == card.id
     assert _output(identity).resolution == "unique"
     assert _output(catalog).items[0].card_id == card.id
     assert _output(directed).cards[0].id == card.id
@@ -386,14 +357,7 @@ async def test_knowledge_chapter_coverage_scans_all_confirmed_cards(
         chapter_ids.append(outline.current_chapter_id)
 
     repository = InMemoryKnowledgeRepository()
-    retrieval_service = RetrievalService(
-        MongoLexicalRetrievalBackend(repository),
-        JsonlRetrievalTraceRepository(tmp_path),
-    )
-    knowledge_service = KnowledgeService(
-        repository,
-        retrieval_service=retrieval_service,
-    )
+    knowledge_service = KnowledgeService(repository)
     await knowledge_service.create_confirmed_from_data(
         knowledge_type=StructuredKnowledgeType.CHARACTER,
         data={
@@ -451,7 +415,7 @@ async def test_knowledge_chapter_coverage_scans_all_confirmed_cards(
     assert result.latest_chapter.chapter_id == chapter_ids[2]
     assert [item.order for item in result.referenced_chapters] == [1, 2, 3]
     assert result.unknown_chapter_ids == []
-    assert any(ref.startswith("retrieval:retrieval_") for ref in result.source_refs)
+    assert any(ref.startswith("knowledge:") for ref in result.source_refs)
 
 
 def _register_modules(registry: ToolRegistry, modules: list[ModuleType]) -> None:

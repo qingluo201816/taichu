@@ -18,13 +18,6 @@ from taichu.application.contracts.knowledge_repository import (
     KnowledgeRepositoryUnavailableError,
     StructuredKnowledgeRepository,
 )
-from taichu.application.retrieval.models import (
-    RetrievalConsumerContext,
-    RetrievalMode,
-    RetrievalRequest,
-    RetrievalResult,
-)
-from taichu.application.services.retrieval_service import RetrievalService
 from taichu.domain.models import (
     KnowledgeTypeSchema,
     KnowledgeFieldMergeStrategy,
@@ -61,43 +54,22 @@ class KnowledgeService:
     def __init__(
         self,
         repository: StructuredKnowledgeRepository,
-        *,
-        retrieval_service: RetrievalService | None = None,
     ) -> None:
         self._repository = repository
-        self._retrieval_service = retrieval_service
 
     async def retrieve_complete_confirmed_catalog(
         self,
         *,
         run_id: str | None,
         stage: str | None,
-    ) -> RetrievalResult:
-        """经统一召回返回完整已确认目录；任何截断都失败关闭。"""
+    ) -> list[StructuredKnowledgeCard]:
+        """直接从 MongoDB 事实源返回完整已确认目录。"""
 
-        if self._retrieval_service is None:
-            raise KnowledgeUnavailableError("统一知识召回服务未配置。")
-        result = await self._retrieval_service.retrieve(
-            RetrievalRequest(
-                mode=RetrievalMode.CATALOG,
-                top_k=200,
-                max_content_chars=50_000,
-                consumer=RetrievalConsumerContext(
-                    consumer_type="general_agent_runtime",
-                    run_id=run_id,
-                    stage=stage,
-                ),
-            )
-        )
-        if (
-            result.truncated
-            or result.budget_limited
-            or result.hit_count != result.candidate_count
-        ):
-            raise KnowledgeUnavailableError(
-                "知识目录召回不完整，不能作为全库事实范围。"
-            )
-        return result
+        del run_id, stage
+        try:
+            return await self._repository.list_confirmed_cards()
+        except KnowledgeRepositoryUnavailableError as error:
+            raise KnowledgeUnavailableError(str(error)) from error
 
     def list_types(self) -> list[StructuredKnowledgeType]:
         """Return all supported structured knowledge types."""

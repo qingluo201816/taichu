@@ -36,9 +36,6 @@ from taichu.application.evaluations.general_agent_benchmark.services import (
 from taichu.application.evaluations.general_agent_benchmark.suite_loader import (
     load_authored_suite,
 )
-from taichu.application.evaluations.retrieval.service import (
-    RetrievalEvaluationService,
-)
 from taichu.application.contracts.llm import (
     LLMGatewayContract,
     LLMModelIdentity,
@@ -77,9 +74,7 @@ from taichu.application.services.outline_service import OutlineService
 from taichu.application.services.selection_ai_service import SelectionAIService
 from taichu.application.services.settings_service import SettingsPreferenceService
 from taichu.application.services.writing_ai_service import WritingAIService
-from taichu.application.services.retrieval_service import RetrievalService
 from taichu.application.vector_graph import VectorGraphRAGService
-from taichu.application.retrieval.policy import RetrievalPolicyResolver
 from taichu.application.services.invocation_policy_service import (
     InvocationPolicyService,
 )
@@ -95,8 +90,6 @@ from taichu.infrastructure.llm_replays import JsonLLMCallReplayRepository
 from taichu.infrastructure.evaluations import (
     JsonEvaluationDatasetRepository,
     JsonEvaluationResultStore,
-    JsonRetrievalEvaluationDatasetRepository,
-    JsonRetrievalEvaluationResultRepository,
     create_evaluation_judge,
 )
 from taichu.infrastructure.evaluations.general_agent_benchmark.runtime_factory import (
@@ -115,6 +108,9 @@ from taichu.infrastructure.evaluations.general_agent_benchmark.persistent_runtim
     JsonBenchmarkRunResourceService,
     JsonSuiteRunStore,
 )
+from taichu.infrastructure.evaluations.rag.result_repository import (
+    RAGEvaluationResultRepository,
+)
 from taichu.infrastructure.plugin_discovery import (
     discover_agents,
     discover_subagents,
@@ -124,10 +120,6 @@ from taichu.infrastructure.agent_runs import JsonAgentRunStore
 from taichu.infrastructure.knowledge import (
     MongoKnowledgeRepository,
     MongoKnowledgeSedimentationProgressRepository,
-)
-from taichu.infrastructure.retrieval import (
-    JsonlRetrievalTraceRepository,
-    MongoLexicalRetrievalBackend,
 )
 from taichu.infrastructure.vector_graph import (
     BGEReranker,
@@ -223,22 +215,7 @@ def create_app(
             app_settings.mongodb_uri,
             app_settings.mongodb_database,
         )
-    retrieval_trace_repository = JsonlRetrievalTraceRepository(
-        app_settings.project_assets_dir
-    )
-    retrieval_policy_resolver = RetrievalPolicyResolver.from_json(
-        app_settings.retrieval_policies_json,
-        default_relevance_strategy=(app_settings.retrieval_default_relevance_strategy),
-    )
-    retrieval_service = RetrievalService(
-        MongoLexicalRetrievalBackend(knowledge_repository),
-        retrieval_trace_repository,
-        policy_resolver=retrieval_policy_resolver,
-    )
-    knowledge_service = KnowledgeService(
-        knowledge_repository,
-        retrieval_service=retrieval_service,
-    )
+    knowledge_service = KnowledgeService(knowledge_repository)
     milvus_vector_graph_backend = MilvusVectorGraphBackend(
         milvus_uri=app_settings.milvus_uri,
         milvus_token=app_settings.milvus_token.get_secret_value(),
@@ -261,6 +238,31 @@ def create_app(
         entity_top_k=app_settings.vector_graph_entity_top_k,
         relation_top_k=app_settings.vector_graph_relation_top_k,
         expansion_degree=app_settings.vector_graph_expansion_degree,
+        relation_number_threshold=(
+            app_settings.vector_graph_relation_number_threshold
+        ),
+        expansion_max_seed_entities=(
+            app_settings.vector_graph_expansion_max_seed_entities
+        ),
+        expansion_initial_relations_per_entity=(
+            app_settings.vector_graph_expansion_initial_relations_per_entity
+        ),
+        expansion_initial_beam_width=(
+            app_settings.vector_graph_expansion_initial_beam_width
+        ),
+        expansion_max_entities_per_hop=(
+            app_settings.vector_graph_expansion_max_entities_per_hop
+        ),
+        expansion_relations_per_entity=(
+            app_settings.vector_graph_expansion_relations_per_entity
+        ),
+        expansion_hub_relations_per_entity=(
+            app_settings.vector_graph_expansion_hub_relations_per_entity
+        ),
+        expansion_hub_degree_threshold=(
+            app_settings.vector_graph_expansion_hub_degree_threshold
+        ),
+        expansion_beam_width=app_settings.vector_graph_expansion_beam_width,
         final_top_k=app_settings.vector_graph_ann_top_k,
     )
     vector_graph_backend = HybridVectorGraphBackend(
@@ -281,11 +283,6 @@ def create_app(
         manuscript_chunk_overlap=(
             app_settings.vector_graph_manuscript_chunk_overlap
         ),
-    )
-    retrieval_evaluation_runtime = RetrievalService(
-        MongoLexicalRetrievalBackend(knowledge_repository),
-        retrieval_trace_repository,
-        policy_resolver=retrieval_policy_resolver,
     )
     invocation_trace_repository = JsonlInvocationTraceRepository(
         app_settings.project_assets_dir
@@ -386,7 +383,7 @@ def create_app(
     knowledge_extraction_service = KnowledgeExtractionService(
         chapter_service=chapter_service,
         llm=llm_service,
-        retrieval_service=retrieval_service,
+        knowledge_repository=knowledge_repository,
         knowledge_service=knowledge_service,
         run_store=knowledge_run_store,
         sedimentation_progress_repository=sedimentation_progress_repository,
@@ -399,6 +396,9 @@ def create_app(
     )
     evaluation_result_repository = JsonEvaluationResultStore(
         app_settings.project_assets_dir
+    )
+    rag_evaluation_result_repository = RAGEvaluationResultRepository(
+        app_settings.project_assets_dir / "derived" / "rag_evaluations"
     )
     evaluation_judge = create_evaluation_judge(
         app_settings,
@@ -415,7 +415,7 @@ def create_app(
     writing_ai_service = WritingAIService(
         storage=project_storage,
         chapter_service=chapter_service,
-        retrieval_service=retrieval_service,
+        retrieval_service=vector_graph_rag_service,
         llm=llm_service,
         default_model_id=active_default_model,
         llm_configured=llm_configured,
@@ -429,7 +429,7 @@ def create_app(
     chapter_summary_service = ChapterSummaryService(
         storage=project_storage,
         chapter_service=chapter_service,
-        retrieval_service=retrieval_service,
+        knowledge_repository=knowledge_repository,
         llm=llm_service,
         ai_card_service=ai_card_service,
         default_model_id=active_default_model,
@@ -441,7 +441,6 @@ def create_app(
             "outline_service": outline_service,
             "knowledge_service": knowledge_service,
             "knowledge_repository": knowledge_repository,
-            "retrieval_service": retrieval_service,
             "vector_graph_rag_service": vector_graph_rag_service,
             "external_research_service": external_research_service,
             "invocation_policy_service": invocation_policy_service,
@@ -576,16 +575,6 @@ def create_app(
     interactive_benchmark_execution.bind_resources(
         general_agent_benchmark_services.resources
     )
-    retrieval_evaluation_service = RetrievalEvaluationService(
-        datasets=JsonRetrievalEvaluationDatasetRepository(
-            app_settings.evaluation_datasets_dir
-        ),
-        results=JsonRetrievalEvaluationResultRepository(
-            app_settings.project_assets_dir
-        ),
-        retrieval=retrieval_evaluation_runtime,
-    )
-
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         if managed_knowledge_repository:
@@ -650,11 +639,11 @@ def create_app(
     application.state.general_agent_benchmark_services = (
         general_agent_benchmark_services
     )
-    application.state.retrieval_evaluation_service = retrieval_evaluation_service
     application.state.invocation_policy_service = invocation_policy_service
     application.state.invocation_trace_repository = invocation_trace_repository
     application.state.artifact_repository = artifact_repository
     application.state.external_research_service = external_research_service
+    application.state.app_settings = app_settings
     application.state.model_role_router = model_role_router
     application.state.storage = storage
     application.state.project_storage = project_storage
@@ -666,11 +655,8 @@ def create_app(
     application.state.export_service = export_service
     application.state.knowledge_service = knowledge_service
     application.state.knowledge_repository = knowledge_repository
-    application.state.retrieval_service = retrieval_service
-    application.state.retrieval_evaluation_runtime = retrieval_evaluation_runtime
     application.state.vector_graph_backend = vector_graph_backend
     application.state.vector_graph_rag_service = vector_graph_rag_service
-    application.state.retrieval_trace_repository = retrieval_trace_repository
     application.state.sedimentation_progress_repository = (
         sedimentation_progress_repository
     )
@@ -682,6 +668,9 @@ def create_app(
     )
     application.state.evaluation_dataset_repository = evaluation_dataset_repository
     application.state.evaluation_result_repository = evaluation_result_repository
+    application.state.rag_evaluation_result_repository = (
+        rag_evaluation_result_repository
+    )
     application.state.evaluation_judge = evaluation_judge
     application.state.selection_ai_service = selection_ai_service
     application.state.chapter_summary_service = chapter_summary_service

@@ -8,9 +8,6 @@ from taichu.application.general_agent.service import GeneralAgentRuntimeService
 from taichu.application.evaluations.general_agent_benchmark.container import (
     GeneralAgentBenchmarkServices,
 )
-from taichu.application.evaluations.retrieval.service import (
-    RetrievalEvaluationService,
-)
 from taichu.application.contracts.invocation_trace import InvocationTraceReader
 from taichu.application.contracts.storage import StorageBackend
 from taichu.application.contracts.llm import LLMGatewayContract
@@ -36,7 +33,11 @@ from taichu.application.services.outline_service import OutlineService
 from taichu.application.services.selection_ai_service import SelectionAIService
 from taichu.application.services.settings_service import SettingsPreferenceService
 from taichu.application.services.writing_ai_service import WritingAIService
+from taichu.config import Settings
 from taichu.application.vector_graph import VectorGraphRAGService
+from taichu.infrastructure.evaluations.rag.result_repository import (
+    RAGEvaluationResultRepository,
+)
 
 
 def provide_agent_registry(request: Request) -> AgentRegistry:
@@ -68,14 +69,6 @@ def provide_general_agent_benchmark_services(
     """返回与正常 Runtime 隔离的固定基准评测服务集合。"""
 
     return request.app.state.general_agent_benchmark_services
-
-
-def provide_retrieval_evaluation_service(
-    request: Request,
-) -> RetrievalEvaluationService:
-    """返回统一召回专项评测只读服务。"""
-
-    return request.app.state.retrieval_evaluation_service
 
 
 def provide_invocation_trace_reader(request: Request) -> InvocationTraceReader:
@@ -178,3 +171,17 @@ def provide_vector_graph_rag_service(request: Request) -> VectorGraphRAGService:
     """返回 Milvus Vector Graph RAG 建模与状态服务。"""
 
     return request.app.state.vector_graph_rag_service
+
+
+def provide_rag_evaluation_result_repository(
+    request: Request,
+) -> RAGEvaluationResultRepository:
+    """返回 Graph RAG 评测结果只读仓储。"""
+
+    return request.app.state.rag_evaluation_result_repository
+
+
+def provide_app_settings(request: Request) -> Settings:
+    """返回创建当前应用实例时使用的配置。"""
+
+    return request.app.state.app_settings

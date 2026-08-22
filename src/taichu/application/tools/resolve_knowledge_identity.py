@@ -1,4 +1,4 @@
-"""按知识类型、名称和别名解析已确认知识身份。"""
+"""直接通过 MongoDB 事实源解析已确认知识身份。"""
 
 from typing import Literal
 
@@ -6,18 +6,15 @@ from pydantic import BaseModel
 
 from taichu.application.capabilities import CapabilityContext
 from taichu.application.invocations.models import InvocationContext
-from taichu.application.retrieval.models import (
-    RetrievalConsumerContext,
-    RetrievalIdentityQuery,
-    RetrievalMode,
-    RetrievalRequest,
+from taichu.application.contracts.knowledge_repository import (
+    StructuredKnowledgeRepository,
 )
-from taichu.application.services.retrieval_service import RetrievalService
 from taichu.application.tools._shared import INTERNAL_READ_CALLERS
 from taichu.application.tools.contract import ToolManifest
 from taichu.application.tools.models import (
     ResolveKnowledgeIdentityInput,
     ResolveKnowledgeIdentityOutput,
+    KnowledgeIdentityMatch,
 )
 
 
@@ -26,7 +23,7 @@ manifest = ToolManifest(
     description="按知识类型、名称和别名解析唯一、歧义或不存在的已确认知识。",
     input_schema=ResolveKnowledgeIdentityInput,
     output_schema=ResolveKnowledgeIdentityOutput,
-    required_capabilities=frozenset({"retrieval_service"}),
+    required_capabilities=frozenset({"knowledge_repository"}),
     exposures=frozenset({"agent_runtime"}),
     allowed_callers=INTERNAL_READ_CALLERS,
     retryable=True,
@@ -39,24 +36,14 @@ async def run(
     context: CapabilityContext,
 ) -> BaseModel:
     tool_input = ResolveKnowledgeIdentityInput.model_validate(input_data)
-    result = await context.require("retrieval_service", RetrievalService).retrieve(
-        RetrievalRequest(
-            mode=RetrievalMode.IDENTITY,
-            identity=RetrievalIdentityQuery(
-                knowledge_type=tool_input.knowledge_type,
-                name=tool_input.name,
-                aliases=tool_input.aliases,
-            ),
-            top_k=20,
-            max_content_chars=tool_input.max_content_chars,
-            consumer=RetrievalConsumerContext(
-                consumer_type="general_agent_runtime",
-                run_id=invocation.run_id,
-                stage=invocation.phase,
-            ),
-        )
+    del invocation
+    cards = await context.require(
+        "knowledge_repository", StructuredKnowledgeRepository
+    ).search_confirmed_identity(
+        tool_input.knowledge_type,
+        tool_input.name,
+        tool_input.aliases,
     )
-    cards = [item.knowledge_card for item in result.items]
     if not cards:
         resolution: Literal["unique", "ambiguous", "not_found"] = "not_found"
         reason = "没有找到名称或别名相同的已确认知识卡。"
@@ -69,8 +56,19 @@ async def run(
     source_refs = [f"knowledge:{card.id}" for card in cards]
     return ResolveKnowledgeIdentityOutput(
         resolution=resolution,
-        matches=cards,
+        matches=[
+            KnowledgeIdentityMatch(
+                card_id=card.id,
+                knowledge_type=card.type,
+                canonical_name=card.name,
+                matched_aliases=[
+                    alias
+                    for alias in card.aliases
+                    if alias in {tool_input.name, *tool_input.aliases}
+                ],
+            )
+            for card in cards
+        ],
         reason=reason,
-        retrieval_id=result.retrieval_id,
         source_refs=source_refs,
     )

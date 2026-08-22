@@ -183,32 +183,19 @@ async def _collect_sources(
         if request.auto_collect and manifest.name != "consistency_reviewer"
         else ""
     )
-    if manuscript_query:
-        calls.append(
-            (
-                "search_manuscript",
-                {"query": manuscript_query[:2_000], "max_hits": 12},
-            )
-        )
     knowledge_query = request.knowledge_query or (goal if request.auto_collect else "")
-    if knowledge_query:
-        retrieval_payload: dict[str, object] = {
-            "query_text": knowledge_query[:20_000],
-            "top_k": 12,
-            "max_content_chars": 12_000,
-        }
-        if manifest.name == "consistency_reviewer":
-            retrieval_payload.update(
-                {
-                    "context_text": review_text[:100_000],
-                    "top_k": 20,
-                    "max_content_chars": 20_000,
-                }
-            )
+    retrieval_query = "\n".join(
+        dict.fromkeys(
+            item.strip()
+            for item in (manuscript_query, knowledge_query, review_text[:4_000])
+            if item.strip()
+        )
+    )
+    if retrieval_query:
         calls.append(
             (
-                "retrieve_knowledge",
-                retrieval_payload,
+                "retrieve_story_context",
+                {"query": retrieval_query[:20_000], "max_passages": 10},
             )
         )
     for identity in request.knowledge_identities:

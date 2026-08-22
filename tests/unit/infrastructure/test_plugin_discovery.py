@@ -21,11 +21,11 @@ class PluginDiscoveryTest(unittest.TestCase):
         )
         self.assertEqual(plugins[0].manifest.label, "正文知识沉淀 Agent")
         self.assertIn(
-            "retrieval_service",
+            "knowledge_repository",
             plugins[0].manifest.required_capabilities,
         )
         self.assertNotIn(
-            "knowledge_repository",
+            "retrieval_service",
             plugins[0].manifest.required_capabilities,
         )
 
@@ -33,16 +33,14 @@ class PluginDiscoveryTest(unittest.TestCase):
         plugins = discover_tools("taichu.application.tools")
 
         names = {plugin.manifest.name for plugin in plugins}
-        self.assertEqual(len(names), 18)
+        self.assertEqual(len(names), 16)
         self.assertEqual(
             names,
             {
                 "get_novel_structure",
                 "get_knowledge_chapter_coverage",
                 "read_manuscript",
-                "search_manuscript",
-                "retrieve_knowledge",
-                "retrieve_story_graph",
+                "retrieve_story_context",
                 "resolve_knowledge_identity",
                 "list_knowledge_catalog",
                 "read_knowledge_cards",
@@ -58,11 +56,11 @@ class PluginDiscoveryTest(unittest.TestCase):
             },
         )
         retrieval = next(
-            plugin for plugin in plugins if plugin.manifest.name == "retrieve_knowledge"
+            plugin for plugin in plugins if plugin.manifest.name == "retrieve_story_context"
         )
         self.assertEqual(
             retrieval.manifest.required_capabilities,
-            frozenset({"retrieval_service"}),
+            frozenset({"vector_graph_rag_service"}),
         )
 
     def test_discover_subagents_finds_twelve_independent_handlers(self) -> None:

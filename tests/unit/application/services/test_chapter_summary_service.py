@@ -14,7 +14,6 @@ from taichu.application.services.chapter_summary_service import (
     ChapterSummaryService,
 )
 from taichu.application.services.import_service import ImportService
-from taichu.application.services.retrieval_service import RetrievalService
 from taichu.domain.models.knowledge import (
     KnowledgeCard,
     KnowledgeCardLifecycle,
@@ -32,10 +31,6 @@ from taichu.domain.models.summary import ChapterSummaryStatus
 from taichu.domain.rules.fact_scope import is_allowed_in_fact_scope
 from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
-)
-from taichu.infrastructure.retrieval import (
-    JsonlRetrievalTraceRepository,
-    MongoLexicalRetrievalBackend,
 )
 from tests.fakes import InMemoryKnowledgeRepository
 
@@ -65,10 +60,6 @@ class ChapterSummaryServiceTest(unittest.IsolatedAsyncioTestCase):
         self.storage = ProjectAssetStorageBackend(self.assets_root)
         self.chapter_service = ChapterService(self.storage)
         self.knowledge_repository = InMemoryKnowledgeRepository()
-        self.retrieval_service = RetrievalService(
-            MongoLexicalRetrievalBackend(self.knowledge_repository),
-            JsonlRetrievalTraceRepository(self.assets_root),
-        )
         self.ai_card_service = AICardService(self.storage)
 
     async def asyncTearDown(self) -> None:
@@ -245,7 +236,7 @@ class ChapterSummaryServiceTest(unittest.IsolatedAsyncioTestCase):
         return ChapterSummaryService(
             storage=self.storage,
             chapter_service=self.chapter_service,
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.knowledge_repository,
             llm=llm,
             ai_card_service=self.ai_card_service,
         )

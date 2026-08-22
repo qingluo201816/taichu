@@ -60,7 +60,6 @@ from taichu.application.services.invocation_policy_service import (
 from taichu.application.services.knowledge_service import KnowledgeService
 from taichu.application.services.model_role_router import ModelRoleRouter
 from taichu.application.services.outline_service import OutlineService
-from taichu.application.services.retrieval_service import RetrievalService
 from taichu.application.subagents.canon_evidence import agent as canon_evidence_agent
 from taichu.application.subagents.narrative_summary import (
     agent as narrative_summary_agent,
@@ -75,11 +74,10 @@ from taichu.application.tools import (
     read_knowledge_cards,
     read_manuscript,
     resolve_knowledge_identity,
-    search_manuscript,
+    retrieve_story_context,
 )
 from taichu.application.tools._shared import sha256_text
 from taichu.application.tools.contract import ToolPlugin
-from taichu.application.tools.knowledge_retrieval import tool as retrieve_knowledge
 from taichu.application.tools.registry import ToolRegistry
 from taichu.infrastructure.artifacts import JsonIntermediateArtifactRepository
 from taichu.infrastructure.agent_memory import (
@@ -97,9 +95,8 @@ from taichu.infrastructure.llm_replays import JsonLLMCallReplayRepository
 from taichu.infrastructure.evaluations.general_agent_benchmark.recovery_harness import (
     GeneralAgentRecoveryHarness,
 )
-from taichu.infrastructure.retrieval import (
-    JsonlRetrievalTraceRepository,
-    MongoLexicalRetrievalBackend,
+from taichu.infrastructure.evaluations.general_agent_benchmark.synthetic_environment import (
+    _SyntheticStoryContextService,
 )
 from taichu.infrastructure.storage.markdown_backend import ProjectAssetStorageBackend
 from taichu.domain.models.structured_knowledge import StructuredKnowledgeType
@@ -207,9 +204,9 @@ async def test_runtime_plans_and_executes_real_subagent_with_real_retrieval_tool
             "role_type": "protagonist",
         },
     )
-    retrieval_service = RetrievalService(
-        MongoLexicalRetrievalBackend(knowledge_repository),
-        JsonlRetrievalTraceRepository(tmp_path),
+    vector_graph_service = _SyntheticStoryContextService(
+        knowledge_repository,
+        chapter_service,
     )
     policy = InvocationPolicyService()
     traces = _TraceRepository()
@@ -218,7 +215,8 @@ async def test_runtime_plans_and_executes_real_subagent_with_real_retrieval_tool
             "chapter_service": chapter_service,
             "outline_service": outline_service,
             "knowledge_service": knowledge_service,
-            "retrieval_service": retrieval_service,
+            "knowledge_repository": knowledge_repository,
+            "vector_graph_rag_service": vector_graph_service,
             "invocation_policy_service": policy,
         }
     )
@@ -1582,8 +1580,7 @@ def _read_tool_modules() -> list[ModuleType]:
     return [
         get_novel_structure,
         read_manuscript,
-        search_manuscript,
-        retrieve_knowledge,
+        retrieve_story_context,
         resolve_knowledge_identity,
         list_knowledge_catalog,
         read_knowledge_cards,

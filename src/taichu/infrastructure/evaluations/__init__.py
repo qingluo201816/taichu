@@ -11,11 +11,6 @@ from taichu.infrastructure.evaluations.json_result_store import (
 from taichu.infrastructure.evaluations.judge_factory import (
     create_evaluation_judge,
 )
-from taichu.infrastructure.evaluations.retrieval import (
-    JsonRetrievalEvaluationDatasetRepository,
-    JsonRetrievalEvaluationResultRepository,
-    RetrievalEvaluationStoreError,
-)
 
 __all__ = [
     "EvaluationDatasetRepositoryError",
@@ -23,7 +18,4 @@ __all__ = [
     "JsonEvaluationDatasetRepository",
     "JsonEvaluationResultStore",
     "create_evaluation_judge",
-    "JsonRetrievalEvaluationDatasetRepository",
-    "JsonRetrievalEvaluationResultRepository",
-    "RetrievalEvaluationStoreError",
 ]

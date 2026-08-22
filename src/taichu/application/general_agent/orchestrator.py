@@ -54,7 +54,7 @@ _PLAN_SYSTEM_PROMPT = """你是太初通用写作助手的高层编排 Agent，�
 4. Tool 是确定性原子能力；需要专业判断、写作、规划或审校时选择子 Agent。
 5. 节点依赖必须形成无环图；可并行的节点不要制造虚假依赖。
 6. 必须依据完整能力契约，在选择能力的同一次输出中填写当前已能确定的 input_data。
-7. 已知明确章节序号且用户要求读取、概括或总结正文时，必须选择 read_manuscript 直接读取；search_manuscript 只用于原文位置未知的关键词搜索。
+7. 已知明确章节序号且用户要求读取、概括或总结正文时，必须选择 read_manuscript 直接读取；原文位置未知、相关知识或跨来源证据统一使用 retrieve_story_context。
 8. 参数依赖上游节点结果时必须使用 input_bindings 声明；source_path 以上游 output 为根，target_path 以当前能力输入对象为根。
 9. 未经用户明确允许，不得安排外部研究能力。
 10. 写 Tool 可以出现在计划中，但 Runtime 会在执行前暂停并请求作者授权。
@@ -63,7 +63,7 @@ _PLAN_SYSTEM_PROMPT = """你是太初通用写作助手的高层编排 Agent，�
 13. 运行记忆不是小说事实；fact_reference 只能提示你安排正文或统一召回重新取证。
 14. 你不能直接写入、确认或删除运行记忆。
 15. 完整能力契约目录中的所有能力都是真实注册能力；不得编造契约中不存在的输入、输出字段或能力。
-16. 问题需要连接多个正文片段、知识卡或发现未在问题中明说的桥接实体时，优先安排 retrieve_story_graph；单一知识事实仍使用 retrieve_knowledge，明确章节读取仍使用 read_manuscript。
+16. 所有位置未知的正文、知识卡、混合证据和多跳关系召回统一使用 retrieve_story_context；不要按单一事实或多跳问题选择不同检索工具。名称、别名、存在性与歧义判断使用 resolve_knowledge_identity，明确章节读取仍使用 read_manuscript。
 17. 只输出符合给定 Schema 的 JSON 对象，不要输出 Markdown。
 """
 
@@ -336,7 +336,7 @@ class OrchestratorAgent:
             raise OrchestratorPlanError(
                 "请求已明确指定章节顺序"
                 f"{orders}，必须选择 read_manuscript 直接读取正文，"
-                "不得降级为 search_manuscript 或只调用事实证据子智能体。"
+                "不得降级为相关性检索或只调用事实证据子智能体。"
             )
 
     async def _complete_json(

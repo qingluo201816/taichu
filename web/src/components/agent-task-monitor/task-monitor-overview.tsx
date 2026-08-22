@@ -9,7 +9,6 @@ import {
   Network,
   RefreshCw,
   Scale,
-  Search,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -219,22 +218,23 @@ export function TaskMonitorOverview() {
             </Link>
 
             <Link
-              href="/task-monitor/retrieval/evaluation"
+              href="/task-monitor/rag/evaluation"
               className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
             >
               <span className="flex min-w-0 items-center gap-3">
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] text-[var(--tc-monitor-rag)]">
-                  <Search className="size-4" />
+                  <Scale className="size-4" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block font-medium">统一召回专项评测集</span>
+                  <span className="block font-medium">RAG 质量评测</span>
                   <span className="mt-0.5 block text-xs text-[var(--tc-text-muted)]">
-                    查看 60 条召回题目、词法基线、分组指标与失败样例
+                    查看 Golden 用例、Graph 关系链与最近回归结果
                   </span>
                 </span>
               </span>
               <ChevronRight className="size-4 shrink-0 text-[var(--tc-text-muted)]" />
             </Link>
+
           </div>
         </div>
       </section>

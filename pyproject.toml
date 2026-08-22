@@ -27,6 +27,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "deepeval>=3.8,<4",
     "mypy>=2.1.0",
     "pytest>=8.3.0",
     "ruff>=0.15.20",

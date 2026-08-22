@@ -95,45 +95,18 @@ class ReadManuscriptOutput(ToolModel):
     source_refs: list[str] = Field(default_factory=list)
 
 
-class SearchManuscriptInput(ToolModel):
-    query: str = Field(min_length=1, max_length=2_000)
-    volume_ids: list[str] = Field(default_factory=list, max_length=50)
-    chapter_ids: list[str] = Field(default_factory=list, max_length=500)
-    max_hits: int = Field(default=20, ge=1, le=100)
-    excerpt_chars: int = Field(default=240, ge=50, le=2_000)
-
-
-class ManuscriptSearchHit(ToolModel):
-    chapter_id: str
-    title: str
-    order: int
-    start_char: int = Field(ge=0)
-    end_char: int = Field(ge=0)
-    excerpt: str
-    score: float = Field(ge=0)
-    match_reasons: list[str] = Field(default_factory=list)
-    source_ref: str
-
-
-class SearchManuscriptOutput(ToolModel):
-    query: str
-    scanned_chapters: int = Field(ge=0)
-    hits: list[ManuscriptSearchHit] = Field(default_factory=list)
-    truncated: bool = False
-    source_refs: list[str] = Field(default_factory=list)
-
-
-class RetrieveStoryGraphInput(ToolModel):
+class RetrieveStoryContextInput(ToolModel):
     query: str = Field(min_length=1, max_length=20_000)
     max_passages: int = Field(default=10, ge=1, le=10)
 
 
-class StoryGraphEvidence(ToolModel):
+class StoryContextEvidence(ToolModel):
     source_type: VectorGraphSourceType
     source_id: str
     source_ref: str
     title: str
     content: str
+    content_sha256: str = Field(min_length=64, max_length=64)
     rank: int = Field(ge=1)
     chunk_index: int = Field(default=0, ge=0)
     start_char: int | None = Field(default=None, ge=0)
@@ -146,11 +119,12 @@ class StoryGraphEvidence(ToolModel):
     context_start_char: int | None = Field(default=None, ge=0)
     context_end_char: int | None = Field(default=None, ge=0)
     context_chunk_indexes: list[int] = Field(default_factory=list)
+    authority_verified: bool = False
 
 
-class RetrieveStoryGraphOutput(ToolModel):
+class RetrieveStoryContextOutput(ToolModel):
     query: str
-    evidences: list[StoryGraphEvidence] = Field(default_factory=list)
+    evidences: list[StoryContextEvidence] = Field(default_factory=list)
     retrieved_relations: list[str] = Field(default_factory=list)
     expanded_relations: list[str] = Field(default_factory=list)
     reranked_relations: list[str] = Field(default_factory=list)
@@ -161,14 +135,19 @@ class ResolveKnowledgeIdentityInput(ToolModel):
     knowledge_type: StructuredKnowledgeType
     name: str = Field(min_length=1, max_length=200)
     aliases: list[str] = Field(default_factory=list, max_length=50)
-    max_content_chars: int = Field(default=10_000, ge=500, le=50_000)
+
+
+class KnowledgeIdentityMatch(ToolModel):
+    card_id: str
+    knowledge_type: StructuredKnowledgeType
+    canonical_name: str
+    matched_aliases: list[str] = Field(default_factory=list)
 
 
 class ResolveKnowledgeIdentityOutput(ToolModel):
     resolution: Literal["unique", "ambiguous", "not_found"]
-    matches: list[StructuredKnowledgeCard] = Field(default_factory=list)
+    matches: list[KnowledgeIdentityMatch] = Field(default_factory=list)
     reason: str
-    retrieval_id: str
     source_refs: list[str] = Field(default_factory=list)
 
 
@@ -199,7 +178,6 @@ class ListKnowledgeCatalogOutput(ToolModel):
     offset: int = Field(ge=0)
     limit: int = Field(ge=1)
     truncated: bool = False
-    retrieval_id: str
     source_refs: list[str] = Field(default_factory=list)
 
 

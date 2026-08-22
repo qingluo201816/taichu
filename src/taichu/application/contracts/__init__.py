@@ -26,10 +26,6 @@ from taichu.application.contracts.storage import (
     StorageContract,
     StorageData,
 )
-from taichu.application.contracts.retrieval import (
-    RetrievalBackend,
-    RetrievalTraceRepository,
-)
 
 __all__ = [
     "CapabilityResultOwner",
@@ -48,8 +44,6 @@ __all__ = [
     "LLMToolDefinition",
     "LLMUsage",
     "ProjectAssetStorageContract",
-    "RetrievalBackend",
-    "RetrievalTraceRepository",
     "ResultIdentityPayload",
     "StorageBackend",
     "StorageContract",

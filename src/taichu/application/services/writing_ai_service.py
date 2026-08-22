@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 from dataclasses import dataclass
@@ -20,19 +21,17 @@ from taichu.application.contracts.llm import (
 )
 from taichu.application.contracts.storage import ProjectAssetStorageContract
 from taichu.application.services.chapter_service import ChapterService
-from taichu.application.services.retrieval_service import RetrievalService
-from taichu.application.retrieval.models import (
-    RetrievalConsumerContext,
-    RetrievalItem,
-    RetrievalRequest,
+from taichu.application.vector_graph.models import (
+    VectorGraphEvidence,
+    VectorGraphIndexState,
 )
+from taichu.application.vector_graph.service import VectorGraphRAGService
 from taichu.application.services.writing_ai_prompts import (
     PROMPT_VERSION,
     TAICHU_COMMON_SYSTEM_V1,
     WritingAIPromptRegistry,
 )
 from taichu.domain.models import (
-    StructuredKnowledgeCard,
     WritingAIButtonType,
     WritingAIInput,
     WritingAIOutputType,
@@ -44,7 +43,6 @@ from taichu.domain.models import (
     WritingAIRunStatus,
     WritingAISelectionRange,
     WritingAIStructuredOutput,
-    knowledge_type_label,
 )
 
 WRITING_AI_RUNS_FILE = "writing_ai_runs.jsonl"
@@ -147,7 +145,7 @@ class WritingAIContextBuilder:
     def __init__(
         self,
         chapter_service: ChapterService,
-        retrieval_service: RetrievalService,
+        retrieval_service: VectorGraphRAGService,
     ) -> None:
         self._chapter_service = chapter_service
         self._retrieval_service = retrieval_service
@@ -206,55 +204,71 @@ class WritingAIContextBuilder:
             if command.reference_scope is not WritingAIReferenceScope.NONE
             else ""
         )
-        result = await self._retrieval_service.retrieve(
-            RetrievalRequest(
-                query_text=query_text or _BUTTON_LABELS[command.button_type],
-                context_text=context_text,
-                top_k=12,
-                consumer=RetrievalConsumerContext(
-                    consumer_type="writing_task",
-                    run_id=run_id,
-                    stage="retrieving",
-                ),
+        del run_id
+        retrieval_query = "\n".join(
+            part
+            for part in (
+                query_text or _BUTTON_LABELS[command.button_type],
+                context_text[:4_000],
             )
+            if part.strip()
         )
         items: list[WritingAIRetrievalEvidenceItem] = []
         if chapter_excerpt.strip():
             items.append(_chapter_evidence_item(command, chapter_excerpt))
-        knowledge_evidence = [
-            _evidence_item(
-                item.knowledge_card,
-                "；".join(item.match_reasons),
+        try:
+            status = await self._retrieval_service.status()
+            if (
+                status.state is not VectorGraphIndexState.READY
+                or not status.is_current
+            ):
+                raise WritingAIError("Milvus 索引当前未就绪。")
+            result = await asyncio.wait_for(
+                self._retrieval_service.retrieve(retrieval_query, top_k=10),
+                timeout=5,
             )
-            for item in result.items
-        ]
-        items.extend(knowledge_evidence)
-        if not result.items:
-            empty_reason = result.empty_reason or "当前没有检索到可用有效知识卡"
+        except Exception:
             return WritingAIRetrievalContext(
                 used=True,
-                retrieval_id=result.retrieval_id,
-                strategy=result.strategy,
-                candidate_count=result.candidate_count,
-                truncated=result.truncated,
+                retrieval_id=None,
+                strategy="milvus_hybrid_vector_graph",
+                candidate_count=0,
+                truncated=False,
+                empty_reason="Milvus 索引当前不可用，本次仅使用已明确读取的章节正文",
+                items=items,
+                knowledge_context=(
+                    "Milvus 索引当前不可用。模型只能使用本次明确读取的章节正文，"
+                    "不得把未检索到的结构知识说成已确认事实。"
+                ),
+                evidence_context=_evidence_context(chapter_excerpt, items),
+            )
+        items.extend(_evidence_item(item) for item in result.evidences)
+        if not result.evidences:
+            empty_reason = "当前没有检索到可用的权威正文或已确认知识卡"
+            return WritingAIRetrievalContext(
+                used=True,
+                retrieval_id=None,
+                strategy="milvus_hybrid_vector_graph",
+                candidate_count=0,
+                truncated=False,
                 empty_reason=empty_reason,
                 items=items,
                 knowledge_context=(
-                    "当前没有检索到可用有效知识卡。模型不得把未检索到的内容说成已确认事实。"
+                    "当前没有检索到可用权威证据。模型不得把未检索到的内容说成已确认事实。"
                 ),
                 evidence_context=_evidence_context(chapter_excerpt, items),
             )
         return WritingAIRetrievalContext(
             used=True,
-            retrieval_id=result.retrieval_id,
-            strategy=result.strategy,
-            candidate_count=result.candidate_count,
-            truncated=result.truncated,
+            retrieval_id=None,
+            strategy="milvus_hybrid_vector_graph",
+            candidate_count=len(result.evidences),
+            truncated=False,
             empty_reason=None,
             items=items,
             knowledge_context="\n\n".join(
                 _knowledge_context_block(index, item)
-                for index, item in enumerate(result.items, start=1)
+                for index, item in enumerate(result.evidences, start=1)
             ),
             evidence_context=_evidence_context(chapter_excerpt, items),
         )
@@ -268,7 +282,7 @@ class WritingAIService:
         *,
         storage: ProjectAssetStorageContract,
         chapter_service: ChapterService,
-        retrieval_service: RetrievalService,
+        retrieval_service: VectorGraphRAGService,
         llm: LLMGatewayContract,
         default_model_id: str,
         llm_configured: bool,
@@ -679,19 +693,15 @@ def _chapter_excerpt(
     return f"{chapter_text[:3000]}\n\n……\n\n{chapter_text[-3000:]}"
 
 
-def _evidence_item(
-    card: StructuredKnowledgeCard,
-    reason: str,
-) -> WritingAIRetrievalEvidenceItem:
-    type_label = knowledge_type_label(card.type)
-    excerpt = card.summary or card.source_note
+def _evidence_item(evidence: VectorGraphEvidence) -> WritingAIRetrievalEvidenceItem:
+    excerpt = evidence.context_content or evidence.content
     return WritingAIRetrievalEvidenceItem(
-        item_id=f"knowledge-{card.id}",
-        source_type="knowledge",
-        source_id=card.id,
-        display_name=f"{type_label}：{card.name}",
+        item_id=f"{evidence.source_type.value}-{evidence.source_id}-{evidence.rank}",
+        source_type=evidence.source_type.value,
+        source_id=evidence.source_id,
+        display_name=evidence.title,
         excerpt=excerpt[:300],
-        usage=reason,
+        usage="Milvus 混合检索并完成权威回源",
     )
 
 
@@ -712,19 +722,16 @@ def _chapter_evidence_item(
 
 def _knowledge_context_block(
     index: int,
-    item: RetrievalItem,
+    item: VectorGraphEvidence,
 ) -> str:
-    card = item.knowledge_card
-    type_label = knowledge_type_label(card.type)
+    content = item.context_content or item.content
     return "\n".join(
         [
-            f"【知识 {index}】",
-            f"类型：{type_label}",
-            f"名称：{card.name}",
-            f"摘要：{card.summary}",
-            f"出现章节数：{card.appearance_chapter_count if card.appearance_chapter_count is not None else '暂未统计'}",
-            f"来源说明：{card.source_note}",
-            f"命中原因：{'；'.join(item.match_reasons)}",
+            f"【权威证据 {index}】",
+            f"来源类型：{item.source_type.value}",
+            f"标题：{item.title}",
+            f"内容：{content}",
+            f"来源引用：{item.context_source_ref or item.source_ref}",
         ]
     )
 

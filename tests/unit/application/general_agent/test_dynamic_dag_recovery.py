@@ -36,9 +36,9 @@ from taichu.application.services.outline_service import OutlineService
 from taichu.application.subagents.registry import SubagentRegistry
 from taichu.application.tools import (
     apply_manuscript_patch,
+    get_novel_structure,
     preview_manuscript_patch,
     read_manuscript,
-    search_manuscript,
 )
 from taichu.application.tools._shared import sha256_text
 from taichu.application.tools.contract import ToolPlugin
@@ -73,7 +73,7 @@ def test_capability_graph_resumes_failed_node_without_rerunning_success_node(
             calls["search"] += 1
             if crash_search:
                 raise _InjectedProcessCrash()
-            return await search_manuscript.run(input_data, invocation, capabilities)
+            return await get_novel_structure.run(input_data, invocation, capabilities)
 
         registry = ToolRegistry(
             CapabilityContext(
@@ -88,7 +88,7 @@ def test_capability_graph_resumes_failed_node_without_rerunning_success_node(
             ToolPlugin(manifest=read_manuscript.manifest, run=counted_read)
         )
         registry.register(
-            ToolPlugin(manifest=search_manuscript.manifest, run=unstable_search)
+            ToolPlugin(manifest=get_novel_structure.manifest, run=unstable_search)
         )
         run = _run(
             nodes=[
@@ -102,9 +102,9 @@ def test_capability_graph_resumes_failed_node_without_rerunning_success_node(
                 GeneralAgentPlanNode(
                     node_id="search_chapter",
                     kind=GeneralAgentNodeKind.TOOL,
-                    capability_name="search_manuscript",
-                    objective="定位正文词语。",
-                    input_data={"query": "秦阳", "max_hits": 5},
+                    capability_name="get_novel_structure",
+                    objective="再次读取卷章结构。",
+                    input_data={},
                     dependencies=["read_chapter"],
                 ),
             ]

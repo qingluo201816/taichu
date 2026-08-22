@@ -40,8 +40,6 @@ class Settings(BaseSettings):
     evaluation_datasets_dir: Path = Path("tests/fixtures/evaluations")
     evaluation_judge_model: str = ""
 
-    retrieval_policies_json: str = "{}"
-    retrieval_default_relevance_strategy: str = "mongo_lexical"
 
     milvus_uri: str = "http://127.0.0.1:19530"
     milvus_token: SecretStr = SecretStr("")
@@ -63,12 +61,21 @@ class Settings(BaseSettings):
     vector_graph_entity_top_k: int = 30
     vector_graph_relation_top_k: int = 30
     vector_graph_expansion_degree: int = 2
+    vector_graph_relation_number_threshold: int = 60
+    vector_graph_expansion_max_seed_entities: int = 3
+    vector_graph_expansion_initial_relations_per_entity: int = 20
+    vector_graph_expansion_initial_beam_width: int = 20
+    vector_graph_expansion_max_entities_per_hop: int = 12
+    vector_graph_expansion_relations_per_entity: int = 8
+    vector_graph_expansion_hub_relations_per_entity: int = 5
+    vector_graph_expansion_hub_degree_threshold: int = 100
+    vector_graph_expansion_beam_width: int = 20
     vector_graph_ann_top_k: int = 30
     vector_graph_reranker_top_k: int = 10
 
     reranker_base_url: str = "http://127.0.0.1:8012"
     reranker_model_id: str = "BAAI/bge-reranker-v2-m3"
-    reranker_request_timeout_seconds: float = 120
+    reranker_request_timeout_seconds: float = 180
 
     general_agent_working_memory_retrieval_top_k: int = 12
     general_agent_working_memory_char_budget: int = 24_000

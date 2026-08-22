@@ -35,19 +35,15 @@ from taichu.application.contracts.knowledge_sedimentation_progress_repository im
     KnowledgeSedimentationProgressRepository,
 )
 from taichu.application.contracts.agent_run_repository import AgentRunRepository
+from taichu.application.contracts.knowledge_repository import (
+    StructuredKnowledgeRepository,
+)
 from taichu.application.contracts.llm import (
     LLMGatewayContract,
     LLMModelIdentity,
     LLMModelProfile,
 )
 from taichu.application.services.chapter_service import ChapterService
-from taichu.application.services.retrieval_service import RetrievalService
-from taichu.application.retrieval.models import (
-    RetrievalConsumerContext,
-    RetrievalIdentityQuery,
-    RetrievalMode,
-    RetrievalRequest,
-)
 from taichu.application.services.knowledge_service import (
     AuthorMergeMode,
     KnowledgeCardNotFoundError,
@@ -117,7 +113,7 @@ class KnowledgeExtractionService:
         *,
         chapter_service: ChapterService,
         llm: object,
-        retrieval_service: RetrievalService,
+        knowledge_repository: StructuredKnowledgeRepository,
         knowledge_service: KnowledgeService,
         run_store: AgentRunRepository,
         sedimentation_progress_repository: KnowledgeSedimentationProgressRepository
@@ -127,7 +123,7 @@ class KnowledgeExtractionService:
     ) -> None:
         self._chapter_service = chapter_service
         self._llm = cast(LLMGatewayContract, llm)
-        self._retrieval_service = retrieval_service
+        self._knowledge_repository = knowledge_repository
         self._knowledge_service = knowledge_service
         self._run_store = run_store
         self._sedimentation_progress_repository = (
@@ -297,7 +293,7 @@ class KnowledgeExtractionService:
             dependencies = KnowledgeExtractionDependencies(
                 chapter_service=self._chapter_service,
                 llm=self._llm,
-                retrieval_service=self._retrieval_service,
+                knowledge_repository=self._knowledge_repository,
                 run_store=self._run_store,
             )
             retry_started_at = _now_iso()
@@ -546,7 +542,7 @@ class KnowledgeExtractionService:
         dependencies = KnowledgeExtractionDependencies(
             chapter_service=self._chapter_service,
             llm=self._llm,
-            retrieval_service=self._retrieval_service,
+            knowledge_repository=self._knowledge_repository,
             run_store=self._run_store,
         )
         candidates = await synthesize_candidate_summaries(
@@ -947,7 +943,7 @@ class KnowledgeExtractionService:
             KnowledgeExtractionDependencies(
                 chapter_service=self._chapter_service,
                 llm=self._llm,
-                retrieval_service=self._retrieval_service,
+                knowledge_repository=self._knowledge_repository,
                 run_store=self._run_store,
                 event_sink=event_sink,
             )
@@ -1415,7 +1411,7 @@ class KnowledgeExtractionService:
         summary_dependencies = KnowledgeExtractionDependencies(
             chapter_service=self._chapter_service,
             llm=self._llm,
-            retrieval_service=self._retrieval_service,
+            knowledge_repository=self._knowledge_repository,
             run_store=self._run_store,
             event_sink=event_sink,
         )
@@ -1512,7 +1508,7 @@ class KnowledgeExtractionService:
         dependencies = KnowledgeExtractionDependencies(
             chapter_service=self._chapter_service,
             llm=self._llm,
-            retrieval_service=self._retrieval_service,
+            knowledge_repository=self._knowledge_repository,
             run_store=self._run_store,
             event_sink=event_sink,
         )
@@ -1544,21 +1540,11 @@ class KnowledgeExtractionService:
             candidate_name = str(candidate.get("name") or "").strip()
             if not candidate_name:
                 continue
-            retrieval = await self._retrieval_service.retrieve(
-                RetrievalRequest(
-                    mode=RetrievalMode.IDENTITY,
-                    identity=RetrievalIdentityQuery(
-                        knowledge_type=knowledge_type,
-                        name=candidate_name,
-                        aliases=_list_strings(candidate.get("aliases")),
-                    ),
-                    consumer=RetrievalConsumerContext(
-                        consumer_type="knowledge_workflow",
-                        stage="BatchMatchExistingKnowledgeNode",
-                    ),
-                )
+            matches = await self._knowledge_repository.search_confirmed_identity(
+                knowledge_type,
+                candidate_name,
+                _list_strings(candidate.get("aliases")),
             )
-            matches = [item.knowledge_card for item in retrieval.items]
             if not matches:
                 continue
             match = matches[0]

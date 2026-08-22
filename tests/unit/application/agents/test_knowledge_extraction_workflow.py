@@ -41,15 +41,10 @@ from taichu.application.agents.knowledge_extraction.workflow import (
     synthesize_candidate_summaries,
 )
 from taichu.application.services.knowledge_service import KnowledgeService
-from taichu.application.services.retrieval_service import RetrievalService
 from taichu.application.agents.models.agent_run import AgentRunStatus
 from taichu.domain.models.structured_knowledge import StructuredKnowledgeType
 from taichu.infrastructure.agent_runs import JsonAgentRunStore
 from taichu.infrastructure.storage.markdown_backend import ProjectAssetStorageBackend
-from taichu.infrastructure.retrieval import (
-    JsonlRetrievalTraceRepository,
-    MongoLexicalRetrievalBackend,
-)
 from tests.fakes import InMemoryKnowledgeRepository
 
 
@@ -76,10 +71,6 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.chapter_service = ChapterService(self.storage)
         self.repository = InMemoryKnowledgeRepository()
         self.knowledge_service = KnowledgeService(self.repository)
-        self.retrieval_service = RetrievalService(
-            MongoLexicalRetrievalBackend(self.repository),
-            JsonlRetrievalTraceRepository(self.assets_root),
-        )
         self.run_store = JsonAgentRunStore(self.assets_root)
 
     async def asyncTearDown(self) -> None:
@@ -129,7 +120,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         service = KnowledgeExtractionService(
             chapter_service=self.chapter_service,
             llm=_PromptAwareLLM(),
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.repository,
             knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
@@ -233,7 +224,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         service = KnowledgeExtractionService(
             chapter_service=self.chapter_service,
             llm=_PromptAwareRuleReuseLLM(),
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.repository,
             knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
@@ -262,7 +253,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         service = KnowledgeExtractionService(
             chapter_service=self.chapter_service,
             llm=_SequenceLLM(["不是 JSON", "仍然不是 JSON", "还是不是 JSON"]),
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.repository,
             knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
@@ -293,7 +284,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         service = KnowledgeExtractionService(
             chapter_service=self.chapter_service,
             llm=_PromptAwareLLM(),
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.repository,
             knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
@@ -332,7 +323,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         service = KnowledgeExtractionService(
             chapter_service=self.chapter_service,
             llm=_PromptAwareSummaryFailureLLM(),
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.repository,
             knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
@@ -362,7 +353,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         dependencies = KnowledgeExtractionDependencies(
             chapter_service=self.chapter_service,
             llm=llm,
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.repository,
             run_store=self.run_store,
         )
         candidates = [
@@ -421,7 +412,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         dependencies = KnowledgeExtractionDependencies(
             chapter_service=self.chapter_service,
             llm=llm,
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.repository,
             run_store=self.run_store,
         )
         candidates = [
@@ -463,7 +454,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         dependencies = KnowledgeExtractionDependencies(
             chapter_service=self.chapter_service,
             llm=llm,
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.repository,
             run_store=self.run_store,
         )
         candidates = [
@@ -509,7 +500,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         dependencies = KnowledgeExtractionDependencies(
             chapter_service=self.chapter_service,
             llm=_TruncatedSummaryLLM(),
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.repository,
             run_store=self.run_store,
         )
         candidates = [
@@ -547,7 +538,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         dependencies = KnowledgeExtractionDependencies(
             chapter_service=self.chapter_service,
             llm=_UnexpectedSummaryFieldLLM(),
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.repository,
             run_store=self.run_store,
         )
         candidates = [
@@ -810,7 +801,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         dependencies = KnowledgeExtractionDependencies(
             chapter_service=self.chapter_service,
             llm=_PromptAwareLLM(),
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.repository,
             run_store=self.run_store,
         )
 
@@ -885,7 +876,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         service = KnowledgeExtractionService(
             chapter_service=self.chapter_service,
             llm=_PromptAwareRepairLLM(),
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.repository,
             knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
@@ -907,7 +898,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         service = KnowledgeExtractionService(
             chapter_service=self.chapter_service,
             llm=_SequenceLLM([_generic_mentions_response()]),
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.repository,
             knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
@@ -933,7 +924,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         service = KnowledgeExtractionService(
             chapter_service=self.chapter_service,
             llm=llm,
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.repository,
             knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
@@ -976,7 +967,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         service = KnowledgeExtractionService(
             chapter_service=self.chapter_service,
             llm=_AlwaysFailLLM(),
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.repository,
             knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
@@ -1006,7 +997,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         service = KnowledgeExtractionService(
             chapter_service=self.chapter_service,
             llm=llm,
-            retrieval_service=self.retrieval_service,
+            knowledge_repository=self.repository,
             knowledge_service=self.knowledge_service,
             run_store=self.run_store,
         )
