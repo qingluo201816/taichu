@@ -1,0 +1,58 @@
+name: Graph RAG 分层质量回归
+
+on:
+  pull_request:
+    paths:
+      - "src/taichu/application/evaluations/rag/**"
+      - "src/taichu/application/vector_graph/**"
+      - "src/taichu/infrastructure/evaluations/rag/**"
+      - "src/taichu/infrastructure/vector_graph/**"
+      - "src/taichu/application/tools/retrieve_story_context.py"
+      - "src/taichu/application/services/knowledge_service.py"
+      - "src/taichu/main.py"
+      - "src/taichu/config.py"
+      - "project_assets/source/manuscripts/**"
+      - "tests/fixtures/evaluations/rag_graph_core/**"
+      - "scripts/evaluate_rag.py"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/rag-*.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: rag-regression-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rag-regression:
+    name: 确定性回归、Graph 消融与语义评测
+    runs-on: [self-hosted, windows, taichu-rag]
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: 安装 uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          enable-cache: true
+      - name: 同步锁定依赖
+        run: uv sync --frozen --group dev
+      - name: 校验评测与生产链契约
+        run: >-
+          uv run pytest
+          tests/unit/application/evaluations/rag
+          tests/unit/infrastructure/evaluations/rag
+          tests/unit/infrastructure/vector_graph
+          -q
+      - name: 运行 RAG 相关 PR 分层回归
+        if: github.event_name == 'pull_request'
+        run: uv run python scripts/evaluate_rag.py rag-pr
+      - name: 运行发布前完整评测
+        if: github.event_name == 'workflow_dispatch'
+        run: uv run python scripts/evaluate_rag.py full
+      - name: 上传评测报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rag-regression-report-${{ github.run_id }}
+          path: project_assets/derived/rag_evaluations/*.json
+          if-no-files-found: warn

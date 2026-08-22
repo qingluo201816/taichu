@@ -1,0 +1,30 @@
+services:
+  bge-reranker:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9
+    container_name: taichu-bge-reranker
+    command:
+      - "--model-id"
+      - "/model"
+      - "--port"
+      - "80"
+      - "--tokenization-workers"
+      - "2"
+      - "--max-concurrent-requests"
+      - "64"
+      - "--max-batch-requests"
+      - "1"
+      - "--max-batch-tokens"
+      - "4096"
+    ports:
+      - "127.0.0.1:8012:80"
+    volumes:
+      - type: bind
+        source: ${RERANKER_MODEL_PATH:-E:/Taichu/Models/bge-reranker-v2-m3}
+        target: /model
+        read_only: true
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:80/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 60
+    restart: unless-stopped
