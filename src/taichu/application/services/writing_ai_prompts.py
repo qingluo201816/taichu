@@ -30,12 +30,8 @@ TAICHU_COMMON_SYSTEM_V1 = """你是“太初”里的中文玄幻长篇小说写
 6. 不要擅自新增会影响世界观根基、角色生死、境界体系、势力格局的重大设定。
 7. 允许做局部表达、氛围、节奏和衔接优化。
 
-三、输出要求
-1. 必须严格输出 JSON。
-2. 不得在 JSON 外输出解释文字。
-3. 不得使用 Markdown 包裹 JSON。
-4. 如果某字段没有内容，使用空数组或空字符串，不要省略字段。
-5. 用户可见内容必须是中文。"""
+三、表达要求
+1. 用户可见内容必须是中文。"""
 
 
 @dataclass(frozen=True)
@@ -99,18 +95,7 @@ def _templates() -> dict[WritingAIButtonType, WritingAIPromptTemplate]:
 【本章正文节选】{{chapter_excerpt}}
 【已确认知识库】{{knowledge_context}}
 【来源摘要】{{evidence_context}}
-
-请严格输出 JSON：
-{
-  "output_type": "chat_answer",
-  "answer": "直接回答作者的问题，要求具体、可执行。",
-  "evidence": [
-    {"display_name": "来源显示名", "excerpt": "不超过300字的来源摘录", "usage": "这条依据支持了回答中的哪一点"}
-  ],
-  "inference": ["基于已有内容但未被明确写死的推测，若没有则为空数组"],
-  "uncertainties": ["当前依据不足或需要作者确认的点，若没有则为空数组"],
-  "actionable_suggestions": ["下一步可以怎么改或怎么写，若没有则为空数组"]
-}""",
+""",
         ),
         WritingAIButtonType.CONTINUE: WritingAIPromptTemplate(
             button_type=WritingAIButtonType.CONTINUE,
@@ -130,7 +115,7 @@ def _templates() -> dict[WritingAIButtonType, WritingAIPromptTemplate]:
 6. 不要改变已有角色动机和已确认知识库事实。
 7. 可以补充氛围、动作、心理、对话、环境压迫感。
 8. 目标字数为 {{target_words}} 字，允许上下浮动 20%。
-9. 如果用户要求与上下文冲突，优先保持上下文一致，并在 risk_notes 中说明。
+9. 如果用户要求与上下文冲突，优先保持上下文一致，并明确说明风险。
 
 输入：
 【当前章节】{{chapter_title}}（{{chapter_id}}）
@@ -141,16 +126,7 @@ def _templates() -> dict[WritingAIButtonType, WritingAIPromptTemplate]:
 【选区后文】{{after_selection}}
 【本章正文节选】{{chapter_excerpt}}
 【已确认知识库】{{knowledge_context}}
-
-请严格输出 JSON：
-{
-  "output_type": "text_candidate",
-  "text": "这里放可以直接插入正文的续写文本，不要解释，不要标题。",
-  "risk_notes": ["如果存在可能影响设定或需要作者确认的点，写在这里；没有则为空数组"],
-  "used_evidence": [
-    {"display_name": "来源显示名", "excerpt": "来源摘录", "usage": "说明续写如何遵守该来源"}
-  ]
-}""",
+""",
         ),
         WritingAIButtonType.POLISH: WritingAIPromptTemplate(
             button_type=WritingAIButtonType.POLISH,
@@ -176,17 +152,7 @@ def _templates() -> dict[WritingAIButtonType, WritingAIPromptTemplate]:
 【选区前文】{{before_selection}}
 【选区后文】{{after_selection}}
 【已确认知识库】{{knowledge_context}}
-
-请严格输出 JSON：
-{
-  "output_type": "polished_text",
-  "polished_text": "润色后的正文，可用于替换选区。",
-  "change_summary": ["说明做了什么改动，例如节奏、氛围、语序；不要超过5条"],
-  "risk_notes": ["如果某处改动可能改变原意，写在这里；没有则为空数组"],
-  "used_evidence": [
-    {"display_name": "来源显示名", "excerpt": "来源摘录", "usage": "说明润色如何避免违背该来源"}
-  ]
-}""",
+""",
         ),
         WritingAIButtonType.SETTING: WritingAIPromptTemplate(
             button_type=WritingAIButtonType.SETTING,
@@ -214,19 +180,7 @@ def _templates() -> dict[WritingAIButtonType, WritingAIPromptTemplate]:
 【本章正文节选】{{chapter_excerpt}}
 【已确认知识库】{{knowledge_context}}
 【来源摘要】{{evidence_context}}
-
-请严格输出 JSON：
-{
-  "output_type": "setting_suggestion",
-  "setting_supplements": [
-    {"title": "设定补充标题", "content": "具体设定建议，说明它如何服务当前写作。", "scope": "影响范围", "conflict_risk": "与现有设定的冲突风险，没有则写空字符串"}
-  ],
-  "usage_advice": ["作者如何把这些设定用进正文，若没有则为空数组"],
-  "possible_impacts": ["这些设定可能影响角色、势力、境界、后续剧情的地方，若没有则为空数组"],
-  "used_evidence": [
-    {"display_name": "来源显示名", "excerpt": "来源摘录", "usage": "说明该来源如何约束本次设定建议"}
-  ]
-}""",
+""",
         ),
         WritingAIButtonType.SUGGESTION: WritingAIPromptTemplate(
             button_type=WritingAIButtonType.SUGGESTION,
@@ -252,19 +206,7 @@ def _templates() -> dict[WritingAIButtonType, WritingAIPromptTemplate]:
 【当前选区】{{selected_text}}
 【本章正文节选】{{chapter_excerpt}}
 【已确认知识库】{{knowledge_context}}
-
-请严格输出 JSON：
-{
-  "output_type": "writing_suggestion",
-  "diagnosis": [
-    {"problem": "具体问题", "why_it_matters": "为什么影响阅读或写作目标", "severity": "轻微|中等|严重", "evidence_excerpt": "对应文本摘录，没有则为空字符串"}
-  ],
-  "suggestions": [
-    {"title": "建议标题", "action": "具体怎么改", "expected_effect": "改完会带来什么效果"}
-  ],
-  "do_not_change": ["建议保留的内容，若没有则为空数组"],
-  "uncertainties": ["需要作者决定的点，若没有则为空数组"]
-}""",
+""",
         ),
         WritingAIButtonType.EVIDENCE: WritingAIPromptTemplate(
             button_type=WritingAIButtonType.EVIDENCE,
@@ -290,18 +232,7 @@ def _templates() -> dict[WritingAIButtonType, WritingAIPromptTemplate]:
 【本章正文节选】{{chapter_excerpt}}
 【已确认知识库】{{knowledge_context}}
 【来源摘要】{{evidence_context}}
-
-请严格输出 JSON：
-{
-  "output_type": "evidence_answer",
-  "conclusion": "基于当前证据能得出的结论。如果证据不足，必须说明不足。",
-  "evidence": [
-    {"display_name": "来源显示名", "excerpt": "不超过300字的原文摘录", "supports": "这条来源支持什么判断"}
-  ],
-  "inference": ["基于证据做出的推测，若没有则为空数组"],
-  "unconfirmed_points": ["当前无法确认、需要作者补充或后续确认的点，若没有则为空数组"],
-  "conflict_warnings": ["发现的可能冲突，若没有则为空数组"]
-}""",
+""",
         ),
         WritingAIButtonType.CHAPTER_SUMMARY: WritingAIPromptTemplate(
             button_type=WritingAIButtonType.CHAPTER_SUMMARY,
@@ -325,21 +256,7 @@ def _templates() -> dict[WritingAIButtonType, WritingAIPromptTemplate]:
 【用户要求】{{user_input}}
 【本章正文】{{chapter_excerpt}}
 【已确认知识库】{{knowledge_context}}
-
-请严格输出 JSON：
-{
-  "output_type": "chapter_summary",
-  "summary": "本章内容摘要。",
-  "key_events": ["关键事件，按发生顺序"],
-  "character_changes": [
-    {"character_name": "角色名", "change": "本章发生的状态、立场、境界、关系或认知变化", "evidence_excerpt": "对应原文摘录，没有则为空字符串"}
-  ],
-  "setting_candidates": [
-    {"title": "可能新增或变化的设定", "content": "候选内容", "needs_confirmation": true}
-  ],
-  "foreshadow_or_hooks": ["伏笔、悬念或下一章衔接点，若没有则为空数组"],
-  "unconfirmed_points": ["需要作者确认的内容，若没有则为空数组"]
-}""",
+""",
         ),
         WritingAIButtonType.INSPIRATION: WritingAIPromptTemplate(
             button_type=WritingAIButtonType.INSPIRATION,
@@ -364,15 +281,7 @@ def _templates() -> dict[WritingAIButtonType, WritingAIPromptTemplate]:
 【当前选区】{{selected_text}}
 【本章正文节选】{{chapter_excerpt}}
 【已确认知识库】{{knowledge_context}}
-
-请严格输出 JSON：
-{
-  "output_type": "inspiration",
-  "ideas": [
-    {"title": "灵感标题", "content": "灵感内容", "use_scene": "适合用在当前段落、当前章、后续章节或人物线", "priority": "低|中|高", "risk": "可能带来的设定或剧情风险，没有则为空字符串"}
-  ],
-  "recommended_next_action": ["作者下一步可以怎么处理这些灵感，若没有则为空数组"]
-}""",
+""",
         ),
         WritingAIButtonType.FACT: WritingAIPromptTemplate(
             button_type=WritingAIButtonType.FACT,
@@ -390,8 +299,8 @@ def _templates() -> dict[WritingAIButtonType, WritingAIPromptTemplate]:
 4. 不把候选事实直接入库。
 5. 不自动猜最终知识卡类型；可以给“类型提示文本”，但前端确认入库时必须由作者选择类型。
 6. 每条候选事实必须给出来源说明。
-7. 如果来源来自作者当前输入，source_origin 建议为 manual；如果来自章节文本，source_origin 建议为 agent_extract。
-8. source_note 必须是中文自由文本，说明依据。
+7. 必须区分候选来源是作者当前输入还是章节文本。
+8. 每条候选必须用中文说明来源依据。
 
 输入：
 【当前章节】{{chapter_title}}（{{chapter_id}}）
@@ -400,14 +309,6 @@ def _templates() -> dict[WritingAIButtonType, WritingAIPromptTemplate]:
 【当前选区】{{selected_text}}
 【本章正文节选】{{chapter_excerpt}}
 【已确认知识库】{{knowledge_context}}
-
-请严格输出 JSON：
-{
-  "output_type": "pending_fact_candidates",
-  "candidates": [
-    {"title": "候选事实标题", "content": "候选事实内容，必须具体可读", "type_hint_text": "类型提示，例如角色、地点、势力、物品、规则、事件；仅作提示，不自动入库", "source_origin": "manual|agent_extract", "source_note": "来源说明，包含章节、选区或作者输入中的依据摘录", "needs_author_confirmation": true, "conflict_risk": "如果可能与已有知识冲突，写在这里；没有则为空字符串"}
-  ],
-  "ignored_items": ["没有提取为事实的内容及原因，若没有则为空数组"]
-}""",
+""",
         ),
     }

@@ -36,7 +36,7 @@ from taichu.application.services.knowledge_extraction_evaluation_service import 
 from taichu.config import Settings
 from taichu.infrastructure.llm.unavailable import UnavailableLLMChatModel
 from taichu.main import create_app
-from tests.fakes import InMemoryKnowledgeRepository
+from tests.fakes import InMemoryKnowledgeRepository, make_test_llm_gateway
 
 
 _PREFIX = "/api/agent-evaluations/knowledge-extraction"
@@ -64,8 +64,7 @@ class AgentEvaluationsApiTest(unittest.IsolatedAsyncioTestCase):
                 project_assets_dir=root / "assets",
                 evaluation_datasets_dir=root / "datasets",
             ),
-            llm=UnavailableLLMChatModel(),
-            llm_model_identity=_IDENTITY,
+            llm_gateway=make_test_llm_gateway(UnavailableLLMChatModel(), _IDENTITY),
             knowledge_repository=InMemoryKnowledgeRepository(),
         )
         self.app.dependency_overrides[
@@ -142,7 +141,9 @@ class AgentEvaluationsApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(payload["dataset"]["dataset_id"], _DATASET_ID)
         self.assertEqual(payload["subject_title"], "第一章")
 
-    async def test_request_cannot_inject_json_path_or_select_multiple_runs(self) -> None:
+    async def test_request_cannot_inject_json_path_or_select_multiple_runs(
+        self,
+    ) -> None:
         injected = {**_request_payload(), "expected_json_path": "../secret.json"}
         injection_response = await self.client.post(
             f"{_PREFIX}/evaluations",

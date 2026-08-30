@@ -1,13 +1,31 @@
 """统一网关驱动的语义裁判组装测试。"""
 
+import asyncio
+from decimal import Decimal
 from pathlib import Path
 import unittest
 
-from taichu.application.contracts.llm import LLMModelIdentity
+from taichu.application.contracts.llm import LLMModelIdentity, LLMModelProfile
+from taichu.infrastructure.llm.contracts import (
+    LLMCost,
+    LLMRequest,
+    LLMResponse,
+    LLMToolCall,
+    LLMUsage,
+)
+from taichu.application.evaluations.knowledge_extraction.difference_explainer import (
+    DifferenceExplanationBatchOutput,
+)
 from taichu.config import Settings
 from taichu.infrastructure.evaluations.judge_factory import create_evaluation_judge
-from taichu.infrastructure.llm.adapter import LangChainLLMAdapter
-from taichu.infrastructure.llm.mock import MVPNoRealLLMChatModel
+from taichu.infrastructure.evaluations.llm_judge_adapter import (
+    LLMEvaluationJudgeAdapter,
+)
+from taichu.infrastructure.llm.adapter import GatewayChatModel
+from tests.fakes import (
+    MVPNoRealLLMChatModel,
+    make_test_llm_gateway,
+)
 
 
 class EvaluationJudgeFactoryTest(unittest.TestCase):
@@ -26,9 +44,12 @@ class EvaluationJudgeFactoryTest(unittest.TestCase):
             endpoint_kind="openai_responses",
             known=True,
         )
-        gateway = LangChainLLMAdapter(MVPNoRealLLMChatModel(), identity)
+        gateway = make_test_llm_gateway(MVPNoRealLLMChatModel(), identity)
         judge = create_evaluation_judge(
-            Settings(), gateway, configured=True
+            Settings(),
+            GatewayChatModel(gateway, model_id="deepseek-v4-pro"),
+            gateway,
+            configured=True,
         )
         self.assertTrue(judge.available)
         self.assertEqual(judge.model_identity.model_id, "deepseek-v4-pro")
@@ -41,10 +62,83 @@ class EvaluationJudgeFactoryTest(unittest.TestCase):
             endpoint_kind="openai_responses",
             known=True,
         )
-        gateway = LangChainLLMAdapter(MVPNoRealLLMChatModel(), identity)
+        gateway = make_test_llm_gateway(MVPNoRealLLMChatModel(), identity)
         judge = create_evaluation_judge(
             Settings(evaluation_judge_model="unknown"),
+            GatewayChatModel(gateway, model_id="deepseek-v4-pro"),
             gateway,
             configured=True,
         )
         self.assertFalse(judge.available)
+
+    def test_judge_sends_output_contract_as_forced_native_tool(self) -> None:
+        class GatewayFake:
+            request: LLMRequest | None = None
+
+            async def complete(self, request: LLMRequest) -> LLMResponse:
+                self.request = request
+                tool_name = request.tools[0].name
+                return LLMResponse(
+                    text="",
+                    model_id="judge",
+                    upstream_model="judge",
+                    usage=LLMUsage(input_tokens=10, output_tokens=5),
+                    cost=LLMCost(amount=Decimal("0")),
+                    tool_calls=(
+                        LLMToolCall(
+                            call_id="call-judge",
+                            name=tool_name,
+                            arguments_json=(
+                                '{"items":[{"explanation_id":"diff-1",'
+                                '"summary":"差异说明。"}]}'
+                            ),
+                        ),
+                    ),
+                )
+
+            def list_models(self) -> list[LLMModelProfile]:
+                return [
+                    LLMModelProfile(
+                        id="judge",
+                        display_name="裁判模型",
+                        provider="rightcode",
+                        upstream_model="judge",
+                        wire_protocol="openai_responses",
+                        enabled=True,
+                        is_default=True,
+                        supports_streaming=True,
+                        upstream_verified=True,
+                    )
+                ]
+
+        gateway = GatewayFake()
+        judge = LLMEvaluationJudgeAdapter(  # type: ignore[arg-type]
+            GatewayChatModel(gateway, model_id="judge"),
+            gateway,
+            model_id="judge",
+            configured=True,
+        )
+
+        result = asyncio.run(
+            judge.complete(
+                "解释差异。",
+                output_schema=DifferenceExplanationBatchOutput,
+            )
+        )
+
+        self.assertIsNotNone(gateway.request)
+        assert gateway.request is not None
+        self.assertEqual(
+            gateway.request.tool_choice,
+            "required",
+        )
+        self.assertEqual(len(gateway.request.tools), 1)
+        self.assertTrue(gateway.request.tools[0].strict)
+        self.assertIn("items", gateway.request.tools[0].parameters["properties"])
+        self.assertNotIn("JSON", gateway.request.messages[0].content)
+        self.assertEqual(
+            result.token_usage,
+            {"input_tokens": 10, "output_tokens": 5, "total_tokens": 15},
+        )
+        self.assertIsInstance(result.output, DifferenceExplanationBatchOutput)
+        self.assertEqual(result.output.items[0].explanation_id, "diff-1")

@@ -10,18 +10,19 @@ from taichu.application.contracts.llm import LLMModelIdentity
 
 
 class EvaluationJudgeResponse(BaseModel):
-    """Raw response plus metadata returned by one judge transport call."""
+    """Validated structured result plus independent transport audit metadata."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    raw_response: str
+    output: BaseModel
+    raw_response: str | None = None
     model_identity: LLMModelIdentity
     token_usage: dict[str, int] | None = None
 
 
 @runtime_checkable
 class EvaluationJudge(Protocol):
-    """One isolated text-to-JSON semantic judge capability."""
+    """One isolated native structured-output semantic judge capability."""
 
     @property
     def available(self) -> bool:
@@ -33,6 +34,11 @@ class EvaluationJudge(Protocol):
         """Return the actual runtime identity."""
         ...
 
-    async def complete(self, prompt: str) -> EvaluationJudgeResponse:
-        """Execute one judge request without mutating application state."""
+    async def complete(
+        self,
+        prompt: str,
+        *,
+        output_schema: type[BaseModel],
+    ) -> EvaluationJudgeResponse:
+        """Execute one native structured-output request without mutating state."""
         ...

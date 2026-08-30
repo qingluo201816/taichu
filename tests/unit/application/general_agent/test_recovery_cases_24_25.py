@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from tests.fakes.capability_results import in_memory_capability_result_repository
+
 import asyncio
 from pathlib import Path
 
@@ -44,7 +46,6 @@ from taichu.application.tools._shared import sha256_text
 from taichu.application.tools.registry import ToolRegistry
 from taichu.infrastructure.artifacts import JsonIntermediateArtifactRepository
 from taichu.infrastructure.general_agent_runs import (
-    JsonGeneralAgentCapabilityResultRepository,
     JsonGeneralAgentEffectRepository,
 )
 from taichu.infrastructure.evaluations.general_agent_benchmark.recovery_harness import (
@@ -54,12 +55,13 @@ from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
 from tests.unit.application.general_agent.test_runtime import (
-    _ScriptedGateway,
+    _ScriptedChatModel,
     _TraceRepository,
     _async_test,
     _register_tools,
     _runtime,
 )
+from tests.fakes.agent_memory import in_memory_agent_memory_repository
 
 _PARTIAL_MARKER = "中断半成品-禁止父级可见"
 _COMPLETE_MARKER = "完整子结果-唯一提交"
@@ -93,11 +95,12 @@ async def test_recovery_case_24_discards_partial_subagent_and_commits_complete_o
     partial_started = asyncio.Event()
 
     async def interrupted_subagent(
+        _manifest: SubagentManifest,
         input_data: BaseModel,
         invocation: InvocationContext,
         context: CapabilityContext,
     ) -> BaseModel:
-        del invocation, context
+        del _manifest, invocation, context
         parsed = _RecoverySubagentInput.model_validate(input_data)
         attempts.append(parsed.upstream_version)
         if len(attempts) == 1:
@@ -111,7 +114,7 @@ async def test_recovery_case_24_discards_partial_subagent_and_commits_complete_o
             source_refs=["fixture:complete-subagent-result"],
         )
 
-    gateway = _ScriptedGateway(
+    gateway = _ScriptedChatModel(
         plans=[
             {
                 "rationale": "先取得稳定上游，再让专业子智能体形成完整结论。",
@@ -150,7 +153,9 @@ async def test_recovery_case_24_discards_partial_subagent_and_commits_complete_o
         },
     )
 
-    def build_runtime(hook: GeneralAgentFaultHook) -> GeneralAgentRuntimeService:
+    def build_runtime(
+        hook: GeneralAgentFaultHook | None,
+    ) -> GeneralAgentRuntimeService:
         policy = InvocationPolicyService()
         tools = ToolRegistry(
             CapabilityContext(
@@ -253,7 +258,7 @@ async def test_recovery_case_24_discards_partial_subagent_and_commits_complete_o
         conversation_id=result.recovered_run.conversation_id,
         run_id=result.recovered_run.run_id,
     )
-    records = await JsonGeneralAgentCapabilityResultRepository(
+    records = await in_memory_capability_result_repository(
         tmp_path / "general_agent_capability_results"
     ).list_for_run(owner)
     tool_records = [
@@ -309,6 +314,22 @@ async def test_recovery_case_24_discards_partial_subagent_and_commits_complete_o
     assert _PARTIAL_MARKER not in result.interrupted_run.model_dump_json()
     assert _PARTIAL_MARKER not in result.recovered_run.model_dump_json()
     _assert_marker_absent_from_carriers(tmp_path, _PARTIAL_MARKER)
+    memories = await in_memory_agent_memory_repository(tmp_path).query(
+        include_deleted=True
+    )
+    assert all(_PARTIAL_MARKER not in memory.content for memory in memories)
+    result_records = await in_memory_capability_result_repository(
+        tmp_path / "general_agent_capability_results"
+    ).list_for_run(
+        CapabilityResultOwner(
+            conversation_id=result.recovered_run.conversation_id,
+            run_id=result.recovered_run.run_id,
+        )
+    )
+    assert all(
+        _PARTIAL_MARKER not in str(record.output)
+        for record in result_records
+    )
 
 
 @_async_test
@@ -385,7 +406,7 @@ async def test_recovery_case_25_preserves_pending_authorization_without_writes(
             },
         ],
     }
-    gateway = _ScriptedGateway(
+    gateway = _ScriptedChatModel(
         plans=[plan],
         verification={
             "outcome": "satisfied",
@@ -395,7 +416,9 @@ async def test_recovery_case_25_preserves_pending_authorization_without_writes(
         },
     )
 
-    def build_runtime(hook: GeneralAgentFaultHook) -> GeneralAgentRuntimeService:
+    def build_runtime(
+        hook: GeneralAgentFaultHook | None,
+    ) -> GeneralAgentRuntimeService:
         policy = InvocationPolicyService()
         tools = ToolRegistry(
             CapabilityContext(
@@ -487,7 +510,7 @@ async def test_recovery_case_25_preserves_pending_authorization_without_writes(
         conversation_id=result.recovered_run.conversation_id,
         run_id=result.recovered_run.run_id,
     )
-    records = await JsonGeneralAgentCapabilityResultRepository(
+    records = await in_memory_capability_result_repository(
         tmp_path / "general_agent_capability_results"
     ).list_for_run(owner)
     assert len(records) == 1
@@ -521,12 +544,37 @@ async def test_recovery_case_25_preserves_pending_authorization_without_writes(
         await chapter_service.read_chapter(chapter_id)
     ).markdown.encode("utf-8") == original_bytes
 
+    # WAITING_HUMAN 只有在官方 interrupt 已提交后才成为可见投影；
+    # 进程随后终止时，作者的一次批准必须直接消费该 interrupt。
+    resumed_runtime = build_runtime(None)
+    try:
+        config = {
+            "configurable": {
+                "thread_id": result.interrupted_run.conversation_id,
+            }
+        }
+        before_resume = await resumed_runtime._graph.aget_state(config)  # noqa: SLF001
+        assert len(before_resume.interrupts) == 1
+        assert before_resume.interrupts[0].value["request_id"] == request.request_id
+
+        completed = await resumed_runtime.resume(
+            result.interrupted_run.run_id,
+            approve=True,
+        )
+
+        assert completed.status is GeneralAgentRunStatus.COMPLETED
+        assert completed.pending_human_request is None
+        after_resume = await resumed_runtime._graph.aget_state(config)  # noqa: SLF001
+        assert after_resume.interrupts == ()
+        assert (
+            await chapter_service.read_chapter(chapter_id)
+        ).markdown.startswith("新内容")
+    finally:
+        await resumed_runtime.shutdown()
+
 
 def _assert_marker_absent_from_carriers(root: Path, marker: str) -> None:
     carrier_roots = {
-        "工作记忆": root / "derived" / "general_agent_memory",
-        "Result": root / "general_agent_capability_results",
-        "Checkpoint": root / "derived" / "general_agent_graph_checkpoints",
         "artifact": root / "derived" / "capability_artifacts",
     }
     encoded = marker.encode("utf-8")

@@ -27,7 +27,7 @@ PRESERVED_ASSETS = (
     "src/taichu/application/general_agent",
     "src/taichu/application/evaluations/knowledge_extraction",
     "scripts/benchmark_general_agent_recovery.py",
-    "docs/历史",
+    "docs/旧历史",
 )
 
 FORBIDDEN_ACTIVE_TEXT = (
@@ -134,7 +134,7 @@ def test_current_documentation_points_to_the_new_benchmark_only() -> None:
     ).read_text(encoding="utf-8")
     runtime_map = (
         ROOT
-        / "docs/临时架构/7-20通用Agent运行链路上下文与能力调用排查地图.md"
+        / "docs/学习资料/7-20通用Agent运行链路上下文与能力调用排查地图.md"
     ).read_text(encoding="utf-8")
 
     assert "general_writing_agent_benchmark/suite.json" in repository_map

@@ -2,21 +2,24 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any, cast
 from uuid import uuid4
 
-from taichu.application.contracts.llm import (
-    LLMGatewayContract,
-    LLMMessage,
-    LLMRequest,
-    response_text,
-)
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from pydantic import BaseModel, ValidationError
+
 from taichu.application.services.ai_card_service import AICardService
-from taichu.application.workflows.selection.schemas import SelectionWorkflowInput
+from taichu.application.invocations.config import model_call_config
+from taichu.application.workflows.selection.schemas import (
+    SelectionAskOutput,
+    SelectionContinueOutput,
+    SelectionEnrichOutput,
+    SelectionWorkflowInput,
+)
 from taichu.domain.models.ai_card import (
     AIResultCard,
     AIResultCardStatus,
@@ -61,11 +64,11 @@ class SelectionAIService:
 
     def __init__(
         self,
-        llm: object,
+        llm: BaseChatModel,
         ai_card_service: AICardService,
         default_model_id: str = "deepseek-v4-pro",
     ) -> None:
-        self._llm = cast(LLMGatewayContract, llm)
+        self._llm = llm
         self._ai_card_service = ai_card_service
         self._default_model_id = default_model_id
 
@@ -90,30 +93,39 @@ class SelectionAIService:
             await self._ai_card_service.mark_retried(request.parent_card_id)
 
         prompt = build_selection_prompt(request)
+        output_schema = _output_schema_for_mode(request.mode)
         model_id = request.model_id or self._default_model_id
-        _ensure_selectable(self._llm, model_id)
-        response = await self._llm.complete(
-            LLMRequest(
-                model_id=model_id,
-                messages=(
-                    LLMMessage(
-                        role="system",
-                        content="你是太初编辑器内的选区智能助手。",
-                    ),
-                    LLMMessage(role="user", content=prompt),
-                ),
-                task_type=f"selection_{request.mode.value}",
-                task_name="选区 AI",
-                chapter_ids=(request.chapter_id,),
-                response_mode="json",
-                feature="选区 AI",
-            )
+        structured_model = self._llm.with_structured_output(
+            output_schema,
+            include_raw=True,
+            method="function_calling",
+            strict=True,
         )
-        raw_output = response_text(response)
+        structured_result = cast(
+            dict[str, Any],
+            await structured_model.ainvoke(
+                [
+                    SystemMessage(content="你是太初编辑器内的选区智能助手。"),
+                    HumanMessage(content=prompt),
+                ],
+                config=model_call_config(
+                    model_id=model_id,
+                    task_type=f"selection_{request.mode.value}",
+                    task_name="选区 AI",
+                    chapter_ids=(request.chapter_id,),
+                    feature="选区 AI",
+                ),
+            ),
+        )
+        parsed, raw_output = _parse_structured_selection_output(
+            structured_result,
+            output_schema=output_schema,
+        )
         card = self._build_card(
             request=request,
             selection_input=selection_input,
             raw_output=raw_output,
+            parsed=parsed,
         )
         return await self._ai_card_service.create_card(card)
 
@@ -123,14 +135,14 @@ class SelectionAIService:
         request: SelectionAIRequest,
         selection_input: SelectionWorkflowInput,
         raw_output: str,
+        parsed: dict[str, Any] | None,
     ) -> AIResultCard:
         now = _now_iso()
-        parsed = _parse_json_object(raw_output)
         if parsed is None:
             card_type = AIResultCardType.SUGGESTION
             content: dict[str, Any] | str = {
                 "title": "智能助手输出解析失败",
-                "body": "模型没有返回结构化 JSON，本次结果已降级为建议卡。",
+                "body": "模型没有按原生结构化协议返回结果，本次结果已降级为建议卡。",
                 "raw_text": raw_output,
             }
         else:
@@ -167,16 +179,14 @@ class SelectionAIService:
 
 
 def build_selection_prompt(request: SelectionAIRequest) -> str:
-    """Build the strict JSON prompt for Selection AI."""
+    """Build the business prompt for Selection AI."""
     mode_instruction = {
-        SelectionMode.ASK: (
-            "返回 suggestion 卡。给出面向作者的建议，不直接改写正文。"
-        ),
+        SelectionMode.ASK: "给出面向作者的建议，不直接改写正文。",
         SelectionMode.ENRICH_SETTING: (
-            "返回 suggestion 或 pending_fact 卡。若提出新设定，只能作为待确认候选。"
+            "若提出新设定，只能作为待确认候选，不能写成已经确认的小说事实。"
         ),
         SelectionMode.CONTINUE_TEXT: (
-            "返回 text_candidate 卡。content.text 只写可插入正文，不解释、不跳剧情。"
+            "只写可插入正文的候选文本，不解释、不擅自跳过剧情。"
         ),
     }[request.mode]
     target_line = (
@@ -190,11 +200,6 @@ def build_selection_prompt(request: SelectionAIRequest) -> str:
             "你是太初编辑器内的选区智能助手工作流。",
             mode_instruction,
             target_line,
-            "必须只返回一个 JSON object，不要 Markdown 代码块。",
-            (
-                'JSON 形状：{"card_type":"suggestion|text_candidate|pending_fact",'
-                '"content":{...}}'
-            ),
             f"章节：{request.chapter_id}",
             f"选中文本：{request.selected_text}",
             f"周边上下文：{request.surrounding_text}",
@@ -211,14 +216,28 @@ def _workflow_for_mode(mode: SelectionMode) -> AIWorkflow:
     return AIWorkflow.CONTINUE_TEXT
 
 
-def _parse_json_object(raw_output: str) -> dict[str, Any] | None:
+def _output_schema_for_mode(mode: SelectionMode) -> type[BaseModel]:
+    if mode is SelectionMode.ASK:
+        return SelectionAskOutput
+    if mode is SelectionMode.CONTINUE_TEXT:
+        return SelectionContinueOutput
+    return SelectionEnrichOutput
+
+
+def _parse_structured_selection_output(
+    result: dict[str, Any],
+    *,
+    output_schema: type[BaseModel],
+) -> tuple[dict[str, Any] | None, str]:
+    parsed = result.get("parsed")
     try:
-        parsed = json.loads(raw_output)
-    except json.JSONDecodeError:
-        return None
-    if not isinstance(parsed, dict):
-        return None
-    return parsed
+        validated = output_schema.model_validate(parsed)
+    except ValidationError:
+        raw = result.get("raw")
+        if isinstance(raw, BaseMessage):
+            return None, str(raw.content)
+        return None, str(raw or "")
+    return validated.model_dump(mode="json"), validated.model_dump_json()
 
 
 def _card_type_for_response(
@@ -329,16 +348,3 @@ def _text_field(value: object) -> str | None:
 
 def _now_iso() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
-
-
-def _ensure_selectable(llm: LLMGatewayContract, model_id: str) -> None:
-    if not hasattr(llm, "list_models"):
-        return
-    for profile in llm.list_models():
-        if profile.id == model_id:
-            if not profile.enabled:
-                raise ValueError(
-                    f"模型“{profile.display_name}”当前已停用，请选择其他模型。"
-                )
-            return
-    raise ValueError("所选模型不存在，请刷新模型列表后重试。")

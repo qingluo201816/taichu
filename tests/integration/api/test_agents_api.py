@@ -4,9 +4,12 @@ import unittest
 
 from httpx import ASGITransport, AsyncClient
 
-from taichu.infrastructure.llm.mock import MVPNoRealLLMChatModel
 from taichu.main import create_app
-from tests.fakes import InMemoryKnowledgeRepository
+from tests.fakes import (
+    InMemoryKnowledgeRepository,
+    MVPNoRealLLMChatModel,
+    make_test_llm_gateway,
+)
 
 
 class AgentApiTest(unittest.IsolatedAsyncioTestCase):
@@ -14,7 +17,7 @@ class AgentApiTest(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         app = create_app(
-            llm=MVPNoRealLLMChatModel(),
+            llm_gateway=make_test_llm_gateway(MVPNoRealLLMChatModel()),
             knowledge_repository=InMemoryKnowledgeRepository(),
         )
         self.client = AsyncClient(

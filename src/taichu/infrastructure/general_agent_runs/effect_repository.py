@@ -20,7 +20,7 @@ class JsonGeneralAgentEffectRepository:
     """每次状态变化追加一行，崩溃后保留最后一条完整证据。"""
 
     def __init__(self, project_assets_dir: Path) -> None:
-        self._root = project_assets_dir / "derived" / "general_agent_graph_checkpoints"
+        self._root = project_assets_dir / "derived" / "general_agent_effects"
         self._lock = RLock()
 
     async def append(self, record: EffectRecord) -> None:
@@ -61,7 +61,7 @@ class JsonGeneralAgentEffectRepository:
         with self._lock:
             if not self._root.exists():
                 return None
-            for path in self._root.glob("general_run_*/effects.jsonl"):
+            for path in self._root.glob("general_run_*.jsonl"):
                 for record in _read_records(path):
                     if record.effect_id == effect_id:
                         latest = record
@@ -83,7 +83,7 @@ class JsonGeneralAgentEffectRepository:
             return True
 
     def _path(self, run_id: str) -> Path:
-        return self._root / run_id / "effects.jsonl"
+        return self._root / f"{run_id}.jsonl"
 
 
 class GeneralAgentEffectStoreError(ValueError):

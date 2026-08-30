@@ -38,7 +38,7 @@ from taichu.application.evaluations.knowledge_extraction.difference_explainer im
     build_difference_explanation_prompt,
     difference_explanation_prompt_contract_hash,
     fallback_difference_explanation,
-    parse_difference_explanation_output,
+    validate_difference_explanation_output,
 )
 from taichu.application.evaluations.knowledge_extraction.judge import (
     PROMPT_CONTRACT_ID,
@@ -48,10 +48,10 @@ from taichu.application.evaluations.knowledge_extraction.judge import (
     JudgeStatus,
     aggregate_judge_samples,
     build_judge_prompt,
-    parse_judge_output,
     prompt_contract_hash,
     semantic_score,
     should_rejudge,
+    validate_judge_output,
 )
 from taichu.application.evaluations.knowledge_extraction.matcher import (
     match_candidates,
@@ -1309,12 +1309,17 @@ class KnowledgeExtractionEvaluationService:
         token_usage: dict[str, int] | None = None
         try:
             response = await asyncio.wait_for(
-                self._judge.complete(prompt),
+                self._judge.complete(
+                    prompt,
+                    output_schema=JudgeBatchOutput,
+                ),
                 timeout=120,
             )
             raw = response.raw_response
             token_usage = response.token_usage
-            output = parse_judge_output(raw, cases)
+            if not isinstance(response.output, JudgeBatchOutput):
+                raise TypeError("语义裁判返回了错误的结构化输出类型。")
+            output = validate_judge_output(response.output, cases)
             parsed = output.model_dump(mode="json")
             result = {item.case_id: item for item in output.items}
         except Exception as error:  # noqa: BLE001
@@ -1503,12 +1508,17 @@ class KnowledgeExtractionEvaluationService:
         token_usage: dict[str, int] | None = None
         try:
             response = await asyncio.wait_for(
-                self._judge.complete(prompt),
+                self._judge.complete(
+                    prompt,
+                    output_schema=DifferenceExplanationBatchOutput,
+                ),
                 timeout=120,
             )
             raw = response.raw_response
             token_usage = response.token_usage
-            output = parse_difference_explanation_output(raw, cases)
+            if not isinstance(response.output, DifferenceExplanationBatchOutput):
+                raise TypeError("差异说明返回了错误的结构化输出类型。")
+            output = validate_difference_explanation_output(response.output, cases)
             parsed = output.model_dump(mode="json")
             result = {item.explanation_id: item.summary for item in output.items}
         except Exception as error:  # noqa: BLE001

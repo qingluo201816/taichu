@@ -9,12 +9,13 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from taichu.application.contracts.llm import (
+from taichu.application.contracts.llm import LLMModelProfile
+from taichu.infrastructure.llm.contracts import (
     LLMCost,
-    LLMModelProfile,
     LLMRequest,
     LLMResponse,
     LLMStreamEvent,
+    LLMToolCall,
     LLMUsage,
 )
 from taichu.application.evaluations.general_agent_benchmark.strict_driver import (
@@ -101,8 +102,9 @@ class StrictSyntheticLLMGateway:
             step.response,
             self._response_bindings,
         )
+        tool_calls = _native_tool_calls(request, response, len(self.requests))
         return LLMResponse(
-            text=json.dumps(response, ensure_ascii=False),
+            text="" if tool_calls else json.dumps(response, ensure_ascii=False),
             model_id=request.model_id,
             upstream_model="strict-synthetic",
             usage=LLMUsage(
@@ -115,6 +117,7 @@ class StrictSyntheticLLMGateway:
             cost=LLMCost(amount=None, kind="unavailable"),
             finish_reason="stop",
             call_id=f"synthetic_model_{len(self.requests):04d}",
+            tool_calls=tool_calls,
         )
 
     async def stream(self, request: LLMRequest) -> AsyncIterator[LLMStreamEvent]:
@@ -134,7 +137,6 @@ class StrictSyntheticLLMGateway:
                 provider="rightcode",
                 upstream_model="strict-synthetic",
                 wire_protocol="openai_responses",
-                base_url_key="",
                 enabled=True,
                 is_default=True,
                 supports_streaming=True,
@@ -169,6 +171,27 @@ class StrictSyntheticLLMGateway:
                 else ()
             ),
         )
+
+
+def _native_tool_calls(
+    request: LLMRequest,
+    payload: dict[str, Any],
+    sequence: int,
+) -> tuple[LLMToolCall, ...]:
+    if not request.tools:
+        return ()
+    selected = (
+        request.tool_choice
+        if request.tool_choice not in {"auto", "none", "required"}
+        else request.tools[-1].name
+    )
+    return (
+        LLMToolCall(
+            call_id=f"synthetic_tool_{sequence:04d}",
+            name=selected,
+            arguments_json=json.dumps(payload, ensure_ascii=False),
+        ),
+    )
 
 
 class StrictSyntheticInteractionObserver:
@@ -286,7 +309,9 @@ class ObservedToolRegistry(ToolRegistry):
     async def invoke(self, name: str, *args: Any, **kwargs: Any):  # type: ignore[no-untyped-def]
         handler_identity = self._handler_identities[name]
         invocation = _invocation_context(args, kwargs)
-        request_payload = _request_payload(args, kwargs)
+        request_payload = self.get_manifest(name).input_schema.model_validate(
+            _request_input(args, kwargs)
+        ).model_dump(mode="json")
         try:
             result = await self._delegate.invoke(name, *args, **kwargs)
         except Exception:
@@ -404,10 +429,17 @@ def _request_payload(
     args: tuple[Any, ...],
     kwargs: dict[str, Any],
 ) -> dict[str, object] | None:
+    return _json_object(_request_input(args, kwargs))
+
+
+def _request_input(
+    args: tuple[Any, ...],
+    kwargs: dict[str, Any],
+) -> object | None:
     value = kwargs.get("input_data")
     if value is None and args:
         value = args[0]
-    return _json_object(value)
+    return value
 
 
 def _json_object(value: object) -> dict[str, object] | None:

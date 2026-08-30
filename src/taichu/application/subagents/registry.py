@@ -89,6 +89,7 @@ class SubagentRegistry:
         try:
             async with asyncio.timeout(manifest.limits.timeout_seconds):
                 raw_output = await plugin.run(
+                    manifest,
                     parsed_input,
                     invocation,
                     self._context,

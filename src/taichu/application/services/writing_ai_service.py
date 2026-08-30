@@ -3,23 +3,33 @@
 from __future__ import annotations
 
 import asyncio
-import json
-import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
-from pydantic import ValidationError
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+)
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputToolsParser,
+    PydanticToolsParser,
+)
+from langchain_core.outputs import ChatGeneration
+from langchain_core.runnables import RunnableConfig
+from pydantic import BaseModel, ValidationError
 
 from taichu.application.contracts.llm import (
-    LLMGatewayContract,
-    LLMMessage,
+    LLMModelCatalogContract,
     LLMModelProfile,
-    LLMRequest,
-    LLMResponse,
-    response_text,
 )
 from taichu.application.contracts.storage import ProjectAssetStorageContract
+from taichu.application.invocations.config import model_call_config
 from taichu.application.services.chapter_service import ChapterService
 from taichu.application.vector_graph.models import (
     VectorGraphEvidence,
@@ -30,6 +40,17 @@ from taichu.application.services.writing_ai_prompts import (
     PROMPT_VERSION,
     TAICHU_COMMON_SYSTEM_V1,
     WritingAIPromptRegistry,
+)
+from taichu.application.services.writing_ai_outputs import (
+    ChapterSummaryOutput,
+    ChatAnswerOutput,
+    EvidenceAnswerOutput,
+    InspirationOutput,
+    PendingFactCandidatesOutput,
+    PolishedTextOutput,
+    SettingSuggestionOutput,
+    TextCandidateOutput,
+    WritingSuggestionOutput,
 )
 from taichu.domain.models import (
     WritingAIButtonType,
@@ -97,6 +118,34 @@ _ALLOWED_SCOPES: dict[WritingAIButtonType, set[WritingAIReferenceScope]] = {
         WritingAIReferenceScope.SELECTION,
         WritingAIReferenceScope.CHAPTER,
     },
+}
+
+_OUTPUT_SCHEMAS: dict[WritingAIOutputType, type[BaseModel]] = {
+    WritingAIOutputType.CHAT_ANSWER: ChatAnswerOutput,
+    WritingAIOutputType.TEXT_CANDIDATE: TextCandidateOutput,
+    WritingAIOutputType.POLISHED_TEXT: PolishedTextOutput,
+    WritingAIOutputType.SETTING_SUGGESTION: SettingSuggestionOutput,
+    WritingAIOutputType.WRITING_SUGGESTION: WritingSuggestionOutput,
+    WritingAIOutputType.EVIDENCE_ANSWER: EvidenceAnswerOutput,
+    WritingAIOutputType.CHAPTER_SUMMARY: ChapterSummaryOutput,
+    WritingAIOutputType.INSPIRATION: InspirationOutput,
+    WritingAIOutputType.PENDING_FACT_CANDIDATES: PendingFactCandidatesOutput,
+}
+
+_STREAM_PREVIEW_PATHS: dict[WritingAIOutputType, tuple[str | int, ...]] = {
+    WritingAIOutputType.CHAT_ANSWER: ("answer",),
+    WritingAIOutputType.TEXT_CANDIDATE: ("text",),
+    WritingAIOutputType.POLISHED_TEXT: ("polished_text",),
+    WritingAIOutputType.SETTING_SUGGESTION: (
+        "setting_supplements",
+        0,
+        "content",
+    ),
+    WritingAIOutputType.WRITING_SUGGESTION: ("suggestions", 0, "action"),
+    WritingAIOutputType.EVIDENCE_ANSWER: ("conclusion",),
+    WritingAIOutputType.CHAPTER_SUMMARY: ("summary",),
+    WritingAIOutputType.INSPIRATION: ("ideas", 0, "content"),
+    WritingAIOutputType.PENDING_FACT_CANDIDATES: ("candidates", 0, "content"),
 }
 
 
@@ -218,10 +267,7 @@ class WritingAIContextBuilder:
             items.append(_chapter_evidence_item(command, chapter_excerpt))
         try:
             status = await self._retrieval_service.status()
-            if (
-                status.state is not VectorGraphIndexState.READY
-                or not status.is_current
-            ):
+            if status.state is not VectorGraphIndexState.READY or not status.is_current:
                 raise WritingAIError("Milvus 索引当前未就绪。")
             result = await asyncio.wait_for(
                 self._retrieval_service.retrieve(retrieval_query, top_k=10),
@@ -283,7 +329,8 @@ class WritingAIService:
         storage: ProjectAssetStorageContract,
         chapter_service: ChapterService,
         retrieval_service: VectorGraphRAGService,
-        llm: LLMGatewayContract,
+        llm: BaseChatModel,
+        model_catalog: LLMModelCatalogContract,
         default_model_id: str,
         llm_configured: bool,
     ) -> None:
@@ -293,6 +340,7 @@ class WritingAIService:
             retrieval_service,
         )
         self._llm = llm
+        self._model_catalog = model_catalog
         self._default_model_id = default_model_id
         self._llm_configured = llm_configured
         self._prompt_registry = WritingAIPromptRegistry()
@@ -301,7 +349,7 @@ class WritingAIService:
         """Run the complete writing AI workflow and persist the trace."""
         _validate_scope(command.button_type, command.reference_scope)
         profile = _resolve_profile(
-            self._llm,
+            self._model_catalog,
             command.model_id or self._default_model_id,
             allow_disabled=not self._llm_configured,
         )
@@ -348,21 +396,23 @@ class WritingAIService:
             if not self._llm_configured:
                 return await self._fail_run(run, MODEL_NOT_CONFIGURED_MESSAGE)
             run = await self._set_status(run, WritingAIRunStatus.CALLING_LLM)
-            llm_response = await self._llm.complete(
-                _llm_request(run, prompt_snapshot, command)
+            raw_message, parsed_output = await self._invoke_structured(
+                run,
+                prompt_snapshot,
+                command,
             )
-            raw_output = response_text(llm_response)
+            raw_output = _structured_response_payload(parsed_output)
             run = run.model_copy(
                 update={
                     "raw_llm_output": raw_output,
-                    **_response_updates(llm_response),
+                    **_response_updates(raw_message),
                     "updated_at": _now_iso(),
                 }
             )
             await self._replace(run)
             run = await self._set_status(run, WritingAIRunStatus.PARSING)
             structured_output = _parse_structured_output(
-                raw_output,
+                parsed_output,
                 self._prompt_registry.get(command.button_type).output_type,
             )
             completed = run.model_copy(
@@ -383,10 +433,10 @@ class WritingAIService:
             return await self._fail_run(run, message)
 
     async def stream_run(self, command: WritingAICreateRunCommand):
-        """执行写作任务并输出 NDJSON 所需的增量事件。"""
+        """执行写作任务并投影结构化结果中用户可见的主内容增量。"""
         _validate_scope(command.button_type, command.reference_scope)
         profile = _resolve_profile(
-            self._llm,
+            self._model_catalog,
             command.model_id or self._default_model_id,
             allow_disabled=not self._llm_configured,
         )
@@ -431,30 +481,69 @@ class WritingAIService:
             if not self._llm_configured:
                 raise WritingAIError(MODEL_NOT_CONFIGURED_MESSAGE)
             run = await self._set_status(run, WritingAIRunStatus.CALLING_LLM)
-            raw_parts: list[str] = []
-            final_response: LLMResponse | None = None
-            async for event in self._llm.stream(
-                _llm_request(run, prompt_snapshot, command)
+            output_type = self._prompt_registry.get(command.button_type).output_type
+            output_schema = _OUTPUT_SCHEMAS[output_type]
+            bound_model = self._llm.bind_tools(
+                [output_schema],
+                tool_choice=output_schema.__name__,
+            ).bind(**_model_call_kwargs(run, command))
+            final_response: AIMessage | AIMessageChunk | None = None
+            preview_text = ""
+            partial_parser = JsonOutputToolsParser(first_tool_only=True)
+            async for chunk in bound_model.astream(
+                _model_messages(prompt_snapshot),
+                config=_model_config(run, command),
             ):
-                if event.event_type == "text_delta":
-                    raw_parts.append(event.delta)
-                    yield {"type": "text_delta", "delta": event.delta}
-                elif event.event_type == "usage" and event.usage is not None:
+                if not isinstance(chunk, (AIMessage, AIMessageChunk)):
+                    raise WritingAIError("模型流式输出返回了不支持的消息类型。")
+                if final_response is None:
+                    final_response = chunk
+                elif isinstance(final_response, AIMessageChunk) and isinstance(
+                    chunk, AIMessageChunk
+                ):
+                    final_response = final_response + chunk
+                else:
+                    raise WritingAIError("模型流式输出混用了完整消息与增量消息。")
+                partial_call = partial_parser.parse_result(
+                    [ChatGeneration(message=final_response)],
+                    partial=True,
+                )
+                current_preview = _stream_preview_text(partial_call, output_type)
+                if current_preview:
+                    if not current_preview.startswith(preview_text):
+                        raise WritingAIError(
+                            "模型流式结构化正文发生非增量改写，请稍后重试。"
+                        )
+                    delta = current_preview[len(preview_text) :]
+                    if delta:
+                        yield {"type": "text_delta", "delta": delta}
+                    preview_text = current_preview
+                if chunk.usage_metadata is not None:
+                    usage = chunk.usage_metadata
+                    input_details = usage.get("input_token_details") or {}
+                    output_details = usage.get("output_token_details") or {}
                     yield {
                         "type": "usage",
-                        "input_tokens": event.usage.input_tokens,
-                        "cached_input_tokens": event.usage.cached_input_tokens,
-                        "output_tokens": event.usage.output_tokens,
-                        "reasoning_tokens": event.usage.reasoning_tokens,
-                        "total_tokens": event.usage.total_tokens,
+                        "input_tokens": usage.get("input_tokens"),
+                        "cached_input_tokens": input_details.get("cache_read"),
+                        "output_tokens": usage.get("output_tokens"),
+                        "reasoning_tokens": output_details.get("reasoning"),
+                        "total_tokens": usage.get("total_tokens"),
                     }
-                elif event.event_type == "completed":
-                    final_response = event.response
-                elif event.event_type == "failed":
-                    raise WritingAIError(event.error or "模型调用失败，请稍后重试。")
             if final_response is None:
                 raise WritingAIError("模型流式输出中断，请稍后重试。")
-            raw_output = "".join(raw_parts) or final_response.text
+            try:
+                parsed_output = PydanticToolsParser(
+                    tools=[output_schema],
+                    first_tool_only=True,
+                ).invoke(final_response)
+            except Exception as error:
+                raise WritingAIError(
+                    "模型结构化输出不符合写作 AI 契约。"
+                ) from error
+            if parsed_output is None:
+                raise WritingAIError("模型没有按要求提交写作结果。")
+            raw_output = _structured_response_payload(parsed_output)
             run = run.model_copy(
                 update={
                     "raw_llm_output": raw_output,
@@ -465,8 +554,8 @@ class WritingAIService:
             await self._replace(run)
             run = await self._set_status(run, WritingAIRunStatus.PARSING)
             structured_output = _parse_structured_output(
-                raw_output,
-                self._prompt_registry.get(command.button_type).output_type,
+                parsed_output,
+                output_type,
             )
             run = run.model_copy(
                 update={
@@ -480,7 +569,7 @@ class WritingAIService:
             yield {
                 "type": "run_completed",
                 "run_id": run.run_id,
-                "call_id": final_response.call_id,
+                "call_id": final_response.id,
             }
         except Exception as error:
             message = (
@@ -490,6 +579,36 @@ class WritingAIService:
             )
             await self._fail_run(run, message)
             yield {"type": "run_failed", "run_id": run.run_id, "message": message}
+
+    async def _invoke_structured(
+        self,
+        run: WritingAIRun,
+        prompt: WritingAIPromptSnapshot,
+        command: WritingAICreateRunCommand,
+    ) -> tuple[AIMessage, BaseModel]:
+        output_type = self._prompt_registry.get(command.button_type).output_type
+        output_schema = _OUTPUT_SCHEMAS[output_type]
+        result = await self._llm.with_structured_output(
+            output_schema,
+            method="function_calling",
+            strict=True,
+            include_raw=True,
+        ).ainvoke(
+            _model_messages(prompt),
+            config=_model_config(run, command),
+        )
+        if not isinstance(result, dict):
+            raise WritingAIError("模型没有按原生结构化协议返回结果。")
+        raw_message = result.get("raw")
+        parsed_output = result.get("parsed")
+        parsing_error = result.get("parsing_error")
+        if parsing_error is not None:
+            raise WritingAIError("模型结构化输出不符合写作 AI 契约。") from parsing_error
+        if not isinstance(raw_message, AIMessage) or not isinstance(
+            parsed_output, BaseModel
+        ):
+            raise WritingAIError("模型没有按原生结构化协议返回结果。")
+        return raw_message, parsed_output
 
     async def list_runs(
         self,
@@ -632,20 +751,16 @@ def _validate_scope(
 
 
 def _parse_structured_output(
-    raw_output: str,
+    response: BaseModel,
     expected_output_type: WritingAIOutputType,
 ) -> WritingAIStructuredOutput:
     try:
-        parsed = json.loads(_strip_json_fence(raw_output))
-    except json.JSONDecodeError as error:
-        raise WritingAIError("模型返回内容不是合法 JSON，已保存原始输出。") from error
-    if not isinstance(parsed, dict):
-        raise WritingAIError("模型返回 JSON 必须是对象。")
-    output_type_value = parsed.get("output_type")
-    if output_type_value != expected_output_type.value:
-        raise WritingAIError("模型返回的输出类型不符合当前入口契约。")
-    content = {key: value for key, value in parsed.items() if key != "output_type"}
-    try:
+        parsed = (
+            _OUTPUT_SCHEMAS[expected_output_type]
+            .model_validate(response)
+            .model_dump(mode="json")
+        )
+        content = {key: value for key, value in parsed.items() if key != "output_type"}
         return WritingAIStructuredOutput(
             output_type=expected_output_type,
             content=content,
@@ -654,12 +769,31 @@ def _parse_structured_output(
         raise WritingAIError("模型结构化输出不符合写作 AI 契约。") from error
 
 
-def _strip_json_fence(value: str) -> str:
-    stripped = value.strip()
-    if stripped.startswith("```"):
-        stripped = re.sub(r"^```(?:json)?\s*", "", stripped, flags=re.IGNORECASE)
-        stripped = re.sub(r"\s*```$", "", stripped)
-    return stripped.strip()
+def _structured_response_payload(response: BaseModel) -> str:
+    return response.model_dump_json()
+
+
+def _stream_preview_text(
+    partial_call: object,
+    output_type: WritingAIOutputType,
+) -> str:
+    """从官方 partial tool parser 结果投影用户可见的主内容增量。"""
+
+    if not isinstance(partial_call, dict):
+        return ""
+    value: object = partial_call.get("args")
+    for segment in _STREAM_PREVIEW_PATHS[output_type]:
+        if isinstance(segment, str) and isinstance(value, dict):
+            value = value.get(segment)
+        elif (
+            isinstance(segment, int)
+            and isinstance(value, list)
+            and len(value) > segment
+        ):
+            value = value[segment]
+        else:
+            return ""
+    return value if isinstance(value, str) else ""
 
 
 def _selection_context(
@@ -767,21 +901,12 @@ def _now_iso() -> str:
 
 
 def _resolve_profile(
-    llm: LLMGatewayContract, model_id: str, *, allow_disabled: bool = False
+    model_catalog: LLMModelCatalogContract,
+    model_id: str,
+    *,
+    allow_disabled: bool = False,
 ) -> LLMModelProfile:
-    if not hasattr(llm, "list_models"):
-        return LLMModelProfile(
-            id=model_id,
-            display_name=model_id,
-            provider="rightcode",
-            upstream_model=model_id,
-            wire_protocol="openai_responses",
-            base_url_key="RIGHTCODE_RESPONSES_BASE_URL",
-            enabled=True,
-            is_default=True,
-            supports_streaming=False,
-        )
-    for profile in llm.list_models():
+    for profile in model_catalog.list_models():
         if profile.id == model_id:
             if not profile.enabled and not allow_disabled:
                 raise WritingAIError(
@@ -791,37 +916,59 @@ def _resolve_profile(
     raise WritingAIError("所选模型不存在，请刷新模型列表后重试。")
 
 
-def _llm_request(
-    run: WritingAIRun,
+def _model_messages(
     prompt: WritingAIPromptSnapshot,
+) -> list[BaseMessage]:
+    return [
+        SystemMessage(content=prompt.system_prompt),
+        HumanMessage(content=prompt.user_prompt),
+    ]
+
+
+def _model_config(
+    run: WritingAIRun,
     command: WritingAICreateRunCommand,
-) -> LLMRequest:
-    return LLMRequest(
+) -> RunnableConfig:
+    return model_call_config(
         model_id=run.model_id,
-        messages=(
-            LLMMessage(role="system", content=prompt.system_prompt),
-            LLMMessage(role="user", content=prompt.user_prompt),
-        ),
         task_type=f"writing_{command.button_type.value}",
         task_name=run.button_label,
         run_id=run.run_id,
         chapter_ids=(run.chapter_id,),
-        response_mode="json",
         feature="写作 AI",
     )
 
 
-def _response_updates(response: LLMResponse | str) -> dict[str, object]:
-    if not isinstance(response, LLMResponse):
-        return {}
+def _model_call_kwargs(
+    run: WritingAIRun,
+    command: WritingAICreateRunCommand,
+) -> dict[str, object]:
+    """流式模型钩子通过 Runnable 绑定接收请求设置。"""
     return {
-        "llm_call_id": response.call_id,
-        "input_tokens": response.usage.input_tokens,
-        "cached_input_tokens": response.usage.cached_input_tokens,
-        "output_tokens": response.usage.output_tokens,
-        "reasoning_tokens": response.usage.reasoning_tokens,
-        "total_tokens": response.usage.total_tokens,
-        "cost_amount": response.cost.amount,
-        "cost_currency": response.cost.currency,
-        "cost_kind": response.cost.kind,
+        "model_id": run.model_id,
+        "task_type": f"writing_{command.button_type.value}",
+        "task_name": run.button_label,
+        "taichu_run_id": run.run_id,
+        "chapter_ids": (run.chapter_id,),
+        "feature": "写作 AI",
+    }
+
+
+def _response_updates(
+    response: AIMessage | AIMessageChunk,
+) -> dict[str, object]:
+    usage: dict[str, Any] = dict(response.usage_metadata or {})
+    input_details = usage.get("input_token_details") or {}
+    output_details = usage.get("output_token_details") or {}
+    metadata = response.response_metadata
+    return {
+        "llm_call_id": response.id,
+        "input_tokens": usage.get("input_tokens"),
+        "cached_input_tokens": input_details.get("cache_read"),
+        "output_tokens": usage.get("output_tokens"),
+        "reasoning_tokens": output_details.get("reasoning"),
+        "total_tokens": usage.get("total_tokens"),
+        "cost_amount": metadata.get("cost_amount"),
+        "cost_currency": metadata.get("cost_currency", "CNY"),
+        "cost_kind": metadata.get("cost_kind", "unavailable"),
     }

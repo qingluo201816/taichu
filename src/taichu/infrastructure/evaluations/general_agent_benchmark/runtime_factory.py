@@ -9,6 +9,8 @@ import re
 from typing import Any
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
+from langgraph.store.base import BaseStore
+from langgraph.store.memory import InMemoryStore
 
 from taichu.application.capabilities import CapabilityContext
 from taichu.application.contracts.general_agent_context_snapshot import (
@@ -26,7 +28,7 @@ from taichu.application.contracts.general_agent_run import (
 from taichu.application.contracts.invocation_trace import (
     InvocationTraceRepository,
 )
-from taichu.application.contracts.llm import LLMGatewayContract
+from taichu.infrastructure.llm.contracts import LLMGatewayContract
 from taichu.application.contracts.llm_replay import LLMCallReplayRepository
 from taichu.application.evaluations.general_agent_benchmark.canonical import (
     canonical_sha256,
@@ -64,8 +66,9 @@ from taichu.infrastructure.evaluations.general_agent_benchmark.synthetic_runtime
     StrictSyntheticInteractionObserver,
 )
 from taichu.infrastructure.general_agent_runs import (
-    JsonGeneralAgentCapabilityResultRepository,
+    LangGraphGeneralAgentCapabilityResultRepository,
 )
+from taichu.infrastructure.llm.adapter import GatewayChatModel
 
 _ISOLATED_DATABASE = re.compile(r"^taichu_eval_[a-f0-9]{32}$")
 
@@ -140,6 +143,7 @@ class BenchmarkRuntimeDependencies:
     effect_repository: GeneralAgentEffectRepository
     context_snapshot_repository: GeneralAgentContextSnapshotRepository
     llm_replay_repository: LLMCallReplayRepository
+    graph_store: BaseStore | None = None
     interaction_observer: StrictSyntheticInteractionObserver | None = None
     fault_hook: GeneralAgentFaultHook | None = None
 
@@ -282,9 +286,14 @@ class GeneralAgentBenchmarkRuntimeFactory:
                     for plugin in tools
                 },
             )
+        general_agent_chat_model = GatewayChatModel(
+            dependencies.llm,
+            model_id=dependencies.model_router.model_for("orchestrator"),
+        )
         subagent_context = CapabilityContext(
             capabilities={
                 **dependencies.capability_context.capabilities,
+                "llm": general_agent_chat_model,
                 "tool_registry": subagent_tool_registry,
             }
         )
@@ -293,10 +302,9 @@ class GeneralAgentBenchmarkRuntimeFactory:
             dependencies.trace_repository,
         )
         subagent_registry.register_all(subagents)
+        graph_store = dependencies.graph_store or InMemoryStore()
         capability_result_repository = (
-            JsonGeneralAgentCapabilityResultRepository(
-                workspace / "runtime" / "capability_results"
-            )
+            LangGraphGeneralAgentCapabilityResultRepository(graph_store)
         )
         capability_handler_identities = {
             **{
@@ -330,7 +338,7 @@ class GeneralAgentBenchmarkRuntimeFactory:
                 },
             )
         orchestrator = OrchestratorAgent(
-            llm=dependencies.llm,
+            llm=general_agent_chat_model,
             model_router=dependencies.model_router,
             tool_registry=runtime_tool_registry,
             subagent_registry=runtime_subagent_registry,
@@ -342,7 +350,6 @@ class GeneralAgentBenchmarkRuntimeFactory:
             policy_service=dependencies.policy_service,
             capability_result_repository=capability_result_repository,
             capability_handler_identities=capability_handler_identities,
-            graph_checkpointer=dependencies.graph_checkpointer,
             effect_repository=dependencies.effect_repository,
             fault_hook=dependencies.fault_hook,
         )
@@ -356,6 +363,7 @@ class GeneralAgentBenchmarkRuntimeFactory:
             context_assembler=dependencies.context_assembler,
             capability_result_repository=capability_result_repository,
             graph_checkpointer=dependencies.graph_checkpointer,
+            graph_store=graph_store,
             effect_repository=dependencies.effect_repository,
             context_snapshot_repository=dependencies.context_snapshot_repository,
             llm_replay_repository=dependencies.llm_replay_repository,

@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api-client";
+import { API_BASE_URL, apiRequest } from "@/lib/api-client";
 import type {
   AgentMemoryListResponse,
   GeneralAgentConversationDeleteResponse,
@@ -11,10 +11,54 @@ import type {
   GeneralAgentRunListResponse,
   GeneralAgentRunRequest,
   GeneralAgentRunResponse,
+  GeneralAgentStreamEvent,
   GeneralAgentTraceListResponse,
 } from "@/lib/types/general-agent";
 
 const PREFIX = "/api/agent-workbench/general-assistant";
+
+export async function streamGeneralAgentEvents(
+  onEvent: (event: GeneralAgentStreamEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}${PREFIX}/runs/stream/events`, {
+    signal,
+  });
+  if (!response.ok) {
+    throw new Error(`运行状态流连接失败：${response.status}`);
+  }
+  if (!response.body) {
+    throw new Error("浏览器未返回通用写作助手运行状态流。");
+  }
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      dispatchGeneralAgentEvent(line, onEvent);
+    }
+  }
+  buffer += decoder.decode();
+  dispatchGeneralAgentEvent(buffer, onEvent);
+}
+
+function dispatchGeneralAgentEvent(
+  line: string,
+  onEvent: (event: GeneralAgentStreamEvent) => void,
+) {
+  const trimmed = line.trim();
+  if (!trimmed) {
+    return;
+  }
+  onEvent(JSON.parse(trimmed) as GeneralAgentStreamEvent);
+}
 
 export async function startGeneralAgentRun(
   request: GeneralAgentRunRequest,

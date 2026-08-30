@@ -10,9 +10,10 @@ from time import perf_counter
 from typing import Annotated, Any, TypedDict
 from uuid import NAMESPACE_URL, uuid4, uuid5
 
+from langchain_core.messages import ToolMessage
 from langgraph.checkpoint.base import BaseCheckpointSaver
-from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
+from langgraph.types import Overwrite, Send
 from pydantic import ValidationError
 
 from taichu.application.agent_memory.models import (
@@ -48,13 +49,11 @@ from taichu.application.general_agent.faults import (
     GeneralAgentFaultPoint,
     InjectedProcessTermination,
 )
-from taichu.application.general_agent.checkpoint_namespace import (
-    NamespacedCheckpointSaver,
-)
 from taichu.application.general_agent.recovery import EffectRecord, EffectStatus
 from taichu.application.invocations.models import (
     InvocationBudget,
     InvocationContext,
+    InvocationEnvelope,
     now_iso,
 )
 from taichu.application.services.invocation_policy_service import (
@@ -69,7 +68,7 @@ from taichu.application.tools.contract import (
 )
 from taichu.application.tools.registry import ToolRegistry
 
-CheckpointCallback = Callable[
+RunProjectionCallback = Callable[
     [GeneralAgentRun, str],
     Awaitable[GeneralAgentRun],
 ]
@@ -86,6 +85,7 @@ class _DynamicDagState(TypedDict, total=False):
     run: dict[str, Any]
     node_results: Annotated[dict[str, dict[str, Any]], _merge_mapping]
     human_requests: Annotated[dict[str, dict[str, Any]], _merge_mapping]
+    dispatched_node_id: str
 
 
 class DynamicDagExecutor:
@@ -99,8 +99,7 @@ class DynamicDagExecutor:
         policy_service: InvocationPolicyService,
         capability_result_repository: GeneralAgentCapabilityResultRepository,
         capability_handler_identities: Mapping[tuple[str, str], str],
-        graph_checkpointer: BaseCheckpointSaver[Any] | None = None,
-        effect_repository: GeneralAgentEffectRepository | None = None,
+        effect_repository: GeneralAgentEffectRepository,
         fault_hook: GeneralAgentFaultHook | None = None,
         memory_validity_provider: ProducerMemoryValidityProvider | None = None,
     ) -> None:
@@ -108,11 +107,8 @@ class DynamicDagExecutor:
         self._subagent_registry = subagent_registry
         self._policy_service = policy_service
         self._capability_result_repository = capability_result_repository
-        self._capability_handler_identities = dict(
-            capability_handler_identities
-        )
-        self._graph_checkpointer = graph_checkpointer or InMemorySaver()
-        self._effect_repository = effect_repository or _InMemoryEffectRepository()
+        self._capability_handler_identities = dict(capability_handler_identities)
+        self._effect_repository = effect_repository
         self._fault_hook = fault_hook
         self._memory_validity_provider = memory_validity_provider
 
@@ -140,70 +136,61 @@ class DynamicDagExecutor:
         self,
         run: GeneralAgentRun,
         *,
-        checkpoint: CheckpointCallback,
+        checkpoint: RunProjectionCallback,
+        checkpointer: BaseCheckpointSaver[Any],
     ) -> GeneralAgentRun:
+        """以独立官方图执行能力 DAG；产品运行时把同一图作为父图子图使用。"""
+
         if run.plan is None:
             raise DynamicDagExecutionError("通用 Runtime 没有可执行计划。")
-        run = await self._ensure_node_runs(run)
-        run = await checkpoint(run, "dag_prepared")
-        assert run.plan is not None
-        if not run.plan.nodes:
-            return run.model_copy(
-                update={
-                    "status": GeneralAgentRunStatus.VERIFYING,
-                    "updated_at": now_iso(),
-                }
-            )
-        graph = self._build_graph(run)
+        graph = self.build_graph(
+            checkpoint=checkpoint,
+            checkpointer=checkpointer,
+        )
         config = {
             "recursion_limit": max(20, len(run.plan.nodes) * 3 + 10),
             "max_concurrency": run.limits.max_concurrency,
-            "configurable": {
-                "thread_id": run.run_id,
-            },
+            "configurable": {"thread_id": run.conversation_id},
+        }
+        graph_input: _DynamicDagState = {
+            "run": run.model_dump(mode="json"),
         }
         graph_state = await graph.aget_state(config)
         if graph_state.next:
             result = await graph.ainvoke(None, config=config)
-        elif graph_state.values:
-            result = graph_state.values
         else:
-            result = await graph.ainvoke(
-                {
-                    "run": run.model_dump(mode="json"),
-                    "node_results": {
-                        item.node_id: item.model_dump(mode="json")
-                        for item in _current_runs(run).values()
-                    },
-                    "human_requests": {},
-                },
-                config=config,
-            )
-        for payload in result.get("node_results", {}).values():
-            run = _replace_node_run(run, GeneralAgentNodeRun.model_validate(payload))
-        requests = [
-            GeneralAgentHumanRequest.model_validate(payload)
-            for payload in result.get("human_requests", {}).values()
-        ]
-        if requests:
-            run = run.model_copy(
-                update={
-                    "status": GeneralAgentRunStatus.WAITING_HUMAN,
-                    "pending_human_request": requests[0],
-                    "updated_at": now_iso(),
-                }
-            )
-            return await checkpoint(run, "waiting_human_after_capability_checkpoint")
-        run = await checkpoint(
-            run.model_copy(update={"updated_at": now_iso()}),
-            "capability_dag_projected",
+            result = await graph.ainvoke(graph_input, config=config)
+        return GeneralAgentRun.model_validate(result["run"])
+
+    def build_graph(
+        self,
+        *,
+        checkpoint: RunProjectionCallback,
+        checkpointer: BaseCheckpointSaver[Any] | None = None,
+    ):
+        """构建固定拓扑的 Send worker 图；动态计划只作为运行状态进入。"""
+
+        async def prepare(state: _DynamicDagState) -> dict[str, Any]:
+            return await self._prepare_graph_state(state, checkpoint)
+
+        async def project(state: _DynamicDagState) -> dict[str, Any]:
+            return await self._project_graph_state(state, checkpoint)
+
+        graph = StateGraph(_DynamicDagState)
+        graph.add_node("prepare_capability_dag", prepare)
+        graph.add_node("execute_capability", self._execute_graph_node)
+        graph.add_node("project_capability_results", project)
+        graph.add_edge(START, "prepare_capability_dag")
+        graph.add_conditional_edges(
+            "prepare_capability_dag",
+            self._dispatch_capabilities,
         )
-        return run.model_copy(
-            update={
-                "status": GeneralAgentRunStatus.VERIFYING,
-                "updated_at": now_iso(),
-            }
+        graph.add_edge("execute_capability", "project_capability_results")
+        graph.add_conditional_edges(
+            "project_capability_results",
+            self._dispatch_capabilities,
         )
+        return graph.compile(checkpointer=checkpointer)
 
     async def _ensure_node_runs(self, run: GeneralAgentRun) -> GeneralAgentRun:
         if run.plan is None:
@@ -257,19 +244,18 @@ class DynamicDagExecutor:
                 f"“{node.reuse_from_node_id}”不存在。"
             )
         source = max(candidates, key=lambda item: item.plan_revision)
-        if source.kind is not node.kind or source.capability_name != node.capability_name:
+        if (
+            source.kind is not node.kind
+            or source.capability_name != node.capability_name
+        ):
             raise DynamicDagExecutionError(
                 f"节点“{node.node_id}”不能复用能力类型或名称不同的"
                 f"节点“{node.reuse_from_node_id}”。"
             )
         provider = self._memory_validity_provider
         if provider is None:
-            raise DynamicDagExecutionError(
-                "节点复用缺少 producer 有效性证明服务。"
-            )
-        producer_ref = (
-            f"node:{run.run_id}:{source.plan_revision}:{source.node_id}"
-        )
+            raise DynamicDagExecutionError("节点复用缺少 producer 有效性证明服务。")
+        producer_ref = f"node:{run.run_id}:{source.plan_revision}:{source.node_id}"
         try:
             observed = await provider.producer_validity_proof(
                 run.conversation_id,
@@ -308,111 +294,208 @@ class DynamicDagExecutor:
             }
         )
 
-    def _build_graph(self, run: GeneralAgentRun):
-        assert run.plan is not None
-        graph = StateGraph(_DynamicDagState)
-        child_ids = {
-            dependency for node in run.plan.nodes for dependency in node.dependencies
+    async def _prepare_graph_state(
+        self,
+        state: _DynamicDagState,
+        checkpoint: RunProjectionCallback,
+    ) -> dict[str, Any]:
+        run = GeneralAgentRun.model_validate(state["run"])
+        if run.plan is None:
+            raise DynamicDagExecutionError("通用 Runtime 没有可执行计划。")
+        run = await self._ensure_node_runs(run)
+        run = await checkpoint(run, "dag_prepared")
+        return {
+            "run": run.model_dump(mode="json"),
+            "node_results": Overwrite(
+                {
+                    item.node_id: item.model_dump(mode="json")
+                    for item in _current_runs(run).values()
+                }
+            ),
+            "human_requests": Overwrite({}),
         }
-        for node in run.plan.nodes:
-            graph.add_node(node.node_id, self._graph_node(node))
-            if node.dependencies:
-                graph.add_edge(node.dependencies, node.node_id)
-            else:
-                graph.add_edge(START, node.node_id)
-        for node in run.plan.nodes:
-            if node.node_id not in child_ids:
-                graph.add_edge(node.node_id, END)
-        return graph.compile(
-            checkpointer=NamespacedCheckpointSaver(
-                self._graph_checkpointer,
-                namespace=f"capability_dag_{run.plan_revision}",
-            )
-        )
 
-    def _graph_node(self, plan_node: GeneralAgentPlanNode):
-        async def execute(state: _DynamicDagState) -> _DynamicDagState:
-            run = GeneralAgentRun.model_validate(state["run"])
-            for payload in state.get("node_results", {}).values():
-                run = _replace_node_run(
-                    run,
-                    GeneralAgentNodeRun.model_validate(payload),
-                )
-            item = _current_runs(run)[plan_node.node_id]
-            if item.status in {
+    def _dispatch_capabilities(
+        self,
+        state: _DynamicDagState,
+    ) -> str | list[Send]:
+        run = self._run_from_graph_state(state)
+        if run.status in {
+            GeneralAgentRunStatus.WAITING_HUMAN,
+            GeneralAgentRunStatus.VERIFYING,
+            GeneralAgentRunStatus.COMPLETED,
+            GeneralAgentRunStatus.CANCELLED,
+            GeneralAgentRunStatus.FAILED,
+        }:
+            return END
+        ready = self._ready_node_ids(run)
+        if not ready:
+            return "project_capability_results"
+        return [
+            Send(
+                "execute_capability",
+                {
+                    "run": state["run"],
+                    "node_results": state.get("node_results", {}),
+                    "human_requests": state.get("human_requests", {}),
+                    "dispatched_node_id": node_id,
+                },
+            )
+            for node_id in ready
+        ]
+
+    async def _execute_graph_node(
+        self,
+        state: _DynamicDagState,
+    ) -> dict[str, Any]:
+        run = self._run_from_graph_state(state)
+        if run.plan is None:
+            raise DynamicDagExecutionError("通用 Runtime 没有可执行计划。")
+        node_id = state.get("dispatched_node_id", "")
+        plan_nodes = {node.node_id: node for node in run.plan.nodes}
+        plan_node = plan_nodes.get(node_id)
+        item = _current_runs(run).get(node_id)
+        if plan_node is None or item is None:
+            raise DynamicDagExecutionError("LangGraph Send 指向了未知能力节点。")
+        if item.status in {
+            GeneralAgentNodeStatus.SUCCESS,
+            GeneralAgentNodeStatus.FAILED,
+            GeneralAgentNodeStatus.SKIPPED,
+        }:
+            return {"node_results": {item.node_id: item.model_dump(mode="json")}}
+        if not self._dependencies_satisfied(
+            item,
+            _current_runs(run),
+            plan_nodes,
+        ):
+            raise DynamicDagExecutionError(f"节点“{node_id}”在依赖尚未满足时被调度。")
+        approval = self._first_write_approval(run, [item], plan_nodes)
+        if approval is not None:
+            waiting, request = approval
+            return {
+                "node_results": {waiting.node_id: waiting.model_dump(mode="json")},
+                "human_requests": {waiting.node_id: request.model_dump(mode="json")},
+            }
+        running = item.model_copy(
+            update={
+                "status": GeneralAgentNodeStatus.RUNNING,
+                "started_at": item.started_at or now_iso(),
+                "error_type": None,
+                "error_message": None,
+            }
+        )
+        result, human_request = await self._execute_node(
+            run,
+            running,
+            plan_node,
+        )
+        update: dict[str, Any] = {
+            "node_results": {result.node_id: result.model_dump(mode="json")}
+        }
+        if human_request is not None:
+            update["human_requests"] = {
+                result.node_id: human_request.model_dump(mode="json")
+            }
+        return update
+
+    async def _project_graph_state(
+        self,
+        state: _DynamicDagState,
+        checkpoint: RunProjectionCallback,
+    ) -> dict[str, Any]:
+        run = self._run_from_graph_state(state)
+        if run.plan is None:
+            raise DynamicDagExecutionError("通用 Runtime 没有可执行计划。")
+        plan_nodes = {node.node_id: node for node in run.plan.nodes}
+        while True:
+            projected = self._mark_blocked_nodes(run, plan_nodes)
+            if projected == run:
+                break
+            run = projected
+        current = _current_runs(run)
+        requests = [
+            GeneralAgentHumanRequest.model_validate(payload)
+            for node_id, payload in state.get("human_requests", {}).items()
+            if node_id in current
+            and current[node_id].status is GeneralAgentNodeStatus.WAITING_HUMAN
+        ]
+        if len(requests) > 1:
+            raise DynamicDagExecutionError("同一执行轮次产生了多个写入授权请求。")
+        if requests:
+            run = run.model_copy(
+                update={
+                    "status": GeneralAgentRunStatus.WAITING_HUMAN,
+                    "pending_human_request": requests[0],
+                    "updated_at": now_iso(),
+                }
+            )
+            run = await checkpoint(
+                run,
+                "waiting_human_after_capability_checkpoint",
+            )
+            return {"run": run.model_dump(mode="json")}
+        if all(
+            item.status
+            in {
                 GeneralAgentNodeStatus.SUCCESS,
                 GeneralAgentNodeStatus.FAILED,
                 GeneralAgentNodeStatus.SKIPPED,
-            }:
-                return {"node_results": {item.node_id: item.model_dump(mode="json")}}
-            blocked = self._blocked_by_dependency(run, item, plan_node)
-            if blocked is not None:
-                return {
-                    "node_results": {blocked.node_id: blocked.model_dump(mode="json")}
-                }
-            approval = self._first_write_approval(
-                run,
-                [item],
-                {plan_node.node_id: plan_node},
+            }
+            for item in current.values()
+        ):
+            run = await checkpoint(
+                run.model_copy(update={"updated_at": now_iso()}),
+                "capability_dag_projected",
             )
-            if approval is not None:
-                waiting, request = approval
-                return {
-                    "node_results": {waiting.node_id: waiting.model_dump(mode="json")},
-                    "human_requests": {
-                        waiting.node_id: request.model_dump(mode="json")
-                    },
-                }
-            running = item.model_copy(
+            run = run.model_copy(
                 update={
-                    "status": GeneralAgentNodeStatus.RUNNING,
-                    "started_at": item.started_at or now_iso(),
-                    "error_type": None,
-                    "error_message": None,
+                    "status": GeneralAgentRunStatus.VERIFYING,
+                    "updated_at": now_iso(),
                 }
             )
-            result, human_request = await self._execute_node(
+            return {"run": run.model_dump(mode="json")}
+        if not self._ready_node_ids(run):
+            raise DynamicDagExecutionError(
+                "能力 DAG 尚有节点，但没有可继续调度的节点。"
+            )
+        return {"run": run.model_dump(mode="json")}
+
+    def _run_from_graph_state(self, state: _DynamicDagState) -> GeneralAgentRun:
+        run = GeneralAgentRun.model_validate(state["run"])
+        for payload in state.get("node_results", {}).values():
+            run = _replace_node_run(
                 run,
-                running,
-                plan_node,
+                GeneralAgentNodeRun.model_validate(payload),
             )
-            update: _DynamicDagState = {
-                "node_results": {result.node_id: result.model_dump(mode="json")}
-            }
-            if human_request is not None:
-                update["human_requests"] = {
-                    result.node_id: human_request.model_dump(mode="json")
-                }
-            return update
+        return run
 
-        return execute
-
-    def _blocked_by_dependency(
-        self,
-        run: GeneralAgentRun,
-        item: GeneralAgentNodeRun,
-        plan_node: GeneralAgentPlanNode,
-    ) -> GeneralAgentNodeRun | None:
+    def _ready_node_ids(self, run: GeneralAgentRun) -> list[str]:
+        if run.plan is None:
+            return []
         current = _current_runs(run)
-        blockers = [
-            dependency
-            for dependency in item.dependencies
-            if current[dependency].status is not GeneralAgentNodeStatus.SUCCESS
-            and not (
-                plan_node.continue_on_failure
-                and current[dependency].status
-                in {GeneralAgentNodeStatus.FAILED, GeneralAgentNodeStatus.SKIPPED}
-            )
-        ]
-        if not blockers:
-            return None
-        return item.model_copy(
-            update={
-                "status": GeneralAgentNodeStatus.SKIPPED,
-                "finished_at": now_iso(),
-                "error_type": "UpstreamDependencyUnavailable",
-                "error_message": "上游节点未成功，未执行：" + "、".join(blockers),
-            }
+        plan_nodes = {node.node_id: node for node in run.plan.nodes}
+        selected: list[str] = []
+        approval_selected = False
+        for plan_node in run.plan.nodes:
+            item = current[plan_node.node_id]
+            if item.status is not GeneralAgentNodeStatus.PENDING:
+                continue
+            if not self._dependencies_satisfied(item, current, plan_nodes):
+                continue
+            needs_approval = self._needs_write_approval(item)
+            if needs_approval and approval_selected:
+                continue
+            selected.append(item.node_id)
+            approval_selected = approval_selected or needs_approval
+        return selected
+
+    def _needs_write_approval(self, item: GeneralAgentNodeRun) -> bool:
+        if item.kind is not GeneralAgentNodeKind.TOOL:
+            return False
+        manifest = self._tool_registry.get_manifest(item.capability_name)
+        return (
+            manifest.authorization_policy is not ToolAuthorizationPolicy.NONE
+            and item.authorization_grant_id is None
         )
 
     def _mark_blocked_nodes(
@@ -536,8 +619,8 @@ class DynamicDagExecutor:
                 external_grant_id=external_grant_id,
             )
             if item.kind is GeneralAgentNodeKind.TOOL:
-                manifest = self._tool_registry.get_manifest(item.capability_name)
-                if manifest.side_effect in {
+                tool_manifest = self._tool_registry.get_manifest(item.capability_name)
+                if tool_manifest.side_effect in {
                     ToolSideEffect.WRITE,
                     ToolSideEffect.HIGH_RISK_WRITE,
                 }:
@@ -552,8 +635,8 @@ class DynamicDagExecutor:
                     run,
                     item,
                     resolved_input,
-                    input_schema=manifest.input_schema,
-                    output_schema=manifest.output_schema,
+                    input_schema=tool_manifest.input_schema,
+                    output_schema=tool_manifest.output_schema,
                 )
                 completed = await self._completed_result(result_identity)
                 if completed is not None:
@@ -567,19 +650,21 @@ class DynamicDagExecutor:
                         ),
                         None,
                     )
-                envelope = await self._tool_registry.invoke(
-                    item.capability_name, resolved_input, invocation
+                envelope = await self._invoke_langchain_tool(
+                    item.capability_name,
+                    resolved_input,
+                    invocation,
                 )
             else:
-                manifest = self._subagent_registry.get_manifest(
+                subagent_manifest = self._subagent_registry.get_manifest(
                     item.capability_name
                 )
                 result_identity = self._result_identity(
                     run,
                     item,
                     resolved_input,
-                    input_schema=manifest.input_schema,
-                    output_schema=manifest.output_schema,
+                    input_schema=subagent_manifest.input_schema,
+                    output_schema=subagent_manifest.output_schema,
                 )
                 completed = await self._completed_result(result_identity)
                 if completed is not None:
@@ -699,11 +784,7 @@ class DynamicDagExecutor:
         action: str,
         timer: float,
     ) -> GeneralAgentNodeRun:
-        action_label = (
-            "复用"
-            if action == "reuse"
-            else "首次调用或安全重试后提交"
-        )
+        action_label = "复用" if action == "reuse" else "首次调用或安全重试后提交"
         return item.model_copy(
             update={
                 "status": GeneralAgentNodeStatus.SUCCESS,
@@ -755,6 +836,7 @@ class DynamicDagExecutor:
         if latest is not None and latest.status in {
             EffectStatus.STARTED,
             EffectStatus.UNKNOWN,
+            EffectStatus.REQUIRES_HUMAN,
         }:
             reconciliation = await self._tool_registry.reconcile(
                 item.capability_name,
@@ -813,6 +895,7 @@ class DynamicDagExecutor:
                     ),
                     node_id=item.node_id,
                     tool_name=item.capability_name,
+                    effect_id=record.effect_id,
                     input_sha256=canonical_input_hash(resolved_input),
                     input_summary={},
                     resource_scopes=_resource_scopes(
@@ -841,7 +924,7 @@ class DynamicDagExecutor:
             ),
         )
         try:
-            envelope = await self._tool_registry.invoke(
+            envelope = await self._invoke_langchain_tool(
                 item.capability_name,
                 resolved_input,
                 invocation,
@@ -928,6 +1011,32 @@ class DynamicDagExecutor:
                 reason=reconciliation.reason or str(error),
             )
             raise
+
+    async def _invoke_langchain_tool(
+        self,
+        name: str,
+        input_data: dict[str, Any],
+        invocation: InvocationContext,
+    ) -> InvocationEnvelope[Any]:
+        tool = self._tool_registry.bind_langchain_tool(name, invocation)
+        result = await tool.ainvoke(
+            {
+                "type": "tool_call",
+                "name": name,
+                "args": input_data,
+                "id": invocation.call_id,
+            }
+        )
+        if not isinstance(result, ToolMessage):
+            raise DynamicDagExecutionError(
+                f"LangChain Tool“{name}”没有返回 ToolMessage。"
+            )
+        artifact = result.artifact
+        if not isinstance(artifact, InvocationEnvelope):
+            raise DynamicDagExecutionError(
+                f"LangChain Tool“{name}”没有返回太初调用证据。"
+            )
+        return artifact
 
     async def _invoke_subagent(
         self,
@@ -1101,6 +1210,10 @@ class DynamicDagExecutor:
         resolved_input: dict[str, Any],
     ) -> GeneralAgentNodeRun:
         """按作者已确认的冻结输入和原资源范围签发本次进程内授权。"""
+        manifest = self._tool_registry.get_manifest(item.capability_name)
+        normalized_payload = dict(resolved_input)
+        normalized_payload["author_grant_id"] = item.authorization_grant_id
+        normalized_input = manifest.input_schema.model_validate(normalized_payload)
         scopes = item.authorization_resource_scopes or _resource_scopes(
             item.capability_name,
             resolved_input,
@@ -1108,7 +1221,7 @@ class DynamicDagExecutor:
         grant = await self._policy_service.issue_author_write(
             task_id=run.task_id,
             tool_name=item.capability_name,
-            input_payload=resolved_input,
+            input_payload=normalized_input,
             resource_scopes=tuple(scopes),
             second_confirmation=item.authorization_second_confirmation,
         )
@@ -1149,6 +1262,8 @@ class DynamicDagExecutor:
         return InvocationContext(
             task_id=run.task_id,
             run_id=run.run_id,
+            conversation_id=run.conversation_id,
+            call_id=item.attempt_id or _attempt_id(run, item.node_id),
             caller_type="orchestrator",
             caller_name="general_writing_orchestrator",
             phase=f"dag:{item.node_id}",
@@ -1219,6 +1334,17 @@ class DynamicDagExecutor:
                     "idempotency_key",
                     f"{run.run_id}:{run.plan_revision}:{node.node_id}",
                 )
+            inserted_author_placeholder = (
+                "author_grant_id" in tool_manifest.input_schema.model_fields
+                and not payload.get("author_grant_id")
+            )
+            if inserted_author_placeholder:
+                payload["author_grant_id"] = "pending_author_grant"
+            payload = tool_manifest.input_schema.model_validate(payload).model_dump(
+                mode="json"
+            )
+            if inserted_author_placeholder:
+                payload.pop("author_grant_id", None)
         return payload
 
     def _requires_external(self, item: GeneralAgentNodeRun) -> bool:
@@ -1355,28 +1481,6 @@ def _effect_id(run: GeneralAgentRun, node_id: str) -> str:
         f"taichu:{run.run_id}:{run.plan_revision}:{node_id}:effect",
     )
     return f"effect_{value.hex}"
-
-
-class _InMemoryEffectRepository:
-    """仅供未注入持久仓储的隔离单元测试使用。"""
-
-    def __init__(self) -> None:
-        self._records: list[EffectRecord] = []
-
-    async def append(self, record: EffectRecord) -> None:
-        self._records.append(record)
-
-    async def latest(self, effect_id: str) -> EffectRecord | None:
-        matches = [item for item in self._records if item.effect_id == effect_id]
-        return matches[-1] if matches else None
-
-    async def list_effects(self, run_id: str) -> list[EffectRecord]:
-        return [item for item in self._records if item.run_id == run_id]
-
-    async def delete_run(self, run_id: str) -> bool:
-        before = len(self._records)
-        self._records = [item for item in self._records if item.run_id != run_id]
-        return len(self._records) != before
 
 
 class DynamicDagExecutionError(RuntimeError):

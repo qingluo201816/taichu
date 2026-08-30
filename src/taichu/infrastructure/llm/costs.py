@@ -2,11 +2,8 @@
 
 from decimal import Decimal
 
-from taichu.application.contracts.llm import (
-    LLMCost,
-    LLMModelProfile,
-    LLMUsage,
-)
+from taichu.application.contracts.llm import LLMModelProfile
+from taichu.infrastructure.llm.contracts import LLMCost, LLMUsage
 
 
 _MILLION = Decimal("1000000")

@@ -17,7 +17,10 @@ def evaluate_case_retrieval(
     top_k: int = 10,
 ) -> RAGCaseScore:
     evidences = result.evidences[:top_k]
-    retrieved_sources = list(dict.fromkeys(item.source_id for item in evidences))
+    ranked_source_ids = result.reranked_source_ids[:top_k] or [
+        item.source_id for item in evidences
+    ]
+    retrieved_sources = list(dict.fromkeys(ranked_source_ids))
     expected_sources = set(case.expected_source_ids)
     if expected_sources:
         matched_sources = expected_sources.intersection(retrieved_sources)
@@ -25,8 +28,8 @@ def evaluate_case_retrieval(
         first_rank = next(
             (
                 index
-                for index, evidence in enumerate(evidences, start=1)
-                if evidence.source_id in expected_sources
+                for index, source_id in enumerate(ranked_source_ids, start=1)
+                if source_id in expected_sources
             ),
             None,
         )
@@ -35,17 +38,31 @@ def evaluate_case_retrieval(
         recall = None
         mrr = None
 
-    relation_ids = list(
-        dict.fromkeys(stable_relation_id(text) for text in result.reranked_relations[:top_k])
+    reranked_relations = result.reranked_relations or list(
+        dict.fromkeys(
+            relation for evidence in evidences for relation in evidence.relation_texts
+        )
+    )
+    if not reranked_relations:
+        reranked_relations = result.context_relations
+    reranked_relation_ids = list(
+        dict.fromkeys(stable_relation_id(text) for text in reranked_relations)
+    )
+    expansion_relations = result.expanded_relations or reranked_relations
+    expansion_relation_ids = list(
+        dict.fromkeys(stable_relation_id(text) for text in expansion_relations)
     )
     expected_relation_ids = {item.relation_id for item in case.expected_relations}
     if expected_relation_ids:
-        matched_relations = expected_relation_ids.intersection(relation_ids)
+        matched_relations = expected_relation_ids.intersection(reranked_relation_ids)
         relation_recall = len(matched_relations) / len(expected_relation_ids)
-        complete_path = float(set(case.expected_path).issubset(relation_ids))
+        complete_path = float(
+            set(case.expected_path).issubset(expansion_relation_ids)
+        )
         noise = (
-            len(set(relation_ids).difference(expected_relation_ids)) / len(relation_ids)
-            if relation_ids
+            len(set(expansion_relation_ids).difference(expected_relation_ids))
+            / len(expansion_relation_ids)
+            if expansion_relation_ids
             else 0.0
         )
     else:
@@ -62,5 +79,5 @@ def evaluate_case_retrieval(
         complete_path_recall=complete_path,
         graph_expansion_noise_rate=noise,
         retrieved_source_ids=retrieved_sources,
-        retrieved_relation_ids=relation_ids,
+        retrieved_relation_ids=reranked_relation_ids,
     )

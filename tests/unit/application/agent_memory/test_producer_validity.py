@@ -27,10 +27,7 @@ from taichu.application.services.agent_memory_service import (
     AgentMemoryService,
     AgentMemoryServiceError,
 )
-from taichu.infrastructure.agent_memory import (
-    JsonAgentMemoryLexicalIndex,
-    JsonAgentMemoryRepository,
-)
+from tests.fakes.agent_memory import in_memory_agent_memory_repository
 
 _ResultT = TypeVar("_ResultT")
 
@@ -41,8 +38,7 @@ def _run(awaitable: Coroutine[object, object, _ResultT]) -> _ResultT:
 
 def _service(root: Path) -> AgentMemoryService:
     return AgentMemoryService(
-        repository=JsonAgentMemoryRepository(root),
-        lexical_index=JsonAgentMemoryLexicalIndex(root),
+        repository=in_memory_agent_memory_repository(root),
         policy=AgentMemoryPolicy(),
     )
 
@@ -82,9 +78,7 @@ def test_producer_proof_preserves_four_states_source_node_and_supersession(
         rejected = await service.write(
             _candidate("审查否决产物", "node:run_fixture:1:rejected")
         )
-        old = await service.write(
-            _candidate("被替代产物", "node:run_fixture:1:old")
-        )
+        old = await service.write(_candidate("被替代产物", "node:run_fixture:1:old"))
         replacement = await service.write(
             _candidate(
                 "当前替代产物",
@@ -128,15 +122,16 @@ def test_producer_proof_preserves_four_states_source_node_and_supersession(
             )
         }
 
-        assert proofs["node:run_fixture:1:active"].validity is AgentMemoryValidity.ACTIVE
+        assert (
+            proofs["node:run_fixture:1:active"].validity is AgentMemoryValidity.ACTIVE
+        )
         assert proofs["node:run_fixture:1:stale"].validity is AgentMemoryValidity.STALE
         assert (
             proofs["node:run_fixture:1:rejected"].validity
             is AgentMemoryValidity.REJECTED
         )
         assert (
-            proofs["node:run_fixture:1:old"].validity
-            is AgentMemoryValidity.SUPERSEDED
+            proofs["node:run_fixture:1:old"].validity is AgentMemoryValidity.SUPERSEDED
         )
         replacement_proof = proofs["node:run_fixture:2:replacement"]
         assert replacement_proof.memory_id == replacement.memory_id
@@ -231,12 +226,8 @@ def test_require_active_producer_fails_closed_for_state_drift_and_conflicts(
                 expected_dependency_fingerprint=stale_proof.dependency_fingerprint,
             )
 
-        await service.write(
-            _candidate("冲突记录一", "node:run_fixture:1:duplicate")
-        )
-        await service.write(
-            _candidate("冲突记录二", "node:run_fixture:1:duplicate")
-        )
+        await service.write(_candidate("冲突记录一", "node:run_fixture:1:duplicate"))
+        await service.write(_candidate("冲突记录二", "node:run_fixture:1:duplicate"))
         with pytest.raises(AgentMemoryServiceError, match="唯一"):
             await service.producer_validity_proof(
                 "conversation_fixture",

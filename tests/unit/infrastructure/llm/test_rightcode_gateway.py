@@ -1,7 +1,7 @@
 """Right Code 统一 Responses 与 Messages 网关测试。"""
 
 import asyncio
-from dataclasses import replace
+from dataclasses import asdict, replace
 from decimal import Decimal
 import json
 from pathlib import Path
@@ -12,20 +12,25 @@ import httpx
 from pydantic import SecretStr
 
 from taichu.application.contracts.llm import (
+    LLMModelAvailability,
+    LLMModelManagementError,
+    LLMModelManagementPort,
+)
+from taichu.infrastructure.llm.contracts import (
     LLMMessage,
     LLMRequest,
     LLMToolCall,
     LLMToolDefinition,
+    LLMTransportProfile,
 )
 from taichu.application.models.llm_usage import LLMUsageQuery
 from taichu.config import Settings
-from taichu.infrastructure.llm.catalog import (
-    LLMModelCatalog,
-    LLMModelSelectionError,
-)
+from taichu.infrastructure.llm.catalog import LLMModelCatalog
 from taichu.infrastructure.llm.rightcode import (
-    RightCodeGatewayError,
+    LLMGatewayError,
     RightCodeLLMGateway,
+    _anthropic_tool_choice,
+    _responses_tool_choice,
 )
 from taichu.infrastructure.llm_usage import JsonlLLMUsageRepository
 from taichu.infrastructure.llm_replays import JsonLLMCallReplayRepository
@@ -38,6 +43,58 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self) -> None:
         self.temporary_directory.cleanup()
+
+    def test_named_tool_choice_uses_provider_native_parameter(self) -> None:
+        self.assertEqual(
+            _responses_tool_choice("GeneralAgentPlanDraft"),
+            {"type": "function", "name": "GeneralAgentPlanDraft"},
+        )
+        self.assertEqual(
+            _anthropic_tool_choice("GeneralAgentPlanDraft"),
+            {"type": "tool", "name": "GeneralAgentPlanDraft"},
+        )
+
+    async def test_gateway_structurally_implements_model_management_port(
+        self,
+    ) -> None:
+        gateway, client, _ = self._gateway(
+            httpx.MockTransport(lambda _: httpx.Response(200))
+        )
+        try:
+            self.assertIsInstance(gateway, LLMModelManagementPort)
+            self.assertIsInstance(
+                gateway.availability_for("deepseek-v4-pro"),
+                LLMModelAvailability,
+            )
+        finally:
+            await client.aclose()
+
+    async def test_gateway_only_closes_the_http_client_it_owns(self) -> None:
+        settings = _settings(self.assets_root)
+        owned_gateway = RightCodeLLMGateway(
+            settings,
+            LLMModelCatalog(settings),
+            JsonlLLMUsageRepository(self.assets_root),
+        )
+        owned_client = owned_gateway._client
+        self.assertFalse(owned_client.is_closed)
+        await owned_gateway.aclose()
+        self.assertTrue(owned_client.is_closed)
+
+        external_client = httpx.AsyncClient(
+            transport=httpx.MockTransport(lambda _: httpx.Response(200))
+        )
+        external_gateway = RightCodeLLMGateway(
+            settings,
+            LLMModelCatalog(settings),
+            JsonlLLMUsageRepository(self.assets_root),
+            client=external_client,
+        )
+        try:
+            await external_gateway.aclose()
+            self.assertFalse(external_client.is_closed)
+        finally:
+            await external_client.aclose()
 
     def test_catalog_has_ten_unique_models_and_one_default(self) -> None:
         catalog = LLMModelCatalog(_settings(self.assets_root))
@@ -60,11 +117,44 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
             catalog.resolve("deepseek-v4-pro").wire_protocol,
             "anthropic_messages",
         )
+        self.assertTrue(all(type(item) is not LLMTransportProfile for item in profiles))
+        self.assertTrue(all("base_url_key" not in asdict(item) for item in profiles))
+        self.assertEqual(
+            catalog.resolve("deepseek-v4-pro").base_url_key,
+            "RIGHTCODE_DEEPSEEK_ANTHROPIC_BASE_URL",
+        )
         self.assertTrue(all(item.upstream_verified for item in profiles))
+
+    def test_deepseek_official_catalog_defaults_to_v4_flash(self) -> None:
+        catalog = LLMModelCatalog(_settings(self.assets_root))
+        profiles = catalog.list_models("deepseek_official")
+
+        self.assertEqual(
+            [item.id for item in profiles],
+            ["deepseek-v4-flash", "deepseek-v4-pro"],
+        )
+        self.assertEqual(
+            [item.id for item in profiles if item.is_default],
+            ["deepseek-v4-flash"],
+        )
+        self.assertEqual(
+            catalog.default_model_id_for("deepseek_official"),
+            "deepseek-v4-flash",
+        )
+        flash, pro = profiles
+        self.assertEqual(flash.input_price_per_million, Decimal("3.0"))
+        self.assertEqual(flash.cached_input_price_per_million, Decimal("0.10"))
+        self.assertEqual(flash.output_price_per_million, Decimal("9.0"))
+        self.assertEqual(flash.reasoning_output_price_per_million, Decimal("9.0"))
+        self.assertEqual(pro.input_price_per_million, Decimal("9.0"))
+        self.assertEqual(pro.cached_input_price_per_million, Decimal("0.30"))
+        self.assertEqual(pro.output_price_per_million, Decimal("27.0"))
+        self.assertEqual(pro.reasoning_output_price_per_million, Decimal("27.0"))
+        self.assertTrue(all(item.currency == "CNY" for item in profiles))
 
     def test_unknown_model_is_rejected_with_stable_chinese_error(self) -> None:
         catalog = LLMModelCatalog(_settings(self.assets_root))
-        with self.assertRaises(LLMModelSelectionError) as context:
+        with self.assertRaises(LLMModelManagementError) as context:
             catalog.resolve("unknown")
         self.assertEqual(context.exception.code, "LLM_MODEL_UNKNOWN")
         self.assertIn("模型不存在", context.exception.message)
@@ -73,10 +163,12 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         self,
     ) -> None:
         requested_models: list[str] = []
+        requested_urls: list[str] = []
 
         async def handler(request: httpx.Request) -> httpx.Response:
             payload = json.loads(request.content)
             requested_models.append(payload["model"])
+            requested_urls.append(str(request.url))
             await asyncio.sleep(0)
             if request.url.path.endswith("/v1/messages"):
                 return httpx.Response(
@@ -101,10 +193,22 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
             responses = await asyncio.gather(
                 gateway.complete(_request("gpt-5-6-luna")),
                 gateway.complete(_request("claude-opus-4-6")),
+                gateway.complete(_request("deepseek-v4-pro")),
             )
         finally:
             await client.aclose()
-        self.assertEqual(set(requested_models), {"gpt-5.6-luna", "claude-opus-4-6"})
+        self.assertEqual(
+            set(requested_models),
+            {"gpt-5.6-luna", "claude-opus-4-6", "deepseek-v4-pro"},
+        )
+        self.assertEqual(
+            set(requested_urls),
+            {
+                "https://www.rightapi.ai/codex/v1/responses",
+                "https://www.rightapi.ai/claude/v1/messages",
+                "https://rightapi.ai/deepseek/anthropic/v1/messages",
+            },
+        )
         self.assertEqual(
             {item.upstream_model for item in responses}, set(requested_models)
         )
@@ -141,6 +245,42 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(record)
         assert record is not None
         self.assertEqual(record.provider_request_id, "provider-request")
+        self.assertEqual(record.status_code, 200)
+        self.assertEqual(record.content_block_types, ["output_text"])
+
+    async def test_anthropic_response_without_body_id_uses_header_diagnostics(
+        self,
+    ) -> None:
+        def handler(_: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                headers={"x-request-id": "header-request-id"},
+                json={
+                    "content": [{"type": "text", "text": "可用"}],
+                    "stop_reason": "end_turn",
+                    "usage": {"input_tokens": 4, "output_tokens": 2},
+                },
+            )
+
+        gateway, client, repository = self._gateway(
+            httpx.MockTransport(handler),
+            fallback_key="test-deepseek-key",
+            enforce_active_provider=True,
+        )
+        gateway.set_active_provider("deepseek_official")
+        try:
+            response = await gateway.complete(_request("deepseek-v4-flash"))
+        finally:
+            await client.aclose()
+
+        self.assertEqual(response.text, "可用")
+        self.assertEqual(response.provider_request_id, "header-request-id")
+        record = await repository.get(response.call_id or "")
+        self.assertIsNotNone(record)
+        assert record is not None
+        self.assertEqual(record.status_code, 200)
+        self.assertEqual(record.provider_request_id, "header-request-id")
+        self.assertEqual(record.content_block_types, ["text"])
 
     async def test_run_call_replay_saves_redacted_messages_and_response(self) -> None:
         def handler(_: httpx.Request) -> httpx.Response:
@@ -211,7 +351,6 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         request = replace(
             _request("gpt-5-6-terra"),
             temperature=0.1,
-            response_mode="json",
         )
         try:
             await gateway.complete(request)
@@ -342,27 +481,154 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(completed.response.provider_request_id, "msg-stream")
         self.assertEqual(completed.response.usage.total_tokens, 9)
 
-    async def test_json_mode_removes_markdown_fence_after_complete_response(
-        self,
-    ) -> None:
+    async def test_anthropic_tool_use_sse_stream_is_normalized(self) -> None:
+        sse = "\n".join(
+            [
+                "event: message_start",
+                'data: {"type":"message_start","message":{"id":"msg-tools","usage":{"input_tokens":5,"cache_read_input_tokens":2}}}',
+                "",
+                "event: content_block_start",
+                'data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}',
+                "",
+                "event: content_block_delta",
+                'data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"先说明。"}}',
+                "",
+                "event: content_block_stop",
+                'data: {"type":"content_block_stop","index":0}',
+                "",
+                "event: content_block_start",
+                'data: {"type":"content_block_start","index":1,"content_block":{"type":"tool_use","id":"toolu_1","name":"write_text","input":{}}}',
+                "",
+                "event: content_block_delta",
+                'data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"{\\"text\\":\\"秦浩"}}',
+                "",
+                "event: content_block_delta",
+                'data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"轩\\"}"}}',
+                "",
+                "event: content_block_stop",
+                'data: {"type":"content_block_stop","index":1}',
+                "",
+                "event: content_block_start",
+                'data: {"type":"content_block_start","index":2,"content_block":{"type":"tool_use","id":"toolu_2","name":"record_note","input":{}}}',
+                "",
+                "event: content_block_delta",
+                'data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"{\\"note\\":\\"已核对\\"}"}}',
+                "",
+                "event: content_block_stop",
+                'data: {"type":"content_block_stop","index":2}',
+                "",
+                "event: message_delta",
+                'data: {"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":7}}',
+                "",
+                "event: message_stop",
+                'data: {"type":"message_stop"}',
+                "",
+            ]
+        )
+
         def handler(_: httpx.Request) -> httpx.Response:
             return httpx.Response(
                 200,
-                json={
-                    "id": "json-message",
-                    "content": [{"type": "text", "text": '```json\n{"ok":true}\n```'}],
-                    "usage": {"input_tokens": 4, "output_tokens": 4},
-                },
+                headers={"content-type": "text/event-stream"},
+                content=sse.encode(),
             )
 
         gateway, client, _ = self._gateway(httpx.MockTransport(handler))
         try:
-            response = await gateway.complete(
-                replace(_request("claude-opus-4-6"), response_mode="json")
-            )
+            events = [
+                event async for event in gateway.stream(_request("deepseek-v4-pro"))
+            ]
         finally:
             await client.aclose()
-        self.assertEqual(response.text, '{"ok":true}')
+
+        self.assertFalse(any(item.event_type == "failed" for item in events))
+        self.assertEqual(
+            "".join(
+                item.delta for item in events if item.event_type == "text_delta"
+            ),
+            "先说明。",
+        )
+        chunks = [
+            item.tool_call_chunk
+            for item in events
+            if item.event_type == "tool_call_delta"
+        ]
+        self.assertEqual(chunks[0].call_id, "toolu_1")
+        self.assertEqual(chunks[0].name, "write_text")
+        self.assertEqual(chunks[0].index, 0)
+        self.assertEqual(
+            "".join(item.arguments_delta for item in chunks if item.index == 0),
+            '{"text":"秦浩轩"}',
+        )
+        self.assertEqual(chunks[3].call_id, "toolu_2")
+        self.assertEqual(chunks[3].index, 1)
+        completed = next(item for item in events if item.event_type == "completed")
+        assert completed.response is not None
+        self.assertEqual(
+            [item.call_id for item in completed.response.tool_calls],
+            ["toolu_1", "toolu_2"],
+        )
+        self.assertEqual(
+            [json.loads(item.arguments_json) for item in completed.response.tool_calls],
+            [{"text": "秦浩轩"}, {"note": "已核对"}],
+        )
+        self.assertEqual(completed.response.finish_reason, "tool_use")
+        self.assertEqual(completed.response.usage.total_tokens, 14)
+
+    async def test_responses_function_arguments_sse_stream_is_normalized(self) -> None:
+        sse = "\n".join(
+            [
+                "event: response.output_item.added",
+                'data: {"type":"response.output_item.added","output_index":0,"item":{"type":"function_call","id":"fc_1","call_id":"call_1","name":"write_text","arguments":""}}',
+                "",
+                "event: response.function_call_arguments.delta",
+                'data: {"type":"response.function_call_arguments.delta","output_index":0,"item_id":"fc_1","delta":"{\\"text\\":\\"秦浩"}',
+                "",
+                "event: response.function_call_arguments.delta",
+                'data: {"type":"response.function_call_arguments.delta","output_index":0,"item_id":"fc_1","delta":"轩\\"}"}',
+                "",
+                "event: response.function_call_arguments.done",
+                'data: {"type":"response.function_call_arguments.done","output_index":0,"item_id":"fc_1","arguments":"{\\"text\\":\\"秦浩轩\\"}"}',
+                "",
+                "event: response.completed",
+                'data: {"type":"response.completed","response":{"id":"response-tools","status":"completed","output":[{"type":"function_call","id":"fc_1","call_id":"call_1","name":"write_text","arguments":"{\\"text\\":\\"秦浩轩\\"}"}],"usage":{"input_tokens":5,"output_tokens":4,"total_tokens":9}}}',
+                "",
+            ]
+        )
+
+        def handler(_: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                headers={"content-type": "text/event-stream"},
+                content=sse.encode(),
+            )
+
+        gateway, client, _ = self._gateway(httpx.MockTransport(handler))
+        try:
+            events = [
+                event async for event in gateway.stream(_request("gpt-5-6-sol"))
+            ]
+        finally:
+            await client.aclose()
+
+        chunks = [
+            item.tool_call_chunk
+            for item in events
+            if item.event_type == "tool_call_delta"
+        ]
+        self.assertEqual(chunks[0].call_id, "call_1")
+        self.assertEqual(chunks[0].name, "write_text")
+        self.assertEqual(
+            "".join(item.arguments_delta for item in chunks),
+            '{"text":"秦浩轩"}',
+        )
+        completed = next(item for item in events if item.event_type == "completed")
+        assert completed.response is not None
+        self.assertEqual(completed.response.tool_calls[0].call_id, "call_1")
+        self.assertEqual(
+            json.loads(completed.response.tool_calls[0].arguments_json),
+            {"text": "秦浩轩"},
+        )
 
     async def test_deepseek_uses_rightcode_anthropic_channel(self) -> None:
         captured_path = ""
@@ -386,6 +652,66 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
             await client.aclose()
         self.assertEqual(captured_path, "/deepseek/anthropic/v1/messages")
         self.assertEqual(response.text, "可用")
+
+    async def test_official_deepseek_rag_judge_disables_thinking(self) -> None:
+        captured_payload: dict[str, object] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            captured_payload.update(json.loads(request.content))
+            return httpx.Response(
+                200,
+                json={
+                    "content": [{"type": "text", "text": '{"score": 1}'}],
+                    "stop_reason": "end_turn",
+                    "usage": {"input_tokens": 8, "output_tokens": 4},
+                },
+            )
+
+        gateway, client, _ = self._gateway(
+            httpx.MockTransport(handler),
+            fallback_key="official-key",
+            enforce_active_provider=True,
+        )
+        gateway.set_active_provider("deepseek_official")
+        try:
+            await gateway.complete(
+                LLMRequest(
+                    model_id="deepseek-v4-flash",
+                    messages=(LLMMessage(role="user", content="评测"),),
+                    task_type="rag_evaluation_judge",
+                    task_name="RAG 语义质量评测",
+                    max_output_tokens=100_000,
+                )
+            )
+        finally:
+            await client.aclose()
+
+        self.assertEqual(captured_payload["thinking"], {"type": "disabled"})
+        self.assertEqual(captured_payload["max_tokens"], 100_000)
+
+    async def test_thinking_only_max_tokens_is_reported_as_truncated(self) -> None:
+        def handler(_: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                200,
+                json={
+                    "id": "official-truncated",
+                    "content": [{"type": "thinking", "thinking": "尚未完成"}],
+                    "stop_reason": "max_tokens",
+                    "usage": {"input_tokens": 10, "output_tokens": 2_048},
+                },
+            )
+
+        gateway, client, _ = self._gateway(
+            httpx.MockTransport(handler), fallback_key="test-deepseek-key"
+        )
+        gateway.set_active_provider("deepseek_official")
+        try:
+            with self.assertRaises(LLMGatewayError) as context:
+                await gateway.complete(_request("deepseek-v4-pro"))
+        finally:
+            await client.aclose()
+
+        self.assertEqual(context.exception.code, "LLM_OUTPUT_TRUNCATED")
 
     async def test_deepseek_probe_reserves_reasoning_output_budget(self) -> None:
         captured_max_tokens = 0
@@ -503,9 +829,9 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(records.total, 1)
         self.assertEqual(records.items[0].provider, "deepseek_official")
         self.assertEqual(records.items[0].fallback_from_provider, "rightcode")
-        replays = await JsonLLMCallReplayRepository(
-            self.assets_root
-        ).list_for_run("general_run_fallback_test")
+        replays = await JsonLLMCallReplayRepository(self.assets_root).list_for_run(
+            "general_run_fallback_test"
+        )
         self.assertEqual(replays[0].provider, "deepseek_official")
         self.assertEqual(replays[0].fallback_from_provider, "rightcode")
 
@@ -521,7 +847,7 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
             fallback_key="test-deepseek-key",
         )
         try:
-            with self.assertRaises(RightCodeGatewayError) as context:
+            with self.assertRaises(LLMGatewayError) as context:
                 await gateway.complete(_request("deepseek-v4-pro"))
         finally:
             await client.aclose()
@@ -531,6 +857,41 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         records = await repository.list_calls(LLMUsageQuery())
         self.assertEqual(records.items[0].provider, "rightcode")
         self.assertIsNone(records.items[0].fallback_from_provider)
+
+    async def test_official_balance_failure_has_explicit_error(self) -> None:
+        def handler(_: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                402,
+                json={
+                    "error": {
+                        "message": "Insufficient Balance",
+                        "code": "invalid_request_error",
+                    }
+                },
+            )
+
+        gateway, client, repository = self._gateway(
+            httpx.MockTransport(handler),
+            fallback_key="test-deepseek-key",
+            enforce_active_provider=True,
+        )
+        gateway.set_active_provider("deepseek_official")
+        try:
+            with self.assertRaises(LLMGatewayError) as context:
+                await gateway.complete(_request("deepseek-v4-flash"))
+        finally:
+            await client.aclose()
+
+        self.assertEqual(context.exception.code, "LLM_INSUFFICIENT_BALANCE")
+        self.assertEqual(
+            context.exception.message,
+            "模型供应商账户余额不足，请充值后重试。",
+        )
+        records = await repository.list_calls(LLMUsageQuery())
+        self.assertEqual(records.items[0].provider, "deepseek_official")
+        self.assertEqual(records.items[0].error_code, "LLM_INSUFFICIENT_BALANCE")
+        self.assertEqual(records.items[0].status_code, 402)
+        self.assertIn("Insufficient Balance", records.items[0].error_summary or "")
 
     async def test_stream_network_failure_falls_back_before_output(self) -> None:
         requested_hosts: list[str] = []
@@ -801,7 +1162,7 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
             max_retries=1,
         )
         try:
-            with self.assertRaises(RightCodeGatewayError) as context:
+            with self.assertRaises(LLMGatewayError) as context:
                 await gateway.complete(_request("deepseek-v4-pro"))
         finally:
             await client.aclose()
@@ -858,7 +1219,7 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
             httpx.MockTransport(handler), key=secret
         )
         try:
-            with self.assertRaises(RightCodeGatewayError) as context:
+            with self.assertRaises(LLMGatewayError) as context:
                 await gateway.complete(_request("claude-opus-4-6"))
         finally:
             await client.aclose()
@@ -877,6 +1238,7 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         key: str = "test-rightcode-key",
         fallback_key: str = "",
         max_retries: int = 0,
+        enforce_active_provider: bool = False,
     ) -> tuple[RightCodeLLMGateway, httpx.AsyncClient, JsonlLLMUsageRepository]:
         settings = _settings(
             self.assets_root,
@@ -894,6 +1256,7 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
                 repository,
                 client=client,
                 replay_repository=JsonLLMCallReplayRepository(self.assets_root),
+                enforce_active_provider=enforce_active_provider,
             ),
             client,
             repository,
@@ -926,5 +1289,4 @@ def _request(model_id: str) -> LLMRequest:
         ),
         task_type="test",
         task_name="网关测试",
-        response_mode="text",
     )

@@ -28,6 +28,9 @@ class MarkdownChunk:
     end_char: int
 
 
+_KNOWLEDGE_CONTEXT_SUMMARY_MAX_CHARS = 1_200
+
+
 def chunk_chapter_markdown(
     markdown: str,
     *,
@@ -152,6 +155,26 @@ def project_knowledge_card(
         content_sha256=_sha256(content),
         updated_at=card.updated_at,
     )
+
+
+def compact_knowledge_card_context(content: str) -> str:
+    """为模型投影知识卡业务字段，不携带长来源附录。"""
+
+    output: list[str] = []
+    for line in content.splitlines():
+        if line.startswith(("来源方式：", "来源说明：")):
+            break
+        if line.startswith("摘要："):
+            prefix = "摘要："
+            summary = line.removeprefix(prefix)
+            if len(summary) > _KNOWLEDGE_CONTEXT_SUMMARY_MAX_CHARS:
+                line = (
+                    prefix
+                    + summary[:_KNOWLEDGE_CONTEXT_SUMMARY_MAX_CHARS]
+                    + "…"
+                )
+        output.append(line)
+    return "\n".join(output).strip()
 
 
 def corpus_snapshot_sha256(documents: list[VectorGraphSourceDocument]) -> str:

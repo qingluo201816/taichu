@@ -6,6 +6,9 @@ import inspect
 from pathlib import Path
 from unittest.mock import MagicMock
 
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.store.memory import InMemoryStore
+
 import pytest
 
 from taichu.application.capabilities import CapabilityContext
@@ -21,6 +24,7 @@ from taichu.application.general_agent.faults import (
 from taichu.application.services.invocation_policy_service import (
     InvocationPolicyService,
 )
+from taichu.application.services.model_role_router import ModelRoleRouter
 from taichu.application.tools.registry import ToolNotFoundError
 from taichu.infrastructure.evaluations.general_agent_benchmark.runtime_factory import (
     BenchmarkRuntimeDependencies,
@@ -29,7 +33,6 @@ from taichu.infrastructure.evaluations.general_agent_benchmark.runtime_factory i
 from taichu.infrastructure.general_agent_runs import (
     JsonGeneralAgentContextSnapshotRepository,
     JsonGeneralAgentEffectRepository,
-    JsonLangGraphCheckpointSaver,
 )
 from taichu.infrastructure.llm_replays import JsonLLMCallReplayRepository
 from taichu.infrastructure.plugin_discovery import discover_subagents, discover_tools
@@ -49,14 +52,14 @@ def _dependencies(workspace: Path) -> BenchmarkRuntimeDependencies:
         database_name="taichu_eval_0123456789abcdef0123456789abcdef",
         capability_context=CapabilityContext(capabilities=capabilities),
         llm=llm,
-        model_router=MagicMock(name="model_router"),
+        model_router=ModelRoleRouter("synthetic-model"),
         trace_repository=None,
         run_repository=MagicMock(name="run_repository"),
         event_center=GeneralAgentEventCenter(),
         policy_service=InvocationPolicyService(),
         memory_service=MagicMock(name="memory_service"),
         context_assembler=MagicMock(name="context_assembler"),
-        graph_checkpointer=JsonLangGraphCheckpointSaver(workspace),
+        graph_checkpointer=InMemorySaver(),
         effect_repository=JsonGeneralAgentEffectRepository(workspace),
         context_snapshot_repository=JsonGeneralAgentContextSnapshotRepository(
             workspace
@@ -101,10 +104,7 @@ def test_factory_registers_full_production_catalog_before_case_exposure(
     )
     assert bundle.physical_capability_count == 28
     assert bundle.runtime is not None
-    expected_result_root = (
-        workspace / "runtime" / "capability_results"
-    ).resolve()
-    assert bundle.capability_result_repository._root == expected_result_root
+    assert isinstance(bundle.capability_result_repository.store, InMemoryStore)
     assert (
         bundle.runtime._capability_result_repository
         is bundle.capability_result_repository
@@ -113,7 +113,7 @@ def test_factory_registers_full_production_catalog_before_case_exposure(
         bundle.runtime._executor.capability_result_repository
         is bundle.capability_result_repository
     )
-    assert not expected_result_root.exists()
+    assert not (workspace / "runtime" / "capability_results").exists()
     runtime_tools = bundle.runtime._orchestrator._tool_registry.list_manifests()
     runtime_subagents = (
         bundle.runtime._orchestrator._subagent_registry.list_manifests()

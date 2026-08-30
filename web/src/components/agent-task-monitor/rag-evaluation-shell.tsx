@@ -4,10 +4,12 @@ import {
   AlertCircle,
   CheckCircle2,
   ChevronLeft,
+  ChevronRight,
   CircleGauge,
   Database,
   FlaskConical,
   GitCompareArrows,
+  Info,
   Network,
   RefreshCw,
   Route,
@@ -37,6 +39,9 @@ import type {
   RAGGoldenCategory,
   RAGGoldenSuite,
   RAGRunReport,
+  RAGSemanticCaseFailure,
+  RAGSemanticCaseResult,
+  RAGSemanticCaseScore,
 } from "@/lib/types/rag-evaluation";
 import { cn } from "@/lib/utils";
 
@@ -175,6 +180,7 @@ export function RAGEvaluationShell() {
             detail={detail}
             detailLoading={detailLoading || loading}
             configuration={configuration}
+            suite={suite}
           />
         ) : <DatasetView suite={suite} loading={loading} />}
       </section>
@@ -191,28 +197,29 @@ function ViewButton({ active, onClick, children }: { active: boolean; onClick: (
   );
 }
 
-function ResultsView({ results, selectedRunId, onSelect, detail, detailLoading, configuration }: {
+function ResultsView({ results, selectedRunId, onSelect, detail, detailLoading, configuration, suite }: {
   results: RAGEvaluationResultSummary[];
   selectedRunId: string;
   onSelect: (runId: string) => void;
   detail: RAGEvaluationResultDetail | null;
   detailLoading: boolean;
   configuration: RAGEvaluationConfiguration | null;
+  suite: RAGGoldenSuite | null;
 }) {
   const report = isCompletedReport(detail) ? detail : null;
   const summary = report?.deterministic.summary;
   return (
     <>
       <section className="mt-3 grid grid-cols-5 gap-1.5">
-        <Metric label="自动门禁" value={gateLabel(detail)} />
-        <Metric label="Recall@10" value={formatScore(summary?.mean_recall_at_k)} />
-        <Metric label="MRR@10" value={formatScore(summary?.mean_mrr_at_k)} />
-        <Metric label="关系召回" value={formatScore(summary?.mean_relation_recall_at_k)} />
-        <Metric label="完整路径" value={formatScore(summary?.complete_path_pass_rate)} />
+        <Metric label="自动门禁" description="所有预设质量门槛均满足时通过；未通过不会修改评测数据。" value={gateLabel(detail)} />
+        <Metric label="Recall@10" description="前 10 条检索结果中，找回预期知识来源的比例。" value={formatScore(summary?.mean_recall_at_k)} />
+        <Metric label="MRR@10" description="正确结果在前 10 条中的排序质量；越靠前分数越高，第一名为 100%。" value={formatScore(summary?.mean_mrr_at_k)} />
+        <Metric label="Relation Recall@10" description="前 10 条结果关联出的关系中，找回预期关系边的比例；仅图关系用例适用。" value={formatScore(summary?.mean_relation_recall_at_k)} />
+        <Metric label="Complete Path Recall" description="预期多跳关系链是否完整命中；路径中的关系均找回才计为成功。" value={formatScore(summary?.complete_path_pass_rate)} />
       </section>
       <section className="mt-3 grid min-h-[390px] grid-cols-[300px_minmax(0,1fr)] gap-3">
         <ResultHistory results={results} selectedRunId={selectedRunId} onSelect={onSelect} />
-        <ResultDetail detail={detail} loading={detailLoading} />
+        <ResultDetail detail={detail} loading={detailLoading} suite={suite} />
       </section>
       <EvaluationArchitecture configuration={configuration} />
     </>
@@ -247,7 +254,8 @@ function ResultHistory({ results, selectedRunId, onSelect }: {
   );
 }
 
-function ResultDetail({ detail, loading }: { detail: RAGEvaluationResultDetail | null; loading: boolean }) {
+function ResultDetail({ detail, loading, suite }: { detail: RAGEvaluationResultDetail | null; loading: boolean; suite: RAGGoldenSuite | null }) {
+  const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
   if (loading && !detail) return <EmptyPanel text="正在读取评测结果" />;
   if (!detail) return <EmptyPanel text="选择一条运行记录查看完整结果" />;
   if (!isCompletedReport(detail)) {
@@ -259,6 +267,8 @@ function ResultDetail({ detail, loading }: { detail: RAGEvaluationResultDetail |
       </section>
     );
   }
+
+  const semanticFailureGroups = summarizeSemanticFailureGroups(detail);
 
   return (
     <section className="rounded-[var(--tc-radius-card)] bg-[var(--tc-surface-card)] p-4">
@@ -284,29 +294,66 @@ function ResultDetail({ detail, loading }: { detail: RAGEvaluationResultDetail |
 
       <div className="mt-3 grid grid-cols-3 gap-1.5">
         <CompactFact label="权威回源" value={formatScore(detail.deterministic.summary.authority_pass_rate)} />
-        <CompactFact label="Graph 消融" value={formatSigned(detail.deterministic.summary.mean_ablation_complete_path_delta)} />
+        <CompactFact label="图关系用例" value={`${detail.deterministic.summary.graph_case_count} 条`} />
         <CompactFact label="语义评测" value={summarizeSemantic(detail)} />
       </div>
 
-      <div className="mt-3 flex items-center gap-2 px-1"><CircleGauge className="size-3.5 text-[var(--tc-monitor-rag)]" /><h3 className="text-xs font-medium text-[var(--tc-text-primary)]">逐案结果</h3></div>
-      <div className="mt-1.5 max-h-[205px] overflow-y-auto rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] p-1">
-        <div className="grid grid-cols-[82px_1fr_1fr_1fr_1fr_56px] gap-2 px-2 py-1 text-[10px] text-[var(--tc-text-muted)]">
-          <span>用例</span><span>召回</span><span>排序</span><span>关系</span><span>路径</span><span>回源</span>
+      {semanticFailureGroups.length ? (
+        <div className="mt-3 rounded-[var(--tc-radius-control)] bg-red-950/20 px-3 py-2">
+          <p className="text-xs font-medium text-red-300">语义评测执行异常</p>
+          <ul className="mt-1 grid gap-1 text-xs leading-5 text-[var(--tc-text-secondary)]">
+            {semanticFailureGroups.map(group => (
+              <li key={group.message}>· {group.count} 条未完成：{group.message}</li>
+            ))}
+          </ul>
         </div>
-        {detail.deterministic.case_scores.map(score => <CaseScoreRow key={score.case_id} score={score} />)}
+      ) : null}
+
+      <div className="mt-3 flex items-center gap-2 px-1"><CircleGauge className="size-3.5 text-[var(--tc-monitor-rag)]" /><h3 className="text-xs font-medium text-[var(--tc-text-primary)]">逐案结果</h3><span className="text-[10px] text-[var(--tc-text-muted)]">点击用例查看预期与实际结果</span></div>
+      <div className="mt-1.5 max-h-[390px] overflow-y-auto rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] p-1">
+        <div className="grid grid-cols-[18px_82px_1fr_1fr_1fr_1fr_56px] gap-2 px-2 py-1 text-[10px] text-[var(--tc-text-muted)]">
+          <span /><MetricTableHeading label="用例" /><MetricTableHeading label="Recall@10" description="前 10 条检索结果中找回预期来源的比例。" /><MetricTableHeading label="MRR@10" description="正确结果在前 10 条中的排序质量。" /><MetricTableHeading label="Relation Recall@10" description="前 10 条中找回预期关系边的比例。" /><MetricTableHeading label="Complete Path Recall" description="预期多跳关系链完整命中的比例。" /><span>回源</span>
+        </div>
+        {detail.deterministic.case_scores.map(score => {
+          const goldenCase = suite?.cases.find(item => item.case_id === score.case_id) ?? null;
+          return <CaseScoreRow key={score.case_id} score={score} goldenCase={goldenCase} expanded={expandedCaseId === score.case_id} onToggle={() => setExpandedCaseId(current => current === score.case_id ? null : score.case_id)} />;
+        })}
       </div>
     </section>
   );
 }
 
-function CaseScoreRow({ score }: { score: RAGCaseScore }) {
+function CaseScoreRow({ score, goldenCase, expanded, onToggle }: { score: RAGCaseScore; goldenCase: RAGGoldenCase | null; expanded: boolean; onToggle: () => void }) {
   return (
-    <div className="grid grid-cols-[82px_1fr_1fr_1fr_1fr_56px] gap-2 rounded-[var(--tc-radius-control)] px-2 py-1.5 text-[11px] text-[var(--tc-text-secondary)] hover:bg-[var(--tc-surface-card)]">
-      <span className="tc-mono-font text-[var(--tc-text-primary)]">{score.case_id}</span>
-      <span>{formatScore(score.recall_at_k)}</span><span>{formatScore(score.mrr_at_k)}</span><span>{formatScore(score.relation_recall_at_k)}</span><span>{formatScore(score.complete_path_recall)}</span>
-      <span className={score.authority_verified ? "text-green-400" : "text-red-400"}>{score.authority_verified ? "通过" : "失败"}</span>
+    <div className="rounded-[var(--tc-radius-control)]">
+      <button type="button" aria-expanded={expanded} aria-controls={`rag-case-${score.case_id}`} onClick={onToggle} className="grid w-full grid-cols-[18px_82px_1fr_1fr_1fr_1fr_56px] gap-2 rounded-[var(--tc-radius-control)] px-2 py-1.5 text-left text-[11px] text-[var(--tc-text-secondary)] transition-colors duration-150 hover:bg-[var(--tc-surface-card)] motion-reduce:transition-none">
+        <ChevronRight className={cn("mt-0.5 size-3 text-[var(--tc-text-muted)] transition-transform duration-150 motion-reduce:transition-none", expanded && "rotate-90")} />
+        <span className="tc-mono-font text-[var(--tc-text-primary)]">{score.case_id}</span>
+        <span>{formatScore(score.recall_at_k)}</span><span>{formatScore(score.mrr_at_k)}</span><span>{formatScore(score.relation_recall_at_k)}</span><span>{formatScore(score.complete_path_recall)}</span>
+        <span className={score.authority_verified ? "text-green-400" : "text-red-400"}>{score.authority_verified ? "通过" : "失败"}</span>
+      </button>
+      {expanded ? <CaseScoreDetail id={`rag-case-${score.case_id}`} score={score} goldenCase={goldenCase} /> : null}
     </div>
   );
+}
+
+function CaseScoreDetail({ id, score, goldenCase }: { id: string; score: RAGCaseScore; goldenCase: RAGGoldenCase | null }) {
+  return (
+    <div id={id} className="mx-1 mb-1 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-card)] p-3 text-xs leading-5 text-[var(--tc-text-secondary)]">
+      <p className="text-[var(--tc-text-primary)]"><span className="text-[var(--tc-text-muted)]">检索问题：</span>{goldenCase?.query ?? "当前评测集已更新，未找到该用例定义。"}</p>
+      <div className="mt-2 grid grid-cols-2 gap-3">
+        <ScoreDetailGroup title="预期来源" values={goldenCase?.expected_source_ids ?? []} emptyText="该用例不要求命中指定来源。" />
+        <ScoreDetailGroup title="实际召回来源" values={score.retrieved_source_ids} emptyText="未召回来源。" />
+        <ScoreDetailGroup title="预期关系" values={goldenCase?.expected_relations.map(relation => relation.text || `${relation.subject} → ${relation.predicate} → ${relation.object}`) ?? []} emptyText="该用例不验证关系。" />
+        <ScoreDetailGroup title="实际召回关系" values={score.retrieved_relation_ids} emptyText="未召回关系。" />
+      </div>
+      {goldenCase?.expected_path.length ? <p className="mt-2"><span className="text-[var(--tc-text-muted)]">预期路径：</span>{goldenCase.expected_path.join(" → ")}</p> : null}
+    </div>
+  );
+}
+
+function ScoreDetailGroup({ title, values, emptyText }: { title: string; values: string[]; emptyText: string }) {
+  return <div><p className="text-[10px] text-[var(--tc-text-muted)]">{title}</p>{values.length ? <div className="mt-1 flex flex-wrap gap-1">{values.map(value => <span key={value} className="tc-mono-font rounded bg-[var(--tc-surface-muted)] px-1.5 py-0.5 text-[10px] text-[var(--tc-text-secondary)]">{value}</span>)}</div> : <p className="mt-1 text-[11px] text-[var(--tc-text-muted)]">{emptyText}</p>}</div>;
 }
 
 function EvaluationArchitecture({ configuration }: { configuration: RAGEvaluationConfiguration | null }) {
@@ -419,8 +466,26 @@ function DetailBlock({ title, children }: { title: string; children: React.React
   return <section className="mt-5 text-sm leading-6 text-[var(--tc-text-secondary)]"><h3 className="mb-1 text-xs text-[var(--tc-text-muted)]">{title}</h3>{children}</section>;
 }
 
-function Metric({ label, value, compact = false }: { label: string; value: string; compact?: boolean }) {
-  return <div className="rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-card)] px-3 py-2"><p className="text-[11px] text-[var(--tc-text-muted)]">{label}</p><p className={cn("tc-mono-font mt-0.5 truncate font-medium text-[var(--tc-text-primary)]", compact ? "text-sm" : "text-base")} title={value}>{value}</p></div>;
+function Metric({ label, value, description, compact = false }: { label: string; value: string; description?: string; compact?: boolean }) {
+  return <div className="rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-card)] px-3 py-2"><MetricLabel label={label} description={description} /><p className={cn("tc-mono-font mt-0.5 truncate font-medium text-[var(--tc-text-primary)]", compact ? "text-sm" : "text-base")} title={value}>{value}</p></div>;
+}
+
+function MetricTableHeading({ label, description }: { label: string; description?: string }) {
+  return <MetricLabel label={label} description={description} className="text-[10px]" />;
+}
+
+function MetricLabel({ label, description, className }: { label: string; description?: string; className?: string }) {
+  if (!description) return <span className={cn("text-[11px] text-[var(--tc-text-muted)]", className)}>{label}</span>;
+  return (
+    <span
+      title={description}
+      tabIndex={0}
+      className={cn("group relative inline-flex w-fit items-center gap-1 text-[11px] text-[var(--tc-text-muted)]", className)}
+    >
+      {label}<Info className="size-3" aria-hidden="true" />
+      <span role="tooltip" className="pointer-events-none absolute bottom-full left-0 z-20 mb-1 hidden w-56 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-card)] px-2 py-1.5 text-[11px] leading-4 text-[var(--tc-text-secondary)] shadow-[var(--tc-shadow-soft)] group-hover:block group-focus-within:block">{description}</span>
+    </span>
+  );
 }
 
 function CompactFact({ label, value }: { label: string; value: string }) {
@@ -442,9 +507,38 @@ function gateLabel(detail: RAGEvaluationResultDetail | null): string {
 }
 
 function summarizeSemantic(report: RAGRunReport): string {
-  const metrics = report.semantic_scores.flatMap(item => item.metrics);
-  if (!metrics.length) return "本次未运行";
-  return `${metrics.filter(metric => metric.passed).length}/${metrics.length} 项通过`;
+  const metrics = report.semantic_scores
+    .filter(isSemanticCaseScore)
+    .flatMap(item => item.metrics);
+  const failureCount = report.semantic_scores.filter(isSemanticCaseFailure).length;
+  const metricSummary = metrics.length
+    ? `${metrics.filter(metric => metric.passed).length}/${metrics.length} 项通过`
+    : "";
+  const failureSummary = failureCount ? `${failureCount} 条执行失败` : "";
+  return [metricSummary, failureSummary].filter(Boolean).join("，") || "本次未运行";
+}
+
+function isSemanticCaseScore(
+  item: RAGSemanticCaseResult,
+): item is RAGSemanticCaseScore {
+  return "metrics" in item && Array.isArray(item.metrics);
+}
+
+function isSemanticCaseFailure(
+  item: RAGSemanticCaseResult,
+): item is RAGSemanticCaseFailure {
+  return "status" in item && item.status === "failed";
+}
+
+function summarizeSemanticFailureGroups(
+  report: RAGRunReport,
+): Array<{ message: string; count: number }> {
+  const counts = new Map<string, number>();
+  for (const failure of report.semantic_scores.filter(isSemanticCaseFailure)) {
+    const message = failure.error_message?.trim() || "模型未返回可用的评测结果。";
+    counts.set(message, (counts.get(message) ?? 0) + 1);
+  }
+  return [...counts.entries()].map(([message, count]) => ({ message, count }));
 }
 
 function modeLabel(mode: string): string {
@@ -470,12 +564,6 @@ function resultStatusClass(result: RAGEvaluationResultSummary): string {
 
 function formatScore(value: number | null | undefined): string {
   return value === null || value === undefined ? "—" : `${(value * 100).toFixed(1)}%`;
-}
-
-function formatSigned(value: number | null | undefined): string {
-  if (value === null || value === undefined) return "本次未运行";
-  const points = value * 100;
-  return `${points >= 0 ? "+" : ""}${points.toFixed(1)} 个百分点`;
 }
 
 function formatCount(value: number | undefined): string {

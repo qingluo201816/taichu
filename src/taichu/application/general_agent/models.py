@@ -47,6 +47,15 @@ class GeneralAgentNodeStatus(StrEnum):
     WAITING_HUMAN = "waiting_human"
 
 
+class GeneralAgentMessageType(StrEnum):
+    """持久标识一条用户可见消息在所属请求轮次中的职责。"""
+
+    USER_REQUEST = "user_request"
+    HUMAN_PROMPT = "human_prompt"
+    HUMAN_RESPONSE = "human_response"
+    ASSISTANT_FINAL = "assistant_final"
+
+
 class RecoveryAction(StrEnum):
     """Runtime 基于持久证据采取的恢复动作。"""
 
@@ -84,6 +93,47 @@ class GeneralAgentMessage(GeneralAgentModel):
     role: Literal["user", "assistant"]
     content: str = Field(min_length=1, max_length=100_000)
     created_at: str = Field(min_length=1)
+    message_id: str | None = Field(
+        default=None,
+        pattern=r"^message_[a-f0-9]{32}$",
+    )
+    turn_id: str | None = Field(default=None, min_length=1, max_length=128)
+    request_index: int | None = Field(default=None, ge=1)
+    message_type: GeneralAgentMessageType | None = None
+    human_request_id: str | None = Field(default=None, min_length=1, max_length=128)
+
+    @model_validator(mode="after")
+    def validate_identity(self) -> Self:
+        identity = (
+            self.message_id,
+            self.turn_id,
+            self.request_index,
+            self.message_type,
+        )
+        if all(value is None for value in identity):
+            # 旧 JSON 与独立历史消息对象由 GeneralAgentRun 的只读迁移器补齐。
+            if self.human_request_id is not None:
+                raise ValueError("旧消息不能只携带人工请求标识。")
+            return self
+        if any(value is None for value in identity):
+            raise ValueError("消息身份必须同时包含消息、轮次、请求序号与职责。")
+        if self.message_type in {
+            GeneralAgentMessageType.USER_REQUEST,
+            GeneralAgentMessageType.HUMAN_RESPONSE,
+        }:
+            if self.role != "user":
+                raise ValueError("用户请求与人工回答必须使用 user 角色。")
+        elif self.role != "assistant":
+            raise ValueError("人工提示与最终回答必须使用 assistant 角色。")
+        if self.message_type in {
+            GeneralAgentMessageType.HUMAN_PROMPT,
+            GeneralAgentMessageType.HUMAN_RESPONSE,
+        }:
+            if self.human_request_id is None:
+                raise ValueError("人工提示与回答必须关联同一个人工请求标识。")
+        elif self.human_request_id is not None:
+            raise ValueError("非人工消息不能携带人工请求标识。")
+        return self
 
 
 class GeneralAgentScope(GeneralAgentModel):
@@ -248,6 +298,7 @@ class GeneralAgentHumanRequest(GeneralAgentModel):
     prompt: str = Field(min_length=1, max_length=20_000)
     node_id: str | None = None
     tool_name: str | None = None
+    effect_id: str | None = Field(default=None, max_length=80)
     input_sha256: str | None = Field(default=None, min_length=64, max_length=64)
     input_summary: dict[str, Any] = Field(default_factory=dict)
     resource_scopes: list[str] = Field(default_factory=list)
@@ -326,6 +377,7 @@ class GeneralAgentCurrentRequest(GeneralAgentModel):
     """完整保留且最后才允许触及的当前请求层。"""
 
     content: str = Field(min_length=1, max_length=100_000)
+    human_responses: list[str] = Field(default_factory=list, max_length=20)
     user_constraints: list[str] = Field(default_factory=list, max_length=100)
     scope: dict[str, Any] = Field(default_factory=dict)
 
@@ -352,16 +404,16 @@ class GeneralAgentHistoryMemory(GeneralAgentModel):
 
 
 class GeneralAgentContextEnvelope(GeneralAgentModel):
-    """按稳定、工作、长期、历史和当前请求五层组装的上下文。"""
+    """按稳定、长期、历史、工作和当前请求顺序组装的五层上下文。"""
 
     phase: Literal["plan", "replan", "verify"]
     stable_memory: list[str] = Field(default_factory=list, max_length=100)
-    working_memory: GeneralAgentWorkingMemory = Field(
-        default_factory=GeneralAgentWorkingMemory
-    )
     long_term_memory: list[GeneralAgentContextMemory] = Field(default_factory=list)
     history_memory: GeneralAgentHistoryMemory = Field(
         default_factory=GeneralAgentHistoryMemory
+    )
+    working_memory: GeneralAgentWorkingMemory = Field(
+        default_factory=GeneralAgentWorkingMemory
     )
     current_request: GeneralAgentCurrentRequest
     category_stats: list[GeneralAgentContextCategoryStat] = Field(default_factory=list)
@@ -557,23 +609,22 @@ class GeneralAgentAssemblyTrace(GeneralAgentModel):
             "stable_memory_sha256": stable_memory_sha256,
             "projections": projections,
         }
-        return cls(
-            **payload,
-            trace_sha256=context_snapshot_sha256(
-                {
-                    key: (
-                        [
-                            item.model_dump(mode="json")
-                            for item in value
-                        ]
-                        if isinstance(value, tuple)
-                        and value
-                        and isinstance(value[0], GeneralAgentModel)
-                        else value
-                    )
-                    for key, value in payload.items()
-                }
-            ),
+        return cls.model_validate(
+            {
+                **payload,
+                "trace_sha256": context_snapshot_sha256(
+                    {
+                        key: (
+                            [item.model_dump(mode="json") for item in value]
+                            if isinstance(value, tuple)
+                            and value
+                            and isinstance(value[0], GeneralAgentModel)
+                            else value
+                        )
+                        for key, value in payload.items()
+                    }
+                ),
+            }
         )
 
 
@@ -618,7 +669,7 @@ class GeneralAgentCompressionStats(GeneralAgentModel):
 
 
 class GeneralAgentRun(GeneralAgentModel):
-    """通用 Runtime 的完整可恢复检查点。"""
+    """通用 Runtime 的业务审计与界面投影；图恢复由 Checkpointer 负责。"""
 
     run_id: str = Field(pattern=r"^general_run_\d{8}_\d{6}_[a-z0-9]{6}$")
     task_id: str = Field(min_length=1, max_length=128)
@@ -633,6 +684,10 @@ class GeneralAgentRun(GeneralAgentModel):
     limits: GeneralAgentRunLimits = Field(default_factory=GeneralAgentRunLimits)
     status: GeneralAgentRunStatus = GeneralAgentRunStatus.INIT
     messages: list[GeneralAgentMessage] = Field(default_factory=list)
+    current_request_message_id: str | None = Field(
+        default=None,
+        pattern=r"^message_[a-f0-9]{32}$",
+    )
     plan: GeneralAgentExecutionPlan | None = None
     plan_revision: int = 0
     replan_count: int = 0
@@ -658,7 +713,13 @@ class GeneralAgentRun(GeneralAgentModel):
     )
     context_resume_differences: list[str] = Field(default_factory=list, max_length=100)
     lifecycle_events: list[GeneralAgentLifecycleEvent] = Field(default_factory=list)
-    checkpoint_revision: int = Field(default=0, ge=0)
+    checkpoint_revision: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "历史字段名，仅表示业务投影保存序号；不得用于 LangGraph 恢复。"
+        ),
+    )
     resumable: bool = True
     created_at: str = Field(min_length=1)
     updated_at: str = Field(min_length=1)
@@ -687,6 +748,7 @@ class GeneralAgentRun(GeneralAgentModel):
         )
         payload.setdefault("request_index", max(1, legacy_request_count))
         payload.setdefault("parent_run_id", None)
+        _migrate_legacy_message_identities(payload)
         payload.setdefault("memory_refs", [])
         payload.setdefault("final_answer_basis_sha256", None)
         payload.setdefault("verification_attempt_count", 0)
@@ -696,6 +758,27 @@ class GeneralAgentRun(GeneralAgentModel):
         payload.setdefault("compression_stats", {})
         payload.setdefault("context_resume_differences", [])
         return payload
+
+    @model_validator(mode="after")
+    def validate_current_request_message(self) -> Self:
+        if self.current_request_message_id is None:
+            return self
+        matches = [
+            message
+            for message in self.messages
+            if message.message_id == self.current_request_message_id
+        ]
+        if len(matches) != 1:
+            raise ValueError("当前请求消息标识必须命中唯一消息。")
+        current = matches[0]
+        if (
+            current.turn_id != self.run_id
+            or current.request_index != self.request_index
+            or current.message_type is not GeneralAgentMessageType.USER_REQUEST
+            or current.content != self.user_goal
+        ):
+            raise ValueError("当前请求消息与运行轮次或用户原文不一致。")
+        return self
 
     @model_validator(mode="after")
     def validate_context_snapshot_reference(self) -> Self:
@@ -750,6 +833,155 @@ def _ensure_acyclic(
         remaining -= ready
 
 
+def _migrate_legacy_message_identities(payload: dict[str, Any]) -> None:
+    """只在读取旧运行 JSON 时补齐消息身份；运行主链必须显式写入这些字段。"""
+
+    raw_messages = payload.get("messages")
+    if not isinstance(raw_messages, list):
+        payload.setdefault("current_request_message_id", None)
+        return
+    messages = [
+        item.model_dump(mode="json")
+        if isinstance(item, GeneralAgentMessage)
+        else dict(item)
+        if isinstance(item, dict)
+        else item
+        for item in raw_messages
+    ]
+    run_id = str(payload.get("run_id") or "legacy_run")
+    conversation_id = str(payload.get("conversation_id") or payload.get("task_id") or run_id)
+    request_index = max(1, int(payload.get("request_index") or 1))
+    user_goal = payload.get("user_goal")
+    current_request_message_id = payload.get("current_request_message_id")
+
+    explicit_current = next(
+        (
+            item
+            for item in messages
+            if isinstance(item, dict)
+            and item.get("turn_id") == run_id
+            and item.get("request_index") == request_index
+            and item.get("message_type") == GeneralAgentMessageType.USER_REQUEST.value
+        ),
+        None,
+    )
+    legacy_current_start: int | None = None
+    if explicit_current is None and isinstance(user_goal, str):
+        # 旧格式没有可恢复的轮次身份，只能在读取时做一次兼容投影。
+        # 新写入路径不会经过这条文本推断分支。
+        legacy_current_start = next(
+            (
+                index
+                for index in range(len(messages) - 1, -1, -1)
+                if isinstance(messages[index], dict)
+                and messages[index].get("role") == "user"
+                and messages[index].get("content") == user_goal
+            ),
+            None,
+        )
+
+    migrated: list[Any] = []
+    active_human_request_id: str | None = None
+    inferred_current_request_id: str | None = None
+    for index, item in enumerate(messages):
+        if not isinstance(item, dict):
+            migrated.append(item)
+            continue
+        message = dict(item)
+        has_complete_identity = all(
+            message.get(field) is not None
+            for field in ("message_id", "turn_id", "request_index", "message_type")
+        )
+        if has_complete_identity:
+            if (
+                message.get("turn_id") == run_id
+                and message.get("request_index") == request_index
+                and message.get("message_type")
+                == GeneralAgentMessageType.USER_REQUEST.value
+            ):
+                inferred_current_request_id = str(message["message_id"])
+            if message.get("message_type") == GeneralAgentMessageType.HUMAN_PROMPT.value:
+                active_human_request_id = str(message.get("human_request_id") or "") or None
+            migrated.append(message)
+            continue
+
+        message_id = _legacy_message_id(run_id, index, message)
+        belongs_to_current = (
+            legacy_current_start is not None and index >= legacy_current_start
+        )
+        message_type: GeneralAgentMessageType
+        human_request_id: str | None = None
+        if belongs_to_current and index == legacy_current_start:
+            message_type = GeneralAgentMessageType.USER_REQUEST
+            inferred_current_request_id = message_id
+        elif belongs_to_current and message.get("role") == "assistant":
+            if (
+                isinstance(payload.get("final_answer"), str)
+                and payload.get("final_answer")
+                and message.get("content") == payload.get("final_answer")
+            ):
+                message_type = GeneralAgentMessageType.ASSISTANT_FINAL
+                active_human_request_id = None
+            else:
+                message_type = GeneralAgentMessageType.HUMAN_PROMPT
+                active_human_request_id = _legacy_human_request_id(run_id, index)
+                human_request_id = active_human_request_id
+        elif belongs_to_current:
+            message_type = GeneralAgentMessageType.HUMAN_RESPONSE
+            human_request_id = active_human_request_id or _legacy_human_request_id(
+                run_id,
+                index,
+            )
+        else:
+            message_type = (
+                GeneralAgentMessageType.USER_REQUEST
+                if message.get("role") == "user"
+                else GeneralAgentMessageType.ASSISTANT_FINAL
+            )
+        message.update(
+            {
+                "message_id": message_id,
+                "turn_id": (
+                    run_id
+                    if belongs_to_current
+                    else f"legacy_turn_{sha256(conversation_id.encode('utf-8')).hexdigest()[:24]}"
+                ),
+                "request_index": (
+                    request_index if belongs_to_current else max(1, request_index - 1)
+                ),
+                "message_type": message_type.value,
+                "human_request_id": human_request_id,
+            }
+        )
+        migrated.append(message)
+
+    payload["messages"] = migrated
+    payload["current_request_message_id"] = (
+        current_request_message_id or inferred_current_request_id
+    )
+
+
+def _legacy_message_id(run_id: str, index: int, message: dict[str, Any]) -> str:
+    encoded = json.dumps(
+        {
+            "run_id": run_id,
+            "index": index,
+            "role": message.get("role"),
+            "content": message.get("content"),
+            "created_at": message.get("created_at"),
+        },
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    return f"message_{sha256(encoded.encode('utf-8')).hexdigest()[:32]}"
+
+
+def _legacy_human_request_id(run_id: str, index: int) -> str:
+    encoded = f"{run_id}:{index}:human_request".encode()
+    return f"human_{sha256(encoded).hexdigest()[:32]}"
+
+
 def _legacy_context_snapshot_payload(payload: dict[str, Any]) -> dict[str, Any]:
     """重建新增细粒度失效字段前的快照形状，仅用于读取旧检查点。"""
 
@@ -760,6 +992,12 @@ def _legacy_context_snapshot_payload(payload: dict[str, Any]) -> dict[str, Any]:
     envelope = legacy.get("envelope")
     if not isinstance(envelope, dict):
         return legacy
+    history_memory = envelope.get("history_memory")
+    if isinstance(history_memory, dict):
+        history_messages = history_memory.get("messages", [])
+        if isinstance(history_messages, list):
+            for message in history_messages:
+                _remove_message_identity_fields(message)
     working_memory = envelope.get("working_memory")
     if isinstance(working_memory, dict):
         working_memory.pop("invalidated_memories", None)
@@ -772,6 +1010,19 @@ def _legacy_context_snapshot_payload(payload: dict[str, Any]) -> dict[str, Any]:
         for memory in long_term_memory:
             _remove_context_memory_validity_fields(memory)
     return legacy
+
+
+def _remove_message_identity_fields(value: Any) -> None:
+    if not isinstance(value, dict):
+        return
+    for field in (
+        "message_id",
+        "turn_id",
+        "request_index",
+        "message_type",
+        "human_request_id",
+    ):
+        value.pop(field, None)
 
 
 def _remove_context_memory_validity_fields(value: Any) -> None:

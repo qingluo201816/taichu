@@ -22,7 +22,7 @@ from taichu.application.evaluations.general_agent_benchmark.observations import 
 )
 from taichu.application.evaluations.general_agent_benchmark.oracles import (
     AssertionEvaluationContext,
-    CheckpointIntegrityObservation,
+    CheckpointAvailabilityObservation,
     RecoveryReuseObservation,
 )
 from taichu.application.evaluations.general_agent_benchmark.run_lineage import (
@@ -70,7 +70,6 @@ from taichu.infrastructure.general_agent_runs import (
     JsonGeneralAgentContextSnapshotRepository,
     JsonGeneralAgentEffectRepository,
     JsonGeneralAgentRunRepository,
-    JsonLangGraphCheckpointSaver,
 )
 from taichu.infrastructure.llm_replays import JsonLLMCallReplayRepository
 
@@ -174,9 +173,9 @@ class SyntheticRecoveryHarness:
         )
         if points == (FaultPoint.CHECKPOINT_REVISION_VALIDATION,):
             assertion_context = AssertionEvaluationContext(
-                checkpoint_integrity=(
-                    _checkpoint_projection(
-                        workspace=self._workspace,
+                checkpoint_availability=(
+                    await _checkpoint_projection(
+                        checkpointer=self._dependencies.graph_checkpointer,
                         run=run,
                         fault_plan_ref=asset.asset_id,
                         effects=effects,
@@ -259,16 +258,15 @@ class SyntheticRecoveryHarness:
                 "source_refs": [],
                 "warnings": [],
             }
-            for attempt in ("interrupted", "recovered"):
-                steps.append(
-                    _model_step(
-                        sequence=len(steps),
-                        step_id=f"recovery_model_subagent_{attempt}",
-                        name=f"recovery_narrative_summary_{attempt}",
-                        phase="narrative_summary",
-                        response=subagent_response,
-                    )
+            steps.append(
+                _model_step(
+                    sequence=len(steps),
+                    step_id="recovery_model_subagent_recovered",
+                    name="recovery_narrative_summary_recovered",
+                    phase="narrative_summary",
+                    response=subagent_response,
                 )
+            )
         steps.append(
             _model_step(
                 sequence=len(steps),
@@ -520,7 +518,7 @@ class SyntheticRecoveryHarness:
             llm=gateway,
             run_repository=JsonGeneralAgentRunRepository(self._workspace),
             event_center=GeneralAgentEventCenter(),
-            graph_checkpointer=JsonLangGraphCheckpointSaver(self._workspace),
+            graph_checkpointer=self._dependencies.graph_checkpointer,
             effect_repository=JsonGeneralAgentEffectRepository(self._workspace),
             context_snapshot_repository=(
                 JsonGeneralAgentContextSnapshotRepository(self._workspace)
@@ -577,18 +575,9 @@ class SyntheticRecoveryHarness:
         finally:
             await first.shutdown()
 
-        revision_root = (
-            self._workspace
-            / "derived"
-            / "general_agent_graph_checkpoints"
-            / interrupted.run_id
-            / "revisions"
+        await self._dependencies.graph_checkpointer.adelete_thread(
+            interrupted.conversation_id
         )
-        revisions = tuple(sorted(revision_root.glob("*.json")))
-        if not revisions:
-            raise RuntimeError("Checkpoint 损坏场景没有可注入的真实修订。")
-        for revision in revisions:
-            revision.write_text("{密封故障：修订损坏", encoding="utf-8")
 
         adapter = FaultPressureAdapter(
             JsonFaultTriggerStore(
@@ -731,18 +720,15 @@ def _duplicate_side_effects(effects: tuple[Any, ...] | list[Any]) -> int:
     return sum(max(0, len(items) - 1) for items in attempts.values())
 
 
-def _checkpoint_projection(
+async def _checkpoint_projection(
     *,
-    workspace: Path,
+    checkpointer: Any,
     run: GeneralAgentRun,
     fault_plan_ref: str,
     effects: tuple[Any, ...] | list[Any],
-) -> CheckpointIntegrityObservation:
-    summary = JsonLangGraphCheckpointSaver(workspace).inspect_thread(run.run_id)
-    valid = tuple(
-        revision
-        for revision in summary.available_revisions
-        if revision not in set(summary.invalid_revisions)
+) -> CheckpointAvailabilityObservation:
+    latest = await checkpointer.aget_tuple(
+        {"configurable": {"thread_id": run.conversation_id}}
     )
     last = run.recovery_decisions[-1] if run.recovery_decisions else None
     automatic_restart_count = (
@@ -763,18 +749,14 @@ def _checkpoint_projection(
         if statuses
         else "not_applicable"
     )
-    selected = (
-        summary.recovered_from_revision
-        if summary.recovered_from_revision in valid
-        else summary.current_revision
-        if summary.current_revision in valid
-        else None
-    )
-    return CheckpointIntegrityObservation(
+    selected = None
+    if latest is not None:
+        configurable = latest.config.get("configurable", {})
+        selected = configurable.get("checkpoint_id") or latest.checkpoint.get("id")
+    return CheckpointAvailabilityObservation(
         fault_plan_ref=fault_plan_ref,
-        valid_revisions=valid,
-        invalid_revisions=tuple(summary.invalid_revisions),
-        selected_revision=selected,
+        status="available" if latest is not None else "missing",
+        selected_checkpoint_id=str(selected) if selected else None,
         recovery_action=(
             "stop"
             if last is not None and last.action is RecoveryAction.STOP

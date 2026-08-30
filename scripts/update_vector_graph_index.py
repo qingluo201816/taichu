@@ -71,11 +71,34 @@ async def _run(args: argparse.Namespace) -> int:
         hnsw_ef_construction=settings.milvus_hnsw_ef_construction,
         hnsw_ef_search=settings.milvus_hnsw_ef_search,
         rrf_k=settings.milvus_rrf_k,
-        entity_top_k=settings.vector_graph_entity_top_k,
-        relation_top_k=settings.vector_graph_relation_top_k,
-        expansion_degree=settings.vector_graph_expansion_degree,
-        relation_number_threshold=settings.vector_graph_relation_number_threshold,
-        final_top_k=settings.vector_graph_ann_top_k,
+        expansion_max_seed_entities=(settings.vector_graph_expansion_max_seed_entities),
+        expansion_max_seed_relations=(
+            settings.vector_graph_expansion_max_seed_relations
+        ),
+        expansion_max_hop=settings.vector_graph_expansion_max_hop,
+        expansion_max_entities_per_hop=(
+            settings.vector_graph_expansion_max_entities_per_hop
+        ),
+        expansion_relations_per_entity=(
+            settings.vector_graph_expansion_relations_per_entity
+        ),
+        expansion_candidate_pool_multiplier=(
+            settings.vector_graph_expansion_candidate_pool_multiplier
+        ),
+        expansion_hub_relations_per_entity=(
+            settings.vector_graph_expansion_hub_relations_per_entity
+        ),
+        expansion_hub_degree_threshold=(
+            settings.vector_graph_expansion_hub_degree_threshold
+        ),
+        expansion_beam_width=settings.vector_graph_expansion_beam_width,
+        expansion_max_total_relations=(
+            settings.vector_graph_expansion_max_total_relations
+        ),
+        expansion_max_graph_passages=(
+            settings.vector_graph_expansion_max_graph_passages
+        ),
+        final_top_k=settings.vector_graph_passage_top_k,
     )
     backend = HybridVectorGraphBackend(
         milvus=milvus_backend,
@@ -84,7 +107,7 @@ async def _run(args: argparse.Namespace) -> int:
             model_id=settings.reranker_model_id,
             timeout_seconds=settings.reranker_request_timeout_seconds,
         ),
-        candidate_top_k=settings.vector_graph_ann_top_k,
+        candidate_top_k=settings.vector_graph_passage_top_k,
         final_top_k=settings.vector_graph_reranker_top_k,
     )
     service = VectorGraphRAGService(

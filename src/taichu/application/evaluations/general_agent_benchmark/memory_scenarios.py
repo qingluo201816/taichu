@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from enum import StrEnum
 import json
 from pathlib import Path
-from typing import Any, Literal, Self, TypeAlias
+from typing import Any, Literal, Protocol, Self, TypeAlias
 
 from pydantic import Field, model_validator
 
@@ -16,7 +16,6 @@ from taichu.application.agent_memory.models import (
     AgentMemoryKind,
     AgentMemoryValidity,
 )
-from taichu.application.contracts.llm import LLMRequest
 from taichu.application.evaluations.general_agent_benchmark.canonical import (
     canonical_sha256,
 )
@@ -30,6 +29,27 @@ from taichu.application.general_agent.models import (
     GeneralAgentNodeRun,
 )
 from taichu.application.invocations.models import InvocationEnvelope
+
+
+class ModelToolCallSnapshot(Protocol):
+    call_id: str
+    name: str
+    arguments_json: str
+
+
+class ModelMessageSnapshot(Protocol):
+    role: str
+    content: str
+    tool_calls: tuple[ModelToolCallSnapshot, ...]
+    tool_call_id: str | None
+    tool_name: str | None
+    is_error: bool
+
+
+class ModelRequestSnapshot(Protocol):
+    """评测只读投影所需的最小供应商请求快照。"""
+
+    messages: tuple[ModelMessageSnapshot, ...]
 
 
 class MemoryCarrierKind(StrEnum):
@@ -324,11 +344,11 @@ class MemoryBranchExchange(BenchmarkModel):
         *,
         branch_id: str,
         node: GeneralAgentNodeRun,
-        request: LLMRequest,
+        request: ModelRequestSnapshot,
         envelope: InvocationEnvelope[Any],
         evidence_ref: str,
     ) -> MemoryBranchExchange:
-        """只读取生产 NodeRun、LLMRequest 与 InvocationEnvelope。"""
+        """只读取生产 NodeRun、模型请求快照与 InvocationEnvelope。"""
 
         output = envelope.output.model_dump(mode="json")
         return cls(
@@ -416,8 +436,8 @@ class MemoryBehaviorProjector:
         target_memory: AgentMemoryEntry,
         baseline_snapshot: GeneralAgentContextSnapshot,
         candidate_snapshot: GeneralAgentContextSnapshot,
-        baseline_request: LLMRequest,
-        candidate_request: LLMRequest,
+        baseline_request: ModelRequestSnapshot,
+        candidate_request: ModelRequestSnapshot,
         baseline_answer: str,
         candidate_answer: str,
         answer_contract: MemoryAnswerContract,
@@ -511,7 +531,7 @@ class MemoryBehaviorProjector:
         invalid_memories: tuple[AgentMemoryEntry, ...],
         sentinel_refs: Mapping[str, str],
         snapshot: GeneralAgentContextSnapshot,
-        orchestrator_request: LLMRequest,
+        orchestrator_request: ModelRequestSnapshot,
         final_answer: str,
         answer_contract: MemoryAnswerContract,
         evidence_ref: str,
@@ -1004,7 +1024,9 @@ def _payload_text(payload: Any) -> str:
     )
 
 
-def _request_messages(request: LLMRequest) -> tuple[dict[str, Any], ...]:
+def _request_messages(
+    request: ModelRequestSnapshot,
+) -> tuple[dict[str, Any], ...]:
     return tuple(
         {
             "role": message.role,
@@ -1025,7 +1047,9 @@ def _request_messages(request: LLMRequest) -> tuple[dict[str, Any], ...]:
     )
 
 
-def _developer_messages(request: LLMRequest) -> tuple[dict[str, Any], ...]:
+def _developer_messages(
+    request: ModelRequestSnapshot,
+) -> tuple[dict[str, Any], ...]:
     return tuple(
         item for item in _request_messages(request) if item["role"] == "developer"
     )

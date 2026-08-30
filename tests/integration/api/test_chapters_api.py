@@ -16,7 +16,7 @@ from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
 from taichu.main import create_app
-from tests.fakes import InMemoryKnowledgeRepository
+from tests.fakes import InMemoryKnowledgeRepository, make_test_llm_gateway
 
 
 class ChapterApiTest(unittest.IsolatedAsyncioTestCase):
@@ -32,8 +32,8 @@ class ChapterApiTest(unittest.IsolatedAsyncioTestCase):
         )
         app = create_app(
             app_settings=Settings(project_assets_dir=self.assets_root),
-            llm=FakeMessagesListChatModel(
-                responses=[AIMessage(content="unused")]
+            llm_gateway=make_test_llm_gateway(
+                FakeMessagesListChatModel(responses=[AIMessage(content="unused")])
             ),
             knowledge_repository=InMemoryKnowledgeRepository(),
         )

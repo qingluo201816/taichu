@@ -54,7 +54,7 @@ _EXPECTED_CASES = (
     ("recovery_after_write_before_effect_success", "写入后效果确认前恢复"),
     ("recovery_verification_interruption", "校验阶段中断恢复"),
     ("recovery_multiple_interruptions", "多次中断恢复"),
-    ("recovery_checkpoint_integrity_or_version", "Checkpoint 完整性与版本恢复"),
+    ("recovery_checkpoint_unavailable", "官方 Checkpoint 缺失时安全停止"),
     ("context_long_history_fact_retention", "长历史关键事实保持"),
     ("context_long_working_memory_priority", "长工作记忆优先裁剪"),
     ("context_large_node_output_projection", "大节点输出投影"),

@@ -1,57 +1,46 @@
 """高层编排只看到需要由模型提供的能力输入。"""
 
+from pydantic import BaseModel
+
+from taichu.application.general_agent.capability_resolution import (
+    CapabilityContract,
+    _native_tool_definition,
+)
+from taichu.application.general_agent.models import GeneralAgentNodeKind
 from taichu.application.general_agent.orchestrator import (
     _invalid_literal_artifact_refs,
-    _planning_schema,
 )
 
 
+class _SourceRequest(BaseModel):
+    auto_collect: bool
+    upstream_artifact_refs: list[str]
+
+
+class _PlanningInput(BaseModel):
+    chapter_id: str
+    author_grant_id: str
+    external_access_grant_id: str
+    idempotency_key: str
+    source_request: _SourceRequest
+
+
 def test_planning_schema_hides_runtime_injected_fields() -> None:
-    schema = {
-        "type": "object",
-        "properties": {
-            "chapter_id": {"type": "string"},
-            "author_grant_id": {"type": "string"},
-            "external_access_grant_id": {"type": "string"},
-            "idempotency_key": {"type": "string"},
-            "source_request": {
-                "type": "object",
-                "properties": {
-                    "auto_collect": {"type": "boolean"},
-                    "upstream_artifact_refs": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                    },
-                },
-                "required": ["auto_collect", "upstream_artifact_refs"],
-            },
-        },
-        "required": [
-            "chapter_id",
-            "author_grant_id",
-            "external_access_grant_id",
-            "idempotency_key",
-            "source_request",
-        ],
-    }
-
-    projected = _planning_schema(schema)
-
-    assert projected["properties"] == {
-        "chapter_id": {"type": "string"},
-        "source_request": {
-            "type": "object",
-            "properties": {
-                "auto_collect": {"type": "boolean"},
-                "upstream_artifact_refs": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                },
-            },
-            "required": ["auto_collect", "upstream_artifact_refs"],
-        },
-    }
-    assert projected["required"] == ["chapter_id", "source_request"]
+    definition = _native_tool_definition(
+        CapabilityContract(
+            name="write_test",
+            kind=GeneralAgentNodeKind.TOOL,
+            description="测试规划 Schema",
+            input_schema=_PlanningInput,
+        )
+    )
+    function = definition["function"]
+    assert isinstance(function, dict)
+    parameters = function["parameters"]
+    assert isinstance(parameters, dict)
+    assert set(parameters["properties"]) == {"chapter_id", "source_request"}
+    assert parameters["required"] == ["chapter_id", "source_request"]
+    assert parameters["additionalProperties"] is False
 
 
 def test_literal_upstream_artifact_refs_require_real_artifact_identity() -> None:

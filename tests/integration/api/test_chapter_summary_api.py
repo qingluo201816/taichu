@@ -6,9 +6,6 @@ import unittest
 from pathlib import Path
 
 from httpx import ASGITransport, AsyncClient
-from langchain_core.language_models.fake_chat_models import (
-    FakeMessagesListChatModel,
-)
 from langchain_core.messages import AIMessage
 
 from taichu.application.services.import_service import ImportService
@@ -17,7 +14,11 @@ from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
 from taichu.main import create_app
-from tests.fakes import InMemoryKnowledgeRepository
+from tests.fakes import (
+    InMemoryKnowledgeRepository,
+    NativeToolCallSequenceChatModel,
+    make_test_llm_gateway,
+)
 
 
 class ChapterSummaryApiTest(unittest.IsolatedAsyncioTestCase):
@@ -33,11 +34,13 @@ class ChapterSummaryApiTest(unittest.IsolatedAsyncioTestCase):
         )
         app = create_app(
             app_settings=Settings(project_assets_dir=self.assets_root),
-            llm=FakeMessagesListChatModel(
-                responses=[
-                    AIMessage(content=_summary_json()),
-                    AIMessage(content=_summary_json()),
-                ]
+            llm_gateway=make_test_llm_gateway(
+                NativeToolCallSequenceChatModel(
+                    responses=[
+                        AIMessage(content=_summary_json()),
+                        AIMessage(content=_summary_json()),
+                    ]
+                )
             ),
             knowledge_repository=InMemoryKnowledgeRepository(),
         )

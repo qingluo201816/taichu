@@ -101,6 +101,7 @@ class RetrieveStoryContextInput(ToolModel):
 
 
 class StoryContextEvidence(ToolModel):
+    passage_id: str = ""
     source_type: VectorGraphSourceType
     source_id: str
     source_ref: str
@@ -119,6 +120,10 @@ class StoryContextEvidence(ToolModel):
     context_start_char: int | None = Field(default=None, ge=0)
     context_end_char: int | None = Field(default=None, ge=0)
     context_chunk_indexes: list[int] = Field(default_factory=list)
+    relation_ids: list[str] = Field(default_factory=list)
+    relation_texts: list[str] = Field(default_factory=list)
+    retrieval_channels: list[str] = Field(default_factory=list)
+    reranker_score: float | None = Field(default=None, ge=0, le=1)
     authority_verified: bool = False
 
 
@@ -127,7 +132,7 @@ class RetrieveStoryContextOutput(ToolModel):
     evidences: list[StoryContextEvidence] = Field(default_factory=list)
     retrieved_relations: list[str] = Field(default_factory=list)
     expanded_relations: list[str] = Field(default_factory=list)
-    reranked_relations: list[str] = Field(default_factory=list)
+    context_relations: list[str] = Field(default_factory=list)
     source_refs: list[str] = Field(default_factory=list)
 
 

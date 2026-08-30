@@ -1,6 +1,7 @@
 from decimal import Decimal
 
-from taichu.application.contracts.llm import LLMModelProfile, LLMUsage
+from taichu.application.contracts.llm import LLMModelProfile
+from taichu.infrastructure.llm.contracts import LLMUsage
 from taichu.infrastructure.llm.costs import calculate_cost
 
 
@@ -11,7 +12,6 @@ def _profile(wire_protocol: str) -> LLMModelProfile:
         provider="rightcode",
         upstream_model="model-under-test",
         wire_protocol=wire_protocol,  # type: ignore[arg-type]
-        base_url_key="MODEL_BASE_URL",
         enabled=True,
         is_default=False,
         supports_streaming=True,

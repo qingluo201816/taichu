@@ -40,7 +40,7 @@ from taichu.application.evaluations.general_agent_benchmark.suite_loader import 
     AuthorizationEffectAssertionSpec,
     CallCountAssertionSpec,
     CallTopologyAssertionSpec,
-    CheckpointIntegrityAssertionSpec,
+    CheckpointAvailabilityAssertionSpec,
     ContextPreservationAssertionSpec,
     DataflowIdentityAssertionSpec,
     FinalClaimsAssertionSpec,
@@ -296,11 +296,10 @@ class RecoveryReuseObservation(BenchmarkModel):
     retried_successful_result_ids: tuple[str, ...] = ()
 
 
-class CheckpointIntegrityObservation(BenchmarkModel):
+class CheckpointAvailabilityObservation(BenchmarkModel):
     fault_plan_ref: StableId
-    valid_revisions: tuple[int, ...]
-    invalid_revisions: tuple[int, ...]
-    selected_revision: int | None = Field(default=None, ge=1)
+    status: Literal["available", "missing"]
+    selected_checkpoint_id: str | None = None
     recovery_action: Literal["resume", "reuse_checkpoint", "stop"]
     automatic_restart_count: int = Field(ge=0)
     effect_state: Literal[
@@ -375,7 +374,7 @@ class AssertionEvaluationContext(BenchmarkModel):
     authorizations: tuple[AuthorizationEffectObservation, ...] = ()
     memory_carriers: tuple[MemoryCarrierObservation, ...] = ()
     recovery_reuse: tuple[RecoveryReuseObservation, ...] = ()
-    checkpoint_integrity: tuple[CheckpointIntegrityObservation, ...] = ()
+    checkpoint_availability: tuple[CheckpointAvailabilityObservation, ...] = ()
     context_preservation: tuple[ContextPreservationObservation, ...] = ()
     result_contract_equivalences: tuple[
         ResultContractEquivalenceObservation,
@@ -393,7 +392,7 @@ AssertionKind: TypeAlias = Literal[
     "authorization_effect",
     "memory_carrier_absence",
     "recovery_reuse",
-    "checkpoint_integrity",
+    "checkpoint_availability",
     "context_preservation",
     "result_contract_equivalence",
     "zero_capability_or_side_effect",
@@ -703,7 +702,7 @@ class TypedOracle:
             return self._memory_absence(assertion, observation, context)
         if isinstance(assertion, RecoveryReuseAssertionSpec):
             return self._recovery_reuse(assertion, observation, context)
-        if isinstance(assertion, CheckpointIntegrityAssertionSpec):
+        if isinstance(assertion, CheckpointAvailabilityAssertionSpec):
             return self._checkpoint(assertion, observation, context)
         if isinstance(assertion, ContextPreservationAssertionSpec):
             return self._context_preservation(
@@ -1407,52 +1406,40 @@ class TypedOracle:
 
     def _checkpoint(
         self,
-        assertion: CheckpointIntegrityAssertionSpec,
+        assertion: CheckpointAvailabilityAssertionSpec,
         observation: CaseObservation,
         context: AssertionEvaluationContext,
     ) -> AssertionResult:
         candidates = tuple(
             item
-            for item in context.checkpoint_integrity
+            for item in context.checkpoint_availability
             if item.fault_plan_ref == assertion.fault_plan_ref
         )
         if not candidates:
             return _invalid(
                 assertion,
                 observation,
-                "缺少 Checkpoint 完整性选择观察。",
+                "缺少 Checkpoint 可用性观察。",
             )
         if len(set(candidates)) != 1:
             return _invalid(
                 assertion,
                 observation,
-                "Checkpoint 完整性观察相互冲突。",
+                "Checkpoint 可用性观察相互冲突。",
             )
         checkpoint = candidates[0]
-        valid = tuple(checkpoint.valid_revisions)
-        invalid = tuple(checkpoint.invalid_revisions)
-        if (
-            len(valid) != len(set(valid))
-            or len(invalid) != len(set(invalid))
-            or set(valid).intersection(invalid)
-        ):
-            return _invalid(
-                assertion,
-                observation,
-                "Checkpoint revision 集合重复或相互冲突。",
-            )
         if checkpoint.effect_state in {"unknown", "requires_human"}:
             passed = checkpoint.recovery_action == "stop"
-        elif valid:
+        elif checkpoint.status == "available":
             passed = (
-                checkpoint.selected_revision == max(valid)
+                checkpoint.selected_checkpoint_id is not None
                 and checkpoint.recovery_action in {"resume", "reuse_checkpoint"}
                 and checkpoint.automatic_restart_count == 0
             )
         else:
             passed = (
                 assertion.allow_safe_failure
-                and checkpoint.selected_revision is None
+                and checkpoint.selected_checkpoint_id is None
                 and checkpoint.recovery_action == "stop"
                 and checkpoint.automatic_restart_count == 0
             )
@@ -1461,8 +1448,8 @@ class TypedOracle:
             status=(AssertionStatus.PASSED if passed else AssertionStatus.FAILED),
             expected=assertion.description,
             observed=(
-                f"valid={valid}；invalid={invalid}；"
-                f"selected={checkpoint.selected_revision}；"
+                f"status={checkpoint.status}；"
+                f"selected={checkpoint.selected_checkpoint_id}；"
                 f"action={checkpoint.recovery_action}。"
             ),
             evidence_refs=_observation_evidence_refs(observation),

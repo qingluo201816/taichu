@@ -24,10 +24,7 @@ from taichu.application.general_agent.models import (
     context_snapshot_sha256,
 )
 from taichu.application.services.agent_memory_service import AgentMemoryService
-from taichu.infrastructure.agent_memory import (
-    JsonAgentMemoryLexicalIndex,
-    JsonAgentMemoryRepository,
-)
+from tests.fakes.agent_memory import in_memory_agent_memory_repository
 from taichu.infrastructure.general_agent_runs.context_snapshot_repository import (
     JsonGeneralAgentContextSnapshotRepository,
 )
@@ -35,8 +32,7 @@ from taichu.infrastructure.general_agent_runs.context_snapshot_repository import
 
 def _memory_service(root: Path) -> AgentMemoryService:
     return AgentMemoryService(
-        repository=JsonAgentMemoryRepository(root),
-        lexical_index=JsonAgentMemoryLexicalIndex(root),
+        repository=in_memory_agent_memory_repository(root),
     )
 
 
@@ -184,7 +180,6 @@ def test_snapshot_repository_round_trips_new_trace(tmp_path: Path) -> None:
         )
 
     asyncio.run(scenario())
-
 
 def test_pre_trace_snapshot_is_read_only_compatible_and_not_backfilled(
     tmp_path: Path,

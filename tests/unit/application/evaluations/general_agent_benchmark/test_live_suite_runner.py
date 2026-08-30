@@ -66,7 +66,7 @@ from taichu.infrastructure.evaluations.general_agent_benchmark.live_runtime impo
 from taichu.infrastructure.evaluations.general_agent_benchmark.runtime_factory import (
     production_capability_catalog_snapshot,
 )
-from taichu.infrastructure.llm.rightcode import RightCodeGatewayError
+from taichu.infrastructure.llm.rightcode import LLMGatewayError
 
 _ROOT = Path("tests/fixtures/evaluations/general_writing_agent_benchmark")
 _SUITE_PATH = _ROOT / "suite.json"
@@ -336,7 +336,7 @@ async def test_provider_blocked_or_error_is_live_only_and_preserves_synthetic(
     )
     synthetic_before = synthetic.model_dump(mode="json")
     runtime = _Runtime(
-        error=RightCodeGatewayError(
+        error=LLMGatewayError(
             code,
             "provider unavailable",
             status_code=status_code,

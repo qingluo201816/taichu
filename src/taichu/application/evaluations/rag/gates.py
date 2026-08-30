@@ -20,11 +20,15 @@ def evaluate_regression_gate(
     mrr_threshold: float = 0.5,
     relation_recall_threshold: float = 0.7,
     complete_path_threshold: float = 0.6,
-    ablation_path_delta_threshold: float = 0.05,
     semantic_threshold: float = 0.7,
 ) -> RAGGateResult:
     summary = report.summary
     failures: list[str] = []
+    for failure in report.execution_failures:
+        failures.append(
+            f"{failure.case_id} 在{failure.phase}阶段执行失败："
+            f"{failure.error_message}"
+        )
     checks = (
         (summary.mean_recall_at_k, recall_threshold, "Recall@10"),
         (summary.mean_mrr_at_k, mrr_threshold, "MRR@10"),
@@ -59,22 +63,13 @@ def evaluate_regression_gate(
             if graph_actual is None or graph_actual < threshold:
                 shown = "无" if graph_actual is None else f"{graph_actual:.3f}"
                 failures.append(f"{label}={shown}，低于门槛 {threshold:.3f}。")
-        if report.ablation_scores:
-            for ablation in report.ablation_scores:
-                if ablation.complete_path_delta < 0:
-                    failures.append(
-                        f"{ablation.case_id} 开启 Graph 后完整路径召回反而下降。"
-                    )
-            delta = summary.mean_ablation_complete_path_delta
-            if delta is None or delta < ablation_path_delta_threshold:
-                shown = "无" if delta is None else f"{delta:.3f}"
-                failures.append(
-                    f"Graph ON/OFF 完整路径增益={shown}，低于门槛 "
-                    f"{ablation_path_delta_threshold:.3f}。"
-                )
-
     semantic_by_metric: dict[str, list[float]] = defaultdict(list)
     for case in semantic_scores:
+        if case.get("status") == "failed":
+            case_id = str(case.get("case_id", "未知用例"))
+            detail = str(case.get("error_message", "未知错误"))
+            failures.append(f"{case_id} 在语义评测阶段执行失败：{detail}")
+            continue
         metrics = case.get("metrics", [])
         if not isinstance(metrics, list):
             continue

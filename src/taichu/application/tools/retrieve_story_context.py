@@ -17,8 +17,9 @@ from taichu.application.vector_graph.service import VectorGraphRAGService
 manifest = ToolManifest(
     name="retrieve_story_context",
     description=(
-        "在正文与已确认知识卡之间统一执行 Milvus BM25、稠密向量、"
-        "Vector Graph 多跳、倒数排名融合和 BGE 重排，并返回权威回源证据。"
+        "在正文与已确认知识卡之间先执行 BM25/Dense Passage 双路召回和 "
+        "Milvus RRF，再由命中 Passage 驱动受控图扩展，合并 Graph Passage "
+        "后执行一次 BGE 重排，并返回完成查询感知装配与权威回源的证据。"
     ),
     input_schema=RetrieveStoryContextInput,
     output_schema=RetrieveStoryContextOutput,
@@ -49,6 +50,6 @@ async def run(
         ],
         retrieved_relations=result.retrieved_relations,
         expanded_relations=result.expanded_relations,
-        reranked_relations=result.reranked_relations,
+        context_relations=result.context_relations,
         source_refs=result.source_refs,
     )

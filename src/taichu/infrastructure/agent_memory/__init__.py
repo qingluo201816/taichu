@@ -1,10 +1,11 @@
-"""通用 Runtime 记忆的文件仓储与派生索引。"""
+"""通用 Runtime 自动记忆的 LangGraph Store 适配器。"""
 
-from taichu.infrastructure.agent_memory.json_repository import (
-    JsonAgentMemoryRepository,
-)
-from taichu.infrastructure.agent_memory.lexical_index import (
-    JsonAgentMemoryLexicalIndex,
+from taichu.infrastructure.agent_memory.langgraph_repository import (
+    AgentMemoryStoreError,
+    LangGraphAgentMemoryRepository,
 )
 
-__all__ = ["JsonAgentMemoryLexicalIndex", "JsonAgentMemoryRepository"]
+__all__ = [
+    "AgentMemoryStoreError",
+    "LangGraphAgentMemoryRepository",
+]

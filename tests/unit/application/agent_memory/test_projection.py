@@ -22,10 +22,7 @@ from taichu.application.general_agent.memory_policy import AgentMemoryPolicy
 from taichu.application.general_agent.context import ContextAssembler
 from taichu.application.general_agent.models import GeneralAgentRun
 from taichu.application.services.agent_memory_service import AgentMemoryService
-from taichu.infrastructure.agent_memory import (
-    JsonAgentMemoryLexicalIndex,
-    JsonAgentMemoryRepository,
-)
+from tests.fakes.agent_memory import in_memory_agent_memory_repository
 
 _ResultT = TypeVar("_ResultT")
 
@@ -36,8 +33,7 @@ def _run(awaitable: Coroutine[object, object, _ResultT]) -> _ResultT:
 
 def _service(root: Path) -> AgentMemoryService:
     return AgentMemoryService(
-        repository=JsonAgentMemoryRepository(root),
-        lexical_index=JsonAgentMemoryLexicalIndex(root),
+        repository=in_memory_agent_memory_repository(root),
         policy=AgentMemoryPolicy(),
     )
 
@@ -116,8 +112,7 @@ def test_current_fact_projection_only_accepts_active_scoped_basis_and_review_tar
             review_target.memory_id,
         }
         assert all(
-            item.validity is AgentMemoryValidity.ACTIVE
-            for item in projection.items
+            item.validity is AgentMemoryValidity.ACTIVE for item in projection.items
         )
         assert all(item.repair_only is False for item in projection.items)
 
@@ -142,9 +137,7 @@ def test_repair_projection_isolatedly_exposes_all_invalid_states_and_provenance(
             _candidate(
                 "替代后的当前内容",
                 "node:run_current:2:replacement",
-            ).model_copy(
-                update={"supersedes_memory_id": superseded.memory_id}
-            )
+            ).model_copy(update={"supersedes_memory_id": superseded.memory_id})
         )
         await service.invalidate(
             stale.memory_id,
@@ -184,7 +177,10 @@ def test_repair_projection_isolatedly_exposes_all_invalid_states_and_provenance(
             AgentMemoryValidity.REJECTED,
             AgentMemoryValidity.SUPERSEDED,
         }
-        assert all(item.previous_validity is AgentMemoryValidity.ACTIVE for item in projection.items)
+        assert all(
+            item.previous_validity is AgentMemoryValidity.ACTIVE
+            for item in projection.items
+        )
         assert all(item.repair_only is True for item in projection.items)
         assert all(item.transition_reason for item in projection.items)
         assert all(item.state_hash for item in projection.items)
@@ -232,9 +228,7 @@ def test_context_snapshot_keeps_current_and_repair_projections_separate(
         working = snapshot.envelope.working_memory
 
         current_by_id = {item.memory_id: item for item in working.memories}
-        repair_by_id = {
-            item.memory_id: item for item in working.invalidated_memories
-        }
+        repair_by_id = {item.memory_id: item for item in working.invalidated_memories}
         assert active.memory_id in current_by_id
         assert stale.memory_id not in current_by_id
         assert current_by_id[active.memory_id].projection_role == "basis"

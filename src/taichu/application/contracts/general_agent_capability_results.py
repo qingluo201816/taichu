@@ -139,9 +139,7 @@ class CapabilityResultErrorCode(StrEnum):
     OWNER_NOT_FOUND = "capability_result_owner_not_found"
     OWNER_MISMATCH = "capability_result_owner_mismatch"
     INVALID_IDENTITY = "capability_result_invalid_identity"
-    PATH_ESCAPE = "capability_result_path_escape"
     CONFLICT = "capability_result_conflict"
-    INDEX_CORRUPT = "capability_result_index_corrupt"
     RECORD_CORRUPT = "capability_result_record_corrupt"
 
 
@@ -172,19 +170,9 @@ class CapabilityResultInvalidIdentityError(CapabilityResultContractError):
         super().__init__(CapabilityResultErrorCode.INVALID_IDENTITY, message)
 
 
-class CapabilityResultPathEscapeError(CapabilityResultContractError):
-    def __init__(self, message: str = "能力结果路径越过允许根目录。") -> None:
-        super().__init__(CapabilityResultErrorCode.PATH_ESCAPE, message)
-
-
 class CapabilityResultConflictError(CapabilityResultContractError):
     def __init__(self, message: str = "同一能力结果标识存在内容冲突。") -> None:
         super().__init__(CapabilityResultErrorCode.CONFLICT, message)
-
-
-class CapabilityResultIndexCorruptError(CapabilityResultContractError):
-    def __init__(self, message: str = "能力结果索引损坏。") -> None:
-        super().__init__(CapabilityResultErrorCode.INDEX_CORRUPT, message)
 
 
 class CapabilityResultRecordCorruptError(CapabilityResultContractError):
@@ -196,8 +184,8 @@ class CapabilityResultRecordCorruptError(CapabilityResultContractError):
 class GeneralAgentCapabilityResultRepository(Protocol):
     """CapabilityResult 持久化协议。
 
-    已知父 owner 尚无目录时，读取返回 ``None``、列举返回空元组、删除返回
-    ``NOT_FOUND``；父 owner 是否真实存在由调用此协议的应用服务先行校验。
+    已知父 owner 尚无 Store 记录时，读取返回 ``None``、列举返回空元组、删除
+    返回 ``NOT_FOUND``；父 owner 是否真实存在由应用服务先行校验。
     """
 
     async def get_completed(
@@ -381,4 +369,3 @@ def _canonical_value(value: object) -> object:
     if isinstance(value, (list, tuple)):
         return [_canonical_value(item) for item in value]
     raise TypeError(f"能力结果包含无法规范化的值：{type(value).__name__}")
-

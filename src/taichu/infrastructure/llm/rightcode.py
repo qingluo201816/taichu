@@ -4,26 +4,32 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import AsyncIterator
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 import hashlib
 import json
 import re
 from time import perf_counter
-from typing import Any
+from typing import Any, Literal
 from uuid import uuid4
 
 import httpx
 
 from taichu.application.contracts.llm import (
+    LLMModelAvailability,
+    LLMModelManagementError,
+    LLMModelProfile,
+)
+from taichu.infrastructure.llm.contracts import (
     LLMCost,
     LLMGatewayContract,
-    LLMModelProfile,
     LLMRequest,
     LLMResponse,
     LLMStreamEvent,
     LLMToolCall,
+    LLMToolCallChunk,
+    LLMTransportProfile,
     LLMUsage,
 )
 from taichu.application.contracts.llm_usage import LLMUsageRepository
@@ -36,38 +42,91 @@ from taichu.application.models.llm_replay import (
 )
 from taichu.application.models.llm_usage import LLMCallRecord
 from taichu.config import Settings
-from taichu.infrastructure.llm.catalog import (
-    LLMModelCatalog,
-    LLMModelSelectionError,
-)
+from taichu.infrastructure.llm.catalog import LLMModelCatalog
 from taichu.infrastructure.llm.costs import calculate_cost
 
 
-class RightCodeGatewayError(RuntimeError):
+class LLMGatewayError(RuntimeError):
     """不会包含鉴权信息或完整上游响应的稳定错误。"""
 
-    def __init__(self, code: str, message: str, *, status_code: int | None = None):
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        *,
+        status_code: int | None = None,
+        provider_request_id: str | None = None,
+        error_summary: str | None = None,
+        content_block_types: tuple[str, ...] = (),
+        retry_count: int = 0,
+    ):
         super().__init__(message)
         self.code = code
         self.message = message
         self.status_code = status_code
+        self.provider_request_id = provider_request_id
+        self.error_summary = error_summary
+        self.content_block_types = content_block_types
+        self.retry_count = retry_count
 
 
 @dataclass(frozen=True, slots=True)
-class ModelAvailability:
-    """显式探测产生的内存状态。"""
+class _GatewayDiagnostics:
+    """仅保留可安全审计的上游调用元数据。"""
 
-    availability: str = "unknown"
-    last_probed_at: str | None = None
-    error: str | None = None
-    requested_provider: str | None = None
-    requested_model_id: str | None = None
-    actual_provider: str | None = None
-    actual_model_id: str | None = None
-    fallback_used: bool = False
-    fallback_from_provider: str | None = None
-    wire_protocol: str | None = None
+    status_code: int | None = None
     provider_request_id: str | None = None
+    error_summary: str | None = None
+    content_block_types: tuple[str, ...] = ()
+    retry_count: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class _CompletionResult:
+    response: LLMResponse
+    diagnostics: _GatewayDiagnostics
+
+
+@dataclass(slots=True)
+class _StreamingToolCall:
+    """一条供应商流式工具调用的可合并状态。"""
+
+    index: int
+    call_id: str | None = None
+    name: str | None = None
+    initial_arguments_json: str = ""
+    argument_parts: list[str] = field(default_factory=list)
+
+    def append(self, value: str) -> None:
+        if value:
+            self.argument_parts.append(value)
+
+    @property
+    def streamed_arguments(self) -> str:
+        return self.initial_arguments_json + "".join(self.argument_parts)
+
+    @property
+    def arguments_json(self) -> str:
+        return self.streamed_arguments or "{}"
+
+    def reconcile_completed_arguments(self, arguments_json: str) -> str:
+        """返回尚未发送的尾部，拒绝无法用 LangChain 增量表达的改写。"""
+
+        current = self.streamed_arguments
+        if not current:
+            self.argument_parts = [arguments_json] if arguments_json else []
+            return arguments_json
+        if arguments_json == current:
+            return ""
+        if arguments_json.startswith(current):
+            remainder = arguments_json[len(current) :]
+            self.append(remainder)
+            return remainder
+        raise LLMGatewayError(
+            "LLM_RESPONSE_INVALID",
+            "模型流式工具参数前后不一致，请稍后重试。",
+            error_summary="函数参数完成事件与已接收增量不一致",
+        )
 
 
 class RightCodeLLMGateway(LLMGatewayContract):
@@ -81,15 +140,56 @@ class RightCodeLLMGateway(LLMGatewayContract):
         *,
         client: httpx.AsyncClient | None = None,
         replay_repository: LLMCallReplayRepository | None = None,
+        enforce_active_provider: bool = False,
     ) -> None:
         self._settings = settings
         self._catalog = catalog
         self._usage_repository = usage_repository
         self._replay_repository = replay_repository
+        self._owns_client = client is None
         self._client = client or httpx.AsyncClient(
             timeout=httpx.Timeout(settings.rightcode_request_timeout_seconds)
         )
-        self._availability: dict[str, ModelAvailability] = {}
+        self._availability: dict[str, LLMModelAvailability] = {}
+        self._active_provider: Literal["rightcode", "deepseek_official"] = "rightcode"
+        self._enforce_active_provider = enforce_active_provider
+
+    async def aclose(self) -> None:
+        """关闭由网关创建的 HTTP 客户端；外部注入客户端仍由调用方管理。"""
+
+        if self._owns_client:
+            await self._client.aclose()
+
+    @property
+    def active_provider(self) -> Literal["rightcode", "deepseek_official"]:
+        return self._active_provider
+
+    def set_active_provider(
+        self, provider: Literal["rightcode", "deepseek_official"]
+    ) -> None:
+        if provider == "rightcode" and not self._rightcode_configured:
+            raise LLMModelManagementError(
+                "LLM_PROVIDER_NOT_CONFIGURED", "RightCode 尚未配置密钥，无法切换。"
+            )
+        if provider == "deepseek_official" and not self._fallback_configured:
+            raise LLMModelManagementError(
+                "LLM_PROVIDER_NOT_CONFIGURED", "DeepSeek 官方尚未配置密钥，无法切换。"
+            )
+        self._active_provider = provider
+
+    def provider_configured(
+        self, provider: Literal["rightcode", "deepseek_official"]
+    ) -> bool:
+        return (
+            self._rightcode_configured
+            if provider == "rightcode"
+            else self._fallback_configured
+        )
+
+    def provider_models(
+        self, provider: Literal["rightcode", "deepseek_official"]
+    ) -> list[LLMModelProfile]:
+        return self._catalog.list_models(provider)
 
     @property
     def configured(self) -> bool:
@@ -108,31 +208,50 @@ class RightCodeLLMGateway(LLMGatewayContract):
 
     @property
     def default_model_id(self) -> str:
-        return self._catalog.default_model_id
+        return self._catalog.default_model_id_for(self._active_provider)
 
     def list_models(self) -> list[LLMModelProfile]:
         return [
             replace(profile, enabled=False)
-            if self.availability_for(profile.id).availability == "unavailable"
+            if self.availability_for(profile.id, profile.provider).availability
+            == "unavailable"
             else profile
-            for profile in self._catalog.list_models()
+            for profile in self._catalog.list_models(
+                self._active_provider if self._enforce_active_provider else "rightcode"
+            )
         ]
 
-    def availability_for(self, model_id: str) -> ModelAvailability:
-        return self._availability.get(model_id, ModelAvailability())
+    def availability_for(
+        self,
+        model_id: str,
+        provider: Literal["rightcode", "deepseek_official"] | None = None,
+    ) -> LLMModelAvailability:
+        actual_provider = provider or (
+            self._active_provider if self._enforce_active_provider else "rightcode"
+        )
+        return self._availability.get(
+            f"{actual_provider}:{model_id}", LLMModelAvailability()
+        )
 
-    def resolve_model(self, model_id: str | None) -> LLMModelProfile:
-        profile = self._catalog.resolve(model_id)
-        status = self.availability_for(profile.id)
+    def _resolve_transport_model(
+        self, model_id: str | None
+    ) -> LLMTransportProfile:
+        profile = self._catalog.resolve(
+            model_id,
+            provider=(
+                self._active_provider if self._enforce_active_provider else "rightcode"
+            ),
+        )
+        status = self.availability_for(profile.id, profile.provider)
         if status.availability == "unavailable":
-            raise LLMModelSelectionError(
+            raise LLMModelManagementError(
                 "LLM_MODEL_UNAVAILABLE",
                 f"模型“{profile.display_name}”当前不可用，请选择其他模型或重新检测。",
             )
         return profile
 
-    async def probe_model(self, model_id: str) -> ModelAvailability:
-        profile = self._catalog.resolve(model_id)
+    async def probe_model(self, model_id: str) -> LLMModelAvailability:
+        profile = self._resolve_transport_model(model_id)
         request = LLMRequest(
             model_id=profile.id,
             messages=(
@@ -150,8 +269,8 @@ class RightCodeLLMGateway(LLMGatewayContract):
                 allow_known_unavailable=True,
                 allow_fallback=False,
             )
-        except (RightCodeGatewayError, LLMModelSelectionError) as exc:
-            state = ModelAvailability(
+        except (LLMGatewayError, LLMModelManagementError) as exc:
+            state = LLMModelAvailability(
                 availability="unavailable",
                 last_probed_at=_now_iso(),
                 error=str(exc),
@@ -165,7 +284,7 @@ class RightCodeLLMGateway(LLMGatewayContract):
                 provider_request_id=None,
             )
         else:
-            state = ModelAvailability(
+            state = LLMModelAvailability(
                 availability="available",
                 last_probed_at=_now_iso(),
                 requested_provider=profile.provider,
@@ -177,7 +296,7 @@ class RightCodeLLMGateway(LLMGatewayContract):
                 wire_protocol=profile.wire_protocol,
                 provider_request_id=response.provider_request_id,
             )
-        self._availability[profile.id] = state
+        self._availability[f"{profile.provider}:{profile.id}"] = state
         return state
 
     async def complete(self, request: LLMRequest) -> LLMResponse:
@@ -191,9 +310,16 @@ class RightCodeLLMGateway(LLMGatewayContract):
         allow_fallback: bool = True,
     ) -> LLMResponse:
         profile = (
-            self._catalog.resolve(request.model_id)
+            self._catalog.resolve(
+                request.model_id,
+                provider=(
+                    self._active_provider
+                    if self._enforce_active_provider
+                    else "rightcode"
+                ),
+            )
             if allow_known_unavailable
-            else self.resolve_model(request.model_id)
+            else self._resolve_transport_model(request.model_id)
         )
         call_id = f"llm-call-{uuid4().hex}"
         started_at = _now_iso()
@@ -202,13 +328,29 @@ class RightCodeLLMGateway(LLMGatewayContract):
         effective_profile = profile
         fallback_from_provider: str | None = None
         try:
-            self._ensure_configured()
-            if not self._rightcode_configured and not allow_fallback:
-                raise RightCodeGatewayError(
+            if self._enforce_active_provider:
+                self._ensure_provider_configured(profile.provider)
+            else:
+                self._ensure_configured()
+            if (
+                self._enforce_active_provider
+                and profile.provider == "deepseek_official"
+            ):
+                payload = _request_payload(profile, request, stream=False)
+                parsed = await self._complete_with_retries(
+                    profile, request, payload, call_id
+                )
+            elif self._enforce_active_provider:
+                payload = _request_payload(profile, request, stream=False)
+                parsed = await self._complete_with_retries(
+                    profile, request, payload, call_id
+                )
+            elif not self._rightcode_configured and not allow_fallback:
+                raise LLMGatewayError(
                     "LLM_TOKEN_MISSING",
                     "尚未配置请求的 RightCode 提供商密钥。",
                 )
-            if self._rightcode_configured:
+            elif self._rightcode_configured:
                 payload = _request_payload(profile, request, stream=False)
                 try:
                     parsed = await self._complete_with_retries(
@@ -219,10 +361,7 @@ class RightCodeLLMGateway(LLMGatewayContract):
                     )
                 except Exception as primary_error:
                     safe_primary_error = _normalize_error(primary_error)
-                    if (
-                        not allow_fallback
-                        or not self._can_fallback(safe_primary_error)
-                    ):
+                    if not allow_fallback or not self._can_fallback(safe_primary_error):
                         raise
                     effective_profile = self._fallback_profile(profile)
                     fallback_from_provider = profile.provider
@@ -270,19 +409,20 @@ class RightCodeLLMGateway(LLMGatewayContract):
             effective_profile,
             started_at,
             timer,
-            parsed,
+            parsed.response,
             wire_request_body=payload,
             fallback_from_provider=fallback_from_provider,
+            diagnostics=parsed.diagnostics,
         )
-        return parsed
+        return parsed.response
 
     async def _complete_with_retries(
         self,
-        profile: LLMModelProfile,
+        profile: LLMTransportProfile,
         request: LLMRequest,
         payload: dict[str, Any],
         call_id: str,
-    ) -> LLMResponse:
+    ) -> _CompletionResult:
         url = self._endpoint(profile)
         retries = (
             self._settings.deepseek_fallback_max_retries
@@ -298,43 +438,111 @@ class RightCodeLLMGateway(LLMGatewayContract):
                     json=payload,
                 )
                 if response.status_code < 400:
-                    parsed = _parse_response(response.json(), profile, call_id)
-                    if request.response_mode == "json":
+                    response_body = response.json()
+                    parsed = _parse_response(response_body, profile, call_id)
+                    provider_request_id = (
+                        parsed.provider_request_id
+                        or _response_provider_request_id(response)
+                    )
+                    if provider_request_id != parsed.provider_request_id:
                         parsed = replace(
-                            parsed,
-                            text=_normalize_json_text(parsed.text),
+                            parsed, provider_request_id=provider_request_id
                         )
+                    content_block_types = _content_block_types(response_body, parsed)
                     if parsed.text.strip() or parsed.tool_calls:
-                        return parsed
-                    error = RightCodeGatewayError(
+                        return _CompletionResult(
+                            response=parsed,
+                            diagnostics=_GatewayDiagnostics(
+                                status_code=response.status_code,
+                                provider_request_id=provider_request_id,
+                                content_block_types=content_block_types,
+                                retry_count=attempt,
+                            ),
+                        )
+                    if _output_was_truncated(parsed.finish_reason):
+                        error = LLMGatewayError(
+                            "LLM_OUTPUT_TRUNCATED",
+                            "模型输出达到上限，尚未生成最终内容。",
+                            status_code=response.status_code,
+                            provider_request_id=provider_request_id,
+                            error_summary="输出在上限处结束",
+                            content_block_types=content_block_types,
+                            retry_count=attempt,
+                        )
+                        if attempt == attempts - 1:
+                            raise error
+                        continue
+                    error = LLMGatewayError(
                         "LLM_EMPTY_RESPONSE",
                         "模型返回了空内容，请稍后重试。",
+                        status_code=response.status_code,
+                        provider_request_id=provider_request_id,
+                        error_summary="响应内容为空",
+                        content_block_types=content_block_types,
+                        retry_count=attempt,
                     )
                     if attempt == attempts - 1:
                         raise error
                 else:
-                    error = _status_error(response.status_code)
+                    error = _status_error(
+                        response.status_code,
+                        provider_request_id=_response_provider_request_id(response),
+                        error_summary=_upstream_error_summary(response),
+                        retry_count=attempt,
+                    )
                     if response.status_code != 429 and response.status_code < 500:
                         raise error
                     if attempt == attempts - 1:
                         raise error
-            except (httpx.TimeoutException, httpx.NetworkError) as exc:
+            except httpx.TimeoutException:
                 if attempt == attempts - 1:
-                    raise exc
+                    raise LLMGatewayError(
+                        "LLM_TIMEOUT",
+                        "模型调用超时，请稍后重试。",
+                        error_summary="请求超时",
+                        retry_count=attempt,
+                    ) from None
+            except httpx.NetworkError:
+                if attempt == attempts - 1:
+                    raise LLMGatewayError(
+                        "LLM_NETWORK_ERROR",
+                        "无法连接模型服务，请稍后重试。",
+                        error_summary="网络连接失败",
+                        retry_count=attempt,
+                    ) from None
             except json.JSONDecodeError as exc:
-                error = RightCodeGatewayError(
+                error = LLMGatewayError(
                     "LLM_RESPONSE_INVALID",
                     "模型服务返回了无法解析的响应，请稍后重试。",
+                    status_code=response.status_code
+                    if "response" in locals()
+                    else None,
+                    provider_request_id=(
+                        _response_provider_request_id(response)
+                        if "response" in locals()
+                        else None
+                    ),
+                    error_summary="响应不是合法 JSON",
+                    retry_count=attempt,
                 )
                 if attempt == attempts - 1:
                     raise error from exc
             await asyncio.sleep(min(0.25 * (2**attempt), 1.0))
-        raise RightCodeGatewayError("LLM_UPSTREAM_ERROR", "模型服务暂时不可用。")
+        raise LLMGatewayError(
+            "LLM_UPSTREAM_ERROR",
+            "模型服务暂时不可用。",
+            error_summary="上游调用未返回可用结果",
+            retry_count=attempts - 1,
+        )
 
     async def stream(self, request: LLMRequest) -> AsyncIterator[LLMStreamEvent]:
-        profile = self.resolve_model(request.model_id)
+        profile = self._resolve_transport_model(request.model_id)
         fallback_from_provider: str | None = None
-        if not self._rightcode_configured and self._fallback_configured:
+        if (
+            not self._enforce_active_provider
+            and not self._rightcode_configured
+            and self._fallback_configured
+        ):
             fallback_from_provider = profile.provider
             profile = self._fallback_profile(profile)
         call_id = f"llm-call-{uuid4().hex}"
@@ -344,10 +552,12 @@ class RightCodeLLMGateway(LLMGatewayContract):
         recorded = False
         last_usage = LLMUsage()
         text_parts: list[str] = []
+        streamed_tool_calls: dict[int, _StreamingToolCall] = {}
+        provider_tool_indexes: dict[int, int] = {}
         payload: dict[str, Any] | None = None
         yield LLMStreamEvent(event_type="started", call_id=call_id)
         try:
-            self._ensure_configured()
+            self._ensure_provider_configured(profile.provider)
             payload = _request_payload(profile, request, stream=True)
             url = self._endpoint(profile)
             async with self._client.stream(
@@ -368,6 +578,90 @@ class RightCodeLLMGateway(LLMGatewayContract):
                                 delta=delta,
                                 call_id=call_id,
                             )
+                    elif event_type == "response.output_item.added":
+                        item = event_payload.get("item")
+                        if isinstance(item, dict) and item.get("type") == "function_call":
+                            index = _stream_tool_index(
+                                event_payload.get("output_index"),
+                                streamed_tool_calls,
+                                provider_tool_indexes,
+                                new_call=True,
+                            )
+                            state = _StreamingToolCall(
+                                index=index,
+                                call_id=_optional_text(
+                                    item.get("call_id") or item.get("id")
+                                ),
+                                name=_optional_text(item.get("name")),
+                                initial_arguments_json=_stream_arguments_json(
+                                    item.get("arguments")
+                                ),
+                            )
+                            streamed_tool_calls[index] = state
+                            yield LLMStreamEvent(
+                                event_type="tool_call_delta",
+                                tool_call_chunk=LLMToolCallChunk(
+                                    index=index,
+                                    call_id=state.call_id,
+                                    name=state.name,
+                                    arguments_delta=state.initial_arguments_json,
+                                ),
+                                call_id=call_id,
+                            )
+                    elif event_type == "response.function_call_arguments.delta":
+                        index = _stream_tool_index(
+                            event_payload.get("output_index"),
+                            streamed_tool_calls,
+                            provider_tool_indexes,
+                        )
+                        state = streamed_tool_calls.setdefault(
+                            index,
+                            _StreamingToolCall(
+                                index=index,
+                                call_id=_optional_text(event_payload.get("call_id")),
+                                name=_optional_text(event_payload.get("name")),
+                            ),
+                        )
+                        delta = str(event_payload.get("delta") or "")
+                        if delta:
+                            state.append(delta)
+                            yield LLMStreamEvent(
+                                event_type="tool_call_delta",
+                                tool_call_chunk=LLMToolCallChunk(
+                                    index=index,
+                                    arguments_delta=delta,
+                                ),
+                                call_id=call_id,
+                            )
+                    elif event_type == "response.function_call_arguments.done":
+                        index = _stream_tool_index(
+                            event_payload.get("output_index"),
+                            streamed_tool_calls,
+                            provider_tool_indexes,
+                        )
+                        state = streamed_tool_calls.setdefault(
+                            index,
+                            _StreamingToolCall(
+                                index=index,
+                                call_id=_optional_text(event_payload.get("call_id")),
+                                name=_optional_text(event_payload.get("name")),
+                            ),
+                        )
+                        completed_arguments = _stream_arguments_json(
+                            event_payload.get("arguments")
+                        )
+                        remainder = state.reconcile_completed_arguments(
+                            completed_arguments
+                        )
+                        if remainder:
+                            yield LLMStreamEvent(
+                                event_type="tool_call_delta",
+                                tool_call_chunk=LLMToolCallChunk(
+                                    index=index,
+                                    arguments_delta=remainder,
+                                ),
+                                call_id=call_id,
+                            )
                     elif event_type in {"response.usage", "response.usage.delta"}:
                         last_usage = _parse_usage(event_payload.get("usage", {}))
                         yield LLMStreamEvent(
@@ -378,6 +672,13 @@ class RightCodeLLMGateway(LLMGatewayContract):
                         if not isinstance(body, dict):
                             body = event_payload
                         parsed = _parse_responses_response(body, profile, call_id)
+                        if streamed_tool_calls and not parsed.tool_calls:
+                            parsed = replace(
+                                parsed,
+                                tool_calls=_completed_stream_tool_calls(
+                                    streamed_tool_calls
+                                ),
+                            )
                         if not parsed.text and text_parts:
                             parsed = LLMResponse(
                                 text="".join(text_parts),
@@ -390,12 +691,8 @@ class RightCodeLLMGateway(LLMGatewayContract):
                                 call_id=call_id,
                                 tool_calls=parsed.tool_calls,
                             )
-                        if request.response_mode == "json":
-                            parsed = replace(
-                                parsed, text=_normalize_json_text(parsed.text)
-                            )
                         if not parsed.text.strip() and not parsed.tool_calls:
-                            raise RightCodeGatewayError(
+                            raise LLMGatewayError(
                                 "LLM_EMPTY_RESPONSE", "模型返回了空内容，请稍后重试。"
                             )
                         last_usage = parsed.usage
@@ -433,17 +730,71 @@ class RightCodeLLMGateway(LLMGatewayContract):
                                 last_usage,
                                 _parse_anthropic_usage(message.get("usage", {})),
                             )
+                    elif event_type == "content_block_start":
+                        block = event_payload.get("content_block")
+                        if isinstance(block, dict) and block.get("type") == "tool_use":
+                            index = _stream_tool_index(
+                                event_payload.get("index"),
+                                streamed_tool_calls,
+                                provider_tool_indexes,
+                                new_call=True,
+                            )
+                            initial_arguments = _stream_arguments_json(
+                                block.get("input")
+                            )
+                            if initial_arguments == "{}":
+                                initial_arguments = ""
+                            state = _StreamingToolCall(
+                                index=index,
+                                call_id=_optional_text(block.get("id")),
+                                name=_optional_text(block.get("name")),
+                                initial_arguments_json=initial_arguments,
+                            )
+                            streamed_tool_calls[index] = state
+                            yield LLMStreamEvent(
+                                event_type="tool_call_delta",
+                                tool_call_chunk=LLMToolCallChunk(
+                                    index=index,
+                                    call_id=state.call_id,
+                                    name=state.name,
+                                    arguments_delta=initial_arguments,
+                                ),
+                                call_id=call_id,
+                            )
                     elif event_type == "content_block_delta":
                         delta_payload = event_payload.get("delta")
                         if isinstance(delta_payload, dict):
-                            delta = str(delta_payload.get("text") or "")
-                            if delta:
-                                text_parts.append(delta)
-                                yield LLMStreamEvent(
-                                    event_type="text_delta",
-                                    delta=delta,
-                                    call_id=call_id,
+                            if delta_payload.get("type") == "input_json_delta":
+                                index = _stream_tool_index(
+                                    event_payload.get("index"),
+                                    streamed_tool_calls,
+                                    provider_tool_indexes,
                                 )
+                                state = streamed_tool_calls.setdefault(
+                                    index, _StreamingToolCall(index=index)
+                                )
+                                delta = str(
+                                    delta_payload.get("partial_json") or ""
+                                )
+                                if delta:
+                                    state.append(delta)
+                                    yield LLMStreamEvent(
+                                        event_type="tool_call_delta",
+                                        tool_call_chunk=LLMToolCallChunk(
+                                            index=index,
+                                            arguments_delta=delta,
+                                        ),
+                                        call_id=call_id,
+                                    )
+                            else:
+                                delta = str(delta_payload.get("text") or "")
+                                if delta:
+                                    text_parts.append(delta)
+                                    yield LLMStreamEvent(
+                                        event_type="text_delta",
+                                        delta=delta,
+                                        call_id=call_id,
+                                    )
                     elif event_type == "message_delta":
                         delta_payload = event_payload.get("delta")
                         if isinstance(delta_payload, dict):
@@ -464,8 +815,9 @@ class RightCodeLLMGateway(LLMGatewayContract):
                             )
                     elif event_type == "message_stop":
                         text = "".join(text_parts)
-                        if not text.strip():
-                            raise RightCodeGatewayError(
+                        tool_calls = _completed_stream_tool_calls(streamed_tool_calls)
+                        if not text.strip() and not tool_calls:
+                            raise LLMGatewayError(
                                 "LLM_EMPTY_RESPONSE", "模型返回了空内容，请稍后重试。"
                             )
                         parsed = LLMResponse(
@@ -477,11 +829,8 @@ class RightCodeLLMGateway(LLMGatewayContract):
                             finish_reason=finish_reason,
                             provider_request_id=provider_request_id,
                             call_id=call_id,
+                            tool_calls=tool_calls,
                         )
-                        if request.response_mode == "json":
-                            parsed = replace(
-                                parsed, text=_normalize_json_text(parsed.text)
-                            )
                         await self._record_success(
                             call_id,
                             request,
@@ -505,16 +854,16 @@ class RightCodeLLMGateway(LLMGatewayContract):
                         "response.incomplete",
                         "error",
                     }:
-                        raise RightCodeGatewayError(
+                        raise LLMGatewayError(
                             "LLM_STREAM_INTERRUPTED",
                             "模型流式输出中断，请稍后重试。",
                         )
             if not completed:
-                raise RightCodeGatewayError(
+                raise LLMGatewayError(
                     "LLM_STREAM_INTERRUPTED", "模型流式输出中断，请稍后重试。"
                 )
         except asyncio.CancelledError:
-            safe = RightCodeGatewayError(
+            safe = LLMGatewayError(
                 "LLM_CLIENT_DISCONNECTED", "客户端已断开，模型调用已清理。"
             )
             if not recorded:
@@ -537,7 +886,9 @@ class RightCodeLLMGateway(LLMGatewayContract):
             safe = _normalize_error(exc)
             if (
                 profile.provider == "rightcode"
+                and not self._enforce_active_provider
                 and not text_parts
+                and not streamed_tool_calls
                 and self._can_fallback(safe)
             ):
                 fallback_profile = self._fallback_profile(profile)
@@ -548,7 +899,7 @@ class RightCodeLLMGateway(LLMGatewayContract):
                     stream=False,
                 )
                 try:
-                    parsed = await self._complete_with_retries(
+                    completion = await self._complete_with_retries(
                         fallback_profile,
                         request,
                         fallback_payload,
@@ -561,6 +912,7 @@ class RightCodeLLMGateway(LLMGatewayContract):
                 else:
                     profile = fallback_profile
                     payload = fallback_payload
+                    parsed = completion.response
                     if parsed.text:
                         yield LLMStreamEvent(
                             event_type="text_delta",
@@ -582,6 +934,7 @@ class RightCodeLLMGateway(LLMGatewayContract):
                         parsed,
                         wire_request_body=payload,
                         fallback_from_provider=fallback_from_provider,
+                        diagnostics=completion.diagnostics,
                     )
                     recorded = True
                     completed = True
@@ -610,7 +963,7 @@ class RightCodeLLMGateway(LLMGatewayContract):
             )
         finally:
             if not recorded and not completed:
-                safe = RightCodeGatewayError(
+                safe = LLMGatewayError(
                     "LLM_CLIENT_DISCONNECTED", "客户端已断开，模型调用已清理。"
                 )
                 await self._record_failure(
@@ -627,12 +980,24 @@ class RightCodeLLMGateway(LLMGatewayContract):
 
     def _ensure_configured(self) -> None:
         if not self.configured:
-            raise RightCodeGatewayError(
+            raise LLMGatewayError(
                 "LLM_TOKEN_MISSING",
                 "尚未配置模型服务密钥，请在本机环境中完成配置。",
             )
 
-    def _can_fallback(self, error: RightCodeGatewayError) -> bool:
+    def _ensure_provider_configured(
+        self, provider: Literal["rightcode", "deepseek_official"]
+    ) -> None:
+        if provider == "rightcode" and not self._rightcode_configured:
+            raise LLMGatewayError(
+                "LLM_TOKEN_MISSING", "尚未配置 RightCode 供应商密钥。"
+            )
+        if provider == "deepseek_official" and not self._fallback_configured:
+            raise LLMGatewayError(
+                "LLM_TOKEN_MISSING", "尚未配置 DeepSeek 官方供应商密钥。"
+            )
+
+    def _can_fallback(self, error: LLMGatewayError) -> bool:
         return self._fallback_configured and error.code in {
             "LLM_NETWORK_ERROR",
             "LLM_TIMEOUT",
@@ -641,8 +1006,10 @@ class RightCodeLLMGateway(LLMGatewayContract):
             "LLM_STREAM_INTERRUPTED",
         }
 
-    def _fallback_profile(self, requested: LLMModelProfile) -> LLMModelProfile:
-        return LLMModelProfile(
+    def _fallback_profile(
+        self, requested: LLMTransportProfile
+    ) -> LLMTransportProfile:
+        return LLMTransportProfile(
             id=requested.id,
             display_name=requested.display_name,
             provider="deepseek_official",
@@ -655,7 +1022,7 @@ class RightCodeLLMGateway(LLMGatewayContract):
             upstream_verified=True,
         )
 
-    def _endpoint(self, profile: LLMModelProfile) -> str:
+    def _endpoint(self, profile: LLMTransportProfile) -> str:
         if profile.provider == "deepseek_official":
             return _join_url(
                 self._settings.deepseek_anthropic_base_url,
@@ -700,6 +1067,7 @@ class RightCodeLLMGateway(LLMGatewayContract):
         *,
         wire_request_body: dict[str, Any],
         fallback_from_provider: str | None = None,
+        diagnostics: _GatewayDiagnostics | None = None,
     ) -> None:
         finished_at = _now_iso()
         duration_ms = max(0, round((perf_counter() - timer) * 1000))
@@ -713,7 +1081,21 @@ class RightCodeLLMGateway(LLMGatewayContract):
                 timer=timer,
                 usage=response.usage,
                 cost=response.cost,
-                provider_request_id=response.provider_request_id,
+                provider_request_id=(
+                    diagnostics.provider_request_id
+                    if diagnostics is not None
+                    else response.provider_request_id
+                ),
+                status_code=diagnostics.status_code
+                if diagnostics is not None
+                else None,
+                error_summary=(
+                    diagnostics.error_summary if diagnostics is not None else None
+                ),
+                content_block_types=(
+                    diagnostics.content_block_types if diagnostics is not None else ()
+                ),
+                retry_count=diagnostics.retry_count if diagnostics is not None else 0,
                 finished_at=finished_at,
                 duration_ms=duration_ms,
                 fallback_from_provider=fallback_from_provider,
@@ -731,6 +1113,7 @@ class RightCodeLLMGateway(LLMGatewayContract):
                     duration_ms=duration_ms,
                     usage=response.usage,
                     response=response,
+                    diagnostics=diagnostics,
                     wire_request_body=wire_request_body,
                     fallback_from_provider=fallback_from_provider,
                 )
@@ -743,7 +1126,7 @@ class RightCodeLLMGateway(LLMGatewayContract):
         profile: LLMModelProfile,
         started_at: str,
         timer: float,
-        error: RightCodeGatewayError,
+        error: LLMGatewayError,
         usage: LLMUsage | None = None,
         *,
         wire_request_body: dict[str, Any] | None = None,
@@ -787,7 +1170,7 @@ class RightCodeLLMGateway(LLMGatewayContract):
 
 
 def _message(role: str, content: str):
-    from taichu.application.contracts.llm import LLMMessage
+    from taichu.infrastructure.llm.contracts import LLMMessage
 
     return LLMMessage(role=role, content=content)  # type: ignore[arg-type]
 
@@ -803,11 +1186,7 @@ def _request_payload(
 def _responses_payload(
     profile: LLMModelProfile, request: LLMRequest, *, stream: bool
 ) -> dict[str, Any]:
-    system_parts = [
-        item.content
-        for item in request.messages
-        if item.role == "system"
-    ]
+    system_parts = [item.content for item in request.messages if item.role == "system"]
     input_items: list[dict[str, Any]] = []
     for item in request.messages:
         if item.role == "system":
@@ -856,13 +1235,11 @@ def _responses_payload(
             }
             for tool in request.tools
         ]
-        payload["tool_choice"] = request.tool_choice
+        payload["tool_choice"] = _responses_tool_choice(request.tool_choice)
     if request.temperature is not None and _supports_temperature(profile):
         payload["temperature"] = request.temperature
     if request.max_output_tokens is not None:
         payload["max_output_tokens"] = request.max_output_tokens
-    if request.response_mode == "json" and _supports_native_json_format(profile):
-        payload["text"] = {"format": {"type": "json_object"}}
     return payload
 
 
@@ -874,11 +1251,6 @@ def _anthropic_payload(
         for item in request.messages
         if item.role in {"system", "developer"}
     ]
-    if request.response_mode == "json":
-        system_parts.append(
-            "只返回一个可通过标准 JSON 解析器解析的 JSON 对象；"
-            "不得使用 Markdown 代码块，不得在对象前后添加说明文字。"
-        )
     messages: list[dict[str, Any]] = []
     pending_tool_results: list[dict[str, Any]] = []
 
@@ -928,6 +1300,13 @@ def _anthropic_payload(
         "max_tokens": request.max_output_tokens or 4096,
         "stream": stream,
     }
+    if (
+        profile.provider == "deepseek_official"
+        and request.task_type == "rag_evaluation_judge"
+    ):
+        # RAG 裁判要求直接产出结构化 JSON。官方 DeepSeek 默认思考模式
+        # 会占用输出预算，并增加 JSON 截断与空正文风险。
+        payload["thinking"] = {"type": "disabled"}
     if system_parts:
         payload["system"] = "\n\n".join(system_parts)
     if request.tools:
@@ -939,11 +1318,7 @@ def _anthropic_payload(
             }
             for tool in request.tools
         ]
-        payload["tool_choice"] = {
-            "auto": {"type": "auto"},
-            "none": {"type": "none"},
-            "required": {"type": "any"},
-        }[request.tool_choice]
+        payload["tool_choice"] = _anthropic_tool_choice(request.tool_choice)
     if request.temperature is not None and _supports_temperature(profile):
         payload["temperature"] = request.temperature
     return payload
@@ -957,12 +1332,84 @@ def _supports_temperature(profile: LLMModelProfile) -> bool:
     )
 
 
-def _supports_native_json_format(profile: LLMModelProfile) -> bool:
-    """RightCode 的 GPT-5.6 Responses 代理不接受 text.format 参数。"""
-    return not (
-        profile.wire_protocol == "openai_responses"
-        and profile.id.startswith("gpt-5-6-")
-    )
+def _responses_tool_choice(value: str) -> str | dict[str, str]:
+    """把 LangChain 的命名工具选择映射到 Responses 原生参数。"""
+    normalized = value.strip()
+    if normalized in {"auto", "none", "required"}:
+        return normalized
+    if normalized == "any":
+        return "required"
+    return {"type": "function", "name": normalized}
+
+
+def _anthropic_tool_choice(value: str) -> dict[str, str]:
+    """把 LangChain 的命名工具选择映射到 Anthropic 原生参数。"""
+    normalized = value.strip()
+    standard = {
+        "auto": {"type": "auto"},
+        "none": {"type": "none"},
+        "required": {"type": "any"},
+        "any": {"type": "any"},
+    }
+    return standard.get(normalized, {"type": "tool", "name": normalized})
+
+
+def _output_was_truncated(finish_reason: str | None) -> bool:
+    return (finish_reason or "").strip().casefold() in {
+        "length",
+        "max_output_tokens",
+        "max_tokens",
+        "incomplete",
+    }
+
+
+def _stream_tool_index(
+    value: Any,
+    states: dict[int, _StreamingToolCall],
+    provider_indexes: dict[int, int],
+    *,
+    new_call: bool = False,
+) -> int:
+    provider_index = _optional_int(value)
+    if provider_index is None or provider_index < 0:
+        if not new_call and len(provider_indexes) == 1:
+            return next(iter(provider_indexes.values()))
+        provider_index = max(provider_indexes, default=-1) + 1
+    existing = provider_indexes.get(provider_index)
+    if existing is not None:
+        return existing
+    normalized_index = len(states)
+    provider_indexes[provider_index] = normalized_index
+    return normalized_index
+
+
+def _stream_arguments_json(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+
+
+def _completed_stream_tool_calls(
+    states: dict[int, _StreamingToolCall],
+) -> tuple[LLMToolCall, ...]:
+    calls: list[LLMToolCall] = []
+    for state in sorted(states.values(), key=lambda item: item.index):
+        if not state.call_id or not state.name:
+            raise LLMGatewayError(
+                "LLM_RESPONSE_INVALID",
+                "模型流式工具调用缺少名称或关联标识，请稍后重试。",
+                error_summary=f"流式函数调用元数据不完整：index={state.index}",
+            )
+        calls.append(
+            LLMToolCall(
+                call_id=state.call_id,
+                name=state.name,
+                arguments_json=state.arguments_json,
+            )
+        )
+    return tuple(calls)
 
 
 def _parse_response(
@@ -1156,18 +1603,6 @@ def _merge_usage(current: LLMUsage, incoming: LLMUsage) -> LLMUsage:
     )
 
 
-def _normalize_json_text(value: str) -> str:
-    stripped = value.strip()
-    if not stripped.startswith("```"):
-        return stripped
-    lines = stripped.splitlines()
-    if lines and lines[0].strip().lower() in {"```", "```json"}:
-        lines = lines[1:]
-    if lines and lines[-1].strip() == "```":
-        lines = lines[:-1]
-    return "\n".join(lines).strip()
-
-
 def _extract_actual_cost(payload: dict[str, Any]) -> tuple[Decimal | None, str | None]:
     candidates: list[tuple[Any, Any]] = [
         (payload.get("cost"), payload.get("currency")),
@@ -1207,7 +1642,7 @@ async def _iter_sse(
                     try:
                         payload = json.loads(raw)
                     except json.JSONDecodeError as exc:
-                        raise RightCodeGatewayError(
+                        raise LLMGatewayError(
                             "LLM_STREAM_INVALID", "模型流式响应格式不正确。"
                         ) from exc
                     if isinstance(payload, dict):
@@ -1227,48 +1662,148 @@ async def _iter_sse(
                 yield event_name, payload
 
 
-def _status_error(status_code: int) -> RightCodeGatewayError:
+def _response_provider_request_id(response: httpx.Response) -> str | None:
+    """从常见响应头中读取供应商请求 ID，不保存完整响应头。"""
+
+    for header in (
+        "x-request-id",
+        "request-id",
+        "x-amzn-requestid",
+        "cf-ray",
+    ):
+        value = response.headers.get(header, "").strip()
+        if value:
+            return value[:256]
+    return None
+
+
+def _content_block_types(
+    payload: dict[str, Any], response: LLMResponse
+) -> tuple[str, ...]:
+    """提取安全的响应结构类型，用于诊断空正文与截断。"""
+
+    values: list[str] = []
+
+    def add(value: Any) -> None:
+        if not isinstance(value, str):
+            return
+        normalized = value.strip()[:64]
+        if normalized and normalized not in values and len(values) < 32:
+            values.append(normalized)
+
+    for key in ("content", "output"):
+        blocks = payload.get(key)
+        if not isinstance(blocks, list):
+            continue
+        for block in blocks:
+            if not isinstance(block, dict):
+                continue
+            add(block.get("type"))
+            nested = block.get("content")
+            if isinstance(nested, list):
+                for item in nested:
+                    if isinstance(item, dict):
+                        add(item.get("type"))
+    if not values and response.text.strip():
+        add("text")
+    if response.tool_calls:
+        add("tool_call")
+    return tuple(values)
+
+
+def _upstream_error_summary(response: httpx.Response) -> str | None:
+    """只保留上游错误的类型、代码和短消息，并执行密钥脱敏。"""
+
+    try:
+        payload = response.json()
+    except (json.JSONDecodeError, httpx.DecodingError):
+        return f"HTTP {response.status_code}，响应正文不可解析"
+    if not isinstance(payload, dict):
+        return f"HTTP {response.status_code}"
+    error = payload.get("error")
+    source = error if isinstance(error, dict) else payload
+    parts: list[str] = []
+    for key in ("type", "code", "message"):
+        value = source.get(key)
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text and text not in parts:
+            parts.append(text)
+    summary = " | ".join(parts) or f"HTTP {response.status_code}"
+    redacted, _ = _redact_secret_values(summary)
+    return redacted[:1_000]
+
+
+def _status_error(
+    status_code: int,
+    *,
+    provider_request_id: str | None = None,
+    error_summary: str | None = None,
+    retry_count: int = 0,
+) -> LLMGatewayError:
+    if status_code == 402:
+        return LLMGatewayError(
+            "LLM_INSUFFICIENT_BALANCE",
+            "模型供应商账户余额不足，请充值后重试。",
+            status_code=status_code,
+            provider_request_id=provider_request_id,
+            error_summary=error_summary,
+            retry_count=retry_count,
+        )
     if status_code in {401, 403}:
-        return RightCodeGatewayError(
+        return LLMGatewayError(
             "LLM_MODEL_FORBIDDEN",
             "当前密钥无权调用该模型，请检查本机密钥权限。",
             status_code=status_code,
+            provider_request_id=provider_request_id,
+            error_summary=error_summary,
+            retry_count=retry_count,
         )
     if status_code == 429:
-        return RightCodeGatewayError(
+        return LLMGatewayError(
             "LLM_RATE_LIMITED",
             "模型服务请求过多或额度不足，请稍后重试并检查账户额度。",
             status_code=status_code,
+            provider_request_id=provider_request_id,
+            error_summary=error_summary,
+            retry_count=retry_count,
         )
     if status_code >= 500:
-        return RightCodeGatewayError(
+        return LLMGatewayError(
             "LLM_UPSTREAM_ERROR",
             "模型服务暂时不可用，请稍后重试。",
             status_code=status_code,
+            provider_request_id=provider_request_id,
+            error_summary=error_summary,
+            retry_count=retry_count,
         )
-    return RightCodeGatewayError(
+    return LLMGatewayError(
         "LLM_REQUEST_REJECTED",
         "模型服务拒绝了本次请求，请检查模型权限或请求设置。",
         status_code=status_code,
+        provider_request_id=provider_request_id,
+        error_summary=error_summary,
+        retry_count=retry_count,
     )
 
 
-def _normalize_error(exc: Exception) -> RightCodeGatewayError:
-    if isinstance(exc, RightCodeGatewayError):
+def _normalize_error(exc: Exception) -> LLMGatewayError:
+    if isinstance(exc, LLMGatewayError):
         return exc
-    if isinstance(exc, LLMModelSelectionError):
-        return RightCodeGatewayError(exc.code, exc.message)
+    if isinstance(exc, LLMModelManagementError):
+        return LLMGatewayError(exc.code, exc.message)
     if isinstance(exc, httpx.TimeoutException):
-        return RightCodeGatewayError("LLM_TIMEOUT", "模型调用超时，请稍后重试。")
+        return LLMGatewayError("LLM_TIMEOUT", "模型调用超时，请稍后重试。")
     if isinstance(exc, httpx.NetworkError):
-        return RightCodeGatewayError(
+        return LLMGatewayError(
             "LLM_NETWORK_ERROR", "无法连接模型服务，请稍后重试。"
         )
     if isinstance(exc, (json.JSONDecodeError, httpx.DecodingError)):
-        return RightCodeGatewayError(
+        return LLMGatewayError(
             "LLM_RESPONSE_INVALID", "模型服务返回了无法解析的响应。"
         )
-    return RightCodeGatewayError("LLM_CALL_FAILED", "模型调用失败，请稍后重试。")
+    return LLMGatewayError("LLM_CALL_FAILED", "模型调用失败，请稍后重试。")
 
 
 def _call_record(
@@ -1282,7 +1817,11 @@ def _call_record(
     usage: LLMUsage,
     cost: LLMCost,
     provider_request_id: str | None = None,
-    error: RightCodeGatewayError | None = None,
+    status_code: int | None = None,
+    error_summary: str | None = None,
+    content_block_types: tuple[str, ...] = (),
+    retry_count: int = 0,
+    error: LLMGatewayError | None = None,
     finished_at: str | None = None,
     duration_ms: int | None = None,
     fallback_from_provider: str | None = None,
@@ -1316,9 +1855,17 @@ def _call_record(
         cost_amount=cost.amount,
         cost_currency=cost.currency,
         cost_kind=cost.kind,
-        provider_request_id=provider_request_id,
+        provider_request_id=(
+            error.provider_request_id if error is not None else provider_request_id
+        ),
+        status_code=error.status_code if error is not None else status_code,
         error_code=error.code if error else None,
         error_message=error.message if error else None,
+        error_summary=(error.error_summary if error is not None else error_summary),
+        content_block_types=list(
+            error.content_block_types if error is not None else content_block_types
+        ),
+        retry_count=error.retry_count if error is not None else retry_count,
     )
 
 
@@ -1380,7 +1927,8 @@ def _replay_record(
     duration_ms: int,
     usage: LLMUsage,
     response: LLMResponse | None = None,
-    error: RightCodeGatewayError | None = None,
+    diagnostics: _GatewayDiagnostics | None = None,
+    error: LLMGatewayError | None = None,
     wire_request_body: dict[str, Any] | None = None,
     fallback_from_provider: str | None = None,
 ) -> LLMCallReplayRecord:
@@ -1419,9 +1967,7 @@ def _replay_record(
     redaction_count += response_replacements
     response_tool_calls: list[LLMReplayToolCall] = []
     for tool_call in response.tool_calls if response is not None else ():
-        arguments_json, replacements = _redact_secret_values(
-            tool_call.arguments_json
-        )
+        arguments_json, replacements = _redact_secret_values(tool_call.arguments_json)
         redaction_count += replacements
         response_tool_calls.append(
             LLMReplayToolCall(
@@ -1441,7 +1987,6 @@ def _replay_record(
             redacted_wire_request_body = redacted_payload
     request_payload = {
         "model_id": profile.id,
-        "response_mode": request.response_mode,
         "temperature": request.temperature,
         "max_output_tokens": request.max_output_tokens,
         "messages": [message.model_dump(mode="json") for message in messages],
@@ -1475,7 +2020,6 @@ def _replay_record(
         upstream_model=profile.upstream_model,
         wire_protocol=profile.wire_protocol,
         status=status,  # type: ignore[arg-type]
-        response_mode=request.response_mode,
         temperature=request.temperature,
         max_output_tokens=request.max_output_tokens,
         wire_request_body=redacted_wire_request_body,
@@ -1502,13 +2046,39 @@ def _replay_record(
         total_tokens=usage.total_tokens,
         finish_reason=response.finish_reason if response is not None else None,
         provider_request_id=(
-            response.provider_request_id if response is not None else None
+            error.provider_request_id
+            if error is not None
+            else (
+                diagnostics.provider_request_id
+                if diagnostics is not None
+                else (response.provider_request_id if response is not None else None)
+            )
+        ),
+        status_code=(
+            error.status_code
+            if error is not None
+            else (diagnostics.status_code if diagnostics is not None else None)
         ),
         started_at=started_at,
         finished_at=finished_at,
         duration_ms=duration_ms,
         error_code=error.code if error is not None else None,
         error_message=error_message or None,
+        error_summary=(
+            error.error_summary
+            if error is not None
+            else (diagnostics.error_summary if diagnostics is not None else None)
+        ),
+        content_block_types=list(
+            error.content_block_types
+            if error is not None
+            else (diagnostics.content_block_types if diagnostics is not None else ())
+        ),
+        retry_count=(
+            error.retry_count
+            if error is not None
+            else (diagnostics.retry_count if diagnostics is not None else 0)
+        ),
     )
 
 

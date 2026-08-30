@@ -1,11 +1,13 @@
 """MVP first-version API integration tests."""
 
+from __future__ import annotations
+
 import asyncio
 import json
 import tempfile
 import unittest
 from pathlib import Path
-from pydantic import SecretStr
+from pydantic import PrivateAttr, SecretStr
 from typing import Any
 
 from httpx import ASGITransport, AsyncClient
@@ -20,7 +22,7 @@ from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
 from taichu.main import create_app
-from tests.fakes import InMemoryKnowledgeRepository
+from tests.fakes import InMemoryKnowledgeRepository, make_test_llm_gateway
 
 
 class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
@@ -36,7 +38,9 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         )
         app = create_app(
             app_settings=Settings(project_assets_dir=self.assets_root),
-            llm=_WritingAIChatModel(responses=[_writing_ai_continue_response()]),
+            llm_gateway=make_test_llm_gateway(
+                _WritingAIChatModel(responses=[_writing_ai_continue_response()])
+            ),
             knowledge_repository=InMemoryKnowledgeRepository(),
         )
         self.client = AsyncClient(
@@ -447,7 +451,13 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         )
         created = await self.client.post(
             "/api/inbox/issues",
-            json={"data": {"id": "issue-cas-test", "title": "CAS 测试", "content": content}},
+            json={
+                "data": {
+                    "id": "issue-cas-test",
+                    "title": "CAS 测试",
+                    "content": content,
+                }
+            },
         )
         self.assertEqual(created.status_code, 200)
         self.assertEqual(created.json()["item"]["revision"], 1)
@@ -489,8 +499,12 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
                 json={"expected_revision": 2, "updates": {"title": "并发胜出"}},
             ),
         )
-        self.assertEqual(sorted(response.status_code for response in concurrent), [200, 409])
-        conflict = next(response for response in concurrent if response.status_code == 409)
+        self.assertEqual(
+            sorted(response.status_code for response in concurrent), [200, 409]
+        )
+        conflict = next(
+            response for response in concurrent if response.status_code == 409
+        )
         self.assertEqual(conflict.json()["error"]["current_revision"], 3)
         self.assertTrue(conflict.json()["error"]["request_id"].startswith("request_"))
 
@@ -538,7 +552,13 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
         )
         created = await self.client.post(
             "/api/inbox/issues",
-            json={"data": {"id": "issue-legacy-test", "title": "旧记录", "content": content}},
+            json={
+                "data": {
+                    "id": "issue-legacy-test",
+                    "title": "旧记录",
+                    "content": content,
+                }
+            },
         )
         self.assertEqual(created.status_code, 200)
         path = self.assets_root / "source" / "workspace" / "inbox_issues.jsonl"
@@ -691,10 +711,26 @@ class MVPFirstApiTest(unittest.IsolatedAsyncioTestCase):
 
 class _WritingAIChatModel(BaseChatModel):
     responses: list[str]
+    _bound_tool_name: str | None = PrivateAttr(default=None)
 
     @property
     def _llm_type(self) -> str:
         return "taichu-writing-ai-test"
+
+    def bind_tools(
+        self,
+        tools: Any,
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> _WritingAIChatModel:
+        del kwargs
+        if tools and tool_choice in {None, "auto", "any", "required"}:
+            function = tools[0].get("function", tools[0])
+            self._bound_tool_name = str(function["name"])
+        else:
+            self._bound_tool_name = tool_choice
+        return self
 
     def _generate(
         self,
@@ -705,10 +741,27 @@ class _WritingAIChatModel(BaseChatModel):
     ) -> ChatResult:
         if not self.responses:
             raise RuntimeError("没有可用的写作 AI 测试响应。")
+        raw_response = self.responses.pop(0)
+        if self._bound_tool_name:
+            return ChatResult(
+                generations=[
+                    ChatGeneration(
+                        message=AIMessage(
+                            content="",
+                            tool_calls=[
+                                {
+                                    "id": "call_writing_ai_test",
+                                    "name": self._bound_tool_name,
+                                    "args": json.loads(raw_response),
+                                    "type": "tool_call",
+                                }
+                            ],
+                        )
+                    )
+                ]
+            )
         return ChatResult(
-            generations=[
-                ChatGeneration(message=AIMessage(content=self.responses.pop(0)))
-            ]
+            generations=[ChatGeneration(message=AIMessage(content=raw_response))]
         )
 
 
@@ -718,7 +771,13 @@ def _writing_ai_continue_response() -> str:
             "output_type": "text_candidate",
             "text": "真实续写正文。",
             "risk_notes": [],
-            "used_evidence": ["chapter:chapter_001", "knowledge:character-qin-yang"],
+            "used_evidence": [
+                {
+                    "display_name": "当前章节",
+                    "excerpt": "正文带着灵火向前。",
+                    "usage": "用于保持续写衔接。",
+                }
+            ],
         },
         ensure_ascii=False,
     )

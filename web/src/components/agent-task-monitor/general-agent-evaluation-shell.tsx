@@ -1020,7 +1020,7 @@ function conditionLabel(value: string): string {
   if (value.includes("artifact")) return "所需产物";
   if (value.includes("source")) return "来源引用";
   if (value.includes("memory")) return "记忆隔离";
-  if (value.includes("checkpoint")) return "检查点完整性";
+  if (value.includes("checkpoint")) return "检查点可用性";
   if (value.includes("authorization")) return "授权结果";
   if (value.includes("auth")) return "授权与写入绑定";
   if (value.includes("recovery")) return "恢复执行结果";
@@ -1207,9 +1207,9 @@ function humanizeEvidenceText(
   if (contextMatch) {
     const memoryLabels: Record<string, string> = {
       stable_memory: "稳定记忆",
-      working_memory: "工作记忆",
       long_term_memory: "长期记忆",
-      history_memory: "历史记忆",
+      history_memory: "历史对话",
+      working_memory: "工作记忆",
       current_request: "当前请求",
     };
     const preserved = Array.from(

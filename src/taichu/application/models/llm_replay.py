@@ -48,13 +48,12 @@ class LLMCallReplayRecord(LLMReplayModel):
     upstream_model: str = Field(min_length=1, max_length=256)
     wire_protocol: str = Field(min_length=1, max_length=64)
     status: Literal["completed", "failed"]
-    response_mode: Literal["text", "json"]
     temperature: float | None = None
     max_output_tokens: int | None = Field(default=None, ge=1)
     wire_request_body: dict[str, Any] | None = None
     messages: list[LLMReplayMessage] = Field(min_length=1, max_length=200)
     tools: list[LLMReplayToolDefinition] = Field(default_factory=list, max_length=100)
-    tool_choice: Literal["auto", "none", "required"] = "auto"
+    tool_choice: str = Field(default="auto", min_length=1, max_length=128)
     response_tool_calls: list[LLMReplayToolCall] = Field(
         default_factory=list,
         max_length=100,
@@ -70,8 +69,12 @@ class LLMCallReplayRecord(LLMReplayModel):
     total_tokens: int | None = Field(default=None, ge=0)
     finish_reason: str | None = Field(default=None, max_length=128)
     provider_request_id: str | None = Field(default=None, max_length=256)
+    status_code: int | None = Field(default=None, ge=100, le=599)
     started_at: str = Field(min_length=1, max_length=64)
     finished_at: str = Field(min_length=1, max_length=64)
     duration_ms: int = Field(ge=0)
     error_code: str | None = Field(default=None, max_length=128)
     error_message: str | None = Field(default=None, max_length=2_000)
+    error_summary: str | None = Field(default=None, max_length=1_000)
+    content_block_types: list[str] = Field(default_factory=list, max_length=32)
+    retry_count: int = Field(default=0, ge=0)

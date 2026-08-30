@@ -2,22 +2,16 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
 from decimal import Decimal, InvalidOperation
 import json
-from typing import Any
+from typing import Any, Literal
 
-from taichu.application.contracts.llm import LLMModelProfile
+from taichu.application.contracts.llm import (
+    LLMModelManagementError,
+    LLMModelProfile,
+)
 from taichu.config import Settings
-
-
-class LLMModelSelectionError(ValueError):
-    """模型选择错误，包含稳定中文错误码。"""
-
-    def __init__(self, code: str, message: str) -> None:
-        super().__init__(message)
-        self.code = code
-        self.message = message
+from taichu.infrastructure.llm.contracts import LLMTransportProfile
 
 
 _MODEL_DEFINITIONS: tuple[tuple[str, str, str, str, str, bool], ...] = (
@@ -103,6 +97,28 @@ _MODEL_DEFINITIONS: tuple[tuple[str, str, str, str, str, bool], ...] = (
     ),
 )
 
+_DEEPSEEK_OFFICIAL_MODEL_DEFINITIONS: tuple[
+    tuple[str, str, bool, Decimal, Decimal, Decimal], ...
+] = (
+    # DeepSeek 官方高峰时段公开价，单位为人民币/百万 Token。
+    (
+        "deepseek-v4-flash",
+        "DeepSeek V4 Flash（官方）",
+        True,
+        Decimal("3.0"),
+        Decimal("0.10"),
+        Decimal("9.0"),
+    ),
+    (
+        "deepseek-v4-pro",
+        "DeepSeek V4 Pro（官方）",
+        False,
+        Decimal("9.0"),
+        Decimal("0.30"),
+        Decimal("27.0"),
+    ),
+)
+
 
 class LLMModelCatalog:
     """后端唯一模型目录事实源。"""
@@ -110,7 +126,7 @@ class LLMModelCatalog:
     def __init__(self, settings: Settings) -> None:
         prices = _parse_prices(settings.rightcode_model_prices_json)
         profiles = [
-            LLMModelProfile(
+            LLMTransportProfile(
                 id=model_id,
                 display_name=display_name,
                 provider="rightcode",
@@ -132,62 +148,100 @@ class LLMModelCatalog:
                 upstream_verified,
             ) in _MODEL_DEFINITIONS
         ]
+        profiles.extend(
+            LLMTransportProfile(
+                id=model_id,
+                display_name=display_name,
+                provider="deepseek_official",
+                upstream_model=model_id,
+                wire_protocol="anthropic_messages",
+                base_url_key="DEEPSEEK_ANTHROPIC_BASE_URL",
+                enabled=True,
+                is_default=is_default,
+                supports_streaming=True,
+                upstream_verified=True,
+                input_price_per_million=input_price,
+                cached_input_price_per_million=cached_input_price,
+                output_price_per_million=output_price,
+                reasoning_output_price_per_million=output_price,
+                currency="CNY",
+            )
+            for (
+                model_id,
+                display_name,
+                is_default,
+                input_price,
+                cached_input_price,
+                output_price,
+            ) in (
+                _DEEPSEEK_OFFICIAL_MODEL_DEFINITIONS
+            )
+        )
         self._profiles = tuple(profiles)
-        self._by_id = {profile.id: profile for profile in profiles}
+        self._by_provider_id = {
+            (profile.provider, profile.id): profile for profile in profiles
+        }
         self._validate(settings.rightcode_default_model_id)
 
     @property
     def default_model_id(self) -> str:
-        return next(profile.id for profile in self._profiles if profile.is_default)
+        return self.default_model_id_for("rightcode")
 
-    def list_models(self) -> list[LLMModelProfile]:
-        return list(self._profiles)
+    def default_model_id_for(
+        self, provider: Literal["rightcode", "deepseek_official"]
+    ) -> str:
+        return next(
+            profile.id
+            for profile in self._profiles
+            if profile.provider == provider and profile.is_default
+        )
 
-    def resolve(self, model_id: str | None) -> LLMModelProfile:
-        actual_id = (model_id or self.default_model_id).strip()
-        profile = self._by_id.get(actual_id)
+    def list_models(
+        self,
+        provider: Literal["rightcode", "deepseek_official"] = "rightcode",
+    ) -> list[LLMModelProfile]:
+        return [
+            profile.to_public_profile()
+            for profile in self._profiles
+            if profile.provider == provider
+        ]
+
+    def resolve(
+        self,
+        model_id: str | None,
+        *,
+        provider: Literal["rightcode", "deepseek_official"] = "rightcode",
+    ) -> LLMTransportProfile:
+        actual_id = (model_id or self.default_model_id_for(provider)).strip()
+        profile = self._by_provider_id.get((provider, actual_id))
         if profile is None:
-            raise LLMModelSelectionError(
+            raise LLMModelManagementError(
                 "LLM_MODEL_UNKNOWN",
                 "所选模型不存在，请刷新模型列表后重试。",
             )
         if not profile.enabled:
-            raise LLMModelSelectionError(
+            raise LLMModelManagementError(
                 "LLM_MODEL_DISABLED",
                 f"模型“{profile.display_name}”当前已停用，请选择其他模型。",
             )
         return profile
 
-    def with_protocol(
-        self,
-        model_id: str,
-        *,
-        wire_protocol: str,
-        base_url_key: str,
-        verified: bool,
-    ) -> LLMModelProfile:
-        """供真实探测结果生成本地配置建议，不会静默改变全局目录。"""
-        profile = self.resolve(model_id)
-        if wire_protocol not in {"openai_responses", "anthropic_messages"}:
-            raise ValueError("不支持的模型传输协议。")
-        return replace(
-            profile,
-            wire_protocol=wire_protocol,  # type: ignore[arg-type]
-            base_url_key=base_url_key,
-            upstream_verified=verified,
-        )
-
     def _validate(self, configured_default: str) -> None:
-        ids = [profile.id for profile in self._profiles]
-        if len(ids) != len(set(ids)):
+        keys = [(profile.provider, profile.id) for profile in self._profiles]
+        if len(keys) != len(set(keys)):
             raise ValueError("模型目录中存在重复模型 ID。")
-        defaults = [profile for profile in self._profiles if profile.is_default]
-        if len(defaults) != 1:
-            raise ValueError("模型目录必须且只能配置一个默认模型。")
-        if configured_default not in self._by_id:
+        for provider in ("rightcode", "deepseek_official"):
+            defaults = [
+                profile
+                for profile in self._profiles
+                if profile.provider == provider and profile.is_default
+            ]
+            if len(defaults) != 1:
+                raise ValueError("每个模型供应商必须且只能配置一个默认模型。")
+            if not defaults[0].enabled:
+                raise ValueError("默认模型必须处于启用状态。")
+        if ("rightcode", configured_default) not in self._by_provider_id:
             raise ValueError("RIGHTCODE_DEFAULT_MODEL_ID 不在模型目录中。")
-        if not defaults[0].enabled:
-            raise ValueError("默认模型必须处于启用状态。")
 
 
 def _parse_prices(raw: str) -> dict[str, dict[str, Any]]:

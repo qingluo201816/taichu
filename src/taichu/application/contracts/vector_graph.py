@@ -33,10 +33,3 @@ class VectorGraphBackend(Protocol):
         *,
         top_k: int,
     ) -> VectorGraphRetrievalResult: ...
-
-    async def retrieve_without_graph(
-        self,
-        query: str,
-        *,
-        top_k: int,
-    ) -> VectorGraphRetrievalResult: ...

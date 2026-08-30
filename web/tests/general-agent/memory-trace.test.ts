@@ -4,7 +4,7 @@ import {
   buildNovelStructureDisplay,
   buildStableMemoryProjection,
   buildRuntimeTrace,
-  checkpointEventLabel,
+  checkpointSourceLabel,
   contextPhaseLabel,
   generalSubagentResultViewKind,
   generalSubagentResultViewKinds,
@@ -46,7 +46,7 @@ const call = {
 
 assert.equal(contextPhaseLabel("replan"), "重规划前");
 assert.equal(modelCallLabel(call), "编排模型 · 校验并形成回答");
-assert.equal(checkpointEventLabel("checkpoint_writes"), "记录节点中间写入");
+assert.equal(checkpointSourceLabel("loop"), "完成图步骤");
 assert.deepEqual(Object.keys(generalToolResultViewKinds).sort(), [
   "apply_manuscript_patch",
   "create_confirmed_knowledge",
@@ -94,16 +94,22 @@ assert.deepEqual(
       messages: [
         {
           role: "system",
-          content: "你是高层编排智能体。",
+          content: JSON.stringify({
+            "稳定记忆（System Prompt）": {
+              "身份、基本行为与准则": ["你是高层编排智能体。"],
+              "Static Capability Index（静态能力索引）": [
+                { name: "retrieve_story_context", type: "tool" },
+              ],
+            },
+          }),
           tool_calls: [],
           is_error: false,
         },
         {
           role: "developer",
           content: JSON.stringify({
-            "稳定记忆": ["只能调用已注册能力。"],
-            "阶段稳定契约": {
-              "完整轻量能力目录": { "能力总数": 28 },
+            "阶段契约": {
+              "相关能力字段摘要": [],
               "输出Schema": { type: "object" },
             },
           }),
@@ -122,12 +128,13 @@ assert.deepEqual(
     },
   ),
   {
-    "系统要求": "你是高层编排智能体。",
-    "稳定规则": ["只能调用已注册能力。"],
-    "阶段稳定契约": {
-      "完整轻量能力目录": { "能力总数": 28 },
-      "输出Schema": { type: "object" },
+    "系统要求": {
+      "身份、基本行为与准则": ["你是高层编排智能体。"],
+      "Static Capability Index（静态能力索引）": [
+        { name: "retrieve_story_context", type: "tool" },
+      ],
     },
+    "稳定规则": ["只能调用已注册能力。"],
     "工具定义": [
       {
         name: "retrieve_story_context",
@@ -290,15 +297,18 @@ const run = {
 } satisfies GeneralAgentRun;
 
 const capabilityContext = JSON.stringify({
-  "阶段稳定契约": {
-    "完整能力契约目录": { "能力总数": 28 },
+  "稳定记忆（System Prompt）": {
+    "Static Capability Index（静态能力索引）": Array.from(
+      { length: 28 },
+      (_, index) => ({ name: `capability_${index}`, type: "tool" }),
+    ),
   },
 });
 const usageCall = {
   ...call,
   messages: [
     {
-      role: "developer" as const,
+      role: "system" as const,
       content: capabilityContext,
       tool_calls: [],
       is_error: false,

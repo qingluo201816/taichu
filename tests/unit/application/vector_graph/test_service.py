@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import unittest
 
 from taichu.application.vector_graph.models import (
@@ -6,13 +7,18 @@ from taichu.application.vector_graph.models import (
     VectorGraphBuildProgress,
     VectorGraphBuildResult,
     VectorGraphBuildStage,
+    VectorGraphEvidence,
     VectorGraphIndexState,
     VectorGraphIndexStatus,
     VectorGraphSourceDocument,
     VectorGraphSourceType,
 )
 from taichu.application.vector_graph.models import VectorGraphExtractedTriplets
-from taichu.application.vector_graph.service import VectorGraphRAGService
+from taichu.application.vector_graph.service import (
+    VectorGraphRAGService,
+    _augment_graph_context,
+    _verified_context_projection,
+)
 
 
 class _ControlledBackend:
@@ -189,3 +195,37 @@ class VectorGraphServiceTest(unittest.IsolatedAsyncioTestCase):
         backend.release.set()
         self.assertIsNotNone(service._background_task)
         await service._background_task
+
+
+def test_graph_relations_are_visible_in_the_verified_model_context() -> None:
+    content = "正文证据"
+    evidence = VectorGraphEvidence(
+        source_type=VectorGraphSourceType.MANUSCRIPT_CHUNK,
+        source_id="chapter-1",
+        source_ref="manuscript:chapter-1:0-4",
+        title="章节",
+        content=content,
+        content_sha256=hashlib.sha256(content.encode("utf-8")).hexdigest(),
+        rank=1,
+        relation_texts=["秦浩轩 驯养 小金"],
+        authority_verified=True,
+    )
+
+    augmented = _augment_graph_context(evidence)
+
+    assert augmented.context_content == (
+        "相关图关系：秦浩轩 驯养 小金\n相关正文：正文证据"
+    )
+
+
+def test_authority_rehydration_preserves_only_contiguous_source_projection() -> None:
+    authoritative = "第一句。\n第二句是直接证据。\n第三句。"
+
+    assert (
+        _verified_context_projection("第二句是直接证据。\n第三句。", authoritative)
+        == "第二句是直接证据。\n第三句。"
+    )
+    assert (
+        _verified_context_projection("第二句是伪造证据。", authoritative)
+        == authoritative
+    )

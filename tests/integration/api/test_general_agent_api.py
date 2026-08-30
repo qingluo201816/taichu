@@ -10,13 +10,16 @@ from decimal import Decimal
 from pathlib import Path
 
 from httpx import ASGITransport, AsyncClient
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.store.memory import InMemoryStore
 
-from taichu.application.contracts.llm import (
+from taichu.application.contracts.llm import LLMModelProfile
+from taichu.infrastructure.llm.contracts import (
     LLMCost,
-    LLMModelProfile,
     LLMRequest,
     LLMResponse,
     LLMStreamEvent,
+    LLMToolCall,
     LLMUsage,
 )
 from taichu.config import Settings
@@ -25,7 +28,10 @@ from taichu.application.models.llm_replay import (
     LLMReplayMessage,
 )
 from taichu.main import create_app
-from tests.fakes import InMemoryKnowledgeRepository
+from tests.fakes import (
+    InMemoryGeneralAgentToolBudgetRepository,
+    InMemoryKnowledgeRepository,
+)
 
 
 class _DirectAnswerGateway:
@@ -83,12 +89,24 @@ class _DirectAnswerGateway:
                     "issues": [],
                     "should_replan": False,
                 }
+        tool_calls = (
+            (
+                LLMToolCall(
+                    call_id=f"call_{len(self.requests)}_{request.tool_choice}",
+                    name=request.tool_choice,
+                    arguments_json=json.dumps(payload, ensure_ascii=False),
+                ),
+            )
+            if request.tools
+            else ()
+        )
         return LLMResponse(
-            text=json.dumps(payload, ensure_ascii=False),
+            text="" if tool_calls else json.dumps(payload, ensure_ascii=False),
             model_id=request.model_id,
             upstream_model=request.model_id,
             usage=LLMUsage(input_tokens=20, output_tokens=20, total_tokens=40),
             cost=LLMCost(amount=Decimal("0.001"), kind="estimated"),
+            tool_calls=tool_calls,
         )
 
     async def stream(self, request: LLMRequest) -> AsyncIterator[LLMStreamEvent]:
@@ -109,6 +127,9 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
             app_settings=Settings(project_assets_dir=self.assets_root),
             llm_gateway=self.gateway,
             knowledge_repository=InMemoryKnowledgeRepository(),
+            graph_checkpointer=InMemorySaver(),
+            graph_store=InMemoryStore(),
+            tool_budget_repository=InMemoryGeneralAgentToolBudgetRepository(),
         )
         self.client = AsyncClient(
             transport=ASGITransport(app=self.app),
@@ -154,7 +175,6 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
             upstream_model="test-model",
             wire_protocol="openai_responses",
             status="completed",
-            response_mode="json",
             messages=[LLMReplayMessage(role="user", content="测试请求")],
             response_text='{"result":"测试响应"}',
             request_sha256="1" * 64,
@@ -194,21 +214,21 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
             all(item["run_id"] == run_id for item in traces.json()["traces"])
         )
         self.assertEqual(
-            recovery.json()["recovery"]["checkpoint"]["integrity_status"],
-            "valid",
+            recovery.json()["recovery"]["checkpoint"]["status"],
+            "available",
         )
         self.assertGreater(
-            len(recovery.json()["recovery"]["checkpoint"]["available_revisions"]),
+            recovery.json()["recovery"]["checkpoint"]["checkpoint_count"],
             0,
         )
-        self.assertGreater(len(recovery.json()["recovery"]["revisions"]), 0)
+        self.assertGreater(len(recovery.json()["recovery"]["checkpoints"]), 0)
         self.assertEqual(
-            recovery.json()["recovery"]["revisions"][-1]["revision"],
-            recovery.json()["recovery"]["checkpoint"]["current_revision"],
+            recovery.json()["recovery"]["checkpoints"][0]["checkpoint_id"],
+            recovery.json()["recovery"]["checkpoint"]["latest_checkpoint_id"],
         )
         self.assertIn(
-            recovery.json()["recovery"]["revisions"][-1]["event_type"],
-            {"checkpoint_put", "checkpoint_writes"},
+            recovery.json()["recovery"]["checkpoints"][0]["source"],
+            {"input", "loop", "update", "fork"},
         )
         self.assertEqual(recovery.json()["recovery"]["effects"], [])
         self.assertEqual(context_snapshots.json()["total"], 1)
@@ -357,17 +377,18 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(second_run["request_index"], 2)
         self.assertEqual(
             [message["role"] for message in second_run["messages"]],
-            ["user", "assistant", "user"],
+            ["user", "assistant", "user", "assistant"],
         )
         self.assertEqual(
             second_run["messages"][0]["content"],
             "第一次请求：怎样安排场景冲突？",
         )
         self.assertEqual(
-            second_run["messages"][-1]["content"],
+            second_run["messages"][-2]["content"],
             "第二次请求：把冲突升级得更自然一些。",
         )
         self.assertIn("信息释放", second_run["messages"][1]["content"])
+        self.assertIn("信息释放", second_run["messages"][-1]["content"])
 
         listing = await self.client.get(
             "/api/agent-workbench/general-assistant/conversations"

@@ -42,8 +42,12 @@ class LLMCallRecord(BaseModel):
     cost_currency: str = "CNY"
     cost_kind: LLMCallCostKind = "unavailable"
     provider_request_id: str | None = None
+    status_code: int | None = Field(default=None, ge=100, le=599)
     error_code: str | None = None
     error_message: str | None = None
+    error_summary: str | None = Field(default=None, max_length=1_000)
+    content_block_types: list[str] = Field(default_factory=list, max_length=32)
+    retry_count: int = Field(default=0, ge=0)
 
 
 class LLMUsageQuery(BaseModel):

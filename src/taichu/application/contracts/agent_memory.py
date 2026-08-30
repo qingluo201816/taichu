@@ -1,4 +1,4 @@
-"""通用 Runtime 自动记忆仓储与可重建索引契约。"""
+"""通用 Runtime 自动记忆的应用层仓储契约。"""
 
 from typing import Protocol, runtime_checkable
 
@@ -29,18 +29,6 @@ class AgentMemoryRepository(Protocol):
     ) -> AgentMemoryEntry | None: ...
 
     async def purge_expired(self, *, as_of: str) -> int: ...
-
-
-@runtime_checkable
-class AgentMemoryLexicalIndex(Protocol):
-    async def scores(
-        self,
-        entries: list[AgentMemoryEntry],
-        *,
-        query_text: str,
-    ) -> dict[str, float]: ...
-
-    async def rebuild(self, entries: list[AgentMemoryEntry]) -> str: ...
 
 
 @runtime_checkable

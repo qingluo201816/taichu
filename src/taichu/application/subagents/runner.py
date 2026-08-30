@@ -3,35 +3,43 @@
 from __future__ import annotations
 
 import json
-from time import perf_counter
-from uuid import uuid4
+from typing import Any, cast
+from uuid import NAMESPACE_URL, uuid5
 
-from pydantic import BaseModel, ValidationError
+from langchain.agents import create_agent
+from langchain.agents.middleware import (
+    AgentMiddleware,
+    ModelCallLimitMiddleware,
+    ModelRequest,
+    ModelResponse,
+    ToolCallLimitMiddleware,
+    ToolRetryMiddleware,
+)
+from langchain.agents.structured_output import ToolStrategy
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import ChatMessage, HumanMessage, ToolMessage
+from langgraph.store.base import BaseStore
+from pydantic import BaseModel
 
 from taichu.application.capabilities import CapabilityContext
 from taichu.application.contracts.intermediate_artifact import (
     IntermediateArtifactRepository,
 )
 from taichu.application.contracts.invocation_trace import InvocationTraceRepository
-from taichu.application.contracts.llm import (
-    LLMGatewayContract,
-    LLMMessage,
-    LLMRequest,
-    LLMResponse,
-    response_text,
-)
 from taichu.application.invocations.models import (
     InvocationContext,
-    InvocationStatus,
-    InvocationTraceRecord,
-    now_iso,
+    InvocationEnvelope,
 )
+from taichu.application.invocations.middleware import (
+    ModelInvocationTraceMiddleware,
+)
+from taichu.application.services.model_role_router import ModelRoleRouter
 from taichu.application.services.invocation_policy_service import (
     canonical_input_hash,
 )
-from taichu.application.services.model_role_router import ModelRoleRouter
 from taichu.application.subagents.contract import SubagentManifest
 from taichu.application.subagents.models import AgentSourceRequest
+from taichu.application.tools.contract import ToolSideEffect
 from taichu.application.tools.registry import ToolRegistry
 
 
@@ -43,106 +51,183 @@ async def run_structured_subagent(
     invocation: InvocationContext,
     context: CapabilityContext,
 ) -> BaseModel:
-    """收集授权来源，调用独立模型角色并有限修复结构化输出。"""
+    """收集授权来源，并交给 LangChain 官方 Agent 循环生成结构化结果。"""
     llm_value = context.capabilities.get("llm")
-    if not isinstance(llm_value, LLMGatewayContract):
-        raise TypeError("专业子 Agent 缺少有效模型网关。")
-    llm = llm_value
+    if not isinstance(llm_value, BaseChatModel):
+        raise TypeError("专业子 Agent 缺少 LangChain BaseChatModel。")
     router = context.require("model_role_router", ModelRoleRouter)
-    source_context, source_refs = await _collect_sources(
-        manifest,
-        input_data,
-        invocation,
-        context,
-    )
     input_json = input_data.model_dump_json(indent=2)
-    schema_json = json.dumps(
-        manifest.output_schema.model_json_schema(),
-        ensure_ascii=False,
-        separators=(",", ":"),
-    )
     user_prompt = (
-        "请完成下面的专业任务。只能输出一个符合 Schema 的 JSON 对象，不要使用 Markdown 代码块。\n\n"
-        f"任务输入：\n{input_json}\n\n"
-        f"已授权来源：\n{source_context or '本次没有额外来源；不得虚构事实。'}\n\n"
-        f"输出 Schema：\n{schema_json}"
+        "请完成下面的专业任务，并通过系统指定的结构化输出 Tool 返回结果。\n\n"
+        f"任务输入：\n{input_json}"
     )
     model_id = router.model_for(manifest.model_role)
-    last_text = ""
-    last_error: Exception | None = None
-    for attempt in range(manifest.repair_attempts + 1):
-        prompt = user_prompt
-        if attempt:
-            prompt += (
-                "\n\n上一次输出未通过 Schema 校验。请修复结构，不要改变任务事实边界。"
-                f"\n校验错误：{str(last_error)[:2_000]}"
-                f"\n上次输出：{last_text[:8_000]}"
-            )
-        request = LLMRequest(
-            model_id=model_id,
-            messages=(
-                LLMMessage(role="system", content=system_prompt),
-                LLMMessage(role="user", content=prompt),
-            ),
-            task_type="general_writing_subagent",
-            task_name=manifest.name,
-            run_id=invocation.run_id,
-            chapter_ids=tuple(_chapter_ids(input_data)),
-            response_mode="json",
-            temperature=_temperature(manifest.name),
-            max_output_tokens=min(
+    model = llm_value.model_copy(
+        update={
+            "model_id": model_id,
+            "task_type": "general_writing_subagent",
+            "task_name": manifest.name,
+            "taichu_run_id": invocation.run_id,
+            "chapter_ids": tuple(_chapter_ids(input_data)),
+            "temperature": _temperature(manifest.name),
+            "max_output_tokens": min(
                 manifest.limits.max_output_tokens,
                 invocation.budget.max_output_tokens,
             ),
-            feature="general_writing_assistant",
-        )
-        llm_context = invocation.child(
-            caller_type="subagent",
-            caller_name=manifest.name,
-            phase=f"{manifest.name}:llm",
-        )
-        started_at = now_iso()
-        timer = perf_counter()
-        try:
-            response = await llm.complete(request)
-        except Exception as error:
-            await _append_llm_failure_trace(
-                context,
-                request,
-                llm_context,
-                started_at,
-                timer,
-                manifest.model_role,
-                attempt,
-                error,
-            )
-            raise
-        last_text = response_text(response)
-        await _append_llm_trace(
-            context,
-            request,
-            response,
-            llm_context,
-            started_at,
-            timer,
-            manifest.model_role,
-            attempt,
-        )
-        try:
-            payload = _extract_json(last_text)
-            output = manifest.output_schema.model_validate(payload)
-            if hasattr(output, "source_refs"):
-                output = output.model_copy(
-                    update={"source_refs": list(dict.fromkeys(source_refs))}
-                )
-            if len(output.model_dump_json()) > manifest.limits.max_output_chars:
-                raise ValueError("专业子 Agent 输出超过 Manifest 字符预算。")
-            return output
-        except (ValidationError, ValueError, json.JSONDecodeError) as error:
-            last_error = error
-    raise SubagentOutputValidationError(
-        f"专业子 Agent“{manifest.name}”输出未通过结构校验：{last_error}"
+            "feature": "general_writing_assistant",
+        }
     )
+    llm_context = invocation.child(
+        caller_type="subagent",
+        caller_name=manifest.name,
+        phase=f"{manifest.name}:llm",
+    )
+    source_middleware = SubagentSourceContextMiddleware(
+        manifest=manifest,
+        input_data=input_data,
+        invocation=invocation,
+        context=context,
+    )
+    model_tool_source_refs: list[str] = []
+
+    def collect_tool_result(envelope: InvocationEnvelope[BaseModel]) -> None:
+        model_tool_source_refs.extend(envelope.source_refs)
+
+    tool_registry = context.require("tool_registry", ToolRegistry)
+    agent_tools = [
+        tool_registry.bind_langchain_agent_tool(
+            name,
+            invocation.child(
+                caller_type="subagent",
+                caller_name=manifest.name,
+                phase=f"{manifest.name}:model_tool",
+            ),
+            result_sink=collect_tool_result,
+        )
+        for name in sorted(manifest.allowed_tools)
+    ]
+    store_value = context.capabilities.get("graph_store")
+    agent_store = store_value if isinstance(store_value, BaseStore) else None
+    middleware_stack: list[Any] = [
+        ModelCallLimitMiddleware(
+            run_limit=manifest.repair_attempts + 1,
+            exit_behavior="error",
+        ),
+        ToolCallLimitMiddleware(
+            run_limit=_effective_tool_call_limit(manifest, invocation),
+            exit_behavior="error",
+        ),
+    ]
+    retryable_tools = _retryable_agent_tool_names(manifest, tool_registry)
+    if retryable_tools:
+        middleware_stack.append(
+            ToolRetryMiddleware(
+                max_retries=invocation.budget.max_retries,
+                tools=cast(Any, retryable_tools),
+                retry_on=(TimeoutError, ConnectionError),
+                on_failure="error",
+                initial_delay=0.25,
+                max_delay=2.0,
+                jitter=True,
+            )
+        )
+    middleware_stack.extend(
+        [
+            source_middleware,
+            ModelInvocationTraceMiddleware(
+                repository=_trace_repository(context),
+                invocation=llm_context,
+                requested_model_id=model_id,
+                model_role=manifest.model_role,
+            ),
+        ]
+    )
+    agent = create_agent(
+        model=model,
+        tools=agent_tools,
+        system_prompt=system_prompt,
+        middleware=middleware_stack,
+        response_format=ToolStrategy(
+            manifest.output_schema,
+            handle_errors=True,
+        ),
+        store=agent_store,
+        name=manifest.name,
+    )
+    result = await agent.ainvoke(
+        {"messages": [HumanMessage(content=user_prompt)]},
+        config={
+            "run_name": f"general_writing_subagent.{manifest.name}",
+            "metadata": {
+                "taichu_run_id": invocation.run_id,
+                "model_role": manifest.model_role,
+            },
+        },
+    )
+    output = result.get("structured_response")
+    if not isinstance(output, manifest.output_schema):
+        raise SubagentOutputValidationError(
+            "LangChain Agent 没有返回符合契约的 structured_response。"
+        )
+    if hasattr(output, "source_refs"):
+        output = output.model_copy(
+            update={
+                "source_refs": list(
+                    dict.fromkeys(
+                        [
+                            *source_middleware.source_refs,
+                            *model_tool_source_refs,
+                        ]
+                    )
+                )
+            }
+        )
+    if len(output.model_dump_json()) > manifest.limits.max_output_chars:
+        raise ValueError("专业子 Agent 输出超过 Manifest 字符预算。")
+    return output
+
+
+class SubagentSourceContextMiddleware(AgentMiddleware):
+    """在每次模型调用前注入一次确定性、已授权的小说来源投影。"""
+
+    def __init__(
+        self,
+        *,
+        manifest: SubagentManifest,
+        input_data: BaseModel,
+        invocation: InvocationContext,
+        context: CapabilityContext,
+    ) -> None:
+        super().__init__()
+        self._manifest = manifest
+        self._input_data = input_data
+        self._invocation = invocation
+        self._context = context
+        self._source_context: str | None = None
+        self.source_refs: list[str] = []
+
+    async def awrap_model_call(
+        self,
+        request: ModelRequest,
+        handler: Any,
+    ) -> ModelResponse:
+        if self._source_context is None:
+            self._source_context, self.source_refs = await _collect_sources(
+                self._manifest,
+                self._input_data,
+                self._invocation,
+                self._context,
+            )
+        source_message = ChatMessage(
+            role="developer",
+            content=(
+                "已授权来源：\n"
+                + (self._source_context or "本次没有额外来源；不得虚构小说事实。")
+            ),
+        )
+        return await handler(
+            request.override(messages=[source_message, *request.messages])
+        )
 
 
 async def _collect_sources(
@@ -163,7 +248,7 @@ async def _collect_sources(
     goal = _primary_goal(input_data)
     review_text = (
         str(getattr(input_data, "text", ""))
-        if manifest.name == "consistency_reviewer"
+        if manifest.name == "consistency_reviewer" and request.auto_collect
         else ""
     )
     if request.include_structure:
@@ -179,9 +264,7 @@ async def _collect_sources(
             )
         )
     manuscript_query = request.manuscript_query or (
-        goal
-        if request.auto_collect and manifest.name != "consistency_reviewer"
-        else ""
+        goal if request.auto_collect and manifest.name != "consistency_reviewer" else ""
     )
     knowledge_query = request.knowledge_query or (goal if request.auto_collect else "")
     retrieval_query = "\n".join(
@@ -246,12 +329,21 @@ async def _collect_sources(
             break
         if tool_name not in manifest.allowed_tools:
             continue
-        child = invocation.child(
-            caller_type="subagent",
+        child = _source_invocation(
+            invocation=invocation,
+            registry=registry,
+            tool_name=tool_name,
+            input_data=payload,
+            ordinal=index,
             caller_name=manifest.name,
             phase=f"{manifest.name}:source_collection",
         )
-        envelope = await registry.invoke(tool_name, payload, child)
+        envelope = await _invoke_langchain_tool(
+            registry,
+            tool_name,
+            payload,
+            child,
+        )
         chunks.append(f"[{tool_name}]\n{envelope.output.model_dump_json(indent=2)}")
         refs.extend(envelope.source_refs)
     text = "\n\n".join(chunks)
@@ -269,30 +361,43 @@ async def _collect_external_sources(
     external_invocation = invocation.model_copy(
         update={"external_access_grant_id": grant_id}
     )
-    search = await registry.invoke(
+    search_payload = {
+        "query": payload["research_question"],
+        "source_preferences": payload.get("source_preferences", []),
+        "date_range": payload.get("date_range"),
+        "max_results": payload.get("max_sources", 5),
+    }
+    search_invocation = _source_invocation(
+        invocation=external_invocation,
+        registry=registry,
+        tool_name="search_external_sources",
+        input_data=search_payload,
+        ordinal=0,
+        caller_name=manifest.name,
+        phase="external_research:search",
+    )
+    search = await _invoke_langchain_tool(
+        registry,
         "search_external_sources",
-        {
-            "query": payload["research_question"],
-            "source_preferences": payload.get("source_preferences", []),
-            "date_range": payload.get("date_range"),
-            "max_results": payload.get("max_sources", 5),
-        },
-        external_invocation.child(
-            caller_type="subagent",
-            caller_name=manifest.name,
-            phase="external_research:search",
-        ),
+        search_payload,
+        search_invocation,
     )
     chunks = [f"[search_external_sources]\n{search.output.model_dump_json(indent=2)}"]
     refs = list(search.source_refs)
     items = getattr(search.output, "items", [])
     read_limit = min(3, manifest.limits.max_tool_calls - 1)
-    for item in items[:read_limit]:
-        result = await registry.invoke(
+    for index, item in enumerate(items[:read_limit], start=1):
+        read_payload = {"url": item.url, "max_content_chars": 15_000}
+        result = await _invoke_langchain_tool(
+            registry,
             "read_external_source",
-            {"url": item.url, "max_content_chars": 15_000},
-            external_invocation.child(
-                caller_type="subagent",
+            read_payload,
+            _source_invocation(
+                invocation=external_invocation,
+                registry=registry,
+                tool_name="read_external_source",
+                input_data=read_payload,
+                ordinal=index,
                 caller_name=manifest.name,
                 phase="external_research:read",
             ),
@@ -304,114 +409,55 @@ async def _collect_external_sources(
     return "\n\n".join(chunks)[:100_000], list(dict.fromkeys(refs))
 
 
-async def _append_llm_trace(
-    context: CapabilityContext,
-    request: LLMRequest,
-    response: LLMResponse | str,
+async def _invoke_langchain_tool(
+    registry: ToolRegistry,
+    name: str,
+    input_data: dict[str, object],
     invocation: InvocationContext,
-    started_at: str,
-    timer: float,
-    model_role: str,
-    retry_count: int,
-) -> None:
-    repository_value = context.capabilities.get("invocation_trace_repository")
-    if not isinstance(repository_value, InvocationTraceRepository):
-        raise TypeError("专业子 Agent 缺少调用记录仓储。")
-    repository = repository_value
-    usage = response.usage if isinstance(response, LLMResponse) else None
-    model_id = (
-        response.model_id if isinstance(response, LLMResponse) else request.model_id
+) -> InvocationEnvelope[Any]:
+    tool = registry.bind_langchain_tool(name, invocation)
+    result = await tool.ainvoke(
+        {
+            "type": "tool_call",
+            "name": name,
+            "args": input_data,
+            "id": invocation.call_id,
+        }
     )
-    finished_at = now_iso()
-    record = InvocationTraceRecord(
-        trace_id=f"trace_{uuid4().hex}",
-        capability_type="llm",
-        capability_name=request.task_name,
-        task_id=invocation.task_id,
-        run_id=invocation.run_id,
-        call_id=invocation.call_id,
-        parent_call_id=invocation.parent_call_id,
-        caller_type=invocation.caller_type,
-        caller_name=invocation.caller_name,
-        status=InvocationStatus.COMPLETED,
-        input_sha256=canonical_input_hash(
-            {"messages": [message.content for message in request.messages]}
-        ),
-        input_char_count=sum(len(message.content) for message in request.messages),
-        output_char_count=len(response_text(response)),
-        model_role=model_role,
-        model_id=model_id,
-        input_tokens=usage.input_tokens if usage else None,
-        output_tokens=usage.output_tokens if usage else None,
-        retry_count=retry_count,
-        started_at=started_at,
-        finished_at=finished_at,
-        duration_ms=max(0, round((perf_counter() - timer) * 1000)),
-    )
-    try:
-        await repository.append(record)
-    except Exception:  # noqa: BLE001
-        return
+    if not isinstance(result, ToolMessage):
+        raise TypeError(f"LangChain Tool“{name}”没有返回 ToolMessage。")
+    artifact = result.artifact
+    if not isinstance(artifact, InvocationEnvelope):
+        raise TypeError(f"LangChain Tool“{name}”没有返回太初调用证据。")
+    return artifact
 
 
-async def _append_llm_failure_trace(
-    context: CapabilityContext,
-    request: LLMRequest,
+def _source_invocation(
+    *,
     invocation: InvocationContext,
-    started_at: str,
-    timer: float,
-    model_role: str,
-    retry_count: int,
-    error: Exception,
-) -> None:
-    repository_value = context.capabilities.get("invocation_trace_repository")
-    if not isinstance(repository_value, InvocationTraceRepository):
-        return
-    record = InvocationTraceRecord(
-        trace_id=f"trace_{uuid4().hex}",
-        capability_type="llm",
-        capability_name=request.task_name,
-        task_id=invocation.task_id,
-        run_id=invocation.run_id,
-        call_id=invocation.call_id,
-        parent_call_id=invocation.parent_call_id,
-        caller_type=invocation.caller_type,
-        caller_name=invocation.caller_name,
-        status=InvocationStatus.FAILED,
-        input_sha256=canonical_input_hash(
-            {"messages": [message.content for message in request.messages]}
+    registry: ToolRegistry,
+    tool_name: str,
+    input_data: dict[str, object],
+    ordinal: int,
+    caller_name: str,
+    phase: str,
+) -> InvocationContext:
+    """为确定性来源预取派生可跨恢复复用的 Tool 调用身份。"""
+
+    manifest = registry.get_manifest(tool_name)
+    parsed_input = manifest.input_schema.model_validate(input_data)
+    value = uuid5(
+        NAMESPACE_URL,
+        (
+            f"taichu:{invocation.call_id}:{phase}:{ordinal}:{tool_name}:"
+            f"{canonical_input_hash(parsed_input)}"
         ),
-        input_char_count=sum(len(message.content) for message in request.messages),
-        model_role=model_role,
-        model_id=request.model_id,
-        retry_count=retry_count,
-        started_at=started_at,
-        finished_at=now_iso(),
-        duration_ms=max(0, round((perf_counter() - timer) * 1000)),
-        error_type=type(error).__name__,
-        error_message=str(error)[:500],
     )
-    try:
-        await repository_value.append(record)
-    except Exception:  # noqa: BLE001
-        return
-
-
-def _extract_json(text: str) -> dict[str, object]:
-    stripped = text.strip()
-    if stripped.startswith("```"):
-        first_newline = stripped.find("\n")
-        stripped = stripped[first_newline + 1 :] if first_newline >= 0 else stripped
-        if stripped.endswith("```"):
-            stripped = stripped[:-3]
-    start = stripped.find("{")
-    end = stripped.rfind("}")
-    if start < 0 or end < start:
-        raise ValueError("模型输出中没有 JSON 对象。")
-    payload = json.loads(stripped[start : end + 1])
-    if not isinstance(payload, dict):
-        raise ValueError("模型输出必须是 JSON 对象。")
-    return payload
+    return invocation.child(
+        caller_type="subagent",
+        caller_name=caller_name,
+        phase=phase,
+    ).model_copy(update={"call_id": f"call_{value.hex}"})
 
 
 def _primary_goal(input_data: BaseModel) -> str:
@@ -460,6 +506,39 @@ def _temperature(agent_name: str) -> float:
 
 class SubagentOutputValidationError(ValueError):
     """模型输出在有限修复后仍不满足专业 Agent Schema。"""
+
+
+def _trace_repository(
+    context: CapabilityContext,
+) -> InvocationTraceRepository | None:
+    value = context.capabilities.get("invocation_trace_repository")
+    return value if isinstance(value, InvocationTraceRepository) else None
+
+
+def _retryable_agent_tool_names(
+    manifest: SubagentManifest,
+    registry: ToolRegistry,
+) -> list[str]:
+    """只允许官方中间件重试 Manifest 明示的无副作用读取 Tool。"""
+
+    result: list[str] = []
+    for name in sorted(manifest.allowed_tools):
+        tool_manifest = registry.get_manifest(name)
+        if (
+            tool_manifest.retryable
+            and tool_manifest.side_effect is ToolSideEffect.READ_ONLY
+        ):
+            result.append(name)
+    return result
+
+
+def _effective_tool_call_limit(
+    manifest: SubagentManifest,
+    invocation: InvocationContext,
+) -> int:
+    """单个子 Agent 的官方 loop 护栏不得超过任务级声明上限。"""
+
+    return min(manifest.limits.max_tool_calls, invocation.budget.max_tool_calls)
 
 
 def _artifact_repository(

@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import BaseModel, ConfigDict
 
 from taichu.application.general_agent.executor import DynamicDagExecutor
@@ -30,6 +31,7 @@ from taichu.application.invocations.models import now_iso
 from taichu.application.services.invocation_policy_service import (
     InvocationPolicyService,
 )
+from tests.fakes import InMemoryGeneralAgentEffectRepository
 
 
 class _RecordingHook:
@@ -127,15 +129,16 @@ def test_fault_hook_protocol_has_no_case_identifier() -> None:
     )
 
 
-def test_durable_runtime_checkpoints_emit_only_their_fixed_fault_points() -> None:
+def test_business_projections_do_not_emit_runtime_checkpoint_faults() -> None:
     async def scenario() -> None:
         hook = _RecordingHook()
         service = _service_shell(hook)
         run = _run()
 
-        planned = await service._checkpoint(run, "plan_created")  # noqa: SLF001
+        planned = await service._project_run_snapshot(run, "plan_created")  # noqa: SLF001
         waiting = planned.model_copy(
             update={
+                "status": GeneralAgentRunStatus.WAITING_HUMAN,
                 "pending_human_request": GeneralAgentHumanRequest(
                     request_id=f"human_{'a' * 32}",
                     kind="write_authorization",
@@ -144,28 +147,14 @@ def test_durable_runtime_checkpoints_emit_only_their_fixed_fault_points() -> Non
                 )
             }
         )
-        authorized = await service._checkpoint(  # noqa: SLF001
+        authorized = await service._project_run_snapshot(  # noqa: SLF001
             waiting,
             "waiting_human_after_capability_checkpoint",
         )
-        verifying = await service._checkpoint(  # noqa: SLF001
-            authorized,
-            "verification_started",
-        )
-        await service._checkpoint(verifying, "unrelated_checkpoint")  # noqa: SLF001
-
-        assert [point for point, _ in hook.calls] == [
-            GeneralAgentFaultPoint.PLAN_CREATED,
-            GeneralAgentFaultPoint.AUTHORIZATION_REQUEST_DURABLE,
-            GeneralAgentFaultPoint.VERIFICATION_STARTED,
-        ]
-        assert hook.calls[0][1].checkpoint_revision == (
-            planned.checkpoint_revision
-        )
-        assert hook.calls[1][1].durable_identity == f"human_{'a' * 32}"
-        assert hook.calls[2][1].checkpoint_revision == (
-            verifying.checkpoint_revision
-        )
+        assert hook.calls == []
+        assert authorized.status is GeneralAgentRunStatus.WAITING_HUMAN
+        # 待人工状态必须等官方 interrupt checkpoint 提交后再由图投影。
+        assert service._repository.saved == [planned]  # type: ignore[attr-defined]
 
     asyncio.run(scenario())
 
@@ -175,7 +164,9 @@ def test_no_fault_hook_keeps_checkpoint_behavior_unchanged() -> None:
         service = _service_shell(None)
         run = _run()
 
-        updated = await service._checkpoint(run, "plan_created")  # noqa: SLF001
+        updated = await service._project_run_snapshot(  # noqa: SLF001
+            run, "plan_created"
+        )
 
         assert updated.checkpoint_revision == run.checkpoint_revision + 1
         assert service._repository.saved == [updated]  # type: ignore[attr-defined]
@@ -280,6 +271,7 @@ def test_subagent_started_hook_runs_after_dispatch_and_before_completed_commit()
                     "tests.fixture_subagent:invoke"
                 )
             },
+            effect_repository=InMemoryGeneralAgentEffectRepository(),
             fault_hook=hook,
         )
         timestamp = now_iso()
@@ -315,7 +307,11 @@ def test_subagent_started_hook_runs_after_dispatch_and_before_completed_commit()
             return current
 
         with pytest.raises(InjectedProcessTermination):
-            await executor.execute(run, checkpoint=checkpoint)
+            await executor.execute(
+                run,
+                checkpoint=checkpoint,
+                checkpointer=InMemorySaver(),
+            )
 
         assert order == [
             "subagent:started",

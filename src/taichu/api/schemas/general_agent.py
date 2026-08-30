@@ -1,5 +1,7 @@
 """通用写作助手 Runtime 的 HTTP 契约。"""
 
+from typing import Literal
+
 from pydantic import BaseModel, Field, model_validator
 
 from taichu.application.agent_memory.models import AgentMemoryEntry
@@ -42,6 +44,11 @@ class GeneralAgentResumeRequest(BaseModel):
     answer: str = Field(default="", max_length=100_000)
     approve: bool | None = None
     second_confirmation: bool = False
+    effect_resolution: Literal[
+        "recheck",
+        "confirm_not_applied",
+        "cancel",
+    ] | None = None
 
 
 class GeneralAgentRunSummary(BaseModel):

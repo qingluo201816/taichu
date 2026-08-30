@@ -8,13 +8,18 @@ import re
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Sequence
+from uuid import uuid4
 
 from httpx import ASGITransport, AsyncClient
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
-from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.chat_models import BaseChatModel, LanguageModelInput
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import PrivateAttr
 
 from taichu.application.services.import_service import ImportService
 from taichu.application.contracts.llm import LLMModelIdentity
@@ -39,7 +44,7 @@ from taichu.domain.models.structured_knowledge import (
 )
 from taichu.infrastructure.storage.markdown_backend import ProjectAssetStorageBackend
 from taichu.main import create_app
-from tests.fakes import InMemoryKnowledgeRepository
+from tests.fakes import InMemoryKnowledgeRepository, make_test_llm_gateway
 
 
 class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
@@ -55,13 +60,15 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
         )
         self.app = create_app(
             app_settings=Settings(project_assets_dir=self.assets_root),
-            llm=_SequenceChatModel(responses=_success_responses()),
-            llm_model_identity=LLMModelIdentity(
-                provider="test",
-                model_id="test-model",
-                family="test-model",
-                endpoint_kind="test",
-                known=True,
+            llm_gateway=make_test_llm_gateway(
+                _SequenceChatModel(responses=_success_responses()),
+                LLMModelIdentity(
+                    provider="test",
+                    model_id="test-model",
+                    family="test-model",
+                    endpoint_kind="test",
+                    known=True,
+                ),
             ),
             knowledge_repository=InMemoryKnowledgeRepository(),
         )
@@ -1123,9 +1130,7 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
                 identity="太初教弟子",
             )
         )
-        await self.app.state.knowledge_run_store.write_run(
-            _retargetable_create_run()
-        )
+        await self.app.state.knowledge_run_store.write_run(_retargetable_create_run())
 
         response = await self.client.post(
             "/api/agent-workbench/knowledge-extraction/candidates/review_item_retarget/edit-confirm",
@@ -1211,10 +1216,27 @@ class AgentWorkbenchApiTest(unittest.IsolatedAsyncioTestCase):
 
 class _SequenceChatModel(BaseChatModel):
     responses: list[str]
+    _bound_tool_name: str | None = PrivateAttr(default=None)
 
     @property
     def _llm_type(self) -> str:
         return "taichu-test-sequence"
+
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable[..., Any] | BaseTool],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, AIMessage]:
+        del kwargs
+        bound = self.model_copy()
+        if tool_choice and tool_choice not in {"auto", "any", "required", "none"}:
+            bound._bound_tool_name = tool_choice
+        else:
+            function = convert_to_openai_tool(tools[-1])["function"]
+            bound._bound_tool_name = str(function["name"])
+        return bound
 
     def _generate(
         self,
@@ -1225,19 +1247,29 @@ class _SequenceChatModel(BaseChatModel):
     ) -> ChatResult:
         prompt_text = "\n".join(str(message.content) for message in messages)
         if '"candidate_id"' in prompt_text:
+            content = _summary_response(prompt_text)
             return ChatResult(
-                generations=[
-                    ChatGeneration(
-                        message=AIMessage(content=_summary_response(prompt_text))
-                    )
-                ]
+                generations=[ChatGeneration(message=self._message(content))]
             )
         if not self.responses:
             raise RuntimeError("没有可用的模拟 LLM 响应。")
         return ChatResult(
-            generations=[
-                ChatGeneration(message=AIMessage(content=self.responses.pop(0)))
-            ]
+            generations=[ChatGeneration(message=self._message(self.responses.pop(0)))]
+        )
+
+    def _message(self, content: str) -> AIMessage:
+        if self._bound_tool_name is None:
+            return AIMessage(content=content)
+        return AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "id": f"call_{uuid4().hex}",
+                    "name": self._bound_tool_name,
+                    "args": json.loads(content),
+                    "type": "tool_call",
+                }
+            ],
         )
 
 

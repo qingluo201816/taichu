@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   rag-regression:
-    name: 确定性回归、Graph 消融与语义评测
+    name: 确定性回归与语义评测
     runs-on: [self-hosted, windows, taichu-rag]
     timeout-minutes: 120
     steps:

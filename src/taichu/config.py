@@ -22,7 +22,7 @@ class Settings(BaseSettings):
         "https://rightapi.ai/deepseek/anthropic"
     )
     rightcode_default_model_id: str = "deepseek-v4-pro"
-    rightcode_request_timeout_seconds: float = 600
+    rightcode_request_timeout_seconds: float = 300
     rightcode_max_retries: int = 2
     rightcode_model_prices_json: str = "{}"
     deepseek_api_key: SecretStr = SecretStr("")
@@ -58,19 +58,18 @@ class Settings(BaseSettings):
     vector_graph_llm_model: str = "deepseek-v4-pro"
     vector_graph_manuscript_chunk_size: int = 1_000
     vector_graph_manuscript_chunk_overlap: int = 200
-    vector_graph_entity_top_k: int = 30
-    vector_graph_relation_top_k: int = 30
-    vector_graph_expansion_degree: int = 2
-    vector_graph_relation_number_threshold: int = 60
-    vector_graph_expansion_max_seed_entities: int = 3
-    vector_graph_expansion_initial_relations_per_entity: int = 20
-    vector_graph_expansion_initial_beam_width: int = 20
-    vector_graph_expansion_max_entities_per_hop: int = 12
-    vector_graph_expansion_relations_per_entity: int = 8
+    vector_graph_passage_top_k: int = 30
+    vector_graph_expansion_max_seed_entities: int = 5
+    vector_graph_expansion_max_seed_relations: int = 32
+    vector_graph_expansion_max_hop: int = 1
+    vector_graph_expansion_max_entities_per_hop: int = 20
+    vector_graph_expansion_relations_per_entity: int = 10
+    vector_graph_expansion_candidate_pool_multiplier: int = 4
     vector_graph_expansion_hub_relations_per_entity: int = 5
     vector_graph_expansion_hub_degree_threshold: int = 100
-    vector_graph_expansion_beam_width: int = 20
-    vector_graph_ann_top_k: int = 30
+    vector_graph_expansion_beam_width: int = 24
+    vector_graph_expansion_max_total_relations: int = 56
+    vector_graph_expansion_max_graph_passages: int = 20
     vector_graph_reranker_top_k: int = 10
 
     reranker_base_url: str = "http://127.0.0.1:8012"
@@ -79,6 +78,7 @@ class Settings(BaseSettings):
 
     general_agent_working_memory_retrieval_top_k: int = 12
     general_agent_working_memory_char_budget: int = 24_000
+    general_agent_long_term_memory_retrieval_top_k: int = 8
     general_agent_long_term_memory_char_budget: int = 12_000
     general_agent_memory_age_decay_days: int = 30
     general_agent_memory_minimum_relevance: float = 0.01
@@ -89,7 +89,8 @@ class Settings(BaseSettings):
     general_agent_plan_summary_char_budget: int = 24_000
     general_agent_message_compaction_threshold: int = 20
     general_agent_node_output_compaction_threshold: int = 48_000
-    general_agent_capability_catalog_char_budget: int = 80_000
+    general_agent_capability_prompt_char_budget: int = 40_000
+    general_agent_capability_retrieval_limit: int = 12
 
     mongodb_home: Path | None = None
     mongodb_data_dir: Path | None = None

@@ -6,9 +6,6 @@ import unittest
 from pathlib import Path
 
 from httpx import ASGITransport, AsyncClient
-from langchain_core.language_models.fake_chat_models import (
-    FakeMessagesListChatModel,
-)
 from langchain_core.messages import AIMessage
 
 from taichu.application.services.import_service import ImportService
@@ -17,7 +14,11 @@ from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
 from taichu.main import create_app
-from tests.fakes import InMemoryKnowledgeRepository
+from tests.fakes import (
+    InMemoryKnowledgeRepository,
+    NativeToolCallSequenceChatModel,
+    make_test_llm_gateway,
+)
 
 
 class InboxApiTest(unittest.IsolatedAsyncioTestCase):
@@ -33,11 +34,13 @@ class InboxApiTest(unittest.IsolatedAsyncioTestCase):
         )
         app = create_app(
             app_settings=Settings(project_assets_dir=self.assets_root),
-            llm=FakeMessagesListChatModel(
-                responses=[
-                    AIMessage(content=_suggestion_response()),
-                    AIMessage(content=_pending_fact_response()),
-                ]
+            llm_gateway=make_test_llm_gateway(
+                NativeToolCallSequenceChatModel(
+                    responses=[
+                        AIMessage(content=_suggestion_response()),
+                        AIMessage(content=_pending_fact_response()),
+                    ]
+                )
             ),
             knowledge_repository=InMemoryKnowledgeRepository(),
         )
@@ -53,9 +56,7 @@ class InboxApiTest(unittest.IsolatedAsyncioTestCase):
     async def test_save_suggestion_card_to_idea_and_source_jump(self) -> None:
         card_id = await self._create_selection_card("ask")
 
-        save_response = await self.client.post(
-            f"/api/inbox/cards/{card_id}/save-idea"
-        )
+        save_response = await self.client.post(f"/api/inbox/cards/{card_id}/save-idea")
         inbox_response = await self.client.get("/api/inbox")
 
         self.assertEqual(save_response.status_code, 200)
@@ -116,7 +117,10 @@ def _suggestion_response() -> str:
     return json.dumps(
         {
             "card_type": "suggestion",
-            "content": {"body": "可以保存成一个后续灵感。"},
+            "content": {
+                "title": None,
+                "body": "可以保存成一个后续灵感。",
+            },
         },
         ensure_ascii=False,
     )
@@ -129,7 +133,7 @@ def _pending_fact_response() -> str:
             "content": {
                 "fact_type": "technique",
                 "title": "太初剑意",
-                "content": {"rule": "以心火照见剑路。"},
+                "content": "以心火照见剑路。",
             },
         },
         ensure_ascii=False,

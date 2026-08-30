@@ -743,22 +743,14 @@ function RunDetail({
           </p>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <Metric
-              label="检查点完整性"
-              value={checkpointIntegrityLabel(recovery.checkpoint.integrity_status)}
+              label="官方检查点"
+              value={checkpointStatusLabel(recovery.checkpoint.status)}
             />
             <Metric
-              label="可用历史修订"
-              value={`${recovery.checkpoint.available_revisions.length} 个`}
+              label="持久状态"
+              value={`${recovery.checkpoint.checkpoint_count} 个`}
             />
           </div>
-          {recovery.checkpoint.recovered_from_revision ? (
-            <p className="mt-2 text-amber-200">
-              已从第 {recovery.checkpoint.recovered_from_revision} 个有效修订恢复。
-            </p>
-          ) : null}
-          {recovery.checkpoint.damage_warnings.map(warning => (
-            <p key={warning} className="mt-1 text-red-200">检查点告警：{warning}</p>
-          ))}
           {recovery.effects.length ? (
             <div className="mt-3 grid gap-1.5">
               {recovery.effects.map(effect => (
@@ -921,13 +913,11 @@ function effectStatusLabel(status: GeneralAgentEffectStatus): string {
   }[status];
 }
 
-function checkpointIntegrityLabel(status: string): string {
+function checkpointStatusLabel(status: GeneralAgentRecoverySnapshot["checkpoint"]["status"]): string {
   return {
-    valid: "完整",
-    recovered: "已回退到有效修订",
-    invalid: "损坏，无法自动恢复",
-    missing: "暂无检查点",
-  }[status] ?? "状态未知";
+    available: "可恢复",
+    missing: "尚未生成",
+  }[status];
 }
 
 function invocationStatusLabel(status: GeneralAgentInvocationTrace["status"]): string {

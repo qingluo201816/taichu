@@ -472,11 +472,11 @@ def test_case_2_unconsumed_or_out_of_scope_hit_cannot_pass(
         }
     )
     invocation = ObservedInvocation(
-        call_id="call_search_chapter_001",
+        call_id="call_retrieve_chapter_001",
         parent_call_id=None,
         node_id="search_fixture",
         capability_kind="tool",
-        capability_name="search_manuscript",
+        capability_name="retrieve_story_context",
         status="completed",
         input_sha256=canonical_sha256(
             {"query": "归潮灯", "chapter_ids": ["chapter_001"]}
@@ -496,7 +496,7 @@ def test_case_2_unconsumed_or_out_of_scope_hit_cannot_pass(
     consumed = AssertionEvaluationContext(
         dataflow_identities=(
             DataflowIdentityObservation(
-                producer="search_manuscript",
+                producer="retrieve_story_context",
                 consumer="final_answer",
                 identity_field="output_sha256",
                 producer_identity=output_sha256,

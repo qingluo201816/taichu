@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from taichu.application.contracts.storage import ProjectAssetStorageContract
-from taichu.domain.models import EditorPreferences
+from taichu.domain.models import EditorPreferences, LLMProvider
 
 
 class SettingsPreferenceService:
@@ -26,6 +26,16 @@ class SettingsPreferenceService:
         for key in ("font_size", "font_style", "editor_background"):
             if key in updates:
                 payload[key] = updates[key]
+        payload["updated_at"] = _now_iso()
+        preferences = EditorPreferences.model_validate(payload)
+        await self._storage.write_preferences(preferences.model_dump(mode="json"))
+        return preferences
+
+    async def set_llm_provider(self, provider: LLMProvider) -> EditorPreferences:
+        """切换全局模型供应商，同时保留编辑器偏好。"""
+        current = await self.get_preferences()
+        payload = current.model_dump(mode="json")
+        payload["llm_provider"] = provider.value
         payload["updated_at"] = _now_iso()
         preferences = EditorPreferences.model_validate(payload)
         await self._storage.write_preferences(preferences.model_dump(mode="json"))

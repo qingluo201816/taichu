@@ -1,4 +1,4 @@
-"""把 Milvus Vector Graph RAG 的模型任务接入太初统一 LLM 契约。"""
+"""把 Milvus Vector Graph RAG 的模型任务接入 LangChain ChatModel。"""
 
 from __future__ import annotations
 
@@ -6,40 +6,86 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 import hashlib
 import json
-import re
 from collections.abc import Iterator
-from typing import Any
 
-from vector_graph_rag.llm.extractor import (  # type: ignore[import-untyped]
-    EXTRACTION_EXAMPLE_INPUT,
-    EXTRACTION_EXAMPLE_OUTPUT,
-    EXTRACTION_SYSTEM_PROMPT,
-    NER_ONE_SHOT_INPUT,
-    NER_ONE_SHOT_OUTPUT,
-    NER_SYSTEM_PROMPT,
-    NER_TEMPLATE,
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
 )
-from taichu.application.contracts.llm import (
-    LLMGatewayContract,
-    LLMMessage,
-    LLMRequest,
-    response_text,
-)
+from pydantic import BaseModel, ConfigDict, Field
 
-_JSON_OBJECT = re.compile(r"\{.*\}", re.S)
+from taichu.application.invocations.callbacks import ModelResponseCapture
+from taichu.application.invocations.config import model_call_config
+
+_TRIPLET_TOOL_NAME = "VectorGraphTripletOutput"
+_TRIPLET_SYSTEM_PROMPT = """你是知识图谱构建专家。请从给定文本中提取有意义的知识三元组。
+主体和客体应是简洁但完整的人物、地点、事物或概念；关系应清晰具体。
+可以抽取文本明确表达或由同一句上下文直接蕴含的关系，但不得补造文本不支持的事实。"""
+_EXAMPLE_INPUT = (
+    "文本：Albert Einstein was born in Ulm, Germany in 1879. "
+    "He developed the theory of relativity, which revolutionized physics. "
+    "Einstein worked at the Institute for Advanced Study in Princeton."
+)
 _VECTOR_GRAPH_RUN_ID: ContextVar[str | None] = ContextVar(
     "vector_graph_run_id",
     default=None,
 )
-_RELATION_RERANK_SYSTEM_PROMPT = """你负责从知识图谱候选关系中选择回答小说问题所需的最小充分证据链。
-先判断问题真正需要的证据类型：事实结果、原因/动机、过程/相关情节、人物反应，或时间/地点。
-为什么/为何类问题必须优先选择能说明诱因、动机、冲突背景和因果结果的关系；仅把“针对”改写成“敌视”、把“指使”改写成“要某人做某事”等同义关系，只是在复述问题，不算原因证据。
-怎么/经历/做了什么类问题应选择能还原关键行为和情节变化的关系，不能只选择最终结论。
-直接属性或归属问题若一条关系即可回答，只选该直接关系，不得为了出现多个实体而拼造多跳路径。
-确需多跳时，所选关系必须首尾形成能回答问题的连续路径；不要选择只有实体共现、但对答案没有贡献的关系。
-最多选择 5 条；如果没有任何候选能支持问题中的前提或真正答案，必须返回空数组。
-只返回 JSON 对象，格式为 {"useful_relation_ids":["关系ID"]}。
-不要输出分析过程、关系原文、Markdown 或其他字段。"""
+
+
+class _StrictOutputModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class VectorGraphTriplet(_StrictOutputModel):
+    subject: str = Field(description="关系主体。", min_length=1)
+    predicate: str = Field(description="主体与客体之间的具体关系。", min_length=1)
+    object: str = Field(description="关系客体。", min_length=1)
+
+
+class VectorGraphTripletOutput(_StrictOutputModel):
+    triplets: list[VectorGraphTriplet] = Field(
+        description="从输入文本中提取的知识三元组；没有关系时为空数组。"
+    )
+
+
+_EXAMPLE_OUTPUT = VectorGraphTripletOutput(
+    triplets=[
+        VectorGraphTriplet(
+            subject="Albert Einstein",
+            predicate="was born in",
+            object="Ulm, Germany",
+        ),
+        VectorGraphTriplet(
+            subject="Albert Einstein",
+            predicate="was born in",
+            object="1879",
+        ),
+        VectorGraphTriplet(
+            subject="Albert Einstein",
+            predicate="developed",
+            object="the theory of relativity",
+        ),
+        VectorGraphTriplet(
+            subject="the theory of relativity",
+            predicate="revolutionized",
+            object="physics",
+        ),
+        VectorGraphTriplet(
+            subject="Albert Einstein",
+            predicate="worked at",
+            object="the Institute for Advanced Study",
+        ),
+        VectorGraphTriplet(
+            subject="the Institute for Advanced Study",
+            predicate="is located in",
+            object="Princeton",
+        ),
+    ]
+)
 
 
 @contextmanager
@@ -58,18 +104,13 @@ class TaichuVectorGraphLLM:
 
     def __init__(
         self,
-        gateway: LLMGatewayContract,
+        llm: BaseChatModel,
         model_id: str,
-        *,
-        relation_candidate_limit: int = 60,
     ) -> None:
         if not model_id.strip():
             raise ValueError("Vector Graph RAG 模型 ID 不能为空。")
-        if relation_candidate_limit < 1:
-            raise ValueError("Vector Graph RAG 关系候选上限必须大于零。")
-        self._gateway = gateway
+        self._llm = llm
         self._model_id = model_id
-        self._relation_candidate_limit = relation_candidate_limit
 
     @property
     def model_id(self) -> str:
@@ -79,9 +120,10 @@ class TaichuVectorGraphLLM:
     def extraction_configuration_sha256(self) -> str:
         """用于判定三元组抽取规则变化是否需要重做来源索引。"""
         payload = {
-            "system_prompt": EXTRACTION_SYSTEM_PROMPT,
-            "example_input": EXTRACTION_EXAMPLE_INPUT,
-            "example_output": EXTRACTION_EXAMPLE_OUTPUT,
+            "system_prompt": _TRIPLET_SYSTEM_PROMPT,
+            "example_input": _EXAMPLE_INPUT,
+            "example_output": _EXAMPLE_OUTPUT.model_dump(mode="json"),
+            "output_schema": VectorGraphTripletOutput.model_json_schema(),
         }
         serialized = json.dumps(
             payload,
@@ -94,128 +136,83 @@ class TaichuVectorGraphLLM:
     async def extract_triplets(self, text: str) -> list[list[str]]:
         if not text.strip():
             return []
-        payload = await self._complete_json(
+        output = await self._complete_structured(
             task_name="vector_graph.extract_triplets",
-            messages=(
-                LLMMessage(role="system", content=EXTRACTION_SYSTEM_PROMPT),
-                LLMMessage(role="user", content=EXTRACTION_EXAMPLE_INPUT),
-                LLMMessage(role="assistant", content=EXTRACTION_EXAMPLE_OUTPUT),
-                LLMMessage(role="user", content=f"Text: {text}"),
-            ),
+            messages=[
+                SystemMessage(content=_TRIPLET_SYSTEM_PROMPT),
+                HumanMessage(content=_EXAMPLE_INPUT),
+                AIMessage(
+                    content="",
+                    tool_calls=[
+                        {
+                            "id": "vector-graph-example",
+                            "name": _TRIPLET_TOOL_NAME,
+                            "args": _EXAMPLE_OUTPUT.model_dump(mode="json"),
+                            "type": "tool_call",
+                        }
+                    ],
+                ),
+                ToolMessage(
+                    content="示例三元组已接收。",
+                    tool_call_id="vector-graph-example",
+                    name=_TRIPLET_TOOL_NAME,
+                ),
+                HumanMessage(content=f"文本：{text}"),
+            ],
             max_output_tokens=4_096,
         )
-        result: list[list[str]] = []
-        for item in payload.get("triplets", []):
-            if not isinstance(item, list) or len(item) != 3:
-                continue
-            values = [str(value).strip() for value in item]
-            if all(values):
-                result.append(values)
-        return result
+        return [
+            [item.subject.strip(), item.predicate.strip(), item.object.strip()]
+            for item in output.triplets
+        ]
 
-    async def extract_query_entities(self, question: str) -> list[str]:
-        payload = await self._complete_json(
-            task_name="vector_graph.extract_query_entities",
-            messages=(
-                LLMMessage(role="system", content=NER_SYSTEM_PROMPT),
-                LLMMessage(role="user", content=NER_ONE_SHOT_INPUT),
-                LLMMessage(role="assistant", content=NER_ONE_SHOT_OUTPUT),
-                LLMMessage(role="user", content=NER_TEMPLATE.format(question)),
-            ),
-            max_output_tokens=1_024,
-        )
-        raw = payload.get("named_entities", payload.get("entities", []))
-        if not isinstance(raw, list):
-            return []
-        return list(
-            dict.fromkeys(
-                normalized
-                for item in raw
-                if (normalized := _normalize_entity(str(item)))
-            )
-        )
-
-    async def rerank_relations(
-        self,
-        query: str,
-        relation_ids: list[str],
-        relation_texts: list[str],
-    ) -> tuple[list[str], list[str]]:
-        if not relation_ids:
-            return [], []
-        relation_ids = relation_ids[: self._relation_candidate_limit]
-        relation_texts = relation_texts[: self._relation_candidate_limit]
-        descriptions = "\n".join(
-            f"[{relation_id}] {text}"
-            for relation_id, text in zip(relation_ids, relation_texts, strict=True)
-        )
-        payload = await self._complete_json(
-            task_name="vector_graph.rerank_relations",
-            messages=(
-                LLMMessage(role="system", content=_RELATION_RERANK_SYSTEM_PROMPT),
-                LLMMessage(
-                    role="user",
-                    content=(
-                        f"问题：\n{query}\n\n"
-                        f"候选关系：\n{descriptions}"
-                    ),
-                ),
-            ),
-            max_output_tokens=2_048,
-        )
-        valid_ids = set(relation_ids)
-        selected_ids: list[str] = []
-        for item in payload.get("useful_relation_ids", []):
-            if not isinstance(item, str):
-                continue
-            relation_id = item.strip()
-            if relation_id in valid_ids and relation_id not in selected_ids:
-                selected_ids.append(relation_id)
-        by_id = dict(zip(relation_ids, relation_texts, strict=True))
-        return selected_ids, [by_id[item] for item in selected_ids]
-
-    async def _complete_json(
+    async def _complete_structured(
         self,
         *,
         task_name: str,
-        messages: tuple[LLMMessage, ...],
+        messages: list[BaseMessage],
         max_output_tokens: int,
-    ) -> dict[str, Any]:
-        response = await self._gateway.complete(
-            LLMRequest(
-                model_id=self._model_id,
-                messages=messages,
-                task_type="vector_graph_rag",
-                task_name=task_name,
-                response_mode="json",
-                temperature=0,
-                max_output_tokens=max_output_tokens,
-                feature="milvus_vector_graph_rag",
-                run_id=_VECTOR_GRAPH_RUN_ID.get(),
-            )
+    ) -> VectorGraphTripletOutput:
+        capture = ModelResponseCapture()
+        structured_model = self._llm.with_structured_output(
+            VectorGraphTripletOutput,
+            method="function_calling",
+            strict=True,
         )
-        if _output_was_truncated(response.finish_reason):
-            raise ValueError("Vector Graph RAG 模型 JSON 输出达到上限并被截断。")
-        return _parse_json_object(response_text(response))
+        try:
+            result = await structured_model.ainvoke(
+                messages,
+                config=model_call_config(
+                    model_id=self._model_id,
+                    task_type="vector_graph_rag",
+                    task_name=task_name,
+                    run_id=_VECTOR_GRAPH_RUN_ID.get(),
+                    temperature=0,
+                    max_output_tokens=max_output_tokens,
+                    feature="milvus_vector_graph_rag",
+                    callbacks=(capture,),
+                ),
+            )
+        except Exception as exc:
+            if _captured_output_was_truncated(capture):
+                raise ValueError(
+                    "Vector Graph RAG 模型结构化输出达到上限并被截断。"
+                ) from exc
+            raise
+        if _captured_output_was_truncated(capture):
+            raise ValueError("Vector Graph RAG 模型结构化输出达到上限并被截断。")
+        return VectorGraphTripletOutput.model_validate(result)
 
 
-def _parse_json_object(text: str) -> dict[str, Any]:
-    candidate = text.strip()
-    try:
-        payload = json.loads(candidate)
-    except json.JSONDecodeError:
-        match = _JSON_OBJECT.search(candidate)
-        if match is None:
-            raise ValueError("Vector Graph RAG 模型没有返回 JSON 对象。") from None
-        payload = json.loads(match.group(0))
-    if not isinstance(payload, dict):
-        raise ValueError("Vector Graph RAG 模型返回值必须是 JSON 对象。")
-    return payload
-
-
-def _normalize_entity(value: str) -> str:
-    """保留中文、字母和数字，修正官方英文归一化会清空中文的问题。"""
-    return " ".join(re.sub(r"[^\w]+", " ", value.lower()).replace("_", " ").split())
+def _captured_output_was_truncated(capture: ModelResponseCapture) -> bool:
+    finish_reason = (
+        capture.response.response_metadata.get("finish_reason")
+        if capture.response is not None
+        else None
+    )
+    return _output_was_truncated(
+        finish_reason if isinstance(finish_reason, str) else None
+    )
 
 
 def _output_was_truncated(finish_reason: str | None) -> bool:
@@ -224,13 +221,3 @@ def _output_was_truncated(finish_reason: str | None) -> bool:
         "max_output_tokens",
         "max_tokens",
     }
-
-
-class StaticEntityExtractor:
-    """把主事件循环已抽取的查询实体交给官方同步检索器。"""
-
-    def __init__(self, entities: list[str]) -> None:
-        self._entities = list(entities)
-
-    def extract(self, _question: str) -> list[str]:
-        return list(self._entities)

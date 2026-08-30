@@ -10,6 +10,7 @@ import sys
 from typing import Any
 
 import pytest
+from pydantic import BaseModel
 
 from taichu.application.contracts.evaluation_judge import (
     EvaluationJudgeResponse,
@@ -60,44 +61,49 @@ class FakeEvaluationJudge:
             known=True,
         )
 
-    async def complete(self, prompt: str) -> EvaluationJudgeResponse:
+    async def complete(
+        self,
+        prompt: str,
+        *,
+        output_schema: type[BaseModel],
+    ) -> EvaluationJudgeResponse:
+        assert output_schema.__name__ == "JudgeBatchOutput"
         if self.invalid_output:
-            raw = "这不是 JSON"
-        else:
-            case = _prompt_case(prompt)
-            verdict = "equivalent" if self.score == 4 else "contradictory"
-            quote_id = case["source_quotes"][0]["quote_id"]
-            dimensions = {
-                name: {
-                    "score": self.score,
-                    "verdict": verdict,
-                    "quote_ids": [quote_id],
-                    "reason": "离线校准测试。",
-                }
-                for name in calibration.REQUIRED_DIMENSIONS
+            raise ValueError("结构化输出校验失败")
+        case = _prompt_case(prompt)
+        verdict = "equivalent" if self.score == 4 else "contradictory"
+        quote_id = case["source_quotes"][0]["quote_id"]
+        dimensions = {
+            name: {
+                "score": self.score,
+                "verdict": verdict,
+                "quote_ids": [quote_id],
+                "reason": "离线校准测试。",
             }
-            raw = json.dumps(
-                {
-                    "items": [
-                        {
-                            "case_id": case["case_id"],
-                            "expected_card_id": case["expected_card_id"],
-                            "actual_review_item_id": case["actual_review_item_id"],
-                            "status": "scored",
-                            "dimensions": dimensions,
-                            "findings": [],
-                            "critical_flags": [],
-                            "reference_issues": [],
-                            "missing_quote_ids": [],
-                            "confidence": 0.95,
-                            "reason": None,
-                        }
-                    ]
-                },
-                ensure_ascii=False,
-            )
+            for name in calibration.REQUIRED_DIMENSIONS
+        }
+        output = output_schema.model_validate(
+            {
+                "items": [
+                    {
+                        "case_id": case["case_id"],
+                        "expected_card_id": case["expected_card_id"],
+                        "actual_review_item_id": case["actual_review_item_id"],
+                        "status": "scored",
+                        "dimensions": dimensions,
+                        "findings": [],
+                        "critical_flags": [],
+                        "reference_issues": [],
+                        "missing_quote_ids": [],
+                        "confidence": 0.95,
+                        "reason": None,
+                    }
+                ]
+            }
+        )
         return EvaluationJudgeResponse(
-            raw_response=raw,
+            output=output,
+            raw_response="opaque calibration audit payload",
             model_identity=self.model_identity,
         )
 
@@ -132,6 +138,13 @@ def test_run_creates_passing_draft_then_confirm_check_and_reject(
     assert summary["status"] == "completed"
     assert summary["passed"] is True
     assert set(summary["metrics"]) == set(calibration.THRESHOLDS)
+    call = json.loads(
+        next((reports / report_id / "judge_calls").glob("*.json")).read_text(
+            encoding="utf-8"
+        )
+    )
+    assert call["raw_response"] == "opaque calibration audit payload"
+    assert call["parsed_output"] is not None
 
     assert _command("confirm", report_id, reports, judge) == 0
     assert _command("check", report_id, reports, judge) == 0

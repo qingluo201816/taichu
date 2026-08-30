@@ -17,10 +17,8 @@ from taichu.application.agent_memory.models import (
     memory_state_sha256,
 )
 from taichu.application.services.agent_memory_service import AgentMemoryService
-from taichu.infrastructure.agent_memory import (
-    JsonAgentMemoryLexicalIndex,
-    JsonAgentMemoryRepository,
-)
+from taichu.infrastructure.agent_memory import LangGraphAgentMemoryRepository
+from tests.fakes.agent_memory import in_memory_agent_memory_repository
 
 _ResultT = TypeVar("_ResultT")
 _CONVERSATION_ID = "conversation_run_deletion"
@@ -32,12 +30,13 @@ def _run(awaitable: Coroutine[object, object, _ResultT]) -> _ResultT:
     return asyncio.run(awaitable)
 
 
-def _service(root: Path) -> tuple[AgentMemoryService, JsonAgentMemoryRepository]:
-    repository = JsonAgentMemoryRepository(root)
+def _service(
+    root: Path,
+) -> tuple[AgentMemoryService, LangGraphAgentMemoryRepository]:
+    repository = in_memory_agent_memory_repository(root)
     return (
         AgentMemoryService(
             repository=repository,
-            lexical_index=JsonAgentMemoryLexicalIndex(root),
         ),
         repository,
     )

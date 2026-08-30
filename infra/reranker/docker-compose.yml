@@ -1,7 +1,8 @@
 services:
   bge-reranker:
-    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9
+    image: ghcr.io/huggingface/text-embeddings-inference:cuda-1.9
     container_name: taichu-bge-reranker
+    gpus: all
     command:
       - "--model-id"
       - "/model"
@@ -11,10 +12,10 @@ services:
       - "2"
       - "--max-concurrent-requests"
       - "64"
-      - "--max-batch-requests"
-      - "1"
+      - "--max-client-batch-size"
+      - "64"
       - "--max-batch-tokens"
-      - "4096"
+      - "16384"
     ports:
       - "127.0.0.1:8012:80"
     volumes:

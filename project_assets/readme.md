@@ -1,6 +1,6 @@
 # project_assets 目录说明
 
-> 更新日期：2026-08-19
+> 更新日期：2026-08-30
 
 `project_assets/` 是太初单本小说的本地资产根目录，用于保存正文 Markdown、工作区中间态、AI/Agent 运行记录、评测审计和临时生成文件。MongoDB `taichu.knowledge_cards` 是唯一结构事实源，`project_assets/` 下的 JSON/JSONL 不承担兼容事实源职责。
 
@@ -15,6 +15,7 @@
 - llama.cpp 运行时：`E:\Taichu\Runtime\llama.cpp\b10066`；Embedding 日志位于 `E:\Taichu\Embedding\log`。
 - 原小说导入资料：`E:\Taichu\导入资料\太初原小说`，只作为外部导入材料，不属于 `project_assets/`。
 - 旧知识 JSON 迁移备份：`E:\Taichu\迁移备份\知识库-20260711-151915`，包含全部 88 张旧卡和 `migration-manifest.json`，不属于运行时数据目录。
+- 旧 LangGraph JSON 检查点备份：`E:\Taichu\迁移备份\旧LangGraph-JSON检查点-20260829`，只用于迁移追溯；当前 Runtime 不读取、不回退，也不会重建原目录。
 - MongoDB、Milvus、模型、推理运行时和日志都不属于 `project_assets/` 目录树；当前开发机把外部数据与大文件放到 E 盘或 Docker 命名卷，避免占用项目所在磁盘。更换开发机时，应同步更新项目根目录 `.env`，不得仅修改本说明。
 
 旧知识迁移已完成 `apply` 和 `finalize`：58 张有效卡作为 `lifecycle=confirmed` 写入 MongoDB，30 张已弃用重复卡仅保留在 E 盘备份，`source/knowledge/` 已完成对账并删除。存储骨架和业务代码不得重新创建该目录。
@@ -70,21 +71,18 @@ project_assets/
 │   ├── embedding_usage/                         # 旧独立向量链路的历史 Embedding 遥测
 │   ├── capability_invocations/                  # Tool、专业子 Agent 与 LLM 的脱敏技术调用记录
 │   ├── capability_artifacts/                    # 专业子 Agent 的有类型 JSON 中间产物
-│   ├── general_agent_runs/                      # 通用写作助手 Runtime 的独立业务检查点
-│   ├── general_agent_capability_results/        # 无副作用能力的可恢复 completed record 与权威索引
+│   ├── general_agent_runs/                      # 通用写作助手 Runtime 的业务运行投影
 │   ├── general_agent_context_snapshots/         # 规划、重规划、校验阶段的五层上下文快照历史
-│   ├── general_agent_graph_checkpoints/         # LangGraph 节点级持久检查点
+│   ├── general_agent_effects/                   # 写入型 Tool 的追加式副作用对账日志
 │   ├── general_agent_recovery_benchmarks/        # 通用写作助手恢复机制的可重建基准报告
-│   ├── general_agent_memory/                    # 通用写作助手运行记忆记录，不是小说事实
 │   ├── agent_evaluations/                       # 专项 Agent 效果评估输入快照、结果与审计记录
 │   │   ├── knowledge_extraction/                # 知识沉淀评估报告及裁判校准报告
-│   ├── rag_evaluations/                         # Graph RAG 回归、消融与语义评测报告
+│   ├── rag_evaluations/                         # Graph RAG 确定性回归与无参考语义评测报告
 │   └── general_agent_benchmarks/                # 通用写作智能体固定基准运行、实验、迭代与比较资产
 │       └── interactive-runtime/                 # 网页发起评测的运行状态与终态证据持久化
 └── generated/                                   # 按需创建的临时生成物根目录
     ├── pytest-workspaces/                       # pytest 临时隔离工作区，不属于项目运行数据
     ├── milvus_vector_graph/                     # 多跳图索引的运行摘要与逐来源增量清单
-    ├── agent_memory_indexes/                    # 从运行记忆记录重建的词法索引
     └── temp/                                    # 前后端运行日志等临时输出
 ```
 
@@ -98,6 +96,7 @@ project_assets/
 - 章节清单位于 `source/manuscripts/manifest.json`。
 - 大纲数据位于 `source/manuscripts/outline.json`。
 - 收件箱、偏好设置、工作区状态、待处理事实和写作 AI 运行记录位于 `source/workspace/`。
+- 通用写作助手的跨任务长期偏好保存在 `source/workspace/long_term_memory.md`。Runtime 按当前请求召回相关二级标题条目并投影到长期记忆层；该文件不是小说事实源，也不保存工具结果或运行轨迹。
 - 写作页 9 个 AI 按钮的真实模型调用轨迹保存在 `source/workspace/writing_ai_runs.jsonl`，用于历史查看、提示词审计和回放，不直接写入正式知识库。
 - `source/knowledge/` 已退出运行时结构并在迁移 `finalize` 时删除；`ensure_skeleton()` 不会重建它。
 
@@ -128,21 +127,23 @@ MongoDB 知识卡统一使用 `lifecycle=draft|confirmed|rejected`；默认列�
 
 专业子 Agent 的结构化输出保存在 `derived/capability_artifacts/`。每个 JSON 文件显式标记 `lifecycle=draft`，记录产物类型、生产者、输入与内容哈希、来源引用和创建时间，可供后续专业子 Agent 按稳定引用接力消费；这些文件是可审计中间态，不是 Markdown 正文或 MongoDB 结构事实。
 
-通用写作助手 Runtime 的业务检查点保存在 `derived/general_agent_runs/`。每次运行独立保存目标、范围、计划修订、动态节点状态、人工中断、来源与中间产物引用、校验结果和最终回答，用于任务列表、恢复和后续节点监控。它不复用知识沉淀 Workflow 的 `agent_runs/knowledge_extraction/`，也不成为正文或结构事实源。
+通用写作助手 Runtime 的业务运行投影保存在 `derived/general_agent_runs/`。每次运行独立保存目标、范围、计划、对外状态、人工请求、来源与中间产物引用、校验结果和最终回答，用于任务列表与节点监控；它不是 LangGraph 检查点，也不负责恢复图通道状态。它不复用知识沉淀 Workflow 的 `agent_runs/knowledge_extraction/`，也不成为正文或结构事实源。
 
-无副作用 Tool 与专业子 Agent 的已完成结果保存在 `derived/general_agent_capability_results/`。目录按 `conversation_id/run_id` 双层 owner 分区，每个结果分别保存 create-once completed record 和同 ID 权威索引；Runtime 只在完整 record 与索引均落盘后推进节点成功，并在同一运行恢复时按完整能力身份定向复用。写入型 Tool 不进入该目录，仍只通过 Effect 与真实资源对账恢复。结果随父运行保留和清理，不提供单条手工新增、修改或删除接口；这些 JSON 只用于运行恢复、审计和回放，不是 Markdown 文本事实源、MongoDB 结构事实源或其兼容回退。
+无副作用 Tool 与专业子 Agent 的可恢复完成记录不再写入 `project_assets/`。Runtime 通过 LangGraph 官方 `MongoDBStore` 保存到 `langgraph_store` 集合，以 `("taichu", "general_agent_capability_results", conversation_id, run_id)` 为 namespace、确定性 `result_id` 为 key；同一身份重复提交会复用原记录，语义冲突会明确失败，不再维护 completed record 与 JSON 权威索引双份文件。写入型 Tool 不进入该 namespace，仍只通过 Effect 与真实资源对账恢复。记录随父运行清理，不提供单条手工新增、修改或删除接口，也不是 Markdown 文本事实源或 MongoDB 结构事实源。
 
 通用写作助手五层上下文历史保存在 `derived/general_agent_context_snapshots/`。规划、每次重规划和校验阶段组装完成后各追加一份不可变快照，供前端按请求和阶段查看、供后续评测复盘；`general_agent_runs/` 与 LangGraph 检查点中只保留最新快照用于当前业务投影和恢复，不把整段快照历史重复写入每个检查点。
 
-LangGraph 节点级检查点保存在 `derived/general_agent_graph_checkpoints/`。每个 `run_id（运行标识）` 对应一个线程目录，内部使用原子写入、哈希链修订和最新修订指针保存 LangGraph 通道状态、中间写入及父检查点关系；服务重启后以同一个 `thread_id（线程标识）` 和计划命名空间恢复未完成节点，已经成功的能力节点不会重复执行。写能力的副作用日志也追加保存在该线程目录中，用于在“外部写入成功、检查点尚未落盘”的窗口内先核对真实资源，再决定复用、继续或转人工处理。它与 `general_agent_runs/` 的业务投影互补，不替代任务列表、最终回答或能力节点审计。
+LangGraph 节点级检查点不再写入 `project_assets/`。Runtime 直接使用官方 `MongoDBSaver`，在 MongoDB 的 `langgraph_checkpoints` 与 `langgraph_checkpoint_writes` 集合中保存图通道状态、节点中间写入和父检查点关系；每个 `conversation_id（会话标识）` 对应一个 LangGraph `thread_id（线程标识）`，同一会话内的多次 `run_id（运行标识）` 是线程上的多次图运行。服务重启后继续同一会话线程，成功节点由框架检查点语义避免重复执行。澄清、写入授权和副作用人工核对使用同一线程上的官方 `interrupt()` 与 `Command(resume=...)`，业务运行投影只保存单次请求审计和待处理请求，不另造恢复协议。图运行状态由官方 `astream` 产生，再投影到网页事件流；事件流不是第二套检查点或恢复状态。项目不再维护 JSON 修订、哈希链、最新指针、损坏隔离或旧格式迁移层。
+
+写入型 Tool 的副作用对账日志独立保存在 `derived/general_agent_effects/`，每个运行对应一个追加式 JSONL 文件。它只处理“真实资源可能已经写入、图检查点尚未推进”的业务副作用边界，不复制或替代 LangGraph 检查点。
 
 通用写作助手恢复基准保存在 `derived/general_agent_recovery_benchmarks/`。报告由 `scripts/benchmark_general_agent_recovery.py` 使用真实能力注册表和动态 LangGraph 执行器生成，记录不同节点数、并发度和进程中断场景的完成率、恢复率、重复执行保护、修订数量、存储体积与耗时。该目录是可重建的工程验证产物，不保存完整 Prompt、正文或密钥，也不构成业务状态或小说事实。
 
-通用写作助手运行记忆保存在 `derived/general_agent_memory/`。每条 JSON 记录使用原子替换写入，保存类型、短摘要、来源运行、稳定引用、创建请求序号、自动退出上下文的请求序号、内容哈希和 `deleted_at（删除时间）`。运行记忆由 Runtime 自动写入、替换和自动过期，不存在草稿、确认、拒绝生命周期，也不要求作者确认；前端只读查看，用户不能新增、修改或逐条删除底层运行记忆，只能通过正常对话或人工确认节点影响 Agent。章节或长资源只保存短摘要与引用，不复制全文。运行记忆用于延续任务，不是 MongoDB 知识卡或小说事实，事实引用在消费时仍须重新取证。
+通用写作助手运行记忆不再写入 `project_assets/`。Runtime 使用 LangGraph 官方 `MongoDBStore`，以 `("taichu", "general_agent_memory", conversation_id)` 为 namespace、`memory_id` 为 key，记录保存在 MongoDB 的 `langgraph_store` 集合。太初应用层只保留有效性、依赖传播、请求序号过期和召回排序等业务规则，不再维护平行 JSON 仓储或 JSON 词法索引。运行记忆不存在草稿、确认、拒绝生命周期，也不要求作者确认；前端只读查看，用户不能新增、修改或逐条删除底层运行记忆，只能通过正常对话或人工确认节点影响 Agent。章节或长资源只保存短摘要与引用，不复制全文。运行记忆用于延续任务，不是 MongoDB 知识卡或小说事实，事实引用在消费时仍须重新取证。
 
 知识沉淀效果评估保存在 `derived/agent_evaluations/knowledge_extraction/`。每次评估独立冻结评测集、实际候选、正文、评分参数和模型身份，并保存确定性结果与裁判调用审计；裁判校准报告位于其 `calibration_reports/` 子目录。评估报告和校准报告都是非事实派生数据，通过 `lifecycle` 区分草稿、已确认和已废弃状态，不得反向成为正文或结构化知识事实源。
 
-Graph RAG 质量评测报告保存在 `derived/rag_evaluations/`。每次运行原子保存 Retriever、权威来源、Graph 关系与完整路径指标、Graph ON/OFF 成对消融、DeepEval 语义评分和 CI 门禁原因；这些 JSON 是可重建的评测审计产物，不是正文或结构事实源。
+Graph RAG 质量评测报告保存在 `derived/rag_evaluations/`。每次运行原子保存 Retriever、权威来源、Graph 关系与完整路径指标、DeepEval 无参考语义评分、运行时模型身份和 CI 门禁原因；这些 JSON 是可重建的评测审计产物，不是正文或结构事实源。生产链没有 Graph ON/OFF 双轨，历史报告中的旧消融字段只按兼容读取处理，不再生成。
 
 通用写作智能体固定基准的派生资产统一归属 `derived/general_agent_benchmarks/`，评测基准位于 `tests/fixtures/evaluations/general_writing_agent_benchmark/suite.json`。该目录按需保存 synthetic 冻结基线、网页发起评测的运行状态与终态证据、真实模型逐案运行、首轮资格工件、多模型比较、问题关联、权威索引、幂等记录、关闭租约和隔离工作区，用于从固定用例、预检门禁、逐案审计、提供商实验和冻结清单回放评测。`interactive-runtime/` 以运行标识逐条原子保存网页运行及其案例、门禁和证据包，服务重启后继续作为最近评测列表的可审计来源；冻结基线仍只从权威索引恢复，不扫描未索引历史。这些资产是可审计派生数据，不成为正文或结构事实。
 
@@ -157,7 +158,5 @@ Graph RAG 质量评测报告保存在 `derived/rag_evaluations/`。每次运行�
 ### generated
 
 `generated/` 是按需创建的临时生成物层。`generated/milvus_vector_graph/active_manifest.json` 保存最近一次正文与知识卡联合更新的语料快照、来源数量、配置指纹、实体数、关系数和 passage 数；`source_manifest.json` 保存每个正文章节或已确认知识卡最近一次成功写入的来源哈希、文档数量与索引配置指纹，用于跳过未变化来源、同步删除和失败续跑；`build_status.json` 只保存当前或最近一次更新的阶段、来源进度与错误。三者都不保存向量、正文或完整知识卡，也不得成为事实源；日常语料变化只做来源级增量更新，只有派生索引丢失或发生不兼容 Schema 迁移时才从 Markdown 与 MongoDB confirmed 卡重新生成。
-
-`generated/agent_memory_indexes/lexical_index.json` 是运行记忆的可重建词法索引，只保存记忆标识、内容哈希和词项，不保存唯一内容副本。索引缺失、过期或损坏时会从 `derived/general_agent_memory/` 自动重建；它不得与知识库向量索引混用。
 
 该目录下的数据不得成为唯一事实来源。若生成物丢失，系统应能从 Markdown 文本事实源、MongoDB 结构事实源和必要的运行流程重新生成。

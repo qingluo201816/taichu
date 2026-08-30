@@ -1,24 +1,53 @@
-"""Schemas for the chapter summary workflow."""
+"""Native structured-output schemas for the chapter summary workflow."""
 
-from typing import Any
+from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class SummaryCandidate(BaseModel):
+class _SummaryOutputModel(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+
+class SummaryCandidate(_SummaryOutputModel):
     """A candidate setting extracted from a chapter summary run."""
 
-    fact_type: str = "other"
+    fact_type: Literal[
+        "character",
+        "realm",
+        "technique",
+        "location",
+        "faction",
+        "item",
+        "rule",
+        "event",
+        "foreshadow",
+        "other",
+    ]
     title: str = Field(min_length=1)
-    content: dict[str, Any] | str
+    content: str = Field(description="具体、可读且尚未经作者确认的候选设定。")
 
 
-class SummaryWorkflowOutput(BaseModel):
-    """Strict JSON shape requested from the summarization workflow."""
+class SummaryCharacterChange(_SummaryOutputModel):
+    """One character state change grounded in the chapter."""
+
+    character: str
+    change: str
+
+
+class SummaryForeshadowCandidate(_SummaryOutputModel):
+    """One unconfirmed foreshadowing observation."""
+
+    title: str
+    description: str
+
+
+class SummaryWorkflowOutput(_SummaryOutputModel):
+    """Strict result contract sent through the native tool parameters."""
 
     summary: str = Field(min_length=1)
-    key_events: list[str] = Field(default_factory=list)
-    character_changes: list[dict[str, Any]] = Field(default_factory=list)
-    new_setting_candidates: list[SummaryCandidate] = Field(default_factory=list)
-    foreshadow_candidates: list[dict[str, Any]] = Field(default_factory=list)
-    next_chapter_hooks: list[str] = Field(default_factory=list)
+    key_events: list[str]
+    character_changes: list[SummaryCharacterChange]
+    new_setting_candidates: list[SummaryCandidate]
+    foreshadow_candidates: list[SummaryForeshadowCandidate]
+    next_chapter_hooks: list[str]

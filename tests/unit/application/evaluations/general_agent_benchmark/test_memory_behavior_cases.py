@@ -3,11 +3,23 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator, Coroutine
-from decimal import Decimal
+from collections.abc import Callable, Coroutine, Sequence
+from dataclasses import dataclass
 import json
 from pathlib import Path
 from typing import Any, TypeVar
+
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import AIMessage, BaseMessage, ChatMessage, ToolMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import PrivateAttr
 
 from taichu.application.agent_memory.models import (
     AgentMemoryDependency,
@@ -18,14 +30,6 @@ from taichu.application.agent_memory.models import (
     MemoryWriteCandidate,
 )
 from taichu.application.capabilities import CapabilityContext
-from taichu.application.contracts.llm import (
-    LLMCost,
-    LLMModelProfile,
-    LLMRequest,
-    LLMResponse,
-    LLMStreamEvent,
-    LLMUsage,
-)
 from taichu.application.evaluations.general_agent_benchmark.memory_scenarios import (
     MemoryAnswerContract,
     MemoryBehaviorProjector,
@@ -72,10 +76,7 @@ from taichu.application.tools import (
 )
 from taichu.application.tools.contract import ToolPlugin
 from taichu.application.tools.registry import ToolRegistry
-from taichu.infrastructure.agent_memory import (
-    JsonAgentMemoryLexicalIndex,
-    JsonAgentMemoryRepository,
-)
+from tests.fakes.agent_memory import in_memory_agent_memory_repository
 from taichu.infrastructure.artifacts import JsonIntermediateArtifactRepository
 
 _ResultT = TypeVar("_ResultT")
@@ -102,13 +103,80 @@ def _run(awaitable: Coroutine[object, object, _ResultT]) -> _ResultT:
     return asyncio.run(awaitable)
 
 
-class _MemoryAwareGateway:
-    def __init__(self) -> None:
-        self.requests: list[LLMRequest] = []
+@dataclass(frozen=True, slots=True)
+class _ProjectedToolCall:
+    call_id: str
+    name: str
+    arguments_json: str
 
-    async def complete(self, request: LLMRequest) -> LLMResponse:
-        self.requests.append(request)
-        visible = str(request)
+
+@dataclass(frozen=True, slots=True)
+class _ProjectedMessage:
+    role: str
+    content: str
+    tool_calls: tuple[_ProjectedToolCall, ...] = ()
+    tool_call_id: str | None = None
+    tool_name: str | None = None
+    is_error: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class _NativeModelRequest:
+    messages: tuple[_ProjectedMessage, ...]
+    task_name: str
+    model_id: str
+
+
+class _MemoryAwareChatModel(BaseChatModel):
+    model_id: str = "memory-test-model"
+    task_name: str = "测试模型调用"
+    _requests: list[_NativeModelRequest] = PrivateAttr(default_factory=list)
+
+    @property
+    def _llm_type(self) -> str:
+        return "taichu-test-memory-aware"
+
+    @property
+    def requests(self) -> tuple[_NativeModelRequest, ...]:
+        return tuple(self._requests)
+
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable[..., Any] | BaseTool],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> Runnable:
+        formatted = [convert_to_openai_tool(tool, strict=True) for tool in tools]
+        return self.bind(tools=formatted, tool_choice=tool_choice, **kwargs)
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        del messages, stop, run_manager, kwargs
+        raise AssertionError("本测试只允许异步模型调用。")
+
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        del stop, run_manager
+        task_name = str(kwargs.get("task_name", self.task_name))
+        model_id = str(kwargs.get("model_id", self.model_id))
+        request = _NativeModelRequest(
+            messages=tuple(_project_message(message) for message in messages),
+            task_name=task_name,
+            model_id=model_id,
+        )
+        self._requests.append(request)
+        visible = "\n".join(message.content for message in request.messages)
         payload: dict[str, Any]
         if request.task_name == "general_writing_orchestrator.plan":
             if _ACTIVE_STYLE in _developer_text(request):
@@ -156,28 +224,77 @@ class _MemoryAwareGateway:
             }
         else:  # pragma: no cover - 测试网关遇到未知调用即应暴露
             raise AssertionError(f"未声明的模型调用：{request.task_name}")
-        return LLMResponse(
-            text=json.dumps(payload, ensure_ascii=False),
-            model_id=request.model_id,
-            upstream_model=request.model_id,
-            usage=LLMUsage(
-                input_tokens=100,
-                output_tokens=50,
-                total_tokens=150,
+        tool_name = _selected_tool_name(
+            tuple(kwargs.get("tools", ())),
+            kwargs.get("tool_choice"),
+        )
+        message = AIMessage(
+            content="" if tool_name else json.dumps(payload, ensure_ascii=False),
+            tool_calls=(
+                [
+                    {
+                        "id": f"memory_{len(payload)}_{tool_name}",
+                        "name": tool_name,
+                        "args": payload,
+                        "type": "tool_call",
+                    }
+                ]
+                if tool_name
+                else []
             ),
-            cost=LLMCost(amount=Decimal("0"), kind="estimated"),
+            usage_metadata={
+                "input_tokens": 100,
+                "output_tokens": 50,
+                "total_tokens": 150,
+            },
+            response_metadata={"model_id": request.model_id},
         )
+        return ChatResult(generations=[ChatGeneration(message=message)])
 
-    async def stream(self, request: LLMRequest) -> AsyncIterator[LLMStreamEvent]:
-        response = await self.complete(request)
-        yield LLMStreamEvent(
-            event_type="completed",
-            response=response,
-            usage=response.usage,
+
+def _selected_tool_name(
+    tools: tuple[dict[str, Any], ...],
+    tool_choice: object,
+) -> str | None:
+    if not tools:
+        return None
+    selected = (
+        tool_choice
+        if isinstance(tool_choice, str)
+        and tool_choice not in {"auto", "none", "required", "any"}
+        else tools[-1]["function"]["name"]
+    )
+    return str(selected)
+
+
+def _project_message(message: BaseMessage) -> _ProjectedMessage:
+    role = (
+        message.role
+        if isinstance(message, ChatMessage)
+        else {"human": "user", "ai": "assistant"}.get(message.type, message.type)
+    )
+    calls = (
+        tuple(
+            _ProjectedToolCall(
+                call_id=str(call.get("id", "")),
+                name=str(call.get("name", "")),
+                arguments_json=json.dumps(call.get("args", {}), ensure_ascii=False),
+            )
+            for call in message.tool_calls
         )
-
-    def list_models(self) -> list[LLMModelProfile]:
-        return []
+        if isinstance(message, AIMessage)
+        else ()
+    )
+    return _ProjectedMessage(
+        role=role,
+        content=str(message.content),
+        tool_calls=calls,
+        tool_call_id=(message.tool_call_id if isinstance(message, ToolMessage) else None),
+        tool_name=(message.name if isinstance(message, ToolMessage) else None),
+        is_error=(
+            message.status == "error" if isinstance(message, ToolMessage) else False
+        ),
+    )
 
 
 class _TraceRepository:
@@ -188,7 +305,7 @@ class _TraceRepository:
         self.records.append(record)
 
 
-def _developer_text(request: LLMRequest) -> str:
+def _developer_text(request: _NativeModelRequest) -> str:
     return "\n".join(
         message.content for message in request.messages if message.role == "developer"
     )
@@ -196,8 +313,7 @@ def _developer_text(request: LLMRequest) -> str:
 
 def _memory_service(root: Path) -> AgentMemoryService:
     return AgentMemoryService(
-        repository=JsonAgentMemoryRepository(root),
-        lexical_index=JsonAgentMemoryLexicalIndex(root),
+        repository=in_memory_agent_memory_repository(root),
     )
 
 
@@ -246,13 +362,13 @@ async def _write_memory(
     )
 
 
-def _orchestrator(gateway: _MemoryAwareGateway) -> OrchestratorAgent:
+def _orchestrator(model: _MemoryAwareChatModel) -> OrchestratorAgent:
     tools = ToolRegistry(CapabilityContext(capabilities={}))
     subagents = SubagentRegistry(
         CapabilityContext(capabilities={"tool_registry": tools})
     )
     return OrchestratorAgent(
-        llm=gateway,
+        llm=model,
         model_router=ModelRoleRouter(
             "memory-test-model",
             {"orchestrator": "memory-test-model"},
@@ -266,8 +382,8 @@ async def _direct_answer(
     *,
     service: AgentMemoryService,
     run: GeneralAgentRun,
-    gateway: _MemoryAwareGateway,
-) -> tuple[GeneralAgentContextSnapshot, LLMRequest, str]:
+    gateway: _MemoryAwareChatModel,
+) -> tuple[GeneralAgentContextSnapshot, _NativeModelRequest, str]:
     snapshot = (
         await ContextAssembler(memory_service=service).assemble(run, phase="plan")
     ).snapshot
@@ -302,8 +418,8 @@ def test_case_18_active_memory_changes_the_real_model_answer_and_state_only_fail
             conversation_id="conversation_active",
             content=_ACTIVE_STYLE,
         )
-        baseline_gateway = _MemoryAwareGateway()
-        candidate_gateway = _MemoryAwareGateway()
+        baseline_gateway = _MemoryAwareChatModel()
+        candidate_gateway = _MemoryAwareChatModel()
         baseline = await _direct_answer(
             service=baseline_service,
             run=_run_state(
@@ -397,7 +513,7 @@ def test_case_19_stale_memory_and_its_invalid_dependency_do_not_limit_answer(
         assert source_after.validity is AgentMemoryValidity.STALE
         assert dependent_after.validity is AgentMemoryValidity.STALE
 
-        gateway = _MemoryAwareGateway()
+        gateway = _MemoryAwareChatModel()
         snapshot, request, answer = await _direct_answer(
             service=service,
             run=_run_state(
@@ -487,7 +603,7 @@ def test_case_20_rejected_memory_is_absent_from_both_real_subagent_branches(
             ),
             suffix="4",
         )
-        gateway = _MemoryAwareGateway()
+        gateway = _MemoryAwareChatModel()
         registry = _subagent_registry(tmp_path, gateway)
         safe_fact = "正文仅确认第三道星纹存在磨损，未确认磨损者。"
         mark_input = WorldbuildingInput(
@@ -656,7 +772,7 @@ def test_case_21_superseded_old_answer_stays_only_in_redacted_repair_history(
         assert old_after is not None
         assert old_after.validity is AgentMemoryValidity.SUPERSEDED
 
-        gateway = _MemoryAwareGateway()
+        gateway = _MemoryAwareChatModel()
         snapshot, request, answer = await _direct_answer(
             service=service,
             run=_run_state(
@@ -707,7 +823,7 @@ def test_case_21_superseded_old_answer_stays_only_in_redacted_repair_history(
 
 def _subagent_registry(
     root: Path,
-    gateway: _MemoryAwareGateway,
+    gateway: _MemoryAwareChatModel,
 ) -> SubagentRegistry:
     tool_context = CapabilityContext(
         capabilities={

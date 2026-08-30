@@ -10,15 +10,10 @@ from datetime import UTC, datetime
 from typing import Any, Sequence, cast
 from uuid import uuid4
 
-from pydantic import ValidationError
-
-from taichu.application.contracts.llm import (
-    LLMGatewayContract,
-    LLMMessage,
-    LLMRequest,
-    response_text,
-)
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import HumanMessage, SystemMessage
 from taichu.application.contracts.storage import ProjectAssetStorageContract
+from taichu.application.invocations.config import model_call_config
 from taichu.application.services.ai_card_service import (
     PENDING_FACTS_FILE,
     AICardService,
@@ -83,14 +78,14 @@ class ChapterSummaryService:
         storage: ProjectAssetStorageContract,
         chapter_service: ChapterService,
         knowledge_repository: StructuredKnowledgeRepository,
-        llm: object,
+        llm: BaseChatModel,
         ai_card_service: AICardService,
         default_model_id: str = "deepseek-v4-pro",
     ) -> None:
         self._storage = storage
         self._chapter_service = chapter_service
         self._knowledge_repository = knowledge_repository
-        self._llm = cast(LLMGatewayContract, llm)
+        self._llm = llm
         self._ai_card_service = ai_card_service
         self._default_model_id = default_model_id
 
@@ -110,11 +105,16 @@ class ChapterSummaryService:
         if _is_empty_chapter(chapter_content.markdown):
             workflow_output = SummaryWorkflowOutput(
                 summary=f"{chapter_content.chapter.title} 暂无可整理正文。",
+                key_events=[],
+                character_changes=[],
+                new_setting_candidates=[],
+                foreshadow_candidates=[],
+                next_chapter_hooks=[],
             )
         else:
-            knowledge_cards = (
-                await self._knowledge_repository.list_confirmed_cards()
-            )[:20]
+            knowledge_cards = (await self._knowledge_repository.list_confirmed_cards())[
+                :20
+            ]
             prompt = build_summary_prompt(
                 chapter_id=chapter_id,
                 chapter_title=chapter_content.chapter.title,
@@ -122,28 +122,35 @@ class ChapterSummaryService:
                 confirmed_knowledge=knowledge_cards,
             )
             selected_model_id = model_id or self._default_model_id
-            _ensure_selectable_model(self._llm, selected_model_id)
-            response = await self._llm.complete(
-                LLMRequest(
-                    model_id=selected_model_id,
-                    messages=(
-                        LLMMessage(
-                            role="system",
-                            content=(
-                                "你是太初章节摘要助手，必须依据正文返回合法 JSON。"
-                            ),
-                        ),
-                        LLMMessage(role="user", content=prompt),
-                    ),
-                    task_type="chapter_summary",
-                    task_name="章节摘要",
-                    chapter_ids=(chapter_id,),
-                    response_mode="json",
-                    feature="章节摘要",
-                )
+            structured_model = self._llm.with_structured_output(
+                SummaryWorkflowOutput,
+                include_raw=True,
+                method="function_calling",
+                strict=True,
             )
-            workflow_output = _parse_summary_output(
-                response_text(response), chapter_content.markdown
+            structured_result = cast(
+                dict[str, Any],
+                await structured_model.ainvoke(
+                    [
+                        SystemMessage(
+                            content="你是太初章节摘要助手，必须严格依据正文。"
+                        ),
+                        HumanMessage(content=prompt),
+                    ],
+                    config=model_call_config(
+                        model_id=selected_model_id,
+                        task_type="chapter_summary",
+                        task_name="章节摘要",
+                        chapter_ids=(chapter_id,),
+                        feature="章节摘要",
+                    ),
+                ),
+            )
+            parsed_output = structured_result.get("parsed")
+            workflow_output = (
+                parsed_output
+                if isinstance(parsed_output, SummaryWorkflowOutput)
+                else _fallback_summary(chapter_content.markdown)
             )
 
         summary = ChapterSummary(
@@ -152,13 +159,19 @@ class ChapterSummaryService:
             status=ChapterSummaryStatus.DRAFT,
             summary=workflow_output.summary,
             key_events=_clean_strings(workflow_output.key_events),
-            character_changes=workflow_output.character_changes,
+            character_changes=[
+                item.model_dump(mode="json")
+                for item in workflow_output.character_changes
+            ],
             new_setting_candidates=_candidate_pending_facts(
                 workflow_output.new_setting_candidates,
                 source_ref,
                 now,
             ),
-            foreshadow_candidates=workflow_output.foreshadow_candidates,
+            foreshadow_candidates=[
+                item.model_dump(mode="json")
+                for item in workflow_output.foreshadow_candidates
+            ],
             next_chapter_hooks=_clean_strings(workflow_output.next_chapter_hooks),
             source_refs=[source_ref],
             created_at=now,
@@ -305,37 +318,15 @@ class SummaryCandidateNotFoundError(LookupError):
         super().__init__(f"章节整理候选“{pending_fact_id}”不存在")
 
 
-def _ensure_selectable_model(llm: LLMGatewayContract, model_id: str) -> None:
-    if not hasattr(llm, "list_models"):
-        return
-    for profile in llm.list_models():
-        if profile.id == model_id:
-            if profile.enabled:
-                return
-            raise ChapterSummaryError(
-                f"模型“{profile.display_name}”当前已停用，请选择其他模型。"
-            )
-    raise ChapterSummaryError("所选模型不存在，请刷新模型列表后重试。")
-
-
-def _parse_summary_output(raw_output: str, markdown: str) -> SummaryWorkflowOutput:
-    try:
-        parsed = json.loads(raw_output)
-    except json.JSONDecodeError:
-        return _fallback_summary(markdown)
-    if not isinstance(parsed, dict):
-        return _fallback_summary(markdown)
-    try:
-        return SummaryWorkflowOutput.model_validate(parsed)
-    except ValidationError:
-        return _fallback_summary(markdown)
-
-
 def _fallback_summary(markdown: str) -> SummaryWorkflowOutput:
     excerpt = _plain_excerpt(markdown)
     return SummaryWorkflowOutput(
         summary=excerpt or "本章暂无可整理正文。",
         key_events=[excerpt] if excerpt else [],
+        character_changes=[],
+        new_setting_candidates=[],
+        foreshadow_candidates=[],
+        next_chapter_hooks=[],
     )
 
 

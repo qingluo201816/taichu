@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from taichu.application.contracts.llm import LLMModelIdentity
+from langchain_core.messages import AIMessage, HumanMessage
 from taichu.application.services.ai_card_service import (
     AI_CARDS_FILE,
     IDEAS_FILE,
@@ -29,22 +29,23 @@ from taichu.domain.models.source_ref import (
 from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
+from tests.fakes import NativeToolCallSequenceChatModel
 
 
-class FakeLLM:
+class FakeLLM(NativeToolCallSequenceChatModel):
     """Record prompts and return queued completions."""
 
     def __init__(self, responses: list[str]) -> None:
-        self.responses = responses
-        self.prompts: list[str] = []
+        super().__init__(responses=[AIMessage(content=item) for item in responses])
 
     @property
-    def model_identity(self) -> LLMModelIdentity:
-        return LLMModelIdentity.unknown("测试替身模型。")
-
-    async def complete(self, prompt: str) -> str:
-        self.prompts.append(prompt)
-        return self.responses.pop(0)
+    def prompts(self) -> list[str]:
+        return [
+            str(message.content)
+            for messages in self.seen_messages
+            for message in messages
+            if isinstance(message, HumanMessage)
+        ]
 
 
 class SelectionAIServiceTest(unittest.IsolatedAsyncioTestCase):
@@ -83,6 +84,11 @@ class SelectionAIServiceTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(card.status, AIResultCardStatus.GENERATED)
         self.assertEqual(len(records), 1)
         self.assertEqual(records[0]["id"], card.id)
+        self.assertEqual(len(llm.bound_tool_definitions[0]), 1)
+        self.assertEqual(llm.bound_tool_choices[0], "any")
+        schema = llm.bound_tool_definitions[0][0]["function"]["parameters"]
+        self.assertIn("card_type", schema["properties"])
+        self.assertNotIn("JSON 形状", llm.prompts[0])
 
     async def test_non_json_llm_output_is_downgraded_to_failure_card(self) -> None:
         llm = FakeLLM(["这不是 JSON，但也不能裸露给前端。"])
@@ -128,7 +134,7 @@ class SelectionAIServiceTest(unittest.IsolatedAsyncioTestCase):
                         "content": {
                             "fact_type": "technique",
                             "title": "太初剑意",
-                            "content": {"rule": "以心火照见剑路。"},
+                            "content": "以心火照见剑路。",
                         },
                     },
                     ensure_ascii=False,
@@ -156,7 +162,10 @@ class SelectionAIServiceTest(unittest.IsolatedAsyncioTestCase):
                 json.dumps(
                     {
                         "card_type": "suggestion",
-                        "content": {"body": "可以把这里沉淀成灵感。"},
+                        "content": {
+                            "title": None,
+                            "body": "可以把这里沉淀成灵感。",
+                        },
                     },
                     ensure_ascii=False,
                 )
@@ -181,7 +190,10 @@ class SelectionAIServiceTest(unittest.IsolatedAsyncioTestCase):
                 json.dumps(
                     {
                         "card_type": "suggestion",
-                        "content": {"body": "这条建议稍后丢弃。"},
+                        "content": {
+                            "title": None,
+                            "body": "这条建议稍后丢弃。",
+                        },
                     },
                     ensure_ascii=False,
                 )
@@ -231,7 +243,7 @@ class SelectionAIServiceTest(unittest.IsolatedAsyncioTestCase):
                 json.dumps(
                     {
                         "card_type": "suggestion",
-                        "content": {"body": "先保存为灵感。"},
+                        "content": {"title": None, "body": "先保存为灵感。"},
                     },
                     ensure_ascii=False,
                 )

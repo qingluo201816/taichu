@@ -7,6 +7,7 @@ from collections.abc import Coroutine
 from typing import TypeVar
 
 import pytest
+from langgraph.checkpoint.memory import InMemorySaver
 
 from taichu.application.agent_memory.models import (
     AgentMemoryValidity,
@@ -25,6 +26,7 @@ from taichu.application.general_agent.models import (
     GeneralAgentRun,
 )
 from taichu.application.services.agent_memory_service import AgentMemoryServiceError
+from tests.fakes import InMemoryGeneralAgentEffectRepository
 
 _ResultT = TypeVar("_ResultT")
 
@@ -114,6 +116,7 @@ def test_executor_stops_reuse_when_producer_proof_changes_before_copy() -> None:
             policy_service=object(),  # type: ignore[arg-type]
             capability_result_repository=object(),  # type: ignore[arg-type]
             capability_handler_identities={},
+            effect_repository=InMemoryGeneralAgentEffectRepository(),
             memory_validity_provider=_DriftingProducerValidity(),
         )
 
@@ -124,6 +127,7 @@ def test_executor_stops_reuse_when_producer_proof_changes_before_copy() -> None:
                     0,
                     result=current,
                 ),
+                checkpointer=InMemorySaver(),
             )
 
     _run(scenario())

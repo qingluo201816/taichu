@@ -39,6 +39,7 @@ class InvocationContext(InvocationModel):
 
     task_id: str = Field(min_length=1, max_length=128)
     run_id: str = Field(min_length=1, max_length=128)
+    conversation_id: str | None = Field(default=None, min_length=1, max_length=128)
     call_id: str = Field(
         default_factory=lambda: f"call_{uuid4().hex}",
         min_length=1,
@@ -118,6 +119,7 @@ class InvocationTraceRecord(InvocationModel):
     model_id: str | None = None
     input_tokens: int | None = Field(default=None, ge=0)
     output_tokens: int | None = Field(default=None, ge=0)
+    call_sequence: int = Field(default=1, ge=1)
     retry_count: int = Field(default=0, ge=0)
     started_at: str = Field(min_length=1)
     finished_at: str = Field(min_length=1)

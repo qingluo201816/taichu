@@ -163,7 +163,11 @@ class InvocationPolicyService:
         """校验并消费一次绑定输入哈希的作者写入授权。"""
         if not grant_id:
             raise InvocationAuthorizationError("写入操作缺少作者授权。")
-        actual_hash = canonical_input_hash(input_payload)
+        actual_hashes = {canonical_input_hash(input_payload)}
+        if isinstance(input_payload, BaseModel):
+            actual_hashes.add(
+                _canonical_input_hash(input_payload, exclude_defaults=False)
+            )
         async with self._lock:
             grant = self._author_grants.get(grant_id)
             if grant is None:
@@ -171,7 +175,7 @@ class InvocationPolicyService:
             _ensure_not_expired(grant.expires_at, "作者写入授权")
             if grant.task_id != task_id or grant.tool_name != tool_name:
                 raise InvocationAuthorizationError("作者授权与当前任务或工具不匹配。")
-            if grant.input_sha256 != actual_hash:
+            if grant.input_sha256 not in actual_hashes:
                 raise InvocationAuthorizationError(
                     "写入参数已变化，必须重新预览并授权。"
                 )
@@ -235,8 +239,18 @@ def canonical_input_hash(
     value: BaseModel | Mapping[str, object],
 ) -> str:
     """计算排除授权引用后的稳定业务输入哈希。"""
+    return _canonical_input_hash(value, exclude_defaults=True)
+
+
+def _canonical_input_hash(
+    value: BaseModel | Mapping[str, object],
+    *,
+    exclude_defaults: bool,
+) -> str:
     payload = (
-        value.model_dump(mode="json") if isinstance(value, BaseModel) else dict(value)
+        value.model_dump(mode="json", exclude_defaults=exclude_defaults)
+        if isinstance(value, BaseModel)
+        else dict(value)
     )
     sanitized = {
         key: item

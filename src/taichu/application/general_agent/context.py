@@ -33,6 +33,7 @@ from taichu.application.general_agent.models import (
     GeneralAgentCurrentRequest,
     GeneralAgentHistoryMemory,
     GeneralAgentMessage,
+    GeneralAgentMessageType,
     GeneralAgentNodeRun,
     GeneralAgentNodeStatus,
     GeneralAgentRun,
@@ -40,14 +41,15 @@ from taichu.application.general_agent.models import (
     GeneralAgentAssemblyTrace,
     context_snapshot_sha256,
 )
+from taichu.application.contracts.long_term_memory import LongTermMemoryRetriever
 from taichu.application.invocations.models import now_iso
 from taichu.application.services.agent_memory_service import AgentMemoryService
 
 ContextPhase = Literal["plan", "replan", "verify"]
 
 _STABLE_MEMORY = (
-    "你是太初通用写作助手的高层编排 Agent，负责理解当前请求、选择最小充分路径并收敛结果。",
-    "只能调用能力目录中真实存在且契约完整的 Tool 或子 Agent；不得临时创造能力。",
+    "你是太初通用写作助手的高层编排 Agent，负责理解当前请求、发现真实能力、选择最小充分路径并收敛结果。",
+    "System Prompt 中的 Static Capability Index 是能力发现边界；只能调用其中真实存在的 Tool 或子 Agent，不得临时创造能力。",
     "Markdown 正文是章节原文事实源；MongoDB 中已确认知识卡是结构事实源；所有索引均为可重建派生层。",
     "运行记忆只延续工作状态，不是小说事实；涉及事实时必须重新读取正文或通过统一召回取证。",
     "工作记忆中标为失效、被否决或被替代的记录只用于理解错误和修复，不得作为当前事实、正文或最终结论。",
@@ -70,6 +72,7 @@ class GeneralAgentContextPolicy:
     total_char_budget: int = 180_000
     working_memory_retrieval_top_k: int = 12
     working_memory_char_budget: int = 24_000
+    long_term_memory_retrieval_top_k: int = 8
     long_term_memory_char_budget: int = 12_000
     history_memory_limit: int = 10
     history_memory_char_budget: int = 24_000
@@ -169,7 +172,11 @@ class ContextCompactor:
             original_source_ids=_deduplicate(
                 [
                     *[
-                        f"message:{index}:{message.created_at}"
+                        (
+                            f"message:{message.message_id}"
+                            if message.message_id is not None
+                            else f"legacy-message:{index}:{message.created_at}"
+                        )
                         for index, message in enumerate(run.messages)
                     ],
                     *[
@@ -189,10 +196,12 @@ class ContextAssembler:
         self,
         *,
         memory_service: AgentMemoryService,
+        long_term_memory_retriever: LongTermMemoryRetriever | None = None,
         policy: GeneralAgentContextPolicy | None = None,
         compactor: ContextCompactor | None = None,
     ) -> None:
         self._memory_service = memory_service
+        self._long_term_memory_retriever = long_term_memory_retriever
         self._policy = policy or GeneralAgentContextPolicy()
         self._compactor = compactor or ContextCompactor()
 
@@ -209,6 +218,9 @@ class ContextAssembler:
             policy=self._policy,
         )
         await self._memory_service.refresh_evidence_validity(run.conversation_id)
+        long_term_memories = await self._retrieve_long_term_memory(
+            _memory_query_text(run, replan_guidance)
+        )
         reusable = run.context_snapshot
         if (
             reusable is not None
@@ -217,6 +229,12 @@ class ContextAssembler:
             and reusable.envelope.working_memory.replan_guidance == replan_guidance
         ):
             differences = await self._snapshot_differences(reusable)
+            if reusable.envelope.current_request != _current_request(run):
+                differences.append("当前请求中的人工接续输入已经变化。")
+            if _memory_projection_identity(
+                reusable.envelope.long_term_memory
+            ) != _memory_projection_identity(long_term_memories):
+                differences.append("按当前请求召回的长期记忆已经变化。")
             if not differences:
                 return ContextAssemblyResult(snapshot=reusable, reused_snapshot=True)
         else:
@@ -331,6 +349,7 @@ class ContextAssembler:
                 )
                 for entry in invalidated_entries
             ],
+            long_term_memories=long_term_memories,
             excluded_node_ids=excluded_node_ids,
         )
         created_at = now_iso()
@@ -377,6 +396,18 @@ class ContextAssembler:
             resume_differences=tuple(differences),
         )
 
+    async def _retrieve_long_term_memory(
+        self,
+        query: str,
+    ) -> list[GeneralAgentContextMemory]:
+        if self._long_term_memory_retriever is None:
+            return []
+        return await self._long_term_memory_retriever.retrieve(
+            query,
+            top_k=self._policy.long_term_memory_retrieval_top_k,
+            char_budget=self._policy.long_term_memory_char_budget,
+        )
+
     async def _snapshot_differences(
         self,
         snapshot: GeneralAgentContextSnapshot,
@@ -404,6 +435,7 @@ class ContextAssembler:
         replan_guidance: str,
         working_memories: list[GeneralAgentContextMemory],
         invalidated_memories: list[GeneralAgentContextMemory],
+        long_term_memories: list[GeneralAgentContextMemory],
         excluded_node_ids: set[str],
     ) -> tuple[GeneralAgentContextEnvelope, GeneralAgentAssemblyTrace]:
         working_memories = _active_context_memories(working_memories)
@@ -482,13 +514,9 @@ class ContextAssembler:
                 replan_guidance=replan_guidance,
                 digest=digest,
             ),
-            long_term_memory=[],
+            long_term_memory=long_term_memories,
             history_memory=history_memory,
-            current_request=GeneralAgentCurrentRequest(
-                content=run.user_goal,
-                user_constraints=_deduplicate(run.author_constraints),
-                scope=run.scope.model_dump(mode="json"),
-            ),
+            current_request=_current_request(run),
             compressed=compression_needed,
             fallback_used=fallback_used,
         )
@@ -572,7 +600,7 @@ class ContextAssembler:
                 chars_per_token=self._policy.estimated_chars_per_token,
             )
 
-        # 2. 历史记忆从最旧对话开始裁剪；完整原文仍保存在运行记录中。
+        # 2. 历史对话从最旧消息开始裁剪；完整原文仍保存在运行记录中。
         if (
             current.total_char_count > trim_budget
             and current.history_memory.messages
@@ -601,7 +629,8 @@ class ContextAssembler:
                 }
             )
         while (
-            current.total_char_count > trim_budget and current.history_memory.messages
+            current.total_char_count > trim_budget
+            and len(current.history_memory.messages) > 1
         ):
             history = current.history_memory.model_copy(
                 update={
@@ -905,15 +934,7 @@ def _history_memory(
     limit: int,
     char_budget: int,
 ) -> GeneralAgentHistoryMemory:
-    messages = [
-        message for message in run.messages if message.role in {"user", "assistant"}
-    ]
-    if (
-        messages
-        and messages[-1].role == "user"
-        and messages[-1].content == run.user_goal
-    ):
-        messages = messages[:-1]
+    messages = _raw_history_messages(run)
     total_message_count = len(messages)
     needs_summary = (
         len(messages) > limit
@@ -938,6 +959,12 @@ def _history_memory(
         total_message_count=total_message_count,
         omitted_message_count=len(omitted),
     )
+
+
+def _memory_projection_identity(
+    memories: list[GeneralAgentContextMemory],
+) -> tuple[tuple[str, str], ...]:
+    return tuple((item.memory_id, item.content_sha256) for item in memories)
 
 
 def _history_summary(
@@ -1463,15 +1490,34 @@ def _build_assembly_trace(
 
 
 def _raw_history_messages(run: GeneralAgentRun) -> list[GeneralAgentMessage]:
-    messages = [item for item in run.messages if item.role in {"user", "assistant"}]
-    if (
-        messages
-        and messages[-1].role == "user"
-        and messages[-1].content == run.user_goal
-    ):
-        return messages[:-1]
-    return messages
+    return [
+        item
+        for item in run.messages
+        if item.role in {"user", "assistant"}
+        and not (
+            item.turn_id == run.run_id
+            and item.request_index == run.request_index
+        )
+    ]
 
+
+def _current_human_responses(run: GeneralAgentRun) -> list[str]:
+    return [
+        item.content
+        for item in run.messages
+        if item.turn_id == run.run_id
+        and item.request_index == run.request_index
+        and item.message_type is GeneralAgentMessageType.HUMAN_RESPONSE
+    ]
+
+
+def _current_request(run: GeneralAgentRun) -> GeneralAgentCurrentRequest:
+    return GeneralAgentCurrentRequest(
+        content=run.user_goal,
+        human_responses=_current_human_responses(run),
+        user_constraints=_deduplicate(run.author_constraints),
+        scope=run.scope.model_dump(mode="json"),
+    )
 
 def _raw_working_carrier_count(
     run: GeneralAgentRun,

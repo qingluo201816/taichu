@@ -2,7 +2,6 @@
 
 import {
   Activity,
-  AlertTriangle,
   Bot,
   BrainCircuit,
   Check,
@@ -44,7 +43,7 @@ import {
   buildNovelStructureDisplay,
   buildStableMemoryProjection,
   buildRuntimeTrace,
-  checkpointEventLabel,
+  checkpointSourceLabel,
   contextPhaseLabel,
   generalSubagentResultViewKind,
   generalToolResultViewKind,
@@ -583,14 +582,9 @@ function ContextSnapshotDetail({
   const envelope = snapshot.envelope;
   const contextLayers = [
     {
-      title: "稳定记忆",
+      title: "稳定记忆（系统提示词）",
       value: buildStableMemoryProjection(envelope.stable_memory, call),
       structured: true,
-    },
-    {
-      title: `工作记忆（${envelope.working_memory.memories.length} 条当前有效，${envelope.working_memory.invalidated_memories.length} 条仅供修复）`,
-      value: workingMemoryContent(envelope.working_memory),
-      structured: false,
     },
     {
       title: `长期记忆（${envelope.long_term_memory.length} 条）`,
@@ -598,8 +592,13 @@ function ContextSnapshotDetail({
       structured: false,
     },
     {
-      title: `历史记忆（${envelope.history_memory.messages.length} 条近期原文）`,
+      title: `历史对话（${envelope.history_memory.messages.length} 条近期原文）`,
       value: historyMemoryContent(envelope.history_memory),
+      structured: false,
+    },
+    {
+      title: `工作记忆（${envelope.working_memory.memories.length} 条当前有效，${envelope.working_memory.invalidated_memories.length} 条仅供修复）`,
+      value: workingMemoryContent(envelope.working_memory),
       structured: false,
     },
     {
@@ -1080,8 +1079,8 @@ function RecoveryMemoryLayer({
           summary={run.resumable ? "可以续跑" : "不再续跑"}
         />
         <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-[var(--tc-text-muted)]">
-          <span>检查点 {checkpointIntegrityLabel(recovery.checkpoint.integrity_status)}</span>
-          <span>最新图修订 {recovery.checkpoint.current_revision ? `第 ${recovery.checkpoint.current_revision} 份` : "尚未生成"}</span>
+          <span>官方检查点 {checkpointStatusLabel(recovery.checkpoint.status)}</span>
+          <span>持久状态 {recovery.checkpoint.checkpoint_count} 个</span>
           <span>业务状态记录 {run.checkpoint_revision} 次</span>
           <span>{run.resumable ? "可以续跑" : "不再续跑"}</span>
         </div>
@@ -1089,17 +1088,6 @@ function RecoveryMemoryLayer({
           <p className="font-medium text-[var(--tc-text-primary)]">恢复后从哪里继续</p>
           <p className="mt-1">{resumeDescription(run, pendingNodes.length)}</p>
         </div>
-        {recovery.checkpoint.recovered_from_revision ? (
-          <p className="mt-3 rounded-[var(--tc-radius-control)] bg-amber-950/20 px-3 py-2.5 text-xs text-amber-100">
-            最近一次加载发现尾部记录异常，已退回第 {recovery.checkpoint.recovered_from_revision} 份有效修订。
-          </p>
-        ) : null}
-        {recovery.checkpoint.damage_warnings.map(warning => (
-          <p key={warning} className="mt-2 flex items-start gap-2 rounded-[var(--tc-radius-control)] bg-red-950/20 px-3 py-2.5 text-xs text-red-100">
-            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
-            {warning}
-          </p>
-        ))}
         {run.context_resume_differences.length ? (
           <div className="mt-5 text-xs">
             <p className="font-medium text-[var(--tc-text-primary)]">恢复时重新取证产生的上下文差异</p>
@@ -1114,29 +1102,29 @@ function RecoveryMemoryLayer({
         <SectionHeading
           icon={<History className="size-4" />}
           title="检查点写入时间线"
-          summary={`${recovery.revisions.length} 份修订`}
+          summary={`${recovery.checkpoints.length} 个状态`}
         />
-        {recovery.revisions.length ? (
+        {recovery.checkpoints.length ? (
           <div className="mt-3 grid max-h-[420px] gap-1 overflow-y-auto pr-1">
-            {[...recovery.revisions].reverse().map((revision, index) => (
+            {recovery.checkpoints.map((checkpoint, index) => (
               <div
-                key={revision.revision}
+                key={checkpoint.checkpoint_id}
                 className="flex items-center gap-3 rounded-[var(--tc-radius-control)] px-2.5 py-2 text-xs odd:bg-[var(--tc-surface-muted)]"
               >
                 <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-cyan-400/10 text-cyan-300">
                   {index === 0 ? <CheckCircle2 className="size-3.5" /> : <Clock3 className="size-3.5" />}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[var(--tc-text-primary)]">{checkpointEventLabel(revision.event_type)}</span>
-                  <span className="mt-0.5 block text-[var(--tc-text-muted)]">{formatTime(revision.created_at)}</span>
+                  <span className="block text-[var(--tc-text-primary)]">{checkpointSourceLabel(checkpoint.source)}</span>
+                  <span className="mt-0.5 block text-[var(--tc-text-muted)]">{checkpoint.created_at ? formatTime(checkpoint.created_at) : "时间未记录"}</span>
                 </span>
-                <span className="font-mono text-[var(--tc-text-muted)]">第 {revision.revision} 份</span>
+                <span className="font-mono text-[var(--tc-text-muted)]">图步骤 {checkpoint.step}</span>
                 {index === 0 ? <span className="text-emerald-300">当前恢复点</span> : null}
               </div>
             ))}
           </div>
         ) : (
-          <EmptyRecord text="该请求没有持久化的 LangGraph 检查点修订。" />
+          <EmptyRecord text="该请求还没有持久化的 LangGraph 检查点。" />
         )}
       </section>
 
@@ -1648,10 +1636,10 @@ function resumeDescription(run: GeneralAgentRun, pendingNodeCount: number): stri
 
 function contextCategoryLabel(category: string): string {
   return {
-    stable_memory: "稳定记忆",
-    working_memory: "工作记忆",
+    stable_memory: "稳定记忆（系统提示词）",
     long_term_memory: "长期记忆",
-    history_memory: "历史记忆",
+    history_memory: "历史对话",
+    working_memory: "工作记忆",
     current_request: "当前请求",
   }[category] ?? "其他上下文";
 }
@@ -1663,13 +1651,11 @@ function wireProtocolLabel(protocol: string): string {
   }[protocol] ?? "模型 API 请求";
 }
 
-function checkpointIntegrityLabel(status: string): string {
+function checkpointStatusLabel(status: GeneralAgentRecoverySnapshot["checkpoint"]["status"]): string {
   return {
-    valid: "完整",
-    recovered: "已回退到有效修订",
-    invalid: "损坏，无法自动恢复",
-    missing: "暂无检查点",
-  }[status] ?? "状态未知";
+    available: "可恢复",
+    missing: "尚未生成",
+  }[status];
 }
 
 function effectStatusLabel(status: GeneralAgentRecoverySnapshot["effects"][number]["status"]): string {
@@ -1695,7 +1681,9 @@ function durationLabel(durationMs: number): string {
 }
 
 function modelPayloadSummary(key: string, value: unknown): string {
-  if (key === "稳定记忆") return "本次模型调用复用的稳定规则";
+  if (key === "稳定记忆" || key === "稳定记忆（System Prompt）") {
+    return "模型身份、基本行为、准则与静态能力索引";
+  }
   if (key === "工作记忆") return "当前任务的资料和运行状态";
   if (key === "完整轻量能力目录") {
     const total = isRecord(value) && typeof value["能力总数"] === "number" ? value["能力总数"] : null;

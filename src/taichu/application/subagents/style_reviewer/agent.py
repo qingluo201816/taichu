@@ -25,6 +25,9 @@ manifest = SubagentManifest(
 
 
 async def run(
-    input_data: BaseModel, invocation: InvocationContext, context: CapabilityContext
+    runtime_manifest: SubagentManifest,
+    input_data: BaseModel,
+    invocation: InvocationContext,
+    context: CapabilityContext,
 ) -> BaseModel:
-    return await execute(manifest, input_data, invocation, context)
+    return await execute(runtime_manifest, input_data, invocation, context)

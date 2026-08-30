@@ -3,6 +3,7 @@ export type LLMAvailability = "unknown" | "available" | "unavailable";
 export type PublicLLMModel = {
   id: string;
   display_name: string;
+  provider: "rightcode" | "deepseek_official";
   enabled: boolean;
   is_default: boolean;
   supports_streaming: boolean;
@@ -15,6 +16,20 @@ export type PublicLLMModel = {
 export type LLMModelListResponse = {
   default_model_id: string;
   models: PublicLLMModel[];
+};
+
+export type LLMProvider = {
+  id: "rightcode" | "deepseek_official";
+  display_name: string;
+  description: string;
+  configured: boolean;
+  model_count: number;
+  model_names: string[];
+};
+
+export type LLMProviderListResponse = {
+  active_provider_id: LLMProvider["id"];
+  providers: LLMProvider[];
 };
 
 export type LLMModelProbeResponse = {

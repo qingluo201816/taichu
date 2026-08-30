@@ -78,6 +78,8 @@ class JsonLLMCallReplayRepository:
 
 def _load(path: Path) -> LLMCallReplayRecord:
     payload = json.loads(path.read_text(encoding="utf-8"))
+    # 旧回放曾保存应用自定义的 text/json 模式；只在读取历史资产时丢弃。
+    payload.pop("response_mode", None)
     return LLMCallReplayRecord.model_validate(payload)
 
 

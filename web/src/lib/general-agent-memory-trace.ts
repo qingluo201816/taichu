@@ -120,10 +120,15 @@ export function generalSubagentResultViewKind(
 
 const readableFieldLabels: Record<string, string> = {
   "稳定记忆": "稳定记忆",
+  "稳定记忆（System Prompt）": "稳定记忆（系统提示词）",
   "阶段稳定契约": "阶段稳定契约",
+  "阶段契约": "阶段契约",
   "工作记忆": "工作记忆",
   "本阶段运行参数": "本阶段运行参数",
   "长期记忆": "长期记忆",
+  "历史对话摘要": "历史对话摘要",
+  "Static Capability Index（静态能力索引）": "静态能力索引",
+  "相关能力字段摘要": "相关能力字段摘要",
   "完整轻量能力目录": "本轮可用能力",
   "已选能力完整契约": "已选能力的输入输出要求",
   "已选能力精确契约": "已选能力的输入输出要求",
@@ -207,7 +212,7 @@ const readableFieldLabels: Record<string, string> = {
   truncated: "是否截断",
   type: "类型",
   plan_summary: "当前计划摘要",
-  history_memory: "历史记忆",
+  history_memory: "历史对话",
   confirmed_card_count: "已确认知识卡",
   referenced_card_count: "含章节引用的知识卡",
   latest_chapter: "最晚覆盖章节",
@@ -414,15 +419,12 @@ export function buildStableMemoryProjection(
   const systemRequirements =
     call?.messages
       .filter(message => message.role === "system" && message.content.trim())
-      .map(message => message.content) ?? [];
-  const phaseContracts =
-    call?.messages
-      .filter(message => message.role === "developer")
-      .map(message => parseStructuredContent(message.content))
-      .filter(isRecord)
-      .map(value => value["阶段稳定契约"])
-      .filter(value => value !== undefined && value !== null) ?? [];
-
+      .map(message => parseStructuredContent(message.content) ?? message.content)
+      .map(value =>
+        isRecord(value) && value["稳定记忆（System Prompt）"] !== undefined
+          ? value["稳定记忆（System Prompt）"]
+          : value,
+      ) ?? [];
   return {
     ...(systemRequirements.length
       ? {
@@ -433,22 +435,16 @@ export function buildStableMemoryProjection(
         }
       : {}),
     "稳定规则": stableRules,
-    ...(phaseContracts.length
-      ? {
-          "阶段稳定契约":
-            phaseContracts.length === 1 ? phaseContracts[0] : phaseContracts,
-        }
-      : {}),
     ...(call?.tools.length ? { "工具定义": call.tools } : {}),
   };
 }
 
-export function checkpointEventLabel(eventType: string): string {
-  if (eventType === "checkpoint_put") return "保存可恢复状态";
-  if (eventType === "checkpoint_writes") return "记录节点中间写入";
-  if (eventType === "legacy_migrated") return "迁移旧检查点";
-  if (eventType.startsWith("repaired_from_revision_")) return "从有效记录修复恢复点";
-  return "更新恢复记录";
+export function checkpointSourceLabel(source: string): string {
+  if (source === "input") return "接收图输入";
+  if (source === "loop") return "完成图步骤";
+  if (source === "update") return "更新图状态";
+  if (source === "fork") return "从历史检查点分支";
+  return "保存图状态";
 }
 
 export function readableFieldLabel(key: string): string {
@@ -845,10 +841,15 @@ function modelCallCapabilityContractCount(
   call: GeneralAgentLLMReplay,
 ): number | undefined {
   for (const message of call.messages) {
-    if (message.role !== "developer") continue;
     const content = parseStructuredContent(message.content);
     if (!isRecord(content)) continue;
-    const phaseContract = content["阶段稳定契约"];
+    const stableMemory = content["稳定记忆（System Prompt）"];
+    if (isRecord(stableMemory)) {
+      const staticIndex = stableMemory["Static Capability Index（静态能力索引）"];
+      if (Array.isArray(staticIndex)) return staticIndex.length;
+    }
+    if (message.role !== "developer") continue;
+    const phaseContract = content["阶段契约"] ?? content["阶段稳定契约"];
     if (!isRecord(phaseContract)) continue;
     for (const catalogName of ["完整能力契约目录", "完整轻量能力目录"]) {
       const catalog = phaseContract[catalogName];

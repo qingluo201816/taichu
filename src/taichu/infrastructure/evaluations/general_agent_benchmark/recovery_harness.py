@@ -104,7 +104,9 @@ class GeneralAgentRecoveryHarness:
                 pass
             else:
                 raise RecoveryHarnessDeviationError(
-                    "Runtime 未在 FaultPlan 声明的故障点中断。"
+                    "Runtime 未在 FaultPlan 声明的故障点中断："
+                    f"状态={first_result.status.value}；"
+                    f"错误={first_result.errors}。"
                 )
             plan = first_hook.resolved_plan
             if plan is None:

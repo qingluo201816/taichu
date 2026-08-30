@@ -6,6 +6,7 @@ import {
   BarChart3,
   ChevronRight,
   ListTree,
+  Network,
   RefreshCw,
   SearchCheck,
   Server,
@@ -28,7 +29,9 @@ import {
   getLLMUsageSummary,
   listLLMCalls,
   listLLMModels,
+  listLLMProviders,
   probeLLMModel,
+  switchLLMProvider,
   type LLMUsageFilters,
 } from "@/lib/api/llm";
 import {
@@ -44,6 +47,7 @@ import type {
   LLMCallRecord,
   LLMCallStatus,
   LLMModelListResponse,
+  LLMProviderListResponse,
   LLMTokenTrendPoint,
   LLMUsageGroup,
   LLMUsageSummary,
@@ -70,7 +74,7 @@ const EMPTY_SUMMARY: LLMUsageSummary = {
   by_task_type: [],
 };
 
-type MonitorView = "trend" | "summary" | "calls" | "availability";
+type MonitorView = "trend" | "summary" | "calls" | "availability" | "providers";
 type TrendMetric =
   | "total_tokens"
   | "input_tokens"
@@ -102,6 +106,7 @@ const VIEW_ITEMS: Array<{
   { id: "summary", label: "模型汇总", description: "比较模型消耗", icon: <ListTree className="size-4" /> },
   { id: "calls", label: "调用明细", description: "追踪单次调用", icon: <Activity className="size-4" /> },
   { id: "availability", label: "模型可用性", description: "检测渠道状态", icon: <Server className="size-4" /> },
+  { id: "providers", label: "供应商切换", description: "限定模型来源", icon: <Network className="size-4" /> },
 ];
 
 const RANGE_ITEMS: Array<{ id: TokenTrendRange; label: string }> = [
@@ -127,6 +132,10 @@ export function ModelMonitorShell() {
     models: [],
   });
   const [summary, setSummary] = useState(EMPTY_SUMMARY);
+  const [providers, setProviders] = useState<LLMProviderListResponse>({
+    active_provider_id: "rightcode",
+    providers: [],
+  });
   const [calls, setCalls] = useState<LLMCallRecord[]>([]);
   const [trend, setTrend] = useState<LLMTokenTrendPoint[]>([]);
   const [taskTypes, setTaskTypes] = useState<LLMUsageGroup[]>([]);
@@ -139,6 +148,7 @@ export function ModelMonitorShell() {
   const [error, setError] = useState("");
   const [selectedCall, setSelectedCall] = useState<LLMCallRecord | null>(null);
   const [probingIds, setProbingIds] = useState<Set<string>>(new Set());
+  const [switchingProvider, setSwitchingProvider] = useState(false);
 
   const apiFilters = useMemo<LLMUsageFilters>(
     () => ({
@@ -156,13 +166,15 @@ export function ModelMonitorShell() {
     setLoading(true);
     setError("");
     try {
-      const [nextCatalog, nextCalls, nextSummary, nextTrend] = await Promise.all([
+      const [nextCatalog, nextProviders, nextCalls, nextSummary, nextTrend] = await Promise.all([
         listLLMModels(),
+        listLLMProviders(),
         listLLMCalls(apiFilters),
         getLLMUsageSummary(apiFilters),
         getLLMTokenTrend(apiFilters, filters.range === "24h" ? "hour" : "day"),
       ]);
       setCatalog(nextCatalog);
+      setProviders(nextProviders);
       setCalls(nextCalls.items);
       setTotal(nextCalls.total);
       setSummary(nextSummary);
@@ -229,6 +241,25 @@ export function ModelMonitorShell() {
     }
   }
 
+  async function changeProvider(providerId: LLMProviderListResponse["active_provider_id"]) {
+    const target = providers.providers.find(item => item.id === providerId);
+    if (!target || providerId === providers.active_provider_id) return;
+    if (!window.confirm(`切换到“${target.display_name}”后，只能使用该供应商支持的模型。是否继续？`)) return;
+    setSwitchingProvider(true);
+    setError("");
+    try {
+      await switchLLMProvider(providerId);
+      setFilters(EMPTY_FILTERS);
+      setPage(1);
+      setAvailabilityPage(1);
+      await load();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "模型供应商切换失败。");
+    } finally {
+      setSwitchingProvider(false);
+    }
+  }
+
   function inspectModel(modelId: string) {
     updateFilters({ ...filters, modelId });
     setView("calls");
@@ -283,7 +314,7 @@ export function ModelMonitorShell() {
           </p>
         ) : null}
 
-        <nav aria-label="模型监控功能入口" className="grid shrink-0 grid-cols-2 border-b border-[var(--tc-border-subtle)] md:grid-cols-4">
+        <nav aria-label="模型监控功能入口" className="grid shrink-0 grid-cols-2 border-b border-[var(--tc-border-subtle)] md:grid-cols-5">
           {VIEW_ITEMS.map(item => (
             <button
               key={item.id}
@@ -353,6 +384,13 @@ export function ModelMonitorShell() {
               onProbeAll={probeAll}
               onPageChange={setAvailabilityPage}
               onInspect={inspectModel}
+            />
+          ) : null}
+          {view === "providers" ? (
+            <ProviderPanel
+              providers={providers}
+              switching={switchingProvider}
+              onSwitch={changeProvider}
             />
           ) : null}
         </div>
@@ -542,6 +580,36 @@ function AvailabilityPanel({ catalog, probingIds, page, onProbeOne, onProbeAll, 
         ))}
       </div>
       <CompactPagination page={currentPage} pageSize={MODEL_PAGE_SIZE} total={catalog.models.length} onPageChange={onPageChange} />
+    </section>
+  );
+}
+
+function ProviderPanel({ providers, switching, onSwitch }: { providers: LLMProviderListResponse; switching: boolean; onSwitch: (providerId: LLMProviderListResponse["active_provider_id"]) => Promise<void> }) {
+  const current = providers.providers.find(item => item.id === providers.active_provider_id);
+  return (
+    <section className="flex h-full min-h-0 flex-col pt-3" aria-labelledby="providers-title">
+      <SectionHeading id="providers-title" title="模型供应商" meta={`当前：${current?.display_name ?? "未读取"}`} />
+      <p className="mt-2 text-xs text-[var(--tc-text-muted)]">切换后，所有新调用只能选择并使用当前供应商支持的模型，不会跨供应商自动降级。</p>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {providers.providers.map(provider => {
+          const active = provider.id === providers.active_provider_id;
+          return (
+            <article key={provider.id} className={cn("border p-4", active ? "border-[var(--tc-text-primary)] bg-[var(--tc-surface-muted)]" : "border-[var(--tc-border-subtle)]")}>
+              <div className="flex items-start justify-between gap-3">
+                <div><h3 className="text-sm font-semibold text-[var(--tc-text-primary)]">{provider.display_name}</h3><p className="mt-1 text-xs leading-5 text-[var(--tc-text-muted)]">{provider.description}</p></div>
+                <span className="shrink-0 text-xs text-[var(--tc-text-secondary)]">{provider.configured ? "已配置" : "未配置"}</span>
+              </div>
+              <div className="mt-4 border-y border-[var(--tc-border-subtle)] py-3 text-xs">
+                <p className="text-[var(--tc-text-muted)]">支持 {provider.model_count} 个模型</p>
+                <p className="mt-2 leading-5 text-[var(--tc-text-secondary)]">{provider.model_names.join("、") || "暂无可用模型"}</p>
+              </div>
+              <Button className="mt-4 w-full" variant={active ? "outline" : "default"} disabled={active || !provider.configured || switching} onClick={() => void onSwitch(provider.id)}>
+                {active ? "当前供应商" : provider.configured ? "切换到此供应商" : "尚未配置密钥"}
+              </Button>
+            </article>
+          );
+        })}
+      </div>
     </section>
   );
 }

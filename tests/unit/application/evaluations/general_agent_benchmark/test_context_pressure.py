@@ -84,10 +84,7 @@ from taichu.application.general_agent.models import (
     GeneralAgentScope,
 )
 from taichu.application.services.agent_memory_service import AgentMemoryService
-from taichu.infrastructure.agent_memory import (
-    JsonAgentMemoryLexicalIndex,
-    JsonAgentMemoryRepository,
-)
+from tests.fakes.agent_memory import in_memory_agent_memory_repository
 
 
 def _fixture_blob() -> PressureFixtureBlob:
@@ -155,8 +152,7 @@ def _generate(
 
 def _memory_service(root: Path) -> AgentMemoryService:
     return AgentMemoryService(
-        repository=JsonAgentMemoryRepository(root),
-        lexical_index=JsonAgentMemoryLexicalIndex(root),
+        repository=in_memory_agent_memory_repository(root),
     )
 
 

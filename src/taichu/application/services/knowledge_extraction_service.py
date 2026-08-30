@@ -10,6 +10,8 @@ import re
 from typing import Any, cast
 from uuid import uuid4
 
+from langchain_core.language_models.chat_models import BaseChatModel
+
 from taichu.application.agents.knowledge_extraction.workflow import (
     ALLOWED_KNOWLEDGE_TYPES,
     BATCH_KNOWLEDGE_EXTRACTION_GRAPH_EDGES,
@@ -39,7 +41,7 @@ from taichu.application.contracts.knowledge_repository import (
     StructuredKnowledgeRepository,
 )
 from taichu.application.contracts.llm import (
-    LLMGatewayContract,
+    LLMModelCatalogContract,
     LLMModelIdentity,
     LLMModelProfile,
 )
@@ -89,22 +91,6 @@ _REVIEW_ONLY_FIELDS = {
 }
 
 
-class _InMemorySedimentationProgressRepository:
-    """Test fallback; the assembled application always uses MongoDB persistence."""
-
-    def __init__(self) -> None:
-        self._progress = KnowledgeSedimentationProgress()
-
-    async def get_progress(self) -> KnowledgeSedimentationProgress:
-        return self._progress
-
-    async def advance_to(self, chapter_id: str) -> KnowledgeSedimentationProgress:
-        self._progress = KnowledgeSedimentationProgress(
-            last_accepted_chapter_id=chapter_id
-        )
-        return self._progress
-
-
 class KnowledgeExtractionService:
     """Run the Agent and process author review actions."""
 
@@ -112,24 +98,22 @@ class KnowledgeExtractionService:
         self,
         *,
         chapter_service: ChapterService,
-        llm: object,
+        llm: BaseChatModel,
+        model_catalog: LLMModelCatalogContract,
         knowledge_repository: StructuredKnowledgeRepository,
         knowledge_service: KnowledgeService,
         run_store: AgentRunRepository,
-        sedimentation_progress_repository: KnowledgeSedimentationProgressRepository
-        | None = None,
+        sedimentation_progress_repository: KnowledgeSedimentationProgressRepository,
         task_events: AgentTaskEventCenter | None = None,
         default_model_id: str = "deepseek-v4-pro",
     ) -> None:
         self._chapter_service = chapter_service
-        self._llm = cast(LLMGatewayContract, llm)
+        self._llm = llm
+        self._model_catalog = model_catalog
         self._knowledge_repository = knowledge_repository
         self._knowledge_service = knowledge_service
         self._run_store = run_store
-        self._sedimentation_progress_repository = (
-            sedimentation_progress_repository
-            or _InMemorySedimentationProgressRepository()
-        )
+        self._sedimentation_progress_repository = sedimentation_progress_repository
         self._task_events = task_events
         self._default_model_id = default_model_id
         self._background_tasks: set[asyncio.Task[None]] = set()
@@ -191,9 +175,7 @@ class KnowledgeExtractionService:
                 "batch_chapter_progress": progress,
                 "current_concurrency": 0,
                 "failed_chapter_count": sum(
-                    1
-                    for item in progress
-                    if item.status is AgentRunNodeStatus.FAILED
+                    1 for item in progress if item.status is AgentRunNodeStatus.FAILED
                 ),
                 "errors": [*run.errors, message]
                 if message not in run.errors
@@ -421,9 +403,7 @@ class KnowledgeExtractionService:
         except KnowledgeIdentityConflictError as error:
             identity_fields = _candidate_identity_fields(item.suggested_card)
             field_hint = (
-                f"候选中的名称或别名为“{identity_fields}”。"
-                if identity_fields
-                else ""
+                f"候选中的名称或别名为“{identity_fields}”。" if identity_fields else ""
             )
             raise KnowledgeExtractionError(
                 f"候选“{item.display_title}”无法采纳：{error}。"
@@ -444,41 +424,16 @@ class KnowledgeExtractionService:
             if requested_model_name is not None
             else self._default_model_id
         )
-        if hasattr(self._llm, "list_models"):
-            for profile in self._llm.list_models():
-                if profile.id != selected_id:
-                    continue
-                if not profile.enabled:
-                    raise KnowledgeExtractionModelSelectionError(
-                        f"模型“{profile.display_name}”当前已停用，请选择其他模型。"
-                    )
-                return profile, requested_model_name
-            raise KnowledgeExtractionModelSelectionError(
-                "所选模型不存在，请刷新模型列表后重试。"
-            )
-        identity = getattr(
-            self._llm,
-            "model_identity",
-            LLMModelIdentity.unknown("测试替身未提供模型身份。"),
-        )
-        actual_model_id = identity.model_id or self._default_model_id
-        if requested_model_name is not None and selected_id != actual_model_id:
-            raise KnowledgeExtractionModelSelectionError(
-                "所选模型不存在，请刷新模型列表后重试。"
-            )
-        return (
-            LLMModelProfile(
-                id=actual_model_id,
-                display_name=actual_model_id,
-                provider="rightcode",
-                upstream_model=actual_model_id,
-                wire_protocol="openai_responses",
-                base_url_key="RIGHTCODE_RESPONSES_BASE_URL",
-                enabled=True,
-                is_default=True,
-                supports_streaming=False,
-            ),
-            requested_model_name,
+        for profile in self._model_catalog.list_models():
+            if profile.id != selected_id:
+                continue
+            if not profile.enabled:
+                raise KnowledgeExtractionModelSelectionError(
+                    f"模型“{profile.display_name}”当前已停用，请选择其他模型。"
+                )
+            return profile, requested_model_name
+        raise KnowledgeExtractionModelSelectionError(
+            "所选模型不存在，请刷新模型列表后重试。"
         )
 
     async def create_run(
@@ -629,7 +584,9 @@ class KnowledgeExtractionService:
             model_display_name=profile.display_name,
             upstream_model=profile.upstream_model,
             wire_protocol=profile.wire_protocol,
-            generation_model_identity=_identity_for_gateway(self._llm, profile),
+            generation_model_identity=_identity_for_catalog(
+                self._model_catalog, profile
+            ),
             status=AgentRunStatus.COMPLETED,
             scope=AgentRunScope(
                 scope_type="summary_repair",
@@ -921,7 +878,9 @@ class KnowledgeExtractionService:
             model_display_name=profile.display_name,
             upstream_model=profile.upstream_model,
             wire_protocol=profile.wire_protocol,
-            generation_model_identity=_identity_for_gateway(self._llm, profile),
+            generation_model_identity=_identity_for_catalog(
+                self._model_catalog, profile
+            ),
             force=force,
         )
         initial_run = run_snapshot_from_state(
@@ -1025,7 +984,9 @@ class KnowledgeExtractionService:
                 model_display_name=profile.display_name,
                 upstream_model=profile.upstream_model,
                 wire_protocol=profile.wire_protocol,
-                generation_model_identity=_identity_for_gateway(self._llm, profile),
+                generation_model_identity=_identity_for_catalog(
+                    self._model_catalog, profile
+                ),
                 status=status,
                 scope=AgentRunScope(
                     scope_type="chapter_batch",
@@ -1521,7 +1482,9 @@ class KnowledgeExtractionService:
             model_display_name=profile.display_name,
             upstream_model=profile.upstream_model,
             wire_protocol=profile.wire_protocol,
-            generation_model_identity=_identity_for_gateway(self._llm, profile),
+            generation_model_identity=_identity_for_catalog(
+                self._model_catalog, profile
+            ),
             force=force,
         )
         return await graph.ainvoke(state)
@@ -1817,11 +1780,9 @@ class KnowledgeExtractionService:
                     )
                 candidate_name = str(update_payload.get("name") or "").strip()
                 aliases = _list_strings(update_payload.get("aliases"))
-                if (
+                if candidate_name and _normalize_identity(
                     candidate_name
-                    and _normalize_identity(candidate_name)
-                    != _normalize_identity(target_card.name)
-                ):
+                ) != _normalize_identity(target_card.name):
                     aliases.append(candidate_name)
                 update_payload["name"] = target_card.name
                 update_payload["aliases"] = _dedupe_strings(aliases)
@@ -1841,8 +1802,7 @@ class KnowledgeExtractionService:
                     "target_card_id": written.id,
                     "matched_card_name": written.name,
                     "match_reason": (
-                        item.match_reason
-                        or "作者选择将候选合并到已有知识卡。"
+                        item.match_reason or "作者选择将候选合并到已有知识卡。"
                     ),
                     "suggested_action_label": "已合并更新已有知识卡",
                 }
@@ -2701,7 +2661,7 @@ def _now_iso() -> str:
 
 def _identity_from_profile(profile: LLMModelProfile) -> LLMModelIdentity:
     return LLMModelIdentity(
-        provider="rightcode",
+        provider=profile.provider,
         model_id=profile.id,
         family=profile.id.rsplit("-", 1)[0],
         endpoint_kind=profile.wire_protocol,
@@ -2712,10 +2672,10 @@ def _identity_from_profile(profile: LLMModelProfile) -> LLMModelIdentity:
     )
 
 
-def _identity_for_gateway(
-    gateway: LLMGatewayContract, profile: LLMModelProfile
+def _identity_for_catalog(
+    catalog: LLMModelCatalogContract, profile: LLMModelProfile
 ) -> LLMModelIdentity:
-    identity = getattr(gateway, "model_identity", None)
+    identity = getattr(catalog, "model_identity", None)
     if isinstance(identity, LLMModelIdentity):
         return identity
     return _identity_from_profile(profile)

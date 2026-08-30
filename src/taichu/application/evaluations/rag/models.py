@@ -101,16 +101,6 @@ class RAGCaseScore(RAGEvaluationModel):
     retrieved_relation_ids: list[str] = Field(default_factory=list)
 
 
-class RAGAblationScore(RAGEvaluationModel):
-    case_id: str
-    graph_on: RAGCaseScore
-    graph_off: RAGCaseScore
-    recall_delta: float | None
-    mrr_delta: float | None
-    relation_recall_delta: float
-    complete_path_delta: float
-
-
 class RAGEvaluationSummary(RAGEvaluationModel):
     case_count: int = Field(ge=0)
     graph_case_count: int = Field(ge=0)
@@ -119,8 +109,13 @@ class RAGEvaluationSummary(RAGEvaluationModel):
     authority_pass_rate: float = Field(ge=0, le=1)
     mean_relation_recall_at_k: float | None = Field(default=None, ge=0, le=1)
     complete_path_pass_rate: float | None = Field(default=None, ge=0, le=1)
-    mean_ablation_recall_delta: float | None = None
-    mean_ablation_complete_path_delta: float | None = None
+
+
+class RAGCaseExecutionFailure(RAGEvaluationModel):
+    case_id: str
+    phase: str
+    error_type: str
+    error_message: str
 
 
 class RAGEvaluationReport(RAGEvaluationModel):
@@ -129,7 +124,7 @@ class RAGEvaluationReport(RAGEvaluationModel):
     created_at: str
     top_k: int = Field(ge=1)
     case_scores: list[RAGCaseScore]
-    ablation_scores: list[RAGAblationScore]
+    execution_failures: list[RAGCaseExecutionFailure] = Field(default_factory=list)
     summary: RAGEvaluationSummary
 
 

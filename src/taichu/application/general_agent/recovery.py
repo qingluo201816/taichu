@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 from uuid import uuid4
 
+from langchain_core.runnables import RunnableConfig
 from pydantic import BaseModel, ConfigDict, Field
 
 from taichu.application.contracts.general_agent_capability_results import (
@@ -45,13 +46,6 @@ class RecoveryModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class NodeAttemptStatus(StrEnum):
-    PREPARED = "prepared"
-    STARTED = "started"
-    SUCCEEDED = "succeeded"
-    FAILED = "failed"
-
-
 class EffectStatus(StrEnum):
     PREPARED = "prepared"
     STARTED = "started"
@@ -60,20 +54,6 @@ class EffectStatus(StrEnum):
     UNKNOWN = "unknown"
     RECONCILED = "reconciled"
     REQUIRES_HUMAN = "requires_human"
-
-
-class NodeAttempt(RecoveryModel):
-    """一次计划修订中某个能力节点的稳定执行身份。"""
-
-    attempt_id: str = Field(pattern=r"^attempt_[a-f0-9]{32}$")
-    run_id: str = Field(min_length=1, max_length=128)
-    plan_revision: int = Field(ge=1)
-    node_id: str = Field(min_length=1, max_length=64)
-    status: NodeAttemptStatus
-    started_at: str | None = None
-    finished_at: str | None = None
-    error_type: str | None = Field(default=None, max_length=200)
-    error_message: str | None = Field(default=None, max_length=2_000)
 
 
 class EffectRecord(RecoveryModel):
@@ -97,24 +77,22 @@ class EffectRecord(RecoveryModel):
     created_at: str = Field(min_length=1)
 
 
-class CheckpointIntegritySummary(RecoveryModel):
-    """面向监控页的脱敏 LangGraph 检查点摘要。"""
+class CheckpointPersistenceSummary(RecoveryModel):
+    """面向监控页的官方 LangGraph 检查点摘要。"""
 
-    current_revision: int = Field(default=0, ge=0)
-    available_revisions: list[int] = Field(default_factory=list)
-    invalid_revisions: list[int] = Field(default_factory=list)
-    integrity_status: str = Field(default="missing", max_length=64)
-    recovered_from_revision: int | None = Field(default=None, ge=1)
-    damage_warnings: list[str] = Field(default_factory=list, max_length=100)
-    legacy_migrated: bool = False
+    status: Literal["available", "missing"] = "missing"
+    checkpoint_count: int = Field(default=0, ge=0)
+    latest_checkpoint_id: str | None = Field(default=None, max_length=256)
+    latest_step: int | None = None
 
 
-class CheckpointRevisionSummary(RecoveryModel):
-    """单次检查点持久化的可读审计元数据。"""
+class CheckpointHistorySummary(RecoveryModel):
+    """官方 Checkpointer 返回的单个检查点元数据。"""
 
-    revision: int = Field(ge=1)
-    event_type: str = Field(min_length=1, max_length=128)
-    created_at: str = Field(min_length=1)
+    checkpoint_id: str = Field(min_length=1, max_length=256)
+    source: str = Field(min_length=1, max_length=64)
+    step: int
+    created_at: str | None = None
 
 
 class EffectSummary(RecoveryModel):
@@ -132,11 +110,11 @@ class EffectSummary(RecoveryModel):
 
 
 class GeneralAgentRecoverySnapshot(RecoveryModel):
-    """检查点完整性与各写节点最新副作用状态。"""
+    """官方检查点与各写节点最新副作用状态。"""
 
     run_id: str = Field(min_length=1, max_length=128)
-    checkpoint: CheckpointIntegritySummary
-    revisions: list[CheckpointRevisionSummary] = Field(default_factory=list)
+    checkpoint: CheckpointPersistenceSummary
+    checkpoints: list[CheckpointHistorySummary] = Field(default_factory=list)
     effects: list[EffectSummary] = Field(default_factory=list)
 
 
@@ -145,7 +123,8 @@ class GeneralAgentRecoveryPreparation(RecoveryModel):
 
     owner: CapabilityResultOwner
     checkpoint_revision: int = Field(ge=1)
-    checkpoint_integrity_status: str = Field(min_length=1, max_length=64)
+    checkpoint_id: str = Field(min_length=1, max_length=256)
+    checkpoint_step: int
     effect_ids: tuple[str, ...] = ()
     capability_result_ids: tuple[str, ...] = ()
     capability_result_content_sha256: tuple[str, ...] = ()
@@ -216,9 +195,9 @@ class GeneralAgentRecoveryCoordinator:
         ]
         if unresolved:
             unresolved = sorted(unresolved, key=lambda item: item.effect_id)
-            evidence = {
+            evidence: dict[str, Any] = {
                 "run_status_before_recovery": run.status.value,
-                "run_checkpoint_revision": run.checkpoint_revision,
+                "projection_revision": run.checkpoint_revision,
                 "effect_ids": [item.effect_id for item in unresolved],
                 "effect_statuses": {
                     item.effect_id: item.status.value for item in unresolved
@@ -242,68 +221,55 @@ class GeneralAgentRecoveryCoordinator:
                 ),
             )
 
-        inspect_thread = getattr(self._graph_checkpointer, "inspect_thread", None)
-        if not callable(inspect_thread):
-            integrity_evidence: dict[str, Any] = {
-                "run_status_before_recovery": run.status.value,
-                "run_checkpoint_revision": run.checkpoint_revision,
-                "checkpoint_integrity_status": "unsupported",
-                "checkpoint_valid_revisions": [],
-                "checkpoint_invalid_revisions": [],
-                "checkpoint_selected_revision": None,
-                "checkpoint_recovered_from_revision": None,
-                "checkpoint_damage_warnings": [
-                    "当前检查点仓储不支持恢复完整性检查。"
-                ],
-                "automatic_restart_count": 0,
-            }
-            raise GeneralAgentRecoveryIntegrityError(
-                "当前检查点仓储不支持恢复完整性检查。",
-                decision=_recovery_decision(
-                    run=run,
-                    action=RecoveryAction.STOP,
-                    reason_code="checkpoint_unrecoverable",
-                    reason="检查点仓储无法提供完整性证据，恢复已安全停止。",
-                    checkpoint_revision=None,
-                    effect_id=None,
-                    evidence=integrity_evidence,
-                ),
-            )
-        checkpoint = inspect_thread(run.run_id)
-        checkpoint_evidence = _checkpoint_integrity_evidence(checkpoint)
-        integrity_status = str(
-            checkpoint_evidence["checkpoint_integrity_status"]
+        checkpoint = await self._graph_checkpointer.aget_tuple(
+            _checkpoint_config(run.conversation_id)
         )
-        selected_revision = checkpoint_evidence[
-            "checkpoint_selected_revision"
-        ]
-        checkpoint_revision = (
-            int(selected_revision)
-            if isinstance(selected_revision, int)
-            else 0
-        )
-        if (
-            checkpoint_revision < 1
-            or integrity_status not in {"valid", "recovered"}
-        ):
+        if checkpoint is None:
             evidence = {
                 "run_status_before_recovery": run.status.value,
-                "run_checkpoint_revision": run.checkpoint_revision,
-                **checkpoint_evidence,
+                "projection_revision": run.checkpoint_revision,
+                "checkpoint_status": "missing",
+                "checkpoint_id": None,
+                "checkpoint_source": None,
+                "checkpoint_step": None,
                 "automatic_restart_count": 0,
             }
             raise GeneralAgentRecoveryIntegrityError(
-                "没有可安全恢复的 LangGraph 检查点修订。",
+                "没有可恢复的 LangGraph 检查点。",
                 decision=_recovery_decision(
                     run=run,
                     action=RecoveryAction.STOP,
                     reason_code="checkpoint_unrecoverable",
-                    reason="不存在可验证的有效检查点修订，恢复已安全停止。",
+                    reason="官方 Checkpointer 中不存在该运行的检查点，恢复已安全停止。",
                     checkpoint_revision=None,
                     effect_id=None,
                     evidence=evidence,
                 ),
             )
+        checkpoint_evidence = _checkpoint_evidence(checkpoint)
+        checkpoint_run_id = _checkpoint_run_id(checkpoint)
+        if checkpoint_run_id != run.run_id:
+            raise GeneralAgentRecoveryIntegrityError(
+                "会话线程的最新检查点不属于当前待恢复运行。",
+                decision=_recovery_decision(
+                    run=run,
+                    action=RecoveryAction.STOP,
+                    reason_code="checkpoint_owner_mismatch",
+                    reason="会话线程已经推进到其他请求，禁止恢复旧运行。",
+                    checkpoint_revision=None,
+                    effect_id=None,
+                    evidence={
+                        **checkpoint_evidence,
+                        "expected_run_id": run.run_id,
+                        "checkpoint_run_id": checkpoint_run_id,
+                        "automatic_restart_count": 0,
+                    },
+                ),
+            )
+        checkpoint_id = str(checkpoint_evidence["checkpoint_id"])
+        checkpoint_step = int(checkpoint_evidence["checkpoint_step"])
+        # 恢复修订只来自官方 checkpoint metadata；业务投影序号仅留作审计。
+        checkpoint_revision = max(1, checkpoint_step + 1)
 
         results = await self._capability_result_repository.list_for_run(owner)
 
@@ -322,7 +288,7 @@ class GeneralAgentRecoveryCoordinator:
         )
         evidence = {
             "run_status_before_recovery": run.status.value,
-            "run_checkpoint_revision": run.checkpoint_revision,
+            "projection_revision": run.checkpoint_revision,
             **checkpoint_evidence,
             "effect_ids": sorted(latest_effects),
             "effect_statuses": {
@@ -380,7 +346,8 @@ class GeneralAgentRecoveryCoordinator:
         return GeneralAgentRecoveryPreparation(
             owner=owner,
             checkpoint_revision=checkpoint_revision,
-            checkpoint_integrity_status=integrity_status,
+            checkpoint_id=checkpoint_id,
+            checkpoint_step=checkpoint_step,
             effect_ids=tuple(sorted(latest_effects)),
             capability_result_ids=tuple(
                 item.result_id for item in results
@@ -421,39 +388,42 @@ class GeneralAgentRecoveryRequiresHumanError(RuntimeError):
         self.decision = decision
 
 
-def _checkpoint_integrity_evidence(checkpoint: object) -> dict[str, Any]:
-    current_revision = int(getattr(checkpoint, "current_revision", 0))
-    integrity_status = str(
-        getattr(checkpoint, "integrity_status", "missing")
-    )
-    valid_revisions = [
-        int(item)
-        for item in getattr(checkpoint, "available_revisions", [])
-    ]
-    invalid_revisions = [
-        int(item)
-        for item in getattr(checkpoint, "invalid_revisions", [])
-    ]
-    recovered_from = getattr(checkpoint, "recovered_from_revision", None)
-    damage_warnings = [
-        str(item) for item in getattr(checkpoint, "damage_warnings", [])
-    ]
-    selected_revision = (
-        current_revision
-        if current_revision >= 1
-        and integrity_status in {"valid", "recovered"}
+def _checkpoint_config(thread_id: str) -> RunnableConfig:
+    return {"configurable": {"thread_id": thread_id}}
+
+
+def _checkpoint_evidence(checkpoint: object) -> dict[str, Any]:
+    config = getattr(checkpoint, "config", {})
+    configurable = config.get("configurable", {})
+    payload = getattr(checkpoint, "checkpoint", {})
+    metadata = getattr(checkpoint, "metadata", {})
+    checkpoint_id = configurable.get("checkpoint_id") or payload.get("id")
+    if not isinstance(checkpoint_id, str) or not checkpoint_id:
+        raise GeneralAgentRecoveryIntegrityError(
+            "官方 Checkpointer 返回的检查点缺少 checkpoint_id。"
+        )
+    raw_step = metadata.get("step", -1)
+    checkpoint_step = int(raw_step) if isinstance(raw_step, int) else -1
+    return {
+        "checkpoint_status": "available",
+        "checkpoint_id": checkpoint_id,
+        "checkpoint_source": str(metadata.get("source", "unknown")),
+        "checkpoint_step": checkpoint_step,
+    }
+
+
+def _checkpoint_run_id(checkpoint: object) -> str | None:
+    payload = getattr(checkpoint, "checkpoint", {})
+    channel_values = payload.get("channel_values", {})
+    run_payload = (
+        channel_values.get("run")
+        if isinstance(channel_values, dict)
         else None
     )
-    return {
-        "checkpoint_integrity_status": integrity_status,
-        "checkpoint_valid_revisions": valid_revisions,
-        "checkpoint_invalid_revisions": invalid_revisions,
-        "checkpoint_selected_revision": selected_revision,
-        "checkpoint_recovered_from_revision": (
-            int(recovered_from) if recovered_from is not None else None
-        ),
-        "checkpoint_damage_warnings": damage_warnings,
-    }
+    if not isinstance(run_payload, dict):
+        return None
+    run_id = run_payload.get("run_id")
+    return run_id if isinstance(run_id, str) else None
 
 
 def _recovery_decision(

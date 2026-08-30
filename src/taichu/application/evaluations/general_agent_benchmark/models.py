@@ -225,7 +225,6 @@ class SyntheticTrackSpec(BenchmarkModel):
 class DecodeConstraints(BenchmarkModel):
     temperature: float = Field(ge=0, le=2)
     max_output_tokens: int = Field(gt=0)
-    response_mode: Literal["text", "json"]
 
 
 class LiveProviderTrackSpec(BenchmarkModel):
@@ -407,7 +406,7 @@ class VerifierId(StrEnum):
     TOOL_CALL_PAIRING = "tool_call_pairing"
     SUBAGENT_SCOPE_ISOLATION = "subagent_scope_isolation"
     MEMORY_USE_OR_REJECT = "memory_use_or_reject"
-    CHECKPOINT_INTEGRITY = "checkpoint_integrity"
+    CHECKPOINT_AVAILABILITY = "checkpoint_availability"
 
 
 class FinalAnswerVerifierConfig(BenchmarkModel):
@@ -431,7 +430,7 @@ class StandardVerifierConfig(BenchmarkModel):
         VerifierId.TOOL_CALL_PAIRING,
         VerifierId.SUBAGENT_SCOPE_ISOLATION,
         VerifierId.MEMORY_USE_OR_REJECT,
-        VerifierId.CHECKPOINT_INTEGRITY,
+        VerifierId.CHECKPOINT_AVAILABILITY,
     ]
 
 

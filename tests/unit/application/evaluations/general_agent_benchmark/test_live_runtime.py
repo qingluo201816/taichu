@@ -8,10 +8,10 @@ from typing import cast
 
 import pytest
 
-from taichu.application.contracts.llm import (
+from taichu.application.contracts.llm import LLMModelProfile
+from taichu.infrastructure.llm.contracts import (
     LLMCost,
     LLMMessage,
-    LLMModelProfile,
     LLMRequest,
     LLMResponse,
     LLMUsage,
@@ -66,7 +66,7 @@ from taichu.infrastructure.evaluations.general_agent_benchmark.synthetic_environ
 from taichu.application.models.llm_replay import LLMCallReplayRecord
 from taichu.application.models.llm_usage import LLMCallRecord
 from taichu.config import Settings
-from taichu.infrastructure.llm.rightcode import RightCodeGatewayError
+from taichu.infrastructure.llm.rightcode import LLMGatewayError
 
 
 def test_legacy_gate_proxy_path_is_removed() -> None:
@@ -99,7 +99,6 @@ class _Gateway:
                 provider="rightcode",
                 upstream_model="deepseek-v4-pro",
                 wire_protocol="anthropic_messages",
-                base_url_key="RIGHTCODE_DEEPSEEK_ANTHROPIC_BASE_URL",
                 enabled=True,
                 is_default=True,
                 supports_streaming=True,
@@ -225,7 +224,7 @@ async def test_live_gateway_preserves_provider_error_without_consuming_script() 
         )
     )
     observer = StrictSyntheticInteractionObserver(driver)
-    error = RightCodeGatewayError(
+    error = LLMGatewayError(
         "LLM_REQUEST_REJECTED",
         "provider failed",
         status_code=404,
@@ -236,13 +235,13 @@ async def test_live_gateway_preserves_provider_error_without_consuming_script() 
         observer=observer,
     )
 
-    with pytest.raises(RightCodeGatewayError, match="provider failed") as captured:
+    with pytest.raises(LLMGatewayError, match="provider failed") as captured:
         await gateway.complete(_request())
 
     assert captured.value is error
     assert driver.current_step is not None
     assert observer.interaction_records == []
-    assert gateway.failures[0].error_type == "RightCodeGatewayError"
+    assert gateway.failures[0].error_type == "LLMGatewayError"
     assert gateway.failures[0].status_code == 404
 
 
@@ -282,7 +281,6 @@ async def test_recording_repositories_keep_exact_usage_and_replay_records() -> N
         upstream_model="deepseek-v4-pro",
         wire_protocol="anthropic_messages",
         status="completed",
-        response_mode="json",
         messages=[{"role": "user", "content": "测试"}],
         response_text='{"status":"completed"}',
         request_sha256="1" * 64,

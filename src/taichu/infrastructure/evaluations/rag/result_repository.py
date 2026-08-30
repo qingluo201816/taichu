@@ -61,7 +61,7 @@ class RAGEvaluationResultRepository:
             return None
         if payload.get("status") == "infrastructure_failed":
             return RAGInfrastructureFailureReport.model_validate(payload)
-        return RAGRunReport.model_validate(payload)
+        return RAGRunReport.model_validate(_without_retired_ablation_fields(payload))
 
 
 _SAFE_RUN_ID_CHARS = frozenset(
@@ -102,3 +102,24 @@ def _result_summary(
 
 def _optional_int(value: object) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+def _without_retired_ablation_fields(
+    payload: dict[str, object],
+) -> dict[str, object]:
+    """读取历史报告时移除已经退出运行契约的 Graph 消融字段。"""
+
+    normalized = dict(payload)
+    deterministic = normalized.get("deterministic")
+    if not isinstance(deterministic, dict):
+        return normalized
+    deterministic = dict(deterministic)
+    deterministic.pop("ablation_scores", None)
+    summary = deterministic.get("summary")
+    if isinstance(summary, dict):
+        summary = dict(summary)
+        summary.pop("mean_ablation_recall_delta", None)
+        summary.pop("mean_ablation_complete_path_delta", None)
+        deterministic["summary"] = summary
+    normalized["deterministic"] = deterministic
+    return normalized

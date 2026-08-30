@@ -82,7 +82,7 @@ _SECURITY_ASSERTION_KINDS = frozenset(
         "authorization_effect",
         "memory_carrier_absence",
         "recovery_reuse",
-        "checkpoint_integrity",
+        "checkpoint_availability",
         "context_preservation",
         "zero_capability_or_side_effect",
     }

@@ -36,6 +36,7 @@ from taichu.domain.models.preferences import (
     EditorBackground,
     EditorFontStyle,
     EditorPreferences,
+    LLMProvider,
 )
 from taichu.domain.models.inbox import (
     ChapterIssue,
@@ -123,6 +124,7 @@ __all__ = [
     "EditorBackground",
     "EditorFontStyle",
     "EditorPreferences",
+    "LLMProvider",
     "IdeaCard",
     "IdeaCardSource",
     "IdeaCardStatus",

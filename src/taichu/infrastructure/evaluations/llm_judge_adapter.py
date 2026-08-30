@@ -1,23 +1,27 @@
-"""统一模型网关驱动的语义评估裁判。"""
+"""LangChain ChatModel 驱动的语义评估裁判。"""
 
 from __future__ import annotations
 
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import HumanMessage, SystemMessage
+from pydantic import BaseModel
+
 from taichu.application.contracts.evaluation_judge import EvaluationJudgeResponse
 from taichu.application.contracts.llm import (
-    LLMGatewayContract,
-    LLMMessage,
+    LLMModelCatalogContract,
     LLMModelIdentity,
-    LLMRequest,
-    response_text,
 )
+from taichu.application.invocations.callbacks import ModelResponseCapture
+from taichu.application.invocations.config import model_call_config
 
 
 class LLMEvaluationJudgeAdapter:
-    """让评估裁判也经过统一网关并记录遥测。"""
+    """通过 LangChain 原生结构化输出调用统一模型传输层。"""
 
     def __init__(
         self,
-        llm: LLMGatewayContract,
+        llm: BaseChatModel,
+        model_catalog: LLMModelCatalogContract,
         *,
         model_id: str,
         configured: bool,
@@ -26,7 +30,7 @@ class LLMEvaluationJudgeAdapter:
         self._model_id = model_id
         self._configured = configured
         profile = next(
-            (item for item in llm.list_models() if item.id == model_id), None
+            (item for item in model_catalog.list_models() if item.id == model_id), None
         )
         self._identity = (
             LLMModelIdentity(
@@ -55,41 +59,51 @@ class LLMEvaluationJudgeAdapter:
     def model_identity(self) -> LLMModelIdentity:
         return self._identity
 
-    async def complete(self, prompt: str) -> EvaluationJudgeResponse:
+    async def complete(
+        self,
+        prompt: str,
+        *,
+        output_schema: type[BaseModel],
+    ) -> EvaluationJudgeResponse:
         if not self.available:
             raise EvaluationJudgeUnavailableError("语义裁判当前不可用。")
-        response = await self._llm.complete(
-            LLMRequest(
+        capture = ModelResponseCapture()
+        structured_model = self._llm.with_structured_output(
+            output_schema,
+            method="function_calling",
+            strict=True,
+        )
+        result = await structured_model.ainvoke(
+            [
+                SystemMessage(content="你是太初知识抽取效果评估裁判。"),
+                HumanMessage(content=prompt),
+            ],
+            config=model_call_config(
                 model_id=self._model_id,
-                messages=(
-                    LLMMessage(
-                        role="system",
-                        content="你是太初知识抽取效果评估裁判，必须返回合法 JSON。",
-                    ),
-                    LLMMessage(role="user", content=prompt),
-                ),
                 task_type="knowledge_evaluation_judge",
                 task_name="知识抽取语义裁判",
-                response_mode="json",
                 feature="知识沉淀评估",
-            )
+                callbacks=(capture,),
+            ),
         )
-        usage = response.usage if hasattr(response, "usage") else None
-        token_usage = None
-        if usage is not None:
-            token_usage = {
+        validated = output_schema.model_validate(result)
+        usage = capture.response.usage_metadata if capture.response is not None else None
+        token_usage = (
+            {
                 key: value
                 for key, value in {
-                    "input_tokens": usage.input_tokens,
-                    "cached_input_tokens": usage.cached_input_tokens,
-                    "output_tokens": usage.output_tokens,
-                    "reasoning_tokens": usage.reasoning_tokens,
-                    "total_tokens": usage.total_tokens,
+                    "input_tokens": usage.get("input_tokens"),
+                    "output_tokens": usage.get("output_tokens"),
+                    "total_tokens": usage.get("total_tokens"),
                 }.items()
-                if value is not None
+                if isinstance(value, int)
             }
+            if usage is not None
+            else None
+        )
         return EvaluationJudgeResponse(
-            raw_response=response_text(response),
+            output=validated,
+            raw_response=validated.model_dump_json(),
             model_identity=self.model_identity,
             token_usage=token_usage,
         )

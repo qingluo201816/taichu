@@ -13,8 +13,11 @@ from time import perf_counter
 from typing import Annotated, Any, TypedDict, cast
 from uuid import uuid4
 
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
+from pydantic import BaseModel
 
 from taichu.application.agents.knowledge_extraction.prompts import (
     CHARACTER_EXPERT_PROMPT,
@@ -29,15 +32,17 @@ from taichu.application.agents.knowledge_extraction.prompts import (
     SUMMARY_SYNTHESIS_PROMPT,
     SUMMARY_SYNTHESIS_PROMPT_VERSION,
 )
-from taichu.application.contracts.agent_run_repository import AgentRunRepository
-from taichu.application.contracts.llm import (
-    LLMGatewayContract,
-    LLMMessage,
-    LLMModelIdentity,
-    LLMRequest,
-    LLMResponse,
-    response_text,
+from taichu.application.agents.knowledge_extraction.schemas import (
+    CharacterExpertOutput,
+    EntityExpertOutput,
+    EventRuleExpertOutput,
+    GeneralExtractionOutput,
+    SummarySynthesisOutput,
 )
+from taichu.application.contracts.agent_run_repository import AgentRunRepository
+from taichu.application.contracts.llm import LLMModelIdentity
+from taichu.application.invocations.callbacks import ModelResponseCapture
+from taichu.application.invocations.config import model_call_config
 from taichu.application.services.chapter_service import ChapterService
 from taichu.application.contracts.knowledge_repository import (
     StructuredKnowledgeRepository,
@@ -65,7 +70,6 @@ from taichu.domain.models.structured_knowledge import (
     StructuredKnowledgeCard,
     StructuredKnowledgeSourceOrigin,
     StructuredKnowledgeType,
-    knowledge_type_schema,
     type_specific_field_keys,
 )
 
@@ -98,7 +102,6 @@ _ENTITY_EXPERT_TYPES = {"location", "faction", "item", "realm", "technique"}
 _EVENT_RULE_EXPERT_TYPES = {"event", "rule"}
 _MAX_MENTION_EVIDENCE_COUNT = 5
 _MAX_GROUP_EVIDENCE_COUNT = 12
-_JSON_REPAIR_MAX_RETRIES = 2
 _KNOWLEDGE_EXTRACTION_MAX_OUTPUT_TOKENS = 100_000
 _SUMMARY_SYNTHESIS_MAX_OUTPUT_TOKENS = 100_000
 _SUMMARY_SYNTHESIS_TIMEOUT_SECONDS = 300.0
@@ -318,7 +321,7 @@ class KnowledgeExtractionDependencies:
     """Runtime dependencies captured by workflow nodes."""
 
     chapter_service: ChapterService
-    llm: LLMGatewayContract
+    llm: BaseChatModel
     knowledge_repository: StructuredKnowledgeRepository
     run_store: AgentRunRepository
     event_sink: KnowledgeExtractionEventSink | None = None
@@ -988,12 +991,13 @@ def _general_extraction(
                 chapter_text=segment,
                 allowed_types=_ALLOWED_TYPE_LABEL,
             )
-            parsed = await _complete_json(
+            parsed = await _complete_structured(
                 state,
                 dependencies,
                 node_name="GeneralExtractionNode",
                 prompt_version=GENERAL_EXTRACTION_PROMPT_VERSION,
                 prompt=prompt,
+                output_schema=GeneralExtractionOutput,
             )
             if parsed is None:
                 state["failed"] = True
@@ -1171,21 +1175,17 @@ def _character_expert(
             return state
         prompt = _render_prompt(
             CHARACTER_EXPERT_PROMPT,
-            character_schema=_json_dump(
-                knowledge_type_schema(StructuredKnowledgeType.CHARACTER).model_dump(
-                    mode="json"
-                )
-            ),
             chapter_id=state["chapter_id"],
             chapter_title=state.get("chapter_title", ""),
             character_entity_groups=_json_dump(entity_groups),
         )
-        parsed = await _complete_json(
+        parsed = await _complete_structured(
             state,
             dependencies,
             node_name="CharacterExpertNode",
             prompt_version=CHARACTER_EXPERT_PROMPT_VERSION,
             prompt=prompt,
+            output_schema=CharacterExpertOutput,
         )
         if parsed is None:
             state["failed"] = True
@@ -1205,7 +1205,7 @@ def _entity_expert(
         entity_groups = state.get("entity_entity_groups", [])
         if not entity_groups:
             return state
-        cards = await dependencies.knowledge_repository.list_confirmed_cards()
+        confirmed_cards = await dependencies.knowledge_repository.list_confirmed_cards()
         active_index = [
             {
                 "id": card.id,
@@ -1214,32 +1214,22 @@ def _entity_expert(
                 "aliases": card.aliases,
                 "summary": card.summary,
             }
-            for card in cards
-        ]
-        entity_schemas = [
-            knowledge_type_schema(knowledge_type).model_dump(mode="json")
-            for knowledge_type in (
-                StructuredKnowledgeType.LOCATION,
-                StructuredKnowledgeType.FACTION,
-                StructuredKnowledgeType.ITEM,
-                StructuredKnowledgeType.REALM,
-                StructuredKnowledgeType.TECHNIQUE,
-            )
+            for card in confirmed_cards
         ]
         prompt = _render_prompt(
             ENTITY_EXPERT_PROMPT,
-            entity_schemas=_json_dump(entity_schemas),
             active_knowledge_index=_json_dump(active_index),
             chapter_id=state["chapter_id"],
             chapter_title=state.get("chapter_title", ""),
             entity_groups=_json_dump(entity_groups),
         )
-        parsed = await _complete_json(
+        parsed = await _complete_structured(
             state,
             dependencies,
             node_name="EntityExpertNode",
             prompt_version=ENTITY_EXPERT_PROMPT_VERSION,
             prompt=prompt,
+            output_schema=EntityExpertOutput,
         )
         if parsed is None:
             state["failed"] = True
@@ -1251,10 +1241,10 @@ def _entity_expert(
             ("factions", "faction"),
             ("items", "item"),
         ):
-            cards = parsed.get(key) if isinstance(parsed, dict) else []
-            if isinstance(cards, list):
+            output_cards = parsed.get(key) if isinstance(parsed, dict) else []
+            if isinstance(output_cards, list):
                 state.setdefault("entity_typed_candidates", []).extend(
-                    _cards_with_type(cards, knowledge_type)
+                    _cards_with_type(output_cards, knowledge_type)
                 )
         return state
 
@@ -1268,7 +1258,7 @@ def _event_rule_expert(
         entity_groups = state.get("event_rule_entity_groups", [])
         if not entity_groups:
             return state
-        cards = await dependencies.knowledge_repository.list_confirmed_cards()
+        confirmed_cards = await dependencies.knowledge_repository.list_confirmed_cards()
         active_rule_index = [
             {
                 "id": card.id,
@@ -1276,30 +1266,23 @@ def _event_rule_expert(
                 "aliases": card.aliases,
                 "summary": card.summary,
             }
-            for card in cards
+            for card in confirmed_cards
             if card.type == StructuredKnowledgeType.RULE
-        ]
-        event_rule_schemas = [
-            knowledge_type_schema(knowledge_type).model_dump(mode="json")
-            for knowledge_type in (
-                StructuredKnowledgeType.EVENT,
-                StructuredKnowledgeType.RULE,
-            )
         ]
         prompt = _render_prompt(
             EVENT_RULE_EXPERT_PROMPT,
-            event_rule_schemas=_json_dump(event_rule_schemas),
             active_rule_index=_json_dump(active_rule_index),
             chapter_id=state["chapter_id"],
             chapter_title=state.get("chapter_title", ""),
             event_rule_entity_groups=_json_dump(entity_groups),
         )
-        parsed = await _complete_json(
+        parsed = await _complete_structured(
             state,
             dependencies,
             node_name="EventRuleExpertNode",
             prompt_version=EVENT_RULE_EXPERT_PROMPT_VERSION,
             prompt=prompt,
+            output_schema=EventRuleExpertOutput,
         )
         if parsed is None:
             state["failed"] = True
@@ -1308,10 +1291,10 @@ def _event_rule_expert(
             ("events", "event"),
             ("rules", "rule"),
         ):
-            cards = parsed.get(key) if isinstance(parsed, dict) else []
-            if isinstance(cards, list):
+            output_cards = parsed.get(key) if isinstance(parsed, dict) else []
+            if isinstance(output_cards, list):
                 state.setdefault("event_rule_typed_candidates", []).extend(
-                    _cards_with_type(cards, knowledge_type)
+                    _cards_with_type(output_cards, knowledge_type)
                 )
         return state
 
@@ -1405,9 +1388,7 @@ def _match_existing(
     dependencies: KnowledgeExtractionDependencies,
 ) -> Callable[[KnowledgeExtractionState], Awaitable[KnowledgeExtractionState]]:
     async def run(state: KnowledgeExtractionState) -> KnowledgeExtractionState:
-        catalog_cards = (
-            await dependencies.knowledge_repository.list_confirmed_cards()
-        )
+        catalog_cards = await dependencies.knowledge_repository.list_confirmed_cards()
         catalog_identity_index = _build_card_identity_index(catalog_cards)
         for candidate in state.get("typed_candidates", []):
             try:
@@ -1526,12 +1507,13 @@ async def synthesize_candidate_summaries(
         chunk_state["llm_calls"] = []
         chunk_state["errors"] = []
         async with semaphore:
-            payload = await _complete_json(
+            payload = await _complete_structured(
                 chunk_state,
                 dependencies,
                 node_name=node_name,
                 prompt_version=SUMMARY_SYNTHESIS_PROMPT_VERSION,
                 prompt=prompt,
+                output_schema=SummarySynthesisOutput,
                 max_output_tokens=_SUMMARY_SYNTHESIS_MAX_OUTPUT_TOKENS,
                 timeout_seconds=_SUMMARY_SYNTHESIS_TIMEOUT_SECONDS,
             )
@@ -1613,25 +1595,19 @@ def _summary_synthesis_failure_message(
     if "已停止等待" in error_text or "调用超过" in error_text:
         return "摘要超时，请重试或编辑摘要后再确认。"
 
-    initial_calls = [
-        call
-        for call in llm_calls
-        if not str(call.get("prompt_version") or "").endswith("_json_repair_v1")
-    ]
     output_limit_reached = any(
         isinstance(call.get("output_tokens"), int)
         and call["output_tokens"] >= _SUMMARY_SYNTHESIS_MAX_OUTPUT_TOKENS
-        for call in initial_calls
+        for call in llm_calls
     )
     provider_reported_truncation = any(
         str(call.get("finish_reason") or "").casefold()
         in {"length", "max_tokens", "max_output_tokens", "incomplete"}
-        for call in initial_calls
+        for call in llm_calls
     )
-    response_ended_mid_json = "Unterminated string" in error_text
-    if output_limit_reached or provider_reported_truncation or response_ended_mid_json:
+    if output_limit_reached or provider_reported_truncation:
         return "摘要输出截断，请重试或编辑摘要后再确认。"
-    if "响应不是有效 JSON" in error_text:
+    if "结构化输出不符合原生工具契约" in error_text:
         return "摘要输出格式错误，请重试或编辑摘要后再确认。"
     if error_text:
         return "摘要调用失败，请重试或编辑摘要后再确认。"
@@ -1733,92 +1709,70 @@ def _write_intermediate_json(
     return run
 
 
-async def _complete_json(
+async def _complete_structured(
     state: KnowledgeExtractionState,
     dependencies: KnowledgeExtractionDependencies,
     *,
     node_name: str,
     prompt_version: str,
     prompt: str,
+    output_schema: type[BaseModel],
     max_output_tokens: int = _KNOWLEDGE_EXTRACTION_MAX_OUTPUT_TOKENS,
     timeout_seconds: float | None = None,
 ) -> dict[str, Any] | None:
-    current_prompt = prompt
-    current_prompt_version = prompt_version
-    last_raw_response = ""
-    last_parse_error: Exception | None = None
+    started_at = _now_iso()
+    timer = perf_counter()
+    raw_response = ""
+    parsed: dict[str, Any] = {}
+    llm_response: AIMessage | None = None
+    capture = ModelResponseCapture()
+    structured_model = dependencies.llm.with_structured_output(
+        output_schema,
+        method="function_calling",
+        strict=True,
+    )
 
-    for attempt_index in range(_JSON_REPAIR_MAX_RETRIES + 1):
-        started_at = _now_iso()
-        timer = perf_counter()
-        raw_response = ""
-        parsed: dict[str, Any] = {}
-        call_error: str | None = None
-        llm_response: LLMResponse | None = None
-
-        try:
-            request = LLMRequest(
+    try:
+        invocation = structured_model.ainvoke(
+            [
+                SystemMessage(content="你是太初知识沉淀工作流节点。"),
+                HumanMessage(content=prompt),
+            ],
+            config=model_call_config(
                 model_id=state.get("model_id") or state.get("model_name") or "",
-                messages=(
-                    LLMMessage(
-                        role="system",
-                        content="你是太初知识沉淀工作流节点，必须严格返回合法 JSON。",
-                    ),
-                    LLMMessage(role="user", content=current_prompt),
-                ),
                 task_type="knowledge_extraction",
                 task_name=_node_label(node_name),
                 run_id=state.get("run_id"),
                 chapter_ids=tuple(_list_strings(state.get("chapter_ids")))
                 or (state.get("chapter_id", ""),),
-                response_mode="json",
                 max_output_tokens=max_output_tokens,
                 feature="知识沉淀",
+                callbacks=(capture,),
+            ),
+        )
+        if timeout_seconds is None:
+            result = await invocation
+        else:
+            async with asyncio.timeout(timeout_seconds):
+                result = await invocation
+        llm_response = capture.response
+    except Exception as caught:  # noqa: BLE001
+        llm_response = capture.response
+        if isinstance(caught, TimeoutError) and timeout_seconds is not None:
+            call_error = (
+                f"{node_name} 的 LLM 调用超过 {timeout_seconds:g} 秒，已停止等待。"
             )
-            if timeout_seconds is None:
-                response = await dependencies.llm.complete(request)
-            else:
-                async with asyncio.timeout(timeout_seconds):
-                    response = await dependencies.llm.complete(request)
-            llm_response = response if isinstance(response, LLMResponse) else None
-            raw_response = response_text(response)
-            parsed_value = json.loads(raw_response)
-            if not isinstance(parsed_value, dict):
-                raise ValueError("LLM 响应 JSON 顶层必须是对象。")
-            parsed = parsed_value
-        except (json.JSONDecodeError, ValueError) as caught:
-            last_raw_response = raw_response
-            last_parse_error = caught
-            call_error = f"{node_name} 的 LLM 响应不是有效 JSON：{caught}"
-        except Exception as caught:  # noqa: BLE001
-            if isinstance(caught, TimeoutError) and timeout_seconds is not None:
-                call_error = (
-                    f"{node_name} 的 LLM 调用超过 {timeout_seconds:g} 秒，已停止等待。"
-                )
-            else:
-                call_error = f"{node_name} 的 LLM 调用失败：{caught}"
-            await _record_llm_completion(
-                state,
-                dependencies,
-                node_name=node_name,
-                prompt_version=current_prompt_version,
-                prompt=current_prompt,
-                raw_response=raw_response,
-                parsed=parsed,
-                started_at=started_at,
-                duration_ms=_elapsed_ms(timer),
-                error=call_error,
-                response=llm_response,
-            )
-            state.setdefault("errors", []).append(call_error)
-            return None
-
+        elif llm_response is not None:
+            call_error = f"{node_name} 的结构化输出不符合原生工具契约：{caught}"
+            raw_response = _raw_ai_message(llm_response)
+        else:
+            call_error = f"{node_name} 的 LLM 调用失败：{caught}"
         await _record_llm_completion(
             state,
             dependencies,
             node_name=node_name,
-            prompt_version=current_prompt_version,
-            prompt=current_prompt,
+            prompt_version=prompt_version,
+            prompt=prompt,
             raw_response=raw_response,
             parsed=parsed,
             started_at=started_at,
@@ -1826,27 +1780,57 @@ async def _complete_json(
             error=call_error,
             response=llm_response,
         )
-
-        if call_error is None:
-            return parsed
-
-        if attempt_index < _JSON_REPAIR_MAX_RETRIES:
-            current_prompt = _json_repair_prompt(
-                node_name=node_name,
-                parse_error=str(last_parse_error),
-                raw_response=last_raw_response,
-            )
-            current_prompt_version = f"{prompt_version}_json_repair_v1"
-            continue
-
-        final_error = (
-            f"{node_name} 的 LLM 响应不是有效 JSON，"
-            f"已重试 {_JSON_REPAIR_MAX_RETRIES} 次：{last_parse_error}"
-        )
-        state.setdefault("errors", []).append(final_error)
+        state.setdefault("errors", []).append(call_error)
         return None
 
-    return None
+    try:
+        validated = output_schema.model_validate(result)
+        parsed = validated.model_dump(mode="json")
+        raw_response = validated.model_dump_json()
+    except ValueError as caught:
+        call_error = f"{node_name} 的结构化输出不符合原生工具契约：{caught}"
+        await _record_llm_completion(
+            state,
+            dependencies,
+            node_name=node_name,
+            prompt_version=prompt_version,
+            prompt=prompt,
+            raw_response=raw_response or _raw_ai_message(llm_response),
+            parsed=parsed,
+            started_at=started_at,
+            duration_ms=_elapsed_ms(timer),
+            error=call_error,
+            response=llm_response,
+        )
+        state.setdefault("errors", []).append(call_error)
+        return None
+
+    await _record_llm_completion(
+        state,
+        dependencies,
+        node_name=node_name,
+        prompt_version=prompt_version,
+        prompt=prompt,
+        raw_response=raw_response,
+        parsed=parsed,
+        started_at=started_at,
+        duration_ms=_elapsed_ms(timer),
+        error=None,
+        response=llm_response,
+    )
+    return parsed
+
+
+def _raw_ai_message(message: AIMessage | None) -> str:
+    if message is None:
+        return ""
+    if len(message.tool_calls) == 1:
+        return json.dumps(
+            message.tool_calls[0].get("args", {}),
+            ensure_ascii=False,
+            separators=(",", ":"),
+        )
+    return str(message.content)
 
 
 async def _record_llm_completion(
@@ -1861,14 +1845,16 @@ async def _record_llm_completion(
     started_at: str,
     duration_ms: int,
     error: str | None,
-    response: LLMResponse | None = None,
+    response: AIMessage | None = None,
 ) -> None:
-    usage = response.usage if response is not None else None
-    cost = response.cost if response is not None else None
+    usage = response.usage_metadata if response is not None else None
+    response_metadata = response.response_metadata if response is not None else {}
+    input_details = usage.get("input_token_details", {}) if usage else {}
+    output_details = usage.get("output_token_details", {}) if usage else {}
     call = {
         "call_id": (
-            response.call_id
-            if response is not None and response.call_id
+            response.id
+            if response is not None and response.id
             else f"llm_call_{node_name}_{uuid4().hex[:8]}"
         ),
         "node_name": node_name,
@@ -1888,16 +1874,16 @@ async def _record_llm_completion(
         "started_at": started_at,
         "finished_at": _now_iso(),
         "duration_ms": duration_ms,
-        "input_tokens": usage.input_tokens if usage else None,
-        "cached_input_tokens": usage.cached_input_tokens if usage else None,
-        "output_tokens": usage.output_tokens if usage else None,
-        "reasoning_tokens": usage.reasoning_tokens if usage else None,
-        "total_tokens": usage.total_tokens if usage else None,
-        "cost_amount": cost.amount if cost else None,
-        "cost_currency": cost.currency if cost else "CNY",
-        "cost_kind": cost.kind if cost else "unavailable",
-        "provider_request_id": response.provider_request_id if response else None,
-        "finish_reason": response.finish_reason if response else None,
+        "input_tokens": usage.get("input_tokens") if usage else None,
+        "cached_input_tokens": input_details.get("cache_read"),
+        "output_tokens": usage.get("output_tokens") if usage else None,
+        "reasoning_tokens": output_details.get("reasoning"),
+        "total_tokens": usage.get("total_tokens") if usage else None,
+        "cost_amount": response_metadata.get("cost_amount"),
+        "cost_currency": response_metadata.get("cost_currency", "CNY"),
+        "cost_kind": response_metadata.get("cost_kind", "unavailable"),
+        "provider_request_id": response_metadata.get("provider_request_id"),
+        "finish_reason": response_metadata.get("finish_reason"),
         "error": error,
     }
     state.setdefault("llm_calls", []).append(call)
@@ -1909,26 +1895,6 @@ async def _record_llm_completion(
             "message": f"模型调用完成：{_node_label(node_name)}。",
             "llm_call": call,
         },
-    )
-
-
-def _json_repair_prompt(
-    *,
-    node_name: str,
-    parse_error: str,
-    raw_response: str,
-) -> str:
-    return (
-        "你是严格的 JSON 修复器。\n"
-        f"节点：{node_name}\n"
-        f"解析错误：{parse_error}\n\n"
-        "任务：只把下面的模型输出修复为合法 JSON。\n"
-        "硬规则：\n"
-        "1. 不允许改写字段名、字段含义、事实内容、数组顺序或对象结构。\n"
-        "2. 只修复 JSON 语法问题，例如中文弯引号、缺失英文双引号、非法换行、尾随逗号。\n"
-        "3. 输出必须是 JSON 对象，不要输出解释、Markdown 或代码块。\n\n"
-        "待修复输出：\n"
-        f"{raw_response}"
     )
 
 

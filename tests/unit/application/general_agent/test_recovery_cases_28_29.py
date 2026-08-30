@@ -1,8 +1,9 @@
-"""案例 28—29：有序多次中断与 Checkpoint 完整性恢复。"""
+"""案例 28—29：有序多次中断与官方 Checkpointer 恢复。"""
 
 from __future__ import annotations
 
-import asyncio
+from tests.fakes.capability_results import in_memory_capability_result_repository
+
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from uuid import uuid4
@@ -56,7 +57,6 @@ from taichu.infrastructure.evaluations.general_agent_benchmark.recovery_harness 
     GeneralAgentRecoveryHarness,
 )
 from taichu.infrastructure.general_agent_runs import (
-    JsonGeneralAgentCapabilityResultRepository,
     JsonGeneralAgentEffectRepository,
 )
 from taichu.infrastructure.storage.markdown_backend import (
@@ -66,9 +66,10 @@ from tests.unit.application.general_agent.test_recovery_cases_26_27 import (
     _prepare_patch_fixture,
 )
 from tests.unit.application.general_agent.test_runtime import (
-    _ScriptedGateway,
+    _ScriptedChatModel,
     _TraceRepository,
     _async_test,
+    _checkpointer,
     _register_tools,
     _runtime,
 )
@@ -91,7 +92,7 @@ async def test_recovery_case_28_handles_two_ordered_interruptions_without_repeat
     traces = _TraceRepository()
     write_calls: list[str] = []
     reconciliation_calls: list[str] = []
-    gateway = _ScriptedGateway(
+    gateway = _ScriptedChatModel(
         plans=[
             {
                 "rationale": "同一计划先完成两次只读，再执行一次确定性写入。",
@@ -178,19 +179,18 @@ async def test_recovery_case_28_handles_two_ordered_interruptions_without_repeat
             ),
         ),
     )
-
     assert result.triggered_ordinals == (1, 2)
     assert result.recover_interrupted_count == 2
     assert len(result.interrupted_runs) == 2
-    assert {
-        item.run_id for item in result.interrupted_runs
-    } == {result.interrupted_run.run_id}
-    assert {
-        item.conversation_id for item in result.interrupted_runs
-    } == {result.interrupted_run.conversation_id}
-    assert {
-        item.plan_revision for item in result.interrupted_runs
-    } == {result.interrupted_run.plan_revision}
+    assert {item.run_id for item in result.interrupted_runs} == {
+        result.interrupted_run.run_id
+    }
+    assert {item.conversation_id for item in result.interrupted_runs} == {
+        result.interrupted_run.conversation_id
+    }
+    assert {item.plan_revision for item in result.interrupted_runs} == {
+        result.interrupted_run.plan_revision
+    }
     assert result.recovered_run.run_id == result.interrupted_run.run_id
     assert result.recovered_run.conversation_id == (
         result.interrupted_run.conversation_id
@@ -213,14 +213,15 @@ async def test_recovery_case_28_handles_two_ordered_interruptions_without_repeat
         conversation_id=result.recovered_run.conversation_id,
         run_id=result.recovered_run.run_id,
     )
-    records = await JsonGeneralAgentCapabilityResultRepository(
+    records = await in_memory_capability_result_repository(
         tmp_path / "general_agent_capability_results"
     ).list_for_run(owner)
     assert len(records) == 2
     assert len({record.result_id for record in records}) == 2
-    assert {
-        record.identity.node_id for record in records
-    } == {"read_structure_first", "read_structure_second"}
+    assert {record.identity.node_id for record in records} == {
+        "read_structure_first",
+        "read_structure_second",
+    }
     assert (
         sum(
             trace.capability_type == "tool"
@@ -273,14 +274,12 @@ async def test_recovery_case_28_handles_two_ordered_interruptions_without_repeat
 
 
 @_async_test
-async def test_recovery_case_29_stops_without_graph_restart_when_no_revision_valid(
+async def test_recovery_case_29_stops_when_official_checkpoint_is_missing(
     tmp_path: Path,
 ) -> None:
     traces = _TraceRepository()
     gateway = _read_gateway()
-    adapter = FaultPressureAdapter(
-        JsonFaultTriggerStore(tmp_path / "fault_pressure")
-    )
+    adapter = FaultPressureAdapter(JsonFaultTriggerStore(tmp_path / "fault_pressure"))
     hook = adapter.bind_runtime(
         plan_id="fault_prepare_unrecoverable_checkpoint",
         steps=(
@@ -301,22 +300,13 @@ async def test_recovery_case_29_stops_without_graph_restart_when_no_revision_val
     finally:
         await first_runtime.shutdown()
 
-    revision_root = (
-        tmp_path
-        / "derived"
-        / "general_agent_graph_checkpoints"
-        / interrupted.run_id
-        / "revisions"
-    )
-    revisions = sorted(revision_root.glob("*.json"))
-    assert revisions
-    revisions[0].write_text("{全修订链损坏", encoding="utf-8")
+    await _checkpointer(tmp_path).adelete_thread(interrupted.conversation_id)
 
     checkpoint_adapter = FaultPressureAdapter(
         JsonFaultTriggerStore(tmp_path / "checkpoint_fault_pressure")
     )
     checkpoint_plan = checkpoint_adapter.store.load_or_create_plan(
-        plan_id="fault_checkpoint_integrity_validation",
+        plan_id="fault_checkpoint_availability_validation",
         run_identity=FaultRunIdentity(
             conversation_id=interrupted.conversation_id,
             run_id=interrupted.run_id,
@@ -344,9 +334,7 @@ async def test_recovery_case_29_stops_without_graph_restart_when_no_revision_val
 
     assert still_interrupted.status is interrupted.status
     assert still_interrupted.recovery_decisions == []
-    assert checkpoint_adapter.store.load(
-        checkpoint_plan
-    ).triggered_ordinals == (1,)
+    assert checkpoint_adapter.store.load(checkpoint_plan).triggered_ordinals == (1,)
 
     restarted = _read_runtime(
         tmp_path,
@@ -375,109 +363,10 @@ async def test_recovery_case_29_stops_without_graph_restart_when_no_revision_val
     assert decision.action is RecoveryAction.STOP
     assert decision.reason_code == "checkpoint_unrecoverable"
     assert decision.checkpoint_revision is None
-    assert decision.evidence["checkpoint_valid_revisions"] == []
-    assert decision.evidence["checkpoint_selected_revision"] is None
-    assert decision.evidence["checkpoint_invalid_revisions"]
+    assert decision.evidence["checkpoint_status"] == "missing"
+    assert decision.evidence["checkpoint_id"] is None
+    assert decision.evidence["checkpoint_step"] is None
     assert decision.evidence["automatic_restart_count"] == 0
-
-
-@_async_test
-async def test_recovery_case_29_resumes_from_latest_explicitly_valid_revision(
-    tmp_path: Path,
-) -> None:
-    traces = _TraceRepository()
-    gateway = _read_gateway()
-    adapter = FaultPressureAdapter(
-        JsonFaultTriggerStore(tmp_path / "fault_pressure")
-    )
-    hook = adapter.bind_runtime(
-        plan_id="fault_before_checkpoint_tail_repair",
-        steps=(
-            FaultStep(
-                ordinal=1,
-                point=FaultPoint.VERIFICATION_STARTED,
-                once=True,
-            ),
-        ),
-    )
-    first_runtime = _read_runtime(tmp_path, gateway, traces, hook)
-    try:
-        with pytest.raises(InjectedProcessTermination):
-            await first_runtime.run(user_goal="读取结构后给出结论。")
-        plan = hook.resolved_plan
-        assert plan is not None
-        interrupted = await first_runtime.get(plan.run_identity.run_id)
-    finally:
-        await first_runtime.shutdown()
-
-    revision_root = (
-        tmp_path
-        / "derived"
-        / "general_agent_graph_checkpoints"
-        / interrupted.run_id
-        / "revisions"
-    )
-    revisions = sorted(revision_root.glob("*.json"))
-    assert len(revisions) >= 2
-    invalid_revision = int(revisions[-1].stem)
-    selected_revision = int(revisions[-2].stem)
-    revisions[-1].write_text("{坏尾修订", encoding="utf-8")
-
-    restarted = _read_runtime(tmp_path, gateway, traces, None)
-    try:
-        before = await restarted.recovery_snapshot(interrupted.run_id)
-        assert before.checkpoint.integrity_status == "recovered"
-        assert before.checkpoint.current_revision == selected_revision
-        assert before.checkpoint.invalid_revisions == [invalid_revision]
-        assert before.checkpoint.recovered_from_revision == selected_revision
-
-        assert await restarted.recover_interrupted() == 1
-        completed = interrupted
-        for _ in range(200):
-            await asyncio.sleep(0.01)
-            completed = await restarted.get(interrupted.run_id)
-            if completed.status is GeneralAgentRunStatus.COMPLETED:
-                break
-        after = await restarted.recovery_snapshot(interrupted.run_id)
-    finally:
-        await restarted.shutdown()
-
-    assert completed.status is GeneralAgentRunStatus.COMPLETED
-    assert completed.run_id == interrupted.run_id
-    assert [request.task_name for request in gateway.requests].count(
-        "general_writing_orchestrator.plan"
-    ) == 1
-    assert [request.task_name for request in gateway.requests].count(
-        "general_writing_orchestrator.verify"
-    ) == 1
-    assert (
-        sum(
-            trace.capability_type == "tool"
-            and trace.capability_name == "get_novel_structure"
-            and trace.status.value == "completed"
-            for trace in traces.records
-        )
-        == 1
-    )
-    assert len(completed.recovery_decisions) == 1
-    decision = completed.recovery_decisions[0]
-    assert decision.action is RecoveryAction.RESUME
-    assert decision.reason_code == "verification_resumed"
-    assert decision.checkpoint_revision == selected_revision
-    assert decision.evidence["checkpoint_valid_revisions"] == list(
-        range(1, selected_revision + 1)
-    )
-    assert decision.evidence["checkpoint_invalid_revisions"] == [
-        invalid_revision
-    ]
-    assert decision.evidence["checkpoint_selected_revision"] == (
-        selected_revision
-    )
-    assert decision.evidence["automatic_restart_count"] == 0
-    assert decision.evidence["checkpoint_resume_count"] == 1
-    assert after.checkpoint.invalid_revisions == [invalid_revision]
-    assert after.checkpoint.current_revision > invalid_revision
-    assert after.checkpoint.recovered_from_revision == selected_revision
 
 
 @_async_test
@@ -486,9 +375,7 @@ async def test_recovery_case_29_unknown_effect_precedes_valid_checkpoint(
 ) -> None:
     traces = _TraceRepository()
     gateway = _read_gateway()
-    adapter = FaultPressureAdapter(
-        JsonFaultTriggerStore(tmp_path / "fault_pressure")
-    )
+    adapter = FaultPressureAdapter(JsonFaultTriggerStore(tmp_path / "fault_pressure"))
     hook = adapter.bind_runtime(
         plan_id="fault_prepare_unknown_effect",
         steps=(
@@ -532,6 +419,10 @@ async def test_recovery_case_29_unknown_effect_precedes_valid_checkpoint(
     try:
         assert await restarted.recover_interrupted() == 0
         stopped = await restarted.get(interrupted.run_id)
+        cancelled = await restarted.resume(
+            interrupted.run_id,
+            effect_resolution="cancel",
+        )
     finally:
         await restarted.shutdown()
 
@@ -539,6 +430,13 @@ async def test_recovery_case_29_unknown_effect_precedes_valid_checkpoint(
     assert stopped.resumable is True
     assert stopped.pending_human_request is not None
     assert stopped.pending_human_request.kind == "effect_reconciliation"
+    assert stopped.pending_human_request.effect_id == effect_id
+    assert stopped.pending_human_request.node_id == "write_unknown"
+    assert stopped.pending_human_request.tool_name == "apply_manuscript_patch"
+    assert cancelled.run_id == interrupted.run_id
+    assert cancelled.status is GeneralAgentRunStatus.CANCELLED
+    assert cancelled.resumable is False
+    assert cancelled.pending_human_request is None
     assert [request.task_name for request in gateway.requests].count(
         "general_writing_orchestrator.plan"
     ) == 1
@@ -553,7 +451,7 @@ async def test_recovery_case_29_unknown_effect_precedes_valid_checkpoint(
 def _write_and_read_runtime_builder(
     *,
     root: Path,
-    gateway: _ScriptedGateway,
+    gateway: _ScriptedChatModel,
     traces: _TraceRepository,
     write_handler: _WriteHandler,
     reconciler: _Reconciler,
@@ -589,7 +487,7 @@ def _write_and_read_runtime_builder(
 
 def _read_runtime(
     root: Path,
-    gateway: _ScriptedGateway,
+    gateway: _ScriptedChatModel,
     traces: _TraceRepository,
     hook: GeneralAgentFaultHook | None,
 ) -> GeneralAgentRuntimeService:
@@ -626,8 +524,8 @@ def _tool_registry(
     )
 
 
-def _read_gateway() -> _ScriptedGateway:
-    return _ScriptedGateway(
+def _read_gateway() -> _ScriptedChatModel:
+    return _ScriptedChatModel(
         plans=[
             {
                 "rationale": "读取一次结构后给出结论。",

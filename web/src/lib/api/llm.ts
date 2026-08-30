@@ -5,12 +5,26 @@ import type {
   LLMCallStatus,
   LLMModelListResponse,
   LLMModelProbeResponse,
+  LLMProviderListResponse,
   LLMUsageSummary,
   LLMTokenTrendResponse,
 } from "@/lib/types/llm";
 
 export function listLLMModels(): Promise<LLMModelListResponse> {
   return apiRequest<LLMModelListResponse>("/api/llm/models");
+}
+
+export function listLLMProviders(): Promise<LLMProviderListResponse> {
+  return apiRequest<LLMProviderListResponse>("/api/llm/providers");
+}
+
+export function switchLLMProvider(
+  providerId: LLMProviderListResponse["active_provider_id"],
+): Promise<LLMProviderListResponse> {
+  return apiRequest<LLMProviderListResponse>("/api/llm/providers/active", {
+    method: "PUT",
+    body: JSON.stringify({ provider_id: providerId }),
+  });
 }
 
 export function probeLLMModel(modelId: string): Promise<LLMModelProbeResponse> {

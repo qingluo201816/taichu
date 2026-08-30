@@ -2,15 +2,11 @@
 
 import unittest
 
-from taichu.application.contracts.llm import (
-    LLMMessage,
-    LLMModelIdentity,
-    LLMRequest,
-)
+from taichu.application.contracts.llm import LLMModelIdentity
+from taichu.infrastructure.llm.contracts import LLMMessage, LLMRequest
 from taichu.config import Settings
-from taichu.infrastructure.llm.adapter import LangChainLLMAdapter
 from taichu.infrastructure.llm.catalog import LLMModelCatalog
-from taichu.infrastructure.llm.mock import MVPNoRealLLMChatModel
+from tests.fakes import MVPNoRealLLMChatModel, make_test_llm_gateway
 
 
 class LLMRuntimeIdentityTest(unittest.IsolatedAsyncioTestCase):
@@ -27,7 +23,7 @@ class LLMRuntimeIdentityTest(unittest.IsolatedAsyncioTestCase):
             endpoint_kind="test",
             known=True,
         )
-        adapter = LangChainLLMAdapter(
+        adapter = make_test_llm_gateway(
             MVPNoRealLLMChatModel(response_text="模型响应"), identity
         )
         response = await adapter.complete(

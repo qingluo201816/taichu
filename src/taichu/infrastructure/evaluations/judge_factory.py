@@ -1,6 +1,8 @@
-"""从统一 Right Code 网关创建语义评估裁判。"""
+"""从 LangChain ChatModel 创建语义评估裁判。"""
 
-from taichu.application.contracts.llm import LLMGatewayContract
+from langchain_core.language_models.chat_models import BaseChatModel
+
+from taichu.application.contracts.llm import LLMModelCatalogContract
 from taichu.config import Settings
 from taichu.infrastructure.evaluations.llm_judge_adapter import (
     LLMEvaluationJudgeAdapter,
@@ -9,7 +11,8 @@ from taichu.infrastructure.evaluations.llm_judge_adapter import (
 
 def create_evaluation_judge(
     settings: Settings,
-    gateway: LLMGatewayContract,
+    llm: BaseChatModel,
+    model_catalog: LLMModelCatalogContract,
     *,
     configured: bool,
 ) -> LLMEvaluationJudgeAdapter:
@@ -17,12 +20,14 @@ def create_evaluation_judge(
     model_id = settings.evaluation_judge_model.strip()
     if not model_id:
         default = next(
-            (profile for profile in gateway.list_models() if profile.is_default), None
+            (profile for profile in model_catalog.list_models() if profile.is_default),
+            None,
         )
         model_id = default.id if default is not None else ""
-    known = any(profile.id == model_id for profile in gateway.list_models())
+    known = any(profile.id == model_id for profile in model_catalog.list_models())
     return LLMEvaluationJudgeAdapter(
-        gateway,
+        llm,
+        model_catalog,
         model_id=model_id,
         configured=configured and known,
     )

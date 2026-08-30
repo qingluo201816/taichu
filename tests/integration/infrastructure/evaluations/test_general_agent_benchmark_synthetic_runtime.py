@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+from tests.fakes.capability_results import in_memory_capability_result_repository
+
 import asyncio
 import hashlib
 import json
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
+from langgraph.checkpoint.memory import InMemorySaver
 
 from taichu.application.capabilities import CapabilityContext
 from taichu.application.evaluations.general_agent_benchmark.canonical import (
@@ -73,10 +77,7 @@ from taichu.application.tools import (
 from taichu.application.tools._shared import sha256_text
 from taichu.application.tools.contract import ToolPlugin
 from taichu.application.tools.registry import ToolRegistry
-from taichu.infrastructure.agent_memory import (
-    JsonAgentMemoryLexicalIndex,
-    JsonAgentMemoryRepository,
-)
+from tests.fakes.agent_memory import in_memory_agent_memory_repository
 from taichu.infrastructure.artifacts import JsonIntermediateArtifactRepository
 from taichu.infrastructure.evaluations.general_agent_benchmark.synthetic_runtime import (
     ObservedSubagentRegistry,
@@ -95,13 +96,12 @@ from taichu.infrastructure.evaluations.general_agent_benchmark.runtime_factory i
     production_capability_catalog_snapshot,
 )
 from taichu.infrastructure.general_agent_runs import (
-    JsonGeneralAgentCapabilityResultRepository,
     JsonGeneralAgentContextSnapshotRepository,
     JsonGeneralAgentEffectRepository,
     JsonGeneralAgentRunRepository,
-    JsonLangGraphCheckpointSaver,
 )
 from taichu.infrastructure.llm_replays import JsonLLMCallReplayRepository
+from taichu.infrastructure.llm.adapter import GatewayChatModel
 from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
@@ -274,6 +274,23 @@ async def _exercise_workspace_cleanup_failure(
     assert tuple(tmp_path.glob("workspace_*"))
 
 
+def _failed_case_summary(items: list[Any]) -> list[dict[str, object]]:
+    return [
+        {
+            "case_id": item.case_id,
+            "conclusion": item.conclusion.value,
+            "problems": item.problems,
+            "failed_conditions": [
+                condition.model_dump(mode="json")
+                for gate in item.gates
+                for condition in gate.conditions
+                if condition.status.value != "passed"
+            ],
+        }
+        for item in items
+    ]
+
+
 async def _exercise_full_suite_stability(tmp_path: Path) -> None:
     catalog = production_capability_catalog_snapshot()
     suite = load_authored_suite(
@@ -301,8 +318,8 @@ async def _exercise_full_suite_stability(tmp_path: Path) -> None:
     first, second = results
     failed_first = [item for item in first.cases if item.conclusion.value != "passed"]
     failed_second = [item for item in second.cases if item.conclusion.value != "passed"]
-    assert first.complete is True, failed_first
-    assert second.complete is True, failed_second
+    assert first.complete is True, _failed_case_summary(failed_first)
+    assert second.complete is True, _failed_case_summary(failed_second)
     assert first.case_count == second.case_count == 37
     assert first.passed_case_count == second.passed_case_count == 37
     assert first.failed_case_count == second.failed_case_count == 0
@@ -778,7 +795,7 @@ async def _exercise_real_search_case(tmp_path: Path) -> None:
     subagents = SubagentRegistry(
         CapabilityContext(
             capabilities={
-                "llm": gateway,
+                "llm": GatewayChatModel(gateway, model_id="synthetic-model"),
                 "model_role_router": ModelRoleRouter("synthetic-model"),
                 "tool_registry": tools,
             }
@@ -786,19 +803,18 @@ async def _exercise_real_search_case(tmp_path: Path) -> None:
         traces,
     )
     memory = AgentMemoryService(
-        repository=JsonAgentMemoryRepository(tmp_path),
-        lexical_index=JsonAgentMemoryLexicalIndex(tmp_path),
+        repository=in_memory_agent_memory_repository(tmp_path),
     )
-    checkpoints = JsonLangGraphCheckpointSaver(tmp_path)
+    checkpoints = InMemorySaver()
     effects = JsonGeneralAgentEffectRepository(tmp_path)
-    capability_results = JsonGeneralAgentCapabilityResultRepository(
+    capability_results = in_memory_capability_result_repository(
         tmp_path / "runtime" / "capability_results"
     )
     runtime = GeneralAgentRuntimeService(
         repository=JsonGeneralAgentRunRepository(tmp_path),
         event_center=GeneralAgentEventCenter(),
         orchestrator=OrchestratorAgent(
-            llm=gateway,
+            llm=GatewayChatModel(gateway, model_id="synthetic-model"),
             model_router=ModelRoleRouter("synthetic-model"),
             tool_registry=tools,
             subagent_registry=subagents,
@@ -813,7 +829,6 @@ async def _exercise_real_search_case(tmp_path: Path) -> None:
                 tools,
                 subagents,
             ),
-            graph_checkpointer=checkpoints,
             effect_repository=effects,
         ),
         policy_service=policy,
@@ -965,7 +980,7 @@ async def _exercise_real_canon_subagent_case(tmp_path: Path) -> None:
     physical_subagents = SubagentRegistry(
         CapabilityContext(
             capabilities={
-                "llm": gateway,
+                "llm": GatewayChatModel(gateway, model_id="synthetic-model"),
                 "model_role_router": ModelRoleRouter(
                     "synthetic-model",
                     {"canon_evidence": "synthetic-model"},
@@ -993,19 +1008,18 @@ async def _exercise_real_canon_subagent_case(tmp_path: Path) -> None:
         },
     )
     memory = AgentMemoryService(
-        repository=JsonAgentMemoryRepository(tmp_path),
-        lexical_index=JsonAgentMemoryLexicalIndex(tmp_path),
+        repository=in_memory_agent_memory_repository(tmp_path),
     )
-    checkpoints = JsonLangGraphCheckpointSaver(tmp_path)
+    checkpoints = InMemorySaver()
     effects = JsonGeneralAgentEffectRepository(tmp_path)
-    capability_results = JsonGeneralAgentCapabilityResultRepository(
+    capability_results = in_memory_capability_result_repository(
         tmp_path / "runtime" / "capability_results"
     )
     runtime = GeneralAgentRuntimeService(
         repository=JsonGeneralAgentRunRepository(tmp_path),
         event_center=GeneralAgentEventCenter(),
         orchestrator=OrchestratorAgent(
-            llm=gateway,
+            llm=GatewayChatModel(gateway, model_id="synthetic-model"),
             model_router=ModelRoleRouter("synthetic-model"),
             tool_registry=tools,
             subagent_registry=subagents,
@@ -1020,7 +1034,6 @@ async def _exercise_real_canon_subagent_case(tmp_path: Path) -> None:
                 tools,
                 subagents,
             ),
-            graph_checkpointer=checkpoints,
             effect_repository=effects,
         ),
         policy_service=policy,
@@ -1228,7 +1241,7 @@ async def _exercise_real_authorized_write_case(tmp_path: Path) -> None:
     subagents = SubagentRegistry(
         CapabilityContext(
             capabilities={
-                "llm": gateway,
+                "llm": GatewayChatModel(gateway, model_id="synthetic-model"),
                 "model_role_router": ModelRoleRouter("synthetic-model"),
                 "tool_registry": tools,
             }
@@ -1236,19 +1249,18 @@ async def _exercise_real_authorized_write_case(tmp_path: Path) -> None:
         traces,
     )
     memory = AgentMemoryService(
-        repository=JsonAgentMemoryRepository(tmp_path),
-        lexical_index=JsonAgentMemoryLexicalIndex(tmp_path),
+        repository=in_memory_agent_memory_repository(tmp_path),
     )
-    checkpoints = JsonLangGraphCheckpointSaver(tmp_path)
+    checkpoints = InMemorySaver()
     effects = JsonGeneralAgentEffectRepository(tmp_path)
-    capability_results = JsonGeneralAgentCapabilityResultRepository(
+    capability_results = in_memory_capability_result_repository(
         tmp_path / "runtime" / "capability_results"
     )
     runtime = GeneralAgentRuntimeService(
         repository=JsonGeneralAgentRunRepository(tmp_path),
         event_center=GeneralAgentEventCenter(),
         orchestrator=OrchestratorAgent(
-            llm=gateway,
+            llm=GatewayChatModel(gateway, model_id="synthetic-model"),
             model_router=ModelRoleRouter("synthetic-model"),
             tool_registry=tools,
             subagent_registry=subagents,
@@ -1263,7 +1275,6 @@ async def _exercise_real_authorized_write_case(tmp_path: Path) -> None:
                 tools,
                 subagents,
             ),
-            graph_checkpointer=checkpoints,
             effect_repository=effects,
         ),
         policy_service=policy,
@@ -1356,7 +1367,7 @@ async def _exercise_real_external_case(tmp_path: Path) -> None:
     physical_subagents = SubagentRegistry(
         CapabilityContext(
             capabilities={
-                "llm": gateway,
+                "llm": GatewayChatModel(gateway, model_id="synthetic-model"),
                 "model_role_router": ModelRoleRouter(
                     "synthetic-model",
                     {"external_research": "synthetic-model"},
@@ -1385,19 +1396,18 @@ async def _exercise_real_external_case(tmp_path: Path) -> None:
         },
     )
     memory = AgentMemoryService(
-        repository=JsonAgentMemoryRepository(tmp_path),
-        lexical_index=JsonAgentMemoryLexicalIndex(tmp_path),
+        repository=in_memory_agent_memory_repository(tmp_path),
     )
-    checkpoints = JsonLangGraphCheckpointSaver(tmp_path)
+    checkpoints = InMemorySaver()
     effects = JsonGeneralAgentEffectRepository(tmp_path)
-    capability_results = JsonGeneralAgentCapabilityResultRepository(
+    capability_results = in_memory_capability_result_repository(
         tmp_path / "runtime" / "capability_results"
     )
     runtime = GeneralAgentRuntimeService(
         repository=JsonGeneralAgentRunRepository(tmp_path),
         event_center=GeneralAgentEventCenter(),
         orchestrator=OrchestratorAgent(
-            llm=gateway,
+            llm=GatewayChatModel(gateway, model_id="synthetic-model"),
             model_router=ModelRoleRouter("synthetic-model"),
             tool_registry=tools,
             subagent_registry=subagents,
@@ -1412,7 +1422,6 @@ async def _exercise_real_external_case(tmp_path: Path) -> None:
                 tools,
                 subagents,
             ),
-            graph_checkpointer=checkpoints,
             effect_repository=effects,
         ),
         policy_service=policy,

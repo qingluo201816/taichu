@@ -1,8 +1,8 @@
 # 统一检索与 Agentic RAG 能力架构
 
 > 讨论日期：2026-08-18  
-> 更新日期：2026-08-18  
-> 状态：已实现
+> 更新日期：2026-08-24
+> 状态：已实现；生产检索已收敛为 Passage-first 受控图扩展并通过 30 条全量回归门禁
 
 ## 决策结论
 
@@ -32,7 +32,7 @@
 
 - Passage Collection 同时索引正文片段和已确认知识卡，承载中文 BM25 与 Dense 向量。
 - Entity 与 Relation Collections 承载实体、关系、来源引用和多跳扩展。
-- 正式检索链固定为 BM25 Top 30 与图关系增强 Dense Top 30，经 `RRFRanker(k=60)` 融合后由 BGE 重排到 Top 10，再对正文命中展开同章前后邻块。
+- 正式检索链固定为 BM25 Passage Top 30 与 Dense Passage Top 30，经 `RRFRanker(k=60)` 先融合为 Passage Top 30；从这些 Passage 的 `entity_ids/relation_ids` 取得种子并执行一次受控 Graph Expansion，通过关系的 `passage_ids` 回取 Graph Passage，与原候选合并去重后只调用一次 BGE。Top 10 作为检索指标与追踪边界；上下文装配再从统一排序中选择最多 3 份互补证据，并按问题类型执行原文句窗或同章父级邻域重建。
 - 知识卡命中回 MongoDB 校验仍为确认态并读取最新投影；正文命中回 Markdown 校验哈希并读取原文。
 
 ## Tool 能力边界
@@ -58,7 +58,7 @@
 
 ## Agentic RAG 边界
 
-一次 `retrieve_story_context` 调用完成单轮 Hybrid RAG：图关系查询增强、BM25 与 Dense 双路召回、RRF、BGE、权威回源和正文邻域展开。工具内部不得隐藏无上限自主循环。
+一次 `retrieve_story_context` 调用完成单轮 Hybrid RAG：BM25 与 Dense 双路 Passage 召回、RRF、由命中 Passage 驱动的受控图扩展、Graph Passage 合并、单次 BGE、查询感知上下文装配和权威回源。查询阶段不再调用 LLM 做实体抽取或关系重排，工具内部也不得隐藏无上限自主循环。
 
 多轮 Agentic RAG 由高层编排 Agent 或事实与证据子 Agent 显式执行：拆解问题、第一次检索、检查缺口、按需改写或补充查询、交叉验证、输出证据包。简单请求不得强制进入多轮链路，复杂请求必须受检索轮数、字符和模型调用预算约束。
 
@@ -71,4 +71,3 @@
 - Milvus 混合召回：`src/taichu/infrastructure/vector_graph/`
 - 高层编排规则：`src/taichu/application/general_agent/orchestrator.py`
 - 子 Agent 检索授权：`src/taichu/application/subagents/_factory.py`
-

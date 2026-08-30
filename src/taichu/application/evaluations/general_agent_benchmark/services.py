@@ -159,7 +159,7 @@ _BENCHMARK_CAPABILITY_DOMAINS = (
     BenchmarkCapabilityDomainEntry(
         domain_id="checkpoint_and_recovery",
         name="检查点、中断与恢复",
-        purpose="验证不同故障窗口中的结果复用、幂等执行、副作用对账和检查点完整性。",
+        purpose="验证不同故障窗口中的结果复用、幂等执行、副作用对账和官方检查点可用性。",
         case_ids=(
             "recovery_after_plan_before_execution",
             "recovery_tool_result_before_consumption",
@@ -168,7 +168,7 @@ _BENCHMARK_CAPABILITY_DOMAINS = (
             "recovery_after_write_before_effect_success",
             "recovery_verification_interruption",
             "recovery_multiple_interruptions",
-            "recovery_checkpoint_integrity_or_version",
+            "recovery_checkpoint_unavailable",
         ),
     ),
     BenchmarkCapabilityDomainEntry(

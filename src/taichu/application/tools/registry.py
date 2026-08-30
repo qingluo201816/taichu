@@ -1,15 +1,29 @@
 """校验、注册和通过统一协议调用可复用 Tool。"""
 
 import asyncio
+import hashlib
+import logging
 from time import perf_counter
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
+from typing import Annotated
 from uuid import uuid4
 
+from langchain.tools import ToolRuntime
+from langchain_core.tools import (
+    BaseTool,
+    InjectedToolCallId,
+    StructuredTool,
+)
 from pydantic import BaseModel
 
 from taichu.application.capabilities import CapabilityContext
 from taichu.application.contracts.invocation_trace import (
     InvocationTraceRepository,
+)
+from taichu.application.contracts.general_agent_tool_budget import (
+    GeneralAgentToolBudgetClaim,
+    GeneralAgentToolBudgetOwner,
+    GeneralAgentToolBudgetRepository,
 )
 from taichu.application.invocations.models import (
     InvocationContext,
@@ -30,7 +44,11 @@ from taichu.application.tools.contract import (
     ToolReconciliationResult,
     ToolReconciliationStatus,
     ToolSideEffect,
+    langchain_agent_args_schema,
+    langchain_direct_args_schema,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ToolRegistry:
@@ -40,10 +58,15 @@ class ToolRegistry:
         self,
         context: CapabilityContext,
         trace_repository: InvocationTraceRepository | None = None,
+        *,
+        tool_budget_repository: GeneralAgentToolBudgetRepository | None = None,
+        require_tool_budget: bool = False,
     ) -> None:
         self._context = context
         self._plugins: dict[str, ToolPlugin] = {}
         self._trace_repository = trace_repository
+        self._tool_budget_repository = tool_budget_repository
+        self._require_tool_budget = require_tool_budget
 
     def register(self, plugin: ToolPlugin) -> None:
         """校验并注册单个 Tool。"""
@@ -84,6 +107,81 @@ class ToolRegistry:
             raise ToolNotFoundError(name)
         return self._plugins[name].manifest
 
+    def bind_langchain_tool(
+        self,
+        name: str,
+        invocation: InvocationContext,
+        *,
+        result_sink: Callable[[InvocationEnvelope[BaseModel]], None] | None = None,
+    ) -> BaseTool:
+        """把已注册能力绑定为本次调用作用域内的官方 LangChain Tool。"""
+
+        manifest = self.get_manifest(name)
+
+        async def call_tool(
+            tool_call_id: Annotated[str, InjectedToolCallId],
+            **input_data: object,
+        ) -> tuple[str, object]:
+            effective_invocation = invocation.model_copy(
+                update={"call_id": tool_call_id}
+            )
+            envelope = await self.invoke(name, input_data, effective_invocation)
+            if result_sink is not None:
+                result_sink(envelope)
+            return envelope.output.model_dump_json(), envelope
+
+        return StructuredTool.from_function(
+            coroutine=call_tool,
+            name=manifest.name,
+            description=manifest.description,
+            args_schema=langchain_direct_args_schema(manifest.input_schema),
+            response_format="content_and_artifact",
+            metadata={
+                "side_effect": manifest.side_effect.value,
+                "authorization_policy": manifest.authorization_policy.value,
+            },
+        )
+
+    def bind_langchain_agent_tool(
+        self,
+        name: str,
+        invocation: InvocationContext,
+        *,
+        result_sink: Callable[[InvocationEnvelope[BaseModel]], None] | None = None,
+    ) -> BaseTool:
+        """绑定由 Agent ToolNode 执行、使用官方 ToolRuntime 身份的 Tool。"""
+
+        manifest = self.get_manifest(name)
+
+        async def call_tool(
+            runtime: ToolRuntime[None, dict[str, object]],
+            **input_data: object,
+        ) -> tuple[str, object]:
+            tool_call_id = runtime.tool_call_id
+            if not tool_call_id:
+                raise ToolInvocationError(
+                    "Agent Tool 调用缺少 LangChain tool_call_id。"
+                )
+            effective_invocation = invocation.model_copy(
+                update={"call_id": tool_call_id}
+            )
+            envelope = await self.invoke(name, input_data, effective_invocation)
+            if result_sink is not None:
+                result_sink(envelope)
+            return envelope.output.model_dump_json(), envelope
+
+        return StructuredTool.from_function(
+            coroutine=call_tool,
+            name=manifest.name,
+            description=manifest.description,
+            args_schema=langchain_agent_args_schema(manifest.input_schema),
+            response_format="content_and_artifact",
+            metadata={
+                "side_effect": manifest.side_effect.value,
+                "authorization_policy": manifest.authorization_policy.value,
+            },
+        )
+
     async def invoke(
         self,
         name: str,
@@ -97,6 +195,7 @@ class ToolRegistry:
         manifest = plugin.manifest
         parsed_input = manifest.input_schema.model_validate(input_data)
         self._validate_caller(manifest, invocation)
+        await self._claim_tool_budget(manifest.name, parsed_input, invocation)
         policy = self._policy_service()
         authorization_reference: str | None = None
         if manifest.requires_external_access:
@@ -135,7 +234,7 @@ class ToolRegistry:
                 grant_id=_string_field(parsed_input, "author_grant_id"),
                 task_id=invocation.task_id,
                 tool_name=name,
-                input_payload=input_data,
+                input_payload=parsed_input,
                 require_second_confirmation=(
                     manifest.authorization_policy
                     is ToolAuthorizationPolicy.SECOND_CONFIRMATION
@@ -248,6 +347,43 @@ class ToolRegistry:
                 f"调用方“{invocation.caller_name}”无权使用工具“{manifest.name}”。"
             )
 
+    async def _claim_tool_budget(
+        self,
+        tool_name: str,
+        parsed_input: BaseModel,
+        invocation: InvocationContext,
+    ) -> None:
+        """在任何授权或 Handler 行为前占用任务级共享预算。"""
+
+        if invocation.conversation_id is None or invocation.caller_type not in {
+            "orchestrator",
+            "subagent",
+        }:
+            return
+        repository = self._tool_budget_repository
+        if repository is None:
+            if self._require_tool_budget:
+                raise ToolInvocationError("通用 Agent Tool 调用缺少任务级预算仓储。")
+            return
+        owner = GeneralAgentToolBudgetOwner(
+            conversation_id=invocation.conversation_id,
+            run_id=invocation.run_id,
+        )
+        await repository.initialize(owner, invocation.budget.max_tool_calls)
+        await repository.claim(
+            owner,
+            GeneralAgentToolBudgetClaim(
+                logical_call_id=_logical_tool_call_id(invocation),
+                tool_name=tool_name,
+                input_sha256=canonical_input_hash(parsed_input),
+                call_id=invocation.call_id,
+                parent_call_id=invocation.parent_call_id,
+                caller_name=invocation.caller_name,
+                phase=invocation.phase,
+                claimed_at=now_iso(),
+            ),
+        )
+
     def _policy_service(self) -> InvocationPolicyService:
         return self._context.require(
             "invocation_policy_service",
@@ -346,7 +482,7 @@ class ToolRegistry:
         try:
             await self._trace_repository.append(record)
         except Exception:  # noqa: BLE001
-            return
+            logger.exception("Tool 调用轨迹写入失败；主调用结果不受影响。")
 
 
 class ToolRegistrationError(ValueError):
@@ -388,3 +524,10 @@ def _source_refs(output: BaseModel) -> list[str]:
     if isinstance(retrieval_id, str) and retrieval_id:
         return [retrieval_id]
     return []
+
+
+def _logical_tool_call_id(invocation: InvocationContext) -> str:
+    identity = (f"{invocation.parent_call_id or ''}\0{invocation.call_id}").encode(
+        "utf-8"
+    )
+    return f"tool_budget_call_{hashlib.sha256(identity).hexdigest()}"

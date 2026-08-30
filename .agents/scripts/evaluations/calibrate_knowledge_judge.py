@@ -21,7 +21,7 @@ import re
 import secrets
 import shutil
 import sys
-from typing import Any, Literal, Protocol, Self
+from typing import Any, Literal, Protocol, Self, cast
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
@@ -29,14 +29,16 @@ from taichu.application.contracts.evaluation_judge import EvaluationJudge
 from taichu.application.contracts.llm import LLMModelIdentity
 from taichu.application.evaluations.knowledge_extraction.judge import (
     PROMPT_CONTRACT_ID,
+    JudgeBatchOutput,
+    JudgeDimensionResult,
     JudgeInputCase,
     JudgeItem,
     JudgeStatus,
     aggregate_judge_samples,
     build_judge_prompt,
-    parse_judge_output,
     prompt_contract_hash,
     semantic_score,
+    validate_judge_output,
 )
 from taichu.application.evaluations.knowledge_extraction.metrics import (
     semantic_quality_state,
@@ -502,14 +504,19 @@ async def _run_command(
                 "error": None,
             }
             try:
-                response = await judge.complete(prompt)
+                response = await judge.complete(
+                    prompt,
+                    output_schema=JudgeBatchOutput,
+                )
                 call["raw_response"] = response.raw_response
                 call["judge_model_identity"] = response.model_identity.model_dump(
                     mode="json"
                 )
                 if response.model_identity != model_identity:
                     raise CalibrationError("裁判调用期间模型身份发生变化。")
-                parsed = parse_judge_output(response.raw_response, [judge_input])
+                if not isinstance(response.output, JudgeBatchOutput):
+                    raise CalibrationError("裁判返回了错误的结构化输出类型。")
+                parsed = validate_judge_output(response.output, [judge_input])
                 item = parsed.items[0]
                 call["parsed_output"] = item.model_dump(mode="json")
                 samples.append(item)
@@ -664,12 +671,12 @@ def _calculate_metrics(
             if calls_by_id[call_id]["parsed_output"] is not None
         ]
         dimension_names = sorted(
-            set().union(*(set(sample.dimensions or {}) for sample in samples))
+            set().union(*(_judge_dimensions(sample).keys() for sample in samples))
         )
         for dimension_name in dimension_names:
             verdicts = []
             for sample in samples:
-                dimension = (sample.dimensions or {}).get(dimension_name)
+                dimension = _judge_dimensions(sample).get(dimension_name)
                 if dimension is not None:
                     verdicts.append(dimension.verdict.value)
             if len(verdicts) == len(samples) and verdicts:
@@ -679,7 +686,7 @@ def _calculate_metrics(
         for dimension_name, expected_score in case.human_label.dimension_scores.items():
             if expected_score is None or not aggregated.dimensions:
                 continue
-            predicted = aggregated.dimensions.get(dimension_name)
+            predicted = _judge_dimensions(aggregated).get(dimension_name)
             if predicted is not None:
                 absolute_errors.append(abs(predicted.score - expected_score))
 
@@ -988,8 +995,34 @@ def _default_judge_factory() -> EvaluationJudge:
     from taichu.infrastructure.evaluations.judge_factory import (
         create_evaluation_judge,
     )
+    from taichu.infrastructure.llm.adapter import GatewayChatModel
+    from taichu.infrastructure.llm.catalog import LLMModelCatalog
+    from taichu.infrastructure.llm.rightcode import RightCodeLLMGateway
+    from taichu.infrastructure.llm_replays import JsonLLMCallReplayRepository
+    from taichu.infrastructure.llm_usage import JsonlLLMUsageRepository
 
-    return create_evaluation_judge(Settings())
+    settings = Settings()
+    gateway = RightCodeLLMGateway(
+        settings,
+        LLMModelCatalog(settings),
+        JsonlLLMUsageRepository(settings.project_assets_dir),
+        replay_repository=JsonLLMCallReplayRepository(settings.project_assets_dir),
+    )
+    return create_evaluation_judge(
+        settings,
+        GatewayChatModel(gateway, model_id=gateway.default_model_id),
+        gateway,
+        configured=gateway.configured,
+    )
+
+
+def _judge_dimensions(
+    item: JudgeItem,
+) -> dict[str, JudgeDimensionResult | None]:
+    return cast(
+        dict[str, JudgeDimensionResult | None],
+        item.dimensions or {},
+    )
 
 
 def _write_summary(

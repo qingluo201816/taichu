@@ -1,4 +1,4 @@
-"""通用写作助手 Runtime 检查点仓储契约。"""
+"""通用写作助手业务审计与界面投影仓储契约。"""
 
 from typing import Protocol, runtime_checkable
 

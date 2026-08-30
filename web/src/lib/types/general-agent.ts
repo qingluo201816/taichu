@@ -106,6 +106,7 @@ export type GeneralAgentHumanRequest = {
   prompt: string;
   node_id?: string | null;
   tool_name?: string | null;
+  effect_id?: string | null;
   input_sha256?: string | null;
   input_summary: Record<string, unknown>;
   resource_scopes: string[];
@@ -232,6 +233,7 @@ export type GeneralAgentContextSnapshot = {
     };
     current_request: {
       content: string;
+      human_responses: string[];
       user_constraints: string[];
       scope: Record<string, unknown>;
     };
@@ -338,9 +340,20 @@ export type GeneralAgentResumeRequest = {
   answer?: string;
   approve?: boolean;
   second_confirmation?: boolean;
+  effect_resolution?: "recheck" | "confirm_not_applied" | "cancel";
 };
 
 export type GeneralAgentRunResponse = { run: GeneralAgentRun };
+
+export type GeneralAgentStreamEvent = {
+  type: string;
+  event_type: string;
+  run_id: string;
+  status: GeneralAgentRunStatus;
+  checkpoint_revision: number;
+  detail: string;
+  run: GeneralAgentRun;
+};
 
 export type GeneralAgentContextSnapshotListResponse = {
   run_id: string;
@@ -496,17 +509,16 @@ export type GeneralAgentTraceListResponse = {
 export type GeneralAgentRecoverySnapshot = {
   run_id: string;
   checkpoint: {
-    current_revision: number;
-    available_revisions: number[];
-    integrity_status: string;
-    recovered_from_revision?: number | null;
-    damage_warnings: string[];
-    legacy_migrated: boolean;
+    status: "available" | "missing";
+    checkpoint_count: number;
+    latest_checkpoint_id?: string | null;
+    latest_step?: number | null;
   };
-  revisions: Array<{
-    revision: number;
-    event_type: string;
-    created_at: string;
+  checkpoints: Array<{
+    checkpoint_id: string;
+    source: string;
+    step: number;
+    created_at?: string | null;
   }>;
   effects: Array<{
     effect_id: string;

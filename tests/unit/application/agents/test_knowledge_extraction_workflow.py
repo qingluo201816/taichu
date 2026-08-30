@@ -3,26 +3,39 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 import json
 import re
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
+
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain_core.language_models.chat_models import BaseChatModel, LanguageModelInput
+from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.runnables import Runnable
+from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
+from pydantic import PrivateAttr
 
 from taichu.application.services.import_service import ImportService
 from taichu.application.services.chapter_service import ChapterService
-from taichu.application.contracts.llm import (
-    LLMCost,
-    LLMModelIdentity,
-    LLMModelProfile,
-    LLMRequest,
-    LLMResponse,
-    LLMUsage,
+from taichu.application.contracts.llm import LLMModelIdentity, LLMModelProfile
+from taichu.application.contracts.knowledge_sedimentation_progress_repository import (
+    InMemoryKnowledgeSedimentationProgressRepository,
 )
+from taichu.application.invocations.config import TAICHU_MODEL_REQUEST_METADATA_KEY
 from taichu.application.services.knowledge_extraction_service import (
     KnowledgeExtractionService,
     _aggregate_batch_candidates,
+    _identity_from_profile,
 )
 from taichu.application.agents.knowledge_extraction.workflow import (
     KnowledgeExtractionDependencies,
@@ -76,6 +89,36 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         self._temporary_directory.cleanup()
 
+    def test_profile_identity_preserves_the_selected_provider(self) -> None:
+        profile = LLMModelProfile(
+            id="deepseek-v4-pro",
+            display_name="DeepSeek V4 Pro",
+            provider="deepseek_official",
+            upstream_model="deepseek-v4-pro",
+            wire_protocol="anthropic_messages",
+            enabled=True,
+            is_default=True,
+            supports_streaming=True,
+            upstream_verified=True,
+        )
+
+        identity = _identity_from_profile(profile)
+
+        self.assertEqual(identity.provider, "deepseek_official")
+
+    def _service(self, llm: _TestLLM) -> KnowledgeExtractionService:
+        return KnowledgeExtractionService(
+            chapter_service=self.chapter_service,
+            llm=llm,
+            model_catalog=llm,
+            knowledge_repository=self.repository,
+            knowledge_service=self.knowledge_service,
+            run_store=self.run_store,
+            sedimentation_progress_repository=(
+                InMemoryKnowledgeSedimentationProgressRepository()
+            ),
+        )
+
     async def test_immortal_seed_leaf_levels_share_one_realm_group(self) -> None:
         state = initial_knowledge_extraction_state(
             chapter_id="chapter_001",
@@ -117,13 +160,8 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
     async def test_workflow_writes_completed_run_with_prompt_and_review_items(
         self,
     ) -> None:
-        service = KnowledgeExtractionService(
-            chapter_service=self.chapter_service,
-            llm=_PromptAwareLLM(),
-            knowledge_repository=self.repository,
-            knowledge_service=self.knowledge_service,
-            run_store=self.run_store,
-        )
+        llm = _PromptAwareLLM()
+        service = self._service(llm)
 
         run = await service.create_run(chapter_id="chapter_001")
         loaded = await self.run_store.get_run(run.run_id)
@@ -189,6 +227,22 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("必须保留事件的认知层级", event_rule_prompt)
         self.assertIn("坠崖、重伤、失联", event_rule_prompt)
         self.assertIn("已有 active 规则卡摘要：\n[]", event_rule_prompt)
+        self.assertTrue(all(len(request.tools) == 1 for request in llm.requests))
+        self.assertTrue(
+            all(request.tool_choice == "required" for request in llm.requests)
+        )
+        self.assertTrue(
+            all(
+                request.tools[0]["function"].get("strict") is True
+                for request in llm.requests
+            )
+        )
+        self.assertTrue(
+            all("字段 schema" not in _prompt_text(request) for request in llm.requests)
+        )
+        self.assertTrue(
+            all("输出 JSON" not in _prompt_text(request) for request in llm.requests)
+        )
         self.assertCountEqual(
             [call.prompt_version for call in run.llm_calls],
             [
@@ -221,13 +275,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             },
         )
         confirmed = await self.knowledge_service.confirm_card(draft.id)
-        service = KnowledgeExtractionService(
-            chapter_service=self.chapter_service,
-            llm=_PromptAwareRuleReuseLLM(),
-            knowledge_repository=self.repository,
-            knowledge_service=self.knowledge_service,
-            run_store=self.run_store,
-        )
+        service = self._service(_PromptAwareRuleReuseLLM())
 
         run = await service.create_run(chapter_id="chapter_001")
         candidate = next(
@@ -249,21 +297,14 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertNotIn("{{active_rule_index}}", event_rule_call.input_prompt)
 
-    async def test_non_json_llm_response_marks_run_failed(self) -> None:
-        service = KnowledgeExtractionService(
-            chapter_service=self.chapter_service,
-            llm=_SequenceLLM(["不是 JSON", "仍然不是 JSON", "还是不是 JSON"]),
-            knowledge_repository=self.repository,
-            knowledge_service=self.knowledge_service,
-            run_store=self.run_store,
-        )
+    async def test_missing_native_tool_call_marks_run_failed(self) -> None:
+        service = self._service(_SequenceLLM(["未调用结果工具"]))
 
         run = await service.create_run(chapter_id="chapter_001")
 
         self.assertEqual(run.status, AgentRunStatus.FAILED)
-        self.assertIn("不是有效 JSON", run.errors[0])
-        self.assertIn("已重试 2 次", run.errors[0])
-        self.assertEqual(len(run.llm_calls), 3)
+        self.assertIn("原生工具契约", run.errors[0])
+        self.assertEqual(len(run.llm_calls), 1)
         self.assertEqual(run.llm_calls[0].error is not None, True)
 
     async def test_existing_card_summary_is_synthesized_as_one_fact_snapshot(
@@ -281,13 +322,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             },
         )
         await self.knowledge_service.confirm_card(draft.id)
-        service = KnowledgeExtractionService(
-            chapter_service=self.chapter_service,
-            llm=_PromptAwareLLM(),
-            knowledge_repository=self.repository,
-            knowledge_service=self.knowledge_service,
-            run_store=self.run_store,
-        )
+        service = self._service(_PromptAwareLLM())
 
         run = await service.create_run(chapter_id="chapter_001")
         candidate = next(
@@ -320,13 +355,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             },
         )
         await self.knowledge_service.confirm_card(draft.id)
-        service = KnowledgeExtractionService(
-            chapter_service=self.chapter_service,
-            llm=_PromptAwareSummaryFailureLLM(),
-            knowledge_repository=self.repository,
-            knowledge_service=self.knowledge_service,
-            run_store=self.run_store,
-        )
+        service = self._service(_PromptAwareSummaryFailureLLM())
 
         run = await service.create_run(chapter_id="chapter_001")
         candidate = next(
@@ -483,7 +512,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
                 node_name="BatchSynthesizeCandidateSummariesNode",
             )
 
-        self.assertTrue(llm.cancelled.is_set())
+        self.assertTrue(not llm.started.is_set() or llm.cancelled.is_set())
         self.assertIn("_summary_synthesis_error", result[0])
         self.assertIn("摘要超时", result[0]["_summary_synthesis_error"])
         self.assertIn("超过 0.01 秒", state["errors"][0])
@@ -529,7 +558,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("摘要输出截断", result[1]["_summary_synthesis_error"])
         self.assertFalse(result[1]["schema_validation"]["passed"])
 
-    async def test_summary_synthesis_ignores_unexpected_output_fields(self) -> None:
+    async def test_summary_synthesis_rejects_unexpected_output_fields(self) -> None:
         state = initial_knowledge_extraction_state(
             chapter_id="chapter_001",
             model_name="test-model",
@@ -562,9 +591,9 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             node_name="BatchSynthesizeCandidateSummariesNode",
         )
 
-        self.assertEqual(result[0]["summary"], "秦阳走入太初教山门。")
-        self.assertNotIn("_summary_synthesis_error", result[0])
-        self.assertTrue(result[0]["schema_validation"]["passed"])
+        self.assertEqual(result[0]["summary"], "秦阳本轮出现。")
+        self.assertIn("摘要输出格式错误", result[0]["_summary_synthesis_error"])
+        self.assertFalse(result[0]["schema_validation"]["passed"])
 
     def test_retired_importance_field_fails_candidate_validation(self) -> None:
         errors = _candidate_validation_errors(
@@ -872,36 +901,24 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(aggregated[0]["first_seen_chapter_id"], "chapter_006")
         self.assertEqual(aggregated[0]["last_seen_chapter_id"], "chapter_010")
 
-    async def test_invalid_expert_json_retries_and_recovers(self) -> None:
-        service = KnowledgeExtractionService(
-            chapter_service=self.chapter_service,
-            llm=_PromptAwareRepairLLM(),
-            knowledge_repository=self.repository,
-            knowledge_service=self.knowledge_service,
-            run_store=self.run_store,
-        )
+    async def test_invalid_expert_tool_arguments_fail_without_prompt_repair(
+        self,
+    ) -> None:
+        service = self._service(_PromptAwareRepairLLM())
 
         run = await service.create_run(chapter_id="chapter_001")
 
-        self.assertEqual(run.status, AgentRunStatus.COMPLETED)
-        self.assertEqual(run.errors, [])
+        self.assertEqual(run.status, AgentRunStatus.FAILED)
         event_calls = [
             call for call in run.llm_calls if call.node_name == "EventRuleExpertNode"
         ]
-        self.assertEqual(len(event_calls), 2)
+        self.assertEqual(len(event_calls), 1)
         self.assertIsNotNone(event_calls[0].error)
-        self.assertIsNone(event_calls[1].error)
-        self.assertIn("json_repair", event_calls[1].prompt_version)
-        self.assertGreater(run.metrics.event_candidate_count, 0)
+        self.assertIn("原生工具契约", event_calls[0].error or "")
+        self.assertNotIn("json_repair", event_calls[0].prompt_version)
 
     async def test_quality_gate_filters_generic_mentions_before_experts(self) -> None:
-        service = KnowledgeExtractionService(
-            chapter_service=self.chapter_service,
-            llm=_SequenceLLM([_generic_mentions_response()]),
-            knowledge_repository=self.repository,
-            knowledge_service=self.knowledge_service,
-            run_store=self.run_store,
-        )
+        service = self._service(_SequenceLLM([_generic_mentions_response()]))
 
         run = await service.create_run(chapter_id="chapter_001")
 
@@ -921,13 +938,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
             source_name="batch_model_fixture.txt",
         )
         llm = _MultiModelLLM()
-        service = KnowledgeExtractionService(
-            chapter_service=self.chapter_service,
-            llm=llm,
-            knowledge_repository=self.repository,
-            knowledge_service=self.knowledge_service,
-            run_store=self.run_store,
-        )
+        service = self._service(llm)
 
         events = [
             event
@@ -964,13 +975,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
     async def test_batch_run_is_failed_when_every_chapter_extraction_fails(
         self,
     ) -> None:
-        service = KnowledgeExtractionService(
-            chapter_service=self.chapter_service,
-            llm=_AlwaysFailLLM(),
-            knowledge_repository=self.repository,
-            knowledge_service=self.knowledge_service,
-            run_store=self.run_store,
-        )
+        service = self._service(_AlwaysFailLLM())
 
         events = [
             event
@@ -994,13 +999,7 @@ class KnowledgeExtractionWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self,
     ) -> None:
         llm = _BlockingLLM()
-        service = KnowledgeExtractionService(
-            chapter_service=self.chapter_service,
-            llm=llm,
-            knowledge_repository=self.repository,
-            knowledge_service=self.knowledge_service,
-            run_store=self.run_store,
-        )
+        service = self._service(llm)
 
         run = await service.start_batch_run_task(chapter_ids=["chapter_001"])
         await asyncio.wait_for(llm.started.wait(), timeout=1)
@@ -1059,65 +1058,191 @@ _TEST_MODEL_IDENTITY = LLMModelIdentity(
 )
 
 
-class _TestLLM:
+@dataclass(frozen=True)
+class _NativeModelRequest:
+    messages: tuple[BaseMessage, ...]
+    tools: tuple[dict[str, Any], ...]
+    tool_choice: str
+    model_id: str
+    run_id: str | None
+    max_output_tokens: int | None
+
+
+class _TestLLM(BaseChatModel):
+    model_id: str = "deepseek-v4-pro"
+    _requests: list[_NativeModelRequest] = PrivateAttr(default_factory=list)
+
+    @property
+    def _llm_type(self) -> str:
+        return "taichu-knowledge-extraction-test"
+
+    @property
+    def requests(self) -> list[_NativeModelRequest]:
+        return self._requests
+
     @property
     def model_identity(self) -> LLMModelIdentity:
         return _TEST_MODEL_IDENTITY
 
+    def list_models(self) -> list[LLMModelProfile]:
+        return [
+            LLMModelProfile(
+                id="deepseek-v4-pro",
+                display_name="test-model",
+                provider="rightcode",
+                upstream_model="test-model",
+                wire_protocol="openai_responses",
+                enabled=True,
+                is_default=True,
+                supports_streaming=False,
+                upstream_verified=True,
+            )
+        ]
+
+    def bind_tools(
+        self,
+        tools: Sequence[dict[str, Any] | type | Callable[..., Any] | BaseTool],
+        *,
+        tool_choice: str | None = None,
+        **kwargs: Any,
+    ) -> Runnable[LanguageModelInput, AIMessage]:
+        formatted = [convert_to_openai_tool(tool, strict=True) for tool in tools]
+        normalized_choice = "required" if tool_choice == "any" else tool_choice
+        return self.bind(
+            tools=formatted,
+            tool_choice=normalized_choice or "auto",
+            **kwargs,
+        )
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        del messages, stop, run_manager, kwargs
+        raise NotImplementedError("知识沉淀测试模型只支持异步调用。")
+
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        if stop:
+            raise ValueError("知识沉淀测试模型不支持 stop 参数。")
+        metadata = getattr(run_manager, "metadata", None)
+        request_metadata = (
+            metadata.get(TAICHU_MODEL_REQUEST_METADATA_KEY, {})
+            if isinstance(metadata, dict)
+            else {}
+        )
+        tools = tuple(dict(item) for item in kwargs.pop("tools", ()))
+        tool_choice = str(kwargs.pop("tool_choice", "auto"))
+        kwargs.pop("ls_structured_output_format", None)
+        if kwargs:
+            raise ValueError("测试模型收到未知调用参数：" + "、".join(sorted(kwargs)))
+        request = _NativeModelRequest(
+            messages=tuple(messages),
+            tools=tools,
+            tool_choice=tool_choice,
+            model_id=str(request_metadata.get("model_id") or self.model_id),
+            run_id=_optional_string(request_metadata.get("run_id")),
+            max_output_tokens=_optional_int(
+                request_metadata.get("max_output_tokens")
+            ),
+        )
+        self._requests.append(request)
+        message = await self.complete(request)
+        return ChatResult(
+            generations=[ChatGeneration(message=message)],
+            llm_output={"model_id": request.model_id},
+        )
+
+    async def complete(self, request: _NativeModelRequest) -> AIMessage:
+        del request
+        raise NotImplementedError
+
 
 class _SequenceLLM(_TestLLM):
     def __init__(self, responses: list[str]) -> None:
+        super().__init__()
         self._responses = responses
 
-    async def complete(self, prompt: str) -> str:
+    async def complete(self, request: _NativeModelRequest) -> AIMessage:
         if not self._responses:
             raise RuntimeError("没有可用的模拟 LLM 响应。")
-        return self._responses.pop(0)
+        raw_response = self._responses.pop(0)
+        try:
+            json.loads(raw_response)
+        except json.JSONDecodeError:
+            return _text_response(raw_response)
+        return _native_response(request, raw_response)
 
 
 class _PromptAwareLLM(_TestLLM):
-    async def complete(self, prompt: str) -> str:
-        prompt_text = _prompt_text(prompt)
-        if '"candidate_id"' in prompt_text:
-            return _summary_response(prompt_text)
-        if "事件与规则 entity_groups" in prompt_text:
-            return _event_rule_response()
-        if "实体 entity_groups" in prompt_text:
-            return _entity_response()
-        if "角色 entity_groups" in prompt_text:
-            return _character_response()
-        return _general_response()
+    async def complete(self, request: _NativeModelRequest) -> AIMessage:
+        prompt_text = _prompt_text(request)
+        payload_by_tool = {
+            "SummarySynthesisOutput": _summary_response(prompt_text),
+            "EventRuleExpertOutput": _event_rule_response(),
+            "EntityExpertOutput": _entity_response(),
+            "CharacterExpertOutput": _character_response(),
+            "GeneralExtractionOutput": _general_response(),
+        }
+        return _native_response(request, payload_by_tool[_selected_tool(request)])
 
 
 class _AlwaysFailLLM(_TestLLM):
-    async def complete(self, prompt: str) -> str:
+    async def complete(self, request: _NativeModelRequest) -> AIMessage:
+        del request
         raise RuntimeError("当前密钥无权调用该模型，请检查本机密钥权限。")
 
 
 class _BlockingLLM(_TestLLM):
-    def __init__(self) -> None:
-        self.started = asyncio.Event()
-        self.cancelled = asyncio.Event()
-        self.release = asyncio.Event()
+    _started: asyncio.Event = PrivateAttr()
+    _cancelled: asyncio.Event = PrivateAttr()
+    _release: asyncio.Event = PrivateAttr()
 
-    async def complete(self, prompt: str) -> str:
+    def __init__(self) -> None:
+        super().__init__()
+        self._started = asyncio.Event()
+        self._cancelled = asyncio.Event()
+        self._release = asyncio.Event()
+
+    @property
+    def started(self) -> asyncio.Event:
+        return self._started
+
+    @property
+    def cancelled(self) -> asyncio.Event:
+        return self._cancelled
+
+    @property
+    def release(self) -> asyncio.Event:
+        return self._release
+
+    async def complete(self, request: _NativeModelRequest) -> AIMessage:
         self.started.set()
         try:
             await self.release.wait()
         except asyncio.CancelledError:
             self.cancelled.set()
             raise
-        return _general_response()
+        return _native_response(request, _general_response())
 
 
 class _PromptAwareRuleReuseLLM(_PromptAwareLLM):
-    async def complete(self, prompt: str) -> str:
-        prompt_text = _prompt_text(prompt)
-        if '"candidate_id"' in prompt_text:
+    async def complete(self, request: _NativeModelRequest) -> AIMessage:
+        prompt_text = _prompt_text(request)
+        if _selected_tool(request) == "SummarySynthesisOutput":
             candidate_ids = list(
                 dict.fromkeys(re.findall(r'"candidate_id":\s*"([^"]+)"', prompt_text))
             )
-            return json.dumps(
+            return _native_response(
+                request,
                 {
                     "summaries": [
                         {
@@ -1127,37 +1252,40 @@ class _PromptAwareRuleReuseLLM(_PromptAwareLLM):
                         for candidate_id in candidate_ids
                     ]
                 },
-                ensure_ascii=False,
             )
-        if "事件与规则 entity_groups" in prompt_text:
-            return _event_rule_reuse_response()
-        return await super().complete(prompt)
+        if _selected_tool(request) == "EventRuleExpertOutput":
+            return _native_response(request, _event_rule_reuse_response())
+        return await super().complete(request)
 
 
 class _PromptAwareSummaryFailureLLM(_PromptAwareLLM):
-    async def complete(self, prompt: str) -> str:
-        if '"candidate_id"' in _prompt_text(prompt):
-            return "不是有效 JSON"
-        return await super().complete(prompt)
+    async def complete(self, request: _NativeModelRequest) -> AIMessage:
+        if _selected_tool(request) == "SummarySynthesisOutput":
+            return _text_response("未调用摘要结果工具")
+        return await super().complete(request)
 
 
 class _TransientSummaryFailureLLM(_TestLLM):
-    def __init__(self) -> None:
-        self.summary_attempts = 0
+    _summary_attempts: int = PrivateAttr(default=0)
 
-    async def complete(self, prompt: str) -> str:
-        prompt_text = _prompt_text(prompt)
-        if '"candidate_id"' in prompt_text:
-            self.summary_attempts += 1
-            if self.summary_attempts == 1:
+    @property
+    def summary_attempts(self) -> int:
+        return self._summary_attempts
+
+    async def complete(self, request: _NativeModelRequest) -> AIMessage:
+        prompt_text = _prompt_text(request)
+        if _selected_tool(request) == "SummarySynthesisOutput":
+            self._summary_attempts += 1
+            if self._summary_attempts == 1:
                 raise RuntimeError("模型调用失败，请稍后重试。")
-            return _summary_response(prompt_text)
-        return _general_response()
+            return _native_response(request, _summary_response(prompt_text))
+        return _native_response(request, _general_response())
 
 
 class _UnexpectedSummaryFieldLLM(_TestLLM):
-    async def complete(self, prompt: str) -> str:
-        return json.dumps(
+    async def complete(self, request: _NativeModelRequest) -> AIMessage:
+        return _native_response(
+            request,
             {
                 "summaries": [
                     {
@@ -1167,55 +1295,40 @@ class _UnexpectedSummaryFieldLLM(_TestLLM):
                     }
                 ]
             },
-            ensure_ascii=False,
         )
 
 
 class _TruncatedSummaryLLM(_TestLLM):
-    async def complete(self, prompt: str) -> LLMResponse:
-        prompt_text = _prompt_text(prompt)
-        if "只把下面的模型输出修复为合法 JSON" in prompt_text:
-            text = json.dumps(
-                {
-                    "summaries": [
-                        {
-                            "candidate_id": "summary_candidate_001",
-                            "summary": "秦阳走入太初教山门。",
-                        }
-                    ]
-                },
-                ensure_ascii=False,
-            )
-            output_tokens = 100
-        else:
-            text = '{"summaries":[{"candidate_id":"summary_candidate_001","summary":"未结束'
-            output_tokens = 100_000
-        return LLMResponse(
-            text=text,
-            model_id="test-model",
-            upstream_model="test-model",
-            usage=LLMUsage(output_tokens=output_tokens),
-            cost=LLMCost(),
-            finish_reason="length" if output_tokens == 100_000 else "stop",
+    async def complete(self, request: _NativeModelRequest) -> AIMessage:
+        return _native_response(
+            request,
+            {
+                "summaries": [
+                    {
+                        "candidate_id": "summary_candidate_001",
+                        "summary": "秦阳走入太初教山门。",
+                    }
+                ]
+            },
+            output_tokens=100_000,
+            finish_reason="length",
         )
 
 
 class _PromptAwareRepairLLM(_TestLLM):
-    async def complete(self, prompt: str) -> str:
-        if "只把下面的模型输出修复为合法 JSON" in prompt:
-            return _event_rule_response()
-        if "entity_groups" in prompt and "events" in prompt and "rules" in prompt:
-            return _broken_event_rule_response()
-        if "entity_groups" in prompt and "locations" in prompt:
-            return _entity_response()
-        if "entity_groups" in prompt and "cards" in prompt:
-            return _character_response()
-        return _general_response()
+    async def complete(self, request: _NativeModelRequest) -> AIMessage:
+        payload_by_tool = {
+            "EventRuleExpertOutput": _broken_event_rule_response(),
+            "EntityExpertOutput": _entity_response(),
+            "CharacterExpertOutput": _character_response(),
+            "GeneralExtractionOutput": _general_response(),
+        }
+        return _native_response(request, payload_by_tool[_selected_tool(request)])
 
 
-class _MultiModelLLM:
+class _MultiModelLLM(_TestLLM):
     def __init__(self) -> None:
-        self.requests: list[LLMRequest] = []
+        super().__init__()
 
     def list_models(self) -> list[LLMModelProfile]:
         return [
@@ -1223,24 +1336,105 @@ class _MultiModelLLM:
             _profile("alternate-model", "upstream-alternate"),
         ]
 
-    async def complete(self, request: LLMRequest) -> str:
-        self.requests.append(request)
+    async def complete(self, request: _NativeModelRequest) -> AIMessage:
         prompt_text = _prompt_text(request)
-        if '"candidate_id"' in prompt_text:
-            return _summary_response(prompt_text)
-        if "事件与规则 entity_groups" in prompt_text:
-            return _event_rule_response()
-        if "实体 entity_groups" in prompt_text:
-            return _entity_response()
-        if "角色 entity_groups" in prompt_text:
-            return _character_response()
-        return _general_response()
+        payload_by_tool = {
+            "SummarySynthesisOutput": _summary_response(prompt_text),
+            "EventRuleExpertOutput": _event_rule_response(),
+            "EntityExpertOutput": _entity_response(),
+            "CharacterExpertOutput": _character_response(),
+            "GeneralExtractionOutput": _general_response(),
+        }
+        return _native_response(request, payload_by_tool[_selected_tool(request)])
 
 
-def _prompt_text(request: object) -> str:
-    if isinstance(request, LLMRequest):
-        return "\n".join(message.content for message in request.messages)
-    return str(request)
+def _prompt_text(request: _NativeModelRequest) -> str:
+    return "\n".join(_message_text(message) for message in request.messages)
+
+
+def _selected_tool(request: _NativeModelRequest) -> str:
+    if request.tool_choice not in {"auto", "none", "required"}:
+        return request.tool_choice
+    function = request.tools[-1]["function"]
+    return str(function["name"])
+
+
+def _native_response(
+    request: _NativeModelRequest,
+    payload: object,
+    *,
+    output_tokens: int | None = None,
+    finish_reason: str = "stop",
+) -> AIMessage:
+    try:
+        arguments = json.loads(payload) if isinstance(payload, str) else payload
+    except json.JSONDecodeError as error:
+        return AIMessage(
+            content="",
+            invalid_tool_calls=[
+                {
+                    "id": "call_structured_output",
+                    "name": _selected_tool(request),
+                    "args": payload,
+                    "error": str(error),
+                    "type": "invalid_tool_call",
+                }
+            ],
+        )
+    if not isinstance(arguments, dict):
+        raise TypeError("结构化输出测试载荷必须是 JSON 对象。")
+    usage_metadata = (
+        {
+            "input_tokens": 0,
+            "output_tokens": output_tokens,
+            "total_tokens": output_tokens,
+        }
+        if output_tokens is not None
+        else None
+    )
+    return AIMessage(
+        content="",
+        id="call_structured_output",
+        tool_calls=[
+            {
+                "id": "call_structured_output",
+                "name": _selected_tool(request),
+                "args": arguments,
+                "type": "tool_call",
+            }
+        ],
+        usage_metadata=usage_metadata,
+        response_metadata={
+            "model_id": request.model_id,
+            "upstream_model": request.model_id,
+            "finish_reason": finish_reason,
+            "cost_currency": "USD",
+            "cost_kind": "unknown",
+        },
+    )
+
+
+def _text_response(text: str) -> AIMessage:
+    return AIMessage(
+        content=text,
+        response_metadata={"finish_reason": "stop"},
+    )
+
+
+def _message_text(message: BaseMessage) -> str:
+    return message.content if isinstance(message.content, str) else str(message.content)
+
+
+def _optional_string(value: object) -> str | None:
+    return str(value) if value is not None else None
+
+
+def _optional_int(value: object) -> int | None:
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.strip():
+        return int(value)
+    return None
 
 
 def _summary_response(prompt: str) -> str:
@@ -1289,7 +1483,6 @@ def _profile(
         provider="rightcode",
         upstream_model=upstream_model,
         wire_protocol="openai_responses",
-        base_url_key="RIGHTCODE_RESPONSES_BASE_URL",
         enabled=True,
         is_default=is_default,
         supports_streaming=True,

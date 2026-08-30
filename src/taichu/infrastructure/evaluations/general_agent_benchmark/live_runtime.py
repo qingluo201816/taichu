@@ -11,9 +11,9 @@ from pymongo import AsyncMongoClient
 from pydantic import Field, model_validator
 
 from taichu.application.capabilities import CapabilityContext
-from taichu.application.contracts.llm import (
+from taichu.application.contracts.llm import LLMModelProfile
+from taichu.infrastructure.llm.contracts import (
     LLMGatewayContract,
-    LLMModelProfile,
     LLMRequest,
     LLMResponse,
     LLMStreamEvent,
@@ -81,7 +81,7 @@ from taichu.infrastructure.evaluations.general_agent_benchmark.synthetic_runtime
 )
 from taichu.infrastructure.llm.catalog import LLMModelCatalog
 from taichu.infrastructure.llm.rightcode import (
-    RightCodeGatewayError,
+    LLMGatewayError,
     RightCodeLLMGateway,
 )
 from taichu.infrastructure.llm_replays.json_repository import (
@@ -685,7 +685,7 @@ class LiveSuiteRunner:
                 progress(position, total, case.case_id, "started")
             try:
                 result = await self._run_case(authoritative_suite, case)
-            except RightCodeGatewayError as error:
+            except LLMGatewayError as error:
                 interruption = _provider_interruption(case.case_id, error)
                 interruptions.append(interruption)
                 provider_state = interruption.state
@@ -715,7 +715,7 @@ class LiveSuiteRunner:
     ) -> SyntheticCaseBaselineResult:
         try:
             observation = await self._runtime.execute(case)
-        except RightCodeGatewayError:
+        except LLMGatewayError:
             raise
         except Exception as error:
             return SyntheticCaseBaselineResult(
@@ -836,7 +836,7 @@ def _revalidate_live_suite(
 
 def _provider_interruption(
     case_id: str,
-    error: RightCodeGatewayError,
+    error: LLMGatewayError,
 ) -> LiveProviderInterruption:
     blocked_codes = {
         "LLM_MODEL_DISABLED",

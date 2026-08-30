@@ -91,6 +91,7 @@ function model(
   return {
     id,
     display_name: id,
+    provider: "rightcode",
     enabled: true,
     is_default: false,
     supports_streaming: true,

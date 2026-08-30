@@ -473,6 +473,18 @@ class TaichuHNSWMilvusStore(MilvusStore):
             ],
         )
 
+    def get_passages_by_ids(self, passage_ids: list[str]) -> list[dict[str, Any]]:
+        """按图关系的 ``passage_ids`` 直接回取 Passage。"""
+
+        unique_ids = list(dict.fromkeys(passage_ids))
+        if not unique_ids:
+            return []
+        return self.client.query(
+            collection_name=self.passage_collection,
+            filter=f"id in {json.dumps(unique_ids, ensure_ascii=False)}",
+            output_fields=["id", "text", "entity_ids", "relation_ids"],
+        )
+
     def search_passages(
         self,
         query_embedding: list[float],

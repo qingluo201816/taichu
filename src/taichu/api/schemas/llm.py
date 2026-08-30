@@ -1,6 +1,7 @@
 """模型目录、检测与调用遥测 API 模型。"""
 
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -14,6 +15,7 @@ from taichu.application.models.llm_usage import (
 class PublicLLMModel(BaseModel):
     id: str
     display_name: str
+    provider: str
     enabled: bool
     is_default: bool
     supports_streaming: bool
@@ -26,6 +28,24 @@ class PublicLLMModel(BaseModel):
 class LLMModelListResponse(BaseModel):
     default_model_id: str
     models: list[PublicLLMModel] = Field(default_factory=list)
+
+
+class LLMProviderItem(BaseModel):
+    id: str
+    display_name: str
+    description: str
+    configured: bool
+    model_count: int
+    model_names: list[str] = Field(default_factory=list)
+
+
+class LLMProviderListResponse(BaseModel):
+    active_provider_id: str
+    providers: list[LLMProviderItem] = Field(default_factory=list)
+
+
+class LLMProviderSwitchRequest(BaseModel):
+    provider_id: Literal["rightcode", "deepseek_official"]
 
 
 class LLMModelProbeResponse(BaseModel):

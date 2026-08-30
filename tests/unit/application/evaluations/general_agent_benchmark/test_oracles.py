@@ -37,7 +37,7 @@ from taichu.application.evaluations.general_agent_benchmark.oracles import (
     AssertionEvaluationContext,
     AssertionStatus,
     AuthorizationEffectObservation,
-    CheckpointIntegrityObservation,
+    CheckpointAvailabilityObservation,
     ClaimNormalizationInput,
     ClaimNormalizer,
     ClaimProjectionStatus,
@@ -60,7 +60,7 @@ from taichu.application.evaluations.general_agent_benchmark.suite_loader import 
     AuthorizationEffectAssertionSpec,
     CallCountAssertionSpec,
     CallTopologyAssertionSpec,
-    CheckpointIntegrityAssertionSpec,
+    CheckpointAvailabilityAssertionSpec,
     ContextPreservationAssertionSpec,
     DataflowIdentityAssertionSpec,
     FinalClaimsAssertionSpec,
@@ -635,12 +635,11 @@ def test_enumerated_assertion_families_use_typed_observations(
                 retried_successful_result_ids=(),
             ),
         ),
-        checkpoint_integrity=(
-            CheckpointIntegrityObservation(
+        checkpoint_availability=(
+            CheckpointAvailabilityObservation(
                 fault_plan_ref="fault_checkpoint_integrity",
-                valid_revisions=(2,),
-                invalid_revisions=(3,),
-                selected_revision=2,
+                status="available",
+                selected_checkpoint_id="checkpoint-2",
                 recovery_action="resume",
                 automatic_restart_count=0,
                 effect_state="settled",
@@ -727,8 +726,8 @@ def test_enumerated_assertion_families_use_typed_observations(
             fault_plan_ref="fault_after_plan",
             max_successful_node_reexecutions=0,
         ),
-        CheckpointIntegrityAssertionSpec(
-            kind="checkpoint_integrity",
+        CheckpointAvailabilityAssertionSpec(
+            kind="checkpoint_availability",
             assertion_id="oracle_checkpoint",
             description="只恢复有效修订。",
             fault_plan_ref="fault_checkpoint_integrity",

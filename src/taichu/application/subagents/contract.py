@@ -49,7 +49,7 @@ class SubagentManifest(BaseModel):
 
 
 SubagentHandler = Callable[
-    [BaseModel, InvocationContext, CapabilityContext],
+    [SubagentManifest, BaseModel, InvocationContext, CapabilityContext],
     Awaitable[BaseModel],
 ]
 

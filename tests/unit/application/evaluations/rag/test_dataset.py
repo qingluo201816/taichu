@@ -67,7 +67,7 @@ def test_graph_cases_do_not_reveal_their_bridge_entity() -> None:
         "graph-004": "绝仙毒谷",
         "graph-005": "无形剑",
         "graph-006": "徐羽",
-        "graph-007": "严冬",
+        "graph-007": "小金",
         "graph-008": "袁山象",
         "graph-009": "古云子",
         "graph-010": "一叶金莲",

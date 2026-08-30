@@ -3,12 +3,14 @@
 import asyncio
 import hashlib
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
 from taichu.application.vector_graph.corpus import (
     build_source_index_state,
+    compact_knowledge_card_context,
     corpus_snapshot_sha256,
     source_documents_sha256,
 )
@@ -62,7 +64,10 @@ def test_passage_header_round_trips_traceable_source(tmp_path: Path) -> None:
     }
     assert backend._hnsw_ef_search == 150
     assert backend._settings.batch_size == 4
-    assert backend._settings.relation_number_threshold == 60
+    assert backend._controlled_expansion.max_seed_entities == 5
+    assert backend._controlled_expansion.candidate_pool_multiplier == 4
+    assert backend._controlled_expansion.beam_width == 24
+    assert backend._controlled_expansion.max_total_relations == 56
 
     document = backend._to_document(source)
     parsed = _parse_passage(document.page_content)
@@ -72,6 +77,119 @@ def test_passage_header_round_trips_traceable_source(tmp_path: Path) -> None:
     assert restored_content == content
     assert metadata["source_ref"] == source.source_ref
     assert metadata["source_type"] == "manuscript_chunk"
+
+
+def test_knowledge_card_context_drops_provenance_and_caps_long_summary() -> None:
+    content = (
+        "知识类型：角色\n"
+        "名称：秦浩轩\n"
+        f"摘要：{'甲' * 2_000}\n"
+        "角色定位：主角\n"
+        "来源方式：agent_extract\n"
+        "来源说明：大量章节原文"
+    )
+
+    projected = compact_knowledge_card_context(content)
+
+    assert "角色定位：主角" in projected
+    assert "来源方式" not in projected
+    assert "来源说明" not in projected
+    summary = next(
+        line for line in projected.splitlines() if line.startswith("摘要：")
+    )
+    assert len(summary) == 1_204
+
+
+def test_retrieval_runs_rrf_before_bounded_graph_passage_lookup(tmp_path: Path) -> None:
+    backend = _backend(tmp_path)
+    first = _source_document(source_id="chapter-1", content="李靖派人联系严冬。")
+    second = _source_document(source_id="chapter-2", content="严冬同意毒害小金。")
+    first_text = backend._to_document(first).page_content
+    second_text = backend._to_document(second).page_content
+    calls: list[str] = []
+
+    class Embedding:
+        def embed(self, query: str) -> list[float]:
+            calls.append("dense")
+            return [1.0, 0.0]
+
+    class Store:
+        relation_records = {
+            "r-1": {
+                "id": "r-1",
+                "text": "李靖 派人传话 严冬",
+                "entity_ids": ["li", "yan"],
+                "passage_ids": ["p-1"],
+            },
+            "r-2": {
+                "id": "r-2",
+                "text": "严冬 同意 毒害小金",
+                "entity_ids": ["yan", "xiaojin"],
+                "passage_ids": ["p-2"],
+            },
+        }
+
+        def hybrid_search_passages(self, **kwargs):
+            calls.append("rrf")
+            assert kwargs["top_k"] == 30
+            return [
+                {
+                    "distance": 0.03,
+                    "entity": {
+                        "id": "p-1",
+                        "text": first_text,
+                        "entity_ids": ["li", "yan"],
+                        "relation_ids": ["r-1"],
+                    },
+                }
+            ]
+
+        def _get_relations_by_ids(self, relation_ids):
+            return [
+                self.relation_records[item]
+                for item in relation_ids
+                if item in self.relation_records
+            ]
+
+        def _get_entities_by_ids(self, entity_ids):
+            records = {
+                "li": {"id": "li", "text": "李靖", "relation_ids": ["r-1"]},
+                "yan": {
+                    "id": "yan",
+                    "text": "严冬",
+                    "relation_ids": ["r-1", "r-2"],
+                },
+            }
+            return [records[item] for item in entity_ids if item in records]
+
+        def search_neighbor_relations(self, _embedding, relation_ids, *, top_k):
+            records = self._get_relations_by_ids(relation_ids)[:top_k]
+            return [
+                {"distance": 0.95 - (index / 100), "entity": record}
+                for index, record in enumerate(records)
+            ]
+
+        def get_passages_by_ids(self, passage_ids):
+            calls.append("graph_passages")
+            assert passage_ids == ["p-2"]
+            return [
+                {
+                    "id": "p-2",
+                    "text": second_text,
+                    "entity_ids": ["yan", "xiaojin"],
+                    "relation_ids": ["r-2"],
+                }
+            ]
+
+    rag = SimpleNamespace(_embedding_model=Embedding(), _store=Store())
+    with patch.object(backend, "_get_rag", return_value=rag):
+        result = backend._retrieve_passage_first_sync("谁指使严冬毒害小金？", 30)
+
+    assert calls == ["dense", "rrf", "graph_passages"]
+    assert [item.passage_id for item in result.evidences] == ["p-1", "p-2"]
+    assert result.evidences[0].retrieval_channels == ["bm25_dense_rrf"]
+    assert result.evidences[1].retrieval_channels == ["graph_expansion"]
+    assert result.graph_passage_ids == ["p-2"]
 
 
 def test_status_reports_not_built_when_all_collections_are_absent(

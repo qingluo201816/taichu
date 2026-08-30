@@ -3,24 +3,21 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator, Callable, Coroutine
-from decimal import Decimal
+from collections.abc import Callable, Coroutine
+from dataclasses import dataclass
 from functools import wraps
 from pathlib import Path
 from types import ModuleType
 from typing import Any
 
+from langchain_core.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.outputs import ChatResult
+from pydantic import PrivateAttr
+
 from taichu.application.capabilities import CapabilityContext
 from taichu.application.artifacts.models import IntermediateArtifactRecord
-from taichu.application.contracts.llm import (
-    LLMCost,
-    LLMModelProfile,
-    LLMRequest,
-    LLMResponse,
-    LLMStreamEvent,
-    LLMUsage,
-)
-from taichu.application.invocations.models import InvocationContext
+from taichu.application.invocations.models import InvocationBudget, InvocationContext
 from taichu.application.invocations.models import now_iso
 from taichu.application.services.chapter_service import ChapterService
 from taichu.application.services.invocation_policy_service import (
@@ -37,7 +34,11 @@ from taichu.application.subagents.drafting import agent as drafting_agent
 from taichu.application.subagents.models import ConsistencyReviewInput, DraftingOutput
 from taichu.application.subagents.prompts import PROMPTS
 from taichu.application.subagents.registry import SubagentRegistry
-from taichu.application.subagents.runner import _collect_sources
+from taichu.application.subagents.runner import (
+    _collect_sources,
+    _effective_tool_call_limit,
+    _retryable_agent_tool_names,
+)
 from taichu.application.tools import (
     get_novel_structure,
     list_knowledge_catalog,
@@ -59,7 +60,7 @@ from taichu.domain.models.structured_knowledge import (
     StructuredKnowledgeSourceOrigin,
     StructuredKnowledgeType,
 )
-from tests.fakes import InMemoryKnowledgeRepository
+from tests.fakes import InMemoryKnowledgeRepository, NativeToolCallSequenceChatModel
 
 
 def _async_test(
@@ -80,36 +81,77 @@ class _TraceRepository:
         self.records.append(record)
 
 
-class _Gateway:
-    def __init__(self) -> None:
-        self.requests: list[LLMRequest] = []
-        self.responses = [
-            "不是 JSON",
-            (
-                '{"text":"秦阳推开山门，风雪落在肩头。",'
-                '"constraints_applied":["保留玄幻语气"],'
-                '"source_refs":[],"risks":[],"warnings":[]}'
-            ),
-        ]
+@dataclass(frozen=True)
+class _NativeSubagentCall:
+    model_id: str
+    run_id: str | None
+    messages: tuple[BaseMessage, ...]
 
-    async def complete(self, request: LLMRequest) -> LLMResponse:
-        self.requests.append(request)
-        text = self.responses.pop(0)
-        return LLMResponse(
-            text=text,
-            model_id=request.model_id,
-            upstream_model=request.model_id,
-            usage=LLMUsage(input_tokens=100, output_tokens=50),
-            cost=LLMCost(amount=Decimal("0.01"), kind="estimated"),
+
+class _NativeSubagentModel(NativeToolCallSequenceChatModel):
+    model_id: str = "default-model"
+    taichu_run_id: str | None = None
+    max_output_tokens: int | None = None
+    task_type: str = ""
+    task_name: str = ""
+    chapter_ids: tuple[str, ...] = ()
+    temperature: float | None = None
+    feature: str = ""
+    _calls: list[_NativeSubagentCall] = PrivateAttr(default_factory=list)
+
+    @property
+    def calls(self) -> tuple[_NativeSubagentCall, ...]:
+        return tuple(self._calls)
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        self._calls.append(
+            _NativeSubagentCall(
+                model_id=self.model_id,
+                run_id=self.taichu_run_id,
+                messages=tuple(messages),
+            )
         )
+        return super()._generate(messages, stop, run_manager, **kwargs)
 
-    async def stream(self, request: LLMRequest) -> AsyncIterator[LLMStreamEvent]:
-        del request
-        if False:
-            yield LLMStreamEvent(event_type="completed")
 
-    def list_models(self) -> list[LLMModelProfile]:
-        return []
+def _drafting_response(call_id: str, arguments: dict[str, Any]) -> AIMessage:
+    return AIMessage(
+        content="",
+        id=call_id,
+        tool_calls=[
+            {
+                "id": call_id,
+                "name": "DraftingOutput",
+                "args": arguments,
+                "type": "tool_call",
+            }
+        ],
+        usage_metadata={
+            "input_tokens": 100,
+            "output_tokens": 50,
+            "total_tokens": 150,
+        },
+        response_metadata={
+            "model_id": "drafting-quality-model",
+            "upstream_model": "drafting-quality-model",
+            "cost_amount": "0.01",
+            "cost_currency": "USD",
+            "cost_kind": "estimated",
+        },
+    )
+
+
+def _messages_text(messages: tuple[BaseMessage, ...]) -> str:
+    return "\n".join(
+        message.content if isinstance(message.content, str) else str(message.content)
+        for message in messages
+    )
 
 
 @_async_test
@@ -153,11 +195,25 @@ async def test_drafting_uses_independent_model_role_and_repairs_schema(
     for module in _read_tool_modules():
         tool_registry.register(ToolPlugin(manifest=module.manifest, run=module.run))
 
-    gateway = _Gateway()
+    llm = _NativeSubagentModel(
+        responses=[
+            _drafting_response("call-1", {"lifecycle": "confirmed"}),
+            _drafting_response(
+                "call-2",
+                {
+                    "text": "秦阳推开山门，风雪落在肩头。",
+                    "constraints_applied": ["保留玄幻语气"],
+                    "source_refs": [],
+                    "risks": [],
+                    "warnings": [],
+                },
+            ),
+        ]
+    )
     subagent_context = CapabilityContext(
         capabilities={
             **tool_context.capabilities,
-            "llm": gateway,
+            "llm": llm,
             "model_role_router": ModelRoleRouter(
                 "default-model",
                 {"drafting": "drafting-quality-model"},
@@ -204,17 +260,28 @@ async def test_drafting_uses_independent_model_role_and_repairs_schema(
     assert saved_artifact is not None
     assert saved_artifact.artifact_type == "manuscript_candidate"
     assert upstream_artifact.artifact_id in saved_artifact.source_refs
-    assert len(gateway.requests) == 2
+    assert len(llm.calls) == 2
+    assert all(call.model_id == "drafting-quality-model" for call in llm.calls)
+    assert all(call.run_id == invocation.run_id for call in llm.calls)
+    assert "场景目标是让秦阳回到山门" in _messages_text(llm.calls[-1].messages)
+    assert llm.bound_tool_definitions
     assert all(
-        request.model_id == "drafting-quality-model" for request in gateway.requests
+        any(
+            tool["function"]["name"] == "DraftingOutput"
+            for tool in definitions
+        )
+        for definitions in llm.bound_tool_definitions
     )
-    assert all(request.run_id == invocation.run_id for request in gateway.requests)
-    assert "场景目标是让秦阳回到山门" in str(gateway.requests[-1])
+    assert all("输出 Schema" not in _messages_text(call.messages) for call in llm.calls)
     assert drafting_agent.manifest.model_role == "drafting"
     assert not any(
         "apply" in name or "create" in name or "update" in name or "delete" in name
         for name in drafting_agent.manifest.allowed_tools
     )
+    assert _retryable_agent_tool_names(
+        drafting_agent.manifest,
+        tool_registry,
+    ) == sorted(drafting_agent.manifest.allowed_tools)
     assert {record.capability_type for record in traces.records} >= {
         "llm",
         "subagent",
@@ -300,3 +367,25 @@ def _read_tool_modules() -> list[ModuleType]:
         list_knowledge_catalog,
         read_knowledge_cards,
     ]
+
+
+def test_official_subagent_tool_loop_uses_the_stricter_local_or_task_limit() -> None:
+    invocation = InvocationContext(
+        task_id="conversation-local-limit",
+        conversation_id="conversation-local-limit",
+        run_id="general_run_20260830_000000_local1",
+        caller_type="orchestrator",
+        caller_name="general_writing_orchestrator",
+        budget=InvocationBudget(max_tool_calls=3),
+    )
+
+    assert _effective_tool_call_limit(drafting_agent.manifest, invocation) == 3
+    assert (
+        _effective_tool_call_limit(
+            drafting_agent.manifest,
+            invocation.model_copy(
+                update={"budget": InvocationBudget(max_tool_calls=100)}
+            ),
+        )
+        == drafting_agent.manifest.limits.max_tool_calls
+    )

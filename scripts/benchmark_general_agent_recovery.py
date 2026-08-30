@@ -15,6 +15,10 @@ from time import perf_counter
 from typing import Any
 from uuid import uuid4
 
+from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.store.memory import InMemoryStore
+
 from taichu.application.capabilities import CapabilityContext
 from taichu.application.general_agent.executor import (
     DynamicDagExecutor,
@@ -40,7 +44,7 @@ from taichu.application.tools.contract import ToolPlugin
 from taichu.application.tools.registry import ToolRegistry
 from taichu.infrastructure.general_agent_runs import (
     JsonGeneralAgentEffectRepository,
-    JsonLangGraphCheckpointSaver,
+    LangGraphGeneralAgentCapabilityResultRepository,
 )
 from taichu.infrastructure.storage.markdown_backend import ProjectAssetStorageBackend
 
@@ -125,13 +129,24 @@ async def run_case(
             measured_read,
         )
         run = _run(node_count=node_count, concurrency=concurrency)
+        graph_checkpointer = InMemorySaver()
+        graph_store = InMemoryStore()
         timer = perf_counter()
         recovered = False
         error_type: str | None = None
         try:
-            executor = _executor(root, registry, policy)
+            executor = _executor(
+                root,
+                registry,
+                policy,
+                graph_store=graph_store,
+            )
             try:
-                completed = await executor.execute(run, checkpoint=_checkpoint)
+                completed = await executor.execute(
+                    run,
+                    checkpoint=_checkpoint,
+                    checkpointer=graph_checkpointer,
+                )
             except _InjectedProcessCrash:
                 # 让同一超步中已取消的并发任务完成 LangGraph 清理。
                 await asyncio.sleep(0.01)
@@ -147,7 +162,12 @@ async def run_case(
                     root,
                     restarted_registry,
                     restarted_policy,
-                ).execute(run, checkpoint=_checkpoint)
+                    graph_store=graph_store,
+                ).execute(
+                    run,
+                    checkpoint=_checkpoint,
+                    checkpointer=graph_checkpointer,
+                )
             completed_ok = all(
                 item.status is GeneralAgentNodeStatus.SUCCESS
                 for item in completed.node_runs
@@ -156,10 +176,22 @@ async def run_case(
         except BaseException as error:  # noqa: BLE001
             completed_ok = False
             error_type = type(error).__name__
-        checkpoint_root = (
-            root / "derived" / "general_agent_graph_checkpoints" / run.run_id
+        checkpoint_config: RunnableConfig = {
+            "configurable": {"thread_id": run.conversation_id}
+        }
+        revisions = [
+            item async for item in graph_checkpointer.alist(checkpoint_config)
+        ]
+        checkpoint_bytes = sum(
+            len(
+                json.dumps(
+                    item.checkpoint,
+                    ensure_ascii=False,
+                    default=str,
+                ).encode("utf-8")
+            )
+            for item in revisions
         )
-        revisions = list((checkpoint_root / "revisions").glob("*.json"))
         duplicate_successes = sum(
             max(0, count - 1) for count in successful_calls.values()
         )
@@ -173,7 +205,7 @@ async def run_case(
             duplicate_success_count=duplicate_successes,
             elapsed_ms=max(0, round((perf_counter() - timer) * 1_000)),
             checkpoint_revision_count=len(revisions),
-            checkpoint_bytes=sum(path.stat().st_size for path in revisions),
+            checkpoint_bytes=checkpoint_bytes,
             error_type=error_type,
         )
 
@@ -272,6 +304,8 @@ def _executor(
     root: Path,
     registry: ToolRegistry,
     policy: InvocationPolicyService,
+    *,
+    graph_store: InMemoryStore,
 ) -> DynamicDagExecutor:
     return DynamicDagExecutor(
         tool_registry=registry,
@@ -279,7 +313,12 @@ def _executor(
             CapabilityContext(capabilities={"invocation_policy_service": policy})
         ),
         policy_service=policy,
-        graph_checkpointer=JsonLangGraphCheckpointSaver(root),
+        capability_result_repository=(
+            LangGraphGeneralAgentCapabilityResultRepository(graph_store)
+        ),
+        capability_handler_identities={
+            ("tool", "get_novel_structure"): "benchmark:get_novel_structure"
+        },
         effect_repository=JsonGeneralAgentEffectRepository(root),
     )
 

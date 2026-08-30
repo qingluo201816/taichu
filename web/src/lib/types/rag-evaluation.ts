@@ -53,23 +53,12 @@ export interface RAGCaseScore {
   retrieved_relation_ids: string[];
 }
 
-export interface RAGAblationScore {
-  case_id: string;
-  graph_on: RAGCaseScore;
-  graph_off: RAGCaseScore;
-  recall_delta: number | null;
-  mrr_delta: number | null;
-  relation_recall_delta: number;
-  complete_path_delta: number;
-}
-
 export interface RAGEvaluationReportDetail {
   suite_id: string;
   mode: string;
   created_at: string;
   top_k: number;
   case_scores: RAGCaseScore[];
-  ablation_scores: RAGAblationScore[];
   summary: {
     case_count: number;
     graph_case_count: number;
@@ -78,8 +67,6 @@ export interface RAGEvaluationReportDetail {
     authority_pass_rate: number;
     mean_relation_recall_at_k: number | null;
     complete_path_pass_rate: number | null;
-    mean_ablation_recall_delta: number | null;
-    mean_ablation_complete_path_delta: number | null;
   };
 }
 
@@ -98,9 +85,21 @@ export interface RAGSemanticCaseScore {
   metrics: RAGSemanticMetric[];
 }
 
+export interface RAGSemanticCaseFailure {
+  case_id: string;
+  status: "failed";
+  phase?: string | null;
+  error_type?: string | null;
+  error_message?: string | null;
+}
+
+export type RAGSemanticCaseResult =
+  | RAGSemanticCaseScore
+  | RAGSemanticCaseFailure;
+
 export interface RAGRunReport {
   deterministic: RAGEvaluationReportDetail;
-  semantic_scores: RAGSemanticCaseScore[];
+  semantic_scores: RAGSemanticCaseResult[];
   runtime_identity: Record<string, string>;
   gate: { passed: boolean; failures: string[] };
 }

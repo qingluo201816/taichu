@@ -1,6 +1,6 @@
 """Selection workflow input and output contracts."""
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -49,3 +49,68 @@ class SelectionWorkflowOutput(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     card: AIResultCard
+
+
+class SelectionSuggestionContent(BaseModel):
+    """Author-facing suggestion content returned through a native result tool."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    title: str | None = Field(description="建议标题；不需要标题时为 null。")
+    body: str = Field(description="直接面向作者的具体中文建议。")
+
+
+class SelectionTextCandidateContent(BaseModel):
+    """Insertable manuscript candidate returned through a native result tool."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    text: str = Field(description="可直接插入正文的候选文本。")
+
+
+class SelectionPendingFactContent(BaseModel):
+    """Unconfirmed fact candidate returned through a native result tool."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    fact_type: Literal[
+        "character",
+        "realm",
+        "technique",
+        "location",
+        "faction",
+        "item",
+        "rule",
+        "event",
+        "foreshadow",
+        "other",
+    ]
+    title: str = Field(description="待确认事实标题。")
+    content: str = Field(description="具体、可读且尚未经作者确认的候选事实。")
+
+
+class SelectionAskOutput(BaseModel):
+    """Native output contract for asking about a selection."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    card_type: Literal["suggestion"]
+    content: SelectionSuggestionContent
+
+
+class SelectionContinueOutput(BaseModel):
+    """Native output contract for continuing selected text."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    card_type: Literal["text_candidate"]
+    content: SelectionTextCandidateContent
+
+
+class SelectionEnrichOutput(BaseModel):
+    """Native output contract for suggestions or unconfirmed setting facts."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    card_type: Literal["suggestion", "pending_fact"]
+    content: SelectionSuggestionContent | SelectionPendingFactContent

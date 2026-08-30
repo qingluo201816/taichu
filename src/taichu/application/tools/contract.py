@@ -3,11 +3,24 @@
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import StrEnum
+from functools import cache
+from typing import Annotated, cast
 
+from langchain.tools import ToolRuntime
+from langchain_core.tools import InjectedToolArg, InjectedToolCallId
 from pydantic import BaseModel, ConfigDict, Field
 
 from taichu.application.capabilities import CapabilityContext
 from taichu.application.invocations.models import InvocationContext
+
+
+RUNTIME_INPUT_FIELDS = frozenset(
+    {
+        "author_grant_id",
+        "external_access_grant_id",
+        "idempotency_key",
+    }
+)
 
 
 class ToolSideEffect(StrEnum):
@@ -92,3 +105,70 @@ class ToolPlugin:
     manifest: ToolManifest
     run: ToolHandler
     reconcile: ToolReconciler | None = None
+
+
+@cache
+def langchain_args_schema(input_schema: type[BaseModel]) -> type[BaseModel]:
+    """为 LangChain 标记运行时字段，同时保留太初原始执行 Schema。"""
+
+    annotations: dict[str, object] = {}
+    for name, field in input_schema.model_fields.items():
+        if name not in RUNTIME_INPUT_FIELDS:
+            continue
+        annotations[name] = Annotated[
+            field.rebuild_annotation(),
+            InjectedToolArg,
+        ]
+    if not annotations:
+        return input_schema
+    schema_type = type(
+        f"{input_schema.__name__}LangChainArgs",
+        (input_schema,),
+        {
+            "__annotations__": annotations,
+            "__module__": input_schema.__module__,
+        },
+    )
+    return cast(type[BaseModel], schema_type)
+
+
+@cache
+def langchain_direct_args_schema(input_schema: type[BaseModel]) -> type[BaseModel]:
+    """为非 ToolNode 调用显式声明官方 ``InjectedToolCallId``。"""
+
+    base_schema = langchain_args_schema(input_schema)
+    schema_type = type(
+        f"{input_schema.__name__}DirectArgs",
+        (base_schema,),
+        {
+            "__annotations__": {
+                "tool_call_id": Annotated[str, InjectedToolCallId],
+            },
+            "__module__": input_schema.__module__,
+        },
+    )
+    return cast(type[BaseModel], schema_type)
+
+
+@cache
+def langchain_agent_args_schema(input_schema: type[BaseModel]) -> type[BaseModel]:
+    """在完整执行 Schema 中加入 ToolNode 负责注入的 ToolRuntime。"""
+
+    base_schema = langchain_args_schema(input_schema)
+    schema_type = type(
+        f"{input_schema.__name__}AgentArgs",
+        (base_schema,),
+        {
+            "__annotations__": {
+                "runtime": ToolRuntime[None, dict[str, object]],
+            },
+            "__module__": input_schema.__module__,
+            "model_config": ConfigDict(
+                **{
+                    **input_schema.model_config,
+                    "arbitrary_types_allowed": True,
+                }
+            ),
+        },
+    )
+    return cast(type[BaseModel], schema_type)

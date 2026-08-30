@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+from types import SimpleNamespace
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from taichu.application.evaluations.general_agent_benchmark.strict_driver import (
     InteractionKind,
@@ -39,6 +40,13 @@ class _ObservedOutput(BaseModel):
     source_refs: list[str]
 
 
+class _ObservedInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    question: str
+    source_request: dict[str, object] = Field(default_factory=dict)
+
+
 class _Delegate:
     def __init__(self, capability_type: Literal["tool", "subagent"]) -> None:
         self._capability_type = capability_type
@@ -70,7 +78,9 @@ class _Delegate:
         return []
 
     def get_manifest(self, name: str) -> object:
-        raise AssertionError(name)
+        if self._capability_type != "tool":
+            raise AssertionError(name)
+        return SimpleNamespace(input_schema=_ObservedInput)
 
     async def reconcile(self, name: str, *args: object, **kwargs: object) -> object:
         raise AssertionError((name, args, kwargs))

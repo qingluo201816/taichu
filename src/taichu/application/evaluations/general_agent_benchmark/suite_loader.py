@@ -62,8 +62,8 @@ _EXPECTED_CASES = (
     ("recovery_verification_interruption", "校验阶段中断恢复"),
     ("recovery_multiple_interruptions", "多次中断恢复"),
     (
-        "recovery_checkpoint_integrity_or_version",
-        "Checkpoint 完整性与版本恢复",
+        "recovery_checkpoint_unavailable",
+        "官方 Checkpoint 缺失时安全停止",
     ),
     ("context_long_history_fact_retention", "长历史关键事实保持"),
     ("context_long_working_memory_priority", "长工作记忆优先裁剪"),
@@ -260,8 +260,8 @@ class RecoveryReuseAssertionSpec(AssertionBase):
     max_successful_node_reexecutions: int = Field(ge=0)
 
 
-class CheckpointIntegrityAssertionSpec(AssertionBase):
-    kind: Literal["checkpoint_integrity"]
+class CheckpointAvailabilityAssertionSpec(AssertionBase):
+    kind: Literal["checkpoint_availability"]
     fault_plan_ref: StableId
     allow_safe_failure: bool
 
@@ -303,7 +303,7 @@ AssertionSpec: TypeAlias = Annotated[
     | AuthorizationEffectAssertionSpec
     | MemoryCarrierAbsenceAssertionSpec
     | RecoveryReuseAssertionSpec
-    | CheckpointIntegrityAssertionSpec
+    | CheckpointAvailabilityAssertionSpec
     | ContextPreservationAssertionSpec
     | ResultContractEquivalenceAssertionSpec
     | ZeroCapabilityOrSideEffectAssertionSpec,
@@ -804,7 +804,7 @@ def _validate_assertion_asset_references(
             references.append((assertion.memory_seed_ref, MemorySeedAssetSpec))
         elif isinstance(
             assertion,
-            (RecoveryReuseAssertionSpec, CheckpointIntegrityAssertionSpec),
+            (RecoveryReuseAssertionSpec, CheckpointAvailabilityAssertionSpec),
         ):
             references.append((assertion.fault_plan_ref, FaultPlanAssetSpec))
         elif isinstance(

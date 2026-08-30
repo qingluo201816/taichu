@@ -16,13 +16,13 @@ from collections.abc import Iterable
 from typing import Any, cast
 
 from langchain_core.documents import Document
+from langchain_core.language_models.chat_models import BaseChatModel
 from pymilvus import MilvusClient  # type: ignore[import-untyped]
 from vector_graph_rag.config import Settings as VectorGraphSettings  # type: ignore[import-untyped]
-from vector_graph_rag.graph.retriever import RetrievalResult  # type: ignore[import-untyped]
 
-from taichu.application.contracts.llm import LLMGatewayContract
 from taichu.application.vector_graph.corpus import (
     build_source_index_state,
+    compact_knowledge_card_context,
     group_source_documents,
 )
 from taichu.application.vector_graph.models import (
@@ -42,12 +42,13 @@ from taichu.application.vector_graph.models import (
     VectorGraphSourceType,
 )
 from taichu.infrastructure.vector_graph.llm_adapter import (
-    StaticEntityExtractor,
     TaichuVectorGraphLLM,
 )
 from taichu.infrastructure.vector_graph.controlled_retriever import (
     ControlledExpansionSettings,
-    ControlledGraphRetriever,
+    PassageGraphSeed,
+    PassageSeededExpansionResult,
+    PassageSeededGraphExpander,
 )
 from taichu.infrastructure.vector_graph.embedding import BoundedEmbeddingModel
 from taichu.infrastructure.vector_graph.rag import TaichuVectorGraphRAG
@@ -65,7 +66,7 @@ class MilvusVectorGraphBackend:
         milvus_uri: str,
         milvus_token: str,
         collection_prefix: str,
-        llm: LLMGatewayContract,
+        llm: BaseChatModel,
         llm_model: str,
         embedding_base_url: str,
         embedding_model: str,
@@ -76,18 +77,17 @@ class MilvusVectorGraphBackend:
         hnsw_ef_construction: int = 300,
         hnsw_ef_search: int = 150,
         rrf_k: int = 60,
-        entity_top_k: int = 30,
-        relation_top_k: int = 30,
-        expansion_degree: int = 2,
-        relation_number_threshold: int = 60,
-        expansion_max_seed_entities: int = 3,
-        expansion_initial_relations_per_entity: int = 20,
-        expansion_initial_beam_width: int = 20,
-        expansion_max_entities_per_hop: int = 12,
-        expansion_relations_per_entity: int = 8,
+        expansion_max_seed_entities: int = 5,
+        expansion_max_seed_relations: int = 32,
+        expansion_max_hop: int = 1,
+        expansion_max_entities_per_hop: int = 20,
+        expansion_relations_per_entity: int = 10,
+        expansion_candidate_pool_multiplier: int = 4,
         expansion_hub_relations_per_entity: int = 5,
         expansion_hub_degree_threshold: int = 100,
-        expansion_beam_width: int = 20,
+        expansion_beam_width: int = 24,
+        expansion_max_total_relations: int = 56,
+        expansion_max_graph_passages: int = 20,
         final_top_k: int = 30,
     ) -> None:
         self._settings = VectorGraphSettings(
@@ -112,28 +112,21 @@ class MilvusVectorGraphBackend:
                 "M": hnsw_m,
                 "efConstruction": hnsw_ef_construction,
             },
-            entity_top_k=entity_top_k,
-            relation_top_k=relation_top_k,
-            expansion_degree=expansion_degree,
-            relation_number_threshold=relation_number_threshold,
             final_top_k=final_top_k,
         )
-        self._llm = TaichuVectorGraphLLM(
-            llm,
-            llm_model,
-            relation_candidate_limit=relation_number_threshold,
-        )
+        self._llm = TaichuVectorGraphLLM(llm, llm_model)
         self._controlled_expansion = ControlledExpansionSettings(
             max_seed_entities=expansion_max_seed_entities,
-            initial_relations_per_entity=expansion_initial_relations_per_entity,
-            initial_beam_width=expansion_initial_beam_width,
-            max_hop=expansion_degree,
+            max_seed_relations=expansion_max_seed_relations,
+            max_hop=expansion_max_hop,
             max_entities_per_hop=expansion_max_entities_per_hop,
             relations_per_entity=expansion_relations_per_entity,
+            candidate_pool_multiplier=expansion_candidate_pool_multiplier,
             hub_relations_per_entity=expansion_hub_relations_per_entity,
             hub_degree_threshold=expansion_hub_degree_threshold,
             beam_width=expansion_beam_width,
-            max_total_relations=relation_number_threshold,
+            max_total_relations=expansion_max_total_relations,
+            max_graph_passages=expansion_max_graph_passages,
         )
         self._milvus_uri = milvus_uri
         self._milvus_token = milvus_token
@@ -460,55 +453,10 @@ class MilvusVectorGraphBackend:
         *,
         top_k: int,
     ) -> VectorGraphRetrievalResult:
-        query_entities = await self._llm.extract_query_entities(query)
-        raw = await asyncio.to_thread(
-            self._retrieve_graph_sync,
+        return await asyncio.to_thread(
+            self._retrieve_passage_first_sync,
             query,
-            query_entities,
-        )
-        _reranked_ids, reranked_relations = await self._llm.rerank_relations(
-            query,
-            raw.expanded_relation_ids,
-            raw.expanded_relation_texts,
-        )
-        passages = await asyncio.to_thread(
-            self._retrieve_passages_sync,
-            query,
-            reranked_relations,
             top_k,
-        )
-        return self._build_retrieval_result(
-            query=query,
-            raw=raw,
-            reranked_relations=reranked_relations,
-            passages=passages,
-        )
-
-    async def retrieve_without_graph(
-        self,
-        query: str,
-        *,
-        top_k: int,
-    ) -> VectorGraphRetrievalResult:
-        """运行同一生产检索链，但不进行图查询或图关系查询增强。"""
-
-        passages = await asyncio.to_thread(
-            self._retrieve_passages_sync,
-            query,
-            [],
-            top_k,
-        )
-        empty_graph = RetrievalResult(
-            relation_ids=[],
-            relation_texts=[],
-            expanded_relation_ids=[],
-            expanded_relation_texts=[],
-        )
-        return self._build_retrieval_result(
-            query=query,
-            raw=empty_graph,
-            reranked_relations=[],
-            passages=passages,
         )
 
     async def expand_context(
@@ -594,30 +542,47 @@ class MilvusVectorGraphBackend:
         }
         return counts["entities"], counts["relations"], counts["passages"]
 
-    def _retrieve_graph_sync(
+    def _retrieve_passage_first_sync(
         self,
         query: str,
-        query_entities: list[str],
-    ) -> RetrievalResult:
-        retriever = self._new_retriever(query_entities)
-        return retriever.retrieve(query)
-
-    def _retrieve_passages_sync(
-        self,
-        query: str,
-        reranked_relations: list[str],
         top_k: int,
-    ) -> list[str]:
+    ) -> VectorGraphRetrievalResult:
         rag = self._get_rag()
-        dense_query = _build_graph_augmented_query(query, reranked_relations)
-        query_embedding = rag._embedding_model.embed(dense_query)
+        query_embedding = rag._embedding_model.embed(query)
         store = cast(TaichuHNSWMilvusStore, rag._store)
-        results = store.hybrid_search_passages(
+        rrf_results = store.hybrid_search_passages(
             lexical_query=query,
             query_embedding=query_embedding,
             top_k=top_k,
         )
-        return [str(item["entity"]["text"]) for item in results]
+        seeds = _passage_graph_seeds(rrf_results)
+        expansion = PassageSeededGraphExpander(
+            store=store,
+            settings=self._controlled_expansion,
+        ).expand(
+            query=query,
+            query_embedding=query_embedding,
+            seed_passages=seeds,
+        )
+        novel_graph_passage_ids = list(expansion.graph_passage_ids)
+        graph_records = store.get_passages_by_ids(novel_graph_passage_ids)
+        passages = _merge_passage_candidates(rrf_results, graph_records)
+        relation_ids = _unique_strings(
+            relation_id
+            for passage in passages
+            for relation_id in passage["relation_ids"]
+        )
+        relation_text_by_id = {
+            str(item["id"]): str(item.get("text", ""))
+            for item in store._get_relations_by_ids(relation_ids)
+        }
+        return self._build_retrieval_result(
+            query=query,
+            expansion=expansion,
+            passages=passages,
+            relation_text_by_id=relation_text_by_id,
+            graph_passage_ids=novel_graph_passage_ids,
+        )
 
     def _expand_context_sync(
         self,
@@ -654,28 +619,18 @@ class MilvusVectorGraphBackend:
             )
         return expanded
 
-    def _new_retriever(self, query_entities: list[str]) -> ControlledGraphRetriever:
-        rag = self._get_rag()
-        return ControlledGraphRetriever(
-            store=rag._store,
-            graph_builder=rag._graph_builder,
-            settings=self._settings,
-            embedding_model=rag._embedding_model,
-            entity_extractor=StaticEntityExtractor(query_entities),
-            expansion=self._controlled_expansion,
-        )
-
     @staticmethod
     def _build_retrieval_result(
         *,
         query: str,
-        raw: RetrievalResult,
-        reranked_relations: list[str],
-        passages: list[str],
+        expansion: PassageSeededExpansionResult,
+        passages: list[dict[str, Any]],
+        relation_text_by_id: dict[str, str],
+        graph_passage_ids: list[str],
     ) -> VectorGraphRetrievalResult:
         evidences: list[VectorGraphEvidence] = []
         for passage in passages:
-            parsed = _parse_passage(passage)
+            parsed = _parse_passage(str(passage.get("text", "")))
             if parsed is None:
                 continue
             metadata, content = parsed
@@ -686,8 +641,11 @@ class MilvusVectorGraphBackend:
                 title = str(metadata["title"])
             except (KeyError, ValueError, TypeError):
                 continue
+            if source_type is VectorGraphSourceType.KNOWLEDGE_CARD:
+                content = compact_knowledge_card_context(content)
             evidences.append(
                 VectorGraphEvidence(
+                    passage_id=str(passage.get("id", "")),
                     source_type=source_type,
                     source_id=source_id,
                     source_ref=source_ref,
@@ -704,14 +662,31 @@ class MilvusVectorGraphBackend:
                         int(str(item))
                         for item in metadata.get("parent_chunk_indexes", [])
                     ],
+                    relation_ids=list(passage.get("relation_ids", [])),
+                    relation_texts=[
+                        relation_text_by_id[relation_id]
+                        for relation_id in passage.get("relation_ids", [])
+                        if relation_id in relation_text_by_id
+                    ],
+                    retrieval_channels=list(passage.get("retrieval_channels", [])),
                 )
             )
+        expanded_by_id = {
+            item.relation_id: item.text for item in expansion.relations
+        }
         return VectorGraphRetrievalResult(
             query=query,
             evidences=evidences,
-            retrieved_relations=raw.relation_texts,
-            expanded_relations=raw.expanded_relation_texts,
-            reranked_relations=reranked_relations,
+            retrieved_relations=[
+                expanded_by_id[item]
+                for item in expansion.seed_relation_ids
+                if item in expanded_by_id
+            ],
+            expanded_relations=[item.text for item in expansion.relations],
+            seed_passage_ids=list(expansion.seed_passage_ids),
+            seed_entity_ids=list(expansion.seed_entity_ids),
+            seed_relation_ids=list(expansion.seed_relation_ids),
+            graph_passage_ids=graph_passage_ids,
             source_refs=list(dict.fromkeys(item.source_ref for item in evidences)),
         )
 
@@ -900,6 +875,65 @@ def _parse_passage(passage: str) -> tuple[dict[str, Any], str] | None:
     return metadata, passage[match.end() :]
 
 
+def _passage_graph_seeds(
+    results: list[dict[str, Any]],
+) -> list[PassageGraphSeed]:
+    seeds: list[PassageGraphSeed] = []
+    seen: set[str] = set()
+    for rank, result in enumerate(results, start=1):
+        record = result.get("entity", {})
+        passage_id = str(record.get("id", ""))
+        if not passage_id or passage_id in seen:
+            continue
+        seen.add(passage_id)
+        seeds.append(
+            PassageGraphSeed(
+                passage_id=passage_id,
+                rank=rank,
+                score=float(result.get("distance", 0.0)),
+                entity_ids=tuple(
+                    str(item) for item in record.get("entity_ids", [])
+                ),
+                relation_ids=tuple(
+                    str(item) for item in record.get("relation_ids", [])
+                ),
+            )
+        )
+    return seeds
+
+
+def _merge_passage_candidates(
+    rrf_results: list[dict[str, Any]],
+    graph_records: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    merged: dict[str, dict[str, Any]] = {}
+    for result in rrf_results:
+        record = dict(result.get("entity", {}))
+        passage_id = str(record.get("id", ""))
+        if not passage_id:
+            continue
+        record["entity_ids"] = list(record.get("entity_ids", []))
+        record["relation_ids"] = list(record.get("relation_ids", []))
+        record["retrieval_channels"] = ["bm25_dense_rrf"]
+        merged.setdefault(passage_id, record)
+    for source in graph_records:
+        record = dict(source)
+        passage_id = str(record.get("id", ""))
+        if not passage_id:
+            continue
+        current = merged.get(passage_id)
+        if current is None:
+            record["entity_ids"] = list(record.get("entity_ids", []))
+            record["relation_ids"] = list(record.get("relation_ids", []))
+            record["retrieval_channels"] = ["graph_expansion"]
+            merged[passage_id] = record
+            continue
+        current["retrieval_channels"] = list(
+            dict.fromkeys([*current["retrieval_channels"], "graph_expansion"])
+        )
+    return list(merged.values())
+
+
 def _document_identity(
     document: VectorGraphSourceDocument,
 ) -> tuple[str, int, str]:
@@ -917,13 +951,6 @@ def _optional_int(value: object) -> int | None:
         return int(str(value))
     except (TypeError, ValueError):
         return None
-
-
-def _build_graph_augmented_query(query: str, relations: list[str]) -> str:
-    if not relations:
-        return query
-    relation_context = "\n".join(relations)
-    return f"{query}\n相关图关系：\n{relation_context}"[:6_000]
 
 
 def _parent_indexes(evidence: VectorGraphEvidence) -> list[int]:
@@ -966,6 +993,10 @@ def _merge_context_sources(
 
 def _as_int(value: object) -> int:
     return int(str(value))
+
+
+def _unique_strings(values: Iterable[str]) -> list[str]:
+    return list(dict.fromkeys(value for value in values if value))
 
 
 def _utc_now() -> str:

@@ -1,18 +1,14 @@
 """Application contract Protocol tests."""
 
+from dataclasses import asdict
 import unittest
 
 from pydantic import ValidationError
 
 from taichu.application.contracts import (
-    LLMCost,
-    LLMGatewayContract,
+    LLMModelCatalogContract,
     LLMModelIdentity,
     LLMModelProfile,
-    LLMRequest,
-    LLMResponse,
-    LLMStreamEvent,
-    LLMUsage,
     StorageContract,
 )
 from taichu.application.contracts.agent_run_repository import AgentRunRepository
@@ -43,33 +39,8 @@ class DummyStorage:
         return True
 
 
-class DummyLLM:
-    """LLM contract stub."""
-
-    @property
-    def model_identity(self) -> LLMModelIdentity:
-        return LLMModelIdentity(
-            provider="test",
-            model_id="dummy",
-            family="dummy",
-            endpoint_kind="test",
-            known=True,
-        )
-
-    async def complete(self, request: LLMRequest) -> LLMResponse:
-        return LLMResponse(
-            text=str(request),
-            model_id="dummy",
-            upstream_model="dummy",
-            usage=LLMUsage(),
-            cost=LLMCost(),
-        )
-
-    async def _stream(self):
-        yield LLMStreamEvent(event_type="completed")
-
-    def stream(self, request: LLMRequest):
-        return self._stream()
+class DummyModelCatalog:
+    """模型目录契约替身。"""
 
     def list_models(self) -> list[LLMModelProfile]:
         return [
@@ -79,7 +50,6 @@ class DummyLLM:
                 provider="rightcode",
                 upstream_model="dummy",
                 wire_protocol="openai_responses",
-                base_url_key="RIGHTCODE_RESPONSES_BASE_URL",
                 enabled=True,
                 is_default=True,
                 supports_streaming=True,
@@ -117,12 +87,18 @@ class ApplicationContractTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_protocols_accept_minimal_stubs(self) -> None:
         storage = DummyStorage()
-        llm = DummyLLM()
+        model_catalog = DummyModelCatalog()
         run_repository = DummyAgentRunRepository()
 
         self.assertIsInstance(storage, StorageContract)
-        self.assertIsInstance(llm, LLMGatewayContract)
+        self.assertIsInstance(model_catalog, LLMModelCatalogContract)
         self.assertIsInstance(run_repository, AgentRunRepository)
+
+    def test_public_model_profile_does_not_expose_transport_configuration(self) -> None:
+        profile = DummyModelCatalog().list_models()[0]
+
+        self.assertFalse(hasattr(profile, "base_url_key"))
+        self.assertNotIn("base_url_key", asdict(profile))
 
     async def test_model_identity_requires_explicit_known_or_unknown_state(
         self,

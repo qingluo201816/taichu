@@ -600,20 +600,6 @@ def compare_live_model_artifacts(
     )
 
 
-def compare_live_models(
-    baseline: ArtifactIdentity,
-    candidate: ArtifactIdentity,
-    declared_differences: DeclaredDifferences,
-) -> ArtifactRelationResult:
-    """``compare_live_model_artifacts`` 的语义化兼容别名。"""
-
-    return compare_live_model_artifacts(
-        baseline,
-        candidate,
-        declared_differences,
-    )
-
-
 def validate_artifact_relation(
     baseline: ArtifactIdentity,
     candidate: ArtifactIdentity,
@@ -632,48 +618,6 @@ def validate_artifact_relation(
         candidate,
         declared_differences,
     )
-
-
-class BenchmarkIdentityJoiner:
-    """无状态关系校验入口；失败时绝不返回拼接/聚合键。"""
-
-    @staticmethod
-    def qualify_synthetic_for_live(
-        synthetic: ArtifactIdentity,
-        live: ArtifactIdentity,
-        declared_differences: DeclaredDifferences,
-    ) -> ArtifactRelationResult:
-        return qualify_synthetic_for_live(
-            synthetic,
-            live,
-            declared_differences,
-        )
-
-    @staticmethod
-    def compare_live_models(
-        baseline: ArtifactIdentity,
-        candidate: ArtifactIdentity,
-        declared_differences: DeclaredDifferences,
-    ) -> ArtifactRelationResult:
-        return compare_live_model_artifacts(
-            baseline,
-            candidate,
-            declared_differences,
-        )
-
-    @staticmethod
-    def join(
-        baseline: ArtifactIdentity,
-        candidate: ArtifactIdentity,
-        declared_differences: DeclaredDifferences,
-    ) -> ArtifactRelationResult:
-        return validate_artifact_relation(
-            baseline,
-            candidate,
-            declared_differences,
-        )
-
-
 def _identity_problems(
     identity: ArtifactIdentity,
     *,

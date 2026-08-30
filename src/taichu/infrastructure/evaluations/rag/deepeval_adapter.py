@@ -1,4 +1,4 @@
-"""让 DeepEval 的 LLM-as-Judge 复用太初统一模型网关。"""
+"""让 DeepEval 的 LLM-as-Judge 复用 LangChain ChatModel。"""
 
 from __future__ import annotations
 
@@ -10,20 +10,19 @@ from deepeval.metrics import (
     ContextualRelevancyMetric,
     FaithfulnessMetric,
 )
+from deepeval.metrics.contextual_relevancy.template import ContextualRelevancyTemplate
 from deepeval.models import DeepEvalBaseLLM
 from deepeval.test_case import LLMTestCase
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
-from taichu.application.contracts.llm import (
-    LLMGatewayContract,
-    LLMMessage,
-    LLMRequest,
-    response_text,
-)
 from taichu.application.evaluations.rag.models import (
     RAGEvaluationModel,
+    RAGGoldenCategory,
     RAGGoldenCase,
 )
+from taichu.application.invocations.config import model_call_config
 from taichu.application.vector_graph.models import VectorGraphRetrievalResult
 
 
@@ -42,11 +41,35 @@ class DeepEvalCaseScore(RAGEvaluationModel):
     metrics: list[DeepEvalMetricScore]
 
 
-class TaichuDeepEvalLLM(DeepEvalBaseLLM):
-    """DeepEval 模型接口到统一网关的薄适配，不绕过遥测与模型目录。"""
+class TaichuGraphContextualRelevancyTemplate(ContextualRelevancyTemplate):
+    """让 DeepEval 按完整图路径判断桥接事实，而非要求每条事实独立作答。"""
 
-    def __init__(self, gateway: LLMGatewayContract, model_id: str) -> None:
-        self._gateway = gateway
+    @staticmethod
+    def generate_verdicts(
+        input: str,
+        context: str,
+        multimodal: bool = False,
+    ) -> str:
+        base_prompt = ContextualRelevancyTemplate.generate_verdicts(
+            input,
+            context,
+            multimodal,
+        )
+        graph_rules = """Graph-aware relevance rules:
+1. Read the entire assembled context before judging individual statements.
+2. A statement is relevant when it directly answers the input OR forms a necessary bridge in a connected multi-hop relation path that answers the input together with another statement in this same context.
+3. For example, for a question asking which weapon killed a person's disciple, both 'B is that person's disciple' and 'A used weapon C to kill B' are relevant.
+4. Do not require every bridge statement to independently contain the final answer. Still mark unrelated background details as irrelevant.
+
+"""
+        return graph_rules + base_prompt
+
+
+class TaichuDeepEvalLLM(DeepEvalBaseLLM):
+    """DeepEval 模型接口到 LangChain ChatModel 的薄适配。"""
+
+    def __init__(self, llm: BaseChatModel, model_id: str) -> None:
+        self._llm = llm
         self._model_id = model_id
         super().__init__(model=model_id)
 
@@ -68,34 +91,45 @@ class TaichuDeepEvalLLM(DeepEvalBaseLLM):
         prompt: str,
         schema: type[BaseModel] | None = None,
     ) -> Any:
-        response = await self._gateway.complete(
-            LLMRequest(
-                model_id=self._model_id,
-                messages=(
-                    LLMMessage(
-                        role="system",
-                        content=(
-                            "你是太初 RAG 质量评测裁判。严格依据评测提示完成判断；"
-                            "要求 JSON 时只返回合法 JSON。"
-                        ),
-                    ),
-                    LLMMessage(role="user", content=prompt),
-                ),
-                task_type="rag_evaluation_judge",
-                task_name="RAG 语义质量评测",
-                response_mode="json" if schema is not None else "text",
-                temperature=0,
-                feature="Graph RAG 质量评测",
-            )
+        messages = [
+            SystemMessage(
+                content="你是太初 RAG 质量评测裁判。严格依据评测提示完成判断。"
+            ),
+            HumanMessage(content=prompt),
+        ]
+        config = model_call_config(
+            model_id=self._model_id,
+            task_type="rag_evaluation_judge",
+            task_name="RAG 语义质量评测",
+            max_output_tokens=100_000,
+            temperature=0,
+            feature="Graph RAG 质量评测",
         )
-        text = response_text(response)
-        return schema.model_validate_json(text) if schema is not None else text
+        if schema is None:
+            response = await self._llm.ainvoke(messages, config=config)
+            return _message_text(response)
+        structured_model = self._llm.with_structured_output(
+            schema,
+            method="function_calling",
+            strict=True,
+        )
+        result = await structured_model.ainvoke(messages, config=config)
+        return schema.model_validate(result)
 
     def supports_structured_outputs(self) -> bool:
         return True
 
     def supports_json_mode(self) -> bool:
-        return True
+        return False
+
+
+def _message_text(message: BaseMessage) -> str:
+    if isinstance(message.content, str):
+        return message.content
+    return "".join(
+        str(item.get("text") or "") if isinstance(item, dict) else str(item)
+        for item in message.content
+    )
 
 
 async def evaluate_semantic_case(
@@ -106,18 +140,15 @@ async def evaluate_semantic_case(
     judge: TaichuDeepEvalLLM,
     threshold: float = 0.7,
 ) -> DeepEvalCaseScore:
-    retrieval_context = [
-        evidence.context_content or evidence.content for evidence in retrieval.evidences
-    ]
+    retrieval_context = _assemble_retrieval_context(retrieval)
     test_case = LLMTestCase(
         input=case.query,
         actual_output=actual_answer,
         retrieval_context=retrieval_context,
     )
     metrics = [
-        ContextualRelevancyMetric(threshold=threshold, model=judge),
-        FaithfulnessMetric(threshold=threshold, model=judge),
-        AnswerRelevancyMetric(threshold=threshold, model=judge),
+        _build_semantic_metric(metric_type, threshold=threshold, judge=judge)
+        for metric_type in _semantic_metric_types(case)
     ]
     scores: list[DeepEvalMetricScore] = []
     for metric in metrics:
@@ -141,3 +172,45 @@ async def evaluate_semantic_case(
         source_refs=retrieval.source_refs,
         metrics=scores,
     )
+
+
+def _assemble_retrieval_context(
+    retrieval: VectorGraphRetrievalResult,
+) -> list[str]:
+    """按生成器实际顺序评估最终上下文，允许裁判读取跨来源图路径。"""
+
+    if not retrieval.evidences:
+        return []
+    return [
+        "\n\n".join(
+            f"[{evidence.source_ref}]\n{evidence.context_content or evidence.content}"
+            for evidence in retrieval.evidences
+        )
+    ]
+
+
+def _semantic_metric_types(case: RAGGoldenCase) -> tuple[type[Any], ...]:
+    """困难负例没有相关上下文目标，不以 Contextual Relevancy 惩罚空召回。"""
+
+    if case.category is RAGGoldenCategory.HARD_NEGATIVE:
+        return (FaithfulnessMetric, AnswerRelevancyMetric)
+    return (
+        ContextualRelevancyMetric,
+        FaithfulnessMetric,
+        AnswerRelevancyMetric,
+    )
+
+
+def _build_semantic_metric(
+    metric_type: type[Any],
+    *,
+    threshold: float,
+    judge: TaichuDeepEvalLLM,
+) -> Any:
+    if metric_type is ContextualRelevancyMetric:
+        return metric_type(
+            threshold=threshold,
+            model=judge,
+            evaluation_template=TaichuGraphContextualRelevancyTemplate,
+        )
+    return metric_type(threshold=threshold, model=judge)

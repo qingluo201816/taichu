@@ -29,7 +29,6 @@ from taichu.application.agent_memory.models import (
 )
 from taichu.application.contracts.agent_memory import (
     AgentMemoryEvidenceResolver,
-    AgentMemoryLexicalIndex,
     AgentMemoryRepository,
 )
 from taichu.application.general_agent.memory_policy import AgentMemoryPolicy
@@ -46,6 +45,7 @@ _SECRET_PATTERNS = (
     re.compile(r"\bsk-[A-Za-z0-9_-]{16,}\b"),
     re.compile(r"(?i)\b(api[_ -]?key|authorization|bearer)\s*[:=]\s*\S+"),
 )
+_WORD_PATTERN = re.compile(r"[A-Za-z0-9_]+|[\u4e00-\u9fff]+")
 _REVIEW_RESULT_TYPES = frozenset(
     {"consistency_review", "narrative_review", "style_review"}
 )
@@ -69,12 +69,10 @@ class AgentMemoryService:
         self,
         *,
         repository: AgentMemoryRepository,
-        lexical_index: AgentMemoryLexicalIndex,
         policy: AgentMemoryPolicy | None = None,
         evidence_resolver: AgentMemoryEvidenceResolver | None = None,
     ) -> None:
         self._repository = repository
-        self._lexical_index = lexical_index
         self._policy = policy or AgentMemoryPolicy()
         self._evidence_resolver = evidence_resolver
 
@@ -229,7 +227,7 @@ class AgentMemoryService:
             run_id=query.run_id,
             refresh_evidence=refresh_evidence,
         )
-        scores = await self._lexical_index.scores(entries, query_text=query.query_text)
+        scores = _lexical_scores(entries, query_text=query.query_text)
         return self._policy.select(
             entries,
             lexical_scores=scores,
@@ -614,45 +612,72 @@ class AgentMemoryService:
             memory_ids.append(entry.memory_id)
         return memory_ids
 
-    async def record_human_correction(
+    async def record_clarification_request(
         self,
         run: GeneralAgentRun,
         *,
-        content: str,
-    ) -> str:
-        entry = await self.write(
-            MemoryWriteCandidate(
-                kind=AgentMemoryKind.USER_INSTRUCTION,
-                content=_compact_text(content, 2_000),
-                source_refs=[f"run:{run.run_id}:user_reply"],
-                run_ids=[run.run_id],
-                conversation_id=run.conversation_id,
-                created_request_index=run.request_index,
-                retention_priority=95,
-            )
-        )
-        return entry.memory_id
-
-    async def record_plan(
-        self,
-        run: GeneralAgentRun,
+        request_id: str,
         plan: GeneralAgentExecutionPlan,
-    ) -> list[str]:
+    ) -> str:
         if not plan.requires_clarification or not plan.clarification_question.strip():
-            return []
+            raise AgentMemoryServiceError("只有真实澄清计划才能记录待解决问题。")
+        request_ref = _clarification_request_ref(run.run_id, request_id)
         entry = await self.write(
             MemoryWriteCandidate(
                 kind=AgentMemoryKind.UNRESOLVED_ISSUE,
                 content=_compact_text(plan.clarification_question, 1_500),
-                source_refs=[f"run:{run.run_id}:clarification"],
+                source_refs=[request_ref],
                 run_ids=[run.run_id],
                 conversation_id=run.conversation_id,
                 created_request_index=run.request_index,
-                expires_after_request_index=run.request_index + 3,
+                expires_after_request_index=run.request_index,
                 retention_priority=90,
+                producer_ref=request_ref,
+                result_type="clarification_request",
             )
         )
-        return [entry.memory_id]
+        return entry.memory_id
+
+    async def resolve_clarification(
+        self,
+        run: GeneralAgentRun,
+        *,
+        request_id: str,
+        content: str,
+    ) -> str:
+        if not content.strip():
+            raise AgentMemoryServiceError("澄清回答不能为空。")
+        request_ref = _clarification_request_ref(run.run_id, request_id)
+        unresolved = [
+            entry
+            for entry in await self._repository.query(
+                conversation_id=run.conversation_id,
+                kinds=(AgentMemoryKind.UNRESOLVED_ISSUE,),
+                run_id=run.run_id,
+                include_deleted=False,
+            )
+            if entry.producer_ref == request_ref
+            and entry.validity is AgentMemoryValidity.ACTIVE
+        ]
+        if len(unresolved) != 1:
+            raise AgentMemoryServiceError("澄清回答必须关联唯一且尚未解决的人工请求。")
+        response_ref = f"run:{run.run_id}:clarification_response:{request_id}"
+        entry = await self.write(
+            MemoryWriteCandidate(
+                kind=AgentMemoryKind.WORK_NOTE,
+                content=_compact_text(content, 2_000),
+                source_refs=[response_ref],
+                run_ids=[run.run_id],
+                conversation_id=run.conversation_id,
+                created_request_index=run.request_index,
+                expires_after_request_index=run.request_index,
+                retention_priority=90,
+                supersedes_memory_id=unresolved[0].memory_id,
+                producer_ref=response_ref,
+                result_type="clarification_response",
+            )
+        )
+        return entry.memory_id
 
     async def record_node_results(
         self,
@@ -799,7 +824,8 @@ class AgentMemoryService:
                 )
             )
             memory_ids.append(entry.memory_id)
-            memory_by_producer[entry.producer_ref] = entry
+            if entry.producer_ref is not None:
+                memory_by_producer[entry.producer_ref] = entry
             if _is_rejecting_review(node, result_type):
                 review_targets = [
                     dependency.memory_id
@@ -1121,7 +1147,19 @@ class AgentMemoryService:
             raise AgentMemoryServiceError("被替代的运行记忆不存在或已经删除。")
         if superseded.conversation_id != candidate.conversation_id:
             raise AgentMemoryServiceError("运行记忆不能替代其他会话中的记忆。")
-        if superseded.kind is not candidate.kind:
+        clarification_resolution = (
+            candidate.kind is AgentMemoryKind.WORK_NOTE
+            and candidate.result_type == "clarification_response"
+            and superseded.kind is AgentMemoryKind.UNRESOLVED_ISSUE
+            and candidate.producer_ref is not None
+            and superseded.producer_ref is not None
+            and candidate.producer_ref.replace(
+                ":clarification_response:",
+                ":clarification_request:",
+            )
+            == superseded.producer_ref
+        )
+        if superseded.kind is not candidate.kind and not clarification_resolution:
             raise AgentMemoryServiceError("运行记忆只能替代同一类型的旧记忆。")
 
     async def _validate_dependencies(
@@ -1163,6 +1201,13 @@ class AgentMemoryService:
 
 class AgentMemoryServiceError(ValueError):
     """自动运行记忆不符合安全写入或来源约束。"""
+
+
+def _clarification_request_ref(run_id: str, request_id: str) -> str:
+    normalized_request_id = request_id.strip()
+    if not normalized_request_id:
+        raise AgentMemoryServiceError("澄清请求标识不能为空。")
+    return f"run:{run_id}:clarification_request:{normalized_request_id}"
 
 
 def _compact_text(value: str, limit: int) -> str:
@@ -1250,6 +1295,46 @@ def _later_request_expiry(left: int | None, right: int | None) -> int | None:
     if left is None or right is None:
         return None
     return max(left, right)
+
+
+def _lexical_scores(
+    entries: list[AgentMemoryEntry],
+    *,
+    query_text: str,
+) -> dict[str, float]:
+    """计算当前候选集的轻量词法相关度，不再维护平行 JSON 索引。"""
+
+    query_terms = _lexical_terms(query_text)
+    scores: dict[str, float] = {}
+    for entry in entries:
+        indexed_terms = _lexical_terms(
+            " ".join(
+                [
+                    entry.kind.value,
+                    entry.content,
+                    *entry.source_refs,
+                    *entry.artifact_refs,
+                ]
+            )
+        )
+        if not query_terms:
+            scores[entry.memory_id] = 0.0
+            continue
+        intersection = len(query_terms & indexed_terms)
+        union = len(query_terms | indexed_terms)
+        scores[entry.memory_id] = intersection / union if union else 0.0
+    return scores
+
+
+def _lexical_terms(value: str) -> set[str]:
+    terms: set[str] = set()
+    for match in _WORD_PATTERN.findall(value.lower()):
+        if all("\u4e00" <= character <= "\u9fff" for character in match):
+            terms.update(match)
+            terms.update(match[index : index + 2] for index in range(len(match) - 1))
+        else:
+            terms.add(match)
+    return terms
 
 
 def _deduplicate(values: list[str]) -> list[str]:

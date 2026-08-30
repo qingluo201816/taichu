@@ -34,11 +34,6 @@ from taichu.application.general_agent.models import (
     GeneralAgentRun,
     GeneralAgentScope,
 )
-from taichu.application.general_agent.orchestrator import (
-    OrchestratorPlanError,
-    _complete_capability_contracts,
-    _json_char_count,
-)
 from taichu.application.general_agent.request_analysis import (
     explicit_chapter_orders,
     is_explicit_chapter_content_request,
@@ -48,10 +43,8 @@ from taichu.application.services.agent_memory_service import (
     AgentMemoryService,
     _summarize_output,
 )
-from taichu.infrastructure.agent_memory import (
-    JsonAgentMemoryLexicalIndex,
-    JsonAgentMemoryRepository,
-)
+from tests.fakes.agent_memory import in_memory_agent_memory_repository
+from taichu.infrastructure.long_term_memory import MarkdownLongTermMemoryRetriever
 
 _ResultT = TypeVar("_ResultT")
 
@@ -70,7 +63,6 @@ def test_node_output_memory_summary_is_human_readable() -> None:
             "source_refs": ["internal-ref"],
         }
     )
-
     assert summary == "摘要：秦浩轩完成引气。；关键事件：进入太初教；首次引气成功"
     assert "{" not in summary
     assert "draft" not in summary
@@ -152,6 +144,42 @@ def test_task_summary_is_not_repeated_in_working_and_history_memory(
             memory.kind != AgentMemoryKind.TASK_SUMMARY.value
             for memory in envelope.working_memory.memories
         )
+
+    _run(scenario())
+
+
+def test_context_assembler_retrieves_markdown_long_term_memory_each_phase(
+    tmp_path: Path,
+) -> None:
+    async def scenario() -> None:
+        path = tmp_path / "long_term_memory.md"
+        path.write_text(
+            "## 战斗偏好\n关键词：战斗\n\n战斗场景使用短句。\n",
+            encoding="utf-8",
+        )
+        assembler = ContextAssembler(
+            memory_service=_memory_service(tmp_path),
+            long_term_memory_retriever=MarkdownLongTermMemoryRetriever(path),
+        )
+        run = _long_run(round_count=1).model_copy(
+            update={"user_goal": "写一段战斗场景"}
+        )
+
+        first = await assembler.assemble(run, phase="plan")
+        assert [item.content for item in first.snapshot.envelope.long_term_memory] == [
+            "战斗偏好\n战斗场景使用短句。"
+        ]
+
+        path.write_text(
+            "## 战斗偏好\n关键词：战斗\n\n战斗场景使用短句，减少解释。\n",
+            encoding="utf-8",
+        )
+        repeated = await assembler.assemble(
+            run.model_copy(update={"context_snapshot": first.snapshot}),
+            phase="plan",
+        )
+        assert repeated.reused_snapshot is False
+        assert repeated.resume_differences == ("按当前请求召回的长期记忆已经变化。",)
 
     _run(scenario())
 
@@ -346,8 +374,7 @@ def test_changed_evidence_marks_memory_and_basis_dependents_stale(
     async def scenario() -> None:
         resolver = _MutableEvidenceResolver()
         service = AgentMemoryService(
-            repository=JsonAgentMemoryRepository(tmp_path),
-            lexical_index=JsonAgentMemoryLexicalIndex(tmp_path),
+            repository=in_memory_agent_memory_repository(tmp_path),
             evidence_resolver=resolver,
         )
         source = await service.write(
@@ -634,61 +661,6 @@ def test_legacy_run_groups_by_task_id_and_derives_request_index() -> None:
     assert migrated.request_index == 3
 
 
-def test_capability_catalog_uses_complete_index_and_progressive_contracts() -> None:
-    index = [
-        {
-            "name": f"capability_{item}",
-            "type": "tool",
-            "description": f"处理第 {item} 类章节任务",
-        }
-        for item in range(24)
-    ]
-    contracts = {
-        item["name"]: {
-            **item,
-            "input_schema": {"description": f"{item['name']}输入"},
-            "output_schema": {"description": f"{item['name']}输出"},
-        }
-        for item in index
-    }
-    catalog = _complete_capability_contracts(
-        index=index,
-        tool_contracts=contracts,
-        subagent_contracts={},
-        char_budget=20_000,
-    )
-    assert catalog["能力总数"] == 24
-    assert {item["name"] for item in catalog["Tool契约"]} == set(contracts)
-    assert "input_schema" in str(catalog)
-    assert _json_char_count(catalog) <= 20_000
-
-
-def test_complete_capability_contracts_never_silently_omit_entries() -> None:
-    index = [
-        {
-            "name": f"capability_{item}",
-            "type": "tool",
-            "description": "完整能力目录中的稳定职责说明",
-        }
-        for item in range(28)
-    ]
-    contracts = {
-        item["name"]: {
-            **item,
-            "input_schema": {"type": "object"},
-            "output_schema": {"type": "object"},
-        }
-        for item in index
-    }
-    with pytest.raises(OrchestratorPlanError, match="完整能力契约目录超过字符预算"):
-        _complete_capability_contracts(
-            index=index,
-            tool_contracts=contracts,
-            subagent_contracts={},
-            char_budget=100,
-        )
-
-
 def test_explicit_chapter_reference_supports_arabic_chinese_and_ranges() -> None:
     assert explicit_chapter_orders("正文第8章讲的什么") == [8]
     assert explicit_chapter_orders("总结第八章") == [8]
@@ -731,8 +703,7 @@ def test_explicit_chapter_content_requires_manuscript_source() -> None:
 
 def _memory_service(root: Path) -> AgentMemoryService:
     return AgentMemoryService(
-        repository=JsonAgentMemoryRepository(root),
-        lexical_index=JsonAgentMemoryLexicalIndex(root),
+        repository=in_memory_agent_memory_repository(root),
     )
 
 

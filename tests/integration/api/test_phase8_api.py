@@ -6,9 +6,6 @@ import unittest
 from pathlib import Path
 
 from httpx import ASGITransport, AsyncClient
-from langchain_core.language_models.fake_chat_models import (
-    FakeMessagesListChatModel,
-)
 from langchain_core.messages import AIMessage
 
 from taichu.application.services.import_service import ImportService
@@ -28,7 +25,11 @@ from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
 from taichu.main import create_app
-from tests.fakes import InMemoryKnowledgeRepository
+from tests.fakes import (
+    InMemoryKnowledgeRepository,
+    NativeToolCallSequenceChatModel,
+    make_test_llm_gateway,
+)
 
 
 class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
@@ -45,8 +46,10 @@ class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
         self.knowledge_repository = InMemoryKnowledgeRepository([_knowledge_card()])
         app = create_app(
             app_settings=Settings(project_assets_dir=self.assets_root),
-            llm=FakeMessagesListChatModel(
-                responses=[AIMessage(content="可以从古卷代价推进。[S1]")]
+            llm_gateway=make_test_llm_gateway(
+                NativeToolCallSequenceChatModel(
+                    responses=[AIMessage(content="可以从古卷代价推进。[S1]")]
+                )
             ),
             knowledge_repository=self.knowledge_repository,
         )
@@ -81,41 +84,46 @@ class Phase8ApiTest(unittest.IsolatedAsyncioTestCase):
     async def test_mvp_writing_loop_smoke(self) -> None:
         app = create_app(
             app_settings=Settings(project_assets_dir=self.assets_root),
-            llm=FakeMessagesListChatModel(
-                responses=[
-                    AIMessage(
-                        content=json.dumps(
-                            {
-                                "card_type": "text_candidate",
-                                "content": {"text": "他握紧古卷，继续入山。"},
-                            },
-                            ensure_ascii=False,
-                        )
-                    ),
-                    AIMessage(
-                        content=json.dumps(
-                            {
-                                "card_type": "suggestion",
-                                "content": {"body": "可以强化古卷代价。"},
-                            },
-                            ensure_ascii=False,
-                        )
-                    ),
-                    AIMessage(
-                        content=json.dumps(
-                            {
-                                "card_type": "pending_fact",
-                                "content": {
-                                    "fact_type": "item",
-                                    "title": "灵犀玉",
-                                    "content": "灵犀玉会回应心念。",
+            llm_gateway=make_test_llm_gateway(
+                NativeToolCallSequenceChatModel(
+                    responses=[
+                        AIMessage(
+                            content=json.dumps(
+                                {
+                                    "card_type": "text_candidate",
+                                    "content": {"text": "他握紧古卷，继续入山。"},
                                 },
-                            },
-                            ensure_ascii=False,
-                        )
-                    ),
-                    AIMessage(content=_summary_json()),
-                ]
+                                ensure_ascii=False,
+                            )
+                        ),
+                        AIMessage(
+                            content=json.dumps(
+                                {
+                                    "card_type": "suggestion",
+                                    "content": {
+                                        "title": None,
+                                        "body": "可以强化古卷代价。",
+                                    },
+                                },
+                                ensure_ascii=False,
+                            )
+                        ),
+                        AIMessage(
+                            content=json.dumps(
+                                {
+                                    "card_type": "pending_fact",
+                                    "content": {
+                                        "fact_type": "item",
+                                        "title": "灵犀玉",
+                                        "content": "灵犀玉会回应心念。",
+                                    },
+                                },
+                                ensure_ascii=False,
+                            )
+                        ),
+                        AIMessage(content=_summary_json()),
+                    ]
+                )
             ),
             knowledge_repository=self.knowledge_repository,
         )

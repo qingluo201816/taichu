@@ -234,7 +234,7 @@ async def api_get_general_agent_recovery(
         provide_general_agent_runtime_service
     ),
 ) -> GeneralAgentRecoveryResponse:
-    """读取脱敏的检查点完整性和写入对账状态。"""
+    """读取官方检查点可用性和写入对账状态。"""
 
     try:
         recovery = await service.recovery_snapshot(run_id)

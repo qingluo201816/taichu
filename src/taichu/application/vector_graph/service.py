@@ -12,6 +12,7 @@ from taichu.application.contracts.knowledge_repository import (
 from taichu.application.contracts.vector_graph import VectorGraphBackend
 from taichu.application.services.chapter_service import ChapterService
 from taichu.application.vector_graph.corpus import (
+    compact_knowledge_card_context,
     corpus_snapshot_sha256,
     project_chapter,
     project_knowledge_card,
@@ -23,6 +24,7 @@ from taichu.application.vector_graph.models import (
     VectorGraphBuildResult,
     VectorGraphBuildStage,
     VectorGraphBuildStartResult,
+    VectorGraphEvidence,
     VectorGraphExtractedTriplets,
     VectorGraphIndexState,
     VectorGraphIndexStatus,
@@ -222,18 +224,11 @@ class VectorGraphRAGService:
         query: str,
         *,
         top_k: int = 10,
-        graph_enabled: bool = True,
     ) -> VectorGraphRetrievalResult:
         normalized = query.strip()
         if not normalized:
             raise ValueError("多跳召回查询不能为空。")
-        if graph_enabled:
-            indexed = await self._backend.retrieve(normalized, top_k=top_k)
-        else:
-            indexed = await self._backend.retrieve_without_graph(
-                normalized,
-                top_k=top_k,
-            )
+        indexed = await self._backend.retrieve(normalized, top_k=top_k)
         evidences = []
         confirmed_cards = None
         for evidence in indexed.evidences:
@@ -262,10 +257,13 @@ class VectorGraphRAGService:
                     and context_end >= end
                     and context_end <= len(chapter.markdown)
                 ):
-                    context_content = chapter.markdown[context_start:context_end]
+                    authoritative_context = chapter.markdown[context_start:context_end]
+                    context_content = _verified_context_projection(
+                        evidence.context_content,
+                        authoritative_context,
+                    )
                     context_ref = (
-                        f"manuscript:{evidence.source_id}:"
-                        f"{context_start}-{context_end}"
+                        f"manuscript:{evidence.source_id}:{context_start}-{context_end}"
                     )
                 evidences.append(
                     evidence.model_copy(
@@ -285,14 +283,19 @@ class VectorGraphRAGService:
                     for card in await self._knowledge_repository.list_confirmed_cards()
                 }
             card = confirmed_cards.get(evidence.source_id)
-            if card is None or card.lifecycle is not StructuredKnowledgeLifecycle.CONFIRMED:
+            if (
+                card is None
+                or card.lifecycle is not StructuredKnowledgeLifecycle.CONFIRMED
+            ):
                 continue
             current_document = project_knowledge_card(card, confirmed_cards)
             evidences.append(
                 evidence.model_copy(
                     update={
                         "title": current_document.title,
-                        "content": current_document.content,
+                        "content": compact_knowledge_card_context(
+                            current_document.content
+                        ),
                         "content_sha256": current_document.content_sha256,
                         "authority_verified": True,
                     }
@@ -300,7 +303,7 @@ class VectorGraphRAGService:
             )
 
         verified = [
-            evidence.model_copy(update={"rank": rank})
+            _augment_graph_context(evidence.model_copy(update={"rank": rank}))
             for rank, evidence in enumerate(evidences[:top_k], start=1)
         ]
         return indexed.model_copy(
@@ -323,3 +326,35 @@ def _utc_now() -> str:
 
 def _sha256(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _augment_graph_context(evidence: VectorGraphEvidence) -> VectorGraphEvidence:
+    """把已筛选的图关系放入最终模型上下文，避免只在重排阶段可见。"""
+
+    if not evidence.relation_texts:
+        return evidence
+    context = evidence.context_content or evidence.content
+    if "相关图关系：" in context:
+        return evidence
+    augmented = "\n".join(
+        [
+            "相关图关系：" + "；".join(evidence.relation_texts),
+            "相关正文：" + context,
+        ]
+    )
+    return evidence.model_copy(update={"context_content": augmented})
+
+
+def _verified_context_projection(
+    projected: str | None,
+    authoritative: str,
+) -> str:
+    """只保留能在权威原文中连续复原的后端上下文投影。"""
+
+    if not projected:
+        return authoritative
+    compact_projected = "".join(projected.split())
+    compact_authoritative = "".join(authoritative.split())
+    if compact_projected and compact_projected in compact_authoritative:
+        return projected
+    return authoritative

@@ -166,7 +166,7 @@ def test_bound_resource_identity_is_derived_from_actual_resolved_input() -> None
             "knowledge_type": "item",
             "name": "归潮灯",
         },
-        output={"matches": [{"id": "fixture_item_tide_lamp"}]},
+        output={"matches": [{"card_id": "fixture_item_tide_lamp"}]},
     )
     read = _node(
         node_id="read_lamp_card",
@@ -201,7 +201,7 @@ def test_wrong_bound_resource_identity_is_projected_as_a_real_mismatch() -> None
     resolved = _node(
         node_id="resolve_lamp",
         capability_name="resolve_knowledge_identity",
-        output={"matches": [{"id": "fixture_item_tide_lamp"}]},
+        output={"matches": [{"card_id": "fixture_item_tide_lamp"}]},
     )
     read = _node(
         node_id="read_lamp_card",

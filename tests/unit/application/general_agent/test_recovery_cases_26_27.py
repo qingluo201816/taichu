@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from tests.fakes.capability_results import in_memory_capability_result_repository
+
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
@@ -56,14 +58,13 @@ from taichu.infrastructure.evaluations.general_agent_benchmark.recovery_harness 
     GeneralAgentRecoveryHarness,
 )
 from taichu.infrastructure.general_agent_runs import (
-    JsonGeneralAgentCapabilityResultRepository,
     JsonGeneralAgentEffectRepository,
 )
 from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
 from tests.unit.application.general_agent.test_runtime import (
-    _ScriptedGateway,
+    _ScriptedChatModel,
     _TraceRepository,
     _async_test,
     _register_tools,
@@ -179,7 +180,7 @@ async def test_recovery_case_26_reconciles_real_write_without_reapplying(
         conversation_id=result.recovered_run.conversation_id,
         run_id=result.recovered_run.run_id,
     )
-    assert await JsonGeneralAgentCapabilityResultRepository(
+    assert await in_memory_capability_result_repository(
         tmp_path / "general_agent_capability_results"
     ).list_for_run(owner) == ()
     assert (
@@ -199,9 +200,9 @@ async def test_recovery_case_26_reconciles_real_write_without_reapplying(
     assert decision.effect_id == terminal_effect.effect_id
     assert decision.checkpoint_revision is not None
     assert decision.checkpoint_revision >= 1
-    assert decision.evidence["run_checkpoint_revision"] == (
-        result.interrupted_run.checkpoint_revision
-    )
+    assert decision.evidence["projection_revision"] >= 1
+    assert decision.evidence["checkpoint_status"] == "available"
+    assert decision.evidence["checkpoint_id"]
     assert decision.evidence["reconciliation_status"] == "succeeded"
     assert decision.evidence["resource_content_sha256"] == fixture.expected_hash
 
@@ -313,7 +314,7 @@ async def test_recovery_case_26_stops_for_human_when_resource_is_ambiguous(
         conversation_id=result.recovered_run.conversation_id,
         run_id=result.recovered_run.run_id,
     )
-    assert await JsonGeneralAgentCapabilityResultRepository(
+    assert await in_memory_capability_result_repository(
         tmp_path / "general_agent_capability_results"
     ).list_for_run(owner) == ()
     assert (
@@ -339,6 +340,30 @@ async def test_recovery_case_26_stops_for_human_when_resource_is_ambiguous(
         "general_writing_orchestrator.verify"
     ) == 0
 
+    resumed_runtime = base_builder(None)  # type: ignore[arg-type]
+    try:
+        rechecked = await resumed_runtime.resume(
+            result.recovered_run.run_id,
+            effect_resolution="recheck",
+        )
+        assert rechecked.run_id == result.recovered_run.run_id
+        assert rechecked.status is GeneralAgentRunStatus.WAITING_HUMAN
+        assert rechecked.pending_human_request is not None
+        assert rechecked.pending_human_request.kind == "effect_reconciliation"
+        assert len(reconciliation_calls) == 2
+
+        cancelled = await resumed_runtime.resume(
+            rechecked.run_id,
+            effect_resolution="cancel",
+        )
+    finally:
+        await resumed_runtime.shutdown()
+
+    assert cancelled.run_id == result.recovered_run.run_id
+    assert cancelled.status is GeneralAgentRunStatus.CANCELLED
+    assert cancelled.pending_human_request is None
+    assert cancelled.resumable is False
+
 
 @_async_test
 async def test_recovery_case_27_resumes_same_run_verification_without_reread(
@@ -348,7 +373,7 @@ async def test_recovery_case_27_resumes_same_run_verification_without_reread(
     storage = ProjectAssetStorageBackend(tmp_path)
     chapter_service = ChapterService(storage)
     outline_service = OutlineService(storage)
-    gateway = _ScriptedGateway(
+    gateway = _ScriptedChatModel(
         plans=[
             {
                 "rationale": "只读取一次结构，然后校验结论。",
@@ -439,7 +464,7 @@ async def test_recovery_case_27_resumes_same_run_verification_without_reread(
         conversation_id=result.recovered_run.conversation_id,
         run_id=result.recovered_run.run_id,
     )
-    records = await JsonGeneralAgentCapabilityResultRepository(
+    records = await in_memory_capability_result_repository(
         tmp_path / "general_agent_capability_results"
     ).list_for_run(owner)
     assert len(records) == 1
@@ -448,8 +473,9 @@ async def test_recovery_case_27_resumes_same_run_verification_without_reread(
         result.recovered_run,
         "read_structure",
     ).output == records[0].output
-    assert result.interrupted_run.verification_attempt_count == 1
-    assert result.recovered_run.verification_attempt_count == 2
+    # 故障点位于官方 checkpoint 已指向 verify、节点尚未执行的边界。
+    assert result.interrupted_run.verification_attempt_count == 0
+    assert result.recovered_run.verification_attempt_count == 1
 
     assert len(result.recovered_run.recovery_decisions) == 1
     decision = result.recovered_run.recovery_decisions[0]
@@ -457,9 +483,9 @@ async def test_recovery_case_27_resumes_same_run_verification_without_reread(
     assert decision.reason_code == "verification_resumed"
     assert decision.checkpoint_revision is not None
     assert decision.checkpoint_revision >= 1
-    assert decision.evidence["run_checkpoint_revision"] == (
-        result.interrupted_run.checkpoint_revision
-    )
+    assert decision.evidence["projection_revision"] >= 1
+    assert decision.evidence["checkpoint_status"] == "available"
+    assert decision.evidence["checkpoint_id"]
     assert decision.effect_id is None
     assert decision.evidence["run_status_before_recovery"] == "verifying"
     assert decision.evidence["capability_result_ids"] == [records[0].result_id]
@@ -544,8 +570,8 @@ async def _prepare_patch_fixture(root: Path) -> _PatchFixture:
     )
 
 
-def _write_gateway(plan_input: dict[str, object]) -> _ScriptedGateway:
-    return _ScriptedGateway(
+def _write_gateway(plan_input: dict[str, object]) -> _ScriptedChatModel:
+    return _ScriptedChatModel(
         plans=[
             {
                 "rationale": "执行已冻结输入的单次真实正文写入。",
@@ -572,7 +598,7 @@ def _write_gateway(plan_input: dict[str, object]) -> _ScriptedGateway:
 def _write_runtime_builder(
     *,
     root: Path,
-    gateway: _ScriptedGateway,
+    gateway: _ScriptedChatModel,
     traces: _TraceRepository,
     chapter_service: ChapterService,
     write_handler: _WriteHandler,

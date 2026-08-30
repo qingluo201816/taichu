@@ -73,23 +73,19 @@ def build_difference_explanation_prompt(
         "证据不足、裁判评分分歧、有效结果不足和裁判调用失败必须明确区分。"
         "当 issue_type 为 judge_failed 时，必须说明无法形成语义结论，不能把调用失败"
         "写成抽取错误；当名称或证据已经匹配时，不得写成漏提取或多提取。"
-        "不要暴露英文枚举、内部编号、模型调用编号或 JSON 字段名。\n"
-        "输出格式必须为 {\"items\":[{\"explanation_id\":\"原样抄回输入编号\","
-        "\"summary\":\"中文差异说明\"}]}，每个输入必须恰好返回一次。"
-        "只返回这个 JSON 对象。\n"
+        "不要暴露英文枚举、内部编号、模型调用编号或结构化字段名。\n"
+        "每个输入必须恰好生成一项说明，并原样带回对应的输入标识。\n"
         "<UNTRUSTED_DIFFERENCE_DATA>\n"
         + json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
         + "\n</UNTRUSTED_DIFFERENCE_DATA>"
     )
 
 
-def parse_difference_explanation_output(
-    raw_response: str,
+def validate_difference_explanation_output(
+    output: DifferenceExplanationBatchOutput,
     expected_cases: list[DifferenceExplanationInput],
 ) -> DifferenceExplanationBatchOutput:
-    """Validate exact explanation cardinality and stable identifiers."""
-    payload = json.loads(_extract_json_object(raw_response))
-    output = DifferenceExplanationBatchOutput.model_validate(payload)
+    """Validate exact cardinality and stable IDs on typed model output."""
     expected_ids = {case.explanation_id for case in expected_cases}
     actual_ids = [item.explanation_id for item in output.items]
     if len(actual_ids) != len(set(actual_ids)) or set(actual_ids) != expected_ids:
@@ -287,11 +283,3 @@ def _judge_issue_reason(
 
 def _non_negative_int(value: Any) -> int:
     return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else 0
-
-
-def _extract_json_object(value: str) -> str:
-    start = value.find("{")
-    end = value.rfind("}")
-    if start < 0 or end <= start:
-        raise ValueError("差异说明模型没有返回 JSON 对象。")
-    return value[start : end + 1]

@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
 
+from langgraph.store.memory import InMemoryStore
+
 from taichu.application.agent_memory.models import (
     AgentMemoryKind,
     AgentMemoryValidity,
@@ -53,9 +55,10 @@ from taichu.application.general_agent.models import (
 )
 from taichu.application.services.agent_memory_service import AgentMemoryService
 from taichu.infrastructure.agent_memory import (
-    JsonAgentMemoryLexicalIndex,
-    JsonAgentMemoryRepository,
+    LangGraphAgentMemoryRepository,
 )
+
+_PRESSURE_STORES: dict[Path, InMemoryStore] = {}
 
 
 @dataclass(frozen=True, slots=True)
@@ -207,9 +210,9 @@ def _with_current_request(
 
 
 def _memory_service(root: Path) -> AgentMemoryService:
+    store = _PRESSURE_STORES.setdefault(root.resolve(), InMemoryStore())
     return AgentMemoryService(
-        repository=JsonAgentMemoryRepository(root),
-        lexical_index=JsonAgentMemoryLexicalIndex(root),
+        repository=LangGraphAgentMemoryRepository(store),
     )
 
 

@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from taichu.application.contracts.llm import LLMModelIdentity
+from langchain_core.messages import AIMessage, HumanMessage
 from taichu.application.services.ai_card_service import AICardService
 from taichu.application.services.chapter_service import ChapterService
 from taichu.application.services.chapter_summary_service import (
@@ -32,23 +32,26 @@ from taichu.domain.rules.fact_scope import is_allowed_in_fact_scope
 from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
-from tests.fakes import InMemoryKnowledgeRepository
+from tests.fakes import (
+    InMemoryKnowledgeRepository,
+    NativeToolCallSequenceChatModel,
+)
 
 
-class FakeLLM:
+class FakeLLM(NativeToolCallSequenceChatModel):
     """Record prompts and return queued completions."""
 
     def __init__(self, responses: list[str]) -> None:
-        self.responses = responses
-        self.prompts: list[str] = []
+        super().__init__(responses=[AIMessage(content=item) for item in responses])
 
     @property
-    def model_identity(self) -> LLMModelIdentity:
-        return LLMModelIdentity.unknown("测试替身模型。")
-
-    async def complete(self, prompt: str) -> str:
-        self.prompts.append(prompt)
-        return self.responses.pop(0)
+    def prompts(self) -> list[str]:
+        return [
+            str(message.content)
+            for messages in self.seen_messages
+            for message in messages
+            if isinstance(message, HumanMessage)
+        ]
 
 
 class ChapterSummaryServiceTest(unittest.IsolatedAsyncioTestCase):
@@ -93,6 +96,11 @@ class ChapterSummaryServiceTest(unittest.IsolatedAsyncioTestCase):
         self.assertIn("分段 1/2", llm.prompts[0])
         self.assertIn("分段 2/2", llm.prompts[0])
         self.assertNotIn("检索证据", llm.prompts[0])
+        self.assertEqual(llm.bound_tool_choices[0], "any")
+        self.assertEqual(len(llm.bound_tool_definitions[0]), 1)
+        schema = llm.bound_tool_definitions[0][0]["function"]["parameters"]
+        self.assertIn("summary", schema["properties"])
+        self.assertNotIn("JSON 字段", llm.prompts[0])
 
     async def test_summary_prompt_uses_confirmed_knowledge_only(self) -> None:
         await ImportService(self.storage).import_text(
@@ -131,12 +139,12 @@ class ChapterSummaryServiceTest(unittest.IsolatedAsyncioTestCase):
                         {
                             "fact_type": "item",
                             "title": "太初古卷",
-                            "content": {"rule": "可映照本心"},
+                            "content": "可映照本心",
                         },
                         {
                             "fact_type": "item",
                             "title": "太初古卷",
-                            "content": {"rule": "可映照本心"},
+                            "content": "可映照本心",
                         },
                     ]
                 )

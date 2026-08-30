@@ -56,7 +56,7 @@ async def api_stream_writing_ai_run(
     http_request: Request,
     service: WritingAIService = Depends(provide_writing_ai_service),
 ) -> StreamingResponse:
-    """以 NDJSON 输出真实模型增量，同时保存最终完整运行记录。"""
+    """以 NDJSON 输出结构化主内容增量，同时保存最终完整运行记录。"""
     command = WritingAICreateRunCommand(
         button_type=payload.button_type,
         chapter_id=payload.chapter_id,

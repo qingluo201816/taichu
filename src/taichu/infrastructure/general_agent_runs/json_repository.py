@@ -1,8 +1,9 @@
-"""把通用写作助手每次运行保存为可恢复 JSON 检查点。"""
+"""把通用写作助手每次请求保存为业务审计与界面投影。"""
 
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Iterable
 import json
 from pathlib import Path
 import re
@@ -10,6 +11,8 @@ import threading
 import time
 from typing import Any
 from uuid import uuid4
+
+from pydantic import ValidationError
 
 from taichu.application.general_agent.models import (
     GeneralAgentRun,
@@ -21,7 +24,7 @@ _RUN_ID_PATTERN = re.compile(r"^general_run_\d{8}_\d{6}_[a-z0-9]{6}$")
 
 
 class JsonGeneralAgentRunRepository:
-    """在独立目录中原子保存通用 Runtime 业务状态。"""
+    """原子保存业务投影；LangGraph Checkpointer 才负责图恢复。"""
 
     def __init__(self, project_assets_dir: Path) -> None:
         self._root = project_assets_dir / "derived" / "general_agent_runs"
@@ -84,17 +87,24 @@ class JsonGeneralAgentRunRepository:
         with self._lock:
             self._root.mkdir(parents=True, exist_ok=True)
             payloads = self._load_payloads()
+            selected_payloads: Iterable[tuple[str, dict[str, Any]]] = (
+                payloads.items()
+            )
+            if status != "all":
+                expected = GeneralAgentRunStatus(status)
+                selected_payloads = (
+                    (run_id, payload)
+                    for run_id, payload in selected_payloads
+                    if payload.get("status") == expected.value
+                )
             runs = [
                 _load_payload(
                     payload,
                     path=self._path(run_id),
                     payloads=payloads,
                 )
-                for run_id, payload in payloads.items()
+                for run_id, payload in selected_payloads
             ]
-            if status != "all":
-                expected = GeneralAgentRunStatus(status)
-                runs = [run for run in runs if run.status is expected]
             return sorted(runs, key=lambda item: item.created_at, reverse=True)
 
     def _delete_sync(self, run_id: str) -> bool:
@@ -119,13 +129,13 @@ class JsonGeneralAgentRunRepository:
                 continue
             run_id = payload.get("run_id")
             if not isinstance(run_id, str):
-                raise GeneralAgentRunStoreError(f"运行检查点缺少运行标识：{path.name}")
+                raise GeneralAgentRunStoreError(f"运行审计投影缺少运行标识：{path.name}")
             payloads[run_id] = payload
         return payloads
 
 
 class GeneralAgentRunStoreError(ValueError):
-    """通用 Runtime 检查点文件不符合稳定契约。"""
+    """通用 Runtime 业务审计投影不符合稳定契约。"""
 
 
 def _read_payload(path: Path) -> dict[str, Any]:
@@ -140,7 +150,7 @@ def _read_payload(path: Path) -> dict[str, Any]:
             # Windows 在原子替换的极短窗口内可能暂时拒绝并发读取。
             time.sleep(0.005 * (attempt + 1))
     if not isinstance(payload, dict):
-        raise GeneralAgentRunStoreError(f"运行检查点必须是对象：{path.name}")
+        raise GeneralAgentRunStoreError(f"运行审计投影必须是对象：{path.name}")
     return payload
 
 
@@ -169,7 +179,7 @@ def _load_payload(
                 "旧版上下文快照未采用稳定、工作、长期、历史和当前请求五层字段，"
                 "恢复时将自动重建。",
             ]
-            return GeneralAgentRun.model_validate(migrated)
+            return _validate_run_projection(migrated)
         migrated_snapshot = dict(snapshot)
         migrated_snapshot["conversation_id"] = canonical_conversation_id
         migrated_snapshot["content_sha256"] = context_snapshot_sha256(
@@ -180,7 +190,33 @@ def _load_payload(
             }
         )
         migrated["context_snapshot"] = migrated_snapshot
-    return GeneralAgentRun.model_validate(migrated)
+    return _validate_run_projection(migrated)
+
+
+def _validate_run_projection(migrated: dict[str, Any]) -> GeneralAgentRun:
+    """旧快照失效时保留运行审计，但不把它误当成恢复状态。"""
+
+    try:
+        return GeneralAgentRun.model_validate(migrated)
+    except ValidationError as error:
+        if migrated.get("context_snapshot") is None or any(
+            not item.get("loc") or item["loc"][0] != "context_snapshot"
+            for item in error.errors()
+        ):
+            raise
+        fallback = dict(migrated)
+        fallback["context_snapshot_id"] = None
+        fallback["context_snapshot"] = None
+        differences = fallback.get("context_resume_differences")
+        preserved_differences = (
+            list(differences) if isinstance(differences, list) else []
+        )
+        fallback["context_resume_differences"] = [
+            *preserved_differences,
+            "历史上下文快照已不满足当前校验契约；运行审计继续保留，"
+            "图恢复仅使用 LangGraph Checkpointer。",
+        ]
+        return GeneralAgentRun.model_validate(fallback)
 
 
 def _canonical_conversation_id(
@@ -202,7 +238,7 @@ def _canonical_conversation_id(
         return candidate.strip()
     run_id = payload.get("run_id")
     if not isinstance(run_id, str) or not run_id:
-        raise GeneralAgentRunStoreError("运行检查点缺少可恢复的会话标识。")
+        raise GeneralAgentRunStoreError("运行审计投影缺少可识别的会话标识。")
     return run_id
 
 

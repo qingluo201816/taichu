@@ -10,7 +10,9 @@ from pathlib import Path
 from time import monotonic
 from typing import Any, cast
 
-from pymongo import AsyncMongoClient
+from langgraph.checkpoint.mongodb import MongoDBSaver
+from langgraph.store.mongodb import MongoDBStore
+from pymongo import AsyncMongoClient, MongoClient
 
 from taichu.application.agent_memory.models import (
     AgentMemoryDependency,
@@ -107,8 +109,7 @@ from taichu.application.subagents.registry import SubagentRegistry
 from taichu.application.tools.registry import ToolRegistry
 from taichu.domain.models import StructuredKnowledgeCard
 from taichu.infrastructure.agent_memory import (
-    JsonAgentMemoryLexicalIndex,
-    JsonAgentMemoryRepository,
+    LangGraphAgentMemoryRepository,
 )
 from taichu.infrastructure.artifacts import JsonIntermediateArtifactRepository
 from taichu.infrastructure.evaluations.general_agent_benchmark.fixture_external_research import (
@@ -145,13 +146,13 @@ from taichu.infrastructure.general_agent_runs import (
     JsonGeneralAgentContextSnapshotRepository,
     JsonGeneralAgentEffectRepository,
     JsonGeneralAgentRunRepository,
-    JsonLangGraphCheckpointSaver,
 )
 from taichu.infrastructure.invocations import JsonlInvocationTraceRepository
 from taichu.infrastructure.knowledge.mongo_repository import (
     MongoKnowledgeRepository,
 )
 from taichu.infrastructure.llm_replays import JsonLLMCallReplayRepository
+from taichu.infrastructure.llm.adapter import GatewayChatModel
 from taichu.infrastructure.storage.markdown_backend import (
     ProjectAssetStorageBackend,
 )
@@ -596,8 +597,8 @@ class SyntheticFixtureRuntime:
                         "recovery_reuse": (
                             recovery_result.assertion_context.recovery_reuse
                         ),
-                        "checkpoint_integrity": (
-                            recovery_result.assertion_context.checkpoint_integrity
+                        "checkpoint_availability": (
+                            recovery_result.assertion_context.checkpoint_availability
                         ),
                     }
                 )
@@ -690,6 +691,8 @@ class SyntheticFixtureRuntime:
                 if environment is not None:
                     await environment["runtime"].shutdown()
             finally:
+                if environment is not None:
+                    environment["checkpoint_client"].close()
                 await client.close()
 
     async def _pressure_result(
@@ -823,11 +826,19 @@ class SyntheticFixtureRuntime:
         trace_repository = JsonlInvocationTraceRepository(workspace)
         artifact_repository = JsonIntermediateArtifactRepository(workspace)
         await _seed_artifacts(artifact_repository)
-        memory_repository = JsonAgentMemoryRepository(workspace)
-        memory_index = JsonAgentMemoryLexicalIndex(workspace)
+        checkpoint_client = MongoClient(
+            self._mongodb_uri,
+            tz_aware=True,
+            serverSelectionTimeoutMS=5_000,
+        )
+        memory_collection_name = "langgraph_store"
+        database = checkpoint_client[database_name]
+        if memory_collection_name not in database.list_collection_names():
+            database.create_collection(memory_collection_name)
+        graph_store = MongoDBStore(database[memory_collection_name])
+        memory_repository = LangGraphAgentMemoryRepository(graph_store)
         memory_service = AgentMemoryService(
             repository=memory_repository,
-            lexical_index=memory_index,
         )
         memory_fixture, memory_entries_by_ref = await _seed_memories(
             memory_service,
@@ -851,9 +862,15 @@ class SyntheticFixtureRuntime:
                 "invocation_trace_repository": trace_repository,
                 "artifact_repository": artifact_repository,
                 "model_role_router": model_router,
+                "graph_store": graph_store,
             }
         )
-        checkpointer = JsonLangGraphCheckpointSaver(workspace)
+        checkpointer = MongoDBSaver(
+            checkpoint_client,
+            db_name=database_name,
+            checkpoint_collection_name="langgraph_checkpoints",
+            writes_collection_name="langgraph_checkpoint_writes",
+        )
         effects = JsonGeneralAgentEffectRepository(workspace)
         replay_repository = JsonLLMCallReplayRepository(workspace)
         run_repository = JsonGeneralAgentRunRepository(workspace)
@@ -880,6 +897,7 @@ class SyntheticFixtureRuntime:
                 memory_service=memory_service,
             ),
             graph_checkpointer=checkpointer,
+            graph_store=graph_store,
             effect_repository=effects,
             context_snapshot_repository=JsonGeneralAgentContextSnapshotRepository(
                 workspace
@@ -903,6 +921,7 @@ class SyntheticFixtureRuntime:
             allowed_capabilities=allowed,
         )
         return {
+            "case": case,
             "runtime": isolated.runtime,
             "driver": driver,
             "observer": observer,
@@ -915,6 +934,7 @@ class SyntheticFixtureRuntime:
             "knowledge_repository": knowledge_repository,
             "external_research_backend": external_research_backend,
             "checkpointer": checkpointer,
+            "checkpoint_client": checkpoint_client,
             "effects": effects,
             "replays": replay_repository,
             "dependencies": dependencies,
@@ -952,20 +972,49 @@ class SyntheticFixtureRuntime:
         )
 
         workspace: Path = environment["workspace"]
-        reloaded_checkpointer = JsonLangGraphCheckpointSaver(workspace)
-        before_summary = reloaded_checkpointer.inspect_thread(interrupted.run_id)
-        if before_summary.current_revision < 1:
-            raise RuntimeError("进程终止后没有可恢复的真实 checkpoint 修订。")
-        before_revision = reloaded_checkpointer.get_revision(
-            interrupted.run_id,
-            before_summary.current_revision,
+        before_checkpoint = await environment["checkpointer"].aget_tuple(
+            {"configurable": {"thread_id": interrupted.conversation_id}}
+        )
+        if before_checkpoint is None:
+            raise RuntimeError("进程终止后没有可恢复的真实 checkpoint。")
+        await environment["runtime"].shutdown()
+        environment["checkpoint_client"].close()
+        reloaded_checkpoint_client = MongoClient(
+            self._mongodb_uri,
+            tz_aware=True,
+            serverSelectionTimeoutMS=5_000,
+        )
+        reloaded_checkpointer = MongoDBSaver(
+            reloaded_checkpoint_client,
+            db_name=environment["dependencies"].database_name,
+            checkpoint_collection_name="langgraph_checkpoints",
+            writes_collection_name="langgraph_checkpoint_writes",
+        )
+        reloaded_database = reloaded_checkpoint_client[
+            environment["dependencies"].database_name
+        ]
+        reloaded_graph_store = MongoDBStore(
+            reloaded_database["langgraph_store"]
+        )
+        reloaded_memory_repository = LangGraphAgentMemoryRepository(
+            reloaded_graph_store
+        )
+        reloaded_memory_service = AgentMemoryService(
+            repository=reloaded_memory_repository
         )
         reloaded_effects = JsonGeneralAgentEffectRepository(workspace)
         restarted_dependencies = replace(
             environment["dependencies"],
             run_repository=JsonGeneralAgentRunRepository(workspace),
             event_center=GeneralAgentEventCenter(),
+            memory_service=reloaded_memory_service,
+            context_assembler=_runtime_context_assembler(
+                environment["case"],
+                fixture=self._declared_fixture,
+                memory_service=reloaded_memory_service,
+            ),
             graph_checkpointer=reloaded_checkpointer,
+            graph_store=reloaded_graph_store,
             effect_repository=reloaded_effects,
             context_snapshot_repository=JsonGeneralAgentContextSnapshotRepository(
                 workspace
@@ -977,7 +1026,14 @@ class SyntheticFixtureRuntime:
         )
         environment["runtime"] = restarted.runtime
         environment["checkpointer"] = reloaded_checkpointer
+        environment["checkpoint_client"] = reloaded_checkpoint_client
+        environment["memory_repository"] = reloaded_memory_repository
+        environment["memory_service"] = reloaded_memory_service
+        environment["capability_result_repository"] = (
+            restarted.capability_result_repository
+        )
         environment["effects"] = reloaded_effects
+        environment["dependencies"] = restarted_dependencies
         recovered_count = await restarted.runtime.recover_interrupted()
 
         completed = interrupted
@@ -999,11 +1055,11 @@ class SyntheticFixtureRuntime:
             and record.interaction.outcome == "completed"
             for record in environment["observer"].capability_records
         )
-        after_summary = reloaded_checkpointer.inspect_thread(interrupted.run_id)
-        after_revision = reloaded_checkpointer.get_revision(
-            interrupted.run_id,
-            after_summary.current_revision,
+        after_checkpoint = await reloaded_checkpointer.aget_tuple(
+            {"configurable": {"thread_id": interrupted.conversation_id}}
         )
+        if after_checkpoint is None:
+            raise RuntimeError("恢复完成后没有可读取的真实 checkpoint。")
         gateway: StrictSyntheticLLMGateway = environment["gateway"]
         environment["recovery_proof"] = {
             "fault_point": "general_writing_orchestrator.verify",
@@ -1015,16 +1071,8 @@ class SyntheticFixtureRuntime:
                 request.task_name == "general_writing_orchestrator.verify"
                 for request in gateway.requests
             ),
-            "checkpoint_before": {
-                "revision": before_revision.revision,
-                "checkpoint_content_sha256": before_revision.content_sha256,
-                "integrity_status": before_summary.integrity_status,
-            },
-            "checkpoint_after": {
-                "revision": after_revision.revision,
-                "checkpoint_content_sha256": after_revision.content_sha256,
-                "integrity_status": after_summary.integrity_status,
-            },
+            "checkpoint_before": _checkpoint_proof(before_checkpoint),
+            "checkpoint_after": _checkpoint_proof(after_checkpoint),
             "no_rerun": {
                 tool_name: {
                     "before": before_calls,
@@ -1702,7 +1750,7 @@ async def _active_memory_baseline(
         CapabilityContext(capabilities={"tool_registry": tools})
     )
     orchestrator = OrchestratorAgent(
-        llm=gateway,
+        llm=GatewayChatModel(gateway, model_id="synthetic-model"),
         model_router=ModelRoleRouter("synthetic-model"),
         tool_registry=tools,
         subagent_registry=subagents,
@@ -1918,6 +1966,19 @@ def _case_execution_id(case_id: str) -> str:
 
     del case_id
     return f"benchmark_case_{uuid4().hex}"
+
+
+def _checkpoint_proof(checkpoint: object) -> dict[str, Any]:
+    config = getattr(checkpoint, "config", {})
+    payload = getattr(checkpoint, "checkpoint", {})
+    metadata = getattr(checkpoint, "metadata", {})
+    configurable = config.get("configurable", {})
+    checkpoint_id = configurable.get("checkpoint_id") or payload.get("id")
+    return {
+        "checkpoint_id": str(checkpoint_id),
+        "source": str(metadata.get("source", "unknown")),
+        "step": int(metadata.get("step", -1)),
+    }
 
 
 def fixture_structure_version() -> str:

@@ -1,4 +1,4 @@
-"""运行太初 Graph RAG 确定性回归、消融与 DeepEval 语义评测。"""
+"""运行太初 Graph RAG 确定性回归与 DeepEval 语义评测。"""
 
 from __future__ import annotations
 
@@ -52,6 +52,17 @@ async def _run(args: argparse.Namespace) -> int:
     suite = load_golden_suite(args.suite)
     validate_core_golden_suite(suite)
     application = create_app(settings)
+    gateway = application.state.llm_gateway
+    chat_model = application.state.chat_model
+    active_provider = getattr(gateway, "active_provider", "unknown")
+    provider_label = {
+        "rightcode": "RightCode",
+        "deepseek_official": "DeepSeek 官方",
+    }.get(active_provider, "未知供应商")
+    print(
+        f"本次评测供应商：{provider_label}；"
+        f"Graph 模型：{settings.vector_graph_llm_model}"
+    )
     run_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + f"-{args.mode}"
     repository = RAGEvaluationResultRepository(
         settings.project_assets_dir / "derived" / "rag_evaluations"
@@ -62,55 +73,68 @@ async def _run(args: argparse.Namespace) -> int:
                 suite,
                 application.state.vector_graph_rag_service,
                 smoke_only=args.mode == "smoke",
-                include_ablation=args.mode != "smoke",
+                continue_on_error=True,
             )
         semantic_scores: list[dict[str, object]] = []
-        if args.mode != "smoke":
-            gateway = application.state.llm_gateway
+        if args.mode in ("smoke", "rag-pr", "full"):
             default_model_id = next(
                 profile.id for profile in gateway.list_models() if profile.is_default
             )
             judge_model_id = (
                 settings.evaluation_judge_model.strip() or default_model_id
             )
-            generator = RAGAnswerGenerator(gateway, model_id=default_model_id)
-            judge = TaichuDeepEvalLLM(gateway, judge_model_id)
+            generator = RAGAnswerGenerator(chat_model, model_id=default_model_id)
+            judge = TaichuDeepEvalLLM(chat_model, judge_model_id)
             semantic_cases = (
-                list(suite.cases)
-                if args.mode == "full"
-                else list(select_pr_semantic_cases(suite.cases))
+                [case for case in suite.cases if case.smoke]
+                if args.mode == "smoke"
+                else (
+                    list(suite.cases)
+                    if args.mode == "full"
+                    else list(select_pr_semantic_cases(suite.cases))
+                )
             )
             with vector_graph_llm_run_context(run_id):
                 for case in semantic_cases:
-                    retrieval = (
-                        await application.state.vector_graph_rag_service.retrieve(
-                            case.query,
-                            top_k=10,
-                            graph_enabled=True,
+                    try:
+                        retrieval = (
+                            await application.state.vector_graph_rag_service.retrieve(
+                                case.query,
+                                top_k=10,
+                            )
                         )
-                    )
-                    answer = await generator.generate(case.query, retrieval)
-                    score = await evaluate_semantic_case(
-                        case,
-                        actual_answer=answer,
-                        retrieval=retrieval,
-                        judge=judge,
-                    )
-                    semantic_scores.append(score.model_dump(mode="json"))
+                        answer = await generator.generate(case.query, retrieval)
+                        score = await evaluate_semantic_case(
+                            case,
+                            actual_answer=answer,
+                            retrieval=retrieval,
+                            judge=judge,
+                        )
+                        semantic_scores.append(score.model_dump(mode="json"))
+                    except Exception as error:
+                        semantic_scores.append(
+                            {
+                                "case_id": case.case_id,
+                                "status": "failed",
+                                "error_type": type(error).__name__,
+                                "error_message": str(error)[:2_000],
+                            }
+                        )
 
         gate = evaluate_regression_gate(deterministic, semantic_scores)
         report = RAGRunReport(
             deterministic=deterministic,
             semantic_scores=semantic_scores,
             runtime_identity={
+                "llm_provider": active_provider,
                 "embedding_model": settings.embedding_model_id,
                 "reranker_model": settings.reranker_model_id,
                 "graph_llm_model": settings.vector_graph_llm_model,
                 "generator_model": (
-                    default_model_id if args.mode != "smoke" else "未调用"
+                    default_model_id
                 ),
                 "judge_model": (
-                    judge_model_id if args.mode != "smoke" else "未调用"
+                    judge_model_id
                 ),
             },
             gate=gate,

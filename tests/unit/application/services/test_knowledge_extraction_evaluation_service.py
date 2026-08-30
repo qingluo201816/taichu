@@ -9,6 +9,8 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
+from pydantic import BaseModel
+
 from taichu.application.agents.models.agent_run import (
     AgentReviewCandidateAction,
     AgentReviewItem,
@@ -159,13 +161,24 @@ class _Judge:
     def model_identity(self) -> LLMModelIdentity:
         return self._identity
 
-    async def complete(self, prompt: str) -> EvaluationJudgeResponse:
+    async def complete(
+        self,
+        prompt: str,
+        *,
+        output_schema: type[BaseModel],
+    ) -> EvaluationJudgeResponse:
         self.calls += 1
         raise AssertionError("本测试不应调用语义裁判")
 
 
 class _SuccessfulJudge(_Judge):
-    async def complete(self, prompt: str) -> EvaluationJudgeResponse:
+    async def complete(
+        self,
+        prompt: str,
+        *,
+        output_schema: type[BaseModel],
+    ) -> EvaluationJudgeResponse:
+        assert output_schema.__name__ == "JudgeBatchOutput"
         self.calls += 1
         encoded = prompt.split("<UNTRUSTED_EVALUATION_DATA>\n", 1)[1].split(
             "\n</UNTRUSTED_EVALUATION_DATA>",
@@ -187,7 +200,7 @@ class _SuccessfulJudge(_Judge):
                 "knowledge_usability",
             )
         }
-        raw = json.dumps(
+        output = output_schema.model_validate(
             {
                 "items": [
                     {
@@ -205,51 +218,61 @@ class _SuccessfulJudge(_Judge):
                     }
                     for item in cases
                 ]
-            },
-            ensure_ascii=False,
+            }
         )
         return EvaluationJudgeResponse(
-            raw_response=raw,
+            output=output,
+            raw_response="opaque structured-output audit payload",
             model_identity=self.model_identity,
         )
 
 
 class _DifferenceJudge(_SuccessfulJudge):
-    async def complete(self, prompt: str) -> EvaluationJudgeResponse:
+    async def complete(
+        self,
+        prompt: str,
+        *,
+        output_schema: type[BaseModel],
+    ) -> EvaluationJudgeResponse:
         if "<UNTRUSTED_DIFFERENCE_DATA>" in prompt:
+            assert output_schema.__name__ == "DifferenceExplanationBatchOutput"
             self.calls += 1
             encoded = prompt.split("<UNTRUSTED_DIFFERENCE_DATA>\n", 1)[1].split(
                 "\n</UNTRUSTED_DIFFERENCE_DATA>",
                 1,
             )[0]
             cases = json.loads(encoded)
+            output = output_schema.model_validate(
+                {
+                    "items": [
+                        {
+                            "explanation_id": item["explanation_id"],
+                            "summary": (
+                                "已匹配为同一张角色卡，但本次摘要对关键事实的"
+                                "覆盖不完整。"
+                            ),
+                        }
+                        for item in cases
+                    ]
+                }
+            )
             return EvaluationJudgeResponse(
-                raw_response=json.dumps(
-                    {
-                        "items": [
-                            {
-                                "explanation_id": item["explanation_id"],
-                                "summary": (
-                                    "已匹配为同一张角色卡，但本次摘要对关键事实的"
-                                    "覆盖不完整。"
-                                ),
-                            }
-                            for item in cases
-                        ]
-                    },
-                    ensure_ascii=False,
-                ),
+                output=output,
+                raw_response="opaque difference-output audit payload",
                 model_identity=self.model_identity,
             )
-        response = await super().complete(prompt)
-        payload = json.loads(response.raw_response)
+        response = await super().complete(
+            prompt,
+            output_schema=output_schema,
+        )
+        payload = response.output.model_dump(mode="json")
         for item in payload["items"]:
             dimension = item["dimensions"]["key_fact_coverage"]
             dimension["score"] = 3
             dimension["verdict"] = "mostly_correct"
             dimension["reason"] = "候选覆盖主要事实，但仍有细节遗漏。"
         return response.model_copy(
-            update={"raw_response": json.dumps(payload, ensure_ascii=False)}
+            update={"output": output_schema.model_validate(payload)}
         )
 
 

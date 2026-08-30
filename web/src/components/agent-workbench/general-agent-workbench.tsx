@@ -40,12 +40,12 @@ import {
   cancelGeneralAgentRun,
   deleteGeneralAgentConversation,
   getGeneralAgentConversation,
-  getGeneralAgentRun,
   listGeneralAgentConversations,
   listGeneralAgentContextSnapshots,
   listGeneralAgentMemories,
   resumeGeneralAgentRun,
   startGeneralAgentRun,
+  streamGeneralAgentEvents,
 } from "@/lib/api/general-agent";
 import { listChapters } from "@/lib/api/chapters";
 import {
@@ -184,7 +184,6 @@ export function GeneralAgentWorkbench({
   const selectedContextRun =
     conversationRuns.find(run => run.run_id === selectedContextRunId) ?? currentRun;
   const activeRunId = currentRun?.run_id ?? "";
-  const activeRunStatus = currentRun?.status;
   const contextRunId = selectedContextRun?.run_id ?? "";
   const latestContextSnapshotId = selectedContextRun?.context_snapshot_id ?? "";
 
@@ -213,37 +212,36 @@ export function GeneralAgentWorkbench({
   }, [contextPanelOpen, contextRunId, latestContextSnapshotId]);
 
   useEffect(() => {
-    if (
-      !activeRunId ||
-      !activeRunStatus ||
-      !isGeneralAgentRunActive(activeRunStatus)
-    ) {
+    if (!selectedConversationId) {
       return;
     }
-    const timer = window.setInterval(() => {
-      void getGeneralAgentRun(activeRunId)
-        .then(response => {
-          setConversationRuns(current =>
-            current.map(run =>
-              run.run_id === response.run.run_id ? response.run : run,
-            ),
-          );
-          if (!isGeneralAgentRunActive(response.run.status)) {
-            void reloadConversations(response.run.conversation_id);
-            if (memoryPanelOpen) {
-              void reloadMemories(response.run.conversation_id);
-            }
-          }
-        })
-        .catch(pollError => setError(errorMessage(pollError)));
-    }, 900);
-    return () => window.clearInterval(timer);
+    const controller = new AbortController();
+    void streamGeneralAgentEvents(event => {
+      if (event.run.conversation_id !== selectedConversationId) {
+        return;
+      }
+      setConversationRuns(current =>
+        current.map(run =>
+          run.run_id === event.run.run_id ? event.run : run,
+        ),
+      );
+      if (!isGeneralAgentRunActive(event.run.status)) {
+        void reloadConversations(event.run.conversation_id);
+        if (memoryPanelOpen) {
+          void reloadMemories(event.run.conversation_id);
+        }
+      }
+    }, controller.signal).catch(streamError => {
+      if (!controller.signal.aborted) {
+        setError(errorMessage(streamError));
+      }
+    });
+    return () => controller.abort();
   }, [
-    activeRunId,
-    activeRunStatus,
     memoryPanelOpen,
     reloadConversations,
     reloadMemories,
+    selectedConversationId,
   ]);
   const scopeSummary = (() => {
     const label =
@@ -421,6 +419,7 @@ export function GeneralAgentWorkbench({
     answer?: string;
     approve?: boolean;
     second_confirmation?: boolean;
+    effect_resolution?: "recheck" | "confirm_not_applied" | "cancel";
   }) {
     if (!currentRun) {
       return;
@@ -1121,10 +1120,48 @@ function GeneralContextPanel({
           </div>
           <div className="tc-editor-scrollbar mt-1 grid max-h-[420px] gap-2 overflow-y-auto pr-1">
             <ContextLayer
-              title="稳定记忆"
+              title="稳定记忆（系统提示词）"
               summary={`${snapshot.envelope.stable_memory.length} 条规则`}
             >
               <ContextTextList items={snapshot.envelope.stable_memory} />
+            </ContextLayer>
+            <ContextLayer
+              title="长期记忆"
+              summary={`${snapshot.envelope.long_term_memory.length} 条偏好记忆`}
+            >
+              <ContextMemoryList
+                memories={snapshot.envelope.long_term_memory}
+                emptyText="当前尚未沉淀可用的用户偏好长期记忆。"
+              />
+            </ContextLayer>
+            <ContextLayer
+              title="历史对话"
+              summary={`${snapshot.envelope.history_memory.messages.length} 条近期原文 · ${snapshot.envelope.history_memory.omitted_message_count} 条已摘要`}
+            >
+              {snapshot.envelope.history_memory.summary ? (
+                <p className="mb-2 whitespace-pre-wrap text-xs leading-5 text-[var(--tc-text-secondary)]">
+                  {snapshot.envelope.history_memory.summary}
+                </p>
+              ) : null}
+              {snapshot.envelope.history_memory.messages.length ? (
+                <div className="grid gap-2">
+                  {snapshot.envelope.history_memory.messages.map((message, index) => (
+                    <div
+                      key={`${message.created_at}-${index}`}
+                      className="rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-page)] px-3 py-2"
+                    >
+                      <p className="text-xs text-[var(--tc-text-muted)]">
+                        {messageRoleLabels[message.role]} · {formatTime(message.created_at)}
+                      </p>
+                      <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-[var(--tc-text-secondary)]">
+                        {message.content}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-[var(--tc-text-muted)]">本次没有选入历史对话。</p>
+              )}
             </ContextLayer>
             <ContextLayer
               title="工作记忆"
@@ -1153,44 +1190,6 @@ function GeneralContextPanel({
               {snapshot.envelope.working_memory.digest ? (
                 <ContextJson label="工作记忆摘要" value={snapshot.envelope.working_memory.digest} />
               ) : null}
-            </ContextLayer>
-            <ContextLayer
-              title="长期记忆"
-              summary={`${snapshot.envelope.long_term_memory.length} 条偏好记忆`}
-            >
-              <ContextMemoryList
-                memories={snapshot.envelope.long_term_memory}
-                emptyText="当前尚未沉淀可用的用户偏好长期记忆。"
-              />
-            </ContextLayer>
-            <ContextLayer
-              title="历史记忆"
-              summary={`${snapshot.envelope.history_memory.messages.length} 条近期原文 · ${snapshot.envelope.history_memory.omitted_message_count} 条已摘要`}
-            >
-              {snapshot.envelope.history_memory.summary ? (
-                <p className="mb-2 whitespace-pre-wrap text-xs leading-5 text-[var(--tc-text-secondary)]">
-                  {snapshot.envelope.history_memory.summary}
-                </p>
-              ) : null}
-              {snapshot.envelope.history_memory.messages.length ? (
-                <div className="grid gap-2">
-                  {snapshot.envelope.history_memory.messages.map((message, index) => (
-                    <div
-                      key={`${message.created_at}-${index}`}
-                      className="rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-page)] px-3 py-2"
-                    >
-                      <p className="text-xs text-[var(--tc-text-muted)]">
-                        {messageRoleLabels[message.role]} · {formatTime(message.created_at)}
-                      </p>
-                      <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-[var(--tc-text-secondary)]">
-                        {message.content}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-[var(--tc-text-muted)]">本次没有选入历史对话。</p>
-              )}
             </ContextLayer>
             <ContextLayer title="当前请求" summary="完整保留" defaultOpen>
               <p className="whitespace-pre-wrap text-xs leading-5 text-[var(--tc-text-primary)]">
@@ -1419,6 +1418,7 @@ function GeneralRunPanel({
     answer?: string;
     approve?: boolean;
     second_confirmation?: boolean;
+    effect_resolution?: "recheck" | "confirm_not_applied" | "cancel";
   }) => void;
   onCopy: () => void;
 }) {
@@ -1579,6 +1579,66 @@ function GeneralRunPanel({
                 >
                   <Check className="size-4" />
                   授权并继续
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {request?.kind === "effect_reconciliation" ? (
+        <div className="mt-6 mr-auto max-w-[760px] rounded-2xl bg-[var(--tc-surface-card)] p-4">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h4 className="text-sm font-semibold text-[var(--tc-text-primary)]">
+                需要核对真实写入结果
+              </h4>
+              <p className="mt-1 text-sm leading-6 text-[var(--tc-text-secondary)]">
+                {request.prompt}
+              </p>
+              <div className="mt-3 grid gap-2 rounded-xl bg-[var(--tc-surface-muted)] p-3 text-xs text-[var(--tc-text-muted)]">
+                <p>操作：{generalCapabilityLabel(request.tool_name ?? "")}</p>
+                <p>
+                  作用范围：
+                  {request.resource_scopes.map(formatResourceScope).join("、") ||
+                    "未标明"}
+                </p>
+                <p className="break-all font-mono">
+                  副作用记录：{request.effect_id ?? "未标明"}
+                </p>
+              </div>
+              <p className="mt-3 text-xs leading-5 text-[var(--tc-text-muted)]">
+                重新核对只读取真实资源；只有你确认原写入没有生效时，系统才会按冻结输入重试。
+              </p>
+              <div className="mt-3 flex flex-wrap justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => onResume({ effect_resolution: "cancel" })}
+                >
+                  <Ban className="size-4" />
+                  停止任务
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() =>
+                    onResume({ effect_resolution: "confirm_not_applied" })
+                  }
+                >
+                  <RefreshCw className="size-4" />
+                  确认未写入并重试
+                </Button>
+                <Button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onResume({ effect_resolution: "recheck" })}
+                >
+                  <RotateCcw className="size-4" />
+                  重新核对资源
                 </Button>
               </div>
             </div>

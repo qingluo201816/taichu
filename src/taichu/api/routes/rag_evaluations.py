@@ -73,28 +73,28 @@ async def get_configuration(
     return RAGEvaluationConfiguration(
         pipeline=[
             RAGEvaluationPipelineStage(
-                key="production_retrieval",
+                key="passage_retrieval",
                 order=1,
-                name="生产检索链",
-                description="BM25 与 HNSW Dense 召回，经 Milvus RRF 融合后进行受控图扩展。",
+                name="Passage 双路召回",
+                description="BM25 Passage Top 30 与 HNSW Dense Passage Top 30 并行召回。",
+            ),
+            RAGEvaluationPipelineStage(
+                key="rrf_graph_expansion",
+                order=2,
+                name="RRF 与有界图扩展",
+                description="RRF Top 30 提供实体与关系种子，一跳扩图后按 relation.passage_ids 回取并合并 Passage。",
             ),
             RAGEvaluationPipelineStage(
                 key="rerank_context",
-                order=2,
+                order=3,
                 name="重排与上下文重建",
-                description="BGE 二阶段精排后回源父级与相邻正文，形成最终证据上下文。",
+                description="全部合并候选只执行一次 BGE 评分；Top 10 作为评测与追踪边界，再选择最多 3 份互补证据并按问题类型重建原文句窗或父级上下文。",
             ),
             RAGEvaluationPipelineStage(
                 key="deterministic",
-                order=3,
+                order=4,
                 name="Golden 确定性回归",
                 description="计算 Recall@10、MRR@10、权威回源、关系召回与完整路径召回。",
-            ),
-            RAGEvaluationPipelineStage(
-                key="ablation",
-                order=4,
-                name="Graph ON/OFF 消融",
-                description="对 14 条图用例成对运行，验证图扩展带来的完整路径净增益。",
             ),
             RAGEvaluationPipelineStage(
                 key="semantic",
@@ -117,16 +117,16 @@ async def get_configuration(
                 description="Recall、MRR 与关系召回统一按前 10 条计算。",
             ),
             RAGEvaluationParameter(
-                key="relation_top_k",
-                name="关系初始召回",
-                value=str(app_settings.vector_graph_relation_top_k),
-                description="关系向量检索进入受控扩展前的候选上限。",
+                key="passage_top_k",
+                name="RRF Passage 候选",
+                value=str(app_settings.vector_graph_passage_top_k),
+                description="BM25 与 Dense 各取相同 TopK，并由 RRF 融合为该数量的种子 Passage。",
             ),
             RAGEvaluationParameter(
                 key="graph_hop",
                 name="最大图跳数",
-                value=str(app_settings.vector_graph_expansion_degree),
-                description="受控 Graph Expansion 的最大扩展深度。",
+                value=str(app_settings.vector_graph_expansion_max_hop),
+                description="从 RRF Passage 图元数据出发允许继续扩展的最大跳数。",
             ),
             RAGEvaluationParameter(
                 key="seed_entities",
@@ -135,17 +135,23 @@ async def get_configuration(
                 description="避免主角等 Hub 实体同时展开过多入口。",
             ),
             RAGEvaluationParameter(
-                key="initial_relations",
-                name="单实体初始关系",
+                key="seed_relations",
+                name="种子关系上限",
+                value=str(app_settings.vector_graph_expansion_max_seed_relations),
+                description="从 RRF Passage 携带关系中按 Query 与 Passage 支持度保留的上限。",
+            ),
+            RAGEvaluationParameter(
+                key="neighbor_candidate_pool",
+                name="邻边候选池倍率",
                 value=str(
-                    app_settings.vector_graph_expansion_initial_relations_per_entity
+                    app_settings.vector_graph_expansion_candidate_pool_multiplier
                 ),
-                description="每个种子实体按 Query 相关性保留的初始邻接关系数。",
+                description="每个实体先扩大查询相关邻边候选池，再按单实体上限择优准入。",
             ),
             RAGEvaluationParameter(
                 key="relation_budget",
                 name="全局关系预算",
-                value=str(app_settings.vector_graph_relation_number_threshold),
+                value=str(app_settings.vector_graph_expansion_max_total_relations),
                 description="图扩展关系总量的硬上限，防止上下文爆炸。",
             ),
             RAGEvaluationParameter(
@@ -156,9 +162,9 @@ async def get_configuration(
             ),
             RAGEvaluationParameter(
                 key="reranker_top_k",
-                name="BGE 最终保留",
+                name="BGE 评测与追踪边界",
                 value=str(app_settings.vector_graph_reranker_top_k),
-                description="二阶段精排后送入上下文组装的证据数量。",
+                description="统一 BGE 排序用于 Recall、MRR、关系召回和检索追踪的前 K 条；上下文装配另按互补性选择最多 3 份证据。",
             ),
         ],
         ci_policies=[
@@ -170,12 +176,12 @@ async def get_configuration(
             RAGEvaluationCIPolicy(
                 name="RAG 相关拉取请求",
                 trigger="检索、评测、语料或配置路径变更",
-                scope="30 条 Golden + 14 条 Graph 消融 + 10 条 DeepEval",
+                scope="30 条 Golden 确定性回归 + 10 条 DeepEval",
             ),
             RAGEvaluationCIPolicy(
                 name="发布前手动评测",
                 trigger="workflow_dispatch",
-                scope="30 条完整确定性回归 + 14 条 Graph 消融 + 30 条 DeepEval",
+                scope="30 条完整确定性回归 + 30 条 DeepEval",
             ),
         ],
     )

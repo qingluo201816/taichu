@@ -1,15 +1,19 @@
 """组装并启动太初 FastAPI 应用。"""
 
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from pathlib import Path
 import uvicorn
-from typing import cast
+from typing import Any, cast
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from langchain_core.language_models.chat_models import BaseChatModel
+from langgraph.checkpoint.base import BaseCheckpointSaver
+from langgraph.checkpoint.mongodb import MongoDBSaver
+from langgraph.store.base import BaseStore
+from langgraph.store.mongodb import MongoDBStore
+from pymongo import MongoClient
 
 from taichu.api.router import register_routes
 from taichu.application.agents.registry import AgentRegistry
@@ -36,16 +40,17 @@ from taichu.application.evaluations.general_agent_benchmark.services import (
 from taichu.application.evaluations.general_agent_benchmark.suite_loader import (
     load_authored_suite,
 )
-from taichu.application.contracts.llm import (
-    LLMGatewayContract,
-    LLMModelIdentity,
-)
+from taichu.application.contracts.llm import LLMModelManagementError
+from taichu.infrastructure.llm.contracts import LLMGatewayContract
 from taichu.application.contracts.knowledge_repository import (
     KnowledgeRepositoryUnavailableError,
     StructuredKnowledgeRepository,
 )
 from taichu.application.contracts.knowledge_sedimentation_progress_repository import (
     InMemoryKnowledgeSedimentationProgressRepository,
+)
+from taichu.application.contracts.general_agent_tool_budget import (
+    GeneralAgentToolBudgetRepository,
 )
 from taichu.application.services.ai_card_service import AICardService
 from taichu.application.services.agent_memory_evidence_service import (
@@ -82,10 +87,12 @@ from taichu.application.services.model_role_router import ModelRoleRouter
 from taichu.application.external_research.service import ExternalResearchService
 from taichu.application.tools.registry import ToolRegistry
 from taichu.config import Settings, settings
-from taichu.infrastructure.llm.adapter import LangChainLLMAdapter
+from taichu.domain.models import EditorPreferences
+from taichu.infrastructure.llm.adapter import GatewayChatModel
 from taichu.infrastructure.llm.catalog import LLMModelCatalog
 from taichu.infrastructure.llm.rightcode import RightCodeLLMGateway
 from taichu.infrastructure.llm_usage import JsonlLLMUsageRepository
+from taichu.infrastructure.long_term_memory import MarkdownLongTermMemoryRetriever
 from taichu.infrastructure.llm_replays import JsonLLMCallReplayRepository
 from taichu.infrastructure.evaluations import (
     JsonEvaluationDatasetRepository,
@@ -136,15 +143,14 @@ from taichu.infrastructure.external_research import (
 from taichu.infrastructure.invocations import JsonlInvocationTraceRepository
 from taichu.infrastructure.artifacts import JsonIntermediateArtifactRepository
 from taichu.infrastructure.general_agent_runs import (
-    JsonGeneralAgentCapabilityResultRepository,
+    LangGraphGeneralAgentCapabilityResultRepository,
     JsonGeneralAgentContextSnapshotRepository,
     JsonGeneralAgentEffectRepository,
     JsonGeneralAgentRunRepository,
-    JsonLangGraphCheckpointSaver,
+    MongoGeneralAgentToolBudgetRepository,
 )
 from taichu.infrastructure.agent_memory import (
-    JsonAgentMemoryLexicalIndex,
-    JsonAgentMemoryRepository,
+    LangGraphAgentMemoryRepository,
 )
 
 _FIXED_GENERAL_AGENT_BENCHMARK_SUITE = (
@@ -166,12 +172,26 @@ _FIXED_GENERAL_AGENT_BENCHMARK_CLAIMS = (
 def create_app(
     app_settings: Settings = settings,
     *,
-    llm: BaseChatModel | None = None,
-    llm_model_identity: LLMModelIdentity | None = None,
     llm_gateway: LLMGatewayContract | None = None,
     knowledge_repository: StructuredKnowledgeRepository | None = None,
+    graph_checkpointer: BaseCheckpointSaver[Any] | None = None,
+    graph_store: BaseStore | None = None,
+    tool_budget_repository: GeneralAgentToolBudgetRepository | None = None,
 ) -> FastAPI:
     """创建并组装 FastAPI 应用。"""
+    persistence_components = (
+        graph_checkpointer,
+        graph_store,
+        tool_budget_repository,
+    )
+    supplied_persistence_count = sum(
+        component is not None for component in persistence_components
+    )
+    if supplied_persistence_count not in {0, len(persistence_components)}:
+        raise ValueError(
+            "LangGraph Checkpointer、Store 和 Tool 调用预算仓储必须成组注入。"
+        )
+    managed_tool_budget_repository = tool_budget_repository is None
     storage = JsonStorageBackend(app_settings.project_assets_dir / "source")
     project_storage = ProjectAssetStorageBackend(app_settings.project_assets_dir)
     chapter_service = ChapterService(project_storage)
@@ -183,29 +203,33 @@ def create_app(
     if llm_gateway is not None:
         llm_service = llm_gateway
         llm_configured = True
-    elif llm is not None:
-        llm_service = LangChainLLMAdapter(
-            llm,
-            llm_model_identity
-            or LLMModelIdentity.unknown(
-                "注入模型未提供身份。",
-                model_id=app_settings.rightcode_default_model_id,
-            ),
-            default_model_id=app_settings.rightcode_default_model_id,
-        )
-        llm_configured = True
     else:
         rightcode_gateway = RightCodeLLMGateway(
             app_settings,
             model_catalog,
             llm_usage_repository,
             replay_repository=llm_replay_repository,
+            enforce_active_provider=True,
         )
+        initial_preferences = EditorPreferences.model_validate(
+            project_storage.read_preferences_snapshot()
+        )
+        try:
+            rightcode_gateway.set_active_provider(
+                initial_preferences.llm_provider.value
+            )
+        except LLMModelManagementError:
+            # 已保存供应商失去密钥时保持可启动，由供应商页面提示重新配置。
+            pass
         llm_service = rightcode_gateway
         llm_configured = rightcode_gateway.configured
     active_default_model = next(
         (profile.id for profile in llm_service.list_models() if profile.is_default),
         app_settings.rightcode_default_model_id,
+    )
+    application_chat_model = GatewayChatModel(
+        llm_service,
+        model_id=active_default_model,
     )
     ai_card_service = AICardService(project_storage)
     inbox_service = InboxService(project_storage, ai_card_service)
@@ -220,7 +244,7 @@ def create_app(
         milvus_uri=app_settings.milvus_uri,
         milvus_token=app_settings.milvus_token.get_secret_value(),
         collection_prefix=app_settings.milvus_collection_prefix,
-        llm=llm_service,
+        llm=application_chat_model,
         llm_model=(app_settings.vector_graph_llm_model or active_default_model),
         embedding_base_url=app_settings.embedding_base_url,
         embedding_model=app_settings.embedding_model_id,
@@ -235,26 +259,21 @@ def create_app(
         hnsw_ef_construction=app_settings.milvus_hnsw_ef_construction,
         hnsw_ef_search=app_settings.milvus_hnsw_ef_search,
         rrf_k=app_settings.milvus_rrf_k,
-        entity_top_k=app_settings.vector_graph_entity_top_k,
-        relation_top_k=app_settings.vector_graph_relation_top_k,
-        expansion_degree=app_settings.vector_graph_expansion_degree,
-        relation_number_threshold=(
-            app_settings.vector_graph_relation_number_threshold
-        ),
         expansion_max_seed_entities=(
             app_settings.vector_graph_expansion_max_seed_entities
         ),
-        expansion_initial_relations_per_entity=(
-            app_settings.vector_graph_expansion_initial_relations_per_entity
+        expansion_max_seed_relations=(
+            app_settings.vector_graph_expansion_max_seed_relations
         ),
-        expansion_initial_beam_width=(
-            app_settings.vector_graph_expansion_initial_beam_width
-        ),
+        expansion_max_hop=app_settings.vector_graph_expansion_max_hop,
         expansion_max_entities_per_hop=(
             app_settings.vector_graph_expansion_max_entities_per_hop
         ),
         expansion_relations_per_entity=(
             app_settings.vector_graph_expansion_relations_per_entity
+        ),
+        expansion_candidate_pool_multiplier=(
+            app_settings.vector_graph_expansion_candidate_pool_multiplier
         ),
         expansion_hub_relations_per_entity=(
             app_settings.vector_graph_expansion_hub_relations_per_entity
@@ -263,7 +282,13 @@ def create_app(
             app_settings.vector_graph_expansion_hub_degree_threshold
         ),
         expansion_beam_width=app_settings.vector_graph_expansion_beam_width,
-        final_top_k=app_settings.vector_graph_ann_top_k,
+        expansion_max_total_relations=(
+            app_settings.vector_graph_expansion_max_total_relations
+        ),
+        expansion_max_graph_passages=(
+            app_settings.vector_graph_expansion_max_graph_passages
+        ),
+        final_top_k=app_settings.vector_graph_passage_top_k,
     )
     vector_graph_backend = HybridVectorGraphBackend(
         milvus=milvus_vector_graph_backend,
@@ -272,7 +297,7 @@ def create_app(
             model_id=app_settings.reranker_model_id,
             timeout_seconds=app_settings.reranker_request_timeout_seconds,
         ),
-        candidate_top_k=app_settings.vector_graph_ann_top_k,
+        candidate_top_k=app_settings.vector_graph_passage_top_k,
         final_top_k=app_settings.vector_graph_reranker_top_k,
     )
     vector_graph_rag_service = VectorGraphRAGService(
@@ -280,9 +305,7 @@ def create_app(
         knowledge_repository=knowledge_repository,
         backend=vector_graph_backend,
         manuscript_chunk_size=app_settings.vector_graph_manuscript_chunk_size,
-        manuscript_chunk_overlap=(
-            app_settings.vector_graph_manuscript_chunk_overlap
-        ),
+        manuscript_chunk_overlap=(app_settings.vector_graph_manuscript_chunk_overlap),
     )
     invocation_trace_repository = JsonlInvocationTraceRepository(
         app_settings.project_assets_dir
@@ -293,29 +316,45 @@ def create_app(
     general_agent_run_repository = JsonGeneralAgentRunRepository(
         app_settings.project_assets_dir
     )
-    general_agent_graph_checkpointer = JsonLangGraphCheckpointSaver(
-        app_settings.project_assets_dir
-    )
+    general_agent_checkpoint_client: MongoClient[Any] | None = None
+    if supplied_persistence_count == 0:
+        general_agent_checkpoint_client = MongoClient(
+            app_settings.mongodb_uri,
+            tz_aware=True,
+            serverSelectionTimeoutMS=5_000,
+        )
+        graph_checkpointer = MongoDBSaver(
+            general_agent_checkpoint_client,
+            db_name=app_settings.mongodb_database,
+            checkpoint_collection_name="langgraph_checkpoints",
+            writes_collection_name="langgraph_checkpoint_writes",
+        )
+        graph_store = MongoDBStore(
+            general_agent_checkpoint_client[app_settings.mongodb_database][
+                "langgraph_store"
+            ]
+        )
+        tool_budget_repository = MongoGeneralAgentToolBudgetRepository(
+            app_settings.mongodb_uri,
+            app_settings.mongodb_database,
+        )
+    assert graph_checkpointer is not None
+    assert graph_store is not None
+    assert tool_budget_repository is not None
+    general_agent_graph_checkpointer = graph_checkpointer
+    general_agent_graph_store = graph_store
     general_agent_effect_repository = JsonGeneralAgentEffectRepository(
         app_settings.project_assets_dir
     )
     general_agent_capability_result_repository = (
-        JsonGeneralAgentCapabilityResultRepository(
-            app_settings.project_assets_dir
-            / "derived"
-            / "general_agent_capability_results"
-        )
+        LangGraphGeneralAgentCapabilityResultRepository(general_agent_graph_store)
     )
     general_agent_context_snapshot_repository = (
         JsonGeneralAgentContextSnapshotRepository(app_settings.project_assets_dir)
     )
-    agent_memory_repository = JsonAgentMemoryRepository(app_settings.project_assets_dir)
-    agent_memory_lexical_index = JsonAgentMemoryLexicalIndex(
-        app_settings.project_assets_dir
-    )
+    agent_memory_repository = LangGraphAgentMemoryRepository(general_agent_graph_store)
     agent_memory_service = AgentMemoryService(
         repository=agent_memory_repository,
-        lexical_index=agent_memory_lexical_index,
         evidence_resolver=AgentMemoryEvidenceService(
             chapter_service=chapter_service,
             knowledge_service=knowledge_service,
@@ -331,6 +370,12 @@ def create_app(
     )
     general_agent_context_assembler = ContextAssembler(
         memory_service=agent_memory_service,
+        long_term_memory_retriever=MarkdownLongTermMemoryRetriever(
+            app_settings.project_assets_dir
+            / "source"
+            / "workspace"
+            / "long_term_memory.md"
+        ),
         policy=GeneralAgentContextPolicy(
             total_char_budget=app_settings.general_agent_context_char_budget,
             working_memory_retrieval_top_k=(
@@ -338,6 +383,9 @@ def create_app(
             ),
             working_memory_char_budget=(
                 app_settings.general_agent_working_memory_char_budget
+            ),
+            long_term_memory_retrieval_top_k=(
+                app_settings.general_agent_long_term_memory_retrieval_top_k
             ),
             long_term_memory_char_budget=(
                 app_settings.general_agent_long_term_memory_char_budget
@@ -382,7 +430,8 @@ def create_app(
     agent_task_events = AgentTaskEventCenter()
     knowledge_extraction_service = KnowledgeExtractionService(
         chapter_service=chapter_service,
-        llm=llm_service,
+        llm=application_chat_model,
+        model_catalog=llm_service,
         knowledge_repository=knowledge_repository,
         knowledge_service=knowledge_service,
         run_store=knowledge_run_store,
@@ -402,6 +451,7 @@ def create_app(
     )
     evaluation_judge = create_evaluation_judge(
         app_settings,
+        application_chat_model,
         llm_service,
         configured=llm_configured,
     )
@@ -416,12 +466,13 @@ def create_app(
         storage=project_storage,
         chapter_service=chapter_service,
         retrieval_service=vector_graph_rag_service,
-        llm=llm_service,
+        llm=application_chat_model,
+        model_catalog=llm_service,
         default_model_id=active_default_model,
         llm_configured=llm_configured,
     )
     selection_ai_service = SelectionAIService(
-        llm_service,
+        application_chat_model,
         ai_card_service,
         default_model_id=active_default_model,
     )
@@ -430,13 +481,16 @@ def create_app(
         storage=project_storage,
         chapter_service=chapter_service,
         knowledge_repository=knowledge_repository,
-        llm=llm_service,
+        llm=application_chat_model,
         ai_card_service=ai_card_service,
         default_model_id=active_default_model,
     )
+    general_agent_chat_model = application_chat_model.for_request(
+        model_id=model_role_router.model_for("orchestrator"),
+    )
     capability_context = CapabilityContext(
         capabilities={
-            "llm": llm_service,
+            "llm": application_chat_model,
             "chapter_service": chapter_service,
             "outline_service": outline_service,
             "knowledge_service": knowledge_service,
@@ -449,6 +503,7 @@ def create_app(
             "model_role_router": model_role_router,
             "knowledge_run_store": knowledge_run_store,
             "storage": storage,
+            "graph_store": general_agent_graph_store,
         }
     )
     agent_registry = AgentRegistry(capability_context)
@@ -456,12 +511,15 @@ def create_app(
     tool_registry = ToolRegistry(
         capability_context,
         invocation_trace_repository,
+        tool_budget_repository=tool_budget_repository,
+        require_tool_budget=True,
     )
     discovered_tools = discover_tools("taichu.application.tools")
     tool_registry.register_all(discovered_tools)
     subagent_context = CapabilityContext(
         capabilities={
             **capability_context.capabilities,
+            "llm": general_agent_chat_model,
             "tool_registry": tool_registry,
         }
     )
@@ -486,24 +544,24 @@ def create_app(
         },
     }
     orchestrator_agent = OrchestratorAgent(
-        llm=llm_service,
+        llm=general_agent_chat_model,
         model_router=model_role_router,
         tool_registry=tool_registry,
         subagent_registry=subagent_registry,
         trace_repository=invocation_trace_repository,
-        capability_catalog_char_budget=(
-            app_settings.general_agent_capability_catalog_char_budget
+        capability_prompt_char_budget=(
+            app_settings.general_agent_capability_prompt_char_budget
+        ),
+        capability_retrieval_limit=(
+            app_settings.general_agent_capability_retrieval_limit
         ),
     )
     dynamic_dag_executor = DynamicDagExecutor(
         tool_registry=tool_registry,
         subagent_registry=subagent_registry,
         policy_service=invocation_policy_service,
-        capability_result_repository=(
-            general_agent_capability_result_repository
-        ),
+        capability_result_repository=(general_agent_capability_result_repository),
         capability_handler_identities=capability_handler_identities,
-        graph_checkpointer=general_agent_graph_checkpointer,
         effect_repository=general_agent_effect_repository,
     )
     general_agent_runtime_service = GeneralAgentRuntimeService(
@@ -514,20 +572,18 @@ def create_app(
         policy_service=invocation_policy_service,
         memory_service=agent_memory_service,
         context_assembler=general_agent_context_assembler,
-        capability_result_repository=(
-            general_agent_capability_result_repository
-        ),
+        capability_result_repository=(general_agent_capability_result_repository),
         graph_checkpointer=general_agent_graph_checkpointer,
+        graph_store=general_agent_graph_store,
         effect_repository=general_agent_effect_repository,
         context_snapshot_repository=general_agent_context_snapshot_repository,
         llm_replay_repository=llm_replay_repository,
+        tool_budget_repository=tool_budget_repository,
     )
     benchmark_capability_catalog = production_capability_catalog_snapshot()
     benchmark_suite = load_authored_suite(
         _FIXED_GENERAL_AGENT_BENCHMARK_SUITE,
-        expected_capability_catalog_hash=(
-            benchmark_capability_catalog.canonical_hash
-        ),
+        expected_capability_catalog_hash=(benchmark_capability_catalog.canonical_hash),
     )
     interactive_benchmark_execution = InteractiveSyntheticExecution(
         suite=benchmark_suite,
@@ -548,68 +604,81 @@ def create_app(
         / "general_agent_benchmarks"
         / "interactive-runtime"
     )
-    general_agent_benchmark_services = (
-        build_general_agent_benchmark_services(
-            catalog_entries=(
-                BenchmarkCatalogEntry.from_suite(benchmark_suite),
-            ),
-            authored_suites=(benchmark_suite,),
-            suite_run_store=JsonSuiteRunStore(
-                benchmark_runtime_root / "runs"
-            ),
-            execute_case=interactive_benchmark_execution.execute_case,
-            finalize_suite=interactive_benchmark_execution.finalize,
-            issue_correlation_repository=IssueCorrelationRepository(),
-            query_hydration=load_frozen_benchmark_query_snapshot(
-                GeneralAgentBenchmarkArtifactRepository(
-                    app_settings.project_assets_dir
-                    / "derived"
-                    / "general_agent_benchmarks"
-                )
-            ),
-            resources=JsonBenchmarkRunResourceService(
-                benchmark_runtime_root / "artifacts"
-            ),
-        )
+    general_agent_benchmark_services = build_general_agent_benchmark_services(
+        catalog_entries=(BenchmarkCatalogEntry.from_suite(benchmark_suite),),
+        authored_suites=(benchmark_suite,),
+        suite_run_store=JsonSuiteRunStore(benchmark_runtime_root / "runs"),
+        execute_case=interactive_benchmark_execution.execute_case,
+        finalize_suite=interactive_benchmark_execution.finalize,
+        issue_correlation_repository=IssueCorrelationRepository(),
+        query_hydration=load_frozen_benchmark_query_snapshot(
+            GeneralAgentBenchmarkArtifactRepository(
+                app_settings.project_assets_dir / "derived" / "general_agent_benchmarks"
+            )
+        ),
+        resources=JsonBenchmarkRunResourceService(benchmark_runtime_root / "artifacts"),
     )
     interactive_benchmark_execution.bind_resources(
         general_agent_benchmark_services.resources
     )
+
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-        if managed_knowledge_repository:
-            try:
-                await cast(MongoKnowledgeRepository, knowledge_repository).initialize()
-                await cast(
-                    MongoKnowledgeSedimentationProgressRepository,
-                    sedimentation_progress_repository,
-                ).initialize()
-            except Exception as error:
-                await cast(MongoKnowledgeRepository, knowledge_repository).close()
-                await cast(
-                    MongoKnowledgeSedimentationProgressRepository,
-                    sedimentation_progress_repository,
-                ).close()
-                raise RuntimeError(
-                    f"MongoDB 知识库初始化失败，后端已停止启动：{error}"
-                ) from error
-        await knowledge_extraction_evaluation_service.recover_interrupted()
-        await general_agent_runtime_service.recover_interrupted()
-        await knowledge_extraction_service.recover_interrupted()
-        knowledge_extraction_evaluation_service.start_watchdog()
-        try:
-            yield
-        finally:
-            await knowledge_extraction_service.shutdown()
-            await general_agent_runtime_service.shutdown()
-            await knowledge_extraction_evaluation_service.shutdown()
-            await vector_graph_backend.close()
+        async with AsyncExitStack() as resources:
             if managed_knowledge_repository:
-                await cast(MongoKnowledgeRepository, knowledge_repository).close()
-                await cast(
-                    MongoKnowledgeSedimentationProgressRepository,
-                    sedimentation_progress_repository,
-                ).close()
+                resources.push_async_callback(
+                    cast(MongoKnowledgeRepository, knowledge_repository).close
+                )
+                resources.push_async_callback(
+                    cast(
+                        MongoKnowledgeSedimentationProgressRepository,
+                        sedimentation_progress_repository,
+                    ).close
+                )
+            if general_agent_checkpoint_client is not None:
+                resources.callback(general_agent_checkpoint_client.close)
+            if managed_tool_budget_repository:
+                resources.push_async_callback(
+                    cast(
+                        MongoGeneralAgentToolBudgetRepository,
+                        tool_budget_repository,
+                    ).aclose
+                )
+            if isinstance(llm_service, RightCodeLLMGateway):
+                resources.push_async_callback(llm_service.aclose)
+            resources.push_async_callback(vector_graph_backend.close)
+            resources.push_async_callback(
+                knowledge_extraction_evaluation_service.shutdown
+            )
+            resources.push_async_callback(general_agent_runtime_service.shutdown)
+            resources.push_async_callback(knowledge_extraction_service.shutdown)
+
+            if isinstance(llm_service, RightCodeLLMGateway):
+                preferences = await settings_preference_service.get_preferences()
+                try:
+                    llm_service.set_active_provider(preferences.llm_provider.value)
+                except LLMModelManagementError:
+                    # 已保存供应商失去密钥时保持可启动，由供应商页面提示重新配置。
+                    pass
+            if managed_knowledge_repository:
+                try:
+                    await cast(
+                        MongoKnowledgeRepository,
+                        knowledge_repository,
+                    ).initialize()
+                    await cast(
+                        MongoKnowledgeSedimentationProgressRepository,
+                        sedimentation_progress_repository,
+                    ).initialize()
+                except Exception as error:
+                    raise RuntimeError(
+                        f"MongoDB 知识库初始化失败，后端已停止启动：{error}"
+                    ) from error
+            await knowledge_extraction_evaluation_service.recover_interrupted()
+            await general_agent_runtime_service.recover_interrupted()
+            await knowledge_extraction_service.recover_interrupted()
+            knowledge_extraction_evaluation_service.start_watchdog()
+            yield
 
     application = FastAPI(
         title="Taichu",
@@ -635,7 +704,10 @@ def create_app(
     )
     application.state.agent_memory_service = agent_memory_service
     application.state.agent_memory_repository = agent_memory_repository
-    application.state.agent_memory_lexical_index = agent_memory_lexical_index
+    application.state.general_agent_graph_store = general_agent_graph_store
+    application.state.general_agent_tool_budget_repository = (
+        tool_budget_repository
+    )
     application.state.general_agent_benchmark_services = (
         general_agent_benchmark_services
     )
@@ -677,6 +749,7 @@ def create_app(
     application.state.settings_preference_service = settings_preference_service
     application.state.writing_ai_service = writing_ai_service
     application.state.llm_gateway = llm_service
+    application.state.chat_model = application_chat_model
     application.state.llm_model_catalog = model_catalog
     application.state.llm_usage_repository = llm_usage_repository
     application.state.llm_replay_repository = llm_replay_repository

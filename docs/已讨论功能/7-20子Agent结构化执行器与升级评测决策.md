@@ -1,6 +1,6 @@
 # 子 Agent 结构化执行器与升级评测决策
 
-> 更新日期：2026-07-20
+> 更新日期：2026-08-24
 > 讨论日期：2026-07-20
 > 状态：已确认待评测；当前默认形态保持为专业结构化执行器，后续按能力评测结果决定是否单独升级某个子 Agent
 
@@ -54,7 +54,7 @@ Tool 负责：
 
 主编排 Agent 与子 Agent 不共享同一套上下文拼装规则，这是已确认的合理边界。
 
-主编排 Agent 的上下文服务于“如何拆任务和收敛结果”，包括当前请求、过程历史、运行记忆、计划摘要、节点摘要和能力目录。
+主编排 Agent 的上下文服务于“如何拆任务和收敛结果”，按 `System Prompt → 长期记忆 → 历史对话 → 工作记忆 → 当前请求` 组装。System Prompt 承载身份、基本准则和静态能力索引；计划摘要、节点摘要、候选能力字段、授权和运行状态进入工作记忆。
 
 子 Agent 的上下文服务于“如何完成一个专业任务”，包括专业任务输入、授权来源、上游中间产物和输出 Schema。
 
@@ -134,4 +134,3 @@ trace_id
 - `src/taichu/application/general_agent/orchestrator.py`：主编排 Agent 的能力选择、计划物化和校验。
 - `src/taichu/application/general_agent/executor.py`：DAG 节点执行、输入绑定、子 Agent 调用和上游产物传递。
 - `src/taichu/application/general_agent/context.py`：主编排 Agent 的五层上下文组装与预算裁剪。
-

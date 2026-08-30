@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+from tests.fakes.capability_results import in_memory_capability_result_repository
+
 import asyncio
 from pathlib import Path
 
 import pytest
+from langgraph.checkpoint.memory import InMemorySaver
 
 from taichu.application.capabilities import CapabilityContext
 from taichu.application.contracts.general_agent_capability_results import (
     CapabilityResultOwner,
+    GeneralAgentCapabilityResultRepository,
 )
 from taichu.application.general_agent.executor import DynamicDagExecutor
 from taichu.application.general_agent.faults import (
@@ -44,9 +48,7 @@ from taichu.application.tools._shared import sha256_text
 from taichu.application.tools.contract import ToolPlugin
 from taichu.application.tools.registry import ToolRegistry
 from taichu.infrastructure.general_agent_runs import (
-    JsonGeneralAgentCapabilityResultRepository,
     JsonGeneralAgentEffectRepository,
-    JsonLangGraphCheckpointSaver,
 )
 from taichu.infrastructure.storage.markdown_backend import ProjectAssetStorageBackend
 
@@ -109,21 +111,131 @@ def test_capability_graph_resumes_failed_node_without_rerunning_success_node(
                 ),
             ]
         )
-        saver = JsonLangGraphCheckpointSaver(tmp_path)
-        first = _executor(registry, policy, saver, tmp_path)
+        saver = InMemorySaver()
+        first = _executor(registry, policy, tmp_path)
 
         with pytest.raises(_InjectedProcessCrash):
-            await first.execute(run, checkpoint=_checkpoint)
+            await first.execute(
+                run,
+                checkpoint=_checkpoint,
+                checkpointer=saver,
+            )
 
         assert calls == {"read": 1, "search": 1}
         crash_search = False
         restored = _executor(
             registry,
             policy,
-            JsonLangGraphCheckpointSaver(tmp_path),
             tmp_path,
         )
-        completed = await restored.execute(run, checkpoint=_checkpoint)
+        completed = await restored.execute(
+            run,
+            checkpoint=_checkpoint,
+            checkpointer=saver,
+        )
+
+        assert calls == {"read": 1, "search": 2}
+        assert all(
+            node.status is GeneralAgentNodeStatus.SUCCESS
+            for node in completed.node_runs
+            if node.plan_revision == 1
+        )
+
+    asyncio.run(scenario())
+
+
+def test_parallel_send_resume_uses_langgraph_pending_writes(
+    tmp_path: Path,
+) -> None:
+    async def scenario() -> None:
+        chapter_service, outline_service, chapter_id = await _chapter_services(tmp_path)
+        policy = InvocationPolicyService()
+        calls = {"read": 0, "search": 0}
+        read_completed = asyncio.Event()
+        crash_search = True
+
+        async def counted_read(input_data, invocation, capabilities):
+            calls["read"] += 1
+            result = await read_manuscript.run(input_data, invocation, capabilities)
+            read_completed.set()
+            return result
+
+        async def unstable_search(input_data, invocation, capabilities):
+            nonlocal crash_search
+            calls["search"] += 1
+            await read_completed.wait()
+            if crash_search:
+                raise _InjectedProcessCrash()
+            return await get_novel_structure.run(input_data, invocation, capabilities)
+
+        registry = ToolRegistry(
+            CapabilityContext(
+                capabilities={
+                    "chapter_service": chapter_service,
+                    "outline_service": outline_service,
+                    "invocation_policy_service": policy,
+                }
+            )
+        )
+        registry.register(
+            ToolPlugin(manifest=read_manuscript.manifest, run=counted_read)
+        )
+        registry.register(
+            ToolPlugin(manifest=get_novel_structure.manifest, run=unstable_search)
+        )
+        run = _run(
+            nodes=[
+                GeneralAgentPlanNode(
+                    node_id="read_chapter",
+                    kind=GeneralAgentNodeKind.TOOL,
+                    capability_name="read_manuscript",
+                    objective="读取章节。",
+                    input_data={"chapter_ids": [chapter_id]},
+                ),
+                GeneralAgentPlanNode(
+                    node_id="search_chapter",
+                    kind=GeneralAgentNodeKind.TOOL,
+                    capability_name="get_novel_structure",
+                    objective="读取卷章结构。",
+                    input_data={},
+                ),
+            ]
+        )
+        saver = InMemorySaver()
+        result_scope = tmp_path / "parallel_pending_results"
+        results = in_memory_capability_result_repository(result_scope)
+
+        with pytest.raises(_InjectedProcessCrash):
+            await _executor(
+                registry,
+                policy,
+                tmp_path,
+                capability_results=results,
+            ).execute(
+                run,
+                checkpoint=_checkpoint,
+                checkpointer=saver,
+            )
+
+        assert calls == {"read": 1, "search": 1}
+        await results.delete_run(
+            CapabilityResultOwner(
+                conversation_id=run.conversation_id,
+                run_id=run.run_id,
+            )
+        )
+
+        crash_search = False
+        completed = await _executor(
+            registry,
+            policy,
+            tmp_path,
+            capability_results=in_memory_capability_result_repository(result_scope),
+        ).execute(
+            run,
+            checkpoint=_checkpoint,
+            checkpointer=saver,
+        )
 
         assert calls == {"read": 1, "search": 2}
         assert all(
@@ -219,16 +331,15 @@ def test_real_manuscript_write_is_reconciled_after_crash_without_duplicate(
 
         hook = ResourceWriteCrashHook()
 
-        saver = JsonLangGraphCheckpointSaver(tmp_path)
+        saver = InMemorySaver()
         effects = JsonGeneralAgentEffectRepository(tmp_path)
-        results = JsonGeneralAgentCapabilityResultRepository(
+        results = in_memory_capability_result_repository(
             tmp_path / "capability_results"
         )
         first = DynamicDagExecutor(
             tool_registry=registry,
             subagent_registry=_subagents(policy),
             policy_service=policy,
-            graph_checkpointer=saver,
             effect_repository=effects,
             capability_result_repository=results,
             capability_handler_identities=_handler_identities(registry),
@@ -236,7 +347,11 @@ def test_real_manuscript_write_is_reconciled_after_crash_without_duplicate(
         )
 
         with pytest.raises(_InjectedProcessCrash):
-            await first.execute(run, checkpoint=_checkpoint)
+            await first.execute(
+                run,
+                checkpoint=_checkpoint,
+                checkpointer=saver,
+            )
 
         after_crash = await chapter_service.read_chapter(chapter_id)
         assert after_crash.markdown == "新内容。秦阳走入山门。"
@@ -255,10 +370,9 @@ def test_real_manuscript_write_is_reconciled_after_crash_without_duplicate(
             tool_registry=restarted_registry,
             subagent_registry=_subagents(restarted_policy),
             policy_service=restarted_policy,
-            graph_checkpointer=JsonLangGraphCheckpointSaver(tmp_path),
             effect_repository=restarted_effects,
             capability_result_repository=(
-                JsonGeneralAgentCapabilityResultRepository(
+                in_memory_capability_result_repository(
                     tmp_path / "capability_results"
                 )
             ),
@@ -266,7 +380,11 @@ def test_real_manuscript_write_is_reconciled_after_crash_without_duplicate(
                 _handler_identities(restarted_registry)
             ),
         )
-        completed = await restored.execute(run, checkpoint=_checkpoint)
+        completed = await restored.execute(
+            run,
+            checkpoint=_checkpoint,
+            checkpointer=saver,
+        )
 
         current = [item for item in completed.node_runs if item.plan_revision == 1]
         assert current[0].status is GeneralAgentNodeStatus.SUCCESS
@@ -340,17 +458,19 @@ def _write_registry(
 def _executor(
     registry: ToolRegistry,
     policy: InvocationPolicyService,
-    saver: JsonLangGraphCheckpointSaver,
     root: Path,
+    *,
+    capability_results: GeneralAgentCapabilityResultRepository | None = None,
 ) -> DynamicDagExecutor:
     return DynamicDagExecutor(
         tool_registry=registry,
         subagent_registry=_subagents(policy),
         policy_service=policy,
-        graph_checkpointer=saver,
         effect_repository=JsonGeneralAgentEffectRepository(root),
         capability_result_repository=(
-            JsonGeneralAgentCapabilityResultRepository(
+            capability_results
+            if capability_results is not None
+            else in_memory_capability_result_repository(
                 root / "capability_results"
             )
         ),

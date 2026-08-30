@@ -10,7 +10,7 @@ def build_summary_prompt(
     segments: list[str],
     confirmed_knowledge: list[KnowledgeCard],
 ) -> str:
-    """Build a strict JSON prompt for one chapter summary draft."""
+    """Build the business prompt for one chapter summary draft."""
     knowledge_lines = [
         f"- {card.name}: {card.summary}" for card in confirmed_knowledge[:20]
     ]
@@ -22,15 +22,7 @@ def build_summary_prompt(
         [
             "你是太初的章节整理工作流。",
             "只生成章节整理草稿，不写 Knowledge，不确认设定。",
-            (
-                "必须只返回 JSON object，不要 Markdown 代码块。JSON 字段："
-                "summary, key_events, character_changes, "
-                "new_setting_candidates, foreshadow_candidates, next_chapter_hooks。"
-            ),
-            (
-                "new_setting_candidates 的每一项必须包含 "
-                "fact_type, title, content；它们只是待确认候选。"
-            ),
+            "正文出现的新设定只能列为待确认候选，不能写成已经确认的小说事实。",
             f"章节 ID：{chapter_id}",
             f"章节标题：{chapter_title}",
             "已确认知识：\n" + ("\n".join(knowledge_lines) or "无"),

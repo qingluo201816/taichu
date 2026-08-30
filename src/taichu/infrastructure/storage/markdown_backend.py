@@ -161,6 +161,10 @@ class ProjectAssetStorageBackend:
         """Read workspace/settings_preferences.json."""
         return await asyncio.to_thread(self._read_preferences_sync)
 
+    def read_preferences_snapshot(self) -> StorageData:
+        """在同步应用组装阶段读取当前偏好快照。"""
+        return self._read_preferences_sync()
+
     async def write_preferences(self, data: StorageData) -> None:
         """Write workspace/settings_preferences.json atomically."""
         await asyncio.to_thread(self._write_preferences_sync, data)
@@ -356,7 +360,12 @@ class ProjectAssetStorageBackend:
                         raise ValueError(
                             f"Workspace record id is not unique: {item_id}"
                         )
-                    current_revision = int(record.get("revision", 0))
+                    revision = record.get("revision", 0)
+                    if not isinstance(revision, int) or isinstance(revision, bool):
+                        raise ValueError(
+                            f"Workspace record revision is invalid: {item_id}"
+                        )
+                    current_revision = revision
                     if current_revision != expected_revision:
                         raise WorkspaceRecordRevisionConflictError(current_revision)
                     candidate = {
@@ -585,6 +594,7 @@ class ProjectAssetStorageBackend:
             "font_size": 18,
             "font_style": "serif",
             "editor_background": "dark",
+            "llm_provider": "rightcode",
             "updated_at": _now_iso(),
         }
 
