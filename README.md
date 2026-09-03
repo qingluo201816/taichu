@@ -1,232 +1,356 @@
-# 太初仓库地图
+<div align="center">
+  <img src="./assets/taichu-mark.png" width="112" alt="Taichu mark" />
+  <h1>Taichu · 太初</h1>
+  <p><strong>An observable, recoverable, and human-interruptible Agent workspace for long-form fiction.</strong></p>
+  <p>面向长篇小说创作的可观测、可恢复、可干预 Agent 工作台</p>
 
-> 更新日期：2026-08-30
+  <p>
+    <a href="https://github.com/qingluo201816/taichu">Homepage</a>
+    · English
+    | <a href="./README.zh-CN.md">中文</a>
+  </p>
 
-太初是面向个人作者的单本玄幻长篇 AI 写作工作台。本文件只回答两件事：仓库每个区域负责什么，以及想找某类资料应该去哪里。
+  <p>
+    <img alt="Python 3.12+" src="https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white" />
+    <img alt="LangGraph" src="https://img.shields.io/badge/LangGraph-Agent_Runtime-171717" />
+    <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white" />
+    <img alt="Next.js" src="https://img.shields.io/badge/Next.js-Frontend-000000?logo=nextdotjs&logoColor=white" />
+    <img alt="MongoDB" src="https://img.shields.io/badge/MongoDB-Confirmed_Knowledge-47A248?logo=mongodb&logoColor=white" />
+    <img alt="Milvus" src="https://img.shields.io/badge/Milvus-Derived_Index-00A1EA" />
+  </p>
+</div>
 
-## 最常用入口
+---
 
-| 我想做什么 | 去哪里 |
-|---|---|
-| 查看 Codex 必须遵守的项目规则 | `AGENTS.md` |
-| 修改当前前端视觉、布局或交互 | `DESIGN.md` |
-| 查看当前入口页状态与历史点云备份位置 | `docs/前端风格/7-11入口页状态说明.md` |
-| 查看前端主题的精确实现 | `web/src/components/theme/`、`web/src/app/globals.css` |
-| 查看全部项目级 Skills | `.agents/索引.md` |
-| 查看 Skill 编写规则 | `.agents/skills/rule.md` |
-| 查看某个 Skill | `.agents/skills/{名称}/SKILL.md` |
-| 启动规格驱动开发 | `$codex-sdd`，规则位于 `.agents/skills/codex-sdd/` |
-| 查看项目资料分类与命名规则 | `docs/rule.md` |
-| 生成或阅读实现学习资料 | `docs/学习资料/说明.md`、`docs/学习资料/` |
-| 查看后端和系统架构学习资料 | `docs/学习资料/7-10太初系统架构图.md` |
-| 查看已实现的第一版 Tool、子 Agent 能力边界与后续调优项 | `docs/学习资料/7-13工具与子智能体能力层技术设计.md` |
-| 查看通用 Agent Runtime 已实现后端边界与后续技术设计 | `docs/学习资料/7-13通用智能体运行时编排技术设计.md` |
-| 查看通用 Agent 全链路、上下文、能力调用、恢复与纠偏排查地图 | `docs/学习资料/7-20通用Agent运行链路上下文与能力调用排查地图.md` |
-| 查看当前真实 LangGraph 图、节点、边与状态转移 | `docs/学习资料/8-24当前LangGraph图节点边与状态转移报告.md` |
-| 查看当前模型请求中系统提示词（System Prompt）、工具、会话、约束的生成、编码与多轮更新链路 | `docs/学习资料/8-24模型请求上下文生成编码与多轮更新真实链路.md` |
-| 查看通用写作智能体当前 37 条固定评测基准与规格 | `tests/fixtures/evaluations/general_writing_agent_benchmark/suite.json`、`.sdd/specs/1.1/通用写作智能体37类Benchmark落实/` |
-| 查看通用 Agent 后续阶段任务包 | `docs/任务包/太初-通用Agent后续推进任务包-20260717/` |
-| 查看独立代码与架构审查报告 | `docs/reviews/` |
-| 查看审查结论生成的可执行迁移任务包 | `docs/tasks/` |
-| 查看多轮讨论形成的未来功能计划 | `docs/已讨论功能/说明.md`、`docs/已讨论功能/` |
-| 查看已落地并通过首轮全量门禁的 Graph RAG 分层评测与自动回归体系 | `docs/学习资料/8-19Graph RAG质量评测与回归体系设计.md` |
-| 查看知识沉淀智能体效果评估设计 | `docs/学习资料/7-11知识沉淀智能体效果评估方案.md` |
-| 核对真实后端代码分层 | `src/taichu/api/`、`src/taichu/application/`、`src/taichu/domain/`、`src/taichu/infrastructure/` |
-| 查看本地数据态目录结构 | `project_assets/readme.md` |
-| 查看当前结构化字段和状态 | `src/taichu/domain/models/` |
-| 查看 API 输入输出 | `src/taichu/api/schemas/` |
-| 查看存储与检索契约 | `src/taichu/application/contracts/` |
-| 追溯已经废弃或被替代的旧方案 | `docs/旧历史/说明.md`、`docs/旧历史/` |
-| 查看测试与评测样本 | `tests/`、`tests/fixtures/evaluations/` |
-| 安全探测 Right Code 模型名称与协议 | `.agents/scripts/probe_rightcode_models.py` |
-| 探测本地嵌入并增量更新 Milvus 多跳图索引 | `scripts/probe_embedding_models.py`、`scripts/update_vector_graph_index.py` |
+> The scarce resource between a human and an Agent is not output tokens. It is understandable, verifiable, and interruptible information bandwidth.
 
-`docs/学习资料/` 解释具体实现主题，`docs/已讨论功能/` 保存未来计划，`docs/旧历史/` 保存已经废弃的方案，`docs/reviews/` 保存基于真实代码与验证证据形成的独立审查报告，`docs/tasks/` 保存由已证实问题生成的可执行任务包。这些资料都不能替代当前代码、测试、`AGENTS.md` 和数据目录说明；学习资料涉及未落地内容时必须明确标记。
+Taichu turns writing, factual retrieval, specialist review, and knowledge maintenance into traceable long-running tasks. Authors do not need to understand the underlying Agent framework to inspect plans, nodes, evidence, memory, cost, and failure causes—or to take control before consequential writes.
 
-## 仓库目录
+Taichu is neither a thin RAG wrapper nor a one-click generation toy optimized for instant gratification. It is a **state-driven, evidence-grounded, human–Agent co-decision runtime** for long-form creation.
 
-```text
-Taichu/
-├── AGENTS.md                 # Codex 项目硬规则
-├── README.md                 # 本仓库地图
-├── DESIGN.md                 # 当前前端唯一设计规则
-├── .env.example              # 环境变量示例
-├── .gitignore                # Git 忽略规则
-├── .python-version           # Python 版本提示
-├── pyproject.toml            # Python 项目与 uv 依赖
-├── uv.lock                   # Python 依赖锁文件，应提交 Git
-├── start.bat                 # Windows 一键启动入口
-├── .agents/                  # Codex Skills、开发工作流与维护脚本
-├── .codex/                   # 项目级 Codex 自定义 Agent 与多 Agent 配置
-├── .sdd/                     # 按需生成的 codex-sdd 规格、状态与验证证据
-├── docs/                     # 学习资料、审查报告、实施任务、未来计划和废弃方案归档
-├── project_assets/           # 当前单本小说的数据态资产
-├── scripts/                  # 可显式运行的向量探测与索引维护命令
-├── src/                      # FastAPI 后端代码
-├── tests/                    # 后端测试和评测夹具
-└── web/                      # Next.js 前端代码
+## Contents
+
+- [Positioning](#positioning)
+- [Product](#product)
+- [Concept](#concept)
+- [Agent system design](#agent-system-design)
+- [Sources of truth](#sources-of-truth)
+- [Engineering evidence](#engineering-evidence)
+- [Stack and local run](#stack-and-local-run)
+- [Current boundaries](#current-boundaries)
+- [Roadmap](#roadmap)
+
+## Positioning
+
+A long-form novel is not a single-prompt task. Across hundreds of thousands of words, hundreds of facts, and months of collaboration, the system must keep answering four questions:
+
+1. What is being done, and why was the plan decomposed this way?
+2. Where did each conclusion come from, and what remains model inference?
+3. Can a failed task recover from state instead of starting over?
+4. What may execute automatically, and what must wait for author approval?
+
+Taichu builds the product around those questions:
+
+| Capability | What the author gets |
+| --- | --- |
+| Observable | Plans, dynamic DAGs, node state, traces, checkpoints, evidence, and cost |
+| Recoverable | Checkpoint continuation, localized failure, retry, and replanning |
+| Interruptible | Candidate-first workflows and author authorization before durable writes |
+| Verifiable | Outputs bound to source scope, retrieved evidence, and author constraints |
+| Governed | Explicit boundaries between prose, candidate knowledge, confirmed facts, and derived indexes |
+
+## Product
+
+### 1. Source-grounded writing
+
+![Taichu writing editor](./assets/editor.png)
+
+Ask, continue, polish, summarize, or review a selection, chapter, chapter range, or the full manuscript. AI output is bound to manuscript scope, retrieved evidence, and author constraints. It enters the workflow as a candidate instead of overwriting a source of truth.
+
+The editor currently exposes AI entry points for chat, continuation, polishing, settings, suggestions, evidence, chapter summaries, inspiration, and factual checks.
+
+<details>
+<summary><strong>Why this design?</strong></summary>
+
+The author can write, ask, and verify at any moment, but the model does not take ownership of final writes or intent. Taichu is designed to extend thought, not hide its absence behind fluent output.
+
+One warning: **do not outsource judgment to the model.**
+
+</details>
+
+### 2. Observable Agent execution
+
+![Long-running creative Agent workspace](./assets/agent-workbench.png)
+
+<table>
+  <tr>
+    <td width="50%"><img src="./assets/knowledge-workflow.png" alt="Knowledge extraction workflow" /></td>
+    <td width="50%"><img src="./assets/agent-monitor.png" alt="Agent run monitor" /></td>
+  </tr>
+  <tr>
+    <td align="center">Knowledge extraction workflow</td>
+    <td align="center">Run, node, and recovery monitoring</td>
+  </tr>
+</table>
+
+A high-level Orchestrator plans complex requests as dynamic DAGs, schedules deterministic Tools and specialist Sub-agents by dependency, and converges through Verification / Replan. Plan revisions, node state, traces, checkpoints, failures, and recovery remain inspectable. Durable writes require author authorization.
+
+<details>
+<summary><strong>What is it useful for?</strong></summary>
+
+Give Taichu a tangled idea and let it decompose, cross-check, and organize the problem. Use it to inspect setting conflicts, power-scale drift, or cross-chapter inconsistencies, or to extract knowledge-card candidates from recent writing.
+
+Model output can be wrong. Confirm it before it enters the knowledge base—**consume responsibly**.
+
+</details>
+
+### 3. Confirmable, rebuildable knowledge
+
+<table>
+  <tr>
+    <td width="50%"><img src="./assets/knowledge.png" alt="Knowledge-card management" /></td>
+    <td width="50%"><img src="./assets/rag-monitor.png" alt="RAG index monitoring" /></td>
+  </tr>
+  <tr>
+    <td align="center">Knowledge-card lifecycle and confirmation</td>
+    <td align="center">RAG synchronization, indexes, and retrieval monitoring</td>
+  </tr>
+</table>
+
+Taichu extracts structured candidates—characters, factions, locations, techniques, and more—from the manuscript. Candidates move through draft, confirmed, or rejected lifecycles. Markdown prose and author-confirmed knowledge cards are sources of truth; Milvus Passage, Entity, and Relation data are deletable, incrementally synchronized, rebuildable derivatives.
+
+<details>
+<summary><strong>Why must retrieval be layered?</strong></summary>
+
+Poor retrieval is often a governance problem before it is a model problem. If prose, candidates, confirmed knowledge, and derived indexes share an unclear boundary, generated claims can silently become facts and contaminate later retrieval.
+
+In Taichu, authors edit prose, authors confirm knowledge cards, and vector/graph indexes can always be rebuilt.
+
+</details>
+
+## Concept
+
+```mermaid
+flowchart LR
+    A[Author goal and constraints] --> B[Creative workspace]
+    B --> C{High-level Orchestrator}
+    C --> D[Dynamic plan and DAG]
+    D --> E[Deterministic Tools]
+    D --> F[Specialist Sub-agents]
+    E --> G[Evidence and artifacts]
+    F --> G
+    G --> H[Verification and replanning]
+    H -->|Not accepted| D
+    H -->|Accepted| I[Candidate result]
+    I --> J{Author confirmation}
+    J -->|Revise| B
+    J -->|Authorize write| K[Prose or confirmed knowledge]
+    K --> L[Rebuildable derived indexes]
+
+    M[Trace / Checkpoint / Cost / Failure] -.observable.-> C
+    M -.recovery.-> D
 ```
 
-`prd-docs/` 只在用户明确提供 PRD 输入时按需创建，用作输入暂存目录；仓库不使用 `.gitkeep` 保存空目录。规格流程通过 `$codex-sdd` 启动，运行状态与产物写入 `.sdd/specs/{版本号}/{大需求模块名称}/`。
+This is not a fixed pipeline. It is an operating principle: **models propose and execute candidate paths, the runtime preserves state and evidence, and the author retains authority over facts and direction.**
 
-## 运行方式
+## Agent system design
 
-首次准备依赖：
+### Hierarchical planning, not a fixed workflow
 
-```powershell
+Taichu follows **Hierarchical Planning + Subagents**. The high-level Orchestrator retains the global objective, plan, dependencies, budget, verification, and replanning. Tools and Sub-agents register around durable capability boundaries; nodes and edges are generated per run.
+
+Small requests may be answered directly or use one Tool. Complex work may form a dynamic DAG with sequential, parallel, verification, repair, and human-interrupt nodes. The runtime does not force every request through the same long pipeline.
+
+### Execution and recovery
+
+```mermaid
+stateDiagram-v2
+    [*] --> Planning: understand goal and plan
+    Planning --> Running: schedule ready nodes
+    Running --> Verifying: collect evidence and artifacts
+    Verifying --> Running: failed verification / replan
+    Running --> Interrupted: authorization or judgment required
+    Interrupted --> Running: resume from Checkpoint
+    Running --> Recovering: node failure
+    Recovering --> Running: retry or replace path
+    Verifying --> Completed: terminal verification passed
+    Completed --> [*]
+```
+
+- `conversation_id` maps to the long-lived LangGraph `thread_id`; each request receives a separate business `run_id` for audit.
+- Checkpoints preserve graph execution state. Business projections and side-effect ledgers do not replace framework checkpoints.
+- Human-in-the-loop resumes the same thread through interrupt/resume semantics rather than a parallel imitation of recovery.
+- Durable side effects are constrained by authorization, idempotency, and a single write node.
+
+### Five context layers
+
+Model-visible context is assembled in this fixed order:
+
+```text
+System Prompt (stable memory)
+→ long-term memory
+→ dialogue history
+→ working memory
+→ current request
+```
+
+| Layer | Content | Boundary |
+| --- | --- | --- |
+| Stable memory | Identity, fixed rules, permissions, static capability index | System Prompt only; optimized as a stable prefix |
+| Long-term memory | User expression, writing, collaboration preferences, and feedback | Not the novel knowledge base; recalled per request |
+| Dialogue history | Original user messages and displayed assistant responses | Excludes tool traces, DAGs, errors, and budgets |
+| Working memory | Current plan, evidence, tool results, node state, recent failures | Projected per stage; full traces are not resent by default |
+| Current request | Latest verbatim user input and immutable attachment references | Never rewritten or mixed with application-generated instructions |
+
+Complete storage is not the same as the current model projection. Business ownership is not the same as an API role. Internal Agent traces are not user dialogue history.
+
+### Software architecture
+
+```mermaid
+flowchart TB
+    UI[Next.js creative workspace] --> API[FastAPI interface layer]
+    API --> APP[Application: orchestration, use cases, authorization, evaluation]
+    APP --> DOMAIN[Domain: fiction and knowledge rules]
+    APP --> RUNTIME[LangChain / LangGraph Runtime]
+    RUNTIME --> TOOLS[Tool and Sub-agent capability catalog]
+    APP --> PORTS[Protocol contracts]
+    PORTS --> INFRA[Infrastructure adapters]
+    INFRA --> MONGO[(MongoDB)]
+    INFRA --> MILVUS[(Milvus)]
+    INFRA --> MODELS[Model providers]
+    INFRA --> OBS[Opik / DeepEval / local audit]
+```
+
+- The domain layer has no dependency on LLMs, Agents, LangGraph, MCP, or storage implementations.
+- The application layer targets LangChain `BaseChatModel` and native message, tool-call, and structured-output contracts.
+- Provider protocols, authentication, stream translation, usage, and replay belong to infrastructure.
+- Discovery and registration are separated; a new Agent joins through a plugin directory and protocol instead of modifying existing capabilities.
+
+## Sources of truth
+
+| Data layer | Role | Source of truth? | Rebuildable? |
+| --- | --- | --- | --- |
+| Markdown manuscript | Original author expression and chapter prose | Yes, textual truth | No |
+| Confirmed MongoDB knowledge cards | Characters, locations, factions, objects, events, and rules | Yes, structural truth | No |
+| JSON / JSONL | AI candidates, run audit, evaluation, and replay | No, intermediate state | Depends on purpose |
+| Milvus Passage / Entity / Relation | Vector, keyword, and graph retrieval indexes | No, derived layer | Yes |
+
+AI never writes directly to MongoDB. Knowledge follows this path:
+
+```text
+model candidate → schema validation → provenance validation → conflict validation
+→ lifecycle validation → author confirmation → application write → derived-index sync
+```
+
+## Engineering evidence
+
+Taichu verifies “it runs” separately from “it is trustworthy.” The results below come from fixed evaluation suites, recovery benchmarks, and real product evaluation screens in the current repository. They are reproducible engineering evidence—not universal promises about every model, every novel, or literary quality.
+
+### Current validation matrix
+
+| Target | Scale | Current result | What it demonstrates |
+| --- | ---: | --- | --- |
+| General writing suite | 37 fixed scenario categories | Continuously regressed | Capability coverage and contract stability |
+| Multi-step Agent contracts | 18 contracts / 9 task classes | 18 / 18 | Capability choice, budget, behavior, artifacts, terminal state, safety, and evidence |
+| Interrupt/recovery contracts | 8 contracts / 4 task classes | 8 / 8 | Checkpointing, recovery, idempotency, and authorization boundaries |
+| Recovery stress matrix | 36 combinations | 100% completion, 100% recovery, 0 duplicate successful side effects | 1/3/6/12/20/40 nodes × concurrency 1/3/8 × normal/interrupted runs |
+| RAG semantic evaluation | 30 fixed cases | Contextual relevancy 0.8530; faithfulness 0.9933; answer relevancy 0.9526 | Retrieval/answer quality trends and long-tail failure discovery |
+
+The largest checkpoint in the recovery matrix was approximately 7.63 MiB. Current defaults remain 12 nodes, concurrency 3, a 900-second runtime limit, and at most one durable write node per author grant.
+
+### Opik evaluation and tracing
+
+![Taichu Opik Agent evaluation screen](./assets/opik-evaluation.png)
+
+Taichu connects Dataset, Experiment, and Trace records to its local evaluation screen and validates suite hash, version, cases, and completion state. The synthetic runtime shown here proves orchestration, capability invocation, recovery, and evidence contracts. It does not represent live-model cost or literary quality.
+
+- [Opik: official Agent Evaluation documentation](https://www.comet.com/docs/opik/evaluation/evaluate_agents)
+- [Opik: official Dashboard documentation](https://www.comet.com/docs/opik/v1/production/dashboards)
+- [DeepEval: official Evaluation documentation](https://deepeval.com/docs/evaluation-introduction)
+
+### Long-context degradation case study
+
+One long-chain `deepseek-v4-flash-0731` run exposed severe repetition degradation:
+
+| Stage | Accumulated context | occurrences of “让我” / output characters | Symptom |
+| --- | ---: | ---: | --- |
+| Early (idx 46) | 15K tokens | 11 / 2,213 | Slight redundancy |
+| Middle (idx 196) | 71K tokens | 50 / 4,290 | Visible degradation |
+| Degraded (idx 404) | 162K tokens | 61 / 4,279 | Severe repetition |
+| Collapse (idx 446) | 181K tokens | 636 / 17,551 | Full loop |
+| Re-collapse (idx 459) | 183K tokens | 1,165 / 19,363 | Distribution collapse |
+
+The output repeatedly said variations of “let me inspect / let me execute / let me use grep” without making actual tool calls.
+
+The incident demonstrates that a long-running Agent cannot rely on a model’s advertised context window alone. Model degradation and missing truncation, refresh, and loop detection can reinforce each other. Taichu therefore treats working-memory projection, checkpoints, failure detection, recovery benchmarks, and model health as runtime capabilities—not prompt tricks.
+
+## Stack and local run
+
+| Layer | Technology |
+| --- | --- |
+| Agent Runtime | LangChain, LangGraph, official Checkpoint / Store / Human-in-the-loop |
+| Backend | Python 3.12+, FastAPI, Pydantic |
+| Frontend | Next.js, React, TypeScript, Tailwind CSS, shadcn/ui |
+| Structural truth | MongoDB |
+| Derived retrieval | Milvus, vector + keyword + graph retrieval |
+| Evaluation and observability | Opik, DeepEval, local traces and audit data |
+| Package management | uv, npm |
+
+### Run locally
+
+```bash
 uv sync
 cd web
 npm install
+cd ..
+start.bat
 ```
 
-日常启动双击根目录 `start.bat`。它调用 `.agents/scripts/start.ps1`，依次启动或复用 MongoDB、Milvus、本地 BGE Reranker 与 Qwen Embedding，再完成固定端口清理和前后端就绪检查：
+Then open:
 
-- 前端：`http://localhost:3000`
-- 后端：`http://127.0.0.1:8000`
-- MongoDB：`mongodb://127.0.0.1:27017`
-- Milvus：`http://127.0.0.1:19530`
-- Milvus 健康检查：`http://127.0.0.1:9091/healthz`
-- 本地 Embedding：`http://127.0.0.1:8011/v1`
-- 本地 BGE Reranker：`http://127.0.0.1:8012`
+- Frontend: `http://localhost:3000`
+- Backend: `http://127.0.0.1:8000`
 
-## Milvus Vector Graph RAG
+See the developer map [myreadme.md](./myreadme.md), `.env.example`, and `AGENTS.md` for environment variables, directory responsibilities, and development constraints.
 
-当前多跳召回使用 Milvus 团队开源的 `vector-graph-rag 0.2.2`。系统把实体、关系和来源 passage 存在同一 Milvus 实例的三组集合中，通过 ID 引用扩展子图，不再维护第二个图数据库。
+## Current boundaries
 
-- 正文 Markdown 默认切成约 1000 字符的子块，目标重叠 200 字符；下一片起点优先对齐段落，其次对齐完整句首，并保留章节、子块序号、字符区间和来源引用。
-- 每张 MongoDB `lifecycle=confirmed` 知识卡形成一个完整 passage，不再拆成身份、摘要和类型字段三个向量。
-- 两类 passage 一起抽取实体和关系，因此可以沿“正文事实 → 桥接实体 → 知识卡设定”或反向路径完成多跳召回。
-- `retrieve_story_context` 是生产唯一的语义相关性检索 Tool，统一返回正文、知识卡、关系链与可追溯证据；最终答案仍由高层编排 Agent 生成。
-- Milvus 仍是可删除、可重建的派生层；Markdown 与 MongoDB 的事实源地位不变。日常语料维护按稳定来源键增量同步，不执行集合级全量重建。
-- 正文章节和知识卡分别形成稳定来源；新增或内容变化的来源执行整源替换，事实源中消失的来源同步删除，内容哈希未变化的来源直接跳过。
-- 每个来源成功后立即推进来源清单；中断后重跑只处理尚未成功或已经变化的来源，不重复处理已完成来源。
+- The current product focuses on a **single personal xuanhuan-fantasy novel**.
+- Multi-novel management, multi-tenancy, and automatic publishing are not current product capabilities.
+- AI artifacts are candidates by default; they do not automatically become prose or confirmed knowledge.
+- Evaluation proves declared contracts and sample coverage. It does not replace the author’s judgment of fact, voice, or literary quality.
 
-生产查询先在 Passage Collection 中分别执行中文 BM25 Top 30 和 HNSW Dense Top 30，再由 Milvus 原生 `RRFRanker(k=60)` 融合成 Passage Top 30。系统从这批相关 Passage 已有的 `entity_ids/relation_ids` 取得图种子，执行一次有全局预算和 Hub 限流的查询感知 Graph Expansion；随后通过关系的 `passage_ids` 回取 Graph Passage，与 RRF Passage 合并去重。`BAAI/bge-reranker-v2-m3` 只调用一次，对全部合并候选统一评分；Top 10 是检索指标与追踪边界，不是第二次图检索入口。HNSW 参数固定为 `M=24`、`efConstruction=300`、`efSearch=150`。
+Clear boundaries do not diminish the vision. They make each promise testable.
 
-上下文装配最多选择 3 份互补证据。正文仍以约 1000 字符的子块完成细粒度定位；直接事实题优先投影覆盖“主体—谓词—客体”的最小原文句窗，因果、过程和共同经历等需要场景语义的问题保留更宽的同章父级邻域。知识卡按查询相关字段和关系投影压缩。所有投影进入模型前仍由 Markdown 或 MongoDB 权威回读校验；邻域和投影不参与第一阶段 BM25、Dense、RRF 或图扩展。
+## Roadmap
 
-运行组件：
+### 1. Human–Agent alignment
 
-| 组件 | 版本或模型 | 位置 |
-|---|---|---|
-| Milvus Standalone | `milvusdb/milvus:v2.6.9` | Docker Compose，入口 `127.0.0.1:19530` |
-| Vector Graph RAG | `vector-graph-rag 0.2.2` | 由 `uv.lock` 固定 |
-| Qwen Embedding | `Qwen3-Embedding-4B-Q4_K_M.gguf`，2560 维 | `E:\Taichu\Models\Qwen3-Embedding-4B\` |
-| BGE Reranker | `BAAI/bge-reranker-v2-m3` | Hugging Face TEI 1.9 CUDA 服务，入口 `127.0.0.1:8012` |
-| llama.cpp | `b10066` Windows Vulkan x64 | `E:\Taichu\Runtime\llama.cpp\b10066` |
+Continue exploring the Human-in-the-loop boundary: what may execute automatically, what should notify, what must wait for authorization, and how to retain maximum control with minimum interruption.
 
-索引构建阶段的实体/关系抽取面向 LangChain `BaseChatModel`，通过 `with_structured_output` 把三元组 Schema 作为模型 API 原生结构化输出契约发送；供应商协议转换、用量审计和降级策略只由基础设施层的 `GatewayChatModel` 适配。`.env` 中的 `VECTOR_GRAPH_LLM_MODEL` 只负责选择该建模模型，当前使用 `deepseek-v4-pro`。生产查询阶段不再调用 LLM 做实体抽取或关系重排：图种子来自 RRF Passage 元数据，关系和全部 Passage 统一交给本地 BGE 查询感知评分。本地 Qwen Embedding 只负责向量化。
+### 2. Creative presentation
 
-## 阶段 04 运行时记忆与上下文压缩
+- Evolve the novel map into a generated, interactive 3D world view.
+- Introduce an opening animation that reflects the fictional world.
+- Use multimodal or world models to propose character, scene, and visual-setting concepts.
 
-通用写作助手以一个侧栏“新对话”窗口对应一个 `conversation_id（会话标识）`；窗口内每次用户请求各自产生一个 `run_id（运行标识）` 和递增的 `request_index（请求序号）`。只要用户没有点击“新对话”，后续请求始终续接同一会话。旧运行会按共同 `task_id（任务标识）` 归并，避免把同一窗口错误拆成多条最近对话。
+### 3. Runtime architecture
 
-`ContextAssembler（上下文组装器）` 从第一次请求开始生成“稳定记忆、长期记忆、历史对话、工作记忆、当前请求”五层上下文，模型输入固定按 `System Prompt → 长期记忆 → 历史对话 → 工作记忆 → 当前请求` 拼接。稳定记忆就是 `system` 角色中的身份、基本准则和静态能力索引；跨任务用户偏好维护在 `project_assets/source/workspace/long_term_memory.md`，按当前请求召回并可在后续阶段重新召回，因此不并入 System Prompt。运行工作记忆由 LangGraph 官方 `MongoDBStore` 保存到 MongoDB 的 `langgraph_store` 集合，并按会话 namespace 隔离；Runtime 自动写入并按请求序号过期，不再维护 JSON 记忆仓储或 JSON 词法索引。总预算不足时依次收缩长期记忆、历史对话和可重建的工作记忆，System Prompt 与当前请求保持完整，仍无法容纳时明确拒绝。
+- Reduce time, token, and provider cost for long chains.
+- Explore evaluation-constrained prompt self-evolution.
+- Build user, collaboration, and novel profiles inspired by LLM-Wiki-style long-term memory.
+- Keep testing multi-model stability and expand long-chain recovery scenarios.
+- Add automatic model and tool health detection.
+- Bring architectural constraints, evaluation gates, and releases into automated CI/CD.
 
-外层运行图直接使用 LangGraph 官方 `MongoDBSaver`，检查点与节点中间写入分别保存在 MongoDB 的 `langgraph_checkpoints`、`langgraph_checkpoint_writes` 集合；`conversation_id` 是 LangGraph `thread_id`，同一会话中的每个 `run_id` 是该线程上的一次图运行。异常或重启后恢复会话线程的当前请求，不重跑已成功图节点。澄清、写入授权和副作用人工核对在同一运行中通过 LangGraph `interrupt()` 暂停，并以 `Command(resume=...)` 接续，不再为人工回答另建接续运行。运行状态由 LangGraph `astream(..., version="v2")` 产生，FastAPI 仅把业务投影转成网页可订阅的 NDJSON；工作台直接订阅状态流，不再轮询任务。写入型 Tool 的副作用对账日志独立保存在 `project_assets/derived/general_agent_effects/`，不再与框架检查点混存。工作台只读展示自动运行记忆及其来源，不提供单条记忆的手动新增、修改或删除入口；作者只通过正常对话或人工介入节点影响 Agent。任务监控可查看本次记忆数量、压缩状态、Token 估算和恢复差异。当前行为以对应源码与测试为准。
+### 4. Deployment and productization research
 
-### 日常检查
+Research multi-tenancy, genre switching, automatic publishing, and online deployment. These remain future product directions; the current implementation deliberately preserves a single-novel, single-author workspace boundary.
 
-正常情况下只需运行 `start.bat`，不需要重复下载。也可以手动检查：
+---
 
-```powershell
-Invoke-WebRequest http://127.0.0.1:9091/healthz -UseBasicParsing
-Invoke-RestMethod http://127.0.0.1:8011/health
-Invoke-RestMethod http://127.0.0.1:8011/v1/models
-docker ps --filter name=taichu-milvus
-Invoke-RestMethod http://127.0.0.1:8012/health
-uv run python scripts/probe_embedding_models.py
-uv run python scripts/update_vector_graph_index.py --dry-run
-```
+<div align="center">
+  <strong>Taichu does not think for you. It makes complex creation legible—and every power delegated to an Agent accountable.</strong>
+</div>
 
-### 索引增量更新与专项评测
 
-```powershell
-# 只核对章节数、正文片段数、知识卡数和当前语料快照，不写 Milvus
-uv run python scripts/update_vector_graph_index.py --dry-run
-
-# 按来源增量更新实体、关系和 passage
-uv run python scripts/update_vector_graph_index.py
-
-```
-
-增量更新以正文章节和已确认知识卡的稳定 `source_key` 为同步边界。来源新增或内容哈希变化时整源替换，来源消失时删除其 passage 及无引用图数据，未变化来源跳过。每个来源成功后立即写入 `project_assets/generated/milvus_vector_graph/source_manifest.json`，因此失败重试只继续未完成来源；整次运行摘要仍写入 `active_manifest.json`。两份清单都不保存正文、知识卡或向量。
-
-只有集合 Schema、嵌入维度或索引协议发生不兼容变化时，才通过专门迁移执行一次性集合重建；普通正文和知识卡更新不得 `drop` Milvus collections。
-
-### 全新机器的下载方式
-
-Milvus 使用仓库内的官方 Standalone 组件编排。一般由 `start.bat` 自动拉取并启动；也可手动执行：
-
-```powershell
-docker compose -f infra/milvus/docker-compose.yml up -d
-docker compose -f infra/reranker/docker-compose.yml up -d
-```
-
-Qwen 模型优先从官方 Hugging Face 仓库按提交号下载：
-
-```powershell
-uvx --from huggingface_hub hf download `
-  Qwen/Qwen3-Embedding-4B-GGUF `
-  Qwen3-Embedding-4B-Q4_K_M.gguf `
-  --revision f4602530db1d980e16da9d7d3a70294cf5c190be `
-  --local-dir E:\Taichu\Models\Qwen3-Embedding-4B
-```
-
-本机 Hugging Face 直连当时不可用，因此实际从 Qwen 官方魔搭仓库下载同一个文件：
-
-```powershell
-New-Item -ItemType Directory -Force E:\Taichu\Models\Qwen3-Embedding-4B
-curl.exe --ssl-no-revoke --fail --location `
-  --output E:\Taichu\Models\Qwen3-Embedding-4B\Qwen3-Embedding-4B-Q4_K_M.gguf `
-  https://www.modelscope.cn/models/Qwen/Qwen3-Embedding-4B-GGUF/resolve/master/Qwen3-Embedding-4B-Q4_K_M.gguf
-Get-FileHash -Algorithm SHA256 `
-  E:\Taichu\Models\Qwen3-Embedding-4B\Qwen3-Embedding-4B-Q4_K_M.gguf
-```
-
-llama.cpp 使用官方 GitHub 的固定版本 Vulkan 构建：
-
-```powershell
-New-Item -ItemType Directory -Force E:\Taichu\Runtime\llama.cpp
-curl.exe --ssl-no-revoke --fail --location `
-  --output E:\Taichu\Runtime\llama.cpp\llama-b10066-bin-win-vulkan-x64.zip `
-  https://github.com/ggml-org/llama.cpp/releases/download/b10066/llama-b10066-bin-win-vulkan-x64.zip
-Expand-Archive `
-  E:\Taichu\Runtime\llama.cpp\llama-b10066-bin-win-vulkan-x64.zip `
-  E:\Taichu\Runtime\llama.cpp\b10066
-```
-
-llama.cpp 依赖最新 Microsoft Visual C++ x64 运行库。本机已升级为 `14.51.36247.0`；若其他机器启动时报 `MSVCP140.dll`，安装[微软官方 x64 运行库](https://aka.ms/vc14/vc_redist.x64.exe)。
-
-完整数据模型、多跳流程和索引约束见 `docs/已讨论功能/8-15Milvus向量图谱多跳召回决策.md`。
-
-## 本机外部数据位置
-
-以下内容在仓库外，不应重新复制到根目录：
-
-| 内容 | 本机位置 | 说明 |
-|---|---|---|
-| MongoDB 数据 | `E:\Taichu\MongoDB\data\db` | 当前唯一结构事实存储位置 |
-| MongoDB 日志 | `E:\Taichu\MongoDB\log` | MongoDB 本地运行日志 |
-| Milvus 多跳图索引 | Docker 命名卷 `taichu_milvus_data`、`taichu_milvus_etcd`、`taichu_milvus_minio` | 可从正文 Markdown 与 MongoDB confirmed 卡按来源增量恢复的派生索引 |
-| BGE Reranker 模型 | `E:\Taichu\Models\bge-reranker-v2-m3` | 本地重排模型权重，不是小说事实源 |
-| Qwen Embedding 模型 | `E:\Taichu\Models\Qwen3-Embedding-4B` | 本地 GGUF 模型，不是小说事实源 |
-| llama.cpp 运行时 | `E:\Taichu\Runtime\llama.cpp\b10066` | 本地模型服务程序 |
-| Embedding 日志 | `E:\Taichu\Embedding\log` | 本地推理服务日志，不保存为知识事实 |
-| 原小说导入资料 | `E:\Taichu\导入资料\太初原小说` | PDF、EPUB、TXT 原始导入包 |
-| 旧知识 JSON 迁移备份 | `E:\Taichu\迁移备份\知识库-20260711-151915` | 88 张旧卡和迁移清单的只读备份 |
-| 旧 LangGraph JSON 检查点备份 | `E:\Taichu\迁移备份\旧LangGraph-JSON检查点-20260829` | 迁移前自维护检查点的只读追溯备份；当前 Runtime 不读取或回退 |
-
-原小说导入包只是外部导入材料。太初当前正文的文本事实源仍是 `project_assets/source/manuscripts/chapters/` 下的 Markdown。
-
-## 数据边界
-
-- Markdown 是唯一文本事实源。
-- MongoDB `taichu.knowledge_cards` 是唯一结构事实源；默认事实查询只使用 `lifecycle=confirmed` 的记录。
-- 旧知识迁移已备份 88 张 JSON：58 张有效卡导入为 `confirmed`，30 张已弃用重复卡只保留在 E 盘备份中。
-- 迁移 `finalize` 已完成，`project_assets/source/knowledge/` 已删除；存储骨架和业务代码不得重新创建它。
-- AI、Agent、评测和 Inbox 保存的 JSON/JSONL 仅是候选、运行、审计或工作区中间态；只有经过校验和作者确认的结构事实才能写入 MongoDB。
-- Milvus 只保存可重建的实体、关系和来源 passage 索引；命中内容必须携带正文区间或知识卡来源引用，不能反向成为事实源。
-- SQLite/FTS 已废弃，不参与后续架构决策；Milvus 向量、BM25、图索引及未来缓存都只能作为可重建派生层。
-
-更完整的物理目录职责以 `project_assets/readme.md` 为准。
