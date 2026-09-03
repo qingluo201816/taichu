@@ -39,22 +39,52 @@ Taichu is neither a thin RAG wrapper nor a one-click generation toy optimized fo
 
 ## Positioning
 
-A long-form novel is not a single-prompt task. Across hundreds of thousands of words, hundreds of facts, and months of collaboration, the system must keep answering four questions:
+Long-form fiction cannot be completed as a single-prompt generation task. It is a long-term Agent collaboration process spanning millions of words and hundreds of interaction rounds.
 
-1. What is being done, and why was the plan decomposed this way?
-2. Where did each conclusion come from, and what remains model inference?
-3. Can a failed task recover from state instead of starting over?
-4. What may execute automatically, and what must wait for author approval?
+The hardest problem is not whether the model can produce one chapter. As chapters, characters, settings, foreshadowing, and creative tasks accumulate, the model must continue solving four classes of problems within a finite context window:
 
-Taichu builds the product around those questions:
+1. **How tasks keep moving forward**: A cross-chapter request may involve plot planning, character-state updates, foreshadowing payoffs, and prose generation at the same time. The system must decompose the work correctly, execute it continuously, and adjust the plan from intermediate results.
 
-| Capability | What the author gets |
-| --- | --- |
-| Observable | Plans, dynamic DAGs, node state, traces, checkpoints, evidence, and cost |
-| Recoverable | Checkpoint continuation, localized failure, retry, and replanning |
-| Interruptible | Candidate-first workflows and author authorization before durable writes |
-| Verifiable | Outputs bound to source scope, retrieved evidence, and author constraints |
-| Governed | Explicit boundaries between prose, candidate knowledge, confirmed facts, and derived indexes |
+2. **How fictional facts remain consistent**: Character relationships, cultivation levels, timelines, and world rules are distributed across manuscript text, knowledge cards, and dialogue history. Retrieval can fail, while context may retain obsolete plans or settings that the author has already changed. The system must distinguish active facts, invalid information, retrieved evidence, and model inference so that incorrect context does not keep contaminating later reasoning and writing.
+
+3. **How human–Agent collaboration continues**: An Agent cannot simply execute without stopping. It must recognize missing information, conflicts, and consequential creative decisions, then pause and ask the author. After author intervention, interruption, or execution failure, it must preserve the current plan and runtime state and resume from the same point instead of replaying the entire creative chain.
+
+4. **What may actually be written into the novel**: Plot analysis and revision suggestions may be generated automatically, but changes to chapter prose, character settings, worldbuilding, and other canonical content require permission control and author confirmation.
+
+The project therefore addresses more than “how to make an LLM write fiction.” It asks **how a probabilistic, context-limited model can continuously understand established plot, preserve factual consistency, know when to collaborate with the author, and advance long-running creative work reliably and under control.**
+
+Taichu builds its product capabilities around these four long-term collaboration problems:
+
+<table align="center" width="72%">
+  <thead>
+    <tr>
+      <th width="18%">Capability</th>
+      <th>What the author gets</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Observable</td>
+      <td>Plans, dynamic DAGs, node state, traces, checkpoints, evidence, and cost</td>
+    </tr>
+    <tr>
+      <td>Recoverable</td>
+      <td>Checkpoint continuation, localized failure, retry, and replanning</td>
+    </tr>
+    <tr>
+      <td>Interruptible</td>
+      <td>Candidate-first workflows and author authorization before durable writes</td>
+    </tr>
+    <tr>
+      <td>Verifiable</td>
+      <td>Outputs bound to source scope, retrieved evidence, and author constraints</td>
+    </tr>
+    <tr>
+      <td>Governed</td>
+      <td>Explicit boundaries between prose, candidate knowledge, confirmed facts, and derived indexes</td>
+    </tr>
+  </tbody>
+</table>
 
 <p align="center">
   <img src="./assets/ChatGPT Image 2026年9月3日 21_18_12.png" width="72%" alt="Taichu Agentic Writing product concept" />
@@ -310,6 +340,5 @@ Research multi-tenancy, genre switching, automatic publishing, and online deploy
 <div align="center">
   <strong>Taichu does not think for you. It makes complex creation legible—and every power delegated to an Agent accountable.</strong>
 </div>
-
 
 
