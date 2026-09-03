@@ -30,6 +30,10 @@ from taichu.application.evaluations.general_agent_benchmark.lifecycle import (
     SuiteFinalizer,
     SuiteRunStore,
 )
+from taichu.application.evaluations.general_agent_benchmark.observability import (
+    BenchmarkObservabilityQuery,
+    UnavailableBenchmarkObservabilityQuery,
+)
 from taichu.application.evaluations.general_agent_benchmark.resources import (
     BenchmarkRunResourceService,
 )
@@ -60,6 +64,7 @@ class GeneralAgentBenchmarkServices:
     issue_closure: IssueClosureCoordinator
     model_comparisons: ModelComparisonService
     query_hydration: BenchmarkQueryHydration
+    observability: BenchmarkObservabilityQuery
 
 
 def build_general_agent_benchmark_services(
@@ -72,6 +77,7 @@ def build_general_agent_benchmark_services(
     query_hydration: BenchmarkQueryHydration | None = None,
     authored_suites: tuple[AuthoredSuiteSpec, ...] = (),
     resources: BenchmarkRunResourceService | None = None,
+    observability: BenchmarkObservabilityQuery | None = None,
 ) -> GeneralAgentBenchmarkServices:
     """仅从显式评测依赖构造服务，不读取活动应用全局状态。"""
 
@@ -84,6 +90,12 @@ def build_general_agent_benchmark_services(
     first_live = FirstLiveIterationService()
     model_comparisons = ModelComparisonService()
     resources = resources or BenchmarkRunResourceService()
+    observability = observability or UnavailableBenchmarkObservabilityQuery(
+        project_name="未配置",
+        suite_content_hash=(
+            catalog_entries[0].content_hash if catalog_entries else "0" * 64
+        ),
+    )
     if hydration.status in {
         QueryHydrationStatus.AVAILABLE,
         QueryHydrationStatus.PARTIAL,
@@ -104,10 +116,7 @@ def build_general_agent_benchmark_services(
                 assert entry.suite_artifact is not None
                 restore_run(entry.suite_run)
                 resources.register(entry.suite_artifact)
-        elif (
-            hydration.suite_run is not None
-            and hydration.suite_artifact is not None
-        ):
+        elif hydration.suite_run is not None and hydration.suite_artifact is not None:
             restore_run(hydration.suite_run)
             resources.register(hydration.suite_artifact)
         if (
@@ -137,11 +146,10 @@ def build_general_agent_benchmark_services(
         experiments=ExperimentService(),
         first_live=first_live,
         issue_correlation_repository=issue_correlation_repository,
-        issue_query=IssueCorrelationQueryService(
-            issue_correlation_repository
-        ),
+        issue_query=IssueCorrelationQueryService(issue_correlation_repository),
         issue_reconciler=IssueCorrelationReconciler(),
         issue_closure=IssueClosureCoordinator(),
         model_comparisons=model_comparisons,
         query_hydration=hydration,
+        observability=observability,
     )

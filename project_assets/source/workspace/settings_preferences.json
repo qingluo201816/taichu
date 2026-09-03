@@ -1,7 +1,7 @@
 {
-  "font_size": 22,
+  "font_size": 19,
   "font_style": "serif",
   "editor_background": "dark",
-  "llm_provider": "deepseek_official",
-  "updated_at": "2026-08-22T03:34:04.914528Z"
+  "llm_provider": "rightcode",
+  "updated_at": "2026-09-03T10:50:58.911548Z"
 }

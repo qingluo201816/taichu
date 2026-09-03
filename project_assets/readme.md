@@ -79,7 +79,8 @@ project_assets/
 │   │   ├── knowledge_extraction/                # 知识沉淀评估报告及裁判校准报告
 │   ├── rag_evaluations/                         # Graph RAG 确定性回归与无参考语义评测报告
 │   └── general_agent_benchmarks/                # 通用写作智能体固定基准运行、实验、迭代与比较资产
-│       └── interactive-runtime/                 # 网页发起评测的运行状态与终态证据持久化
+│       ├── interactive-runtime/                 # 网页发起评测的运行状态与终态证据持久化
+│       └── opik-workspaces/                     # Opik Experiment 逐案执行时按批次创建的隔离临时工作区
 └── generated/                                   # 按需创建的临时生成物根目录
     ├── pytest-workspaces/                       # pytest 临时隔离工作区，不属于项目运行数据
     ├── milvus_vector_graph/                     # 多跳图索引的运行摘要与逐来源增量清单
@@ -145,7 +146,7 @@ LangGraph 节点级检查点不再写入 `project_assets/`。Runtime 直接使�
 
 Graph RAG 质量评测报告保存在 `derived/rag_evaluations/`。每次运行原子保存 Retriever、权威来源、Graph 关系与完整路径指标、DeepEval 无参考语义评分、运行时模型身份和 CI 门禁原因；这些 JSON 是可重建的评测审计产物，不是正文或结构事实源。生产链没有 Graph ON/OFF 双轨，历史报告中的旧消融字段只按兼容读取处理，不再生成。
 
-通用写作智能体固定基准的派生资产统一归属 `derived/general_agent_benchmarks/`，评测基准位于 `tests/fixtures/evaluations/general_writing_agent_benchmark/suite.json`。该目录按需保存 synthetic 冻结基线、网页发起评测的运行状态与终态证据、真实模型逐案运行、首轮资格工件、多模型比较、问题关联、权威索引、幂等记录、关闭租约和隔离工作区，用于从固定用例、预检门禁、逐案审计、提供商实验和冻结清单回放评测。`interactive-runtime/` 以运行标识逐条原子保存网页运行及其案例、门禁和证据包，服务重启后继续作为最近评测列表的可审计来源；冻结基线仍只从权威索引恢复，不扫描未索引历史。这些资产是可审计派生数据，不成为正文或结构事实。
+通用写作智能体固定基准的派生资产统一归属 `derived/general_agent_benchmarks/`，评测基准位于 `tests/fixtures/evaluations/general_writing_agent_benchmark/suite.json`。该目录按需保存 synthetic 冻结基线、网页发起评测的运行状态与终态证据、真实模型逐案运行、首轮资格工件、多模型比较、问题关联、权威索引、幂等记录、关闭租约和隔离工作区，用于从固定用例、预检门禁、逐案审计、提供商实验和冻结清单回放评测。`interactive-runtime/` 以运行标识逐条原子保存网页运行及其案例、门禁和证据包，服务重启后继续作为最近评测列表的可审计来源；`opik-workspaces/` 仅承载 Opik Experiment 调用真实 Synthetic Runtime 时的逐案隔离环境，成功或失败收尾都会清理案例内容，目录本身不得成为评测结果源；Dataset、Experiment、Trace 与评分保存在配置的 Opik 服务中。冻结基线仍只从权威索引恢复，不扫描未索引历史。这些资产是可审计派生数据，不成为正文或结构事实。
 
 正文知识沉淀 Agent 的候选卡不单独落到 `source/knowledge/`，而是保存在运行 JSON 的 `review_items[*].suggested_card` 中。只有用户确认并通过 JSON 中间态校验后，才允许由应用层服务写入 MongoDB 成为结构事实。
 

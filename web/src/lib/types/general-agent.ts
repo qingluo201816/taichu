@@ -261,6 +261,7 @@ export type GeneralAgentRun = {
   parent_run_id?: string | null;
   agent_name: "general_writing_assistant";
   user_goal: string;
+  model_id?: string | null;
   scope: GeneralAgentScope;
   author_constraints: string[];
   external_access_allowed: boolean;
@@ -329,6 +330,7 @@ export type GeneralAgentRunSummary = {
 
 export type GeneralAgentRunRequest = {
   user_goal: string;
+  model_id: string;
   conversation_id?: string | null;
   start_new_conversation: boolean;
   scope: GeneralAgentScope;

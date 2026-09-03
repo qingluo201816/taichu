@@ -1300,12 +1300,10 @@ def _anthropic_payload(
         "max_tokens": request.max_output_tokens or 4096,
         "stream": stream,
     }
-    if (
-        profile.provider == "deepseek_official"
-        and request.task_type == "rag_evaluation_judge"
-    ):
-        # RAG 裁判要求直接产出结构化 JSON。官方 DeepSeek 默认思考模式
-        # 会占用输出预算，并增加 JSON 截断与空正文风险。
+    if _should_disable_deepseek_thinking(profile, request):
+        # DeepSeek 的 Anthropic 兼容接口默认可能启用思考模式。该模式与
+        # 强制工具选择（any/tool）不兼容；结构化输出必须优先保证原生
+        # Tool 契约可执行。RAG 裁判则继续关闭思考以避免 JSON 截断。
         payload["thinking"] = {"type": "disabled"}
     if system_parts:
         payload["system"] = "\n\n".join(system_parts)
@@ -1322,6 +1320,19 @@ def _anthropic_payload(
     if request.temperature is not None and _supports_temperature(profile):
         payload["temperature"] = request.temperature
     return payload
+
+
+def _should_disable_deepseek_thinking(
+    profile: LLMModelProfile,
+    request: LLMRequest,
+) -> bool:
+    if not profile.id.startswith("deepseek-"):
+        return False
+    if request.task_type == "rag_evaluation_judge":
+        return True
+    if not request.tools:
+        return False
+    return _anthropic_tool_choice(request.tool_choice)["type"] in {"any", "tool"}
 
 
 def _supports_temperature(profile: LLMModelProfile) -> bool:

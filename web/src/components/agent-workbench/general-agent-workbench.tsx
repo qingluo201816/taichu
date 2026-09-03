@@ -34,8 +34,10 @@ import {
   AgentWorkbenchSwitcher,
   type WorkbenchAgent,
 } from "@/components/agent-workbench/agent-workbench-switcher";
+import { ModelSelector } from "@/components/llm/model-selector";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useModelSelection } from "@/hooks/use-model-selection";
 import {
   cancelGeneralAgentRun,
   deleteGeneralAgentConversation,
@@ -76,7 +78,7 @@ const scopeOptions: Array<{
   value: GeneralAgentScopeType;
   label: string;
 }> = [
-  { value: "none", label: "无需正文范围" },
+  { value: "none", label: "默认范围" },
   { value: "selection", label: "选区" },
   { value: "chapter", label: "单章" },
   { value: "range", label: "多章" },
@@ -117,6 +119,7 @@ export function GeneralAgentWorkbench({
   const [contextSnapshotsRunId, setContextSnapshotsRunId] = useState("");
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const goalInputRef = useRef<HTMLTextAreaElement>(null);
+  const modelSelection = useModelSelection();
 
   const reloadMemories = useCallback(async (conversationId: string) => {
     if (!conversationId) {
@@ -246,7 +249,7 @@ export function GeneralAgentWorkbench({
   const scopeSummary = (() => {
     const label =
       scopeOptions.find(option => option.value === scopeType)?.label ??
-      "无需正文范围";
+      "默认范围";
     if (
       (scopeType === "chapter" || scopeType === "range") &&
       selectedChapterIds.length
@@ -266,7 +269,8 @@ export function GeneralAgentWorkbench({
         (isGeneralAgentRunActive(currentRun.status) ||
           currentRun.status === "waiting_human"),
     );
-  const canSendMessage = Boolean(goal.trim()) && !composerLocked;
+  const canSendMessage =
+    Boolean(goal.trim()) && Boolean(modelSelection.modelId) && !composerLocked;
 
   useEffect(() => {
     if (!activeRunId && conversationRuns.length === 0) {
@@ -290,6 +294,10 @@ export function GeneralAgentWorkbench({
     const trimmedGoal = goal.trim();
     if (!trimmedGoal) {
       setError("请先输入你希望通用写作助手完成的任务。");
+      return;
+    }
+    if (!modelSelection.modelId) {
+      setError(modelSelection.error || "模型列表尚未加载完成。");
       return;
     }
     if (scopeType === "selection" && !selectionText.trim()) {
@@ -316,6 +324,7 @@ export function GeneralAgentWorkbench({
     try {
       const response = await startGeneralAgentRun({
         user_goal: goal,
+        model_id: modelSelection.modelId,
         conversation_id: selectedConversationId || undefined,
         start_new_conversation: !selectedConversationId,
         scope: {
@@ -582,10 +591,10 @@ export function GeneralAgentWorkbench({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-sm font-semibold text-[var(--tc-text-primary)]">
-                    通用写作助手
+                    长程创作智能体
                   </h2>
                   <p className="mt-0.5 text-xs text-[var(--tc-text-muted)]">
-                    问答、规划、续写与检查
+                    规划、取证、执行与核验
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -617,7 +626,7 @@ export function GeneralAgentWorkbench({
                     className="rounded-full bg-[var(--tc-surface-card)] text-[var(--tc-text-secondary)]"
                   >
                     <Database className="size-3.5" />
-                    运行记忆 {memories.length || currentRun?.memory_refs.length || 0}
+                    工作记忆 {memories.length || currentRun?.memory_refs.length || 0}
                     <ChevronDown
                       className={cn(
                         "size-3.5 transition-transform duration-150 motion-reduce:transition-none",
@@ -671,10 +680,10 @@ export function GeneralAgentWorkbench({
                 <div className="flex flex-1 items-center justify-center pb-12 text-center">
                   <div>
                     <h3 className="text-lg font-semibold text-[var(--tc-text-primary)]">
-                      开始一段写作对话
+                      把复杂创作变成可控的长程任务
                     </h3>
                     <p className="mt-2 text-sm text-[var(--tc-text-muted)]">
-                      从下方输入问题、写作任务或需要检查的内容。
+                      从一个问题、一条设定或一个创作目标开始。
                     </p>
                   </div>
                 </div>
@@ -725,7 +734,7 @@ export function GeneralAgentWorkbench({
                     }
                   }}
                   rows={2}
-                  placeholder="输入你想问、想写或想检查的内容……"
+                  placeholder="描述你的创作目标、约束与需要核验的事实……"
                   className="min-h-16 max-h-40 w-full resize-none bg-transparent px-3 py-2 text-[15px] leading-6 text-[var(--tc-text-primary)] outline-none placeholder:text-[var(--tc-text-muted)]"
                 />
 
@@ -902,6 +911,7 @@ export function GeneralAgentWorkbench({
                         停止当前任务
                       </Button>
                     ) : null}
+                    <ModelSelector selection={modelSelection} compact />
                     <Button
                       type="button"
                       size="icon-lg"

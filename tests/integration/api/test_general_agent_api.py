@@ -145,6 +145,7 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
             "/api/agent-workbench/general-assistant/runs",
             json={
                 "user_goal": "怎样规划一个有冲突的场景？",
+                "model_id": "deepseek-v4-pro",
                 "start_new_conversation": True,
             },
         )
@@ -154,6 +155,14 @@ class GeneralAgentApiTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(run["status"], "completed")
         self.assertIn("信息释放", run["final_answer"])
         self.assertEqual(run["agent_name"], "general_writing_assistant")
+        self.assertEqual(run["model_id"], "deepseek-v4-pro")
+        self.assertTrue(self.gateway.requests)
+        self.assertTrue(
+            all(
+                request.model_id == "deepseek-v4-pro"
+                for request in self.gateway.requests
+            )
+        )
         run_id = run["run_id"]
 
         detail = await self.client.get(

@@ -23,6 +23,7 @@ from fastapi.routing import APIRoute
 
 from taichu.api.deps import provide_general_agent_benchmark_services
 from taichu.api.schemas.general_agent_benchmarks import (
+    BenchmarkObservabilityResponse,
     CaseResultResponse,
     EvidenceBundleResponse,
     ExperimentDetailResponse,
@@ -98,9 +99,7 @@ class RequestIdRoute(APIRoute):
                         "detail": _error_detail(
                             error="request_invalid",
                             message="请求参数不符合评测契约。",
-                            details={
-                                "issues": jsonable_encoder(error.errors())
-                            },
+                            details={"issues": jsonable_encoder(error.errors())},
                         )
                     },
                 )
@@ -126,6 +125,16 @@ router = APIRouter(
     tags=["通用写作智能体固定基准"],
     route_class=RequestIdRoute,
 )
+
+
+@router.get("/opik/summary")
+async def get_opik_summary(
+    services: GeneralAgentBenchmarkServices = Depends(
+        provide_general_agent_benchmark_services
+    ),
+) -> BenchmarkObservabilityResponse:
+    snapshot = await services.observability.get_snapshot()
+    return BenchmarkObservabilityResponse.model_validate(snapshot.model_dump())
 
 
 @router.get("/suites")
@@ -192,9 +201,7 @@ async def submit_run(
                     "code": selection.code,
                     "track": selection.track,
                     "case_ids": list(selection.case_ids),
-                    "expected_case_ids": list(
-                        selection.expected_case_ids
-                    ),
+                    "expected_case_ids": list(selection.expected_case_ids),
                 },
             ),
         ) from error
@@ -435,9 +442,7 @@ async def create_iteration(
     ),
 ) -> FirstLiveIterationResponse:
     try:
-        iteration = services.first_live.create_iteration(
-            **request.model_dump()
-        )
+        iteration = services.first_live.create_iteration(**request.model_dump())
     except ValueError as error:
         _conflict(str(error))
     return FirstLiveIterationResponse(iteration=iteration)
@@ -527,9 +532,7 @@ async def reconcile_issue_correlations(
     ),
 ) -> IssueCorrelationCommandResponse:
     try:
-        correlation_status = services.issue_query.get_by_subject(
-            request.subject_id
-        )
+        correlation_status = services.issue_query.get_by_subject(request.subject_id)
     except KeyError as error:
         _not_found(str(error))
     if correlation_status.snapshot.iteration.iteration_id != iteration_id:

@@ -74,6 +74,11 @@ def _profile(
 
 
 _TOOL_METRICS: dict[str, tuple[MetricDefinition, ...]] = {
+    "maintain_working_memory": (
+        ("state_accuracy", "关键状态记录准确率", "higher_is_better"),
+        ("stale_state_write", "过期状态写入次数", "guardrail"),
+        ("redundant_memory", "冗余记忆写入率", "lower_is_better"),
+    ),
     "get_novel_structure": (
         ("field_accuracy", "结构字段准确率", "higher_is_better"),
         ("stable_order", "稳定排序", "guardrail"),

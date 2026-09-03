@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import {
   BenchmarkApiError,
   benchmarkApiRequest,
+  getBenchmarkOpikSummary,
   getBenchmarkSuite,
   listBenchmarkRuns,
 } from "../../src/lib/api/general-agent-benchmark";
@@ -518,6 +519,26 @@ async function verifyApiContract(): Promise<void> {
     );
     assert.equal(requestedSignal, request.signal);
 
+    const opikSummary = {
+      provider: "opik",
+      status: "available",
+      project_name: "taichu-general-agent-benchmark",
+      project_url: "https://example.test/opik/project",
+      suite_content_hash: "b".repeat(64),
+      refreshed_at: "2026-09-01T12:00:00Z",
+      message: "已校验当前套件对应的云端实验。",
+      entries: [],
+    } as const;
+    globalThis.fetch = async input => {
+      requestedUrl = String(input);
+      return Response.json(opikSummary);
+    };
+    assert.deepEqual(await getBenchmarkOpikSummary(), opikSummary);
+    assert.match(
+      requestedUrl,
+      /\/api\/general-agent-benchmarks\/opik\/summary$/,
+    );
+
     const suiteDetail = {
       suite_id: "general_writing_agent_core",
       name: "通用写作智能体固定基准",
@@ -528,6 +549,52 @@ async function verifyApiContract(): Promise<void> {
         synthetic: 37,
         live_provider: 21,
       },
+      benchmark_entries: [
+        {
+          entry_id: "multi_step",
+          name: "多步骤组合任务",
+          summary: "验证跨能力组合任务的规划、执行与证据闭环。",
+          opik_dataset_name: "taichu-general-agent-multi-step",
+          case_count: 18,
+          case_ids: ["structure_coverage_read"],
+          categories: [
+            {
+              category_id: "outline_decomposition",
+              name: "拆解小说大纲",
+              purpose: "验证大纲读取与结构化拆解。",
+              case_ids: ["structure_coverage_read"],
+            },
+          ],
+          invalid_invocation_rules: [
+            "调用合同白名单之外的能力。",
+            "同一能力调用次数超过合同上限。",
+            "调用顺序、并行关系或父子依赖不符合合同。",
+            "工具结果没有被下游节点或最终回答消费。",
+          ],
+        },
+        {
+          entry_id: "recovery",
+          name: "异常中断恢复",
+          summary: "验证真实故障窗口中的恢复语义与副作用控制。",
+          opik_dataset_name: "taichu-general-agent-recovery",
+          case_count: 8,
+          case_ids: ["recovery_after_plan_before_execution"],
+          categories: [
+            {
+              category_id: "plan_and_tool_recovery",
+              name: "规划与工具结果恢复",
+              purpose: "验证计划与工具结果的可恢复性。",
+              case_ids: ["recovery_after_plan_before_execution"],
+            },
+          ],
+          invalid_invocation_rules: [
+            "调用合同白名单之外的能力。",
+            "同一能力调用次数超过合同上限。",
+            "调用顺序、并行关系或父子依赖不符合合同。",
+            "工具结果没有被下游节点或最终回答消费。",
+          ],
+        },
+      ],
       capability_domains: [
         {
           domain_id: "routing_and_retrieval",
@@ -592,11 +659,43 @@ void verifyApiContract().then(() => {
     ),
     "utf8",
   );
+  const multiStepPageSource = readFileSync(
+    resolve(
+      process.cwd(),
+      "src/app/task-monitor/general-agent/evaluation/multi-step/page.tsx",
+    ),
+    "utf8",
+  );
+  const recoveryPageSource = readFileSync(
+    resolve(
+      process.cwd(),
+      "src/app/task-monitor/general-agent/evaluation/recovery/page.tsx",
+    ),
+    "utf8",
+  );
+  assert.match(multiStepPageSource, /entryId="multi_step"/);
+  assert.match(recoveryPageSource, /entryId="recovery"/);
+  assert.match(shellSource, /suite_content_hash === detail\.content_hash/);
+  assert.doesNotMatch(
+    shellSource,
+    /runPage\.items\[0\]/,
+    "当前 Suite 没有匹配运行时不得回退展示旧 Suite 工件。",
+  );
   for (const requiredCopy of [
     "通用写作智能体能力证明",
-    "选择能力分类",
+    "多步骤组合任务",
+    "异常中断恢复",
+    "选择任务分类",
     "选择具体合同",
     "评测说明",
+    "Opik 数据集",
+    "Opik 云端评测结果",
+    "八维固定合同评分",
+    "打开实验",
+    "查看数据集",
+    "查看 Trace",
+    "Trace 采集范围",
+    "什么算无效工具调用",
     "每条合同主要检查三件事",
     "不明白合同中的名词？查看术语解释",
     "处理方式对不对",

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Activity,
   ArrowRight,
   Bot,
   BrainCircuit,
@@ -8,11 +9,17 @@ import {
   CircleAlert,
   CircleCheck,
   ChevronDown,
+  Database,
+  ExternalLink,
   FileQuestion,
+  RefreshCcw,
   ShieldCheck,
+  Timer,
   UserRound,
   Wrench,
+  Workflow,
 } from "lucide-react";
+import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -24,8 +31,9 @@ import {
 
 import { GeneralAgentMonitorNav } from "@/components/agent-task-monitor/general-agent-monitor-nav";
 import { AppShell } from "@/components/app-shell";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
+  getBenchmarkOpikSummary,
   getBenchmarkSuite,
   getBenchmarkSuiteArtifact,
   listBenchmarkRuns,
@@ -42,9 +50,13 @@ import {
 import { suiteRunLifecycleLabel } from "@/lib/general-agent-benchmark-view";
 import {
   SuiteRunLifecycle,
-  type BenchmarkCapabilityDomain,
   type BenchmarkCaseExpectation,
   type BenchmarkCaseResult,
+  type BenchmarkEntryId,
+  type BenchmarkObservabilityEntry,
+  type BenchmarkObservabilitySnapshot,
+  type BenchmarkPortfolioEntry,
+  type BenchmarkScenarioCategory,
   type BenchmarkSuiteArtifact,
   type BenchmarkSuiteDetail,
   type BenchmarkSuiteRun,
@@ -89,11 +101,18 @@ const proofGroups: ReadonlyArray<{
   },
 ];
 
-export function GeneralAgentEvaluationShell() {
+export function GeneralAgentEvaluationShell({
+  entryId,
+}: {
+  entryId: BenchmarkEntryId;
+}) {
   const [suite, setSuite] = useState<BenchmarkSuiteDetail | null>(null);
   const [latestRun, setLatestRun] = useState<BenchmarkSuiteRun | null>(null);
   const [artifact, setArtifact] = useState<BenchmarkSuiteArtifact | null>(null);
-  const [selectedDomainId, setSelectedDomainId] = useState("");
+  const [opikSnapshot, setOpikSnapshot] = useState<
+    BenchmarkObservabilitySnapshot | null | undefined
+  >(undefined);
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [selectedContractId, setSelectedContractId] = useState("");
   const [error, setError] = useState("");
   const coordinator = useRef(new RequestCoordinator());
@@ -101,9 +120,10 @@ export function GeneralAgentEvaluationShell() {
   const loadLatest = useCallback(async () => {
     const request = coordinator.current.begin();
     try {
-      const [suitePage, runPage] = await Promise.all([
+      const [suitePage, runPage, opikSummary] = await Promise.all([
         listBenchmarkSuites({ page: 1, pageSize: 1 }, request.signal),
         listBenchmarkRuns({ page: 1, pageSize: 1 }, request.signal),
+        getBenchmarkOpikSummary(request.signal).catch(() => null),
       ]);
       const suiteSummary = suitePage.items[0];
       if (!suiteSummary) {
@@ -116,9 +136,7 @@ export function GeneralAgentEvaluationShell() {
       const run =
         runPage.items.find(
           item => item.suite_content_hash === detail.content_hash,
-        ) ??
-        runPage.items[0] ??
-        null;
+        ) ?? null;
       const latestArtifact =
         run?.terminal_artifact_ref &&
         run.lifecycle === SuiteRunLifecycle.COMPLETED
@@ -128,19 +146,23 @@ export function GeneralAgentEvaluationShell() {
         request,
         Math.max(suitePage.index_revision, runPage.index_revision),
         () => {
-          const firstDomain = detail.capability_domains[0];
+          const entry =
+            detail.benchmark_entries.find(item => item.entry_id === entryId) ??
+            detail.benchmark_entries[0];
+          const firstCategory = entry?.categories[0];
           setSuite(detail);
           setLatestRun(run);
           setArtifact(latestArtifact);
-          setSelectedDomainId(current =>
-            detail.capability_domains.some(
-              domain => domain.domain_id === current,
+          setOpikSnapshot(opikSummary);
+          setSelectedCategoryId(current =>
+            entry?.categories.some(
+              category => category.category_id === current,
             )
               ? current
-              : firstDomain?.domain_id ?? "",
+              : firstCategory?.category_id ?? "",
           );
           setSelectedContractId(current =>
-            detail.cases.some(contract => contract.case_id === current)
+            entry?.case_ids.includes(current)
               ? current
               : "",
           );
@@ -153,7 +175,7 @@ export function GeneralAgentEvaluationShell() {
         setError(message);
       }
     }
-  }, []);
+  }, [entryId]);
 
   useEffect(() => {
     const activeCoordinator = coordinator.current;
@@ -161,30 +183,37 @@ export function GeneralAgentEvaluationShell() {
     return () => activeCoordinator.cancel();
   }, [loadLatest]);
 
-  const selectedDomain = useMemo(
+  const selectedEntry = useMemo(
     () =>
-      suite?.capability_domains.find(
-        domain => domain.domain_id === selectedDomainId,
+      suite?.benchmark_entries.find(entry => entry.entry_id === entryId) ?? null,
+    [entryId, suite],
+  );
+  const selectedCategory = useMemo(
+    () =>
+      selectedEntry?.categories.find(
+        category => category.category_id === selectedCategoryId,
       ) ??
-      suite?.capability_domains[0] ??
+      selectedEntry?.categories[0] ??
       null,
-    [selectedDomainId, suite],
+    [selectedCategoryId, selectedEntry],
   );
   const contractsById = useMemo(
     () => new Map((suite?.cases ?? []).map(item => [item.case_id, item])),
     [suite],
   );
-  const domainContracts = useMemo(
+  const categoryContracts = useMemo(
     () =>
-      (selectedDomain?.case_ids ?? [])
+      (selectedCategory?.case_ids ?? [])
         .map(caseId => contractsById.get(caseId))
         .filter(
           (contract): contract is BenchmarkCaseExpectation =>
             contract !== undefined,
         ),
-    [contractsById, selectedDomain],
+    [contractsById, selectedCategory],
   );
-  const selectedContract = contractsById.get(selectedContractId) ?? null;
+  const selectedContract = selectedEntry?.case_ids.includes(selectedContractId)
+    ? (contractsById.get(selectedContractId) ?? null)
+    : null;
   const selectedRow =
     artifact?.case_rows.find(
       row => row.case_id === selectedContract?.case_id,
@@ -194,8 +223,8 @@ export function GeneralAgentEvaluationShell() {
       bundle => bundle.identity.case_id === selectedContract?.case_id,
     ) ?? null;
 
-  function selectDomain(domain: BenchmarkCapabilityDomain) {
-    setSelectedDomainId(domain.domain_id);
+  function selectCategory(category: BenchmarkScenarioCategory) {
+    setSelectedCategoryId(category.category_id);
     setSelectedContractId("");
   }
 
@@ -203,9 +232,17 @@ export function GeneralAgentEvaluationShell() {
     <AppShell activePath="/task-monitor">
       <section className="mx-auto min-h-full w-full max-w-[1200px] px-6 py-5">
         <GeneralAgentMonitorNav active="evaluation" />
+        <BenchmarkEntryNav
+          entries={suite?.benchmark_entries ?? []}
+          activeEntryId={entryId}
+        />
         <BenchmarkHeader
-          suite={suite}
+          entry={selectedEntry}
           artifact={artifact}
+        />
+        <OpikResultsPanel
+          snapshot={opikSnapshot}
+          entryId={entryId}
         />
 
         {error ? (
@@ -226,16 +263,16 @@ export function GeneralAgentEvaluationShell() {
         ) : (
           <main className="mt-5">
             <ContractPicker
-              domains={suite?.capability_domains ?? []}
-              domain={selectedDomain}
-              contracts={domainContracts}
+              categories={selectedEntry?.categories ?? []}
+              category={selectedCategory}
+              contracts={categoryContracts}
               contract={selectedContract}
               artifact={artifact}
-              onDomainChange={domainId => {
-                const domain = suite?.capability_domains.find(
-                  item => item.domain_id === domainId,
+              onCategoryChange={categoryId => {
+                const category = selectedEntry?.categories.find(
+                  item => item.category_id === categoryId,
                 );
-                if (domain) selectDomain(domain);
+                if (category) selectCategory(category);
               }}
               onContractChange={setSelectedContractId}
               onShowIntroduction={() => setSelectedContractId("")}
@@ -248,7 +285,7 @@ export function GeneralAgentEvaluationShell() {
                 run={latestRun}
               />
             ) : (
-              <EvaluationIntroduction />
+              <EvaluationIntroduction entry={selectedEntry} />
             )}
           </main>
         )}
@@ -257,22 +294,101 @@ export function GeneralAgentEvaluationShell() {
   );
 }
 
+function BenchmarkEntryNav({
+  entries,
+  activeEntryId,
+}: {
+  entries: BenchmarkPortfolioEntry[];
+  activeEntryId: BenchmarkEntryId;
+}) {
+  const entryById = new Map(entries.map(entry => [entry.entry_id, entry]));
+  const items: ReadonlyArray<{
+    id: BenchmarkEntryId;
+    href: string;
+    fallbackName: string;
+    fallbackCount: number;
+    icon: ComponentType<{ className?: string }>;
+  }> = [
+    {
+      id: "multi_step",
+      href: "/task-monitor/general-agent/evaluation/multi-step",
+      fallbackName: "多步骤组合任务",
+      fallbackCount: 18,
+      icon: Workflow,
+    },
+    {
+      id: "recovery",
+      href: "/task-monitor/general-agent/evaluation/recovery",
+      fallbackName: "异常中断恢复",
+      fallbackCount: 8,
+      icon: RefreshCcw,
+    },
+  ];
+
+  return (
+    <nav
+      aria-label="通用写作智能体评测入口"
+      className="mt-4 grid grid-cols-2 gap-3"
+    >
+      {items.map(item => {
+        const entry = entryById.get(item.id);
+        const Icon = item.icon;
+        const isActive = item.id === activeEntryId;
+        return (
+          <Link
+            key={item.id}
+            href={item.href}
+            aria-current={isActive ? "page" : undefined}
+            className={cn(
+              "flex items-center gap-3 rounded-[var(--tc-radius-card)] px-4 py-3 transition-colors duration-150 motion-reduce:transition-none",
+              isActive
+                ? "bg-[var(--tc-surface-card)] text-[var(--tc-text-primary)] ring-1 ring-inset ring-white/10"
+                : "bg-[var(--tc-surface-muted)] text-[var(--tc-text-secondary)] hover:bg-[var(--tc-surface-card)] hover:text-[var(--tc-text-primary)]",
+            )}
+          >
+            <span
+              className={cn(
+                "flex size-9 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)]",
+                isActive ? "bg-cyan-300/10 text-cyan-200" : "bg-black/15",
+              )}
+            >
+              <Icon className="size-4" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium">
+                {entry?.name ?? item.fallbackName}
+              </span>
+              <span className="mt-0.5 block text-xs text-[var(--tc-text-muted)]">
+                {entry?.case_count ?? item.fallbackCount} 条 · {entry?.categories.length ?? 0} 类
+              </span>
+            </span>
+            <ArrowRight className="size-4 shrink-0 text-[var(--tc-text-muted)]" />
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 function BenchmarkHeader({
-  suite,
+  entry,
   artifact,
 }: {
-  suite: BenchmarkSuiteDetail | null;
+  entry: BenchmarkPortfolioEntry | null;
   artifact: BenchmarkSuiteArtifact | null;
 }) {
-  const total = suite?.case_count ?? 0;
+  const caseIds = new Set(entry?.case_ids ?? []);
+  const total = entry?.case_count ?? 0;
   const passed =
-    artifact?.case_rows.filter(row => row.conclusion === "passed").length ?? 0;
+    artifact?.case_rows.filter(
+      row => caseIds.has(row.case_id) && row.conclusion === "passed",
+    ).length ?? 0;
   const allPassed = total > 0 && passed === total;
 
   return (
     <header className="mt-6">
       <p className="text-xs text-[var(--tc-text-muted)]">
-        通用写作智能体能力证明
+        通用写作智能体能力证明 · {entry?.name ?? "正在读取评测入口"}
       </p>
       <h1 className="mt-1 flex items-center gap-3 text-[32px] font-semibold leading-tight text-[var(--tc-text-primary)]">
         {total ? `${passed}/${total} 条合同通过` : "正在读取固定基准"}
@@ -280,26 +396,213 @@ function BenchmarkHeader({
           <CircleCheck className="size-6 text-emerald-300" />
         ) : null}
       </h1>
+      {entry ? (
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--tc-text-secondary)]">
+          {entry.summary}
+        </p>
+      ) : null}
     </header>
   );
 }
 
+function OpikResultsPanel({
+  snapshot,
+  entryId,
+}: {
+  snapshot: BenchmarkObservabilitySnapshot | null | undefined;
+  entryId: BenchmarkEntryId;
+}) {
+  const entry =
+    snapshot?.entries.find(item => item.entry_id === entryId) ?? null;
+  const isAvailable = snapshot?.status === "available" && entry !== null;
+
+  return (
+    <section
+      aria-labelledby="opik-results-title"
+      className="mt-5 rounded-[var(--tc-radius-card)] bg-[var(--tc-surface-card)] px-5 py-4"
+    >
+      <div className="flex items-start gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-[var(--tc-radius-control)] bg-cyan-300/10 text-cyan-200">
+          <Activity className="size-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h2
+              id="opik-results-title"
+              className="text-sm font-medium text-[var(--tc-text-primary)]"
+            >
+              Opik 云端评测结果
+            </h2>
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-[11px]",
+                isAvailable
+                  ? "bg-emerald-300/10 text-emerald-200"
+                  : "bg-amber-300/10 text-amber-100",
+              )}
+            >
+              {isAvailable ? "已校验" : opikStatusLabel(snapshot)}
+            </span>
+          </div>
+          <p className="mt-1 text-xs leading-5 text-[var(--tc-text-secondary)]">
+            {snapshot === undefined
+              ? "正在读取 Dataset、Experiment、评分与 Trace 摘要。"
+              : snapshot?.message ??
+                "Opik 结果接口暂时不可读取；本地合同结果不受影响。"}
+          </p>
+        </div>
+        {isAvailable ? <OpikResultLinks entry={entry} /> : null}
+      </div>
+
+      {isAvailable ? (
+        <>
+          <dl className="mt-4 grid grid-cols-4 gap-2">
+            <OpikMetric
+              icon={Database}
+              label="Dataset 数据集"
+              value={`${entry.dataset_item_count} 条 · ${entry.dataset_version}`}
+            />
+            <OpikMetric
+              icon={CircleCheck}
+              label="Experiment 实验"
+              value={`${entry.passed_count}/${entry.case_count} 条通过`}
+            />
+            <OpikMetric
+              icon={Activity}
+              label="Trace 链路"
+              value={`${entry.trace_count} 条根链路`}
+            />
+            <OpikMetric
+              icon={Timer}
+              label="案例耗时中位数"
+              value={formatOpikDuration(entry.duration_p50_ms)}
+            />
+          </dl>
+
+          <div className="mt-3 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] px-4 py-3">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-xs font-medium text-[var(--tc-text-primary)]">
+                八维固定合同评分
+              </p>
+              <p className="text-[11px] text-[var(--tc-text-muted)]">
+                最近实验 · {formatOpikDate(entry.created_at)}
+              </p>
+            </div>
+            <dl className="mt-3 grid grid-cols-4 gap-x-5 gap-y-3">
+              {entry.scores.map(score => (
+                <div key={score.name} className="min-w-0">
+                  <dt className="truncate text-[11px] text-[var(--tc-text-muted)]">
+                    {score.name}
+                  </dt>
+                  <dd className="mt-0.5 font-mono text-sm text-emerald-200">
+                    {Math.round(score.value * 100)}%
+                  </dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-3 text-[11px] text-[var(--tc-text-muted)]">
+              {entry.total_estimated_cost === null
+                ? "本轮使用确定性合成运行时，Opik 未计量真实模型费用。"
+                : `Opik 估算费用：$${entry.total_estimated_cost.toFixed(4)}`}
+            </p>
+          </div>
+        </>
+      ) : null}
+    </section>
+  );
+}
+
+function OpikResultLinks({ entry }: { entry: BenchmarkObservabilityEntry }) {
+  const links = [
+    { href: entry.experiment_url, label: "打开实验", emphasized: true },
+    { href: entry.dataset_url, label: "查看数据集", emphasized: false },
+    { href: entry.traces_url, label: "查看 Trace", emphasized: false },
+  ] as const;
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      {links.map(link => (
+        <a
+          key={link.label}
+          href={link.href}
+          target="_blank"
+          rel="noreferrer"
+          className={buttonVariants({
+            variant: link.emphasized ? "outline" : "ghost",
+            size: "sm",
+          })}
+        >
+          {link.label}
+          <ExternalLink className="size-3.5" />
+        </a>
+      ))}
+    </div>
+  );
+}
+
+function OpikMetric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] px-3 py-3">
+      <dt className="flex items-center gap-1.5 text-[11px] text-[var(--tc-text-muted)]">
+        <Icon className="size-3.5" />
+        {label}
+      </dt>
+      <dd className="mt-1 text-sm font-medium text-[var(--tc-text-primary)]">
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+function opikStatusLabel(
+  snapshot: BenchmarkObservabilitySnapshot | null | undefined,
+) {
+  if (snapshot === undefined) return "读取中";
+  if (snapshot?.status === "disabled") return "未启用";
+  return "暂不可用";
+}
+
+function formatOpikDuration(value: number | null) {
+  if (value === null) return "未计量";
+  if (value < 1000) return `${Math.round(value)} 毫秒`;
+  return `${(value / 1000).toFixed(2)} 秒`;
+}
+
+function formatOpikDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "时间未知";
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
 function ContractPicker({
-  domains,
-  domain,
+  categories,
+  category,
   contracts,
   contract,
   artifact,
-  onDomainChange,
+  onCategoryChange,
   onContractChange,
   onShowIntroduction,
 }: {
-  domains: BenchmarkCapabilityDomain[];
-  domain: BenchmarkCapabilityDomain | null;
+  categories: BenchmarkScenarioCategory[];
+  category: BenchmarkScenarioCategory | null;
   contracts: BenchmarkCaseExpectation[];
   contract: BenchmarkCaseExpectation | null;
   artifact: BenchmarkSuiteArtifact | null;
-  onDomainChange: (domainId: string) => void;
+  onCategoryChange: (categoryId: string) => void;
   onContractChange: (caseId: string) => void;
   onShowIntroduction: () => void;
 }) {
@@ -312,17 +615,17 @@ function ContractPicker({
         查看合同
       </span>
       <label className="relative block w-[300px]">
-        <span className="sr-only">选择能力分类</span>
+        <span className="sr-only">选择任务分类</span>
         <select
-          aria-label="选择能力分类"
-          value={domain?.domain_id ?? ""}
-          onChange={event => onDomainChange(event.target.value)}
+          aria-label="选择任务分类"
+          value={category?.category_id ?? ""}
+          onChange={event => onCategoryChange(event.target.value)}
           className="h-9 w-full appearance-none rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] px-3 pr-9 text-sm text-[var(--tc-text-primary)] outline-none focus:border-[var(--tc-text-primary)]"
         >
-          {domains.map(item => {
-            const result = domainResult(item, artifact);
+          {categories.map(item => {
+            const result = categoryResult(item, artifact);
             return (
-              <option key={item.domain_id} value={item.domain_id}>
+              <option key={item.category_id} value={item.category_id}>
                 {item.name}
                 {result.available
                   ? ` · ${result.passed}/${result.total} 通过`
@@ -406,7 +709,11 @@ const evaluationTerms = [
   },
 ] as const;
 
-function EvaluationIntroduction() {
+function EvaluationIntroduction({
+  entry,
+}: {
+  entry: BenchmarkPortfolioEntry | null;
+}) {
   return (
     <article className="mt-4 rounded-[var(--tc-radius-card)] bg-[var(--tc-surface-card)] px-6 py-5">
       <p className="text-xs text-[var(--tc-text-muted)]">评测说明</p>
@@ -416,6 +723,52 @@ function EvaluationIntroduction() {
       <p className="mt-2 text-sm leading-6 text-[var(--tc-text-secondary)]">
         页面同时展示原问题、实际执行和最终结果，不会只给一个“通过”。
       </p>
+
+      {entry ? (
+        <section className="mt-5 grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-3">
+          <div className="rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] px-4 py-3">
+            <p className="text-xs text-[var(--tc-text-muted)]">Opik 数据集</p>
+            <p className="mt-1 font-mono text-sm text-[var(--tc-text-primary)]">
+              {entry.opik_dataset_name}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-[var(--tc-text-secondary)]">
+              {entry.case_count} 条真实合同，可复用为批量实验和版本对比输入。
+            </p>
+          </div>
+          <div className="rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] px-4 py-3">
+            <p className="text-xs text-[var(--tc-text-muted)]">Trace 采集范围</p>
+            <p className="mt-1 text-sm text-[var(--tc-text-primary)]">
+              任务 · 模型轮次 · 工具 · 子图 · 恢复点
+            </p>
+            <p className="mt-1 text-xs leading-5 text-[var(--tc-text-secondary)]">
+              使用嵌套链路记录执行树，默认关闭外发，配置 Opik 后启用。
+            </p>
+          </div>
+        </section>
+      ) : null}
+
+      {entry ? (
+        <section className="mt-5">
+          <h3 className="text-sm font-medium text-[var(--tc-text-primary)]">
+            覆盖 {entry.categories.length} 类真实场景
+          </h3>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {entry.categories.map((category, index) => (
+              <div
+                key={category.category_id}
+                className="rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] px-3 py-2.5"
+              >
+                <p className="font-mono text-[11px] text-[var(--tc-text-muted)]">
+                  {String(index + 1).padStart(2, "0")} · {category.case_ids.length} 条
+                </p>
+                <p className="mt-1 text-sm text-[var(--tc-text-primary)]">
+                  {category.name}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="mt-5">
         <dl className="grid grid-cols-3 gap-3">
@@ -439,6 +792,30 @@ function EvaluationIntroduction() {
           ))}
         </dl>
       </section>
+
+      {entry ? (
+        <section className="mt-5">
+          <h3 className="text-sm font-medium text-[var(--tc-text-primary)]">
+            什么算无效工具调用
+          </h3>
+          <p className="mt-1 text-xs leading-5 text-[var(--tc-text-secondary)]">
+            不是凭模型主观打分，而是由合同中的能力白名单、次数上限、依赖关系和证据消费规则判定。
+          </p>
+          <ol className="mt-2 grid grid-cols-2 gap-2">
+            {entry.invalid_invocation_rules.map((rule, index) => (
+              <li
+                key={rule}
+                className="flex gap-2 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)] px-3 py-2.5 text-xs leading-5 text-[var(--tc-text-secondary)]"
+              >
+                <span className="font-mono text-[var(--tc-text-muted)]">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span>{rule}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
 
       <details className="group mt-4 rounded-[var(--tc-radius-control)] bg-[var(--tc-surface-muted)]">
         <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2.5 text-sm text-[var(--tc-text-secondary)]">
@@ -981,16 +1358,16 @@ function contractResultLabel(
   return row.conclusion === "passed" ? "合同已通过" : "合同未通过";
 }
 
-function domainResult(
-  domain: BenchmarkCapabilityDomain,
+function categoryResult(
+  category: BenchmarkScenarioCategory,
   artifact: BenchmarkSuiteArtifact | null,
 ): { total: number; passed: number; available: boolean } {
-  const caseIds = new Set(domain.case_ids);
+  const caseIds = new Set(category.case_ids);
   const rows = (artifact?.case_rows ?? []).filter(row =>
     caseIds.has(row.case_id),
   );
   return {
-    total: domain.case_ids.length,
+    total: category.case_ids.length,
     passed: rows.filter(row => row.conclusion === "passed").length,
     available: rows.length > 0,
   };

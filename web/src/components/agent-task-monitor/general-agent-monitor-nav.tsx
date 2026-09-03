@@ -27,7 +27,7 @@ export function GeneralAgentMonitorNav({
     },
     {
       key: "evaluation" as const,
-      href: "/task-monitor/general-agent/evaluation",
+      href: "/task-monitor/general-agent/evaluation/multi-step",
       label: "效果评测",
       icon: Scale,
     },

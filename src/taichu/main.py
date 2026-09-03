@@ -34,6 +34,12 @@ from taichu.application.evaluations.general_agent_benchmark.container import (
 from taichu.application.evaluations.general_agent_benchmark.issue_correlations import (
     IssueCorrelationRepository,
 )
+from taichu.application.evaluations.general_agent_benchmark.observability import (
+    UnavailableBenchmarkObservabilityQuery,
+)
+from taichu.application.evaluations.general_agent_benchmark.portfolio import (
+    build_benchmark_portfolio,
+)
 from taichu.application.evaluations.general_agent_benchmark.services import (
     BenchmarkCatalogEntry,
 )
@@ -115,6 +121,12 @@ from taichu.infrastructure.evaluations.general_agent_benchmark.persistent_runtim
     JsonBenchmarkRunResourceService,
     JsonSuiteRunStore,
 )
+from taichu.infrastructure.evaluations.general_agent_benchmark.opik_integration import (
+    configure_opik_observability,
+)
+from taichu.infrastructure.evaluations.general_agent_benchmark.opik_query import (
+    OpikBenchmarkObservabilityQuery,
+)
 from taichu.infrastructure.evaluations.rag.result_repository import (
     RAGEvaluationResultRepository,
 )
@@ -179,6 +191,14 @@ def create_app(
     tool_budget_repository: GeneralAgentToolBudgetRepository | None = None,
 ) -> FastAPI:
     """创建并组装 FastAPI 应用。"""
+
+    configure_opik_observability(
+        enabled=app_settings.opik_enabled,
+        project_name=app_settings.opik_project_name,
+        url_override=app_settings.opik_url_override,
+        api_key=app_settings.opik_api_key.get_secret_value(),
+        workspace=app_settings.opik_workspace,
+    )
     persistence_components = (
         graph_checkpointer,
         graph_store,
@@ -502,6 +522,8 @@ def create_app(
             "artifact_repository": artifact_repository,
             "model_role_router": model_role_router,
             "knowledge_run_store": knowledge_run_store,
+            "agent_memory_service": agent_memory_service,
+            "general_agent_run_repository": general_agent_run_repository,
             "storage": storage,
             "graph_store": general_agent_graph_store,
         }
@@ -604,6 +626,22 @@ def create_app(
         / "general_agent_benchmarks"
         / "interactive-runtime"
     )
+    benchmark_portfolio = build_benchmark_portfolio(benchmark_suite)
+    benchmark_observability = (
+        OpikBenchmarkObservabilityQuery.create(
+            suite=benchmark_suite,
+            entries=benchmark_portfolio,
+            project_name=app_settings.opik_project_name,
+            workspace=app_settings.opik_workspace,
+            api_key=app_settings.opik_api_key.get_secret_value(),
+            url_override=app_settings.opik_url_override,
+        )
+        if app_settings.opik_enabled
+        else UnavailableBenchmarkObservabilityQuery(
+            project_name=app_settings.opik_project_name,
+            suite_content_hash=benchmark_suite.content_hash,
+        )
+    )
     general_agent_benchmark_services = build_general_agent_benchmark_services(
         catalog_entries=(BenchmarkCatalogEntry.from_suite(benchmark_suite),),
         authored_suites=(benchmark_suite,),
@@ -617,6 +655,7 @@ def create_app(
             )
         ),
         resources=JsonBenchmarkRunResourceService(benchmark_runtime_root / "artifacts"),
+        observability=benchmark_observability,
     )
     interactive_benchmark_execution.bind_resources(
         general_agent_benchmark_services.resources
@@ -705,9 +744,7 @@ def create_app(
     application.state.agent_memory_service = agent_memory_service
     application.state.agent_memory_repository = agent_memory_repository
     application.state.general_agent_graph_store = general_agent_graph_store
-    application.state.general_agent_tool_budget_repository = (
-        tool_budget_repository
-    )
+    application.state.general_agent_tool_budget_repository = tool_budget_repository
     application.state.general_agent_benchmark_services = (
         general_agent_benchmark_services
     )

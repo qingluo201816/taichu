@@ -329,6 +329,10 @@ class GeneralAgentContextMemory(GeneralAgentModel):
     artifact_refs: list[str] = Field(default_factory=list, max_length=100)
     content_sha256: str = Field(min_length=64, max_length=64)
     basis_sha256: str = Field(min_length=64, max_length=64)
+    state_sha256: str | None = Field(
+        default=None,
+        pattern=r"^[a-f0-9]{64}$",
+    )
     validity: Literal["active", "stale", "rejected", "superseded"] = "active"
     previous_validity: Literal[
         "active", "stale", "rejected", "superseded"
@@ -348,6 +352,7 @@ class GeneralAgentContextMemory(GeneralAgentModel):
             return value
         payload = dict(value)
         payload.setdefault("basis_sha256", payload.get("content_sha256"))
+        payload.setdefault("state_sha256", None)
         payload.setdefault("validity", "active")
         payload.setdefault("previous_validity", None)
         payload.setdefault("invalidation_reason", "")
@@ -678,6 +683,7 @@ class GeneralAgentRun(GeneralAgentModel):
     parent_run_id: str | None = Field(default=None, max_length=128)
     agent_name: Literal["general_writing_assistant"] = "general_writing_assistant"
     user_goal: str = Field(min_length=1, max_length=100_000)
+    model_id: str | None = Field(default=None, min_length=1, max_length=128)
     scope: GeneralAgentScope = Field(default_factory=GeneralAgentScope)
     author_constraints: list[str] = Field(default_factory=list, max_length=100)
     external_access_allowed: bool = False
@@ -748,6 +754,7 @@ class GeneralAgentRun(GeneralAgentModel):
         )
         payload.setdefault("request_index", max(1, legacy_request_count))
         payload.setdefault("parent_run_id", None)
+        payload.setdefault("model_id", None)
         _migrate_legacy_message_identities(payload)
         payload.setdefault("memory_refs", [])
         payload.setdefault("final_answer_basis_sha256", None)
@@ -1030,6 +1037,7 @@ def _remove_context_memory_validity_fields(value: Any) -> None:
         return
     for field in (
         "basis_sha256",
+        "state_sha256",
         "validity",
         "previous_validity",
         "invalidation_reason",

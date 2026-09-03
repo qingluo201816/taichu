@@ -200,7 +200,7 @@ export function TaskMonitorOverview() {
             </Link>
 
             <Link
-              href="/task-monitor/general-agent/evaluation"
+              href="/task-monitor/general-agent/evaluation/multi-step"
               className="flex items-center justify-between gap-3 rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-card)] px-3 py-3 text-sm text-[var(--tc-text-primary)] hover:bg-[var(--tc-surface-muted)]"
             >
               <span className="flex min-w-0 items-center gap-3">

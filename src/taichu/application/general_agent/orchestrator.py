@@ -72,7 +72,7 @@ _PLAN_SYSTEM_PROMPT = """你是太初通用写作助手的高层编排 Agent，�
 11. 信息缺口会实质改变结果时才澄清；不要询问可以从小说正文或知识库取得的事实。
 12. 所有面向作者的内容使用中文。
 13. 运行记忆不是小说事实；fact_reference 只能提示你安排正文或统一召回重新取证。
-14. 你不能直接写入、确认或删除运行记忆。
+14. 只有确实出现需要跨步骤或后续请求保留的关键约束、任务主线、伏笔、阶段结论或未决事项时，才安排 maintain_working_memory；普通节点结果由 Runtime 自动沉淀，不要重复记录。
 15. 完整轻量索引及候选摘要中的能力都是真实注册能力；不得创造索引中不存在的能力。参数细节只以原生 tools 参数承载的 Schema 为准。
 16. 所有位置未知的正文、知识卡、混合证据和多跳关系召回统一使用 retrieve_story_context；不要按单一事实或多跳问题选择不同检索工具。名称、别名、存在性与歧义判断使用 resolve_knowledge_identity，明确章节读取仍使用 read_manuscript。
 17. 必须通过系统指定的结构化输出 Tool 返回计划，不要在正文中手写 JSON。
@@ -94,6 +94,7 @@ _VERIFY_SYSTEM_PROMPT = """你是太初通用写作助手的高层编排 Agent�
 _PLAN_SYSTEM_PROMPT += """
 18. input_bindings 的数组下标统一使用点号，例如 chunks.0.content；方括号形式会被规范化，但不得使用其他路径语法。
 19. 重规划时不得重复执行已经成功且仍可满足目标的节点；需要把成功结果带入新修订版时，使用 reuse_from_node_id 明确引用上一修订版节点。
+20. 工作记忆不是小说事实。替代或失效旧记忆时必须使用当前上下文给出的 memory_id 与 state_sha256；不得把 stale、rejected 或 superseded 记录恢复成当前依据。
 """
 
 
@@ -362,7 +363,7 @@ class OrchestratorAgent:
         native_tools: list[dict[str, Any]],
         output_tool: dict[str, Any] | None = None,
     ) -> _OutputModel:
-        model_id = self._model_router.model_for("orchestrator")
+        model_id = run.model_id or self._model_router.model_for("orchestrator")
         system_memory = _json_message(
             {
                 "稳定记忆（System Prompt）": {

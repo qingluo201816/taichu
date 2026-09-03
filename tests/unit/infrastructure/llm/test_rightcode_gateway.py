@@ -653,6 +653,86 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(captured_path, "/deepseek/anthropic/v1/messages")
         self.assertEqual(response.text, "可用")
 
+    async def test_deepseek_forced_tool_choice_disables_thinking(self) -> None:
+        captured_payload: dict[str, object] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            captured_payload.update(json.loads(request.content))
+            return httpx.Response(
+                200,
+                json={
+                    "id": "deepseek-structured",
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "toolu_plan",
+                            "name": "GeneralAgentPlanDraft",
+                            "input": {"nodes": []},
+                        }
+                    ],
+                    "stop_reason": "tool_use",
+                    "usage": {"input_tokens": 8, "output_tokens": 4},
+                },
+            )
+
+        definition = LLMToolDefinition(
+            name="GeneralAgentPlanDraft",
+            description="返回结构化执行计划。",
+            parameters={"type": "object", "properties": {}},
+        )
+        gateway, client, _ = self._gateway(httpx.MockTransport(handler))
+        try:
+            response = await gateway.complete(
+                replace(
+                    _request("deepseek-v4-pro"),
+                    tools=(definition,),
+                    tool_choice="GeneralAgentPlanDraft",
+                )
+            )
+        finally:
+            await client.aclose()
+
+        self.assertEqual(captured_payload["thinking"], {"type": "disabled"})
+        self.assertEqual(
+            captured_payload["tool_choice"],
+            {"type": "tool", "name": "GeneralAgentPlanDraft"},
+        )
+        self.assertEqual(response.tool_calls[0].name, "GeneralAgentPlanDraft")
+
+    async def test_deepseek_auto_tool_choice_keeps_default_thinking(self) -> None:
+        captured_payload: dict[str, object] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            captured_payload.update(json.loads(request.content))
+            return httpx.Response(
+                200,
+                json={
+                    "id": "deepseek-auto",
+                    "content": [{"type": "text", "text": "无需调用工具"}],
+                    "usage": {"input_tokens": 5, "output_tokens": 2},
+                },
+            )
+
+        definition = LLMToolDefinition(
+            name="get_weather",
+            description="查询天气。",
+            parameters={"type": "object", "properties": {}},
+        )
+        gateway, client, _ = self._gateway(httpx.MockTransport(handler))
+        try:
+            await gateway.complete(
+                replace(
+                    _request("deepseek-v4-pro"),
+                    tools=(definition,),
+                    tool_choice="auto",
+                )
+            )
+        finally:
+            await client.aclose()
+
+        self.assertNotIn("thinking", captured_payload)
+        self.assertEqual(captured_payload["tool_choice"], {"type": "auto"})
+
     async def test_official_deepseek_rag_judge_disables_thinking(self) -> None:
         captured_payload: dict[str, object] = {}
 

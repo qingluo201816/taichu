@@ -61,7 +61,7 @@ async def run_structured_subagent(
         "请完成下面的专业任务，并通过系统指定的结构化输出 Tool 返回结果。\n\n"
         f"任务输入：\n{input_json}"
     )
-    model_id = router.model_for(manifest.model_role)
+    model_id = invocation.model_id or router.model_for(manifest.model_role)
     model = llm_value.model_copy(
         update={
             "model_id": model_id,

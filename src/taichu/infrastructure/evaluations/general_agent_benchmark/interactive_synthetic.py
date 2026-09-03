@@ -66,7 +66,7 @@ class InteractiveSyntheticExecution:
         self._mongodb_uri = mongodb_uri
         self._capability_catalog = capability_catalog
         self._oracle = TypedOracle(
-            catalog=_load_oracle_catalog(
+            catalog=load_synthetic_oracle_catalog(
                 suite=suite,
                 fixture_root=fixture_root,
                 claim_catalog_path=claim_catalog_path,
@@ -149,7 +149,7 @@ class InteractiveSyntheticExecution:
             return artifact
 
 
-def _load_oracle_catalog(
+def load_synthetic_oracle_catalog(
     *,
     suite: AuthoredSuiteSpec,
     fixture_root: Path,

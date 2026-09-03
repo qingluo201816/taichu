@@ -851,6 +851,7 @@ def _context_memory(
         artifact_refs=[] if repair_only else entry.artifact_refs,
         content_sha256=entry.content_sha256,
         basis_sha256=entry.basis_sha256,
+        state_sha256=memory_state_sha256(entry),
         validity=entry.validity.value,
         previous_validity=(
             entry.previous_validity.value
@@ -876,6 +877,7 @@ def _working_entries(
 ) -> list[AgentMemoryEntry]:
     limits = {
         AgentMemoryKind.USER_INSTRUCTION: 8,
+        AgentMemoryKind.TASK_SUMMARY: 3,
         AgentMemoryKind.RESOURCE_SUMMARY: 5,
         AgentMemoryKind.WORK_NOTE: 3,
         AgentMemoryKind.UNRESOLVED_ISSUE: 5,
@@ -904,7 +906,10 @@ def _working_entries(
         used += chars
 
     for entry in entries:
-        if entry.kind is AgentMemoryKind.TASK_SUMMARY:
+        if (
+            entry.kind is AgentMemoryKind.TASK_SUMMARY
+            and entry.result_type != "orchestrator_working_memory"
+        ):
             continue
         if entry.memory_id in selected_ids:
             continue

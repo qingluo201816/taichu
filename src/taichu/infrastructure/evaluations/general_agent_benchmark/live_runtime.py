@@ -79,6 +79,10 @@ from taichu.infrastructure.evaluations.general_agent_benchmark.synthetic_runtime
     StrictSyntheticInteractionObserver,
     SyntheticInjectedProcessTermination,
 )
+from taichu.infrastructure.evaluations.general_agent_benchmark.opik_integration import (
+    opik,
+    update_current_span,
+)
 from taichu.infrastructure.llm.catalog import LLMModelCatalog
 from taichu.infrastructure.llm.rightcode import (
     LLMGatewayError,
@@ -200,7 +204,9 @@ class LiveSuiteBaselineResult(BenchmarkModel):
             ProviderExecutionState.ERROR,
         }:
             if len(self.provider_interruptions) != 1 or not self.pending_case_ids:
-                raise ValueError("provider blocked/error 必须保留一次中断及待执行案例。")
+                raise ValueError(
+                    "provider blocked/error 必须保留一次中断及待执行案例。"
+                )
         else:
             raise ValueError("Live 终态只接受 completed、blocked 或 error。")
         expected_complete = (
@@ -245,7 +251,21 @@ class LiveObservedLLMGateway:
     def set_response_bindings(self, values: dict[str, object]) -> None:
         """兼容共享夹具执行器；真实模型响应不接受合成绑定。"""
 
+    @opik.track(
+        name="真实模型调用",
+        type="llm",
+        capture_input=False,
+        capture_output=False,
+    )
     async def complete(self, request: LLMRequest) -> LLMResponse:
+        update_current_span(
+            name=f"模型 · {_model_phase(request.task_name)}",
+            metadata={
+                "task_name": request.task_name,
+                "synthetic": False,
+            },
+            model=request.model_id,
+        )
         if request.task_name == self._crash_once_task_name and not self._crashed:
             self.requests.append(request)
             self._crashed = True
@@ -290,6 +310,25 @@ class LiveObservedLLMGateway:
             self._driver.observe(interaction)
         self._observer.record_observed(interaction)
         self._responses.append(response)
+        update_current_span(
+            name=f"模型 · {_model_phase(request.task_name)}",
+            metadata={
+                "task_name": request.task_name,
+                "call_id": response.call_id,
+                "synthetic": False,
+            },
+            output={"finish_reason": response.finish_reason},
+            model=response.model_id,
+            usage={
+                key: value
+                for key, value in {
+                    "prompt_tokens": response.usage.input_tokens,
+                    "completion_tokens": response.usage.output_tokens,
+                    "total_tokens": response.usage.total_tokens,
+                }.items()
+                if value is not None
+            },
+        )
         return response
 
     async def stream(
@@ -810,8 +849,7 @@ class LiveSuiteRunner:
             case_observation=case_observation,
             observation_sha256=case_observation.observation_sha256,
             evidence_ids=tuple(
-                record.ref.evidence_id
-                for record in case_observation.evidence_records
+                record.ref.evidence_id for record in case_observation.evidence_records
             ),
             normalization_artifact=None,
             problems=invocation_problems,

@@ -175,6 +175,7 @@ class GeneralAgentRuntimeService:
         self,
         *,
         user_goal: str,
+        model_id: str | None = None,
         conversation_id: str | None = None,
         start_new_conversation: bool | None = None,
         scope: GeneralAgentScope | None = None,
@@ -226,6 +227,7 @@ class GeneralAgentRuntimeService:
                 request_index=request_index,
                 parent_run_id=parent_run_id,
                 user_goal=goal,
+                model_id=model_id,
                 scope=scope or GeneralAgentScope(),
                 author_constraints=author_constraints or [],
                 external_access_allowed=external_access_allowed,
@@ -254,6 +256,7 @@ class GeneralAgentRuntimeService:
         self,
         *,
         user_goal: str,
+        model_id: str | None = None,
         conversation_id: str | None = None,
         start_new_conversation: bool | None = None,
         scope: GeneralAgentScope | None = None,
@@ -263,6 +266,7 @@ class GeneralAgentRuntimeService:
     ) -> GeneralAgentRun:
         run = await self.create_run(
             user_goal=user_goal,
+            model_id=model_id,
             conversation_id=conversation_id,
             start_new_conversation=start_new_conversation,
             scope=scope,
@@ -276,6 +280,7 @@ class GeneralAgentRuntimeService:
         self,
         *,
         user_goal: str,
+        model_id: str | None = None,
         conversation_id: str | None = None,
         start_new_conversation: bool | None = None,
         scope: GeneralAgentScope | None = None,
@@ -285,6 +290,7 @@ class GeneralAgentRuntimeService:
     ) -> GeneralAgentRun:
         run = await self.create_run(
             user_goal=user_goal,
+            model_id=model_id,
             conversation_id=conversation_id,
             start_new_conversation=start_new_conversation,
             scope=scope,

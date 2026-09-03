@@ -141,8 +141,72 @@ export interface BenchmarkCapabilityDomain {
   case_ids: string[];
 }
 
+export type BenchmarkEntryId = "multi_step" | "recovery";
+
+export type BenchmarkObservabilityStatus =
+  | "available"
+  | "disabled"
+  | "unavailable";
+
+export interface BenchmarkObservabilityScore {
+  name: string;
+  value: number;
+}
+
+export interface BenchmarkObservabilityEntry {
+  entry_id: BenchmarkEntryId;
+  dataset_name: string;
+  dataset_id: string;
+  dataset_url: string;
+  dataset_version: string;
+  dataset_item_count: number;
+  experiment_id: string;
+  experiment_name: string;
+  experiment_url: string;
+  traces_url: string;
+  experiment_status: string;
+  created_at: string;
+  case_count: number;
+  passed_count: number;
+  trace_count: number;
+  duration_p50_ms: number | null;
+  duration_p90_ms: number | null;
+  total_estimated_cost: number | null;
+  scores: BenchmarkObservabilityScore[];
+}
+
+export interface BenchmarkObservabilitySnapshot {
+  provider: "opik";
+  status: BenchmarkObservabilityStatus;
+  project_name: string;
+  project_url: string | null;
+  suite_content_hash: string;
+  refreshed_at: string;
+  message: string;
+  entries: BenchmarkObservabilityEntry[];
+}
+
+export interface BenchmarkScenarioCategory {
+  category_id: string;
+  name: string;
+  purpose: string;
+  case_ids: string[];
+}
+
+export interface BenchmarkPortfolioEntry {
+  entry_id: BenchmarkEntryId;
+  name: string;
+  summary: string;
+  opik_dataset_name: string;
+  case_count: number;
+  case_ids: string[];
+  categories: BenchmarkScenarioCategory[];
+  invalid_invocation_rules: string[];
+}
+
 export interface BenchmarkSuiteDetail
   extends Omit<BenchmarkSuiteSummary, "cases"> {
+  benchmark_entries: BenchmarkPortfolioEntry[];
   capability_domains: BenchmarkCapabilityDomain[];
   cases: BenchmarkCaseExpectation[];
 }

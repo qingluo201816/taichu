@@ -24,6 +24,10 @@ from taichu.application.general_agent.models import (
     GeneralAgentRunStatus,
 )
 from taichu.application.general_agent.service import GeneralAgentRuntimeService
+from taichu.infrastructure.evaluations.general_agent_benchmark.opik_integration import (
+    opik,
+    update_current_span,
+)
 
 RecoveryRuntimeBuilder = Callable[
     [GeneralAgentFaultHook],
@@ -70,6 +74,13 @@ class GeneralAgentRecoveryHarness:
         self._fault_adapter = fault_adapter
         self._poll_timeout_seconds = poll_timeout_seconds
 
+    @opik.track(
+        name="异常中断恢复",
+        type="general",
+        tags=["太初", "故障注入", "检查点恢复"],
+        capture_input=False,
+        capture_output=False,
+    )
     async def execute(
         self,
         *,
@@ -78,6 +89,14 @@ class GeneralAgentRecoveryHarness:
         steps: tuple[FaultStep, ...],
         runtime_arguments: dict[str, Any] | None = None,
     ) -> RecoveryHarnessResult:
+        update_current_span(
+            name="恢复子图 · 注入并恢复进程异常",
+            metadata={
+                "fault_plan_id": plan_id,
+                "fault_points": [step.point.value for step in steps],
+                "fault_count": len(steps),
+            },
+        )
         first_hook = self._fault_adapter.bind_runtime(
             plan_id=plan_id,
             steps=steps,
@@ -122,9 +141,7 @@ class GeneralAgentRecoveryHarness:
         interrupted_runs = [interrupted]
         recovered = interrupted
         while True:
-            triggered_before = self._fault_adapter.store.load(
-                plan
-            ).triggered_ordinals
+            triggered_before = self._fault_adapter.store.load(plan).triggered_ordinals
             restarted_hook = self._fault_adapter.bind(plan)
             restarted_runtime = self._runtime_builder(restarted_hook)
             interrupted_again = False
@@ -135,9 +152,7 @@ class GeneralAgentRecoveryHarness:
                     )
                 except InjectedProcessTermination:
                     await asyncio.sleep(0)
-                    recovered = await restarted_runtime.get(
-                        plan.run_identity.run_id
-                    )
+                    recovered = await restarted_runtime.get(plan.run_identity.run_id)
                     self._assert_next_fault_triggered(
                         plan=plan,
                         previous=triggered_before,
@@ -154,22 +169,16 @@ class GeneralAgentRecoveryHarness:
 
                 preflight_stopped: GeneralAgentRun | None = None
                 if current_recovered_count == 0:
-                    candidate = await restarted_runtime.get(
-                        plan.run_identity.run_id
-                    )
-                    if (
-                        candidate.status is GeneralAgentRunStatus.WAITING_HUMAN
-                        or (
-                            candidate.status is GeneralAgentRunStatus.FAILED
-                            and not candidate.resumable
-                        )
+                    candidate = await restarted_runtime.get(plan.run_identity.run_id)
+                    if candidate.status is GeneralAgentRunStatus.WAITING_HUMAN or (
+                        candidate.status is GeneralAgentRunStatus.FAILED
+                        and not candidate.resumable
                     ):
                         preflight_stopped = candidate
                 expected_recovered_count = (
                     0
                     if (
-                        current_interrupted.status
-                        in _DURABLE_NON_AUTO_RESUME_STATUSES
+                        current_interrupted.status in _DURABLE_NON_AUTO_RESUME_STATUSES
                         or preflight_stopped is not None
                     )
                     else 1
@@ -187,20 +196,20 @@ class GeneralAgentRecoveryHarness:
                         plan.run_identity.run_id
                     )
                     if (
-                        current_interrupted.status
-                        in _DURABLE_NON_AUTO_RESUME_STATUSES
+                        current_interrupted.status in _DURABLE_NON_AUTO_RESUME_STATUSES
                         and recovered != current_interrupted
                     ):
                         raise RecoveryHarnessDeviationError(
                             "无需自动执行的持久状态在 Runtime 重建后发生了漂移。"
                         )
                 else:
-                    recovered, interrupted_again = (
-                        await self._wait_for_terminal_or_fault(
-                            restarted_runtime,
-                            plan,
-                            triggered_before=triggered_before,
-                        )
+                    (
+                        recovered,
+                        interrupted_again,
+                    ) = await self._wait_for_terminal_or_fault(
+                        restarted_runtime,
+                        plan,
+                        triggered_before=triggered_before,
                     )
                     if interrupted_again:
                         self._assert_interruption_consistent(
@@ -221,7 +230,7 @@ class GeneralAgentRecoveryHarness:
             raise RecoveryHarnessDeviationError(
                 "Runtime 已结束但仍有 FaultPlan ordinal 未触发。"
             )
-        return RecoveryHarnessResult(
+        result = RecoveryHarnessResult(
             fault_plan=plan,
             interrupted_run=interrupted,
             interrupted_runs=tuple(interrupted_runs),
@@ -231,6 +240,19 @@ class GeneralAgentRecoveryHarness:
             plan_before_sha256=_plan_sha256(interrupted),
             plan_after_sha256=_plan_sha256(recovered),
         )
+        update_current_span(
+            name="恢复子图 · 注入并恢复进程异常",
+            metadata={
+                "fault_plan_id": plan_id,
+                "triggered_ordinals": list(result.triggered_ordinals),
+            },
+            output={
+                "恢复后状态": recovered.status.value,
+                "自动恢复次数": recovered_count,
+                "计划保持一致": (result.plan_before_sha256 == result.plan_after_sha256),
+            },
+        )
+        return result
 
     async def _wait_for_terminal_or_fault(
         self,
@@ -253,9 +275,7 @@ class GeneralAgentRecoveryHarness:
                         current = await runtime.resume(
                             current.run_id,
                             approve=True,
-                            second_confirmation=(
-                                request.second_confirmation_required
-                            ),
+                            second_confirmation=(request.second_confirmation_required),
                         )
                     except InjectedProcessTermination:
                         await asyncio.sleep(0)
@@ -306,8 +326,7 @@ class GeneralAgentRecoveryHarness:
         triggered = self._fault_adapter.store.load(resolved).triggered_ordinals
         remaining = resolved.steps[len(triggered) :]
         return any(
-            step.point is FaultPoint.RESOURCE_WRITE_APPLIED
-            for step in remaining
+            step.point is FaultPoint.RESOURCE_WRITE_APPLIED for step in remaining
         )
 
     def _assert_next_fault_triggered(
@@ -342,13 +361,9 @@ class GeneralAgentRecoveryHarness:
                 "多次中断没有保持 FaultPlan 声明的同一逻辑运行 owner。"
             )
         if current.plan_revision != initial.plan_revision:
-            raise RecoveryHarnessDeviationError(
-                "多次中断期间计划修订发生漂移。"
-            )
+            raise RecoveryHarnessDeviationError("多次中断期间计划修订发生漂移。")
         if _plan_sha256(current) != _plan_sha256(initial):
-            raise RecoveryHarnessDeviationError(
-                "多次中断期间计划内容发生漂移。"
-            )
+            raise RecoveryHarnessDeviationError("多次中断期间计划内容发生漂移。")
 
 
 class RecoveryHarnessDeviationError(RuntimeError):

@@ -32,6 +32,9 @@ from taichu.application.evaluations.general_agent_benchmark.run_models import (
     SuiteArtifact,
     SuiteRun,
 )
+from taichu.application.evaluations.general_agent_benchmark.observability import (
+    BenchmarkObservabilitySnapshot,
+)
 from taichu.application.evaluations.general_agent_benchmark.services import (
     BenchmarkCatalogEntry,
     BenchmarkSuiteDetailEntry,
@@ -58,11 +61,13 @@ class SuiteDetailResponse(BenchmarkModel):
     suite: BenchmarkSuiteDetailEntry
 
 
+class BenchmarkObservabilityResponse(BenchmarkObservabilitySnapshot):
+    pass
+
+
 class RunSubmissionRequest(BenchmarkModel):
     idempotency_key: str = Field(min_length=1, max_length=300)
-    run_id: str = Field(
-        pattern=r"^benchmark_run_\d{8}T\d{6}Z_[a-f0-9]{12}$"
-    )
+    run_id: str = Field(pattern=r"^benchmark_run_\d{8}T\d{6}Z_[a-f0-9]{12}$")
     suite_id: StableId
     suite_content_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
     selected_case_ids: tuple[StableId, ...] = Field(min_length=1)
@@ -120,9 +125,7 @@ class FirstLiveIterationCreateRequest(BenchmarkModel):
     fixture_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
     capability_catalog_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
     selected_case_ids: tuple[StableId, ...] = Field(min_length=1)
-    synthetic_qualification_artifact_refs: tuple[str, ...] = Field(
-        min_length=1
-    )
+    synthetic_qualification_artifact_refs: tuple[str, ...] = Field(min_length=1)
     synthetic_suite_passed: bool
     core_gates_passed: bool
     memory_gates_passed: bool

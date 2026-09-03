@@ -39,7 +39,11 @@ class Settings(BaseSettings):
     project_assets_dir: Path = Path("project_assets")
     evaluation_datasets_dir: Path = Path("tests/fixtures/evaluations")
     evaluation_judge_model: str = ""
-
+    opik_enabled: bool = False
+    opik_project_name: str = "taichu-general-agent-benchmark"
+    opik_url_override: str = ""
+    opik_api_key: SecretStr = SecretStr("")
+    opik_workspace: str = ""
 
     milvus_uri: str = "http://127.0.0.1:19530"
     milvus_token: SecretStr = SecretStr("")

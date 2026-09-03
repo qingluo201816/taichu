@@ -22,6 +22,10 @@ from taichu.application.evaluations.general_agent_benchmark.models import (
     StableId,
     TrackKind,
 )
+from taichu.application.evaluations.general_agent_benchmark.portfolio import (
+    BenchmarkPortfolioEntry,
+    build_benchmark_portfolio,
+)
 from taichu.application.evaluations.general_agent_benchmark.run_models import (
     SuiteRun,
 )
@@ -62,8 +66,7 @@ class BenchmarkCatalogEntry(BenchmarkModel):
             case_order=suite.case_order,
             track_case_counts={
                 track.kind: sum(
-                    track.kind in case.applicable_tracks
-                    for case in suite.cases
+                    track.kind in case.applicable_tracks for case in suite.cases
                 )
                 for track in suite.tracks
             },
@@ -201,6 +204,7 @@ class BenchmarkSuiteDetailEntry(BenchmarkModel):
     case_count: int = Field(gt=0)
     case_order: tuple[StableId, ...]
     track_case_counts: dict[TrackKind, int]
+    benchmark_entries: tuple[BenchmarkPortfolioEntry, ...]
     capability_domains: tuple[BenchmarkCapabilityDomainEntry, ...]
     cases: tuple[BenchmarkCaseExpectationEntry, ...]
 
@@ -215,10 +219,9 @@ class BenchmarkSuiteDetailEntry(BenchmarkModel):
             for domain in _BENCHMARK_CAPABILITY_DOMAINS
             for case_id in domain.case_ids
         )
-        if (
-            len(declared_case_ids) != len(set(declared_case_ids))
-            or frozenset(declared_case_ids) != frozenset(suite.case_order)
-        ):
+        if len(declared_case_ids) != len(set(declared_case_ids)) or frozenset(
+            declared_case_ids
+        ) != frozenset(suite.case_order):
             raise ValueError("能力领域必须无重复地覆盖全部固定合同。")
         return cls(
             suite_id=summary.suite_id,
@@ -227,6 +230,7 @@ class BenchmarkSuiteDetailEntry(BenchmarkModel):
             case_count=summary.case_count,
             case_order=summary.case_order,
             track_case_counts=summary.track_case_counts,
+            benchmark_entries=build_benchmark_portfolio(suite),
             capability_domains=_BENCHMARK_CAPABILITY_DOMAINS,
             cases=tuple(
                 BenchmarkCaseExpectationEntry(
@@ -243,14 +247,11 @@ class BenchmarkSuiteDetailEntry(BenchmarkModel):
                     objective=case.scenario.objective,
                     target_final_artifact=case.scenario.target_final_artifact,
                     behavior_expectations=tuple(
-                        assertion.description
-                        for assertion in case.behavior_assertions
+                        assertion.description for assertion in case.behavior_assertions
                     ),
                     expected_terminal=case.expected_terminal,
                     budget_limits=case.budgets,
-                    capability_domain_id=_CAPABILITY_DOMAIN_BY_CASE_ID[
-                        case.case_id
-                    ],
+                    capability_domain_id=_CAPABILITY_DOMAIN_BY_CASE_ID[case.case_id],
                 )
                 for ordinal, case in enumerate(suite.cases, start=1)
             ),
@@ -276,9 +277,7 @@ class BenchmarkCatalogService:
         self._authored_suites = suites_by_id
 
     def list(self) -> tuple[BenchmarkCatalogEntry, ...]:
-        return tuple(
-            self._entries[key] for key in sorted(self._entries)
-        )
+        return tuple(self._entries[key] for key in sorted(self._entries))
 
     def get(self, suite_id: str) -> BenchmarkCatalogEntry:
         try:
@@ -332,9 +331,7 @@ class BenchmarkCatalogService:
 
 class SubmissionRequest(BenchmarkModel):
     idempotency_key: str = Field(min_length=1, max_length=300)
-    run_id: str = Field(
-        pattern=r"^benchmark_run_\d{8}T\d{6}Z_[a-f0-9]{12}$"
-    )
+    run_id: str = Field(pattern=r"^benchmark_run_\d{8}T\d{6}Z_[a-f0-9]{12}$")
     suite_id: StableId
     suite_content_hash: Sha256
     selected_case_ids: tuple[StableId, ...] = Field(min_length=1)
@@ -383,9 +380,7 @@ class BenchmarkSubmissionService:
             if claim is not None:
                 claimed_hash, run_id = claim
                 if claimed_hash != submission_hash:
-                    raise BenchmarkSubmissionConflict(
-                        "幂等键已经绑定不同的评测提交。"
-                    )
+                    raise BenchmarkSubmissionConflict("幂等键已经绑定不同的评测提交。")
                 return await self._lifecycle.get(run_id)
             try:
                 created = await self._lifecycle.create(
@@ -433,9 +428,7 @@ class BenchmarkQueryService:
             raise ValueError("page 必须大于等于 1。")
         if page_size < 1 or page_size > 100:
             raise ValueError("page_size 必须在 1 到 100 之间。")
-        runs, index_revision, snapshot = await self._store.list_snapshot(
-            total_snapshot
-        )
+        runs, index_revision, snapshot = await self._store.list_snapshot(total_snapshot)
         total = len(runs)
         offset = (page - 1) * page_size
         return SuiteRunPage(

@@ -31,6 +31,10 @@ from taichu.application.general_agent.executor import InjectedProcessTermination
 from taichu.application.general_agent.models import GeneralAgentHumanRequest
 from taichu.application.subagents.registry import SubagentRegistry
 from taichu.application.tools.registry import ToolRegistry
+from taichu.infrastructure.evaluations.general_agent_benchmark.opik_integration import (
+    opik,
+    update_current_span,
+)
 
 
 class SyntheticInjectedProcessTermination(InjectedProcessTermination):
@@ -57,7 +61,21 @@ class StrictSyntheticLLMGateway:
     def set_response_bindings(self, values: dict[str, Any]) -> None:
         self._response_bindings.update(values)
 
+    @opik.track(
+        name="模型调用",
+        type="llm",
+        capture_input=False,
+        capture_output=False,
+    )
     async def complete(self, request: LLMRequest) -> LLMResponse:
+        update_current_span(
+            name=f"模型 · {_model_phase(request.task_name)}",
+            metadata={
+                "task_name": request.task_name,
+                "synthetic": True,
+            },
+            model=request.model_id,
+        )
         if request.task_name == self._crash_once_task_name and not self._crashed:
             self.requests.append(request)
             self._crashed = True
@@ -103,7 +121,7 @@ class StrictSyntheticLLMGateway:
             self._response_bindings,
         )
         tool_calls = _native_tool_calls(request, response, len(self.requests))
-        return LLMResponse(
+        result = LLMResponse(
             text="" if tool_calls else json.dumps(response, ensure_ascii=False),
             model_id=request.model_id,
             upstream_model="strict-synthetic",
@@ -119,6 +137,22 @@ class StrictSyntheticLLMGateway:
             call_id=f"synthetic_model_{len(self.requests):04d}",
             tool_calls=tool_calls,
         )
+        update_current_span(
+            name=f"模型 · {_model_phase(request.task_name)}",
+            metadata={
+                "task_name": request.task_name,
+                "call_id": result.call_id,
+                "synthetic": True,
+            },
+            output={"工具请求数": len(tool_calls)},
+            model=result.model_id,
+            usage={
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
+            },
+        )
+        return result
 
     async def stream(self, request: LLMRequest) -> AsyncIterator[LLMStreamEvent]:
         response = await self.complete(request)
@@ -306,12 +340,27 @@ class ObservedToolRegistry(ToolRegistry):
     def get_manifest(self, name: str):  # type: ignore[no-untyped-def]
         return self._delegate.get_manifest(name)
 
+    @opik.track(
+        name="工具调用",
+        type="tool",
+        capture_input=False,
+        capture_output=False,
+    )
     async def invoke(self, name: str, *args: Any, **kwargs: Any):  # type: ignore[no-untyped-def]
+        update_current_span(
+            name=f"工具 · {name}",
+            metadata={
+                "capability_name": name,
+                "call_id": _invocation_call_id(args, kwargs),
+            },
+        )
         handler_identity = self._handler_identities[name]
         invocation = _invocation_context(args, kwargs)
-        request_payload = self.get_manifest(name).input_schema.model_validate(
-            _request_input(args, kwargs)
-        ).model_dump(mode="json")
+        request_payload = (
+            self.get_manifest(name)
+            .input_schema.model_validate(_request_input(args, kwargs))
+            .model_dump(mode="json")
+        )
         try:
             result = await self._delegate.invoke(name, *args, **kwargs)
         except Exception:
@@ -340,6 +389,18 @@ class ObservedToolRegistry(ToolRegistry):
             started_at=str(result.started_at),
             finished_at=str(result.finished_at),
         )
+        update_current_span(
+            name=f"工具 · {name}",
+            metadata={
+                "capability_name": name,
+                "call_id": str(result.invocation_id),
+            },
+            output={
+                "状态": str(result.status.value),
+                "来源数": len(result.source_refs),
+                "产物数": len(result.artifact_refs),
+            },
+        )
         return result
 
     async def reconcile(self, name: str, *args: Any, **kwargs: Any):  # type: ignore[no-untyped-def]
@@ -366,7 +427,20 @@ class ObservedSubagentRegistry:
     def get_manifest(self, name: str):  # type: ignore[no-untyped-def]
         return self._delegate.get_manifest(name)
 
+    @opik.track(
+        name="专业智能体调用",
+        type="general",
+        capture_input=False,
+        capture_output=False,
+    )
     async def invoke(self, name: str, *args: Any, **kwargs: Any):  # type: ignore[no-untyped-def]
+        update_current_span(
+            name=f"专业智能体 · {name}",
+            metadata={
+                "capability_name": name,
+                "call_id": _invocation_call_id(args, kwargs),
+            },
+        )
         handler_identity = self._handler_identities[name]
         invocation = _invocation_context(args, kwargs)
         request_payload = _request_payload(args, kwargs)
@@ -396,6 +470,18 @@ class ObservedSubagentRegistry:
             artifact_refs=tuple(str(item) for item in result.artifact_refs),
             started_at=str(result.started_at),
             finished_at=str(result.finished_at),
+        )
+        update_current_span(
+            name=f"专业智能体 · {name}",
+            metadata={
+                "capability_name": name,
+                "call_id": str(result.invocation_id),
+            },
+            output={
+                "状态": str(result.status.value),
+                "来源数": len(result.source_refs),
+                "产物数": len(result.artifact_refs),
+            },
         )
         return result
 

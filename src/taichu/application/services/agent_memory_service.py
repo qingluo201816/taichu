@@ -63,7 +63,7 @@ _PROPAGATING_RELATIONS = frozenset(
 
 
 class AgentMemoryService:
-    """记忆由 Runtime 自动维护，不经过作者确认，也不是模型可调用的 Tool。"""
+    """由 Runtime 自动维护，并向内部编排工具提供受控写入原语。"""
 
     def __init__(
         self,
@@ -696,6 +696,20 @@ class AgentMemoryService:
             if entry.producer_ref is not None
         }
         for node in _topological_node_runs(nodes):
+            if node.output.get("result_type") == "managed_working_memory":
+                managed_memory_id = node.output.get("memory_id")
+                if not isinstance(managed_memory_id, str):
+                    raise AgentMemoryServiceError("工作记忆维护工具结果缺少记忆标识。")
+                managed_memory = await self._repository.get(managed_memory_id)
+                if (
+                    managed_memory is None
+                    or managed_memory.conversation_id != run.conversation_id
+                ):
+                    raise AgentMemoryServiceError(
+                        "工作记忆维护工具结果不属于当前会话。"
+                    )
+                memory_ids.append(managed_memory.memory_id)
+                continue
             output_summary = _summarize_output(node.output)
             if not output_summary and not node.source_refs and not node.artifact_refs:
                 continue
@@ -799,7 +813,7 @@ class AgentMemoryService:
                     ),
                     None,
                 )
-            evidence_anchors = await self._resolve_evidence_anchors(
+            evidence_anchors = await self.resolve_evidence_anchors(
                 source_refs=node.source_refs,
                 artifact_refs=node.artifact_refs,
             )
@@ -861,7 +875,7 @@ class AgentMemoryService:
             )
             for entry in active_node_memories
         ]
-        evidence_anchors = await self._resolve_evidence_anchors(
+        evidence_anchors = await self.resolve_evidence_anchors(
             source_refs=[
                 source_ref
                 for entry in active_node_memories
@@ -984,12 +998,13 @@ class AgentMemoryService:
         )
         return [summary.memory_id]
 
-    async def _resolve_evidence_anchors(
+    async def resolve_evidence_anchors(
         self,
         *,
         source_refs: list[str],
         artifact_refs: list[str],
     ) -> list[AgentMemoryEvidenceAnchor]:
+        """冻结当前可解析来源的内容指纹，供后续自动判旧。"""
         if self._evidence_resolver is None:
             return []
         references = _deduplicate(

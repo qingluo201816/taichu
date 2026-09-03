@@ -12,6 +12,7 @@ dependencies = [
     "pydantic-settings>=2.7",
     "python-dotenv>=1.0",
     "pymongo>=4.13,<5",
+    "opik>=2.2,<3",
     "vector-graph-rag==0.2.2",
     "langgraph-checkpoint-mongodb>=0.4.0",
     "langgraph-store-mongodb>=0.1.0",
@@ -19,6 +20,7 @@ dependencies = [
 
 [project.scripts]
 taichu = "taichu.main:main"
+taichu-opik-benchmarks = "taichu.infrastructure.evaluations.general_agent_benchmark.opik_integration:main"
 
 [tool.uv]
 package = true

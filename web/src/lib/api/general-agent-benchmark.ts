@@ -4,6 +4,7 @@ import type {
   BenchmarkComparison,
   BenchmarkExperiment,
   BenchmarkFirstLiveIteration,
+  BenchmarkObservabilitySnapshot,
   BenchmarkPage,
   BenchmarkRunSubmission,
   BenchmarkSuiteRun,
@@ -93,6 +94,12 @@ export async function getBenchmarkSuite(
     { signal },
   );
   return response.suite;
+}
+
+export function getBenchmarkOpikSummary(
+  signal?: AbortSignal,
+): Promise<BenchmarkObservabilitySnapshot> {
+  return benchmarkApiRequest("/opik/summary", { signal });
 }
 
 export function listBenchmarkRuns(

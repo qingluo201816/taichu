@@ -19,6 +19,7 @@ from taichu.application.models.llm_replay import LLMCallReplayRecord
 
 class GeneralAgentRunRequest(BaseModel):
     user_goal: str = Field(min_length=1, max_length=100_000)
+    model_id: str | None = Field(default=None, min_length=1, max_length=128)
     conversation_id: str | None = Field(
         default=None,
         min_length=1,

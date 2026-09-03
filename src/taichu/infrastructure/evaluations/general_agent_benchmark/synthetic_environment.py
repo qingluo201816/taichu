@@ -115,6 +115,10 @@ from taichu.infrastructure.artifacts import JsonIntermediateArtifactRepository
 from taichu.infrastructure.evaluations.general_agent_benchmark.fixture_external_research import (
     FixtureExternalResearchBackend,
 )
+from taichu.infrastructure.evaluations.general_agent_benchmark.opik_integration import (
+    opik,
+    update_current_span,
+)
 from taichu.infrastructure.evaluations.general_agent_benchmark.fixture_manager import (
     CaseWorkspaceHandle,
     FixtureIsolationController,
@@ -184,8 +188,7 @@ class _SyntheticStoryContextService(VectorGraphRAGService):
         for chapter in await self._synthetic_chapters.list_chapters():
             content = (await self._synthetic_chapters.read_chapter(chapter.id)).markdown
             if not any(
-                term and term in content.casefold()
-                for term in normalized.split()
+                term and term in content.casefold() for term in normalized.split()
             ):
                 continue
             evidences.append(
@@ -263,7 +266,22 @@ class SyntheticFixtureRuntime:
         self._factory = GeneralAgentBenchmarkRuntimeFactory(workspaces_root.resolve())
         self._mongodb_uri = mongodb_uri
 
+    @opik.track(
+        name="通用写作智能体评测案例",
+        type="general",
+        tags=["太初", "固定基准"],
+        capture_input=False,
+        capture_output=False,
+    )
     async def execute(self, case: AuthoredCaseSpec) -> SyntheticCaseObservation:
+        update_current_span(
+            name=f"评测案例 · {case.name}",
+            metadata={
+                "case_id": case.case_id,
+                "tracks": [track.value for track in case.applicable_tracks],
+                "fault_injection": case.setup.fault_plan_ref is not None,
+            },
+        )
         handle = self._controller.create_workspace(
             snapshot=self._snapshot,
             case_execution_id=_case_execution_id(case.case_id),
@@ -369,20 +387,14 @@ class SyntheticFixtureRuntime:
                 case,
                 environment=environment,
             )
-            observed_run = (
-                recovery_result.run
-                if recovery_result is not None
-                else run
-            )
+            observed_run = recovery_result.run if recovery_result is not None else run
             if recovery_result is not None:
                 run_status = observed_run.status.value
                 node_statuses.extend(
                     item.status.value for item in observed_run.node_runs
                 )
                 observed_effects = list(
-                    await environment["effects"].list_effects(
-                        observed_run.run_id
-                    )
+                    await environment["effects"].list_effects(observed_run.run_id)
                 )
                 effect_tools = [
                     item.tool_name
@@ -442,12 +454,12 @@ class SyntheticFixtureRuntime:
             if recovery_result is not None:
                 run_lineage = recovery_result.lineage
             else:
-                all_runs, _ = (
-                    await environment["dependencies"].run_repository.list_runs(
-                        page=1,
-                        page_size=10_000,
-                        status="all",
-                    )
+                all_runs, _ = await environment[
+                    "dependencies"
+                ].run_repository.list_runs(
+                    page=1,
+                    page_size=10_000,
+                    status="all",
                 )
                 run_lineage = capture_run_lineage(
                     preexisting_run_ids=environment["preexisting_run_ids"],
@@ -624,11 +636,7 @@ class SyntheticFixtureRuntime:
                         {
                             "recovery": {
                                 "triggered_ordinals": (
-                                    tuple(
-                                        sorted(
-                                            recovery_result.triggered_ordinals
-                                        )
-                                    )
+                                    tuple(sorted(recovery_result.triggered_ordinals))
                                 ),
                                 "decisions": tuple(
                                     {
@@ -668,6 +676,20 @@ class SyntheticFixtureRuntime:
                 handle=handle,
                 environment=environment,
                 client=client,
+            )
+            update_current_span(
+                name=f"评测案例 · {case.name}",
+                metadata={
+                    "case_id": case.case_id,
+                    "case_execution_id": handle.case_execution_id,
+                    "run_id": observed_run.run_id,
+                    "fault_injection": case.setup.fault_plan_ref is not None,
+                },
+                output={
+                    "运行状态": terminal.run_status,
+                    "能力交互数": len(observer.interaction_records),
+                    "资源变化数": len(observed_effects),
+                },
             )
             return observation
         except Exception as execution_error:
@@ -736,8 +758,7 @@ class SyntheticFixtureRuntime:
             (
                 item
                 for item in self._declared_fixture.scenario_assets
-                if isinstance(item, FaultPlanAssetSpec)
-                and item.asset_id == fault_ref
+                if isinstance(item, FaultPlanAssetSpec) and item.asset_id == fault_ref
             ),
             None,
         )
@@ -826,7 +847,7 @@ class SyntheticFixtureRuntime:
         trace_repository = JsonlInvocationTraceRepository(workspace)
         artifact_repository = JsonIntermediateArtifactRepository(workspace)
         await _seed_artifacts(artifact_repository)
-        checkpoint_client = MongoClient(
+        checkpoint_client: MongoClient[Any] = MongoClient(
             self._mongodb_uri,
             tz_aware=True,
             serverSelectionTimeoutMS=5_000,
@@ -942,9 +963,7 @@ class SyntheticFixtureRuntime:
                 sorted(item.run_id for item in preexisting_runs)
             ),
             "allowed_capabilities": allowed,
-            "capability_result_repository": (
-                isolated.capability_result_repository
-            ),
+            "capability_result_repository": (isolated.capability_result_repository),
             "workspace": workspace,
         }
 
@@ -979,7 +998,7 @@ class SyntheticFixtureRuntime:
             raise RuntimeError("进程终止后没有可恢复的真实 checkpoint。")
         await environment["runtime"].shutdown()
         environment["checkpoint_client"].close()
-        reloaded_checkpoint_client = MongoClient(
+        reloaded_checkpoint_client: MongoClient[Any] = MongoClient(
             self._mongodb_uri,
             tz_aware=True,
             serverSelectionTimeoutMS=5_000,
@@ -993,9 +1012,7 @@ class SyntheticFixtureRuntime:
         reloaded_database = reloaded_checkpoint_client[
             environment["dependencies"].database_name
         ]
-        reloaded_graph_store = MongoDBStore(
-            reloaded_database["langgraph_store"]
-        )
+        reloaded_graph_store = MongoDBStore(reloaded_database["langgraph_store"])
         reloaded_memory_repository = LangGraphAgentMemoryRepository(
             reloaded_graph_store
         )
@@ -1144,7 +1161,7 @@ def _recovery_special_artifacts(
         run.status is GeneralAgentRunStatus.WAITING_HUMAN
         and run.pending_human_request is not None
     ):
-        payload = {
+        payload: dict[str, Any] = {
             "run_id": run.run_id,
             "fault_triggered_ordinals": recovery_result.triggered_ordinals,
             "request": run.pending_human_request.model_dump(mode="json"),
@@ -1159,13 +1176,9 @@ def _recovery_special_artifacts(
                 payload=payload,
             ),
         )
-    if (
-        run.status is GeneralAgentRunStatus.FAILED
-        and any(
-            item.action == "stop"
-            and item.reason_code == "checkpoint_unrecoverable"
-            for item in recovery_result.recovery_decisions
-        )
+    if run.status is GeneralAgentRunStatus.FAILED and any(
+        item.action == "stop" and item.reason_code == "checkpoint_unrecoverable"
+        for item in recovery_result.recovery_decisions
     ):
         payload = {
             "summary": "检查点已损坏或不兼容，Runtime 已安全停止且没有静默重跑。",
@@ -1342,8 +1355,7 @@ def _runtime_context_assembler(
         (
             item
             for item in fixture.scenario_assets
-            if isinstance(item, PressurePlanAssetSpec)
-            and item.asset_id == pressure_ref
+            if isinstance(item, PressurePlanAssetSpec) and item.asset_id == pressure_ref
         ),
         None,
     )

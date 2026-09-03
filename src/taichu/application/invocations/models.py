@@ -50,6 +50,7 @@ class InvocationContext(InvocationModel):
     caller_name: str = Field(min_length=1, max_length=128)
     phase: str = Field(default="execution", min_length=1, max_length=128)
     user_goal: str = Field(default="", max_length=20_000)
+    model_id: str | None = Field(default=None, min_length=1, max_length=128)
     author_constraints: list[str] = Field(default_factory=list, max_length=100)
     scope: dict[str, object] = Field(default_factory=dict)
     external_access_grant_id: str | None = Field(default=None, max_length=128)

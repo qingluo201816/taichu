@@ -93,10 +93,7 @@ def _app() -> tuple[FastAPI, object]:
 def _authoritative_app() -> tuple[FastAPI, object, object]:
     catalog = production_capability_catalog_snapshot()
     suite = load_authored_suite(
-        Path(
-            "tests/fixtures/evaluations/"
-            "general_writing_agent_benchmark/suite.json"
-        ),
+        Path("tests/fixtures/evaluations/general_writing_agent_benchmark/suite.json"),
         expected_capability_catalog_hash=catalog.canonical_hash,
     )
     services = build_general_agent_benchmark_services(
@@ -111,6 +108,26 @@ def _authoritative_app() -> tuple[FastAPI, object, object]:
     app.state.general_agent_benchmark_services = services
     app.include_router(router)
     return app, services, suite
+
+
+def test_opik_summary_returns_secret_free_disabled_projection() -> None:
+    async def scenario() -> None:
+        app, _ = _app()
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport,
+            base_url="http://test",
+        ) as client:
+            response = await client.get("/api/general-agent-benchmarks/opik/summary")
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["provider"] == "opik"
+        assert payload["status"] == "disabled"
+        assert payload["entries"] == []
+        assert "api_key" not in response.text.lower()
+
+    _run(scenario())
 
 
 def test_catalog_submission_list_detail_and_lifecycle_resources() -> None:
@@ -143,15 +160,11 @@ def test_catalog_submission_list_detail_and_lifecycle_resources() -> None:
                 "/api/general-agent-benchmarks/runs",
                 params={"page": 1, "page_size": 20},
             )
-            detail = await client.get(
-                f"/api/general-agent-benchmarks/runs/{run_id}"
-            )
+            detail = await client.get(f"/api/general-agent-benchmarks/runs/{run_id}")
             assert listing.json()["items"][0]["conclusion"] == "passed"
             assert detail.json()["run"]["lifecycle"] == "completed"
 
-            cancellable_id = (
-                "benchmark_run_20260727T000002Z_abcdef123457"
-            )
+            cancellable_id = "benchmark_run_20260727T000002Z_abcdef123457"
             await services.lifecycle.create(
                 run_id=cancellable_id,
                 suite_content_hash="a" * 64,
@@ -203,9 +216,23 @@ def test_suite_detail_and_submission_use_authoritative_37_track_selection() -> N
                 "synthetic": 37,
                 "live_provider": 21,
             }
-            assert [case["ordinal"] for case in payload["cases"]] == list(
-                range(1, 38)
+            assert [
+                (entry["entry_id"], entry["case_count"], len(entry["categories"]))
+                for entry in payload["benchmark_entries"]
+            ] == [
+                ("multi_step", 18, 9),
+                ("recovery", 8, 4),
+            ]
+            assert all(
+                len(category["case_ids"]) == 2
+                for entry in payload["benchmark_entries"]
+                for category in entry["categories"]
             )
+            assert all(
+                len(entry["invalid_invocation_rules"]) == 4
+                for entry in payload["benchmark_entries"]
+            )
+            assert [case["ordinal"] for case in payload["cases"]] == list(range(1, 38))
             assert [case["case_id"] for case in payload["cases"]] == list(
                 suite.case_order
             )
@@ -359,8 +386,7 @@ def test_case_evidence_and_artifact_resources_use_formal_contracts() -> None:
                 f"/api/general-agent-benchmarks/runs/{run_id}/cases/case_a"
             )
             observed = await client.get(
-                f"/api/general-agent-benchmarks/runs/{run_id}"
-                "/cases/case_a/evidence"
+                f"/api/general-agent-benchmarks/runs/{run_id}/cases/case_a/evidence"
             )
             aggregate = await client.get(
                 f"/api/general-agent-benchmarks/runs/{run_id}/artifact"
@@ -383,9 +409,7 @@ def test_missing_resource_error_contains_request_id() -> None:
             transport=transport,
             base_url="http://test",
         ) as client:
-            response = await client.get(
-                "/api/general-agent-benchmarks/runs/missing"
-            )
+            response = await client.get("/api/general-agent-benchmarks/runs/missing")
 
         assert response.status_code == 404
         assert response.json()["detail"]["error"] == "resource_not_found"
@@ -413,8 +437,7 @@ def test_validation_error_and_openapi_use_only_formal_new_contracts() -> None:
         paths = openapi["paths"]
         assert "/api/general-agent-benchmarks/runs/{run_id}/artifact" in paths
         assert (
-            "/api/general-agent-benchmarks/runs/{run_id}"
-            "/cases/{case_id}/evidence"
+            "/api/general-agent-benchmarks/runs/{run_id}/cases/{case_id}/evidence"
         ) in paths
         serialized = str(openapi)
         assert "coherence" not in serialized
@@ -503,9 +526,7 @@ def test_experiment_and_iteration_resources_return_server_decisions() -> None:
                     "fixture_hash": "c" * 64,
                     "capability_catalog_hash": "d" * 64,
                     "selected_case_ids": ["case_a"],
-                    "synthetic_qualification_artifact_refs": [
-                        "synthetic_artifact_a"
-                    ],
+                    "synthetic_qualification_artifact_refs": ["synthetic_artifact_a"],
                     "synthetic_suite_passed": False,
                     "core_gates_passed": True,
                     "memory_gates_passed": True,
@@ -705,12 +726,8 @@ def test_main_route_table_switches_to_unique_new_benchmark_prefix() -> None:
             if (path := getattr(route, "path", None)) is not None
         )
     assert "/api/general-agent-benchmarks/suites" in paths
-    assert (
-        app.state.general_agent_benchmark_services.catalog.list()[0].case_count
-        == 37
-    )
+    assert app.state.general_agent_benchmark_services.catalog.list()[0].case_count == 37
     assert "/health" in paths
     assert not any(
-        path.startswith("/api/agent-evaluations/general-agent")
-        for path in paths
+        path.startswith("/api/agent-evaluations/general-agent") for path in paths
     )

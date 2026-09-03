@@ -1272,6 +1272,7 @@ class DynamicDagExecutor:
                 if context_envelope is not None
                 else run.user_goal
             ),
+            model_id=run.model_id,
             author_constraints=(
                 context_envelope.author_constraints
                 if context_envelope is not None
