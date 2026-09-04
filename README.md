@@ -34,8 +34,7 @@
 
 - [产品定位](#产品定位)
 - [产品展示](#产品展示)
-- [Agent 系统设计](#agent-系统设计)
-- [事实源与知识治理](#事实源与知识治理)
+- [系统设计](#系统设计)
 - [工程证据](#工程证据)
 - [技术栈与运行](#技术栈与运行)
 - [当前边界与进化方向](#当前边界与进化方向)
@@ -162,94 +161,35 @@
 
 </details>
 
-## Agent 系统设计
-
-### 分层规划，而非固定工作流
-
-太初采用 **Hierarchical Planning + Subagents（分层规划 + 子 Agent）**。高层编排 Agent 始终维护全局目标、计划、依赖、预算、校验与重规划；Tool 和 Sub-agent 围绕长期稳定的能力边界注册，单次任务的节点与边则按请求动态生成。
-
-小请求可以直接回答或调用一个 Tool；复杂请求可以形成包含顺序、并行、核验、修复和人工中断的动态 DAG。系统不会强迫每个问题进入同一条长流程。
+## 系统设计
 
 ### 运行与恢复
 
-```mermaid
-stateDiagram-v2
-    [*] --> Planning: 理解目标并生成计划
-    Planning --> Running: 调度就绪节点
-    Running --> Verifying: 汇总证据与产物
-    Verifying --> Running: 校验失败 / 重规划
-    Running --> Interrupted: 需要授权或人工判断
-    Interrupted --> Running: 从 Checkpoint 恢复
-    Running --> Recovering: 节点失败
-    Recovering --> Running: 重试或替换路径
-    Verifying --> Completed: 通过终态校验
-    Completed --> [*]
-```
+Agent 按需生成计划，调度工具与子 Agent，在执行中校验结果并调整路径。  
+检查点保存运行状态，支持失败重试与人工介入，让中断的任务在同一会话中继续。
 
-- `conversation_id` 对应 LangGraph 长期会话 `thread_id`；每次请求使用独立 `run_id` 完成业务审计。
-- Checkpoint 保存图运行状态；业务投影与副作用账本不替代框架检查点。
-- Human-in-the-loop 使用中断与恢复语义延续同一线程，而不是另起一条伪恢复流程。
-- 持久化副作用受到授权、幂等和单写节点约束。
+![运行与恢复](./assets/runtime-recovery.gif)
 
-### 五层上下文
+### 记忆管理
 
-模型可见上下文严格按以下顺序组装：
+模型输入按稳定记忆、长期记忆、历史对话、工作记忆与当前请求五层组装。  
+每轮调用按需召回、压缩与投影，保留当前请求原文，让模型获得当前阶段所需的信息。
 
-```text
-System Prompt（稳定记忆）
-→ 长期记忆
-→ 历史对话
-→ 工作记忆
-→ 当前请求
-```
+![记忆管理](./assets/memory-management.gif)
 
-| 层级 | 内容 | 关键边界 |
-| --- | --- | --- |
-| 稳定记忆 | 身份、固定规则、权限边界、静态能力索引 | 只进入 System Prompt，保持稳定前缀 |
-| 长期记忆 | 用户表达、写作与协作偏好、效果反馈 | 不是小说事实库，按当前请求召回 |
-| 历史对话 | 已发生的用户原文与已展示回答 | 不混入工具轨迹、DAG、错误和预算 |
-| 工作记忆 | 当前计划、证据、工具结果、节点状态与近期错误 | 按阶段投影，不默认重发完整运行历史 |
-| 当前请求 | 最新用户原文和不可变附件引用 | 不改写、不摘要，与系统生成说明隔离 |
+### 数据治理
 
-完整存储不等于本轮模型投影，业务归属不等于模型 API 角色，Agent 内部调用轨迹也不等于用户历史对话。
+Markdown 保存正文原文，MongoDB 保存已确认知识，检索索引从这两类事实源派生。  
+AI 候选经过结构、来源、冲突与生命周期校验，再由作者确认、应用层写入，保留完整审核记录。
 
-### 代码架构
+![数据治理](./assets/data-governance.gif)
 
-```mermaid
-flowchart TB
-    UI[Next.js 创作工作台] --> API[FastAPI 接口层]
-    API --> APP[应用层：编排、用例、授权、评测]
-    APP --> DOMAIN[领域层：小说与知识规则]
-    APP --> RUNTIME[LangChain / LangGraph Runtime]
-    RUNTIME --> TOOLS[Tool 与 Sub-agent 能力目录]
-    APP --> PORTS[Protocol 行为契约]
-    PORTS --> INFRA[基础设施适配层]
-    INFRA --> MONGO[(MongoDB)]
-    INFRA --> MILVUS[(Milvus)]
-    INFRA --> MODELS[模型供应商]
-    INFRA --> OBS[Opik / DeepEval / 本地审计]
-```
+### 代码结构
 
-- 领域层不依赖 LLM、Agent、LangGraph、MCP 或具体存储技术。
-- 应用层面向 LangChain `BaseChatModel` 与原生消息、工具调用和结构化输出契约。
-- 供应商协议、鉴权、流式事件、用量与回放归基础设施层。
-- 能力发现与注册分离；新增 Agent 通过插件目录与协议接入，不修改既有能力实现。
+系统按接口、应用、领域与基础设施划分职责，基于 LangChain / LangGraph 组织智能体执行。  
+工具与子 Agent 通过能力协议接入，模型与存储通过适配层连接，支持独立扩展与替换。
 
-## 事实源与知识治理
-
-| 数据层 | 角色 | 是否事实源 | 是否可重建 |
-| --- | --- | --- | --- |
-| Markdown 正文 | 作者原始表达与章节文本 | 是，文本事实源 | 否 |
-| MongoDB 已确认知识卡 | 人物、地点、势力、物品、事件与规则 | 是，结构事实源 | 否 |
-| JSON / JSONL | AI 候选、运行审计、评测和回放 | 否，中间态 | 视用途而定 |
-| Milvus Passage / Entity / Relation | 向量、关键词与图检索索引 | 否，派生层 | 是 |
-
-AI 不直接写入 MongoDB。知识内容必须经过：
-
-```text
-模型生成候选 → Schema 校验 → 来源校验 → 冲突校验
-→ 生命周期校验 → 作者确认 → 应用层写入 → 派生索引同步
-```
+![代码结构](./assets/code-structure.gif)
 
 ## 工程证据
 
@@ -303,6 +243,8 @@ start.bat
 
 - 前端：`http://localhost:3000`
 - 后端：`http://127.0.0.1:8000`
+
+太初处于 *开发者预览* 阶段，正在快速迭代。**未来将出现破坏兼容性的变更。**
 
 ## 当前边界与进化方向
 
