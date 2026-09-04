@@ -34,13 +34,16 @@ Taichu is neither a thin RAG wrapper nor a one-click generation toy optimized fo
 
 - [Positioning](#positioning)
 - [Product](#product)
-- [Agent system design](#agent-system-design)
-- [Sources of truth](#sources-of-truth)
+- [System design](#system-design)
 - [Engineering evidence](#engineering-evidence)
 - [Stack and local run](#stack-and-local-run)
 - [Current boundaries and roadmap](#current-boundaries-and-roadmap)
 
 ## Positioning
+
+<p align="center">
+  <img src="./assets/ChatGPT Image 2026年9月3日 21_18_12.png" width="72%" alt="Taichu Agentic Writing product concept" />
+</p>
 
 Long-form fiction cannot be completed as a single-prompt generation task. It is a long-term Agent collaboration process spanning millions of words and hundreds of interaction rounds.
 
@@ -88,10 +91,6 @@ Taichu builds its product capabilities around these four long-term collaboration
     </tr>
   </tbody>
 </table>
-
-<p align="center">
-  <img src="./assets/ChatGPT Image 2026年9月3日 21_18_12.png" width="72%" alt="Taichu Agentic Writing product concept" />
-</p>
 
 ## Product
 
@@ -162,94 +161,35 @@ In Taichu, authors edit prose, authors confirm knowledge cards, and vector/graph
 
 </details>
 
-## Agent system design
-
-### Hierarchical planning, not a fixed workflow
-
-Taichu follows **Hierarchical Planning + Subagents**. The high-level Orchestrator retains the global objective, plan, dependencies, budget, verification, and replanning. Tools and Sub-agents register around durable capability boundaries; nodes and edges are generated per run.
-
-Small requests may be answered directly or use one Tool. Complex work may form a dynamic DAG with sequential, parallel, verification, repair, and human-interrupt nodes. The runtime does not force every request through the same long pipeline.
+## System design
 
 ### Execution and recovery
 
-```mermaid
-stateDiagram-v2
-    [*] --> Planning: understand goal and plan
-    Planning --> Running: schedule ready nodes
-    Running --> Verifying: collect evidence and artifacts
-    Verifying --> Running: failed verification / replan
-    Running --> Interrupted: authorization or judgment required
-    Interrupted --> Running: resume from Checkpoint
-    Running --> Recovering: node failure
-    Recovering --> Running: retry or replace path
-    Verifying --> Completed: terminal verification passed
-    Completed --> [*]
-```
+The Agent plans as needed, coordinates tools and sub-agents, and verifies results while adjusting the execution path.  
+Checkpoints preserve execution state, supporting retries and human intervention so interrupted tasks can continue in the same conversation.
 
-- `conversation_id` maps to the long-lived LangGraph `thread_id`; each request receives a separate business `run_id` for audit.
-- Checkpoints preserve graph execution state. Business projections and side-effect ledgers do not replace framework checkpoints.
-- Human-in-the-loop resumes the same thread through interrupt/resume semantics rather than a parallel imitation of recovery.
-- Durable side effects are constrained by authorization, idempotency, and a single write node.
+![Execution and recovery](./assets/runtime-recovery.gif)
 
-### Five context layers
+### Memory management
 
-Model-visible context is assembled in this fixed order:
+Model input is assembled in five layers: stable memory, long-term memory, dialogue history, working memory, and the current request.  
+Each call recalls, compresses, and projects context as needed, preserving the current request verbatim and providing the information required for the current stage.
 
-```text
-System Prompt (stable memory)
-→ long-term memory
-→ dialogue history
-→ working memory
-→ current request
-```
+![Memory management](./assets/memory-management.gif)
 
-| Layer | Content | Boundary |
-| --- | --- | --- |
-| Stable memory | Identity, fixed rules, permissions, static capability index | System Prompt only; optimized as a stable prefix |
-| Long-term memory | User expression, writing, collaboration preferences, and feedback | Not the novel knowledge base; recalled per request |
-| Dialogue history | Original user messages and displayed assistant responses | Excludes tool traces, DAGs, errors, and budgets |
-| Working memory | Current plan, evidence, tool results, node state, recent failures | Projected per stage; full traces are not resent by default |
-| Current request | Latest verbatim user input and immutable attachment references | Never rewritten or mixed with application-generated instructions |
+### Data governance
 
-Complete storage is not the same as the current model projection. Business ownership is not the same as an API role. Internal Agent traces are not user dialogue history.
+Markdown stores the original manuscript, MongoDB stores confirmed knowledge, and retrieval indexes are derived from these two sources of truth.  
+AI candidates pass schema, provenance, conflict, and lifecycle validation before author confirmation and application-layer writes, with review records retained for audit.
 
-### Software architecture
+![Data governance](./assets/data-governance.gif)
 
-```mermaid
-flowchart TB
-    UI[Next.js creative workspace] --> API[FastAPI interface layer]
-    API --> APP[Application: orchestration, use cases, authorization, evaluation]
-    APP --> DOMAIN[Domain: fiction and knowledge rules]
-    APP --> RUNTIME[LangChain / LangGraph Runtime]
-    RUNTIME --> TOOLS[Tool and Sub-agent capability catalog]
-    APP --> PORTS[Protocol contracts]
-    PORTS --> INFRA[Infrastructure adapters]
-    INFRA --> MONGO[(MongoDB)]
-    INFRA --> MILVUS[(Milvus)]
-    INFRA --> MODELS[Model providers]
-    INFRA --> OBS[Opik / DeepEval / local audit]
-```
+### Code structure
 
-- The domain layer has no dependency on LLMs, Agents, LangGraph, MCP, or storage implementations.
-- The application layer targets LangChain `BaseChatModel` and native message, tool-call, and structured-output contracts.
-- Provider protocols, authentication, stream translation, usage, and replay belong to infrastructure.
-- Discovery and registration are separated; a new Agent joins through a plugin directory and protocol instead of modifying existing capabilities.
+The system separates interface, application, domain, and infrastructure responsibilities, using LangChain / LangGraph to orchestrate Agent execution.  
+Tools and sub-agents connect through capability contracts, while models and storage connect through adapters, supporting independent extension and replacement.
 
-## Sources of truth
-
-| Data layer | Role | Source of truth? | Rebuildable? |
-| --- | --- | --- | --- |
-| Markdown manuscript | Original author expression and chapter prose | Yes, textual truth | No |
-| Confirmed MongoDB knowledge cards | Characters, locations, factions, objects, events, and rules | Yes, structural truth | No |
-| JSON / JSONL | AI candidates, run audit, evaluation, and replay | No, intermediate state | Depends on purpose |
-| Milvus Passage / Entity / Relation | Vector, keyword, and graph retrieval indexes | No, derived layer | Yes |
-
-AI never writes directly to MongoDB. Knowledge follows this path:
-
-```text
-model candidate → schema validation → provenance validation → conflict validation
-→ lifecycle validation → author confirmation → application write → derived-index sync
-```
+![Code structure](./assets/code-structure.gif)
 
 ## Engineering evidence
 
@@ -303,6 +243,8 @@ Then open:
 
 - Frontend: `http://localhost:3000`
 - Backend: `http://127.0.0.1:8000`
+
+Taichu is in *developer preview* and is evolving rapidly. **Future updates will introduce breaking changes.**
 
 ## Current boundaries and roadmap
 
