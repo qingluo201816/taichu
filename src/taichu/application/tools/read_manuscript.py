@@ -41,6 +41,13 @@ async def run(
     chapters = await service.list_chapters()
     if tool_input.chapter_ids:
         ordered_ids = list(dict.fromkeys(tool_input.chapter_ids))
+    elif tool_input.recent_count is not None:
+        ordered_ids = [
+            item.id
+            for item in sorted(chapters, key=lambda chapter: chapter.order)[
+                -tool_input.recent_count :
+            ]
+        ]
     else:
         end_order = tool_input.end_order if tool_input.end_order is not None else 10**9
         ordered_ids = [

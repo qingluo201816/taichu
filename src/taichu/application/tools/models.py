@@ -61,15 +61,35 @@ class GetNovelStructureOutput(ToolModel):
 
 
 class ReadManuscriptInput(ToolModel):
-    chapter_ids: list[str] = Field(default_factory=list, max_length=100)
-    start_order: int | None = Field(default=None, ge=0)
-    end_order: int | None = Field(default=None, ge=0)
-    max_content_chars: int = Field(default=30_000, ge=100, le=200_000)
+    chapter_ids: list[str] = Field(
+        default_factory=list,
+        max_length=100,
+        description="已知的稳定章节 ID 数组，不是章节序号。按序号读取时省略此字段。",
+    )
+    start_order: int | None = Field(
+        default=None, ge=0, description="要读取的起始章节序号，包含本章。"
+    )
+    end_order: int | None = Field(
+        default=None, ge=0, description="要读取的结束章节序号，包含本章。"
+    )
+    recent_count: int | None = Field(default=None, ge=1, le=100)
+    max_content_chars: int = Field(default=100_000, ge=100, le=200_000)
 
     @model_validator(mode="after")
     def validate_scope(self) -> Self:
-        if not self.chapter_ids and self.start_order is None:
-            raise ValueError("正文读取必须提供章节 ID 或起始章节顺序。")
+        selectors = sum(
+            (
+                bool(self.chapter_ids),
+                self.start_order is not None,
+                self.recent_count is not None,
+            )
+        )
+        if selectors == 0:
+            raise ValueError("正文读取必须提供章节 ID、起始顺序或最近章节数。")
+        if selectors > 1:
+            raise ValueError("正文读取的章节 ID、顺序范围和最近章节数不能混用。")
+        if self.recent_count is not None and self.end_order is not None:
+            raise ValueError("按最近章节数读取时不能同时提供结束章节顺序。")
         if (
             self.start_order is not None
             and self.end_order is not None

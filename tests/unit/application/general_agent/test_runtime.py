@@ -465,15 +465,7 @@ async def test_explicit_chapter_summary_selects_and_fills_parameters_in_one_call
                 "dependencies": ["read_chapter"],
                 "input_data": {
                     "summary_goal": "概括第8章主要内容。",
-                    "source_request": {"auto_collect": False},
                 },
-                "input_bindings": [
-                    {
-                        "source_node_id": "read_chapter",
-                        "source_path": "chunks.0.content",
-                        "target_path": "source_request.direct_context",
-                    }
-                ],
             },
         ],
     }
@@ -548,6 +540,22 @@ async def test_explicit_chapter_summary_selects_and_fills_parameters_in_one_call
         "general_writing_orchestrator.plan"
     ) == 1
     assert all(".materialize" not in request.task_name for request in gateway.requests)
+    summary_node = next(
+        node
+        for node in run.node_runs
+        if node.node_id == "summarize_chapter"
+        and node.status is GeneralAgentNodeStatus.SUCCESS
+    )
+    assert "第8章正文内容。" in summary_node.resolved_input["source_request"][
+        "direct_context"
+    ]
+    assert summary_node.resolved_input["source_request"]["auto_collect"] is False
+    assert any(
+        item.startswith("manuscript:")
+        for item in summary_node.resolved_input["source_request"][
+            "direct_source_refs"
+        ]
+    )
     assert any(
         source_ref.startswith("manuscript:")
         for node in run.node_runs
@@ -593,11 +601,11 @@ async def test_runtime_recovers_invalid_data_handoff_after_runtime_failure(
                     "source_request": {"auto_collect": False},
                 },
                 "dependencies": ["read_chapter"],
-                "input_bindings": [
-                    {
-                        "source_node_id": "read_chapter",
-                        "source_path": "result.content",
-                        "target_path": "text",
+                    "input_bindings": [
+                        {
+                            "source_node_id": "read_chapter",
+                            "source_path": "chunks.99.content",
+                            "target_path": "source_request.direct_context",
                     }
                 ],
             },
@@ -702,7 +710,7 @@ async def test_runtime_recovers_invalid_data_handoff_after_runtime_failure(
     )
     assert failed_summary_node.status is GeneralAgentNodeStatus.FAILED
     assert failed_summary_node.error_type == "DynamicDagExecutionError"
-    assert "result.content" in (failed_summary_node.error_message or "")
+    assert "chunks.99.content" in (failed_summary_node.error_message or "")
     summary_node = next(
         node
         for node in run.node_runs
@@ -746,7 +754,7 @@ async def test_runtime_recovers_invalid_data_handoff_after_runtime_failure(
     assert str(planning_requests[1].messages[-1].content) == "这一章讲了什么？"
     assert any(
         _message_role(message) == "developer"
-        and "result.content" in str(message.content)
+        and "chunks.99.content" in str(message.content)
         for message in planning_requests[1].messages
     )
     assert any(

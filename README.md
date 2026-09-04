@@ -1,5 +1,8 @@
 <div align="center">
-  <h1>太初 Taichu</h1>
+  <h1 align="center">
+    <img src="./assets/taichu-readme-mark.png" height="56" align="absmiddle" alt="太初标志" />
+    &nbsp;太初 Taichu
+  </h1>
   <p><strong>面向长篇小说创作的可观测、可恢复、可干预 Agent 工作台</strong></p>
   <p>An observable, recoverable, and human-interruptible Agent workspace for long-form fiction.</p>
 
@@ -38,6 +41,10 @@
 - [当前边界与进化方向](#当前边界与进化方向)
 
 ## 产品定位
+
+<p align="center">
+  <img src="./assets/ChatGPT Image 2026年9月3日 21_18_12.png" width="72%" alt="太初 Agentic Writing 产品概念图" />
+</p>
 
 长篇小说创作不是一次 Prompt 能完成的生成任务，而是一个跨数百万字、持续数百轮的长期 Agent 协作过程。
 
@@ -85,10 +92,6 @@
     </tr>
   </tbody>
 </table>
-
-<p align="center">
-  <img src="./assets/ChatGPT Image 2026年9月3日 21_18_12.png" width="72%" alt="太初 Agentic Writing 产品概念图" />
-</p>
 
 ## 产品展示
 
@@ -340,5 +343,3 @@ start.bat
 <div align="center">
   <strong>太初不替你思考。它让复杂创作更清楚，让每次交给 Agent 的权力都有迹可循。</strong>
 </div>
-
-

@@ -110,7 +110,7 @@ async def run_structured_subagent(
     agent_store = store_value if isinstance(store_value, BaseStore) else None
     middleware_stack: list[Any] = [
         ModelCallLimitMiddleware(
-            run_limit=manifest.repair_attempts + 1,
+            run_limit=_effective_model_call_limit(manifest, invocation),
             exit_behavior="error",
         ),
         ToolCallLimitMiddleware(
@@ -306,7 +306,7 @@ async def _collect_sources(
             )
         )
     chunks = [request.direct_context] if request.direct_context else []
-    refs: list[str] = []
+    refs: list[str] = list(request.direct_source_refs)
     if request.upstream_artifact_refs:
         artifact_repository = _artifact_repository(context)
         for artifact_id in request.upstream_artifact_refs:
@@ -539,6 +539,19 @@ def _effective_tool_call_limit(
     """单个子 Agent 的官方 loop 护栏不得超过任务级声明上限。"""
 
     return min(manifest.limits.max_tool_calls, invocation.budget.max_tool_calls)
+
+
+def _effective_model_call_limit(
+    manifest: SubagentManifest,
+    invocation: InvocationContext,
+) -> int:
+    """给真实 Tool 循环、最终结构化输出和有限修复分别保留模型轮次。"""
+
+    return (
+        _effective_tool_call_limit(manifest, invocation)
+        + manifest.repair_attempts
+        + 1
+    )
 
 
 def _artifact_repository(

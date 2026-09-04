@@ -90,14 +90,17 @@ export function AppShell({
       >
         <div
           className={cn(
-            "mx-auto flex max-w-[1440px] flex-col gap-3 px-4 md:px-6 xl:flex-row xl:items-center xl:justify-between",
-            headerActions ? "py-2" : "py-3",
+            "flex gap-3 px-4 md:px-6",
+            headerActions
+              ? "w-full items-center justify-between py-2"
+              : "mx-auto max-w-[1440px] flex-col py-3 xl:flex-row xl:items-center xl:justify-between",
           )}
         >
           <Link
             href="/home"
             className={cn(
               "flex min-w-0 items-center gap-3",
+              headerActions && "shrink-0",
               transparentHeader ? "text-white" : "text-[var(--tc-midnight-ink)]",
             )}
           >

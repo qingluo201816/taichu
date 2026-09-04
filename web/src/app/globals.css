@@ -139,6 +139,8 @@
   --tc-danger-soft: rgba(139, 44, 35, 0.08);
   --tc-agent-knowledge: #6d28d9;
   --tc-agent-writing: #0f766e;
+  --tc-writing-explanation: var(--tc-agent-writing);
+  --tc-writing-risk: var(--tc-issue-impact);
   --tc-monitor-knowledge: #6d28d9;
   --tc-monitor-general-agent: #0f766e;
   --tc-monitor-rag: #0369a1;

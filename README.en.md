@@ -1,5 +1,8 @@
 <div align="center">
-  <h1>Taichu · 太初</h1>
+  <h1 align="center">
+    <img src="./assets/taichu-readme-mark.png" height="56" align="absmiddle" alt="Taichu mark" />
+    &nbsp;Taichu · 太初
+  </h1>
   <p><strong>An observable, recoverable, and human-interruptible Agent workspace for long-form fiction.</strong></p>
   <p>面向长篇小说创作的可观测、可恢复、可干预 Agent 工作台</p>
 
@@ -340,5 +343,3 @@ Research multi-tenancy, genre switching, automatic publishing, and online deploy
 <div align="center">
   <strong>Taichu does not think for you. It makes complex creation legible—and every power delegated to an Agent accountable.</strong>
 </div>
-
-

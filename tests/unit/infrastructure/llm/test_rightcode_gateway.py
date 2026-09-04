@@ -138,6 +138,10 @@ class RightCodeGatewayTest(unittest.IsolatedAsyncioTestCase):
             ["deepseek-v4-flash"],
         )
         self.assertEqual(
+            [item.display_name for item in profiles],
+            ["DeepSeek V4 Flash", "DeepSeek V4 Pro"],
+        )
+        self.assertEqual(
             catalog.default_model_id_for("deepseek_official"),
             "deepseek-v4-flash",
         )

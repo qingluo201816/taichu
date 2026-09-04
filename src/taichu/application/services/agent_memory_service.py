@@ -60,6 +60,11 @@ _PROPAGATING_RELATIONS = frozenset(
         AgentMemoryDependencyRelation.REVIEW_TARGET,
     }
 )
+_MAX_MEMORY_SOURCE_REFS = 100
+_MAX_MEMORY_ARTIFACT_REFS = 100
+_MAX_MEMORY_EVIDENCE_ANCHORS = 200
+_MAX_MEMORY_DEPENDENCIES = 100
+_MAX_MEMORY_RUN_IDS = 100
 
 
 class AgentMemoryService:
@@ -110,21 +115,25 @@ class AgentMemoryService:
         )
         now = memory_now_iso()
         if duplicate is not None:
-            source_refs = _deduplicate([*duplicate.source_refs, *candidate.source_refs])
+            source_refs = _deduplicate(
+                [*duplicate.source_refs, *candidate.source_refs]
+            )[:_MAX_MEMORY_SOURCE_REFS]
             artifact_refs = _deduplicate(
                 [*duplicate.artifact_refs, *candidate.artifact_refs]
-            )
+            )[:_MAX_MEMORY_ARTIFACT_REFS]
             evidence_anchors = _deduplicate_evidence_anchors(
                 [*duplicate.evidence_anchors, *candidate.evidence_anchors]
-            )
+            )[:_MAX_MEMORY_EVIDENCE_ANCHORS]
             merged_dependencies = _deduplicate_dependencies(
                 [*duplicate.dependencies, *dependencies]
-            )
+            )[:_MAX_MEMORY_DEPENDENCIES]
             updated = duplicate.model_copy(
                 update={
                     "source_refs": source_refs,
                     "artifact_refs": artifact_refs,
-                    "run_ids": _deduplicate([*duplicate.run_ids, *candidate.run_ids]),
+                    "run_ids": _deduplicate(
+                        [*duplicate.run_ids, *candidate.run_ids]
+                    )[:_MAX_MEMORY_RUN_IDS],
                     "created_request_index": min(
                         duplicate.created_request_index,
                         candidate.created_request_index,
@@ -813,16 +822,22 @@ class AgentMemoryService:
                     ),
                     None,
                 )
-            evidence_anchors = await self.resolve_evidence_anchors(
-                source_refs=node.source_refs,
-                artifact_refs=node.artifact_refs,
-            )
+            source_refs = _deduplicate(node.source_refs)[:_MAX_MEMORY_SOURCE_REFS]
+            artifact_refs = _deduplicate(node.artifact_refs)[
+                :_MAX_MEMORY_ARTIFACT_REFS
+            ]
+            evidence_anchors = (
+                await self.resolve_evidence_anchors(
+                    source_refs=source_refs,
+                    artifact_refs=artifact_refs,
+                )
+            )[:_MAX_MEMORY_EVIDENCE_ANCHORS]
             entry = await self.write(
                 MemoryWriteCandidate(
                     kind=kind,
                     content=content,
-                    source_refs=node.source_refs,
-                    artifact_refs=node.artifact_refs,
+                    source_refs=source_refs,
+                    artifact_refs=artifact_refs,
                     run_ids=[run.run_id],
                     conversation_id=run.conversation_id,
                     created_request_index=run.request_index,

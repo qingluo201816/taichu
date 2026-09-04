@@ -676,6 +676,7 @@ export default function EditorShell() {
   const activeEntry =
     aiEntries.find(entry => entry.key === selectedAiTool) ?? aiEntries[1];
   const activeConversation = conversations[selectedAiTool] ?? null;
+  const hasConversationContent = Boolean(activeConversation);
   const isSummaryEntry = false;
   const isRecordEntry = false;
   const isConversationEntry = Boolean(activeEntry.buttonType);
@@ -1491,7 +1492,7 @@ export default function EditorShell() {
   }
 
   const editorToolbar = (
-    <div className="flex min-w-max flex-wrap items-center justify-end gap-2">
+    <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
       <span className="hidden rounded-full border border-[var(--tc-stone-mist)] px-3 py-1 text-xs text-[var(--tc-smoke)] 2xl:inline-flex">
         {statusText(saveState, loading)}
       </span>
@@ -1763,9 +1764,10 @@ export default function EditorShell() {
       showNavigation={false}
       headerActions={editorToolbar}
       workspaceStyle={editorThemeStyle}
+      viewportLocked
     >
       <div
-        className="tc-editor-theme-scope flex min-h-[calc(100dvh-62px)] flex-col bg-[var(--tc-workspace-bg)] xl:h-[calc(100dvh-62px)] xl:flex-row xl:overflow-hidden"
+        className="tc-editor-theme-scope flex h-full min-h-0 flex-col overflow-auto bg-[var(--tc-workspace-bg)] xl:flex-row xl:overflow-hidden"
         style={{
           ...editorThemeStyle,
           background: activePaperTone.pageBackground,
@@ -2102,7 +2104,7 @@ export default function EditorShell() {
               {!isSummaryEntry && !isRecordEntry ? (
                 <>
                   {aiBusy && streamingText ? (
-                    <div className="mb-3 whitespace-pre-wrap rounded-[var(--tc-radius-control)] border border-[var(--tc-border-subtle)] bg-[var(--tc-surface-muted)] p-3 text-sm leading-6 text-[var(--tc-text-primary)]">
+                    <div className="mb-3 whitespace-pre-wrap px-1 py-2 text-sm leading-6 text-[var(--tc-text-primary)]">
                       {streamingText}
                     </div>
                   ) : null}
@@ -2121,8 +2123,18 @@ export default function EditorShell() {
               ) : null}
             </div>
 
-            <div className="shrink-0 border-t border-[var(--tc-stone-mist)] bg-[var(--tc-cream-paper)] p-3">
-              <div className="mb-2 flex justify-end">
+            <div
+              className={cn(
+                "shrink-0 bg-[var(--tc-cream-paper)] px-3 pb-3 pt-2",
+                !hasConversationContent && "pt-3",
+              )}
+            >
+              <div
+                className={cn(
+                  "flex justify-end",
+                  hasConversationContent ? "mb-1" : "mb-2",
+                )}
+              >
                 <ModelSelector selection={modelSelection} compact />
               </div>
               {isSummaryEntry ? (
@@ -2168,19 +2180,36 @@ export default function EditorShell() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex items-stretch gap-2">
+                    <div
+                      className={cn(
+                        "gap-2",
+                        hasConversationContent
+                          ? "grid grid-cols-[minmax(0,1fr)_auto] items-center"
+                          : "flex items-stretch",
+                      )}
+                    >
                       <textarea
+                        rows={1}
                         value={aiInput}
                         onChange={event => setAIInput(event.target.value)}
-                        className="h-20 min-h-0 flex-1 resize-none rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 py-2 text-sm leading-6 outline-none"
+                        className={cn(
+                          "min-h-0 w-full resize-none rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 py-2 outline-none",
+                          hasConversationContent
+                            ? "h-10 overflow-hidden text-xs leading-5"
+                            : "h-20 flex-1 overflow-y-auto text-sm leading-6",
+                        )}
                         placeholder={activeEntry.placeholder}
                       />
                       <div
                         className={cn(
-                          "flex shrink-0 flex-col items-stretch gap-2",
-                          isConversationEntry && activeReferenceConfig
-                            ? "justify-start"
-                            : "justify-center",
+                          "flex shrink-0 items-stretch gap-2",
+                          hasConversationContent
+                            ? "flex-row justify-end"
+                            : "flex-col",
+                          !hasConversationContent &&
+                            (isConversationEntry && activeReferenceConfig
+                              ? "justify-start"
+                              : "justify-center"),
                         )}
                       >
                         {isConversationEntry && activeReferenceConfig ? (
@@ -2189,7 +2218,12 @@ export default function EditorShell() {
                             onClick={cycleReferenceRange}
                             title="参考范围，点击切换"
                             aria-label="参考范围，点击切换"
-                            className="inline-flex h-9 min-w-[72px] items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 text-sm text-[var(--tc-midnight-ink)] hover:bg-[var(--tc-workspace-panel-soft)]"
+                            className={cn(
+                              "inline-flex items-center justify-center rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] px-3 text-sm text-[var(--tc-midnight-ink)] hover:bg-[var(--tc-workspace-panel-soft)]",
+                              hasConversationContent
+                                ? "h-10 min-w-16"
+                                : "h-9 min-w-[72px]",
+                            )}
                           >
                             {referenceScopeLabel(currentReferenceScope)}
                           </button>
@@ -2199,7 +2233,11 @@ export default function EditorShell() {
                           size="sm"
                           onClick={() => void submitAI()}
                           disabled={aiBusy || !activeChapter}
-                          className="h-9 min-w-[72px]"
+                          className={cn(
+                            hasConversationContent
+                              ? "h-10 min-w-16"
+                              : "h-9 min-w-[72px]",
+                          )}
                           aria-label="发送"
                         >
                           {aiBusy ? (
@@ -2212,12 +2250,6 @@ export default function EditorShell() {
                       </div>
                     </div>
                   )}
-                  {activeConversation ? (
-                    <p className="mt-2 text-xs text-[var(--tc-smoke)]">
-                      状态：{runStatusLabel(activeConversation.status)} · 模型：
-                      {activeConversation.model || "未记录"}
-                    </p>
-                  ) : null}
                 </>
               )}
               {aiError ? (
@@ -2295,20 +2327,17 @@ function AIMessageList({
 
   return (
     <section className="mt-4 space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-[var(--tc-midnight-ink)]">
-          对话记录
-        </h3>
-        {latestSnapshot ? (
+      {latestSnapshot ? (
+        <div className="flex justify-end">
           <button
             type="button"
             onClick={onTogglePromptSnapshot}
-            className="text-xs text-[var(--tc-deep-forest-teal)]"
+            className="text-xs text-[var(--tc-writing-explanation)]"
           >
             {showPromptSnapshot ? "收起提示词快照" : "查看提示词快照"}
           </button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
       {showPromptSnapshot && latestSnapshot?.snapshot ? (
         <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-[var(--tc-radius-control)] border border-[var(--tc-stone-mist)] bg-[var(--tc-white)] p-3 text-xs leading-5">
           {latestSnapshot.snapshot}
@@ -2323,20 +2352,24 @@ function AIMessageList({
           )}
         >
           <div
-            className={cn(
-              "max-w-[86%] rounded-[var(--tc-radius-card)] border p-3",
+            className={
               message.role === "user"
-                ? "border-[var(--tc-action-primary-border)] bg-[var(--tc-action-primary-bg)] text-[var(--tc-action-primary-text)]"
-                : "border-[var(--tc-stone-mist)] bg-[var(--tc-white)] text-[var(--tc-midnight-ink)]",
-            )}
+                ? "max-w-[78%] px-1 py-1 text-right text-[var(--tc-midnight-ink)]"
+                : "w-full px-1 py-2 text-[var(--tc-midnight-ink)]"
+            }
           >
-            <div className="mb-2 flex items-center gap-2 text-xs opacity-70">
+            <div
+              className={cn(
+                "mb-1.5 flex items-center gap-1.5 text-[11px] font-medium leading-4 opacity-60",
+                message.role === "user" && "justify-end",
+              )}
+            >
               {message.role === "user" ? (
-                <BookOpen className="size-4" />
+                <BookOpen className="size-3" />
               ) : message.role === "assistant" ? (
-                <Bot className="size-4" />
+                <Bot className="size-3" />
               ) : (
-                <Sparkles className="size-4" />
+                <Sparkles className="size-3" />
               )}
               {message.role === "user"
                 ? "作者"
@@ -2345,9 +2378,22 @@ function AIMessageList({
                   : "模型回答"}
               {message.status ? <span>{message.status}</span> : null}
             </div>
-            <p className="whitespace-pre-wrap text-sm leading-6">{message.text}</p>
+            {message.role === "assistant" ? (
+              <WritingResponseBody text={message.text} />
+            ) : (
+              <p
+                className={cn(
+                  "whitespace-pre-wrap leading-7",
+                  message.role === "user"
+                    ? "text-right text-base font-semibold"
+                    : "text-[15px] font-normal",
+                )}
+              >
+                {message.text}
+              </p>
+            )}
             {message.sourceRefs.length ? (
-              <div className="mt-3 space-y-2 border-t border-[var(--tc-stone-mist)] pt-3">
+              <div className="mt-4 space-y-2">
                 {message.sourceRefs.map((source, sourceIndex) => (
                   <div
                     key={`${source.source_id}-${sourceIndex}`}
@@ -2393,6 +2439,68 @@ function AIMessageList({
       ))}
     </section>
   );
+}
+
+type WritingResponseSection = {
+  kind: "main" | "explanation" | "risk";
+  text: string;
+};
+
+function WritingResponseBody({ text }: { text: string }) {
+  const sections = splitWritingResponse(text);
+
+  return (
+    <div className="text-[15px] font-normal leading-7">
+      {sections.map((section, index) => {
+        if (section.kind === "main") {
+          return (
+            <p key={`${section.kind}-${index}`} className="whitespace-pre-wrap">
+              {section.text}
+            </p>
+          );
+        }
+        const isRisk = section.kind === "risk";
+        const textClass = isRisk
+          ? "text-[var(--tc-writing-risk)]"
+          : "text-[var(--tc-writing-explanation)]";
+        return (
+          <div key={`${section.kind}-${index}`} className="mt-4">
+            <span
+              aria-hidden="true"
+              className="mb-2 block h-px w-full bg-[var(--tc-text-muted)] opacity-20"
+            />
+            <p className="whitespace-pre-wrap text-[var(--tc-text-secondary)]">
+              <span className={cn("mr-1 font-normal opacity-75", textClass)}>
+                {isRisk ? "风险提示：" : "修改说明："}
+              </span>
+              {section.text}
+            </p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function splitWritingResponse(text: string): WritingResponseSection[] {
+  const parts = text.split(/(修改说明：|风险提示：)/g).filter(Boolean);
+  const sections: WritingResponseSection[] = [];
+  let kind: WritingResponseSection["kind"] = "main";
+  for (const part of parts) {
+    if (part === "修改说明：") {
+      kind = "explanation";
+      continue;
+    }
+    if (part === "风险提示：") {
+      kind = "risk";
+      continue;
+    }
+    const sectionText = part.trim();
+    if (sectionText) {
+      sections.push({ kind, text: sectionText });
+    }
+  }
+  return sections;
 }
 
 function writingRunMessages(run: WritingAIRun | null): Array<{

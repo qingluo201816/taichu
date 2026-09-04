@@ -37,6 +37,7 @@ import {
 import { ModelSelector } from "@/components/llm/model-selector";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 import { useModelSelection } from "@/hooks/use-model-selection";
 import {
   cancelGeneralAgentRun,
@@ -1690,9 +1691,7 @@ function GeneralRunPanel({
             </div>
             {run.final_answer ? (
               <div className="cursor-text select-text px-1 py-1 selection:bg-[var(--tc-text-primary)] selection:text-[var(--tc-surface-page)]">
-                <div className="whitespace-pre-wrap text-sm leading-7 text-[var(--tc-text-primary)]">
-                  {run.final_answer}
-                </div>
+                <MarkdownContent content={run.final_answer} />
                 {run.verification_issues.length ? (
                   <div className="mt-3 rounded-xl bg-[var(--tc-surface-page)] p-3 text-xs leading-5 text-[var(--tc-text-muted)]">
                     未完全解决：{run.verification_issues.join("；")}

@@ -35,6 +35,7 @@ class AgentSourceRequest(SubagentModel):
     knowledge_card_ids: list[str] = Field(default_factory=list, max_length=100)
     upstream_artifact_refs: list[str] = Field(default_factory=list, max_length=50)
     direct_context: str = Field(default="", max_length=100_000)
+    direct_source_refs: list[str] = Field(default_factory=list, max_length=100)
 
 
 class CanonEvidenceInput(SubagentModel):

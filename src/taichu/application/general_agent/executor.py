@@ -6,6 +6,7 @@ import asyncio
 from collections.abc import Awaitable, Callable, Mapping
 from contextlib import suppress
 from copy import deepcopy
+import json
 from time import perf_counter
 from typing import Annotated, Any, TypedDict
 from uuid import NAMESPACE_URL, uuid4, uuid5
@@ -1316,6 +1317,7 @@ class DynamicDagExecutor:
                 source_request = payload.setdefault("source_request", {})
                 if not isinstance(source_request, dict):
                     raise DynamicDagExecutionError("source_request 必须是对象。")
+                auto_collect_declared = "auto_collect" in source_request
                 artifact_refs: list[str] = []
                 for dependency in node.dependencies:
                     artifact_refs.extend(current[dependency].artifact_refs)
@@ -1328,6 +1330,50 @@ class DynamicDagExecutor:
                     source_request["upstream_artifact_refs"] = list(
                         dict.fromkeys([*existing, *artifact_refs])
                     )
+                tool_contexts: list[str] = []
+                tool_source_refs: list[str] = []
+                for dependency in node.dependencies:
+                    source_run = current[dependency]
+                    if (
+                        source_run.kind is not GeneralAgentNodeKind.TOOL
+                        or source_run.status is not GeneralAgentNodeStatus.SUCCESS
+                        or not source_run.output
+                    ):
+                        continue
+                    tool_contexts.append(
+                        f"[上游工具：{source_run.capability_name}]\n"
+                        + json.dumps(
+                            source_run.output,
+                            ensure_ascii=False,
+                            separators=(",", ":"),
+                        )
+                    )
+                    tool_source_refs.extend(source_run.source_refs)
+                if tool_contexts:
+                    existing_context = source_request.get("direct_context", "")
+                    if not isinstance(existing_context, str):
+                        raise DynamicDagExecutionError("direct_context 必须是字符串。")
+                    if not existing_context.strip():
+                        combined_context = "\n\n".join(tool_contexts)
+                        if len(combined_context) > 100_000:
+                            combined_context = (
+                                combined_context[:99_960]
+                                + "\n\n[上游工具结果因上下文上限被截断]"
+                            )
+                        source_request["direct_context"] = combined_context
+                    existing_refs = source_request.get("direct_source_refs", [])
+                    if not isinstance(existing_refs, list):
+                        raise DynamicDagExecutionError(
+                            "direct_source_refs 必须是数组。"
+                        )
+                    source_request["direct_source_refs"] = list(
+                        dict.fromkeys([*existing_refs, *tool_source_refs])
+                    )[:100]
+                if (
+                    (artifact_refs or tool_contexts)
+                    and not auto_collect_declared
+                ):
+                    source_request["auto_collect"] = False
         if node.kind is GeneralAgentNodeKind.TOOL:
             tool_manifest = self._tool_registry.get_manifest(node.capability_name)
             if "idempotency_key" in tool_manifest.input_schema.model_fields:

@@ -103,7 +103,7 @@ _DEEPSEEK_OFFICIAL_MODEL_DEFINITIONS: tuple[
     # DeepSeek 官方高峰时段公开价，单位为人民币/百万 Token。
     (
         "deepseek-v4-flash",
-        "DeepSeek V4 Flash（官方）",
+        "DeepSeek V4 Flash",
         True,
         Decimal("3.0"),
         Decimal("0.10"),
@@ -111,7 +111,7 @@ _DEEPSEEK_OFFICIAL_MODEL_DEFINITIONS: tuple[
     ),
     (
         "deepseek-v4-pro",
-        "DeepSeek V4 Pro（官方）",
+        "DeepSeek V4 Pro",
         False,
         Decimal("9.0"),
         Decimal("0.30"),

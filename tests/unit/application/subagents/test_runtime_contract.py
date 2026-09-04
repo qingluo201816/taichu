@@ -36,6 +36,7 @@ from taichu.application.subagents.prompts import PROMPTS
 from taichu.application.subagents.registry import SubagentRegistry
 from taichu.application.subagents.runner import (
     _collect_sources,
+    _effective_model_call_limit,
     _effective_tool_call_limit,
     _retryable_agent_tool_names,
 )
@@ -388,4 +389,7 @@ def test_official_subagent_tool_loop_uses_the_stricter_local_or_task_limit() -> 
             ),
         )
         == drafting_agent.manifest.limits.max_tool_calls
+    )
+    assert _effective_model_call_limit(drafting_agent.manifest, invocation) == (
+        3 + drafting_agent.manifest.repair_attempts + 1
     )

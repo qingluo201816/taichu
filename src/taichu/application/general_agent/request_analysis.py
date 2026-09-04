@@ -11,6 +11,9 @@ _CHAPTER_RANGE_PATTERN = re.compile(
     rf"(?:到|至|—|–|-|~|～)(?:第)?(?P<end>{_CHAPTER_NUMBER})章"
 )
 _CHAPTER_PATTERN = re.compile(rf"第(?P<number>{_CHAPTER_NUMBER})章")
+_RECENT_CHAPTER_PATTERN = re.compile(
+    rf"最近(?P<count>{_CHAPTER_NUMBER})章"
+)
 _CONTENT_REQUEST_MARKERS = (
     "讲的什么",
     "讲了什么",
@@ -69,6 +72,16 @@ def is_explicit_chapter_content_request(text: str) -> bool:
     return bool(explicit_chapter_orders(normalized)) and any(
         marker in normalized for marker in _CONTENT_REQUEST_MARKERS
     )
+
+
+def recent_chapter_count(text: str) -> int | None:
+    """提取“最近 N 章”的确定性范围，避免模型猜测结构输出路径。"""
+
+    match = _RECENT_CHAPTER_PATTERN.search(text.strip())
+    if match is None:
+        return None
+    count = _chapter_number(match.group("count"))
+    return count if 1 <= count <= 100 else None
 
 
 def _chapter_number(value: str) -> int:

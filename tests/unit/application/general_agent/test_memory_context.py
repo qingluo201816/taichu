@@ -37,6 +37,7 @@ from taichu.application.general_agent.models import (
 from taichu.application.general_agent.request_analysis import (
     explicit_chapter_orders,
     is_explicit_chapter_content_request,
+    recent_chapter_count,
 )
 from taichu.application.general_agent.service import _chapter_source_quality_issues
 from taichu.application.services.agent_memory_service import (
@@ -368,6 +369,38 @@ def test_revision_supersedes_rejected_draft_without_invalidating_revision(
     _run(scenario())
 
 
+def test_node_memory_caps_large_source_reference_sets(tmp_path: Path) -> None:
+    async def scenario() -> None:
+        service = _memory_service(tmp_path)
+        run = _long_run(round_count=2).model_copy(
+            update={
+                "conversation_id": "conversation_many_sources",
+                "task_id": "conversation_many_sources",
+                "node_runs": [],
+            }
+        )
+        node = GeneralAgentNodeRun(
+            node_id="summarize_many_chapters",
+            plan_revision=1,
+            kind=GeneralAgentNodeKind.SUBAGENT,
+            capability_name="narrative_summary",
+            objective="归纳大量章节。",
+            status=GeneralAgentNodeStatus.SUCCESS,
+            output={"summary": "已完成归纳。"},
+            source_refs=[f"manuscript:chapter_{index}:0-100" for index in range(223)],
+        )
+
+        memory_ids = await service.record_node_results(run, [node])
+        entry = await service.get(memory_ids[0])
+
+        assert entry is not None
+        assert len(entry.source_refs) == 100
+        assert entry.source_refs[0] == "manuscript:chapter_0:0-100"
+        assert entry.source_refs[-1] == "manuscript:chapter_99:0-100"
+
+    _run(scenario())
+
+
 def test_changed_evidence_marks_memory_and_basis_dependents_stale(
     tmp_path: Path,
 ) -> None:
@@ -667,6 +700,9 @@ def test_explicit_chapter_reference_supports_arabic_chinese_and_ranges() -> None
     assert explicit_chapter_orders("概括第8到10章") == [8, 9, 10]
     assert is_explicit_chapter_content_request("正文第8章讲的什么") is True
     assert is_explicit_chapter_content_request("设计第8章的新冲突") is False
+    assert recent_chapter_count("请检查最近20章的内容") == 20
+    assert recent_chapter_count("请检查最近二十章的内容") == 20
+    assert recent_chapter_count("请检查当前章节") is None
 
 
 def test_explicit_chapter_content_requires_manuscript_source() -> None:

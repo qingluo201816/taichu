@@ -40,6 +40,7 @@ from taichu.application.general_agent.capability_resolution import (
 from taichu.application.general_agent.request_analysis import (
     explicit_chapter_orders,
     is_explicit_chapter_content_request,
+    recent_chapter_count,
 )
 from taichu.application.invocations.models import (
     InvocationContext,
@@ -95,6 +96,8 @@ _PLAN_SYSTEM_PROMPT += """
 18. input_bindings 的数组下标统一使用点号，例如 chunks.0.content；方括号形式会被规范化，但不得使用其他路径语法。
 19. 重规划时不得重复执行已经成功且仍可满足目标的节点；需要把成功结果带入新修订版时，使用 reuse_from_node_id 明确引用上一修订版节点。
 20. 工作记忆不是小说事实。替代或失效旧记忆时必须使用当前上下文给出的 memory_id 与 state_sha256；不得把 stale、rejected 或 superseded 记录恢复成当前依据。
+21. input_bindings 的 target_path 必须是下游能力输入 Schema 中的真实字段，source_path 必须是上游输出 Schema 中的真实字段；不得凭语义猜测 content、chapters 等字段名。
+22. 专业子 Agent 依赖的上游专业产物会由 Runtime 自动写入 source_request.upstream_artifact_refs，作为工作上下文；这不替代能力的必填输入。审查、修改等能力的必填正文参数仍须通过 input_bindings 从上游真实输出字段绑定，不得填产物类型或占位说明。
 """
 
 
@@ -148,6 +151,7 @@ class OrchestratorAgent:
             char_budget=self._capability_prompt_char_budget,
         )
         chapter_orders = explicit_chapter_orders(context.current_goal)
+        recent_count = recent_chapter_count(context.current_goal)
         candidate_names = [
             str(item["name"]) for item in capability_view["相关候选摘要"]
         ]
@@ -177,11 +181,14 @@ class OrchestratorAgent:
                 working_payload=payload,
                 output_schema=GeneralAgentPlanDraft,
                 native_tools=candidate_tools,
-                output_tool=_structured_output_tool(
+                output_tool=self._schema_loader.plan_output_tool(
                     GeneralAgentPlanDraft,
+                    candidate_names,
                     max_plan_nodes=run.limits.max_plan_nodes,
                 ),
             )
+            candidate = self._schema_loader.canonicalize_input_aliases(candidate)
+            candidate = _apply_recent_chapter_scope(candidate, recent_count)
             try:
                 self._validate_capabilities(candidate, run, context=context)
                 schema_errors = self._schema_loader.validation_errors(candidate)
@@ -193,6 +200,10 @@ class OrchestratorAgent:
                         draft=candidate,
                         schema_errors=schema_errors,
                     )
+                    candidate = self._schema_loader.canonicalize_input_aliases(
+                        candidate
+                    )
+                    candidate = _apply_recent_chapter_scope(candidate, recent_count)
                     self._validate_capabilities(candidate, run, context=context)
                     remaining = self._schema_loader.validation_errors(candidate)
                     if remaining:
@@ -235,8 +246,9 @@ class OrchestratorAgent:
             },
             output_schema=GeneralAgentPlanDraft,
             native_tools=self._schema_loader.selected_native_definitions(draft),
-            output_tool=_structured_output_tool(
+            output_tool=self._schema_loader.plan_output_tool(
                 GeneralAgentPlanDraft,
+                [node.capability_name for node in draft.nodes],
                 max_plan_nodes=run.limits.max_plan_nodes,
             ),
         )
@@ -539,26 +551,59 @@ def _invalid_literal_artifact_refs(input_data: dict[str, Any]) -> tuple[str, ...
     )
 
 
+def _apply_recent_chapter_scope(
+    plan: GeneralAgentPlanDraft,
+    count: int | None,
+) -> GeneralAgentPlanDraft:
+    """把“最近 N 章”落实为 Tool 正式参数，不让模型解析卷章树数组。"""
+
+    if count is None:
+        return plan
+    changed = False
+    nodes = []
+    range_fields = {
+        "chapter_ids",
+        "start_order",
+        "end_order",
+        "recent_count",
+    }
+    for node in plan.nodes:
+        if node.capability_name != "read_manuscript" or "最近" not in node.objective:
+            nodes.append(node)
+            continue
+        input_data = {
+            key: value
+            for key, value in node.input_data.items()
+            if key not in range_fields
+        }
+        input_data["recent_count"] = count
+        input_bindings = [
+            binding
+            for binding in node.input_bindings
+            if binding.target_path.split(".", 1)[0] not in range_fields
+        ]
+        nodes.append(
+            node.model_copy(
+                update={
+                    "input_data": input_data,
+                    "input_bindings": input_bindings,
+                }
+            )
+        )
+        changed = True
+    if not changed:
+        return plan
+    return plan.model_copy(update={"nodes": nodes})
+
+
 def _json_message(value: dict[str, Any]) -> str:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 
 
 def _structured_output_tool(
     schema: type[BaseModel],
-    *,
-    max_plan_nodes: int | None = None,
 ) -> dict[str, Any]:
-    tool = convert_to_openai_tool(schema, strict=True)
-    if max_plan_nodes is not None:
-        nodes = (
-            tool.get("function", {})
-            .get("parameters", {})
-            .get("properties", {})
-            .get("nodes")
-        )
-        if isinstance(nodes, dict):
-            nodes["maxItems"] = max_plan_nodes
-    return tool
+    return convert_to_openai_tool(schema, strict=True)
 
 
 def _raw_output_text(message: AIMessage) -> str:

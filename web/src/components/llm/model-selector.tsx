@@ -127,8 +127,12 @@ export function ModelSelector({
 
 function modelLabel(model: ReturnTypeOfModelSelection["models"][number]): string {
   return [
-    model.display_name,
+    modelDisplayName(model.display_name),
     model.is_default ? "（默认）" : "",
     model.availability === "unavailable" ? "（不可用）" : "",
   ].join("");
+}
+
+export function modelDisplayName(value: string): string {
+  return value.replaceAll("（官方）", "").replaceAll("(官方)", "").trim();
 }
