@@ -393,3 +393,33 @@ def test_official_subagent_tool_loop_uses_the_stricter_local_or_task_limit() -> 
     assert _effective_model_call_limit(drafting_agent.manifest, invocation) == (
         3 + drafting_agent.manifest.repair_attempts + 1
     )
+
+
+@_async_test
+async def test_subagent_projects_budget_and_reserves_structured_completion() -> None:
+    from langchain.agents.middleware import ModelRequest, ModelResponse
+    from langchain_core.language_models.fake_chat_models import FakeListChatModel
+    from langchain_core.messages import HumanMessage
+    from taichu.application.subagents.runner import SubagentBudgetContextMiddleware
+
+    middleware = SubagentBudgetContextMiddleware(tool_limit=10, model_limit=12)
+    captured = []
+
+    async def handler(request):
+        captured.append(request)
+        return ModelResponse(result=[AIMessage(content="完成")])
+
+    for used in (0, 8, 10):
+        request = ModelRequest(
+            model=FakeListChatModel(responses=["unused"]),
+            messages=[HumanMessage(content="梳理人物动机。")],
+            tools=[{"name": "retrieve_story_context"}],
+            state={"run_tool_call_count": {"__all__": used}, "run_model_call_count": 1},
+        )
+        await middleware.awrap_model_call(request, handler)
+    assert len(captured[0].tools) == 1
+    assert captured[1].tools == []
+    assert captured[2].tools == []
+    assert "8" in captured[0].messages[-2].content
+    assert "停止" in captured[1].messages[-2].content
+    assert captured[1].messages[-1].content == "梳理人物动机。"

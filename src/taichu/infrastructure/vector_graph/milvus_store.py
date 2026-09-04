@@ -28,20 +28,21 @@ class TaichuHNSWMilvusStore(MilvusStore):
         self.ef_search = ef_search
         self.rrf_k = rrf_k
 
-    @property
-    def _search_params(self) -> dict[str, Any]:
-        return {"metric_type": "IP", "params": {"ef": self.ef_search}}
+    def _search_params(self, top_k: int) -> dict[str, Any]:
+        # HNSW 的候选搜索宽度不能小于本次请求的结果数。
+        return {"metric_type": "IP", "params": {"ef": max(self.ef_search, top_k)}}
 
     def _search_entities(
         self,
         query_embeddings: list[list[float]],
         top_k: int | None = None,
     ) -> list[list[dict[str, Any]]]:
+        limit = top_k or self.settings.entity_top_k
         return self.client.search(
             collection_name=self.entity_collection,
             data=query_embeddings,
-            limit=top_k or self.settings.entity_top_k,
-            search_params=self._search_params,
+            limit=limit,
+            search_params=self._search_params(limit),
             output_fields=["id", "text", "relation_ids", "passage_ids"],
         )
 
@@ -50,11 +51,12 @@ class TaichuHNSWMilvusStore(MilvusStore):
         query_embedding: list[float],
         top_k: int | None = None,
     ) -> list[dict[str, Any]]:
+        limit = top_k or self.settings.relation_top_k
         results = self.client.search(
             collection_name=self.relation_collection,
             data=[query_embedding],
-            limit=top_k or self.settings.relation_top_k,
-            search_params=self._search_params,
+            limit=limit,
+            search_params=self._search_params(limit),
             output_fields=[
                 "id",
                 "text",
@@ -85,7 +87,7 @@ class TaichuHNSWMilvusStore(MilvusStore):
             data=[query_embedding],
             limit=limit,
             filter=f"id in {json.dumps(unique_ids, ensure_ascii=False)}",
-            search_params=self._search_params,
+            search_params=self._search_params(limit),
             output_fields=[
                 "id",
                 "text",
@@ -434,7 +436,7 @@ class TaichuHNSWMilvusStore(MilvusStore):
             AnnSearchRequest(
                 data=[query_embedding],
                 anns_field="vector",
-                param=self._search_params,
+                param=self._search_params(top_k),
                 limit=top_k,
                 expr=filter,
             ),
@@ -491,12 +493,13 @@ class TaichuHNSWMilvusStore(MilvusStore):
         top_k: int | None = None,
         filter: str | None = None,
     ) -> list[dict[str, Any]]:
+        limit = top_k or self.settings.final_top_k
         results = self.client.search(
             collection_name=self.passage_collection,
             data=[query_embedding],
-            limit=top_k or self.settings.final_top_k,
+            limit=limit,
             filter=filter,
-            search_params=self._search_params,
+            search_params=self._search_params(limit),
             output_fields=["id", "text", "entity_ids", "relation_ids"],
         )
         return results[0] if results else []

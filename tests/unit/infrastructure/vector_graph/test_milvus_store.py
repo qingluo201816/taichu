@@ -211,6 +211,36 @@ def _assert_no_destructive_or_data_writes(client: _MilvusClientFake) -> None:
     client.delete.assert_not_called()
 
 
+@pytest.mark.parametrize("top_k", [10, 150, 151, 300])
+@pytest.mark.parametrize("search", ["entity", "relation", "neighbor", "passage", "hybrid"])
+def test_hnsw_search_breadth_covers_actual_candidate_limit(top_k, search) -> None:
+    client = _MilvusClientFake()
+    client.search = Mock(return_value=[[]])
+    client.hybrid_search = Mock(return_value=[[]])
+    store = _store(client)
+    store.ef_search = 150
+    store.rrf_k = 60
+    if search == "entity":
+        store._search_entities([[0.0] * DIMENSION], top_k=top_k)
+    elif search == "relation":
+        store._search_relations([0.0] * DIMENSION, top_k=top_k)
+    elif search == "neighbor":
+        store.search_neighbor_relations([0.0] * DIMENSION, [str(i) for i in range(400)], top_k=top_k)
+    elif search == "passage":
+        store.search_passages([0.0] * DIMENSION, top_k=top_k)
+    else:
+        store.hybrid_search_passages(lexical_query="测试", query_embedding=[0.0] * DIMENSION, top_k=top_k)
+    if search == "hybrid":
+        request = client.hybrid_search.call_args.kwargs["reqs"][1]
+        parameters, limit = request.param, request.limit
+    else:
+        call = client.search.call_args.kwargs
+        parameters, limit = call["search_params"], call["limit"]
+    assert parameters["params"]["ef"] == max(150, limit)
+    assert limit == top_k
+    _assert_no_destructive_or_data_writes(client)
+
+
 def test_existing_incompatible_passage_stops_before_create_or_write() -> None:
     incompatible_passage = _valid_collection(passage=True)
     incompatible_passage["description"]["fields"] = [

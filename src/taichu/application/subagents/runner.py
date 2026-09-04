@@ -133,6 +133,10 @@ async def run_structured_subagent(
         )
     middleware_stack.extend(
         [
+            SubagentBudgetContextMiddleware(
+                tool_limit=_effective_tool_call_limit(manifest, invocation),
+                model_limit=_effective_model_call_limit(manifest, invocation),
+            ),
             source_middleware,
             ModelInvocationTraceMiddleware(
                 repository=_trace_repository(context),
@@ -185,6 +189,42 @@ async def run_structured_subagent(
     if len(output.model_dump_json()) > manifest.limits.max_output_chars:
         raise ValueError("专业子 Agent 输出超过 Manifest 字符预算。")
     return output
+
+
+class SubagentBudgetContextMiddleware(AgentMiddleware):
+    """投影官方计数并预留结果输出机会，不替代或放宽官方硬预算护栏。"""
+
+    def __init__(self, *, tool_limit: int, model_limit: int) -> None:
+        super().__init__()
+        self._tool_limit = tool_limit
+        self._model_limit = model_limit
+
+    async def awrap_model_call(
+        self, request: ModelRequest, handler: Any,
+    ) -> ModelResponse:
+        used_tools = request.state.get("run_tool_call_count", {}).get("__all__", 0)
+        used_models = request.state.get("run_model_call_count", 0)
+        # ToolStrategy 的结果输出及一次校验修复同样占用 Tool 调用计数。
+        available_reads = max(0, self._tool_limit - used_tools - 2)
+        finish_now = available_reads == 0 or used_models >= self._model_limit - 1
+        budget_message = ChatMessage(
+            role="developer",
+            content=(
+                "当前工作记忆中的调用预算："
+                f"最多还可补充 {available_reads} 次取证调用（本轮并行调用合计也不得超过），"
+                "其余预算预留给结构化结果及必要校验修复。已有来源足够时立即提交结果；"
+                "不要为了补全背景反复扩大检索范围。"
+                + (
+                    "现在必须停止取证，依据已有证据通过结构化输出提交结果，"
+                    "在警告中明确仍缺少的证据；不得编造事实。"
+                    if finish_now else ""
+                )
+            ),
+        )
+        return await handler(request.override(
+            tools=[] if finish_now else request.tools,
+            messages=[*request.messages[:-1], budget_message, *request.messages[-1:]],
+        ))
 
 
 class SubagentSourceContextMiddleware(AgentMiddleware):

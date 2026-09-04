@@ -55,6 +55,7 @@ class GatewayChatModel(BaseChatModel):
     chapter_ids: tuple[str, ...] = ()
     feature: str = ""
     _gateway: LLMGatewayContract = PrivateAttr()
+    _structured_output_strict: bool | None = PrivateAttr(default=None)
 
     def __init__(
         self,
@@ -86,15 +87,36 @@ class GatewayChatModel(BaseChatModel):
         tools: Sequence[dict[str, Any] | type | Callable[..., Any] | BaseTool],
         *,
         tool_choice: str | None = None,
+        strict: bool | None = None,
         **kwargs: Any,
     ) -> Runnable:
         """只通过原生 ``tools`` 参数传递 Schema，不注入消息正文。"""
-        formatted = [convert_to_openai_tool(tool, strict=True) for tool in tools]
+        if strict is None and "ls_structured_output_format" in kwargs:
+            strict = self._structured_output_strict
+        # 保留工具原有可选字段和动态字典；只有调用方明确要求时才转换为严格契约。
+        formatted = [convert_to_openai_tool(tool, strict=strict) for tool in tools]
         normalized_choice = _normalize_tool_choice(tool_choice)
         return self.bind(
             tools=formatted,
             tool_choice=normalized_choice,
             **kwargs,
+        )
+
+    def with_structured_output(
+        self,
+        schema: dict[str, Any] | type,
+        *,
+        include_raw: bool = False,
+        strict: bool | None = None,
+        **kwargs: Any,
+    ) -> Runnable:
+        """保留显式严格选项，解析和错误封装仍由官方 BaseChatModel 实现。"""
+        # 官方基础实现忽略 strict；用独立模型副本向它内部的 bind_tools
+        # 传递此选项，不改变原模型及普通 Tool 调用的默认行为。
+        structured_model = self.model_copy()
+        structured_model._structured_output_strict = strict
+        return super(GatewayChatModel, structured_model).with_structured_output(
+            schema, include_raw=include_raw, **kwargs,
         )
 
     def for_request(self, **settings: Any) -> GatewayChatModel:
@@ -307,7 +329,7 @@ def _gateway_tool_definition(value: dict[str, Any]) -> Any:
         name=str(function.get("name") or ""),
         description=str(function.get("description") or ""),
         parameters=parameters,
-        strict=bool(function.get("strict", True)),
+        strict=bool(function.get("strict", False)),
     )
 
 

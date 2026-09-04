@@ -89,6 +89,9 @@ _VERIFY_SYSTEM_PROMPT = """你是太初通用写作助手的高层编排 Agent�
 4. 最终回答直接面向作者，使用中文，清楚区分事实、建议、草稿与不确定项。
 5. 运行记忆不是小说事实；没有重新取证的事实引用不能写成确定事实。
 6. 必须通过系统指定的结构化输出 Tool 返回校验结果，不要在正文中手写 JSON。
+7. 本次验收记录是当前运行的候选与审查原始产物，不是当前有效小说事实。即使候选被否定或不能再作为事实依据，也必须报告它及其问题，不能因未出现在有效记忆中而忽略。
+8. 最终交付的正文候选必须逐字保留实际生成的 text（可调整 Markdown 排版），不得由编排层重写、扩写或自行修复。每项审查须原样引用实际 verdict，并说明重要问题；节点执行成功不表示审查通过。
+9. 用户要求创作并检查时，交付候选及发现的问题即可完成检查目标；只有用户要求修复或目标确有未完成项才重规划。若需要修改候选，须调用真实修改能力并重新审查，不得在最终汇总中暗改。
 """
 
 
@@ -99,6 +102,54 @@ _PLAN_SYSTEM_PROMPT += """
 21. input_bindings 的 target_path 必须是下游能力输入 Schema 中的真实字段，source_path 必须是上游输出 Schema 中的真实字段；不得凭语义猜测 content、chapters 等字段名。
 22. 专业子 Agent 依赖的上游专业产物会由 Runtime 自动写入 source_request.upstream_artifact_refs，作为工作上下文；这不替代能力的必填输入。审查、修改等能力的必填正文参数仍须通过 input_bindings 从上游真实输出字段绑定，不得填产物类型或占位说明。
 """
+
+
+def _verification_audit(run: GeneralAgentRun) -> list[dict[str, Any]]:
+    """本轮被审对象和审查意见是验收证据，不能复用事实有效性过滤。"""
+    current = [
+        node for node in run.node_runs
+        if node.plan_revision == run.plan_revision and node.status is GeneralAgentNodeStatus.SUCCESS
+    ]
+    superseded = {
+        dependency
+        for node in current if node.output.get("artifact_type") == "revision_candidate"
+        for dependency in node.dependencies
+    }
+    audit = []
+    for node in current:
+        candidate = node.output.get("artifact_type") in {"manuscript_candidate", "revision_candidate"}
+        review = "verdict" in node.output and "issues" in node.output
+        if not candidate and not review:
+            continue
+        audit.append({
+            "node_id": node.node_id,
+            "usage": "仅作本次验收证据，不能据此恢复为有效小说事实或有效记忆。",
+            "deliver_candidate": candidate and node.node_id not in superseded,
+            "output": node.output,
+        })
+    if len(json.dumps(audit, ensure_ascii=False)) > 40_000:
+        raise ValueError("本次候选与审查证据超过验收预算，不能省略关键证据后宣称完成。")
+    return audit
+
+
+def _verification_delivery_errors(
+    decision: GeneralAgentVerification, audit: list[dict[str, Any]],
+) -> list[str]:
+    if decision.should_replan:
+        return []
+    # 排版不属于正文改写，允许引用和标题标记及空白变化。
+    def normalized(value: str) -> str:
+        return re.sub(r"[\s#*>`]", "", value)
+
+    answer = normalized(decision.final_answer)
+    errors = []
+    for record in audit:
+        output = record["output"]
+        expected = output.get("text") if record["deliver_candidate"] else output.get("verdict")
+        if isinstance(expected, str) and expected.strip() and normalized(expected) not in answer:
+            field = "正文候选" if record["deliver_candidate"] else "审查结论"
+            errors.append(f"节点 {record['node_id']} 的{field}被遗漏或改写，须原样保留。")
+    return errors
 
 
 class OrchestratorAgent:
@@ -185,6 +236,7 @@ class OrchestratorAgent:
                     GeneralAgentPlanDraft,
                     candidate_names,
                     max_plan_nodes=run.limits.max_plan_nodes,
+                    include_unloaded=True,
                 ),
             )
             candidate = self._schema_loader.canonicalize_input_aliases(candidate)
@@ -192,6 +244,14 @@ class OrchestratorAgent:
             try:
                 self._validate_capabilities(candidate, run, context=context)
                 schema_errors = self._schema_loader.validation_errors(candidate)
+                newly_selected = sorted({
+                    node.capability_name for node in candidate.nodes
+                } - set(candidate_names))
+                if newly_selected:
+                    schema_errors.append(
+                        "以下入选能力尚未加载完整契约，须按本次原生契约确认参数与输出绑定："
+                        + "、".join(newly_selected)
+                    )
                 if schema_errors:
                     candidate = await self._materialize_plan(
                         run=run,
@@ -263,20 +323,28 @@ class OrchestratorAgent:
         working_payload = {
             "计划修订号": run.plan_revision,
             "剩余重规划次数": max(0, run.limits.max_replans - run.replan_count),
+            "本次验收记录": _verification_audit(run),
         }
-        decision = await self._complete_json(
-            run=run,
-            phase="verify",
-            phase_prompt=_VERIFY_SYSTEM_PROMPT,
-            context=context,
-            phase_contract={},
-            working_payload=working_payload,
-            output_schema=GeneralAgentVerification,
-            native_tools=[],
-        )
-        if run.replan_count >= run.limits.max_replans and decision.should_replan:
-            decision = decision.model_copy(update={"should_replan": False})
-        return decision
+        for attempt in range(2):
+            decision = await self._complete_json(
+                run=run,
+                phase="verify",
+                phase_prompt=_VERIFY_SYSTEM_PROMPT,
+                context=context,
+                phase_contract={},
+                working_payload=working_payload,
+                output_schema=GeneralAgentVerification,
+                native_tools=[],
+            )
+            if run.replan_count >= run.limits.max_replans and decision.should_replan:
+                decision = decision.model_copy(update={"should_replan": False})
+            errors = _verification_delivery_errors(decision, working_payload["本次验收记录"])
+            if not errors:
+                return decision
+            if attempt:
+                raise ValueError("最终交付未忠实保留真实产物：" + "；".join(errors))
+            working_payload = {**working_payload, "交付校验错误": errors}
+        raise AssertionError("最终校验未按有限修复策略结束。")
 
     def _validate_capabilities(
         self,
