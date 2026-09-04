@@ -1,6 +1,9 @@
 <div align="center">
   <h1 align="center">
-    <img src="./assets/taichu-readme-mark.png" height="56" align="absmiddle" alt="太初标志" />
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./assets/taichu-readme-mark-dark.png" />
+      <img src="./assets/taichu-readme-mark.png" height="44" align="absmiddle" alt="太初标志" />
+    </picture>
     &nbsp;太初 Taichu
   </h1>
   <p><strong>面向长篇小说创作的可观测、可恢复、可干预 Agent 工作台</strong></p>
@@ -13,6 +16,7 @@
   </p>
 
   <p>
+    <a href="./LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-blue.svg" /></a>
     <img alt="Python 3.12+" src="https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white" />
     <img alt="LangGraph" src="https://img.shields.io/badge/LangGraph-Agent_Runtime-171717" />
     <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white" />
@@ -38,6 +42,7 @@
 - [工程证据](#工程证据)
 - [技术栈与运行](#技术栈与运行)
 - [当前边界与进化方向](#当前边界与进化方向)
+- [许可证](#许可证)
 
 ## 产品定位
 
@@ -279,6 +284,10 @@ start.bat
 ### 4. 部署与产品化研究
 
 调研多租户、多类型小说切换、自动发布和线上部署方案。这些属于未来产品化方向；当前实现仍坚持单本小说、单作者工作台的清晰边界。
+
+## 许可证
+
+本项目采用 [MIT 许可证](./LICENSE)。
 
 ---
 

@@ -1,6 +1,9 @@
 <div align="center">
   <h1 align="center">
-    <img src="./assets/taichu-readme-mark.png" height="56" align="absmiddle" alt="Taichu mark" />
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./assets/taichu-readme-mark-dark.png" />
+      <img src="./assets/taichu-readme-mark.png" height="44" align="absmiddle" alt="Taichu mark" />
+    </picture>
     &nbsp;Taichu · 太初
   </h1>
   <p><strong>An observable, recoverable, and human-interruptible Agent workspace for long-form fiction.</strong></p>
@@ -13,6 +16,7 @@
   </p>
 
   <p>
+    <a href="./LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-blue.svg" /></a>
     <img alt="Python 3.12+" src="https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white" />
     <img alt="LangGraph" src="https://img.shields.io/badge/LangGraph-Agent_Runtime-171717" />
     <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white" />
@@ -38,6 +42,7 @@ Taichu is neither a thin RAG wrapper nor a one-click generation toy optimized fo
 - [Engineering evidence](#engineering-evidence)
 - [Stack and local run](#stack-and-local-run)
 - [Current boundaries and roadmap](#current-boundaries-and-roadmap)
+- [License](#license)
 
 ## Positioning
 
@@ -279,6 +284,10 @@ Continue exploring the Human-in-the-loop boundary: what may execute automaticall
 ### 4. Deployment and productization research
 
 Research multi-tenancy, genre switching, automatic publishing, and online deployment. These remain future product directions; the current implementation deliberately preserves a single-novel, single-author workspace boundary.
+
+## License
+
+This project is licensed under the [MIT License](./LICENSE).
 
 ---
 
