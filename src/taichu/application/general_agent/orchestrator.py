@@ -124,9 +124,11 @@ def _verification_audit(run: GeneralAgentRun) -> list[dict[str, Any]]:
             continue
         audit.append({
             "node_id": node.node_id,
-            "usage": "仅作本次验收证据，不能据此恢复为有效小说事实或有效记忆。",
+            "usage": "仅作本次验收证据，不能据此恢复为有效小说事实或有效记忆。来源标识全集保存在原始节点产物；此处保留正文、审查问题及问题内的来源引用。",
             "deliver_candidate": candidate and node.node_id not in superseded,
-            "output": node.output,
+            # 各专家继承的来源标识全集高度重叠，不是验收正文；不要反复投影。
+            # 问题自带的 evidence/source_ref、警告与候选正文均完整保留。
+            "output": {key: value for key, value in node.output.items() if key != "source_refs"},
         })
     if len(json.dumps(audit, ensure_ascii=False)) > 40_000:
         raise ValueError("本次候选与审查证据超过验收预算，不能省略关键证据后宣称完成。")

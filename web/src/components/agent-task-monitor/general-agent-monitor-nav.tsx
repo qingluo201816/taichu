@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BrainCircuit, GitBranch, Scale } from "lucide-react";
+import { BrainCircuit, GitBranch, Route, Scale } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -9,7 +9,7 @@ export function GeneralAgentMonitorNav({
   active,
   accent = false,
 }: {
-  active: "monitor" | "memory" | "evaluation";
+  active: "monitor" | "trajectory" | "memory" | "evaluation";
   accent?: boolean;
 }) {
   const items = [
@@ -18,6 +18,12 @@ export function GeneralAgentMonitorNav({
       href: "/task-monitor/general-agent",
       label: "节点监控",
       icon: GitBranch,
+    },
+    {
+      key: "trajectory" as const,
+      href: "/task-monitor/general-agent/trajectory",
+      label: "执行轨迹",
+      icon: Route,
     },
     {
       key: "memory" as const,

@@ -31,11 +31,11 @@ export interface GeneralAgentGraphLayout {
   height: number;
 }
 
-const NODE_WIDTH = 148;
-const NODE_HEIGHT = 56;
+const NODE_WIDTH = 190;
+const NODE_HEIGHT = 88;
 const COLUMN_GAP = 52;
-const ROW_GAP = 24;
-const PADDING = 22;
+const ROW_GAP = 36;
+const PADDING = 48;
 
 export function generalAgentPlanRevisions(nodes: GeneralAgentNodeRun[]): number[] {
   return [...new Set(nodes.map(node => node.plan_revision))].sort((a, b) => b - a);

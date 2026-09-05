@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import "./trajectory.test";
+import "./trajectory-ledger.test";
 
 import {
   buildGeneralAgentExecutionFlow,
@@ -50,7 +52,13 @@ assert.deepEqual(levels, {
 });
 assert.ok(layout.width >= 520);
 assert.ok(layout.height >= 220);
-assert.ok(layout.nodes.every(item => item.width <= 148 && item.height <= 56));
+assert.ok(layout.nodes.every(item => item.x >= 0 && item.y >= 0 && item.x + item.width <= layout.width && item.y + item.height <= layout.height));
+for (const target of layout.nodes) {
+  for (const dependency of target.dependencies) {
+    const source = layout.nodes.find(item => item.node_id === dependency)!;
+    assert.ok(source.x + source.width < target.x);
+  }
+}
 
 const singleNodeLayout = buildGeneralAgentGraphLayout(
   buildGeneralAgentExecutionFlow([], "completed"),

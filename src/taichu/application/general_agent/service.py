@@ -447,7 +447,7 @@ class GeneralAgentRuntimeService:
             conversations.append(
                 GeneralAgentConversation(
                     conversation_id=conversation_id,
-                    title=first.user_goal,
+                    title=first.conversation_title or first.user_goal,
                     status=latest.status,
                     request_count=len(ordered),
                     latest_run_id=latest.run_id,
@@ -828,6 +828,12 @@ class GeneralAgentRuntimeService:
         """把官方图状态单向保存为业务审计与界面投影。"""
 
         projected = _with_visible_conversation_messages(run)
+        stored = await self._repository.get(run.run_id)
+        if stored is not None:
+            # 展示标题由业务投影维护，不随图检查点回放覆盖。
+            projected = projected.model_copy(
+                update={"conversation_title": stored.conversation_title}
+            )
         projected = await self._merge_durable_recovery_audit(projected)
         await self._repository.save(projected)
         await self._event_center.publish(event_type=event_type, run=projected)

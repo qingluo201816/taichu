@@ -14,7 +14,27 @@ import {
 import {
   tokenTrendRangeStart,
   tokenTrendTickIndexes,
+  customTrendWindow,
+  trendBucketWindow,
+  trendCsv,
 } from "../../src/lib/llm/token-trend";
+
+assert.equal(customTrendWindow("2026-09-05", "2026-09-04"), null);
+assert.equal(customTrendWindow("2026-02-30", "2026-03-04"), null);
+assert.equal(customTrendWindow("", "2026-09-04"), null);
+assert.deepEqual(customTrendWindow("2026-09-04", "2026-09-04"), {
+  startedFrom: "2026-09-04T00:00:00.000Z", startedTo: "2026-09-04T23:59:59.999Z",
+});
+assert.deepEqual(trendBucketWindow("2026-09-04T00:00:00Z", "hour", { startedFrom: "2026-09-04T00:30:00Z" }), {
+  startedFrom: "2026-09-04T00:30:00.000Z", startedTo: "2026-09-04T00:59:59.999Z",
+});
+assert.deepEqual(trendBucketWindow("2026-09-04T00:00:00Z", "day", { startedTo: "2026-09-04T12:00:00Z" }), {
+  startedFrom: "2026-09-04T00:00:00.000Z", startedTo: "2026-09-04T12:00:00.000Z",
+});
+const csv = trendCsv([{ bucket_start: "2026-09-04T00:00:00Z", call_count: 1, total_tokens: 0, input_tokens: null }]);
+assert.ok(csv.startsWith("\uFEFF"));
+assert.ok(csv.includes('"0","未返回"'));
+assert.equal(csv.split("\r\n").length, 2);
 
 const models: PublicLLMModel[] = [
   model("disabled", { enabled: false }),

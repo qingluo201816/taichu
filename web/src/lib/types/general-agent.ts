@@ -273,10 +273,16 @@ export type GeneralAgentRun = {
     max_runtime_seconds: number;
   };
   status: GeneralAgentRunStatus;
+  current_request_message_id?: string | null;
   messages: Array<{
     role: "user" | "assistant";
     content: string;
     created_at: string;
+    message_id?: string | null;
+    turn_id?: string | null;
+    request_index?: number | null;
+    message_type?: "user_request" | "assistant_final" | "human_prompt" | "human_response" | null;
+    human_request_id?: string | null;
   }>;
   plan?: GeneralAgentExecutionPlan | null;
   plan_revision: number;

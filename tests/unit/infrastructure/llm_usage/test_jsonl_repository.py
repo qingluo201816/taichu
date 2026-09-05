@@ -11,6 +11,23 @@ from taichu.infrastructure.llm_usage import JsonlLLMUsageRepository
 
 
 class JsonlLLMUsageRepositoryTest(unittest.IsolatedAsyncioTestCase):
+    async def test_date_filters_compare_instants_not_timestamp_strings(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = JsonlLLMUsageRepository(Path(temporary_directory))
+            for index, stamp in enumerate([
+                "2026-07-11T23:59:59Z",
+                "2026-07-12T00:00:00.000000Z",
+                "2026-07-12T07:59:59+08:00",
+            ], start=1):
+                await repository.append(_record(f"call-{index}", "model-a", "completed").model_copy(update={"started_at": stamp}))
+            query = LLMUsageQuery(started_from="2026-07-11T00:00:00.000Z", started_to="2026-07-11T23:59:59.999Z")
+            page = await repository.list_calls(query)
+            summary = await repository.summarize(query)
+            trend = await repository.token_trend(query, "day")
+        self.assertEqual({record.call_id for record in page.items}, {"call-1", "call-3"})
+        self.assertEqual(summary.total_calls, 2)
+        self.assertEqual(trend[0].call_count, 2)
+
     async def test_pagination_filtering_and_summary(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository = JsonlLLMUsageRepository(Path(temporary_directory))

@@ -683,6 +683,7 @@ class GeneralAgentRun(GeneralAgentModel):
     parent_run_id: str | None = Field(default=None, max_length=128)
     agent_name: Literal["general_writing_assistant"] = "general_writing_assistant"
     user_goal: str = Field(min_length=1, max_length=100_000)
+    conversation_title: str | None = Field(default=None, min_length=1, max_length=200)
     model_id: str | None = Field(default=None, min_length=1, max_length=128)
     scope: GeneralAgentScope = Field(default_factory=GeneralAgentScope)
     author_constraints: list[str] = Field(default_factory=list, max_length=100)

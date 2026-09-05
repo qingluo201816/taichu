@@ -113,15 +113,33 @@ class JsonlLLMUsageRepository:
     def _filter(
         records: list[LLMCallRecord], query: LLMUsageQuery
     ) -> list[LLMCallRecord]:
+        started_from = _parse_time(query.started_from) if query.started_from else None
+        started_to = _parse_time(query.started_to) if query.started_to else None
+
+        def in_window(record: LLMCallRecord) -> bool:
+            if started_from is None and started_to is None:
+                return True
+            try:
+                started = _parse_time(record.started_at)
+            except ValueError:
+                return False
+            return (started_from is None or started >= started_from) and (
+                started_to is None or started <= started_to
+            )
+
         return [
             item
             for item in records
-            if (query.started_from is None or item.started_at >= query.started_from)
-            and (query.started_to is None or item.started_at <= query.started_to)
+            if in_window(item)
             and (query.model_id is None or item.model_id == query.model_id)
             and (query.task_type is None or item.task_type == query.task_type)
             and (query.status is None or item.status == query.status)
         ]
+
+
+def _parse_time(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return parsed.replace(tzinfo=UTC) if parsed.tzinfo is None else parsed.astimezone(UTC)
 
 
 def _group(
