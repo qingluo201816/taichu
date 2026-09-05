@@ -122,8 +122,8 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="./assets/knowledge-workflow.png" alt="知识沉淀工作流" /></td>
-    <td width="50%"><img src="./assets/agent-monitor.png" alt="Agent 运行监控" /></td>
+    <td width="50%" valign="top"><img src="./assets/knowledge-workflow-20260905.png" alt="知识沉淀工作流" /></td>
+    <td width="50%" valign="top"><img src="./assets/agent-monitor.png" alt="Agent 运行监控" /></td>
   </tr>
   <tr>
     <td align="center">知识沉淀工作流</td>
@@ -214,7 +214,16 @@ AI 候选经过结构、来源、冲突与生命周期校验，再由作者确�
 
 ### Opik 评测与追踪
 
-![太初 Opik Agent 评测页面](./assets/opik-evaluation.png)
+<table>
+  <tr>
+    <td width="50%" valign="top"><img src="./assets/opik-recovery-feedback-20260905.png" alt="Opik 中断恢复评分对比" /></td>
+    <td width="50%" valign="top"><img src="./assets/opik-multi-step-insights-20260905.png" alt="Opik 多步骤 Agent 评测洞察" /></td>
+  </tr>
+  <tr>
+    <td align="center">中断恢复评分对比</td>
+    <td align="center">多步骤 Agent 评测洞察</td>
+  </tr>
+</table>
 
 太初将 Dataset、Experiment 与 Trace 关联到本地评测页面，并校验评测套件哈希、版本、样例和完成状态。截图中的合成运行时用于证明编排、能力调用、恢复与证据契约，不代表真实模型成本，也不等价于文学质量评判。
 
