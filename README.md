@@ -118,7 +118,7 @@
 
 ### 2. 可观测的长程 Agent 执行
 
-![长程创作智能体工作台](./assets/agent-workbench.png)
+![长程创作智能体工作台](./assets/agent-workbench-20260905.png)
 
 <table>
   <tr>
