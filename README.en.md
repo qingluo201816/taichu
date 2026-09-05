@@ -83,7 +83,7 @@ Taichu builds its product capabilities around these four long-term collaboration
       <td>Checkpoint continuation, localized failure, retry, and replanning</td>
     </tr>
     <tr>
-      <td>Interruptible</td>
+      <td>Human-interruptible</td>
       <td>Candidate-first workflows and author authorization before durable writes</td>
     </tr>
     <tr>
@@ -91,7 +91,7 @@ Taichu builds its product capabilities around these four long-term collaboration
       <td>Outputs bound to source scope, retrieved evidence, and author constraints</td>
     </tr>
     <tr>
-      <td>Governed</td>
+      <td>Governable</td>
       <td>Explicit boundaries between prose, candidate knowledge, confirmed facts, and derived indexes</td>
     </tr>
   </tbody>
@@ -118,12 +118,12 @@ One warning: **do not outsource judgment to the model.**
 
 ### 2. Observable Agent execution
 
-![Long-running creative Agent workspace](./assets/agent-workbench.png)
+![Long-running creative Agent workspace](./assets/agent-workbench-20260905.png)
 
 <table>
   <tr>
-    <td width="50%"><img src="./assets/knowledge-workflow.png" alt="Knowledge extraction workflow" /></td>
-    <td width="50%"><img src="./assets/agent-monitor.png" alt="Agent run monitor" /></td>
+    <td width="50%" valign="top"><img src="./assets/knowledge-workflow-20260905.png" alt="Knowledge extraction workflow" /></td>
+    <td width="50%" valign="top"><img src="./assets/agent-monitor.png" alt="Agent run monitor" /></td>
   </tr>
   <tr>
     <td align="center">Knowledge extraction workflow</td>
@@ -138,7 +138,7 @@ A high-level Orchestrator plans complex requests as dynamic DAGs, schedules dete
 
 Give Taichu a tangled idea and let it decompose, cross-check, and organize the problem. Use it to inspect setting conflicts, power-scale drift, or cross-chapter inconsistencies, or to extract knowledge-card candidates from recent writing.
 
-Model output can be wrong. Confirm it before it enters the knowledge base—**consume responsibly**.
+Model output can be wrong. Confirm it before it enters the knowledge base.
 
 </details>
 
@@ -207,16 +207,25 @@ Taichu verifies “it runs” separately from “it is trustworthy.” The resul
 | General writing suite | 37 fixed scenario categories | Continuously regressed | Capability coverage and contract stability |
 | Multi-step Agent contracts | 18 contracts / 9 task classes | 18 / 18 | Capability choice, budget, behavior, artifacts, terminal state, safety, and evidence |
 | Interrupt/recovery contracts | 8 contracts / 4 task classes | 8 / 8 | Checkpointing, recovery, idempotency, and authorization boundaries |
-| Recovery stress matrix | 36 combinations | 100% completion, 100% recovery, 0 duplicate successful side effects | 1/3/6/12/20/40 nodes × concurrency 1/3/8 × normal/interrupted runs |
-| RAG semantic evaluation | 30 fixed cases | Contextual relevancy 0.8530; faithfulness 0.9933; answer relevancy 0.9526 | Retrieval/answer quality trends and long-tail failure discovery |
+| Recovery stress matrix | 36 combinations | Completion Rate 100%; Recovery Rate 100%; Duplicate Successful Side Effects 0 | 1/3/6/12/20/40 nodes × concurrency 1/3/8 × normal/interrupted runs |
+| RAG semantic evaluation | 30 fixed cases | Context Relevance 0.8530; Faithfulness 0.9933; Answer Relevance 0.9526 | Retrieval/answer quality trends and long-tail failure discovery |
 
 The largest checkpoint in the recovery matrix was approximately 7.63 MiB. Current defaults remain 12 nodes, concurrency 3, a 900-second runtime limit, and at most one durable write node per author grant.
 
 ### Opik evaluation and tracing
 
-![Taichu Opik Agent evaluation screen](./assets/opik-evaluation.png)
+<table>
+  <tr>
+    <td width="50%" valign="top"><img src="./assets/opik-recovery-feedback-20260905.png" alt="Opik interrupt recovery score comparison" /></td>
+    <td width="50%" valign="top"><img src="./assets/opik-multi-step-insights-20260905.png" alt="Opik multi-step Agent evaluation insights" /></td>
+  </tr>
+  <tr>
+    <td align="center">Interrupt recovery score comparison</td>
+    <td align="center">Multi-step Agent evaluation insights</td>
+  </tr>
+</table>
 
-Taichu connects Dataset, Experiment, and Trace records to its local evaluation screen and validates suite hash, version, cases, and completion state. The synthetic runtime shown here proves orchestration, capability invocation, recovery, and evidence contracts. It does not represent live-model cost or literary quality.
+Taichu connects Dataset, Experiment, and Trace records to its local evaluation screen and validates suite hash, version, cases, and completion state. The synthetic runtime shown here proves orchestration, capability invocation, recovery, and evidence contracts. It does not guarantee that every future task will pass, nor does it represent literary quality.
 
 - [Opik: official Agent Evaluation documentation](https://www.comet.com/docs/opik/evaluation/evaluate_agents)
 - [Opik: official Dashboard documentation](https://www.comet.com/docs/opik/v1/production/dashboards)
@@ -231,7 +240,10 @@ Taichu connects Dataset, Experiment, and Trace records to its local evaluation s
 | Frontend | Next.js, React, TypeScript, Tailwind CSS, shadcn/ui |
 | Structural truth | MongoDB |
 | Derived retrieval | Milvus, vector + keyword + graph retrieval |
+| Embedding model | Qwen3-Embedding-4B-Q4_K_M (local llama.cpp, 2,560 dimensions, OpenAI-compatible HTTP) |
+| Reranker | BAAI/bge-reranker-v2-m3 (local Hugging Face TEI, CUDA) |
 | Evaluation and observability | Opik, DeepEval, local traces and audit data |
+| Containers and orchestration | Docker, Docker Compose (Milvus Standalone, etcd, MinIO, BGE Reranker) |
 | Package management | uv, npm |
 
 ### Run locally

@@ -69,29 +69,29 @@
 <table align="center" width="72%">
   <thead>
     <tr>
-      <th width="18%">核心能力</th>
+      <th width="30%">核心能力</th>
       <th>作者看到的结果</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td>可观测</td>
+      <td>可观测（Observable）</td>
       <td>计划、动态 DAG、节点状态、Trace、Checkpoint、证据和成本均可查看</td>
     </tr>
     <tr>
-      <td>可恢复</td>
+      <td>可恢复（Recoverable）</td>
       <td>长任务可从检查点继续，失败节点可定位、重试和重规划</td>
     </tr>
     <tr>
-      <td>可干预</td>
+      <td>可干预（Human-interruptible）</td>
       <td>候选内容先进入审核流程，关键持久化写入由作者授权</td>
     </tr>
     <tr>
-      <td>可验证</td>
+      <td>可验证（Verifiable）</td>
       <td>检索证据、作者约束和输出作用域绑定，评测结果可复验</td>
     </tr>
     <tr>
-      <td>可治理</td>
+      <td>可治理（Governable）</td>
       <td>正文、候选知识、确认知识和派生索引具有明确边界</td>
     </tr>
   </tbody>
@@ -225,7 +225,7 @@ AI 候选经过结构、来源、冲突与生命周期校验，再由作者确�
   </tr>
 </table>
 
-太初将 Dataset、Experiment 与 Trace 关联到本地评测页面，并校验评测套件哈希、版本、样例和完成状态。截图中的合成运行时用于证明编排、能力调用、恢复与证据契约，不代表真实模型成本，也不等价于文学质量评判。
+太初将 Dataset、Experiment 与 Trace 关联到本地评测页面，并校验评测套件哈希、版本、样例和完成状态。截图中的合成运行时用于证明编排、能力调用、恢复与证据契约，不代表未来全部任务通过，也不等价于文学质量评判。
 
 - [Opik：Agent Evaluation 官方文档](https://www.comet.com/docs/opik/evaluation/evaluate_agents)
 - [Opik：Dashboard 官方文档](https://www.comet.com/docs/opik/v1/production/dashboards)
