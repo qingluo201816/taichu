@@ -180,7 +180,7 @@ Checkpoints preserve execution state, supporting retries and human intervention 
 Model input is assembled in five layers: stable memory, long-term memory, dialogue history, working memory, and the current request.  
 Each call recalls, compresses, and projects context as needed, preserving the current request verbatim and providing the information required for the current stage.
 
-![Memory management](./assets/memory-management.gif)
+![Memory management](./assets/memory-management-context-20260906.gif)
 
 ### Data governance
 
